@@ -2399,3 +2399,21 @@ function semAcentoESemCaixa(string $texto): string
 {
     return mb_strtolower(Str::ascii($texto));
 }
+
+/**
+ * Liga o login com Google (credenciais fake) para o caso corrente.
+ *
+ * Em `tests/Pest.php` por ter dois consumidores (`LoginSocialGoogleTest`, `RodapeCoerenteTest`); nome longo por colisão global de função.
+ *
+ * @param  array<string, mixed>  $credenciais  sobrescreve chaves de `services.google`
+ */
+function ligarLoginComGoogleDoKit(array $credenciais = []): void
+{
+    config()->set('kit.login.google.habilitado', true);
+
+    config()->set('services.google', array_merge([
+        'client_id'     => 'id-de-teste',
+        'client_secret' => 'segredo-de-teste',
+        'redirect'      => '/auth/google/callback',
+    ], $credenciais));
+}

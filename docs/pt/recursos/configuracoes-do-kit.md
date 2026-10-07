@@ -59,8 +59,8 @@ versiona — a assinatura `© {ano} {Nome}` continua lá, só sem o número.
 
 ### O recado da tela de login
 
-A aba **Login** tem um campo de texto livre que vira uma **segunda linha do rodapé, abaixo da
-assinatura**, e só nas telas de login (`/admin/login`, `/app/login`, `/infra/login` e `/login`). Ele
+A aba **Login** tem um campo de texto livre que é renderizado **dentro do cartão do formulário de login, abaixo dos
+botões** (inclusive os de login social), e só nas telas de login (`/admin/login`, `/app/login`, `/infra/login` e `/login`). Ele
 aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a tela de login é pública.
 
 As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.
@@ -201,7 +201,7 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:540`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:428`); as chaves sobrepostas são
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
 (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:396`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:400`) não está nesse mapa, então o banco nunca a sobrescreve.

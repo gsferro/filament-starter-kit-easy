@@ -60,8 +60,8 @@ pretend to — the `© {year} {Name}` signature stays, just without the number.
 
 ### The login screen notice
 
-The **Login** tab has a free-text field that becomes a **second footer line, below the signature**,
-and only on the login screens (`/admin/login`, `/app/login`, `/infra/login` and `/login`). It
+The **Login** tab has a free-text field that is rendered **inside the login form card, below the buttons**
+(social login ones included), and only on the login screens (`/admin/login`, `/app/login`, `/infra/login` and `/login`). It
 accepts Markdown — bold, italic and links — and discards raw HTML, because the login screen is
 public.
 
@@ -207,7 +207,7 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:540`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:428`); the overridden keys are exactly
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
 (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:396`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:400`) is not in that map, so the database never overrides it.
