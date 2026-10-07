@@ -16,6 +16,29 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   composição, só com a logo) com o `alt` = nome da organização, nas duas formas da marca, como a tela de
   bloqueio já fazia; organização sem logo segue com a imagem e o `alt` da instalação.
 
+### Validação antes da tag
+
+Patch e não minor: uma correção (o `alt` da logo da organização), sem chave nova nem migration. O
+`checklist-de-release` pede os quatro cenários a cada tag, e o cenário 1 foi simulado pela mesma rota da
+`v0.43.0` à `v0.45.2`: extração por `git archive` (que aplica o `export-ignore` como o Packagist aplica —
+`docs/` e `wikis/specs/` ausentes, conferido) + `composer install` + `.env` +
+`kit:install --create-project --no-npm --no-interaction`.
+
+- **Cenário 1, simulado** (extração de `1cd21fe`, o commit do bump; a árvore só difere da etiquetada no
+  CHANGELOG): `config('kit.version')` = `0.45.3`;
+  `php artisan test --testsuite=Kit,Tenancy --parallel --processes=2 --compact --log-junit` →
+  `{"result":"passed","tests":4212,"passed":3290,"assertions":14857,"duration_ms":1370892,"skipped":922}`
+  — **4.212 testes, 3.290 passaram, 14.857 asserções, 922 pulados, 0 falhas**, 22,8 min com 2 processos
+  (a máquina rodava os testes de browser do kit ao mesmo tempo)
+- **Teto de pulados: 922 → 922 (+0)**, decomposição por arquivo (`--log-junit`) contra o junit da
+  `v0.45.2`: 31 arquivos nos dois e nenhuma linha mudou — o CT-58 novo (`CabecalhoDoPainelTenancyTest`)
+  é HTTP e roda no projeto instalado
+- **Browser, na árvore do kit**: `IdentidadeVisualTest` (CT-B01 da logo, 4 linhas), `CabecalhoDoPainelTest`,
+  `LogoDarkModeTest` e `RodapeNaDobraTest` rodados sobre `1cd21fe` antes da tag; o resultado está na
+  release do GitHub
+- **CI no Linux**: a tag dispara o `release.yml`; o job `cobertura` da `main` roda depois do push e o
+  número entra no PR de documentação dos cenários 2, 3 e 4, que rodam sobre a tag publicada
+
 ## [0.45.2] - 2026-10-07
 
 ### Alterado
