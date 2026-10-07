@@ -1,6 +1,6 @@
 # Progresso — fix/logo-dark-do-tenant: a logo da organização (clara e escura) no topo do `/app`
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-10-07
 <!-- Uma linha só, no topo: em planejamento | em implementação | em revisão | concluída — {YYYY-MM-DD}.
      Pedido do despacho do step 4: "em andamento" até o início da implementação. O indice.sh lê esta linha. -->
 
@@ -37,7 +37,7 @@
 - [x] `README.md` e `README.en.md`: features especificadas 76 para 77 e o badge de casos de teste recontado; `SiteDeDocumentacaoTest` verde — commit `84c6d01` (badge 1.976); `SiteDeDocumentacaoTest` 68/68 (254 asserções); regressão de docs 91/91 (343 asserções), mesmo comando do item de documentação acima 2026-10-07
 
 ## 7. Índice das wikis
-- [ ] `wikis/specs/INDEX.md` regenerado por `indice.sh` (não à mão) — aberto: só depois do veredito do step 11
+- [x] `wikis/specs/INDEX.md` regenerado por `indice.sh` (não à mão) — aberto: só depois do veredito do step 11 — regenerado por `indice.sh`, linha `fix/logo-dark-do-tenant` presente, 2026-10-07
 
 ## Testes
 <!-- Preenchida no step 7, depois da derivação do 04/05: um arquivo de teste por linha, com os IDs que ele cobre. -->
@@ -58,7 +58,7 @@
 - [ ] Regressão: `LogoDarkModeTest`, `CabecalhoDoPainelTest`, `CabecalhoDoPainelTelaTest`, `CabecalhoDoPainelTenancyTest`, `IdentidadeVisualTenancyTest`, `ArquiteturaDoCodigoTest`, `CitacoesDeCodigoTest`, `SiteDeDocumentacaoTest`, `RedeDeDocumentacaoTest` e os três arquivos de navegador da regressão — aberto: só `LogoDarkModeTest`, `CabecalhoDoPainelTenancyTest`, `CitacoesDeCodigoTest`, `SiteDeDocumentacaoTest` e `RedeDeDocumentacaoTest` foram reexecutados; o restante depende de rodada futura
 - [ ] Suíte afetada (ou `--group=kit`) contra a **baseline** de `main`: nada além das falhas pré-existentes por nome — aberto: depende de rodada futura (o passo 1 com `--tia` é proibido nesta esteira)
 - [ ] `pest --mutate --path=app/Support/IdentidadeDoKit.php` (via `pestw.cmd`, sem `--filter`, `--no-tia`): score, duração e sobreviventes listados; mutantes manuais: remover a guarda de painel de `organizacaoAberta()` e inverter a ordem das quedas — aberto: `pest --mutate` depende de rodada futura; os mutantes manuais estão em `## Notas de Implementação`, sem score
-- [x] `/code-review high` não rodado como `/code-review`: o step 9 desta esteira foi `fw-revisor-diff` (11 RC) + ponytail do diff (ver `## Revisão do Diff`) — despachos 7 e 8 e RC-01 a RC-12 fechados (`## Revisão do Diff (step 9)`), 2026-10-07
+- [ ] /code-review high — não rodado como `/code-review`; o step 9 desta esteira foi `fw-revisor-diff` (RC-01 a RC-10 e RC-12) + ponytail do diff — despachos 7 e 8 fechados (`## Revisão do Diff (step 9)`), 2026-10-07
 - [x] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido — 4 linhas verdes no `05`, 2026-10-07
 - [x] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*` — `grep -c "alterado em 2026-10-07"` dá 5 no `04` e 1 no `05` (marcas do QA-04), 0 no `01` e no `02`, 2026-10-07
 - [x] `rastreabilidade.sh {wiki}` silencioso (`RQ`/`P-nn` × passo do `01` × CT do `04`) — saída vazia, exit 0, 2026-10-07
@@ -79,7 +79,7 @@
 |---|---|---|---|---|---|
 | RC-01 | revisor do diff (Major) | CT-50 "sem vínculo" sem `assertNotFound` nem controle positivo; cláusula `null` da instalação sem o que medir | teste | CT-50, M25 | aplicado: `assertNotFound()`, `<div class="sn-brand">` com o nome da aplicação na MESMA resposta, parâmetro `null` removido; M25 ganha matador |
 | RC-02 | revisor do diff | comentários de `brandLogo`/`darkModeBrandLogo` do `app` ainda dizem "logo de sempre" | implementação | — | aplicado em `AppPanelProvider` (mesma contagem de linhas, citações dos docs intactas); `/admin` e `/infra` sem mudança |
-| RC-03 | revisor do diff | "a marca é a de hoje"/"o de hoje" em `CabecalhoDoPainel`; ressalva da P-12 repetida em `resolverSegmentos()` e em `organizacaoAberta()` | implementação | — | aplicado na reciclagem do ciclo 2 (QA-12); a rodada pós-revisão não tocou essas três linhas: "o par de `logos()`", ressalva só no docblock da classe, `organizacaoAberta()` com 3 linhas |
+| RC-03 | revisor do diff | "a marca é a de hoje"/"o de hoje" em `CabecalhoDoPainel`; ressalva da P-12 repetida em `resolverSegmentos()` e em `organizacaoAberta()` | implementação | — | aplicado no fechamento pós-ciclo 3 (QA-12 resto): "o par de `logos()`", ressalva da P-12 só no docblock da classe, `organizacaoAberta()` com 3 linhas |
 | RC-04 | revisor do diff | docs listam o "bloqueio" entre as telas de autenticação com logo da instalação | docs | CT-55 | aplicado em pt e en: login e recuperação de senha usam a instalação, a tela de bloqueio a organização da sessão |
 | RC-05 | revisor do diff | `helperText` do upload `logo` não diz o que acontece sem logo da instalação | implementação | — | aplicado em `TenantForm` |
 | RC-06 | revisor do diff | comentários de `TenantForm` e `TenantsTable` citam só a tela de bloqueio | implementação | — | aplicado: citam também o topo do `/app` |
@@ -89,7 +89,7 @@
 | RC-10 | revisor do diff | `.fi-user-menu-trigger` é seletor por classe de CSS | teste | CT-B01 | aplicado: `button[aria-label="Menu do usuário"]` (o botão do topbar tem `aria-label`, `user-menu.blade.php` do Filament); `IdentidadeVisualTest` 9/9 |
 | RC-12 | revisor do diff | CT-48 "ligada (composição)" não conta as `<img>` da região | teste | CT-48 | aplicado: a região `kit-cabecalho` tem exatamente 1 `<img>` |
 
-**Ponytail do diff**: net -190 proposto. Aplicados: helper único dos parsers em `tests/Pest.php`; `expectParDaMarca()` no arquivo Tenancy para o padrão repetido do par (8 usos); recorte do CT-55 por `Str::before`/`Str::after`, mesmos oráculos; ressalva da P-12 só no docblock da classe; docblock de `organizacaoAberta()` em 3 linhas. Recusados: fundir CT-42/43/46 e CT-41 em CT-40 (casos distintos por oráculo e por mutante), cortar linhas do CT-40/CT-49/CT-53, remover `$nenhumaOculta` do CT-B01 (é o oráculo de que a variante oculta de fato some) e reverter o docblock de `Tenant.php` (decisão do revisor).
+**Ponytail do diff**: net -190 proposto. Aplicados: helper único dos parsers em `tests/Pest.php`; `expectParDaMarca()` no arquivo Tenancy para o padrão repetido do par (8 usos); recorte do CT-55 por `Str::before`/`Str::after`, mesmos oráculos; ressalva da P-12 só no docblock da classe; docblock de `organizacaoAberta()` em 3 linhas (estes dois, aplicados no fechamento pós-ciclo 3). Recusados: fundir CT-42/43/46 e CT-41 em CT-40 (casos distintos por oráculo e por mutante), cortar linhas do CT-40/CT-49/CT-53, remover `$nenhumaOculta` do CT-B01 (é o oráculo de que a variante oculta de fato some) e reverter o docblock de `Tenant.php` (decisão do revisor).
 
 ## Conformidade com Rules
 
@@ -135,10 +135,14 @@
   - QA-12 → código + `03`: três comentários de `CabecalhoDoPainel` ("o par de `logos()`") e evidência do RC-03 e do item `03:16`
   - QA-13, QA-07, QA-10 → `03` e glossário: contagem refeita pelo comando, "Marca simples" no glossário, `## Verificação Final` com evidência
   - QA-08 e QA-09 → débito, solicitante: ficam em `## Débitos` e `## Blockers`; a Q7 do `00` está "retirada — coberta por P-03 (confirmar no PR)"
+- **Ciclo**: 3 · **Veredito**: APROVADO COM DÉBITO · **Data**: 2026-10-07 · 0 Blocker, 0 Major, 5 Minor, 1 Cosmético · 8/12 (teto por cobertura: G3, H, J1, K2 não verificadas) · **Relatório**: `06-relatorio-qa.md`
+- **Pós-ciclo 3** (sem novo ciclo, teto do perfil completo atingido): QA-12 resto, QA-14, QA-15 e QA-16 corrigidos em linha; QA-08 e QA-09 ficam como débito para o solicitante (PR)
 
 ## Candidatos a Rule
 
 <!-- Step 12, depois do veredito. -->
+
+apresentados 0 · gravados 0 · recusados 0 · descartados no gate 2 · poda 0 — avaliados pela sessão: (1) «guarda de organização por `getCurrentPanel()?->hasTenancy()`, nunca `Paineis::correnteOuPadrao()`» — descartado no gate 4 (já é a exceção registrada em `.ai/rules/app.md`); (2) «resolução do par de logos só por `IdentidadeDoKit::logosPara()`» — descartado no gate 3 (inferível: `TelaBloqueio` e `CabecalhoDoPainel` já delegam e os docblocks o dizem)
 
 ## Auditoria Pré-Implementação
 <!-- Saída dos steps 4 a 6, ANTES de escrever código. -->
@@ -181,7 +185,7 @@ step 6 — ponytail (sonnet): 38 achados, net -140 proposto; aceitos os de A (re
 | 9 | 9→10 | construtor da rodada pós-revisão: RC-01 a RC-07, RC-09, RC-10, RC-12 e o ponytail aceito | — | a conversa da sessão | 86/86 (447 asserções) e 9/9 (54), verdes; citações reancoradas | — | `pint` e `filacheck` silenciosos; `citacoes.sh` acusou 3 citações deslocadas pela rodada; reancoradas nesta reciclagem (QA-02) |
 | 10 | 7 | construtor · `general-purpose`: derivação do `04` e do `05` (`feature-test-design`) | sonnet | a conversa da sessão e o código de `app/` como oráculo | 18 CT (CT-40 a CT-57) e 1 CT-B (CT-B01), 11 regras, 3 rodadas | — | `rastreabilidade.sh`, `citacoes.sh` e `checkbox-sem-evidencia.sh` conferidos; contagens recalculadas por `grep -c` na reciclagem do ciclo 1 (QA-05) |
 | 11 | 7 | `fw-adversario-ct`: revisão adversarial do `04`/`05` | — | o `01`, o código e o raciocínio de quem derivou | 26 achados, 23 aplicados, 3 recusados com motivo (ADV-18, ADV-25, ADV-26) | — | aplicados e recusados decididos pela sessão; P-05 do `00` reescrita (ADV-24) |
-| 12 | 11 | `/code-review high` do step 9 | — | — | não rodado como `/code-review`: o step 9 desta esteira foi `fw-revisor-diff` (despacho 7, 11 RC) + ponytail do diff (despacho 8); ver `## Revisão do Diff` | — | QA-10: item da `## Verificação Final` reescrito |
+| 12 | 9 | `/code-review high` do step 9 | — | — | não rodado como `/code-review`: o step 9 desta esteira foi `fw-revisor-diff` (despacho 7, 11 RC) + ponytail do diff (despacho 8); ver `## Revisão do Diff` | — | QA-10: item da `## Verificação Final` reescrito |
 | 13 | 11 | construtor da reciclagem do ciclo 2: QA-07, QA-10 a QA-13 | — | a conversa da sessão | docblocks de `CabecalhoDoPainel` (QA-12), frase do par nas docs pt/en (QA-11), glossário (QA-07), `03` | — | `pint` passed; 89/89 (457); `citacoes.sh` silencioso |
 
 **Step 7 fechado**: a revisão adversarial do `04`/`05` foi feita (26 achados, 6 altos; aplicados 23, recusados 3) e o preenchimento da coluna `Confirmada` fica com o construtor da implementação; a Q6 está respondida por D5 do `01` e a colisão de IDs, resolvida (CT-40 a CT-57). Pendências para a implementação: o executor mede se a página de recusa de CT-50 renderiza a marca (senão M25 fica sem matador), se `/app` de CT-51 renderiza topo ou redireciona, e o seletor de tema de CT-B01.
@@ -203,6 +207,8 @@ step 6 — ponytail (sonnet): 38 achados, net -140 proposto; aceitos os de A (re
 - Edição por script: o heredoc do Bash colapsa barra invertida (`\b` virou backspace no helper movido para `tests/Pest.php`) e o `expectParDaMarca()` foi capturado pelo próprio regex de substituição e chamou a si mesmo (recursão infinita: o processo do Pest morria mudo, exit 127). Os dois corrigidos e cobertos pelos 86 testes.
 
 ## Débitos
+- QA-09 (Q7): marca mista no tema escuro quando a organização só tem a clara; confirmação do solicitante no PR.
+- Não verificados por decisão da sessão: TIA (`--tia`), `pest --mutate`, suíte contra a baseline de `main`, G nível 3 (swap renderizado) e H (axe e teclado).
 - Débito de acessibilidade (QA-08): o `alt` da logo da organização no topo do `/app` continua com o nome da aplicação (Filament `$brandName`; composição `config('app.name')`); fora de escopo por P-06 do `00`; destacado no PR para o solicitante decidir se vira feature.
 
 ## Referências Abertas

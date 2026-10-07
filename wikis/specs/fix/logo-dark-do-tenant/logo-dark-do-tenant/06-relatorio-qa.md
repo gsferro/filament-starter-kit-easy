@@ -233,3 +233,95 @@ Nenhuma lacuna. `rastreabilidade.sh` saiu com exit 0. O diff por passo é o mesm
 - **H, axe e teclado**: nenhum CT-B tem `assertNoAccessibilityIssues()`, e o gate não escreve teste.
 - **J, passo 1** (`pest --parallel --tia`): proibido pelo orquestrador.
 - **K2** (`pest --mutate`): proibido pelo orquestrador. Os 6 mutantes manuais do `03` são anteriores ao refactor dos testes e não têm score nem `Duration`.
+
+## Veredito — Ciclo 3
+**APROVADO COM DÉBITO**
+
+> Cobertura: 8 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
+
+- Blocker: 0 · Major: 0 · Minor: 5 · Cosmético: 1
+- Achados abertos:
+  - QA-12 (Minor), fechado só em parte;
+  - QA-14 e QA-15 (Minor, novos);
+  - QA-16 (Cosmético, novo);
+  - QA-08 e QA-09 (Minor), débitos que dependem do solicitante.
+- Não verificadas: G (nível 3), H (axe e teclado), J (passo 1, TIA) e K (K2). As causas estão em *Não Verificado*.
+- `RQ` abertas: nenhuma. A Q7 continua "retirada — coberta por P-03 (confirmar no PR)" (QA-09).
+- Ambiente: app em `http://127.0.0.1:8012`, sem anti-robô. Login feito por `curl` no endpoint `livewire-7204384e/update` (componente `TelaLogin`, método `authenticate`). Pest 5. PCOV e Xdebug carregados (`php -m`). Playwright MCP indisponível. Boost não foi usado.
+- Ciclo 3 é o último pelo teto do perfil completo. Os dois Major do ciclo 2 (QA-11 e QA-13) estão fechados. O que sobra é texto do `03`, uma frase das docs e um docblock, e nada disso é defeito de produto.
+
+## Verificação dos achados abertos do Ciclo 2
+
+| QA | Estado no ciclo 3 | Evidência |
+|---|---|---|
+| QA-07 (Minor, L7) | **fechado** | `wikis/glossario.md:20` criou "Marca simples" e a declara sinônimo de "logo solta" das wikis anteriores. "Marca composta" (`:19`) e "Organização aberta" seguem atualizadas. `docs/pt…:287` e `CHANGELOG.md:12` usam o termo do glossário. |
+| QA-10 (Minor, L) | **fechado** | Todo item de `## Verificação Final` tem agora evidência (`[x]`) ou motivo (`[ ]`). `checkbox-sem-evidencia.sh` dá exit 0. Os `[ ]` restantes (`03:53`, `58`, `59`, `60`, `67`, `69`, `70`, `72`) foram para *Não Verificado* e *Débitos*. O caso `03:61` virou QA-14. |
+| QA-11 (Major, L3) | **fechado** | `docs/pt/recursos/configuracoes-do-kit.md:262` e `docs/en/…:271` passam a recomendar o par da organização. Isso cumpre a mitigação de `01:186` e `02:26`. A precisão da frase virou QA-15. |
+| QA-12 (Minor, L3/L6) | **parcial** (segue Minor) | Feito: `grep -n "de hoje" app/Support/CabecalhoDoPainel.php` só acha `:217` (autenticação, verdadeira), e `03:16` foi corrigido. Falta: `03:82` (RC-03) e `03:92` (Ponytail do diff, "Aplicados") ainda dizem "ressalva da P-12 só no docblock da classe" e "docblock de `organizacaoAberta()` em 3 linhas". O código contradiz os dois:<br>• `app/Support/CabecalhoDoPainel.php:resolverSegmentos():205` (`resolverSegmentos()`) mantém "a P-12 vale fora do `/app` com organização aberta", e `03:16` diz o mesmo.<br>• O docblock de `organizacaoAberta()` (`:175-180`) tem 5 linhas de texto.<br>• `git show 54ab9d7 --stat` não toca o arquivo, e o código de `e969341` é o de hoje, então o corte nunca foi feito. |
+| QA-13 (Major, L6) | **fechado** | `git diff --name-only main...HEAD \| wc -l` dá 26, como `03:71`. A lista do que ficou fora do plano inclui `wikis/glossario.md` e o `06`, com o motivo. |
+| QA-08 (Minor, H) | **débito, solicitante** | Confirmado de novo no app: em `/app/acme`, `alt="Logotipo de Starter Kit"` sobre `organizacoes/logos/acme-qa.png`. Registrado em `03:206` e `03:191`. |
+| QA-09 (Minor, A) | **débito, solicitante** | A Q7 do `00:40` segue "retirada — coberta por P-03 (confirmar no PR)", sem resposta do solicitante. A mitigação documental agora existe (QA-11). |
+
+## Achados novos
+
+### QA-14 — `03:61` fecha com `[x]` uma checagem que não rodou · Minor · destino 1
+- **Dimensão**: L (L6)
+- **Esperado**: `[x]` só para checagem feita. Para o mesmo caso, uma checagem substituída por outro passe, `03:53` usa `[ ]` com motivo ("o ponytail do diff rodou como despacho 8, não como `/ponytail:ponytail-review`").
+- **Observado**:
+  - `03:61` diz "[x] `/code-review high` não rodado como `/code-review`…". O próprio item afirma que a checagem não aconteceu.
+  - A evidência diz "RC-01 a RC-12 fechados", mas o RC-11 não existe (`03:179`: "o revisor não emitiu RC-11"). O RC-08 está "sem ação registrada".
+  - O despacho 12 (`03:184`) está na coluna Step "11", mas descreve um passe do step 9 que não foi disparado.
+- **Repro**: `sed -n '53p;61p;184p' 03-progresso.md`; `grep -n "RC-11" 03-progresso.md`.
+- **Ação exigida**: reabrir `03:61` como `[ ]`, com o motivo, como em `03:53` (ou rodar o `/code-review`). Escrever "RC-01 a RC-10 e RC-12" e corrigir o Step do despacho 12.
+
+### QA-15 — A recomendação nova das docs descreve o risco só para uma configuração · Minor · destino 1
+- **Dimensão**: L (L5)
+- **Esperado**: a consequência descrita vale no caso mais comum. O padrão é a marca simples, sem nenhum segmento do cabeçalho ligado.
+- **Observado**: `docs/pt/recursos/configuracoes-do-kit.md:262` diz "o tema escuro mostra a escura da instalação **ao lado do nome da organização**". `docs/en/…:271` diz "next to the organisation's name". O nome só aparece com o interruptor "Nome do painel na marca do topo" ligado (`app/Support/CabecalhoDoPainel.php:resolverSegmentos():205`). Com a marca simples, `marcaEscura()` devolve `logosPara()['escura']` (`app/Support/IdentidadeDoKit.php:logosPara():94`). Nesse caso a escura da instalação aparece sozinha, no lugar da logo da organização, que é o efeito mais forte e o que o QA-09 descreve.
+- **Repro**: `grep -n "ao lado do nome da organização\|next to the organisation's name" docs/*/recursos/configuracoes-do-kit.md`. Ler `app/Support/CabecalhoDoPainel.php:marca():65` e `:232-241`.
+- **Ação exigida**: reescrever a frase em pt e en sem "ao lado do nome da organização". Por exemplo: "o tema escuro mostra a escura da instalação no lugar da logo da organização". `01:186` e `02:26` não repetem o trecho e ficam como estão.
+
+### QA-16 — Docblock de `marca()` com dois "dois-pontos" seguidos · Cosmético · destino 2
+- **Dimensão**: L (L3)
+- **Observado**: `app/Support/CabecalhoDoPainel.php:marca():65` diz "a marca é o par de `logos()`: o da organização aberta no `/app`, senão o da instalação: nenhum segmento ligado, tela de autenticação…". Com os dois "dois-pontos", a lista parece enumerar os casos da instalação. As linhas de prosa `:61`, `:78` e `:120`, de 162 a 172 colunas, também saem da quebra em ~100 do resto do docblock.
+- **Repro**: `awk 'length>110{print FNR": "length}' app/Support/CabecalhoDoPainel.php`
+- **Ação exigida**: trocar o segundo ":" por "—" ou por um parêntese e quebrar as três linhas na largura do resto do bloco. Depois, `pint` e `citacoes.sh`.
+
+## Matriz de Rastreabilidade
+
+Nenhuma lacuna:
+- `rastreabilidade.sh` saiu com exit 0.
+- Desde o ciclo 2 só mudaram docblocks, docs, glossário e wiki (`git diff --stat fc7a712 HEAD`), então o diff por passo é o mesmo.
+- Não há `07-tickets/`.
+
+## Dimensões
+
+| # | Dimensão | Status | Observação |
+|---|----------|--------|------------|
+| A | Cobertura do requisito | ⚠️ | QA-09 (débito). `rastreabilidade.sh` exit 0. Amostra no app: `/app/acme` serve o par `acme-qa(-dark).png` em `fi-logo-light`/`fi-logo-dark`; `/app/globex` serve `kit/logo-qa(-dark).png`. O resto vale pelo ciclo 2. |
+| B | Fronteiras e dados | ✅ | Globex sem logo cai no par da instalação. CT-40 verde dentro dos 89. O código de comportamento não mudou. |
+| C | Matriz de permissão | ✅ | `/admin` serve `kit/logo-qa(-dark).png`, sem a logo da Acme. CT-50 e CT-56 verdes. Nenhuma ação destrutiva. |
+| D | Observabilidade | ✅ | Nenhum log novo no diff. `tenancy-2026-10-07.log` e `configuracoes-2026-10-07.log` só trazem ids e nomes de chave, sem PII. O único `ERROR` do `laravel.log` é de um comando artisan (`--columns`) anterior a esta sessão, fora do app. |
+| E | Performance | ✅ | Código do ciclo 1: nenhum acesso a banco no diff e uma resolução por request (memo). |
+| F | UX de erro | n/a | O diff não acrescenta mensagem nem estado de erro (prova do ciclo 1). |
+| G | Tema e cor | ⏭️ parcial | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`). Nível 1 nos arquivos AM de `app`/`resources`: exit 0. Nível 2: `IdentidadeVisualTest` 9/9 (54), depois de `view:cache`. Nível 3 não rodou. |
+| H | Acessibilidade | ⏭️ parcial | `alt` conferido no app (QA-08). axe e teclado não rodaram. |
+| I | Segurança da superfície nova | ✅ | Os eixos 9 foram cobertos pelo `fw-revisor-diff` (11 RC, nenhum rejeitado). O `/code-review` não rodou (QA-14). Além do step 9: `/admin` sem dado da organização, CT-50 e CT-56 verdes, nenhuma rota nova. |
+| J | Regressão adjacente | ⏭️ parcial | TIA proibido. Rodados agora:<br>• 89/89 (457);<br>• `IdentidadeVisualTest` 9/9 (54);<br>• docs 91/91 (343) e `Site`+`Rede` 88/88 (333);<br>• o resto da regressão do `01:10` e de `03:58` (`ArquiteturaDoCodigoTest`, `BloqueioDeSessaoTest`, `CabecalhoDoPainelTelaTest`, `CabecalhoDoPainelTest`, `HelpersDeTesteTest`, `IdentidadeVisualTenancyTest`): 100/100 (556).<br>Os browser `tests/Browser/LogoDarkModeTest.php` e `CabecalhoDoPainelTest.php` valem pelo ciclo 1 (5/5); o código de comportamento é o mesmo. |
+| K | Adequação da suíte | ⏭️ | K1 `k1-oraculo-fraco.sh` exit 0. K2 proibido pelo orquestrador. Cabeçalho do `04`: revisão adversarial FEITA. |
+| L | Consistência documental | ⚠️ | QA-12 (resto), QA-14, QA-15 e QA-16. Scripts:<br>• L1 `ids-ct.sh` (3 arquivos juntos): exit 1, só CT-01…CT-31 das ancestrais (`### Colisão de IDs`);<br>• L2 `citacoes.sh`: exit 0;<br>• L4 `conformidade-rules.sh {wiki} main`: exit 0;<br>• L6 `checkbox-sem-evidencia.sh`: exit 0.<br>Números reproduzidos: 89/457, 9/54, 68/254, 91/343, 26 arquivos, 12 PHP (`pint --test`: passed), "alterado em 2026-10-07" 5/1/0/0, 18/11/47/5/1. |
+
+## Débitos Aceitos
+
+- Nenhum aceito pelo solicitante. QA-08 e QA-09 estão em `03` (`## Débitos`, `## Blockers`), com confirmação pedida no PR.
+
+## Suspeitas Não Confirmadas
+
+- Nenhuma nova. O `warnings: 2` do `IdentidadeVisualTest` dos ciclos 1 e 2 não apareceu na saída `--compact` deste ciclo.
+
+## Não Verificado
+
+- **G, nível 3** (olhar o swap renderizado): Playwright MCP indisponível e nenhum navegador neste agente. O swap é provado pelo CT-B01 (9/9). O app foi conferido só no HTML.
+- **H, axe e teclado**: nenhum CT-B tem `assertNoAccessibilityIssues()`, e o gate não escreve teste.
+- **J, passo 1** (`pest --parallel --tia`) e **suíte contra a baseline de `main`** (`03:59`): proibidos pelo orquestrador.
+- **K2** (`pest --mutate`) e **falsificabilidade** (`03:60`, `03:69`): proibidos pelo orquestrador. PCOV e Xdebug estão carregados, então a causa é a proibição e não a ferramenta. Os 6 mutantes manuais do `03` são anteriores ao refactor dos testes e não têm score nem `Duration`.

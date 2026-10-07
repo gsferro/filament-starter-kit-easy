@@ -268,7 +268,7 @@ theme when it is "System", so both `<img>` tags ship in the same HTML and Filame
 right one. An organisation without a dark variant falls back to the installation's — and, without
 that, to the light one. The top of the business panel and the lock screen use the same pair: the **organisation's** logo
 if it has one, the installation's if not.
-With a split brand, upload both variants of the organisation's logo: without its own dark one, the dark theme shows the installation's dark logo next to the organisation's name.
+With a split brand, upload both variants of the organisation's logo: without its own dark one, the dark theme shows the installation's dark logo in place of the organisation's logo.
 
 ## Panel header: what to show at the top
 

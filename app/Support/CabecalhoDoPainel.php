@@ -58,9 +58,9 @@ final class CabecalhoDoPainel
     /**
      * O que o `brandLogo()` dos três painéis devolve.
      *
-     * `null` em `segmentos()` cobre os casos em que a marca é o par de `logos()`: o da organização aberta no `/app`, senão o da instalação: nenhum segmento
-     * ligado, tela de autenticação, ou ligado e nada resolvido (P-11 — nunca marca vazia,
-     * nunca imagem quebrada).
+     * `null` em `segmentos()` cobre os casos em que a marca é o par de `logos()` — o da
+     * organização aberta no `/app`, senão o da instalação —: nenhum segmento ligado, tela de
+     * autenticação, ou ligado e nada resolvido (P-11 — nunca marca vazia, nunca imagem quebrada).
      */
     public static function marca(): string|Htmlable|null
     {
@@ -75,7 +75,8 @@ final class CabecalhoDoPainel
 
     /**
      * O que o `darkModeBrandLogo()` devolve: `null` com a composição ativa, porque a variante
-     * escura já vai dentro dela (`<img class="fi-logo fi-logo-dark">`); do contrário, o par de `logos()`: o da organização aberta no `/app`, senão o da instalação.
+     * escura já vai dentro dela (`<img class="fi-logo fi-logo-dark">`); do contrário, o par de
+     * `logos()` — o da organização aberta no `/app`, senão o da instalação.
      */
     public static function marcaEscura(): ?string
     {
@@ -117,7 +118,8 @@ final class CabecalhoDoPainel
     }
 
     /**
-     * Os segmentos da composição, já resolvidos — ou `null` quando a marca deve ser o par de `logos()`: o da organização aberta no `/app`, senão o da instalação.
+     * Os segmentos da composição, já resolvidos — ou `null` quando a marca deve ser o par de
+     * `logos()` — o da organização aberta no `/app`, senão o da instalação.
      * Memoizado por request (ver o docblock da classe).
      *
      * @return array{projeto: ?string, painel: ?string, logo_clara: ?string, logo_escura: ?string}|null
@@ -174,10 +176,8 @@ final class CabecalhoDoPainel
     /**
      * A organização aberta, só em painel com tenancy (o `/app`); `null` nos demais.
      *
-     * Lê `Filament::getCurrentPanel()`, NUNCA `Paineis::correnteOuPadrao()`: sem painel
-     * corrente este cai no `app`, que tem tenancy, e a logo de uma organização vazaria para
-     * onde não há organização (exceção da rule `app.md`; precedente: a Closure da cor em
-     * `AppPanelProvider`). Falha para a instalação sempre que houver dúvida.
+     * Nunca `Paineis::correnteOuPadrao()`: cai no `app`, que tem tenancy, e vazaria a logo de
+     * organização — exceção da `app.md`; precedente: a Closure da cor em `AppPanelProvider`.
      */
     private static function organizacaoAberta(): ?Tenant
     {
@@ -196,8 +196,7 @@ final class CabecalhoDoPainel
      *   (`Paineis::rotulo()`), omitido quando o projeto está ligado e tem o mesmo texto (P-01 —
      *   o `/app` usa o nome da aplicação como rótulo).
      * - `logo_clara`/`logo_escura`: o par de `logos()` (P-07), se o interruptor estiver ligado:
-     *   a da organização aberta no `/app`, a da instalação no resto — a P-12 vale fora do `/app`
-     *   com organização aberta, ver `wikis/specs/fix/logo-dark-do-tenant/`. A escura só existe
+     *   a da organização aberta no `/app`, a da instalação no resto. A escura só existe
      *   com a marca separada e só acompanha uma clara.
      *
      * @param  array{clara: ?string, escura: ?string}  $logos
