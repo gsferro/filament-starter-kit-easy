@@ -1,6 +1,6 @@
 # Progresso — Rodapé separado: o recado volta ao cartão do login e a assinatura fica
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-10-07
 <!-- Uma linha só, no topo: em planejamento | em implementação | em revisão | concluída — {YYYY-MM-DD}.
      Step 4 → "em planejamento"; início da implementação → "em implementação"; step 9 → "em revisão";
      step 11, depois do veredito e antes de regenerar o INDEX.md → "concluída — {data}".
@@ -33,11 +33,11 @@
 - [x] Falsificabilidade, medida em 2026-10-07 com `XDEBUG_MODE=off php vendor/bin/pest tests/Kit/RodapeCoerenteTest.php --compact` (73 testes), um mutante por vez sobre o provider commitado, `git checkout` depois: **M7** (recado no `FOOTER` sem escopo) 63 passaram, 10 falharam (CT-01, CT-04, CT-10, CT-12); **M8** (recado em `AUTH_REGISTER_FORM_AFTER`) 59 passaram, 14 falharam (CT-01, CT-08, CT-09, CT-10, CT-11, CT-12, CT-20); **M3** (recado em `AUTH_LOGIN_FORM_BEFORE`) 69 passaram, 4 falharam (CT-10 ×4); **M2** (recado registrado antes dos botões sociais) 71 passaram, 2 falharam (CT-10, as 2 linhas com Google); **M1** (provider de `main`, recado no `FOOTER` escopado) filtro `CT-10|CT-12|CT-09|CT-01|CT-04` = 25 testes, 4 falharam (todos CT-10); CT-01, CT-04, CT-09 e CT-12 não são falsificáveis contra `main`, porque `main` não vaza o recado, e matam M7 a M11 por construção (M7 e M8 medidos acima) — commit `b940d2c`
 
 ## 4. Teste de browser
-- [x] CT-B01: ordem visual invertida (recado acima da assinatura) e mensagens trocadas — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M21 morto: CT-B03 2 de 3 falharam com a `<div>` e verde com o `<aside>`, bifurcação (c) do `05` (D1 e P-05 se confirmam)); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 5 rotas, 2026-10-07
-- [x] CT-B01: contenção no cartão por `closest('.fi-auth-card, .fi-auth-form-container')`, seletor medido contra o layout (D7) — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M21 morto: CT-B03 2 de 3 falharam com a `<div>` e verde com o `<aside>`, bifurcação (c) do `05` (D1 e P-05 se confirmam)); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 5 rotas, 2026-10-07
-- [x] CT-B03: `landmark-complementary-is-top-level` acrescentada à constante `regras`; verde com o `<aside>` no cartão, ou bifurcação (tag volta a `<div>` e P-05 revisada) registrada — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M21 morto: CT-B03 2 de 3 falharam com a `<div>` e verde com o `<aside>`, bifurcação (c) do `05` (D1 e P-05 se confirmam)); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 5 rotas, 2026-10-07
-- [x] Mutante M21 (`<aside>` → `<div>`) medido com o recado no cartão; se o CT-B03 seguir verde, oráculo passa a "o recado está contido num landmark" (`closest('aside,[role],main,form')`) — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M21 morto: CT-B03 2 de 3 falharam com a `<div>` e verde com o `<aside>`, bifurcação (c) do `05` (D1 e P-05 se confirmam)); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 5 rotas, 2026-10-07
-- [x] CT-B01 medido contra o estado sem o passo 1 (vermelho) — medido pela sessão: provider de `main` na árvore, `pest tests/Browser/RodapeNaDobraTest.php --filter CT-B01` → vermelho nas 5 linhas ("o recado em /login não…"), árvore restaurada e `git status` limpo, 2026-10-07
+- [x] CT-B01: ordem visual invertida (recado acima da assinatura) e mensagens trocadas — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M21 morto: CT-B03 2 de 3 falharam com a `<div>` e verde com o `<aside>`, bifurcação (c) do `05` (D1 e P-05 se confirmam)); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 3 rotas do CT-B03 (2 com recado), 2026-10-07
+- [x] CT-B01: contenção no cartão por `closest('.fi-auth-card, .fi-auth-form-container')`, seletor medido contra o layout (D7) — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M21 morto: CT-B03 2 de 3 falharam com a `<div>` e verde com o `<aside>`, bifurcação (c) do `05` (D1 e P-05 se confirmam)); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 3 rotas do CT-B03 (2 com recado), 2026-10-07
+- [x] CT-B03: `landmark-complementary-is-top-level` acrescentada à constante `regras`; verde com o `<aside>` no cartão, ou bifurcação (tag volta a `<div>` e P-05 revisada) registrada — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M21 morto: CT-B03 2 de 3 falharam com a `<div>` e verde com o `<aside>`, bifurcação (c) do `05` (D1 e P-05 se confirmam)); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 3 rotas do CT-B03 (2 com recado), 2026-10-07
+- [x] Mutante M21 (`<aside>` → `<div>`) medido com o recado no cartão; se o CT-B03 seguir verde, oráculo passa a "o recado está contido num landmark" (`closest('aside,[role],main,form')`) — commit `b940d2c`; `RodapeNaDobraTest` 9/9 e 48 asserções; `<aside>` trocado por `<div>` contra CT-B03 = 3 testes, 2 falharam (M21 morto: CT-B03 2 de 3 falharam com a `<div>` e verde com o `<aside>`, bifurcação (c) do `05` (D1 e P-05 se confirmam)); seletor medido `.fi-auth-form-container`, `.fi-auth-card` não emitido; nenhuma das 4 regras acusa o `<aside>` nas 3 rotas do CT-B03 (2 com recado), 2026-10-07
+- [x] CT-B01 medido contra o estado sem o passo 1 (vermelho) — medido pela sessão: provider de `main` na árvore, `pest tests/Browser/RodapeNaDobraTest.php --filter CT-B01` → RE-MEDIDO no ciclo 2: 5 testes, 1 passou, 4 falharam — `/admin/login`, `/app/login`, `/infra/login` e `/login`, todas com "o recado em {rota} não está dentro do cartão do formulário"; a linha `/admin/password-reset/request` ficou verde, como o `05` previa (`git show main:app/Providers/KitServiceProvider.php`, `view:clear`, `pest tests/Browser/RodapeNaDobraTest.php --compact --filter CT-B01`), árvore restaurada e `git status` limpo, 2026-10-07
 
 ## 5. Docs, CHANGELOG e READMEs
 - [x] `docs/pt/recursos/configuracoes-do-kit.md` e espelho en — commits `23d1ed9` e `e3f9ab2` (docs reancoradas), 2026-10-07
@@ -46,9 +46,9 @@
 - [x] `README.md` e `README.en.md`: features especificadas 76 → 77 — commits `23d1ed9` e `e3f9ab2` (docs reancoradas), 2026-10-07
 
 ## 6. Reconciliação com as wikis anteriores
-- [ ] ADR-02 do `02` registra o que da `rodape-coerente` fica superado
-- [ ] `wikis/specs/feat/rodape-coerente/**` sem diff
-- [ ] `wikis/specs/INDEX.md` regenerado pelo `indice.sh`
+- [x] ADR-02 do `02` registra o que da `rodape-coerente` fica superado — ADR-02 escrita (`02`), 2026-10-07
+- [x] `wikis/specs/feat/rodape-coerente/**` sem diff — `git diff --stat main...HEAD -- wikis/specs/feat/rodape-coerente` vazio, 2026-10-07
+- [x] `wikis/specs/INDEX.md` regenerado pelo `indice.sh` — regenerado por `indice.sh`, linha `fix/rodape-separado` presente, 2026-10-07
 
 ## Testes
 <!-- Preenchida no step 7, depois da derivação do 04/05: um arquivo de teste por linha, com os IDs que ele cobre. -->
@@ -62,7 +62,7 @@ Sem fatiar — 6 passos, 8 CT (6 HTTP + 2 CT-B), um PR; step 8 não se aplica
 - [x] `/ponytail:ponytail-review` no diff (validar contra over-engineering) — ponytail do diff no step 9 (net -43 proposto, cortes de redundância aplicados; tabela em Revisão do Diff), 2026-10-07
 - [x] `vendor/bin/pint --dirty --format agent` — `vendor/bin/pint --test` nos 8 PHP do diff: pint passed; `php -l` sem erro; `vendor/bin/filacheck`: All 17 rules passed, 2026-10-07
 - [x] `vendor/bin/pest tests/Kit/RodapeCoerenteTest.php --compact` — `XDEBUG_MODE=off php vendor/bin/pest tests/Kit/RodapeCoerenteTest.php tests/Kit/HelpersDeTesteTest.php tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php --compact`: 81/81, 352 asserções, 2026-10-07
-- [ ] `vendor/bin/pest tests/Browser/RodapeNaDobraTest.php` (via `composer test:browser`)
+- [x] `vendor/bin/pest tests/Browser/RodapeNaDobraTest.php` (via `composer test:browser`) — 9/9, 48 asserções (`pest tests/Browser/RodapeNaDobraTest.php --compact`, ciclo 2 do QA reproduziu), 2026-10-07
 - [ ] `vendor/bin/pest --parallel --tia`: nada mais no suite quebrou além da **baseline** de `main` (falhas pré-existentes por nome)
 - [x] `pest --mutate`: não se aplica (sem classe de regra); mutantes manuais sobre o provider listados — mutantes manuais M1, M2, M3, M7 e M8 no passo 3 deste arquivo, com comando e números, 2026-10-07
 - [x] **Custo medido**: não se aplica (sem query) — sem query nova no diff, 2026-10-07
@@ -71,7 +71,7 @@ Sem fatiar — 6 passos, 8 CT (6 HTTP + 2 CT-B), um PR; step 8 não se aplica
 - [x] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*` — QA-01 a QA-04 e QA-06 propagados ao `01`, `02`, `04` e `05` com a marca `*(alterado em 2026-10-07)*`, 2026-10-07
 - [x] `rastreabilidade.sh {wiki}` silencioso (`RQ`/`P-nn` × passo do `01` × CT do `04`) — `rastreabilidade.sh` na wiki: exit 0, sem saída, 2026-10-07
 - [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — `checkbox-sem-evidencia.sh` exit 0, sem saída, 2026-10-07
-- [ ] Citações `arquivo:símbolo:linha` reverificadas: `citacoes.sh {wiki}` silencioso — aberto: `citacoes.sh` acusa só uma citação sem símbolo no texto do `06-relatorio-qa.md`, gravado verbatim
+- [x] Citações `arquivo:símbolo:linha` reverificadas: `citacoes.sh {wiki}` silencioso — `citacoes.sh` exit 0 (2026-10-07, depois da reciclagem do ciclo 1)
 - [x] IDs `[CT-nn]` do teste ⊆ `04`/`05` e vice-versa: `ids-ct.sh {wiki} 'tests/**/RodapeCoerenteTest.php'` só acusa IDs da `rodape-coerente` nos dois arquivos compartilhados (ruído esperado, registrado no step 7) — `ids-ct.sh` só acusa 15 linhas "no teste, sem cenário definido" de IDs da `rodape-coerente`, o ruído esperado, 2026-10-07
 - [x] Rules casadas pelo diff com linha em `## Conformidade com Rules`: `conformidade-rules.sh {wiki} main` silencioso — `conformidade-rules.sh` na wiki com a base `main`: exit 0, sem saída, 2026-10-07
 - [x] Falsificabilidade dos CTs alterados: quantos falham sem o fix; os demais "não falsificável nesta pilha", com motivo — passo 3 deste arquivo: M1 (CT-10 4/4 contra `main`), M2, M3, M7 e M8 medidos; CT-01, CT-04, CT-09 e CT-12 não falsificáveis contra `main`, com motivo, 2026-10-07
@@ -132,10 +132,24 @@ Ponytail do diff (sonnet): net -43 proposto. Aplicados os cortes de redundância
 - QA-08 (Cosmético, destino 1): base `b347fcc` (v0.45.1) e teto de pulados 920 no `01` e no `03`.
 - QA-09 (Cosmético, destino 1): célula de Custo da linha 1 de Despachos = `—`.
 
+- **Ciclo**: 2 · **Veredito**: REPROVADO → especificação · **Data**: 2026-10-07 · 0 Blocker, 2 Major, 2 Minor, 0 Cosmético · 7/12 dimensões · produto correto, achados só de texto
+- **Relatório**: `06-relatorio-qa.md`
+
+**Reciclagem do ciclo 2** (destino 1 = wiki; aplicados nesta rodada)
+
+- QA-06d (Minor, destino 1): Verificação Final e passo 6 marcados com a evidência (`RodapeNaDobraTest` 9/9, 48; `citacoes.sh` exit 0; ADR-02; diff da `rodape-coerente` vazio). O item do `INDEX.md` fica aberto, depois do veredito.
+- QA-10 (Major, destino 1): as cinco linhas do `01` e do `04` reescritas com o fato (`kit.css` e a cópia publicada só por comentário, `assinatura-do-rodape.blade.php` só por comentário, `tests/Pest.php` pelo helper de D8) e a marca de data.
+- QA-11 (Major, destino 1): CT-B01 re-medido contra o provider de `main` (4 de 5 falharam; a recuperação de senha ficou verde); "5 rotas" do CT-B03 trocado por "3 rotas (2 com recado)" no `03` e no `05`.
+- QA-12 (Minor, destino 1): títulos de Falsificabilidade do `05` como "prevista"; M19, M22 e M23 "não medido nesta entrega"; M20 não plantável com `.fi-auth-form-container`.
+
+**Teto de ciclos do perfil padrão (2) atingido.** Os achados abertos foram reciclados nesta rodada e não há achado de código; conforme a regra de convergência, o aceite final é do solicitante e está pedido na descrição do PR.
+
 ## Candidatos a Rule
 
 <!-- Step 12, depois do veredito. Quem coleta, julga e pergunta é a requirement-to-rule — um prompt de
      aprovação só, o dela. Aqui fica só o resultado. -->
+
+apresentados 0 · gravados 0 · recusados 0 · descartados no gate 2 · poda 0 — candidatos avaliados pela sessão (requirement-to-rule): (1) «o `FOOTER` é da assinatura; o recado do login é do cartão» — descartado no gate 3 (inferível: o docblock de `configureTelaDeLogin()` e a ADR-02 o dizem; um agente que leia o provider não erra); (2) «recado do login sem escopo no `AUTH_LOGIN_FORM_AFTER`» — descartado no gate 1 (decisão de uma feature, fica na ADR)
 
 ## Auditoria Pré-Implementação
 <!-- Saída dos steps 4 a 6, ANTES de escrever código. Não confundir com "Desvios do Plano",
@@ -182,6 +196,7 @@ Entendimento confirmado: —
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->
+- [ ] Aceite do solicitante para o veredito pós-reciclagem do ciclo 2 (teto do perfil padrão); nenhum achado de código em aberto
 
 ## Desvios do Plano
 <!-- Onde a implementação divergiu do PRD e por quê -->

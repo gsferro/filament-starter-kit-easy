@@ -19,7 +19,7 @@
 | RQ-04 | feature própria, branch separada da outra feature do pedido, em paralelo | — | ⚠️ fora desta entrega como passo de código: já cumprida pela branch `fix/rodape-separado` e pela worktree `wt-rodape`; não há arquivo a mudar |
 | P-01 | "como estava" = estado anterior a `bfe9a8d`, no histórico do git | 1, 3, 4 | — |
 | P-02 | a assinatura não muda em nada, nem a visibilidade para o visitante | 3, 4 | guardas existentes: CT-01, CT-04, CT-07 da ancestral |
-| P-03 | o que a unificação trouxe e não é "juntar no footer" fica (prefixo `v`, `©`, landmarks, CSS da dobra) | 2 | o passo 2 só mexe em comentário de blade; nenhum arquivo da assinatura nem o CSS entra no diff |
+| P-03 | o que a unificação trouxe e não é "juntar no footer" fica (prefixo `v`, `©`, landmarks, CSS da dobra) | 2 | o passo 2 só mexe em comentário de blade; `kit.css` e `public/css/kit/kit-correcoes.css` entram no diff só por comentário (Desvio no `03`), `assinatura-do-rodape.blade.php` só por comentário (D5) e `tests/Pest.php` pelo helper de D8; o comportamento da assinatura e do CSS não muda *(alterado em 2026-10-07: QA-10)* |
 | P-04 | a opção de configuração do recado não muda | 1, 5 | `KIT_LOGIN_RODAPE` e o campo Markdown da aba Login intocados |
 | P-05 | o recado volta com a tag `<aside>` da `rodape-coerente`, e não com o `<div>` de antes de `bfe9a8d` | 2, 4 | D1; o CT-B03 mede o `<aside>` dentro do cartão, com a bifurcação do passo 4 |
 
@@ -71,7 +71,7 @@ O que fica, por P-03 do `00`: o prefixo `v` do campo de versão, o `©` e o nome
 - A assinatura é `<footer class="kit-versao">` (`resources/views/filament/assinatura-do-rodape.blade.php:footer:70`), registrada sem escopo no `FOOTER` por `configuraVersaoNoRodape()` (`app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraVersaoNoRodape():129`, hook em `app/Providers/Concerns/ConfiguraFilamentGlobal.php:FOOTER:132`). Não entram no diff (P-03).
 - **Comentário que fica desatualizado**: a linha 46 da blade da assinatura diz "O recado do login, logo abaixo desta linha, aceita Markdown" (`resources/views/filament/assinatura-do-rodape.blade.php:recado:46`). Depois desta entrega o recado está acima, dentro do cartão. É comentário, sem efeito de comportamento: o passo 2 o corrige em uma linha (D5).
 
-### `resources/css/filament/kit.css` e `tests/Pest.php` (fora do diff)
+### `resources/css/filament/kit.css` (só comentário) e `tests/Pest.php` (só o helper de D8) *(alterado em 2026-10-07: QA-10)*
 - A regra da dobra (`resources/css/filament/kit.css:'fi-auth-layout':224`) serve à assinatura sozinha e **fica**; a cópia publicada `public/css/kit/kit-correcoes.css` acompanha.
 - `rodapeDe()` (`tests/Pest.php:rodapeDe():2032`) mede a cauda após o fechamento do `.fi-auth-layout` (`tests/Pest.php:rodapeDoLayoutDeAutenticacao():2040`); `recadoDoRodape()` (`tests/Pest.php:recadoDoRodape():2156`) recorta o recado em qualquer ponto do HTML. Nenhum dos dois muda.
 
@@ -303,7 +303,7 @@ RQ → passo → CT previsto. Os CT ainda são os da ancestral (IDs preservados)
 | RQ-04 (processo) | — | n.a.: cumprida pela branch e pela worktree |
 | P-01 | 1, 3, 4 | CT-10, CT-B01 |
 | P-02 | 3, 4 | CT-04, CT-18 (regressão), CT-10 |
-| P-03 | 2 | a ausência de diff nos arquivos da assinatura e do CSS (`git diff --name-only` no passo 2) e CT-B02/CT-B03 |
+| P-03 | 2 | o diff só com comentário em `kit.css` e na blade da assinatura (`git diff -U0 main...HEAD -- resources/css/filament/kit.css resources/views/filament/assinatura-do-rodape.blade.php` sem linha de código) mais CT-B02 e CT-07 verdes *(alterado em 2026-10-07: QA-10)* |
 | P-04 | 1, 5 | CT-08 (o valor lido de `kit.login.rodape` continua o mesmo) |
 | P-05 | 2, 4 | CT-B03 (`landmark-complementary-is-top-level` e M59 com o recado no cartão) |
 

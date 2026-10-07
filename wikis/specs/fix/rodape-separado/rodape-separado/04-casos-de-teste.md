@@ -326,7 +326,7 @@ Os mutantes da ancestral sobre o **escopo** do hook (M16, M17 e M43 dela) deixam
 
 ## Regra R4 — a assinatura fica como está, e o recado de volta não a substitui
 
-> `RQ-01`, `RQ-03`, `P-02`, `P-03` · área C, perfil **mínimo** (1 por regra: CT-08; o resto é regressão da ancestral, que continua verde porque nenhum arquivo da assinatura entra no diff)
+> `RQ-01`, `RQ-03`, `P-02`, `P-03` · área C, perfil **mínimo** (1 por regra: CT-08; o resto é regressão da ancestral, que continua verde porque o comportamento da assinatura não muda: `assinatura-do-rodape.blade.php` está no diff só por comentário (D5) *(alterado em 2026-10-07: QA-10)*)
 >
 > A regra é negativa por natureza ("fica como está"): o oráculo é o conjunto de casos da ancestral que já afirmam a composição, o lugar e a visibilidade. Eles viram regressão obrigatória; só o CT-08 tem Gherkin aqui, porque é o que afirma a **independência** (o recado preenchido não toma o lugar da assinatura) e porque o plano o lista.
 
@@ -414,7 +414,7 @@ Nenhum destes casos muda de oráculo; todos entram na regressão obrigatória do
 | `tests/Kit/LoginSocialGoogleTest.php` — o caso que ordena `form.password` antes de `Entrar com Google` | o recado entra no mesmo hook, **depois** dos botões; a ordem dos botões não muda | nenhuma; é regressão |
 | `tests/Browser/LoginSocialTest.php` (comentário "sai pelo MESMO render hook dos botões") | volta a ser verdadeiro | conferir que o comentário e o caso concordam |
 | `tests/Kit/VersaoNoRodapeTest.php`, `tests/Kit/TelasDeAutenticacaoTest.php`, `tests/Kit/LoginUnificadoTest.php`, `tests/Kit/LoginSocialProvedoresTest.php`, `tests/Kit/LoginSocialContaIndisponivelTest.php` | leem `rodapeDe()` só para a assinatura; a assinatura não muda | nenhuma; é regressão |
-| `[CT-B02]` da ancestral (`tests/Browser/RodapeNaDobraTest.php:'[CT-B02]':108`) | a faixa da assinatura tem o estilo do kit; o diff não toca `kit.css` nem a blade da assinatura (P-03) | nenhuma; roda na regressão do passo 4. Fora do índice: não mata nenhum mutante desta feature (candidato a corte da skill) |
+| `[CT-B02]` da ancestral (`tests/Browser/RodapeNaDobraTest.php:'[CT-B02]':108`) | a faixa da assinatura tem o estilo do kit; `kit.css` e a blade da assinatura estão no diff só por comentário, sem linha de código (P-03) *(alterado em 2026-10-07: QA-10)* | nenhuma; roda na regressão do passo 4. Fora do índice: não mata nenhum mutante desta feature (candidato a corte da skill) |
 | `[CT-24]` e `[CT-25]` da ancestral (`tests/Kit/RodapeCoerenteTest.php:'[CT-24]':899`) | varrem `tests/` por `preg_*` citando o marcador do rodapé | o texto novo dos testes não reintroduz essa cópia do extrator |
 
 ## Cogitado e cortado

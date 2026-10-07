@@ -72,11 +72,11 @@ Funcionalidade: O rodapé do login cabe na dobra e fica separado da assinatura
 
 **Assertions**: controle positivo primeiro · oráculo é **número** (geometria), não presença (`assertVisible` passa com o elemento fora do viewport; `.ai/rules/testes-browser.md`) · **uma única** mensagem de ordem · `assertNoJavaScriptErrors()` **não** é o oráculo.
 
-**Falsificabilidade (medida no step 10, registrada no `03`)**:
+**Falsificabilidade (prevista; medido: M1 no CT-B01 e M21 no CT-B03)** *(alterado em 2026-10-07: QA-12)*:
 
 1. contra o provider de `main`, sem o passo 1 (o recado no `FOOTER`): a ordem invertida fica **vermelha nas quatro telas de login** (a assinatura fica acima do recado) — mata M1;
-2. com o recado emitido em um hook fora do cartão, mas dentro do `.fi-auth-layout` (por exemplo `CardAfter` do designer): `recadoNoCartao` fica falso — mata M20; **se o seletor do cartão estiver errado, o teste fica vermelho no estado correto**, e é por isso que o nome é medido antes de ser fixado;
-3. cartão mais alto sem a regra de CSS da dobra: `assinaturaBottom` passa de `vh` — mata M19. Mutar **as duas** cópias do CSS (`resources/css/filament/kit.css` e `public/css/kit/kit-correcoes.css`), porque o Filament serve a cópia publicada.
+2. com o recado emitido em um hook fora do cartão, mas dentro do `.fi-auth-layout` (por exemplo `CardAfter` do designer): `recadoNoCartao` fica falso — mata M20 (não plantável com `.fi-auth-form-container`: sem cartão o vendor não renderiza `CardAfter`, `vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php` l.49–58); **se o seletor do cartão estiver errado, o teste fica vermelho no estado correto**, e é por isso que o nome é medido antes de ser fixado;
+3. cartão mais alto sem a regra de CSS da dobra: `assinaturaBottom` passa de `vh` — mata M19 (não medido nesta entrega). Mutar **as duas** cópias do CSS (`resources/css/filament/kit.css` e `public/css/kit/kit-correcoes.css`), porque o Filament serve a cópia publicada.
 
 ---
 
@@ -128,7 +128,7 @@ Funcionalidade: O rodapé do login cabe na dobra e fica separado da assinatura
 A branch (b) é a que o plano já pré-decidiu; a (a) e a (c) são as outras duas saídas possíveis da mesma medição. **Sem a medição de M21 com o recado no cartão, M21 não tem matador comprovado** (o matador (b) existe por construção, mas não foi executado).
 **Medido em 2026-10-07 (step 10): linha (c).** Com a `<div>` o CT-B03 ficou vermelho (2 de 3 falharam, mutante M21); com o `<aside>` ficou verde. D1 e P-05 se confirmam e a tag fica `<aside>` *(alterado em 2026-10-07: QA-06)*.
 
-**Falsificabilidade (medida no step 10, registrada no `03`)**: M22 (`<footer>` no recado) fica vermelho nas duas telas de login pelas regras de `contentinfo`; M23 (sem o axe) fica vermelho pelo controle positivo; M21 conforme a tabela acima.
+**Falsificabilidade (prevista; medido: M1 no CT-B01 e M21 no CT-B03)** *(alterado em 2026-10-07: QA-12)*: M22 (`<footer>` no recado) fica vermelho nas duas telas de login pelas regras de `contentinfo`; M23 (sem o axe) fica vermelho pelo controle positivo (M22 e M23: não medidos nesta entrega); M21 conforme a tabela acima.
 
 ---
 
@@ -139,4 +139,4 @@ A branch (b) é a que o plano já pré-decidiu; a (a) e a (c) são as outras dua
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
 | 1 | recado dentro do cartão, assinatura abaixo, as duas na dobra nas quatro telas de login | recado dentro do cartão (`.fi-auth-form-container`), assinatura fora e abaixo, as duas na dobra nas quatro telas | sim | `tests/Browser/RodapeNaDobraTest.php` 9/9, 48 asserções (2026-10-07); `.fi-auth-card` não é emitido |
-| 2 | o recado é `<aside>` e não é acusado pelas quatro regras de landmark | `<aside>` dentro do cartão; as quatro regras do axe não o acusam nas cinco rotas | sim | CT-B03 verde com o `<aside>`; com a `<div>` (M21) 2 de 3 falharam: linha (c) da bifurcação |
+| 2 | o recado é `<aside>` e não é acusado pelas quatro regras de landmark | `<aside>` dentro do cartão; as quatro regras do axe não o acusam nas 3 rotas do CT-B03 (2 com recado) | sim | CT-B03 verde com o `<aside>`; com a `<div>` (M21) 2 de 3 falharam: linha (c) da bifurcação |

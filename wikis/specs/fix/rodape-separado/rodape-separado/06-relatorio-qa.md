@@ -140,3 +140,104 @@ O produto atende ao requisito. No app servido, o recado (`<aside class="fi-login
 - F (reprodução dinâmica do erro de login com recado) — motivo: Playwright MCP indisponível e pest-plugin-agent ausente
 - J passo 1 (`pest --parallel --tia`) — motivo: não rodado (custo e memória da suíte completa no host Windows; risco de gravar cache de TIA na árvore). Os passos 2 e 3 rodaram
 - K2 (mutação medida) — motivo: fora do perfil padrão. PCOV, Xdebug e `pest-plugin-mutate` **estão** instalados (`php -m`, `ls vendor/pestphp/`)
+
+## Veredito — Ciclo 2
+
+**REPROVADO → especificação**
+
+> Independência: sub-agente fw-qa-gate/opus, sem acesso à conversa
+> Cobertura: 7 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
+
+- Blocker: 0 · Major: 2 · Minor: 2 · Cosmético: 0
+- Não verificadas: F (em parte), G, H, J (em parte), K (em parte). As causas estão em *Não Verificado — Ciclo 2*.
+- `RQ` abertas: nenhuma.
+- Ambiente: app em `http://127.0.0.1:8011` · Pest 5 · Playwright MCP indisponível · Boost MCP não usado. Merge-base `b347fcc`.
+
+O produto continua atendendo ao requisito. No app servido, em `/admin/login`, `/app/login` e `/infra/login`, a ordem dos marcadores é `fi-auth-layout` → `fi-auth-form-container` → `</form>` → `fi-login-rodape` → `kit-versao`. O recado ("Fale com o **suporte** da Acme") fecha antes do `</div>` do contêiner. A assinatura é `<footer class="kit-versao">` e fica depois do layout. Em `/admin/password-reset/request` não há recado. `/login` responde 302 porque o login unificado está desligado no app servido; a suíte cobre essa rota. O ciclo 1 fechou 7 dos 9 achados. Dos outros dois, o QA-04 ficou com cópias da mesma afirmação (viraram o QA-10) e o QA-06 ficou aberto em parte. Os achados novos são todos da dimensão L.
+
+### Verificação dos achados do ciclo 1
+
+| ID | Sev. | Estado | Evidência (ciclo 2) |
+|---|---|---|---|
+| QA-01 | Major | **fechado** | `03` l.33, `04` l.458 e `01` l.216 dizem agora o mesmo: M1 matou 4 de 25 (só o CT-10), e o CT-01, o CT-04, o CT-09 e o CT-12 não são falsificáveis contra `main`, com o motivo. Não reexecutei os mutantes, porque isso altera a árvore. Conferi as contagens pelos datasets: M7 = 4+4+1+1 = 10, M8 = 4+4+1+1+2+1+1 = 14, M3 = 4, M2 = 2. Todas batem com o que o `03` declara |
+| QA-02 | Major | **fechado** | `pest tests/Kit/RodapeCoerenteTest.php --compact` dá `73/73, 326`. O comando colado ao lado do "81/81" dá `81/81, 352`. Os dois reproduzem |
+| QA-03 | Major | **fechado** | Passo 5 do `01` (l.36 e l.242), Superfície do `01` (l.114) e `02` l.83 corrigidos, com a marca de data |
+| QA-04 | Major | **fechado em parte** | Corrigido: Desvio registrado (`03` l.189), critério do passo 2 marcado, linha `css-filament.md` com "aplicada" e cópia publicada regenerada (`diff kit.css kit-correcoes.css` vazio). Ficaram cópias da mesma afirmação em outros arquivos → **QA-10** |
+| QA-05 | Minor | **fechado** | `conformidade-rules.sh … main` sai com exit 0 |
+| QA-06 | Minor | **aberto em parte** | (a), (b) e (c) fechados: rótulo (c), ID M21, Roteiro, Pré-requisitos e seletor efetivo no `05`. O (d) segue aberto (detalhe abaixo) |
+| QA-07 | Minor | **fechado** | `wikis/glossario.md` tem "Recado do login" e "Assinatura do rodapé", uma apontando a outra |
+| QA-08 | Cosm. | **fechado** | `grep -rn "7221dd3\|914\b"` na wiki, fora do `06`, não devolve nada |
+| QA-09 | Cosm. | **fechado** | A coluna Custo de `## Despachos` está com `—` em todas as linhas |
+
+### QA-06 (resto do (d)) — A Verificação Final segue aberta onde já há evidência · Minor · destino 1
+
+- **Dimensão**: L6
+- **Observado**:
+  - `03` l.65 (`RodapeNaDobraTest`) está `[ ]`, mas a evidência existe: 9/9 e 48 em Despachos l.178 e no Roteiro do `05`, e reproduzi agora (9/9, 48).
+  - `03` l.74 está aberto com o motivo "citacoes.sh acusa uma citação no 06", mas `citacoes.sh` sai hoje com exit 0 e em silêncio.
+  - Passo 6, l.49–50: a ADR-02 existe, e `git diff --stat main...HEAD -- wikis/specs/feat/rodape-coerente` volta vazio. Mesmo assim, os dois itens estão `[ ]`.
+- **Repro**: `bash .ai/skills/feature-wiki/scripts/citacoes.sh {wiki}; echo $?` dá 0. `git diff --stat main...HEAD -- wikis/specs/feat/rodape-coerente | wc -l` dá 0.
+- **Ação exigida**: marcar os quatro itens com a evidência colada. O `INDEX.md` (l.51) fica para depois do veredito, como manda o step 11.
+
+### QA-10 — O plano e os casos de teste ainda dizem que o CSS e a assinatura não entram no diff · Major · destino 1
+
+- **Dimensão**: L3. São cópias da afirmação do QA-04, que só foi corrigida no critério do passo 2.
+- **Relacionado a**: P-03, passo 2, RD-01, D5
+- **Esperado**: o diff tem `resources/css/filament/kit.css` e `public/css/kit/kit-correcoes.css` (só comentário, Desvio no `03` l.189), além de `assinatura-do-rodape.blade.php` (comentário, D5) e `tests/Pest.php` (helper do D8).
+- **Observado**, sem marca `*(alterado em …)*`:
+  - `01` l.22 (Cobertura, P-03): "nenhum arquivo da assinatura nem o CSS entra no diff"
+  - `01` l.74 (título): "`kit.css` e `tests/Pest.php` (fora do diff)"
+  - `01` l.306 (Rastreabilidade, P-03): "a ausência de diff nos arquivos da assinatura e do CSS"
+  - `04` l.329: "nenhum arquivo da assinatura entra no diff"
+  - `04` l.417: "o diff não toca `kit.css` nem a blade da assinatura"
+- **Repro**: `git diff --name-only main...HEAD | grep -E "kit.css|kit-correcoes|assinatura-do-rodape|tests/Pest.php"` devolve 4 arquivos. `grep -n "entra no diff\|fora do diff\|não toca .kit.css\|nem o CSS" {wiki}0[0-5]*.md` devolve as 5 linhas acima.
+- **Ação exigida**: reescrever as 5 linhas com o fato. Esses arquivos estão no diff só com comentário ou com o helper do D8, e o comportamento da assinatura e do CSS não muda. Marcar a data. A prova de P-03 deixa de ser "ausência de diff" e passa a ser "diff só com comentário" mais o CT-B02 e o CT-07.
+
+### QA-11 — Números das medições de browser que o próprio teste desmente · Major · destino 1
+
+- **Dimensão**: L6 (e K)
+- **Relacionado a**: passo 4 (critério "CT-B01 medido também contra o estado sem o passo 1"), CT-B01, CT-B03, M1
+- **Observado**:
+  - (a) O `03` l.40 diz que o CT-B01 contra o provider de `main` ficou "vermelho nas 5 linhas". A 5ª linha do dataset (`/admin/password-reset/request`, `esperaRecado=false`) não pode falhar contra `main`. O `main` escopa o recado a `TelaLogin` e `TelaLoginUnificada`, então a tela de recuperação não tem recado, e `temRecado` = `false` como o esperado. A dobra da assinatura é igual à da HEAD, que passa. O próprio `05` l.77 prevê "vermelha nas quatro telas de login". Uma 5ª linha vermelha indica falha de arnês, não morte do mutante. A citação ("o recado em /login não…") é a mesma mensagem para todas as linhas, o que reforça isso. A falsificação do CT-B01 fica sem prova confiável.
+  - (b) O `03` l.36–39 e o `05` l.142 dizem que "nenhuma das 4 regras acusa o `<aside>` nas 5 (cinco) rotas". O CT-B03 roda em 3 rotas (`/admin/login`, `/login`, `/admin/password-reset/request`), e só 2 delas têm recado. Nenhum comando reproduz "5 rotas".
+- **Repro**:
+  1. `sed -n 90,96p tests/Browser/RodapeNaDobraTest.php` mostra 5 linhas, a última com `false`.
+  2. `git show main:app/Providers/KitServiceProvider.php | grep -n "scopes:"` mostra `[TelaLogin::class, TelaLoginUnificada::class]`.
+  3. `sed -n 222,226p tests/Browser/RodapeNaDobraTest.php` mostra o dataset do CT-B03 com 3 rotas.
+  4. `grep -rn "5 rotas\|cinco rotas" {wiki}` aponta o `03` l.36–39 e o `05` l.142. O "cinco rotas" do `01` l.35 é do CT-B01 e está certo.
+- **Ação exigida**: (a) medir de novo e colar o resultado linha a linha: quais falharam e com qual mensagem. O esperado é 4 de 5, com a recuperação de senha verde. Se a 5ª falhar, investigar o arnês antes de aceitar a falsificação. (b) Trocar por "nas 3 rotas do CT-B03 (2 com recado)", nos quatro checkboxes do `03` e no `05` l.142.
+
+### QA-12 — O `05` diz que M19, M20, M22 e M23 foram medidos, e não há registro · Minor · destino 1
+
+- **Dimensão**: L6 / L3
+- **Observado**: o `05` l.75 e l.131 têm o título "Falsificabilidade (medida no step 10, registrada no `03`)" e listam M20, M19, M22 e M23. O `03` registra só M1 (CT-B01) e M21 (CT-B03). M20 não é plantável no modo atual: sem cartão, o vendor não renderiza `CardAfter`. Ver `vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php` l.49–58.
+- **Repro**: `grep -n "M19\|M20\|M22\|M23" {wiki}03-progresso.md` não devolve nada.
+- **Ação exigida**: reescrever os dois títulos como "previsto". Para cada mutante, marcar "não medido nesta entrega", ou "herdado da ancestral" com o ID dela, ou medir e registrar no `03`. No M20, registrar que ele não é plantável com `.fi-auth-form-container`.
+
+### Dimensões — Ciclo 2
+
+| # | Dimensão | Status | Observação |
+|---|---|---|---|
+| A | Cobertura do requisito | ✅ | `rastreabilidade.sh` exit 0. `indice.sh --check` não roda: não há `07-tickets/`. O código fora de passo (QA-03) foi fechado. App servido: recado dentro de `.fi-auth-form-container` e assinatura fora, nas 3 telas de painel |
+| B | Fronteiras e dados | ✅ | Sem código novo desde o ciclo 1. CT-09 (ausente, vazio, só espaços) verde |
+| C | Matriz de permissão | ✅ | Sem ação nem policy. CT-12 verde |
+| D | Observabilidade | ✅ | Nenhum `Log::` no diff de código. Nenhum PII |
+| E | Performance | ✅ | Sem query nova |
+| F | UX de erro | ⏭️ em parte | Sem reprodução dinâmica do erro de login com recado |
+| G | Tema e cor | ⏭️ | Fora do perfil padrão. `dark-mode.sh --mecanismo` sai com exit 1 (Filament com classe `dark`) |
+| H | Acessibilidade | ⏭️ | Fora do perfil padrão. O CT-B03 (4 regras de landmark) está verde, 9/9 no arquivo |
+| I | Segurança da superfície nova | ✅ | Coberto pelo step 9 (8 achados, 0 rejeitados). Além dele: nenhuma rota, `public $` nem mass assignment novos. `filacheck`: All 17 rules passed |
+| J | Regressão adjacente | ⚠️ em parte | Verdes: `RodapeCoerente` 73/326, os três arquivos do "81/81" com 81/352, `RodapeNaDobra` 9/48 e Site + Rede + Citações + Helpers + LoginSocialGoogle + VersaoNoRodape + TelasDeAutenticacao com 226/2189. `--parallel --tia` não rodou |
+| K | Adequação da suíte | ⏭️ em parte | K1 `k1-oraculo-fraco.sh` exit 0. K2 fora do perfil. As contagens de mutantes manuais conferem pelos datasets. A falsificação do CT-B01 não está provada (QA-11). Revisão adversarial "não exigida" |
+| L | Consistência documental | ❌ | 4 achados abertos (QA-06 resto, QA-10, QA-11, QA-12). L1 `ids-ct.sh` exit 1, com as 15 linhas de ruído da ancestral, e o cabeçalho do `04` 6/5/23/1 confere pelo `grep -c`. L2 `citacoes.sh` exit 0. L4 `conformidade-rules.sh` exit 0. L5: docs pt × en × CHANGELOG coerentes, e README 77 = `find wikis/specs -name 00-requisito.md \| wc -l`. L6 `checkbox-sem-evidencia.sh` exit 0, mas há números de browser que não se reproduzem (QA-11). L7 fechado |
+
+### Suspeitas Não Confirmadas — Ciclo 2
+
+- R1 (recado longo empurrando a assinatura para fora da dobra) segue sem medir. O CT-B01 só usa "Fale com o suporte".
+
+### Não Verificado — Ciclo 2
+
+- G e H: fora do perfil padrão.
+- F (reprodução dinâmica): Playwright MCP indisponível e `pest-plugin-agent` ausente.
+- J passo 1 (`pest --parallel --tia`): não rodou, por memória do host e por instrução do orquestrador.
+- K2 (mutação medida): fora do perfil padrão. Os mutantes manuais M1, M2, M3, M7 e M8 não foram reexecutados, porque isso exigiria alterar a árvore. Foram conferidos por aritmética sobre os datasets.
