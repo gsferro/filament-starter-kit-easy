@@ -196,7 +196,7 @@ Entendimento confirmado: —
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->
-- [ ] Aceite do solicitante para o veredito pós-reciclagem do ciclo 2 (teto do perfil padrão); nenhum achado de código em aberto
+- [x] Aceite do solicitante para o veredito pós-reciclagem do ciclo 2 (teto do perfil padrão); nenhum achado de código em aberto — aceite dado pelo solicitante no chat em 2026-10-07 ("pode prosseguir", depois do relato dos vereditos e das premissas P-01/P-02/P-05); merge por squash em seguida
 
 ## Desvios do Plano
 <!-- Onde a implementação divergiu do PRD e por quê -->
