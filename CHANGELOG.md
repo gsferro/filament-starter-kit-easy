@@ -25,6 +25,28 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   enviada vê a marca do topo dela mudar no update (apagar a logo da organização devolve a da
   instalação).
 
+### Validação antes da tag
+
+Patch e não minor: as duas correções (#150, #151) e duas Project Rules; sem chave nova nem migration. O
+`checklist-de-release` pede os quatro cenários a cada tag, e o cenário 1 foi simulado pela mesma rota da
+`v0.43.0` à `v0.45.1`: extração por `git archive` (que aplica o `export-ignore` como o Packagist aplica —
+`docs/` e `wikis/specs/` ausentes, conferido) + `composer install` + `.env` +
+`kit:install --create-project --no-npm --no-interaction`.
+
+- **Cenário 1, simulado** (extração de `b0360ed`, o commit das rules, logo depois do bump `135dbaa`; a
+  árvore só difere da etiquetada no CHANGELOG e no checklist): `config('kit.version')` = `0.45.2`;
+  `php artisan test --testsuite=Kit,Tenancy --parallel --processes=2 --compact --log-junit` →
+  `{"result":"passed","tests":4210,"passed":3288,"assertions":14838,"duration_ms":928666,"skipped":922}`
+  — **4.210 testes, 3.288 passaram, 14.838 asserções, 922 pulados, 0 falhas**, 15,5 min com 2 processos
+- **Teto de pulados: 920 → 922 (+2)**, decomposição por arquivo (`--log-junit`) contra o junit da
+  `v0.45.1`, 31 arquivos nos dois e nenhuma outra linha mudou: **+2** em `tests/Kit/LogoDarkModeTest.php`
+  — as duas linhas (pt, en) do CT-55 da wiki `logo-dark-do-tenant`, que leem `docs/` e pulam por
+  `naArvoreDoKit()` no projeto instalado. Era o número que o quality gate da feature previu
+- **CI no Linux**: os jobs `qualidade`, `site`, `telas` e `instalacao` dos PRs #150 (`0065cb6`) e #151
+  (`86e600f`, já rebaseado sobre o #150) verdes; a árvore mergeada rodou local 779 testes de backend e 18
+  de browser das duas features. O job `cobertura` da `main` roda depois do push e o número entra no PR
+  de documentação dos cenários 2, 3 e 4, que rodam sobre a tag publicada
+
 ## [0.45.1] - 2026-10-07
 
 ### Corrigido
