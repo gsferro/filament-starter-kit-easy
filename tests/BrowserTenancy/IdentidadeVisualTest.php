@@ -3,6 +3,7 @@
 use App\Models\Tenant;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -227,6 +228,21 @@ it('nao deixa nenhum elemento na cor default quando a organizacao tem a sua', fu
 });
 
 /**
+ * Cria `public/storage` (o `storage:link`) se ainda não existir. Idempotente; o link é gitignored.
+ * Local a este arquivo: só o CT-B01 precisa da imagem carregada, não só da URL.
+ */
+function garantirLinkPublicoDoStorage(): void
+{
+    $link = public_path('storage');
+
+    if (is_link($link) || is_dir($link)) {
+        return;
+    }
+
+    Artisan::call('storage:link');
+}
+
+/**
  * [CT-B01] (wiki `logo-dark-do-tenant`) — a imagem visível da marca troca com o tema, SEM recarregar.
  *
  * O HTML prova que as duas `<img>` estão lá; só `getComputedStyle` no navegador prova qual está
@@ -280,6 +296,11 @@ it('troca a imagem visivel da marca quando o tema e alternado sem recarregar', f
     $usuario->tenants()->attach($acme->id);
 
     $this->actingAs($usuario);
+
+    // O navegador só CARREGA `/storage/...` se `public/storage` existir. O job de telas do CI copia o
+    // `.env.example` e nunca roda `storage:link`; o CT-B04 acima só confere a URL no `src`, então a
+    // suíte ficava verde sem o link — e este caso, que exige `naturalWidth > 0`, caía só no CI.
+    garantirLinkPublicoDoStorage();
 
     // Aquece pelo kernel: a compilação dos componentes fica fora do cronômetro do Playwright.
     $this->get('/app/acme')->assertSuccessful();
