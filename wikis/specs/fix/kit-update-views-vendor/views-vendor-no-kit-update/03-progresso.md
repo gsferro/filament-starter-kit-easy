@@ -1,6 +1,6 @@
 # Progresso — Issue #148: overrides autorais de `resources/views/vendor` no `kit:update`
 
-**Estado**: em revisão — QA ciclo 3 REPROVADO só por texto do `01`/`03`/`04` (corrigido depois do ciclo); teto de ciclos atingido, aceite final é do solicitante (ver `## Blockers`)
+**Estado**: concluída — 2026-10-07
 
 > Branch: `fix/kit-update-views-vendor` · Base do PR: `main` (`dcb3083`, v0.45.0)
 
@@ -108,7 +108,9 @@ Step 12 (`requirement-to-rule`), 2026-10-06 — rota: sessão principal (tem `se
 
 **Descartados**: "mutar só código commitado" e "`open('w').write(fn(t))` trunca" — processo da sessão, não restrição de código (memória). **Poda**: nenhuma.
 
-Linha de retorno: `apresentados 2 · gravados 0 · recusados 0 · descartados no gate 0 · poda 0` *(aguardando aprovação do solicitante)*.
+Linha de retorno (2026-10-06): `apresentados 2 · gravados 0 · recusados 0 · descartados no gate 0 · poda 0` *(aguardando aprovação do solicitante)*.
+
+- 2026-10-07 — rota: sessão principal — aprovação do solicitante (Adendo 1 do `00`): `record-rule` gravou as duas — a 1 em `.ai/rules/vendor.md` (área nova: o Boost nomeia pelo último segmento do glob, não `views.md`), a 2 como segunda seção de `.ai/rules/commands.md`; `.ai/rules/index.md` regenerado pelo Boost com as linhas `resources/views/vendor/**` e `app/Console/Commands/KitUpdate.php`; README pt/en: rules 20 → 21. **apresentados 2 · gravados 2 · recusados 0 · descartados no gate 0 · poda 0**
 
 ## Auditoria Pré-Implementação
 
@@ -171,7 +173,7 @@ Nenhuma classe nova nesta entrega. A "irmã" relevante é a **entrada** `'resour
 | — | pré-9 | Sem despacho — re-varredura da `## Superfície Livewire`: não exigida (`git diff main...HEAD --stat -- app/Filament app/Livewire` vazio) | sessão | — | — | — | — |
 
 ## Blockers
-- [ ] **Aceite final do solicitante** (teto de 3 ciclos do quality gate atingido com `REPROVADO → especificação` só por texto): os achados QA-10/11/12 foram corrigidos na wiki depois do veredito; código e testes são os do ciclo 2 (APROVADO COM DÉBITO). Confirmar no PR: D2 (pasta inteira), D7 (linha de comentário nas dez views), Q1 (as 7 pastas cruas ficam no repositório), Q3 (tag `v0.45.1`).
+- [x] **Aceite final do solicitante** (teto de 3 ciclos do quality gate atingido com `REPROVADO → especificação` só por texto) — dado em 2026-10-07 (Adendo 1 do `00`: "faz o merge, grava as 2 rules e sai a tag v0.45.1"); D2/D7 aceitos por consequência, Q1 continua fora de escopo: os achados QA-10/11/12 foram corrigidos na wiki depois do veredito; código e testes são os do ciclo 2 (APROVADO COM DÉBITO). Confirmar no PR: D2 (pasta inteira), D7 (linha de comentário nas dez views), Q1 (as 7 pastas cruas ficam no repositório), Q3 (tag `v0.45.1`).
 
 ## Desvios do Plano
 - **Passo 5 novo (P-06)**: o plano original só acrescentava a constante; o step 9 (CR-01 = RD-01) mostrou que a entrada nova não entrega arquivo que não mudou desde a origem. `01` ganhou o passo 5, D6 e a linha de P-06 na Cobertura; `00` ganhou P-06; `04` ganhou R8 (CT-15…CT-17).

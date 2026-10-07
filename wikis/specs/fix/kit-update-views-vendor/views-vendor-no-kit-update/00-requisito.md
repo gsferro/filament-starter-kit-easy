@@ -78,7 +78,7 @@
 |----|----------|-------|--------------|--------|
 | Q1 | A auditoria achou 7 pastas de `resources/views/vendor` cujo conteúdo é **idêntico** ao que o pacote instalado traz (publish cru: `ai-tasks`, `authentication-log`, `filament-composer-release-notifier`, `filament-jobs-monitor`, `filament-onboarding`, `filament-sentinel`, `pulse`). Elas ficam fora do `kit:update` (RQ-04). Devem também **sair do repositório do kit** — uma cópia publicada esconde atualização futura da view do pacote — ou ficam como estão? | nenhuma RQ desta entrega (remover é escopo novo; manter fora da lista é a RQ-04 literal, P-01) | ➡️ ficam como estão nesta correção (fora de escopo declarado) e viram issue próprio: remover publish é mudança de comportamento das telas, não de entrega. *(alterado em 2026-10-06: QA-01 — a coluna Afeta dizia RQ-02/RQ-04; nenhum passo depende da resposta)* | aberta |
 | Q2 | `command-center` tem 4 views: 3 editadas pelo kit (tradução, commit 5511a0a) e 1 idêntica ao pacote (`pages/history.blade.php`). A entrada em `CAMINHOS_DO_KIT` é a **pasta**: o arquivo idêntico viaja junto. Aceita que o `kit:update` ofereça esse arquivo (hoje idêntico ao pacote) ou prefere entradas por arquivo? | RQ-02, RQ-04 | ➡️ pasta inteira (P-02): o arquivo idêntico sobrescrito por si mesmo é inócuo, e entrada por arquivo quebraria no próximo arquivo editado da mesma pasta — a mesma classe de esquecimento que gerou o issue. | retirada — reclassificada como **desenho** em 2026-10-06 (QA-01): granularidade da entrada é decisão de entrega, não de requisito; é a D2 do `01`, e P-02 registra o que a feature passa a assumir |
-| Q3 | A correção só chega a quem atualiza quando houver tag. Sai como patch `v0.45.1` logo depois do merge? | release (nenhuma RQ desta entrega: a tag é a publicação, não o comportamento) | ➡️ sim, patch — é correção de entrega sem API nova; a sessão não cria a tag sem a sua palavra. *(alterado em 2026-10-06: QA-01 — Afeta dizia RQ-01/RQ-05)* | aberta |
+| Q3 | A correção só chega a quem atualiza quando houver tag. Sai como patch `v0.45.1` logo depois do merge? | release (nenhuma RQ desta entrega: a tag é a publicação, não o comportamento) | ➡️ sim, patch — é correção de entrega sem API nova; a sessão não cria a tag sem a sua palavra. *(alterado em 2026-10-06: QA-01 — Afeta dizia RQ-01/RQ-05)* | respondida no Adendo 1 |
 | Q9 | Para a classe **antiga** do `kit:update` (a que roda na primeira rodada de quem atualiza) entregar o override, cada uma das dez views autorais precisa mudar nesta release: entra uma linha de comentário Blade no cabeçalho de cada uma ("Override autoral do kit, entregue pelo kit:update — issue #148"). Aceita a linha? A alternativa é documentar que quem já está em ≥ v0.43.0 rode `kit:update` duas vezes, a segunda com `--from=<versão anterior>`. | RQ-01, RQ-02, RQ-05 | ➡️ sim, a linha (P-07): entrega sem passo manual, e o comentário não chega ao HTML. Implementado assim; se recusar, remove-se a linha e a doc ganha o passo duplo. | retirada — reclassificada como **desenho** em 2026-10-06 (QA-01): como o arquivo chega é mecanismo de entrega; é a D7 do `01`, e P-07 registra a premissa. Numerada Q9 porque Q4 já era a pergunta de desenho da varredura |
 
 ## Premissas
@@ -103,3 +103,21 @@
 - Mudar o que as views autorais fazem (lock-screen, captcha, limpar cache, tradução do command-center): a correção é só de **entrega**.
 - O cenário 3 do `checklist-de-release` (projeto antigo + `kit:update` real) sobre a tag publicada: continua sendo o roteiro de release, não um teste desta wiki.
 - Tag/release: depende de Q3.
+
+## Adendo 1 — 2026-10-07
+
+- **Fonte**: pedido do solicitante no chat, depois do PR #149 aberto e com o CI verde
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: Q3 (tag) — e é o aceite do PR pedido em `## Blockers` do `03` (teto de ciclos do quality gate) e a aprovação dos dois candidatos a rule do step 12
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> faz o merge, grava as 2 rules e sai a tag v0.45.1
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| — | nenhuma `RQ` nova: o adendo não muda o comportamento da feature; decide publicação (merge, tag `v0.45.1`) e as rules | "faz o merge, grava as 2 rules e sai a tag v0.45.1" | restrição (processo) | — |

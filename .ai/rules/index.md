@@ -6,7 +6,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | app/** | .ai/rules/app.md |
 | app/Filament/Pages/Auth/** | .ai/rules/auth.md |
-| app/Console/Commands/** | .ai/rules/commands.md |
+| app/Console/Commands/**, app/Console/Commands/KitUpdate.php | .ai/rules/commands.md |
 | config/** | .ai/rules/config.md |
 | resources/css/filament/**, app/Providers/** | .ai/rules/css-filament.md |
 | app/Filament/**/Resources/** | .ai/rules/filament-resources.md |
@@ -23,4 +23,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Support/** | .ai/rules/support.md |
 | tests/Browser/**, tests/BrowserTenancy/** | .ai/rules/testes-browser.md |
 | tests/** | .ai/rules/testes.md |
+| resources/views/vendor/** | .ai/rules/vendor.md |
 | resources/views/** | .ai/rules/views.md |
