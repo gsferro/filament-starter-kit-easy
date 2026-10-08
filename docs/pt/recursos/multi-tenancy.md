@@ -69,6 +69,22 @@ varrer slugs para enumerar os clientes da instalação. Ele fica registrado no l
 No **cadastro** de uma organização nova o link não aparece: enquanto o registro não está gravado,
 não existe endereço para apontar — e um link para um slug ainda não salvo seria 404 garantido.
 
+## Um seletor para quem não tem o que trocar
+
+No topo da barra lateral do `/app` fica o seletor de organização — quem tem acesso a duas ou mais
+troca de contexto por ele. Para quem tem acesso a **uma só** ele não tem utilidade: é só o nome da
+organização repetido (o cabeçalho já o mostra). O interruptor *Ocultar o seletor quando houver uma
+organização só*, na aba **Kit** das configurações, esconde o bloco inteiro nesse caso; com duas ou
+mais organizações acessíveis o seletor continua lá.
+
+A contagem é a mesma do próprio seletor: organizações **ativas** acessíveis — e, para o
+`master_global`, todas as ativas. Esconder é decisão de aparência: `/app/{tenant}`, link direto e
+`canAccessTenant()` não mudam. Nasce **desligado** — `KIT_TENANCY_OCULTAR_SELETOR_UNICO=false` no
+`.env.example` — e vale no próximo F5, porque quem decide é uma avaliação por request
+(`App\Support\SeletorDeOrganizacao`), não o boot do painel.
+
+![O seletor visível e oculto, na mesma tela](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/seletor-organizacao.gif)
+
 ## Insights das organizações no `/admin`
 
 A listagem de organizações traz quatro widgets para operação global — a visão geral acima da tabela e os três de detalhe abaixo dela:

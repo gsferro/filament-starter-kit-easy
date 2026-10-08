@@ -5,6 +5,17 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- **Ocultar o seletor de organização quando houver uma só** (aba **Kit** das configurações,
+  `kit.tenancy.ocultar_seletor_unico`, semeado por `KIT_TENANCY_OCULTAR_SELETOR_UNICO`, default
+  `false`): ligado, o bloco inteiro do topo da barra lateral do `/app` — avatar, rótulo e nome —
+  some para quem tem acesso a uma única organização ativa. A decisão é por request: a Closure de
+  `tenantMenu()` delega a `App\Support\SeletorDeOrganizacao`, que conta por
+  `Filament::getUserTenants()` — a mesma lista do seletor, só ativas, e todas as ativas para o
+  `master_global`. Só aparência: `canAccessTenant()` e o link direto não mudam. Sem a
+  multi-organização ligada o interruptor nem aparece na tela.
+
 ## [0.45.4] - 2026-10-07
 
 ### Corrigido

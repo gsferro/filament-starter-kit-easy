@@ -14,7 +14,7 @@ What the installer asked — plus a handful of things you previously could only 
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) |
 | **Login** | the single login page at `/login` ([details](../../autenticacao/login-unificado/)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../../autenticacao/login-social/)) |
-| **Kit** | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, and what your business calls each organisation (singular and plural) |
+| **Kit** | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
 
@@ -186,6 +186,26 @@ Two decisions are what make it a switch rather than a one-way door:
 
 Viewing is not building: dragging and saving the grid belongs to whoever has Shield's
 `Manage:Dashboard` permission — everyone else sees the same screen without being able to edit it.
+
+## A selector for people with nothing to switch to
+
+With multi-organization enabled, the **Kit** tab gains *Ocultar o seletor quando houver uma
+organização só*. On, the whole block at the top of the `/app` sidebar — avatar, label and name —
+disappears for anyone who can reach **one** active organization; with nothing to switch to, it
+just repeats the name the header already shows. With two or more, the selector stays.
+
+The count comes from the very list that feeds the selector: the user's **active** organizations —
+and, for `master_global`, all of them. A link to an inactive organization does not count.
+
+It is looks only: `canAccessTenant()`, the `/app/{tenant}` address and direct links do not change.
+It ships **off** and takes effect on the next F5 — the decision is read per request, not when the
+panel boots.
+
+![The selector visible and hidden, on the same screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/seletor-organizacao.gif)
+
+| The switch on the Kit tab |
+|---|
+| [![The "hide the selector" switch on the Kit tab](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-seletor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-seletor.png) |
 
 ## Who wins: the database or `.env`?
 

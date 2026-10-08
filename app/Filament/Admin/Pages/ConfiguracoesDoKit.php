@@ -973,6 +973,21 @@ class ConfiguracoesDoKit extends SettingsPage
                     ->label('E no plural')
                     ->required()
                     ->maxLength(255),
+
+                /*
+                 * Interruptor lido por REQUEST, como os do topo desta aba: a Closure de
+                 * `tenantMenu()` no `AppPanelProvider` é avaliada no render da barra
+                 * lateral — salvar aqui vale no próximo F5.
+                 *
+                 * `->visible()` e não só "sem efeito": sem a multi-organização ligada o
+                 * seletor nem existe, e um interruptor que não muda nada é ruído na
+                 * tela. Mesmo critério do `login_anti_robo_local`.
+                 */
+                Toggle::make('ocultar_seletor_unico')
+                    ->label('Ocultar o seletor quando houver uma organização só')
+                    ->helperText('Ligado, quem tem acesso a uma única organização não vê o seletor no topo da barra lateral — sem nada para trocar, ele só repete o nome que o cabeçalho já mostra. Com duas ou mais, o seletor continua lá. Só aparência: o acesso por link direto não muda.')
+                    ->visible(fn (): bool => (bool) config('kit.tenancy.enabled'))
+                    ->columnSpanFull(),
             ]);
     }
 

@@ -408,6 +408,13 @@ return [
         // próprio registro}, definido em cada tenant.
         'slug' => env('KIT_TENANCY_SLUG') ?: 'organizacoes',
 
+        // Esconder o seletor de organização de quem tem acesso a uma só.
+        // Semeia a primeira gravação: depois que a tabela `settings` existe, o
+        // que manda é o interruptor da aba Kit em /admin/configuracoes-da-aplicacao
+        // — lido por request pela Closure de `tenantMenu()`, que o Filament
+        // avalia no render (HasTenancy.php:344-347), não no boot.
+        'ocultar_seletor_unico' => (bool) env('KIT_TENANCY_OCULTAR_SELETOR_UNICO', false),
+
     ],
 
     /*

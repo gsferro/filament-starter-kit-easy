@@ -1163,13 +1163,15 @@ it('[CT-56] o extrator acha as três formas de default desligado, só no código
         'KIT_ANTI_ROBO', 'KIT_ANTI_ROBO_LOCAL', 'KIT_EXIBIR_VERSAO',
         // feat/cabecalho-do-painel: os quatro interruptores do cabeçalho (o detalhe não é booleano)
         'KIT_CABECALHO_NOME_DO_PROJETO', 'KIT_CABECALHO_NOME_DO_PAINEL', 'KIT_CABECALHO_LOGO_DA_MARCA', 'KIT_CABECALHO_USUARIO',
+        // main/ocultar-seletor-de-organizacao-unica
+        'KIT_TENANCY_OCULTAR_SELETOR_UNICO',
     ];
 
     foreach ($esperadas as $chave) {
         test()->assertContains($chave, $doKitPhp, "config/kit.php deveria conter {$chave} extraída como desligada por padrão");
     }
 
-    expect($doKitPhp)->toHaveCount(20, 'piso das 20 chaves — extraído: '.implode(', ', $doKitPhp));
+    expect($doKitPhp)->toHaveCount(21, 'piso das 21 chaves — extraído: '.implode(', ', $doKitPhp));
 
     // Mapa da guarda = extraído (R57 usa exatamente este conjunto).
     expect(array_keys(mapaOptInDaGuarda()))->toEqualCanonicalizing($doKitPhp);
@@ -1201,6 +1203,9 @@ function mapaOptInDaGuarda(): array
         'KIT_CABECALHO_NOME_DO_PAINEL'    => ['nome do painel na marca', 'panel name in the brand'],
         'KIT_CABECALHO_LOGO_DA_MARCA'     => ['marca composta', 'composed brand', 'CabecalhoDoPainel'],
         'KIT_CABECALHO_USUARIO'           => ['bloco do usuário', 'user block', 'usuario-no-cabecalho'],
+        // ocultar-seletor-de-organizacao-unica — idem às do cabeçalho: a assinatura existe para
+        // o dia em que um diagrama desenhar o seletor/organizações.
+        'KIT_TENANCY_OCULTAR_SELETOR_UNICO' => ['SeletorDeOrganizacao', 'ocultar o seletor', 'seletor de organização'],
     ];
 }
 

@@ -14,7 +14,7 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) |
 | **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) |
-| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, e como o seu negócio chama cada organização (singular e plural) |
+| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
@@ -180,6 +180,25 @@ O que faz dela um interruptor, e não um caminho sem volta, são duas decisões:
 
 Ver não é montar: quem arrasta e salva a grade é quem tem a permissão `Manage:Dashboard` do
 Shield — os demais veem a mesma tela sem poder editá-la.
+
+## Um seletor para quem não tem o que trocar
+
+Com a multi-organização ligada, a aba **Kit** ganha *Ocultar o seletor quando houver uma
+organização só*. Ligado, o bloco inteiro do topo da barra lateral do `/app` — avatar, rótulo e
+nome — some para quem tem acesso a **uma** organização ativa; sem troca possível, ele só repete o
+nome que o cabeçalho já mostra. Com duas ou mais, o seletor continua lá.
+
+Quem conta é a mesma lista que alimenta o seletor: organizações **ativas** do usuário — e, para o
+`master_global`, todas as ativas. Vínculo com organização inativa não conta.
+
+É só aparência: `canAccessTenant()`, o endereço `/app/{tenant}` e o link direto não mudam. Nasce
+**desligado** e vale no próximo F5 — a decisão é lida por request, não no boot do painel.
+
+![O seletor visível e oculto, na mesma tela](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/seletor-organizacao.gif)
+
+| O interruptor na aba Kit |
+|---|
+| [![O interruptor "ocultar o seletor" na aba Kit](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-seletor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-seletor.png) |
 
 ## Quem manda: o banco ou o `.env`?
 

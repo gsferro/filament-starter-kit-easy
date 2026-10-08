@@ -887,3 +887,52 @@ it('[CT-B04][CT-B10] captura os quadros do instalador', function (): void {
         $anterior = $hash;
     }
 })->group('browser', 'art');
+
+/**
+ * Os dois quadros do clipe `seletor-organizacao`: a barra lateral com o bloco do
+ * seletor e sem ele, na mesma tela e com a mesma organização aberta.
+ *
+ * Um cenário só, porque os quadros de um GIF nascem do mesmo banco — e a flag é
+ * lida por request, então religar entre as duas visitas basta: a Closure de
+ * `tenantMenu()` é avaliada a cada render. O `beforeEach` já dá exatamente UMA
+ * organização ao usuário (master_global vê só as ativas), que é a condição do
+ * segundo quadro.
+ */
+it('captura o seletor de organização visível e oculto', function (): void {
+    arranjarPainelApp($this, $this->organizacao);
+
+    Projeto::create(['nome' => 'Contrato de fornecimento 2026']);
+
+    visit("/app/{$this->organizacao->slug}/projetos")
+        ->resize(1400, 875)
+        ->assertSee('Projetos')
+        ->assertSee($this->organizacao->nome)
+        ->assertScript("document.querySelector('.fi-tenant-menu') !== null")
+        ->screenshot(fullPage: false, filename: 'seletor-organizacao-1-visivel');
+
+    gravarConfiguracao('ocultar_seletor_unico', true);
+    alinharConfiguracoesDoKit();
+
+    visit("/app/{$this->organizacao->slug}/projetos")
+        ->resize(1400, 875)
+        ->assertSee('Projetos')
+        ->assertScript("document.querySelector('.fi-tenant-menu') === null")
+        ->screenshot(fullPage: false, filename: 'seletor-organizacao-2-oculto');
+})->group('browser', 'art');
+
+/**
+ * A aba Kit das configurações, com o interruptor "ocultar o seletor" — onde o
+ * administrador liga a opção (RQ-05).
+ *
+ * Aquece e visita só o /admin, como as outras capturas do mesmo painel deste
+ * arquivo (ver o cabeçalho: arranjar o /app antes publicaria a barra errada).
+ */
+it('captura o interruptor de ocultar o seletor na tela de configurações', function (): void {
+    $this->get('/admin/configuracoes-da-aplicacao');
+
+    visit('/admin/configuracoes-da-aplicacao')
+        ->resize(1400, 875)
+        ->click('Kit')
+        ->assertSee('Ocultar o seletor quando houver uma organização só')
+        ->screenshot(fullPage: false, filename: 'admin-configuracoes-seletor');
+})->group('browser', 'art');

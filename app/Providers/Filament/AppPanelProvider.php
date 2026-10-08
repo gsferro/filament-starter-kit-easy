@@ -23,6 +23,7 @@ use App\Support\CabecalhoDoPainel;
 use App\Support\CorPrimaria;
 use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
+use App\Support\SeletorDeOrganizacao;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
@@ -610,6 +611,15 @@ class AppPanelProvider extends PanelProvider
         if (config('kit.tenancy.enabled')) {
             $panel
                 ->tenant(Tenant::class, slugAttribute: 'slug')
+                /*
+                 * A Closure — e não um bool — é o que torna o interruptor da tela de
+                 * configurações editável de verdade: o Filament avalia `tenantMenu()`
+                 * no render de cada request (`HasTenancy::hasTenantMenu()`), lendo o
+                 * valor já sobreposto pelo banco. Quem decide é
+                 * `App\Support\SeletorDeOrganizacao`: ligado, esconde o bloco inteiro
+                 * de quem tem acesso a uma única organização ativa.
+                 */
+                ->tenantMenu(fn (): bool => SeletorDeOrganizacao::visivel())
                 ->tenantMiddleware([DefinirTenantDePermissoes::class], isPersistent: true);
         }
 

@@ -69,6 +69,22 @@ sweeping slugs would be enough to enumerate the installation's clients. It is re
 On the **create** screen of a new organization the link is absent: while the record is not saved
 there is no address to point at — and a link to an unsaved slug would be a guaranteed 404.
 
+## A selector for people with nothing to switch to
+
+At the top of the `/app` sidebar sits the organization selector — people who can reach two or more
+use it to switch context. For someone with access to **only one** it is useless: just the
+organization's name repeated (the header already shows it). The *Ocultar o seletor quando houver
+uma organização só* switch, on the **Kit** tab of the settings screen, hides the whole block in
+that case; with two or more reachable organizations the selector stays.
+
+The count is the selector's own list: the user's reachable **active** organizations — and, for
+`master_global`, all of them. Hiding is a looks-only decision: `/app/{tenant}`, direct links and
+`canAccessTenant()` do not change. It ships **off** — `KIT_TENANCY_OCULTAR_SELETOR_UNICO=false` in
+`.env.example` — and takes effect on the next F5, because the decision is evaluated per request
+(`App\Support\SeletorDeOrganizacao`), not when the panel boots.
+
+![The selector visible and hidden, on the same screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/seletor-organizacao.gif)
+
 ## Organization insights under `/admin`
 
 The organization list includes four widgets for global operations — the overview above the table and the three detail widgets below it:

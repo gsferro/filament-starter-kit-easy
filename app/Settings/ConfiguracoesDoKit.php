@@ -212,6 +212,16 @@ final class ConfiguracoesDoKit extends Settings
 
     public string $rotulo_das_organizacoes;
 
+    /**
+     * Esconder o seletor de organização de quem tem acesso a uma só.
+     *
+     * Lido POR REQUEST: `AppPanelProvider` passa uma Closure a `tenantMenu()`, e o
+     * Filament a avalia no render da sidebar/topbar (`HasTenancy::hasTenantMenu()`),
+     * não no boot — então este toggle governa de verdade, no próximo F5. Quem decide
+     * é `App\Support\SeletorDeOrganizacao::visivel()`.
+     */
+    public bool $ocultar_seletor_unico;
+
     // Registro aberto --------------------------------------------------------
 
     public bool $registro_habilitado;
@@ -449,6 +459,7 @@ final class ConfiguracoesDoKit extends Settings
             'dashboard_dinamico_paineis'    => 'kit.dashboard_dinamico.paineis',
             'rotulo_da_organizacao'         => 'kit.tenancy.label',
             'rotulo_das_organizacoes'       => 'kit.tenancy.label_plural',
+            'ocultar_seletor_unico'         => 'kit.tenancy.ocultar_seletor_unico',
             /*
              * O registro aberto entra pelo MAPA, e por isso `App\Support\RegistroAberto` não
              * muda uma linha: os três métodos dele leem `config('kit.registro.*')`, e

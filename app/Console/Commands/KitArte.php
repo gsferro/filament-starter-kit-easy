@@ -88,6 +88,10 @@ class KitArte extends Command
             'instalacao-3-progresso',
             'instalacao-4-resumo',
         ],
+        'seletor-organizacao' => [
+            'seletor-organizacao-1-visivel',
+            'seletor-organizacao-2-oculto',
+        ],
     ];
 
     /**
@@ -133,6 +137,10 @@ class KitArte extends Command
 
         // Proteção anti-robô (wiki recaptcha-nas-telas-publicas).
         'admin-anti-robo',
+
+        // O interruptor "ocultar o seletor" na tela de configurações
+        // (wiki ocultar-seletor-de-organizacao-unica, RQ-05).
+        'admin-configuracoes-seletor',
 
         // As duas telas de login com o desafio no ar, cada uma com chave real do
         // provedor. Só são geradas por quem tem as chaves no ambiente — os cenários
