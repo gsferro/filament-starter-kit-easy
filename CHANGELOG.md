@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-10-08
+
 ### Adicionado
 
 - **Ocultar o seletor de organização quando houver uma só** (aba **Kit** das configurações,
