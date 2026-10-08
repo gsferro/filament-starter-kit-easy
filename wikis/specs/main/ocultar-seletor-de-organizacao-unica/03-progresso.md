@@ -1,6 +1,6 @@
 # Progresso — ocultar-seletor-de-organizacao-unica
 
-**Estado**: em verificação
+**Estado**: concluída
 
 ## 1. Chave de config + `.env.example`
 - [x] `kit.tenancy.ocultar_seletor_unico` em `config/kit.php` com env `KIT_TENANCY_OCULTAR_SELETOR_UNICO` — `config/kit.php:'ocultar_seletor_unico':416`
@@ -54,7 +54,7 @@ Não fatiado — 2026-10-08: 5 RQ vigentes, 11 CT, compactação: não, 0 pergun
 - [x] `ids-ct.sh {wiki} 'tests/**/SeletorDeOrganizacao*.php'` silencioso
 - [x] `conformidade-rules.sh {wiki} main` silencioso
 - [x] Docs pt/en, CHANGELOG reconciliados com o comportamento final — mesmas frases dos testes de doc
-- [ ] `git commit`
+- [x] `git commit` — `:sparkles: feat(tenancy): opcao de ocultar o seletor de organizacao quando ha uma so`
 
 ## Revisão do Diff (step 9)
 
