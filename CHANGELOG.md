@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-10-09
+
 ### Adicionado
 
 - **Uma logo só, nos dois temas, por organização** (`tenants.unifica_logo`, toggle no formulário da
