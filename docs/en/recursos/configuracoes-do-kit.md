@@ -290,6 +290,11 @@ that, to the light one. The top of the business panel and the lock screen use th
 if it has one, the installation's if not.
 With a split brand, upload both variants of the organisation's logo: without its own dark one, the dark theme shows the installation's dark logo in place of the organisation's logo.
 
+The organisation has the same switch on its own form: **One logo for both themes**. On (the default),
+the uploaded logo covers light and dark and the company does not have to send a second image; off, the
+dark-variant field appears. Organisations that already had a `logo_dark` uploaded when the feature
+shipped start with the switch off — an existing split is not undone by an update.
+
 ## Panel header: what to show at the top
 
 The **Identidade** tab closes with the **Cabeçalho dos painéis** (panel header) section: four

@@ -13,6 +13,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
@@ -211,13 +212,33 @@ class TenantForm
                             ->columnSpanFull(),
 
                         /*
+                         * O `unifica_logo_marca` do settings, da organização: ligado, a logo
+                         * acima serve os dois temas e a empresa não é obrigada a enviar uma
+                         * segunda imagem — sem o toggle, quem não manda a escura vê a
+                         * `logo_dark` da INSTALAÇÃO no dark.
+                         *
+                         * Só existe quando a instalação separa a marca: com
+                         * `unifica_logo_marca` ligado, toda `logo_dark` já é inerte e um
+                         * toggle que não muda nada é promessa quebrada (mesmo critério do
+                         * campo abaixo). `live()` porque é ele quem abre o campo da escura.
+                         */
+                        Toggle::make('unifica_logo')
+                            ->label('Uma logo só, nos dois temas')
+                            ->helperText('Ligado (padrão), a logo acima vale no tema claro e no escuro. Desligado, aparece o campo da variante escura — sem ela preenchida, o tema escuro usa a logo da instalação.')
+                            ->default(true)
+                            ->live()
+                            ->visible(fn (): bool => ! config('kit.identidade.unifica_logo_marca', true))
+                            ->columnSpanFull(),
+
+                        /*
                          * A variante escura, com o mesmo contrato do campo acima — a lista de
                          * tipos, o disk público e o teto são a mesma decisão, não duas.
                          *
-                         * `visible()`, e não sempre visível: com a marca unificada o campo é
-                         * inerte (a resolução nem a consulta), e um upload que não muda nada
-                         * na tela é promessa quebrada. O campo volta quando o admin separa a
-                         * marca em /admin/configuracoes-da-aplicacao.
+                         * `visible()`, e não sempre visível: com a marca unificada — a da
+                         * instalação OU a desta organização — o campo é inerte (a resolução
+                         * nem a consulta), e um upload que não muda nada na tela é promessa
+                         * quebrada. O campo volta quando o admin separa a marca em
+                         * /admin/configuracoes-da-aplicacao E desliga o toggle acima.
                          */
                         FileUpload::make('logo_dark')
                             ->label('Logo para o tema escuro')
@@ -230,7 +251,8 @@ class TenantForm
                                 'max' => 'O arquivo passa de '.TetoDeUpload::emMb().' MB.',
                             ])
                             ->helperText('Variante escura da logo — fundo transparente recomendado. Em branco, usa a da instalação. Até '.TetoDeUpload::emMb().' MB, e SVG não é aceito.')
-                            ->visible(fn (): bool => ! config('kit.identidade.unifica_logo_marca', true))
+                            ->visible(fn (Get $get): bool => ! config('kit.identidade.unifica_logo_marca', true)
+                                && ! (bool) $get('unifica_logo'))
                             ->columnSpanFull(),
                     ]),
             ]);

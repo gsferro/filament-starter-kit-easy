@@ -87,7 +87,11 @@ final class IdentidadeDoKit
      *
      * Regra única para duas superfícies — a tela de bloqueio e o topo do `/app` —, para que
      * não divirjam. Por variante e independente: a escura nunca cai para a clara da
-     * organização, e com a marca unificada é `null`. Sem organização, é o par da instalação.
+     * organização, e é `null` com a marca unificada — da instalação
+     * (`unifica_logo_marca`) OU da organização (`unifica_logo`, o mesmo toggle um nível
+     * abaixo: a clara dela serve os dois temas). O flag da organização decide sobre as
+     * logos DELA: sem clara própria resolvível, não há o que unificar — o par segue a
+     * instalação inteiro, escura inclusa.
      *
      * @return array{clara: ?string, escura: ?string}
      */
@@ -96,6 +100,7 @@ final class IdentidadeDoKit
         return [
             'clara'  => $organizacao?->urlDaLogo() ?? self::logo(),
             'escura' => self::unificaLogo()
+                || ($organizacao !== null && $organizacao->unifica_logo && $organizacao->urlDaLogo() !== null)
                 ? null
                 : ($organizacao?->urlDaLogoEscura() ?? self::logoEscura()),
         ];

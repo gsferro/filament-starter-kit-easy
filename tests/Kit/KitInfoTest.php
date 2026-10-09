@@ -182,8 +182,10 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * 54 → 55 na feature `layout-compact`: `densidade_do_layout`.
      * 55 → 57 na feature `logo-dark-mode`: `logo_dark` e `unifica_logo_marca`.
      * 57 → 62 na feature `cabecalho-do-painel`: os quatro interruptores `cabecalho_*` e o detalhe do usuário.
+     * 62 → 63 na feature `ocultar-seletor-unico`: `ocultar_seletor_unico` (bump que a
+     * v0.46.0 não fez — pego na verificação da `unificar-logo-da-organizacao`).
      */
-    expect($propriedades)->toHaveCount(62);
+    expect($propriedades)->toHaveCount(63);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));

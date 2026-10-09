@@ -220,15 +220,21 @@ function marcasEmTextoDaTenancia(string $html): array
 /**
  * Uma organização com as logos pedidas no disco `public` (o disco já é fake) e na coluna.
  * `null` deixa a coluna vazia.
+ *
+ * `unifica_logo` nasce `false` de propósito: os casos deste arquivo afirmam a queda por
+ * variante no modo SEPARADO — com o default `true` da coluna, uma organização com só a
+ * clara teria `escura = null` (a dela cobre os dois temas, feature
+ * `unificar-logo-da-organizacao`) e as quedas para a `logo_dark` da instalação nunca
+ * apareceriam. Quem precisar da unificada passa `unifica: true` no chamador.
  */
-function organizacaoComLogos(string $nome, string $slug, ?string $clara = null, ?string $escura = null): Tenant
+function organizacaoComLogos(string $nome, string $slug, ?string $clara = null, ?string $escura = null, ?bool $unifica = false): Tenant
 {
     foreach (array_filter([$clara, $escura]) as $caminho) {
         Storage::disk('public')->put($caminho, 'png');
     }
 
     return Tenant::factory()
-        ->comIdentidadeVisual('#7c3aed', $clara, null, $escura)
+        ->comIdentidadeVisual('#7c3aed', $clara, null, $escura, $unifica)
         ->create(['nome' => $nome, 'slug' => $slug]);
 }
 

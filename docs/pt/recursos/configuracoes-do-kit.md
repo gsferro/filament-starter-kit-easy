@@ -280,6 +280,11 @@ Organização sem variante escura cai para a da instalação — e, sem ela, par
 e a tela de bloqueio usam o mesmo par: logo da **organização**, se houver; da instalação, se não.
 Com a marca separada, envie as duas variantes da logo da organização: sem a escura própria, o tema escuro mostra a escura da instalação no lugar da logo da organização.
 
+A organização tem o mesmo interruptor, no formulário dela: **Uma logo só, nos dois temas**. Ligado (o
+padrão), a logo enviada cobre o claro e o escuro e a empresa não precisa mandar uma segunda imagem;
+desligado, o campo da variante escura aparece. Quem já tinha `logo_dark` gravada quando o recurso
+chegou nasce com o interruptor desligado — a separação existente não é desfeita por update.
+
 ## Cabeçalho dos painéis: o que mostrar no topo
 
 A aba **Identidade** fecha com a seção **Cabeçalho dos painéis**: quatro interruptores e um seletor,

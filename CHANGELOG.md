@@ -5,6 +5,16 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- **Uma logo só, nos dois temas, por organização** (`tenants.unifica_logo`, toggle no formulário da
+  organização — aparece só quando a marca da instalação está separada): ligado, a logo enviada cobre
+  o tema claro e o escuro e a empresa não é obrigada a enviar uma segunda imagem para o dark não
+  mostrar a `logo_dark` da instalação. Desligado, o campo da variante escura aparece. Backfill:
+  organização que já tinha `logo_dark` gravada nasce com o toggle desligado — separação existente
+  não é desfeita por update; sem `logo_dark`, nasce unificada e o dark passa a mostrar a clara dela
+  (mudança de tela intencional, é o comportamento pedido).
+
 ## [0.46.0] - 2026-10-08
 
 ### Adicionado

@@ -156,7 +156,9 @@ it('[CT-09] mostra e esconde o campo logo dark no formulario da organizacao pelo
     noPainelDoShield('admin');
     noPainelBootado('admin');
 
-    $organizacao = Tenant::factory()->create();
+    // Separada também na organização: com `unifica_logo` ligado o campo logo_dark
+    // continua escondido mesmo com a marca global separada (unificar-logo-da-organizacao).
+    $organizacao = Tenant::factory()->create(['unifica_logo' => false]);
 
     $this->actingAs(usuarioDoKit('master_global'));
 
@@ -327,7 +329,8 @@ it('[CT-16] exibe na lock screen o par resolvido por variante', function (bool $
         Storage::disk('public')->put($caminho, 'png');
     }
 
-    $organizacao = Tenant::factory()->create(['logo' => $logoOrg, 'logo_dark' => $darkOrg]);
+    // `unifica_logo` desligado: a tabela exercita a queda por variante no modo separado.
+    $organizacao = Tenant::factory()->create(['logo' => $logoOrg, 'logo_dark' => $darkOrg, 'unifica_logo' => false]);
 
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 
@@ -489,9 +492,13 @@ it('[CT-40] o par resolvido para uma organização segue a tabela de decisão po
         'kit.identidade.logo_dark'          => $resolve($instEscura),
     ]);
 
+    // `unifica_logo` é a decisão da organização (feature unificar-logo-da-organizacao):
+    // esta tabela exercita o caminho SEPARADO, então o flag vem desligado sempre —
+    // e isso não esconde a linha "global unificada", porque ela ignora o flag do tenant.
     $organizacao = Tenant::factory()->create([
-        'logo'      => $resolve($orgClara),
-        'logo_dark' => $resolve($orgEscura),
+        'logo'         => $resolve($orgClara),
+        'logo_dark'    => $resolve($orgEscura),
+        'unifica_logo' => false,
     ]);
 
     $par = IdentidadeDoKit::logosPara($organizacao);

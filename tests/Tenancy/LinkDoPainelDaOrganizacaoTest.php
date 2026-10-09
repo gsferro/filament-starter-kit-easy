@@ -344,7 +344,7 @@ it('[CT-05] a organizacao inativa tambem exibe o link, e e o dela', function (st
  * CT-06 — a tela de cadastro não oferece link, nem depois de o slug ser digitado.
  *
  * O "sem salvar" é o ponto. O campo `nome` é `live(onBlur: true)` e alimenta o `slug` no
- * `afterStateUpdated` (`app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:configure:31`),
+ * `afterStateUpdated` (`app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:configure:32`),
  * então o estado do formulário TEM um slug antes de qualquer gravação: uma implementação que
  * montasse o link a partir do state vivo passaria num caso que só abrisse a tela vazia.
  *
@@ -354,7 +354,7 @@ it('[CT-05] a organizacao inativa tambem exibe o link, e e o dela', function (st
  * ## A armadilha, e é por isso que o oráculo é o `href` e nunca o caminho `/app/`
  *
  * O `TenantForm` é o schema do `CreateTenant` **também**, e a `description` da seção
- * (`app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:configure:31`) já contém o literal
+ * (`app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:configure:32`) já contém o literal
  * `/app/{slug}` — **prosa renderizada ao usuário**, não comentário, e é onde está escrito o que o
  * slug significa. Um caso escrito como `assertDontSee('/app/')` nasce VERMELHO contra a
  * implementação correta, e a "correção" óbvia seria apagar a explicação do slug.

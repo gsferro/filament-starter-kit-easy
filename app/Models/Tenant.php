@@ -47,6 +47,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property ?string $cor_primaria_nome
  * @property ?string $logo
  * @property ?string $logo_dark
+ * @property bool $unifica_logo
  */
 class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
 {
@@ -89,6 +90,9 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         'cor_primaria_nome',
         'logo',
         'logo_dark',
+        // Uma logo só nos dois temas (o `unifica_logo_marca` do settings, da organização).
+        // Fillable como os vizinhos: é a decisão de quem administra, tomada no formulário.
+        'unifica_logo',
     ];
 
     /** Rótulo exibido acima do nome no seletor de tenant do painel. */
@@ -124,6 +128,7 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         return [
             'ativo'               => 'boolean',
             'registro_habilitado' => 'boolean',
+            'unifica_logo'        => 'boolean',
         ];
     }
 

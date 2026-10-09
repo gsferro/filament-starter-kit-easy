@@ -87,7 +87,7 @@ class TenantInfolist
                     ->schema([
                         /*
                          * `urlDaLogo()` e não a coluna crua: ele confere
-                         * `Storage::disk('public')->exists()` antes (`app/Models/Tenant.php:urlDaLogo:188`),
+                         * `Storage::disk('public')->exists()` antes (`app/Models/Tenant.php:urlDaLogo:193`),
                          * então path órfão degrada para o placeholder em vez de renderizar imagem
                          * quebrada — que é o oposto do que a tela promete.
                          */
