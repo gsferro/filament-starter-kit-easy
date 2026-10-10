@@ -1,6 +1,6 @@
 # Progresso — unificar-logo-da-organizacao
 
-**Estado**: entregue na tag local v0.47.0; correções da revisão verificadas localmente; publicação pendente
+**Estado**: correções publicadas na v0.47.1; tag local v0.47.0 preservada; CI completo em execução no fechamento
 **Base**: `683067a^` para a feature; `50706ad` para as correções ainda não commitadas
 
 ## Requisito e Plano
@@ -53,7 +53,15 @@ Registro anterior à revisão. Suíte TIA e revisão manual abaixo não comprova
 - [x] Reconciliação wiki × código — desvios 1-4 registrados; `04` ganhou CT-06b/CT-06c e a cláusula "clara própria resolvível" em R-C
 - [x] Docs pt/en, CHANGELOG reconciliados — parágrafo novo nos dois idiomas; citações de linha deslocadas corrigidas (`urlDaLogo:193`, `artePadrao:136`, `users:118`, `configure:32`)
 - [x] `git commit` + tag local — feature `683067a`, release `50706ad`, tag `v0.47.0`; publicação remota não verificada
-- [ ] Publicação remota — não verificada; correções atuais ainda não publicadas
+- [x] Publicação remota — correções `365dc29`, release `11c408a`, tag `v0.47.1`; push de main e tag confirmado
+
+### Fechamento da publicação — 2026-10-09
+
+- Release publicada: https://github.com/gsferro/filament-starter-kit-easy/releases/tag/v0.47.1
+- Check remoto `Release/marcador` aprovado: https://github.com/gsferro/filament-starter-kit-easy/actions/runs/38008040022
+- Testes focados de logos e cabeçalho: 101 verdes, 518 assertions. KitInfo e checklist: 58 verdes, três pulados, 238 assertions.
+- Pint passou; marcador, CHANGELOG e exemplos PT/EN concordam em 0.47.1. Tag local v0.47.0 continua em `50706ad`.
+- CI completo estava em execução na publicação. As notas da release declaram os limites da validação local; instalação via Packagist e nova resolução de dependências não foram verificadas.
 
 ### Revalidação das correções — 2026-10-09
 
@@ -65,7 +73,7 @@ Registro anterior à revisão. Suíte TIA e revisão manual abaixo não comprova
 - [x] Concorrência do arnês — limpeza restrita ao PID; duas suítes simultâneas no mesmo temporário passaram, 43 testes/236 assertions cada
 - [x] Qualidade — Pint `--dirty --format agent` passou; PHPStan zero erros; Filacheck 17 rules passaram; validadores da wiki passaram
 
-Publicação, axe, build novo e instalação pelo Packagist permanecem não verificados. Suítes integrais não foram repetidas após os ajustes finais; arquivos afetados foram reexecutados. Gate atual: **APROVADO COM DÉBITO**, restrito às evidências locais.
+Publicação confirmada no fechamento acima. Axe, build novo e instalação pelo Packagist permanecem não verificados. Suítes integrais não foram repetidas após os ajustes finais; arquivos afetados foram reexecutados. Gate atual: **APROVADO COM DÉBITO**, restrito às evidências locais.
 
 ### Revisão do diff (step 9, manual — sem /code-review no host)
 

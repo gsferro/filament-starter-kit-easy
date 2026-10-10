@@ -96,3 +96,11 @@ Regressões consolidadas anteriores: 42 testes/71 assertions; browser cinco test
 - Publicação remota, CI remoto e upgrade de banco de produção.
 - Axe, inspeção completa de logs reais e benchmark de latência.
 - Nova execução integral das suítes depois das correções finais de texto, oráculo de extração, lista de entrega e limpeza do arnês; arquivos e casos afetados foram reexecutados.
+
+## Publicação posterior ao gate — 2026-10-09
+
+Correções commitadas em `365dc29` e publicadas na tag `v0.47.1`, commit `11c408a`.
+Push de main e tag confirmado; release pública no GitHub. A tag local `v0.47.0` permaneceu intacta.
+O check remoto `Release/marcador` passou; CI completo estava em execução no fechamento.
+Esta confirmação substitui apenas a pendência de publicação remota acima; os limites de
+instalação, dependências, acessibilidade, build e suíte integral permanecem declarados.
