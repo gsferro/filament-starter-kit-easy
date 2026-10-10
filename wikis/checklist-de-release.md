@@ -124,7 +124,7 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 >
 > **Teto local candidato: 924**, medido nos quatro cenários desta revisão (2026-10-09),
 > com artefato local e dependências/assets reutilizados; não comprova a tag publicada.
-> Decomposição completa no `CHANGELOG.md`, seção `Unreleased / Validação antes da próxima tag`: 32 arquivos.
+> Decomposição completa no `CHANGELOG.md`, seção `0.47.1 / Validação local antes da publicação`: 32 arquivos.
 > O aumento de dois são as linhas PT/EN do CT-09 de `UnificaLogoDoTenantTest`, que leem `docs/`
 > excluído do pacote. Falhas de concorrência foram corrigidas e reexecutadas, sem novos skips.
 >

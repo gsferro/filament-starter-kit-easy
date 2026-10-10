@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.47.1] - 2026-10-09
+
 ### Corrigido
 
 - Logo unificado permanece visível no tema escuro da tela de bloqueio. Sem clara própria utilizável,
@@ -17,9 +19,9 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   deixam de apagar fixtures umas das outras.
 - Wikis, matrizes de requisitos/testes, referências de código e documentação PT/EN reconciliadas.
 
-### Validação antes da próxima tag
+### Validação local antes da publicação
 
-Correções ainda não publicadas. Quatro cenários locais concluídos em 2026-10-09. Artefato
+Correções desta versão. Quatro cenários locais concluídos em 2026-10-09. Artefato
 com `export-ignore`, `composer create-project --no-install --no-scripts` pelo repositório local,
 dependências e assets reutilizados; não comprova resolução nova de dependências ou Packagist.
 Atualizações partiram de v0.46.0, executaram `kit:update --from=v0.46.0 --no-branch --all
@@ -27,6 +29,12 @@ Atualizações partiram de v0.46.0, executaram `kit:update --from=v0.46.0 --no-b
 foi ativada antes do update nos cenários correspondentes e permaneceu ligada. Versão 0.47.0
 confirmada nos quatro; tag v0.47.0 original permaneceu intacta. A versão do artefato local
 não significa publicação destas correções.
+
+Fechamento da v0.47.1: marcador e exemplos PT/EN atualizados; tag v0.47.0 preservada.
+Testes focados de logos e cabeçalho reexecutados: 101 verdes, 518 assertions.
+Mutação real registrada no QA: 42 mutantes, 37 mortos, cinco sobreviventes, 88,10%;
+a medição anterior de 100% foi invalidada. Os resultados dos quatro cenários acima
+continuam sendo evidência do artefato local em 0.47.0, não de instalação pelo Packagist.
 
 Comando da suíte inicial (dois processos no cenário 1, quatro nos demais):
 
