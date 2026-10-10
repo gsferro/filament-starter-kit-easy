@@ -163,7 +163,7 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 
 ## Test coverage — and what the number leaves **out**
 
-**84 %** of the lines in `app/` — 8,533 of 10,067 statements, measured on 2026-09-30, in the `cobertura` job on `main`. The README
+**85 %** of the lines in `app/` — 8,926 of 10,460 statements (85.33%), measured on 2026-10-10, in the `cobertura` job on `main`. The README
 badge comes from here, and CI fails when it lies.
 
 > **The number moves slightly with the operating system**, and the badge was designed to absorb

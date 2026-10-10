@@ -172,11 +172,12 @@ it('exibe a logo da organizacao na tela de bloqueio', function (): void {
 
     visit('/app/screen/lock')
         ->assertPathIs('/app/screen/lock')
-        // `.fi-logo-light`, e não `.fi-auth-media`: desde `feat/logo-dark-mode` a logo da
+        // `.fi-logo`, e não `.fi-auth-media`: desde `feat/logo-dark-mode` a logo da
         // tela de bloqueio sai pelo override de `partials/media.blade.php` com as classes
-        // nativas do swap do Filament (`fi-logo fi-logo-light`), contida — `fi-auth-media`
+        // nativas do Filament (`fi-logo`; `fi-logo-light` só no par de temas), contida — `fi-auth-media`
         // ficou só para a ARTE do login, que continua `cover`. Ver RQ-05 daquela wiki.
-        ->assertAttributeContains('.fi-logo-light', 'src', $caminho)
+        ->assertAttributeContains('.fi-auth-media-wrapper img.fi-logo', 'src', $caminho)
+        ->assertScript("document.querySelector('.fi-auth-media-wrapper img.fi-logo').naturalWidth > 0")
         // A tela não veio vazia: o formulário de desbloqueio está lá.
         ->assertSee('Desbloquear')
         // E o alternador de tema sobreviveu. É a asserção que pega o erro de trocar a mídia com
@@ -297,8 +298,8 @@ it('troca a imagem visivel da marca quando o tema e alternado sem recarregar', f
 
     $this->actingAs($usuario);
 
-    // O navegador só CARREGA `/storage/...` se `public/storage` existir. O job de telas do CI copia o
-    // `.env.example` e nunca roda `storage:link`; o CT-B04 acima só confere a URL no `src`, então a
+    // O navegador só CARREGA `/storage/...` se `public/storage` existir. Quando este caso nasceu, o job de telas do CI copiava o
+    // `.env.example` sem rodar `storage:link`; o CT-B04 acima só conferia a URL no `src`, então a
     // suíte ficava verde sem o link — e este caso, que exige `naturalWidth > 0`, caía só no CI.
     garantirLinkPublicoDoStorage();
 

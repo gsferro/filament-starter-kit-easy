@@ -128,6 +128,7 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+          php artisan storage:link --no-interaction
           npm run build
 
       # Em série de propósito: --parallel multiplicaria processos de navegador e exigiria

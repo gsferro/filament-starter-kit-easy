@@ -5,6 +5,27 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.47.2] - 2026-10-10
+
+### Corrigido
+
+- O CI de navegador e `composer test:browser` criam `public/storage` antes dos testes.
+  As logos públicas deixam de cair na rota assinada do disco privado em um checkout limpo.
+- O teste da logo da organização na tela de bloqueio usa o seletor da logo unificada
+  e verifica o carregamento da imagem, sem exigir a classe reservada ao par claro/escuro.
+- Badge e percentuais dos READMEs PT/EN atualizados para 85%, conforme os 85,33% medidos
+  pelo CI da v0.47.1 (8.926 de 10.460 statements; execução `38008122914`).
+
+### Validação local
+
+- Quatro casos reproduziram HTTP 403 sem `public/storage`; o teste com `.fi-logo-light`
+  reproduziu timeout mesmo com o link presente. Após as correções, os dois arquivos de
+  navegador passaram: 14 testes, 96 assertions.
+- Checks afetados de versão, badge e documentação: 24 testes, 112 assertions.
+  Pint, `composer validate --no-check-publish` e `git diff --check` passaram.
+- A medição de cobertura acima pertence ao CI anterior. O CI completo desta versão
+  será conferido antes da publicação da release no GitHub; as tags anteriores permanecem intactas.
+
 ## [0.47.1] - 2026-10-09
 
 ### Corrigido

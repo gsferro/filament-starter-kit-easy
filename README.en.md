@@ -224,7 +224,7 @@ The other two already come complete.
 | Screens swept in a real browser | **55** |
 | Test files | **181** in `Kit` + `Tenancy` (**210** in total) |
 | PHPStan | **level 8**, zero errors |
-| Test coverage (`app/`, line) | **84 %** — see [what the number leaves out](docs/en/referencia/qualidade-de-codigo.md) |
+| Test coverage (`app/`, line) | **85 %** — see [what the number leaves out](docs/en/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** rules, all passing |
 
 | Documentation | |
