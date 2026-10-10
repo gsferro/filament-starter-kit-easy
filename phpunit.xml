@@ -67,6 +67,9 @@
         <env name="KIT_TENANCY_LABEL" value="Organização" force="true"/>
         <env name="KIT_TENANCY_LABEL_PLURAL" value="Organizações" force="true"/>
         <env name="KIT_TENANCY_SLUG" value="organizacoes" force="true"/>
+        <env name="KIT_TENANCY_OCULTAR_SELETOR_UNICO" value="false" force="true"/>
+        <!-- Dotenv consulta também $_SERVER, preenchido pelo ambiente do processo no Windows. -->
+        <server name="KIT_TENANCY_OCULTAR_SELETOR_UNICO" value="false" force="true"/>
         <!--
             Provedores sociais precisam nascer desligados e sem credenciais nos testes.
             Senão, um .env com GOOGLE_CLIENT_ID real faz o teste `disponivel()`

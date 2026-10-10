@@ -193,7 +193,7 @@ The ledger comes from an event listener, never a direct call:
 (`app/Providers/KitServiceProvider.php:AgentStreamed:483`), and `RegistrarAiRun::handle()` writes to
 `ai_runs` with `status: 'ok'` (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`) — a request
 blocked by any layer above **never** reaches this row. The widget only exists on the `/app` panel
-(`app/Providers/Filament/AppPanelProvider.php:BODY_END:163`).
+(`app/Providers/Filament/AppPanelProvider.php:BODY_END:164`).
 
 ## What the roadmap **does not** cover on its own
 

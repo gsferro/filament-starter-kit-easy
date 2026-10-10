@@ -34,6 +34,21 @@ it('[CT-01] guarda unifica_logo e nasce unificada', function (): void {
         ->and($desligada->fresh()->unifica_logo)->toBeFalse();
 })->group('kit');
 
+it('[CT-10] preserva a separacao de logos das organizacoes existentes na atualizacao', function (): void {
+    $migration = require database_path('migrations/2026_10_09_100000_add_unifica_logo_to_tenants_table.php');
+    $migration->down();
+
+    $separada  = Tenant::factory()->create(['logo' => 'organizacoes/clara.png', 'logo_dark' => 'organizacoes/escura.png']);
+    $unificada = Tenant::factory()->create(['logo' => 'organizacoes/clara.png', 'logo_dark' => null]);
+
+    $migration->up();
+
+    expect($separada->fresh()->unifica_logo)->toBeFalse()
+        ->and($separada->fresh()->logo_dark)->toBe('organizacoes/escura.png')
+        ->and($unificada->fresh()->unifica_logo)->toBeTrue()
+        ->and($unificada->fresh()->logo)->toBe('organizacoes/clara.png');
+})->group('kit');
+
 // --- o form: visibilidade e gravação -------------------------------------------
 
 /**
@@ -173,18 +188,22 @@ it('[CT-06] organizacao separada com logo dark usa a dela', function (): void {
  * `urlDaLogo() !== null` do `logosPara()`: este caso deixa de devolver a dark da
  * instalação e o dark da organização sem logo some da tela.
  */
-it('[CT-06b] unificada sem logo clara nao suprime a escura da instalacao', function (): void {
+it('[CT-11] unificada sem logo clara nao suprime a escura da instalacao', function (): void {
     Storage::fake('public');
+    Storage::disk('public')->put('kit/clara.png', 'png');
     Storage::disk('public')->put('kit/d.png', 'png');
+    Storage::disk('public')->put('organizacoes/escura-antiga.png', 'png');
 
     config(['kit.identidade.unifica_logo_marca' => false]);
     config(['kit.identidade.logo_dark' => 'kit/d.png']);
+    config(['kit.identidade.logo' => 'kit/clara.png']);
 
-    $organizacao = Tenant::factory()->create(['unifica_logo' => true]);
+    $organizacao = Tenant::factory()->create(['unifica_logo' => true, 'logo_dark' => 'organizacoes/escura-antiga.png']);
 
     $par = IdentidadeDoKit::logosPara($organizacao);
 
-    expect($par['escura'])->toBeString()->toContain('kit/d.png');
+    expect($par['clara'])->toBeString()->toContain('kit/clara.png')
+        ->and($par['escura'])->toBeString()->toContain('kit/d.png');
 })->group('kit');
 
 /**
@@ -193,18 +212,22 @@ it('[CT-06b] unificada sem logo clara nao suprime a escura da instalacao', funct
  * Mesma cláusula pelo outro lado: a coluna declarada mas o arquivo fora do disco
  * equivale a "sem clara" — `urlDaLogo()` devolve `null` e o flag fica mudo.
  */
-it('[CT-06c] unificada com a clara orfa cai na escura da instalacao', function (): void {
+it('[CT-12] unificada com a clara orfa cai na escura da instalacao', function (): void {
     Storage::fake('public');
+    Storage::disk('public')->put('kit/clara.png', 'png');
     Storage::disk('public')->put('kit/d.png', 'png');
+    Storage::disk('public')->put('organizacoes/escura-antiga.png', 'png');
 
     config(['kit.identidade.unifica_logo_marca' => false]);
     config(['kit.identidade.logo_dark' => 'kit/d.png']);
+    config(['kit.identidade.logo' => 'kit/clara.png']);
 
-    $organizacao = Tenant::factory()->create(['logo' => 'organizacoes/logos/sumiu.png', 'unifica_logo' => true]);
+    $organizacao = Tenant::factory()->create(['logo' => 'organizacoes/logos/sumiu.png', 'logo_dark' => 'organizacoes/escura-antiga.png', 'unifica_logo' => true]);
 
     $par = IdentidadeDoKit::logosPara($organizacao);
 
-    expect($par['escura'])->toBeString()->toContain('kit/d.png');
+    expect($par['clara'])->toBeString()->toContain('kit/clara.png')
+        ->and($par['escura'])->toBeString()->toContain('kit/d.png');
 })->group('kit');
 
 // --- a segunda superfície ------------------------------------------------------
@@ -235,6 +258,7 @@ it('[CT-07] lock screen nao emite img dark para organizacao unificada', function
 
     expect($html)->toContain('organizacoes/logos/a.png')
         ->and($html)->not->toContain('fi-logo-dark')
+        ->and($html)->not->toContain('fi-logo-light')
         ->and($html)->not->toContain('kit/d.png');
 })->group('kit');
 

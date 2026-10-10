@@ -492,7 +492,7 @@ it('[CT-08] o roteiro está presente onde quem instalou o lê, e diz de quem é 
 
 /**
  * `@premissa`. `KitUpdate::handle()` opera sobre `base_path()` fixo, exige repositório git real
- * (`is_dir(base_path('.git'))`, `app/Console/Commands/KitUpdate.php:is_dir:493`) e cria remote/tag contra
+ * (`is_dir(base_path('.git'))`, `app/Console/Commands/KitUpdate.php:is_dir:494`) e cria remote/tag contra
  * o repositório publicado (`:git:1225`, `new Process([$this->git, ...], base_path(), ...)`). Rodar
  * isto de verdade destruiria/poluiria o checkout onde a suíte roda, e exige rede e uma tag
  * publicada — o mesmo ambiente externo que L1 do `04` já declara fora do arnês. NÃO EXECUTADO.
@@ -507,7 +507,7 @@ it('[CT-18] o kit:update deixa o roteiro em disco, qualquer que seja o destino',
 ])->skip(
     'Fora do arnês: `KitUpdate::handle()` exige git real e opera sobre base_path() fixo — '
     .'executar contra este checkout seria destrutivo e exige rede + tag publicada (mesma classe '
-    .'de L1 do 04). Ver app/Console/Commands/KitUpdate.php:preVoo:485 e :git:1213.',
+    .'de L1 do 04). Ver app/Console/Commands/KitUpdate.php:preVoo:486 e :git:1213.',
 );
 
 /*

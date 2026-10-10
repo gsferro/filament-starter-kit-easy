@@ -21,6 +21,7 @@ it('cobre os arquivos da fundação na lista de caminhos do kit', function (stri
         .'quem já instalou o projeto nunca receberá este arquivo.'
     );
 })->with([
+    'pestw.cmd',
     // A cola
     'app/Providers/KitServiceProvider.php',
     'app/Providers/Concerns/ConfiguraFilamentGlobal.php',
@@ -988,10 +989,12 @@ it('[CT-14] a entrada-pasta extrai o arquivo aninhado', function (): void {
 
     expect($processo->isSuccessful())->toBeTrue('git archive | tar falhou: '.$processo->getErrorOutput());
 
-    $extraido = $this->raizTemporaria.'/'.$alvo;
+    $extraido      = $this->raizTemporaria.'/'.$alvo;
+    $fonteDoCommit = new Process(['git', 'show', 'HEAD:'.$alvo], base_path());
+    $fonteDoCommit->mustRun();
 
     expect(is_file($extraido))->toBeTrue("{$alvo} não chegou à árvore temporária")
-        ->and(conteudoComFimDeLinhaNormalizado($extraido))->toBe(conteudoComFimDeLinhaNormalizado(base_path($alvo)));
+        ->and(conteudoComFimDeLinhaNormalizado($extraido))->toBe(str_replace("\r\n", "\n", $fonteDoCommit->getOutput()));
 })->skip(fn (): bool => ! naArvoreDoKit(), 'Precisa do git do kit: o projeto instalado não tem o histórico do kit para o git archive.')->group('kit');
 
 /*

@@ -97,10 +97,16 @@ final class IdentidadeDoKit
      */
     public static function logosPara(?Tenant $organizacao): array
     {
+        $logoDaOrganizacao = $organizacao?->urlDaLogo();
+
+        if ($organizacao?->unifica_logo && $logoDaOrganizacao === null) {
+            return ['clara' => self::logo(), 'escura' => self::logoEscura()];
+        }
+
         return [
-            'clara'  => $organizacao?->urlDaLogo() ?? self::logo(),
+            'clara'  => $logoDaOrganizacao ?? self::logo(),
             'escura' => self::unificaLogo()
-                || ($organizacao !== null && $organizacao->unifica_logo && $organizacao->urlDaLogo() !== null)
+                || ($organizacao !== null && $organizacao->unifica_logo)
                 ? null
                 : ($organizacao?->urlDaLogoEscura() ?? self::logoEscura()),
         ];

@@ -92,5 +92,7 @@
 | `main` | `lembretes-de-convite` | 76/76 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](main/lembretes-de-convite/03-progresso.md) |
 | `main` | `lightbox-em-imagens-e-documentos` | 28/28 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](main/lightbox-em-imagens-e-documentos/03-progresso.md) |
 | `main` | `model-caching-painel-app` | 12/14 itens | não fatiada | `[████████░░] 85 %` do 03 | — | — | [03](main/model-caching-painel-app/03-progresso.md) |
+| `main` | `ocultar-seletor-de-organizacao-unica` | 31/32 itens · concluída | não fatiada | `[█████████░] 96 %` do 03 | — | APROVADO COM DÉBITO (ciclo 1) | [03](main/ocultar-seletor-de-organizacao-unica/03-progresso.md) |
 | `main` | `perfil-e-acesso-ao-painel` | 53/53 itens | não fatiada | `[██████████] 100 %` do 03 | — | APROVADO COM DÉBITO (ciclo 1) | [03](main/perfil-e-acesso-ao-painel/03-progresso.md) |
 | `main` | `stat-de-logins-do-dia` | 20/20 itens | não fatiada | `[██████████] 100 %` do 03 | — | APROVADO (ciclo 1) | [03](main/stat-de-logins-do-dia/03-progresso.md) |
+| `main` | `unificar-logo-da-organizacao` | 26/27 itens · entregue na tag local v0.47.0; correções da revisão verificadas localmente; publicação pendente | não fatiada | `[█████████░] 96 %` do 03 | — | — | [03](main/unificar-logo-da-organizacao/03-progresso.md) |

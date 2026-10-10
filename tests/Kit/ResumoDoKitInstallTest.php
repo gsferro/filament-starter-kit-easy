@@ -57,7 +57,7 @@ use Symfony\Component\Console\Question\Question;
  */
 function diretorioDeInstalacaoDoKit(): string
 {
-    $base = sys_get_temp_dir().'/kit_install_'.Str::random(10);
+    $base = sys_get_temp_dir().'/kit_install_'.getmypid().'_'.Str::random(10);
 
     File::ensureDirectoryExists($base);
     // Lido uma vez, do repositório: numa segunda chamada do mesmo teste (CT-149) o base_path()
@@ -73,7 +73,7 @@ function diretorioDeInstalacaoDoKit(): string
 }
 
 afterEach(function (): void {
-    foreach (File::glob(sys_get_temp_dir().'/kit_install_*') as $temporario) {
+    foreach (File::glob(sys_get_temp_dir().'/kit_install_'.getmypid().'_*') as $temporario) {
         File::deleteDirectory($temporario);
     }
 });

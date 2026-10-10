@@ -37,7 +37,7 @@ O que ele faz, em ordem:
 
 O fluxo é **não interativo** quando não há terminal (CI, `--no-interaction`) — nunca "sem TTY": ele
 vira relatório e sai sem aplicar nada, a menos que `--all` ou `--only-new` já tenham dado a
-aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:449`).
+aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:450`).
 
 ```mermaid
 flowchart TD
@@ -66,7 +66,7 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:397`): pré-voo (`:preVoo:485`), remote temporário
+(`app/Console/Commands/KitUpdate.php:handle:398`): pré-voo (`:preVoo:486`), remote temporário
 (`:vincularKit:545`), diff restrito (`:arquivosAlterados:651`), resumo (`:mostrarResumo:827`), a
 checagem de terminal (`:isInteractive:449`), o branch temporário (`:prepararBranch:847`), a revisão
 por arquivo (`:revisarEAplicar:896`), o relatório do `composer.json`
@@ -166,7 +166,7 @@ viaja no `create-project`, mas no `kit:update` é **só relatório**, nunca apli
 
 Caminho que **entrou** em `CAMINHOS_DO_KIT` depois da sua versão — como as pastas autorais de
 `resources/views/vendor` — é comparado com a **sua árvore**, e não só tag com tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:692`): o arquivo que você não tem aparece como
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:693`): o arquivo que você não tem aparece como
 "novo no kit" mesmo que o kit não o tenha mudado desde a sua versão, e arquivo que o seu projeto não tem
 aparece como "novo no kit" ainda que o kit o tenha mudado entre as tags — é o rótulo que o `--only-new`
 aplica. Esse comportamento vale a partir da versão em que ele entrou (a classe que roda é a instalada):

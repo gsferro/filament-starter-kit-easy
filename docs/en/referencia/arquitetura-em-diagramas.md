@@ -8,7 +8,7 @@ Twenty Mermaid diagrams show how the kit works today: architecture, role-based a
 
 ## DG-01 — Layered architecture
 
-From the browser to the three Filament panels (`app/Providers/Filament/AppPanelProvider.php:id:78`, `app/Providers/Filament/AdminPanelProvider.php:id:69`, `app/Providers/Filament/InfraPanelProvider.php:id:90`), through role-based access, down to the database, queue, cache and the optional services. It is the same block as the README — a single source.
+From the browser to the three Filament panels (`app/Providers/Filament/AppPanelProvider.php:id:79`, `app/Providers/Filament/AdminPanelProvider.php:id:69`, `app/Providers/Filament/InfraPanelProvider.php:id:90`), through role-based access, down to the database, queue, cache and the optional services. It is the same block as the README — a single source.
 
 ```mermaid
 flowchart TD

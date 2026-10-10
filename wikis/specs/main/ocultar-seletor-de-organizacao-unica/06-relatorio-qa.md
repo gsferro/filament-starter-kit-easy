@@ -1,9 +1,19 @@
 # Relatório de QA — ocultar-seletor-de-organizacao-unica: interruptor que esconde o seletor de quem tem uma só organização
 
 **Data**: 2026-10-08
-**Escopo**: `main...HEAD` (diff de trabalho, pré-commit)
+**Escopo histórico**: diff de trabalho pré-commit; `main...HEAD` não inclui esse diff. Base da feature para revalidação: `47a6a60^`.
 **Independência**: mesma sessão que escreveu a wiki — **modo degradado** (host sem sub-agente)
 **Perfil**: Padrão (natureza `nova`, UI presente sem JS, domínio comum) — teto: `APROVADO COM DÉBITO` por construção
+
+## Revalidação — 2026-10-09
+
+O ciclo abaixo é histórico. Sua alegação L4 foi invalidada: `conformidade-rules.sh` compara somente commits, e `main...HEAD` pré-commit não verifica o diff de trabalho. A tabela de rules no `03` foi preenchida e o script passou com base `47a6a60^`; esse intervalo também inclui a feature posterior de unificação. Correções não commitadas foram conferidas pelo diff de trabalho separadamente.
+
+O CT-02 passou com `KIT_TENANCY_OCULTAR_SELETOR_UNICO=true` no ambiente externo, após fixar a chave em `env` e `server` no `phpunit.xml`. Uma migration nova invalida cache de settings anterior ao novo campo, preservando dados do banco e cache do negócio. Regressão de cache antigo e 159 testes relacionados passaram. PHPStan: zero erros; Filacheck: 17 regras passaram.
+
+O número histórico de 19 mutantes não foi revalidado para este predicado. O launcher foi corrigido e sua regressão cobre filtros compostos, caminhos especiais e saída não zero. O escopo de logos produziu uma medição real de 88,10%, registrada na wiki de unificação; não substituir esse número por 100% nem aplicá-lo ao seletor.
+
+Custo estático corrigido: até três chamadas no layout normal, pelos boots de sidebar/topbar e pela view da sidebar. Referências: `vendor/filament/filament/src/Livewire/Concerns/HasTenantMenu.php:bootHasTenantMenu:27`, `vendor/filament/filament/src/Livewire/Concerns/HasTenantMenu.php:hasTenantMenu:37` e `vendor/filament/filament/resources/views/livewire/sidebar.blade.php:hasTenantMenu:11`. Sem medição de latência; não foi introduzido cache especulativo.
 
 ## Veredito — Ciclo 1
 
@@ -20,11 +30,11 @@ Nenhum achado aberto. O único candidato mecânico do ciclo foi rejeitado como n
 
 ### QA-01 — CT-04 com assertion só negada · rejeitado (não-defeito) · destino 5
 
-- **Dimensão**: K1 — `k1-oraculo-fraco.sh` linha `tests/Tenancy/SeletorDeOrganizacaoTenancyTest.php:136`
+- **Dimensão**: K1 — `k1-oraculo-fraco.sh` linha `tests/Tenancy/SeletorDeOrganizacaoTenancyTest.php:'[CT-04]':136`
 - **Relacionado a**: CT-04 (`ligada e uma organização: o bloco inteiro some`)
 - **Alegação do script**: "só expectativa negada (`not->toContain()`) — nenhum valor esperado"
 - **Por que não é defeito**: a ausência do bloco **é** o comportamento sob teste; o par positivo vive no CT-05 (`ligada e duas: o bloco aparece`, mesmo seletor `fi-tenant-menu`). Mutante `visivel() → false` sempre morreria no CT-05 e nos dados do CT-03 — e de fato morreu: `--mutate` reportou **19 mutantes, 0 sobreviventes**, Duration compatível com a base da suíte.
-- **Evidência**: `pest --mutate --path=app/Support/SeletorDeOrganizacao.php` (comando 291, `pestw.cmd`); CT-05 em `SeletorDeOrganizacaoTenancyTest.php:150`
+- **Evidência histórica**: `pest --mutate --path=app/Support/SeletorDeOrganizacao.php` (comando 291, `pestw.cmd`); CT-05 em `tests/Tenancy/SeletorDeOrganizacaoTenancyTest.php:'[CT-05]':150`. Pontuação depende de revalidação do launcher Windows; não sustenta aceite atual sozinha.
 
 ## Matriz de Rastreabilidade
 
@@ -38,7 +48,7 @@ Sem lacuna — `rastreabilidade.sh` silencioso (exit 0): toda `RQ` tem passo, to
 | B — Fronteiras e dados | ✅ verificada | contagem 0/1/2/3 organizações coberta pelo dataset do CT-03; campo bool (Toggle) — sem string/numérico para sondar |
 | C — Matriz de permissão | ✅ verificada | sem ação nova autorizável: `visivel()` não permite nem nega acesso; toggle vive em tela de settings já protegida |
 | D — Observabilidade real | ✅ verificada | `SeletorDeOrganizacao.php:'tenancy':67`: channel dedicado, prefixo `[SeletorDeOrganizacao@visivel]`, context `{user_id, organizacoes, ocultar_seletor_unico}` — sem PII; mutante de remoção do `Log::` morreu (K2) |
-| E — Performance | ✅ verificada | leitura estática: ligado, `hasTenantMenu()` avalia no render de sidebar **e** topbar → até 2× `getUserTenants()`/request — registrado como não-defeito R4 no `03` (YAGNI, D4 do `01`) |
+| E — Performance | leitura estática corrigida | layout normal pode executar 3× `getUserTenants()`/request; cada chamada hidrata a coleção completa. Sem medição de latência; custo conhecido registrado no R4 do `03` |
 | F — UX de erro | ✅ verificada | sem caminho de erro novo: o toggle salva pelo fluxo existente da página de settings |
 | G — Tema/cor | n.a. com prova | `dark-mode.sh --mecanismo` exit 1 (mecanismo existe), mas `git diff --name-only --diff-filter=AM -- '*.blade.php' '*.css'` = vazio — sem superfície de cor nova |
 | H — Acessibilidade | ⚠️ não verificada | componente `Toggle` padrão Filament e remoção de UI não pedem markup; sem `assertNoAccessibilityIssues()` nos CT-B novos |
@@ -62,4 +72,4 @@ Nenhum achado aberto. O teto `APROVADO COM DÉBITO` vem do **perfil Padrão** (G
 
 ## Para o orquestrador
 
-- Candidato a rule do step 12: **nenhum** — o contrato "fence de código dentro de bullet engole headings no parser da wiki" já é do `rastreabilidade.sh`; o padrão settings→mapa→migration→toggle já está em `.ai/rules` (a L4 passou silenciosa porque as rules casadas estão cumpridas).
+- Candidato a rule do step 12: **nenhum** — o contrato "fence de código dentro de bullet engole headings no parser da wiki" já é do `rastreabilidade.sh`; o padrão settings→mapa→migration→toggle já está em `.ai/rules`. O silêncio histórico de L4 não comprovou conformidade; ver a revalidação acima.

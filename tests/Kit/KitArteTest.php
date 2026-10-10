@@ -83,7 +83,7 @@ afterEach(function (): void {
         $_SERVER['PATH'] = $this->pathOriginalServer;
     }
 
-    foreach (File::glob(sys_get_temp_dir().'/kit_arte_*') as $temporario) {
+    foreach (File::glob(sys_get_temp_dir().'/kit_arte_'.getmypid().'_*') as $temporario) {
         File::deleteDirectory($temporario);
     }
 });
@@ -98,7 +98,7 @@ afterEach(function (): void {
  */
 function diretorioDeArte(): string
 {
-    $base = sys_get_temp_dir().'/kit_arte_'.Str::random(10);
+    $base = sys_get_temp_dir().'/kit_arte_'.getmypid().'_'.Str::random(10);
 
     File::ensureDirectoryExists("{$base}/tests/Browser/Screenshots");
     File::ensureDirectoryExists("{$base}/art/thumbs");
@@ -157,7 +157,7 @@ function conteudoDoQuadroDeTeste(string $clipe, int $indice, string $prefixoDeTe
  */
 function instalarFfmpegDeTeste(string $modo): string
 {
-    $dir = sys_get_temp_dir().'/kit_arte_ffmpeg_'.Str::random(10);
+    $dir = sys_get_temp_dir().'/kit_arte_'.getmypid().'_ffmpeg_'.Str::random(10);
     File::ensureDirectoryExists($dir);
 
     $scriptPhp = <<<'PHP'
@@ -265,7 +265,7 @@ function todosOsQuadrosDoKitArte(): array
     return array_merge(...array_values(clipesDoKitArte()));
 }
 
-/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:305`): traços viram espaços. */
+/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:313`): traços viram espaços. */
 function saidaNomeiaOClipe(string $saida, string $clipe): bool
 {
     $minuscula = mb_strtolower($saida);
@@ -591,7 +591,7 @@ it('[CT-49] a falha do ffmpeg por ausencia preserva o GIF ja publicado', functio
 
     // ffmpeg de verdade AUSENTE do PATH: um diretório vazio à frente, sem nenhum executável
     // chamado "ffmpeg" — nem o real do sistema deve ser alcançado.
-    $dirVazio = sys_get_temp_dir().'/kit_arte_sem_ffmpeg_'.Str::random(10);
+    $dirVazio = sys_get_temp_dir().'/kit_arte_'.getmypid().'_sem_ffmpeg_'.Str::random(10);
     File::ensureDirectoryExists($dirVazio);
     $novoPath = $dirVazio.PATH_SEPARATOR;
     putenv("PATH={$novoPath}");

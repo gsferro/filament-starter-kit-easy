@@ -6,7 +6,16 @@ rem entrada a partir de um arquivo chamado "?php" e morre com
 rem "A sintaxe do nome do arquivo ... esta incorreta".
 rem PAO_DISABLE: ver "O printer, e por que ele precisa desta linha" abaixo.
 set PAO_DISABLE=1
+setlocal EnableDelayedExpansion
+set "PESTW_PROCESS_COMMAND=!cmdcmdline!"
+if not "!PESTW_PROCESS_COMMAND: /C (=!"=="!PESTW_PROCESS_COMMAND!" goto symfony
+set "PESTW_PROCESS_COMMAND="
+setlocal DisableDelayedExpansion
 php -d pcov.enabled=1 "%~f0" %*
+exit /b %errorlevel%
+:symfony
+setlocal DisableDelayedExpansion
+php -d pcov.enabled=1 "%~f0"
 exit /b %errorlevel%
 */
 
@@ -102,5 +111,29 @@ exit /b %errorlevel%
 | - Em Linux e macOS este arquivo e desnecessario: `vendor/bin/pest` ja e executavel e o
 |   relancamento funciona.
 */
+
+if (($comando = getenv('PESTW_PROCESS_COMMAND')) !== false) {
+    require __DIR__.'/vendor/autoload.php';
+
+    /** O Symfony protege argumentos em variáveis; expandir `%*` no batch desfaz essa proteção. */
+    if (preg_match('~ /C \((?:"[^"]*"|[^\s"]+)(.*)\) \d>~is', $comando, $partes) !== 1) {
+        fwrite(STDERR, "Não foi possível recuperar os argumentos do Symfony Process.\n");
+
+        exit(1);
+    }
+
+    putenv('PESTW_PROCESS_COMMAND');
+    unset($_SERVER['PESTW_PROCESS_COMMAND'], $_ENV['PESTW_PROCESS_COMMAND']);
+
+    $processo = Symfony\Component\Process\Process::fromShellCommandline(
+        '"${:PESTW_PHP}" -d pcov.enabled=1 "${:PESTW_SCRIPT}"'.$partes[1],
+        env: ['PESTW_PHP' => PHP_BINARY, 'PESTW_SCRIPT' => __FILE__],
+        timeout: null,
+    );
+
+    exit($processo->run(static function (string $tipo, string $saida): void {
+        fwrite($tipo === Symfony\Component\Process\Process::ERR ? STDERR : STDOUT, $saida);
+    }));
+}
 
 require __DIR__.'/vendor/pestphp/pest/bin/pest';

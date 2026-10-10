@@ -98,7 +98,7 @@ php artisan migrate --force
 
 > **O `kit:update` nunca apaga arquivo, e isso é desenho.** Um arquivo **renomeado** no kit chega
 > pelo nome novo e o nome velho **fica** no projeto atualizado — órfão, mas presente. O comando
-> avisa (`KitUpdate.php:revisarEAplicar:917`: *"foi REMOVIDO do kit. Nada é apagado automaticamente — decida
+> avisa (`KitUpdate.php:revisarEAplicar:918`: *"foi REMOVIDO do kit. Nada é apagado automaticamente — decida
 > você"*). Então **não** trate a presença do nome antigo como falha do cenário 3 ou 4;
 > a v0.39.0 renomeou `versao-do-kit.blade.php` e as duas blades convivem em projeto atualizado.
 
@@ -122,7 +122,13 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto corrente: 922**, medido na simulação por `git archive` do cenário 1 da `v0.45.2` e **confirmado sem
+> **Teto local candidato: 924**, medido nos quatro cenários desta revisão (2026-10-09),
+> com artefato local e dependências/assets reutilizados; não comprova a tag publicada.
+> Decomposição completa no `CHANGELOG.md`, seção `Unreleased / Validação antes da próxima tag`: 32 arquivos.
+> O aumento de dois são as linhas PT/EN do CT-09 de `UnificaLogoDoTenantTest`, que leem `docs/`
+> excluído do pacote. Falhas de concorrência foram corrigidas e reexecutadas, sem novos skips.
+>
+> **Teto histórico anterior: 922**, medido na simulação por `git archive` do cenário 1 da `v0.45.2` e **confirmado sem
 > mudança na `v0.45.3`** (31 arquivos, decomposição idêntica), antes de cada tag (a confirmar nos quatro
 > cenários sobre a tag publicada). O `+2` sobre o 920 da `v0.45.1` está decomposto
 > por arquivo, medido com `--log-junit` dentro da extração, na seção `Validação antes da tag` da `v0.45.2`

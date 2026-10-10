@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Tenant;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
@@ -67,3 +68,43 @@ it('[CT-B01] troca a logo da marca entre claro e escuro no navegador', function 
 
     $paginaEscura->screenshotElement('.fi-auth-media-wrapper', 'logo-tema-escuro');
 })->group('browser');
+
+it('[CT-B02] mantém a logo unificada visível nos dois temas da tela de bloqueio', function (bool $daOrganizacao, bool $escuro): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    $caminho = 'kit/logo-unificada-b02.png';
+    Storage::disk('public')->put($caminho, UploadedFile::fake()->image('logo.png', 400, 80)->get());
+    Storage::disk('public')->put('kit/logo-escura-b02.png', UploadedFile::fake()->image('escura.png', 400, 80)->get());
+
+    gravarConfiguracao('logo', $caminho);
+    gravarConfiguracao('logo_dark', 'kit/logo-escura-b02.png');
+    gravarConfiguracao('unifica_logo_marca', ! $daOrganizacao);
+    alinharConfiguracoesDoKit();
+
+    if ($daOrganizacao) {
+        config(['kit.tenancy.enabled' => true]);
+        $caminho = 'organizacoes/logo-unificada-b02.png';
+        Storage::disk('public')->put($caminho, UploadedFile::fake()->image('organizacao.png', 400, 80)->get());
+        $organizacao = Tenant::factory()->create(['logo' => $caminho, 'unifica_logo' => true]);
+        session(['tenant_corrente' => $organizacao->getKey()]);
+    }
+
+    $this->actingAs(usuarioDoKit('master_global'));
+    $this->post(route('lockscreen.app.lock-session'))->assertRedirect();
+
+    $pagina = $escuro
+        ? visit('/app/screen/lock')->inDarkMode()
+        : visit('/app/screen/lock')->inLightMode();
+
+    $pagina->assertVisible('.fi-auth-media-wrapper img.fi-logo')
+        ->assertAttributeContains('.fi-auth-media-wrapper img.fi-logo', 'src', '/storage/'.$caminho)
+        ->assertScript("document.querySelector('.fi-auth-media-wrapper img.fi-logo').naturalWidth > 0")
+        ->assertScript("document.querySelector('.fi-auth-media-wrapper .fi-logo-light, .fi-auth-media-wrapper .fi-logo-dark') === null")
+        ->assertScript("document.documentElement.classList.contains('dark') === ".($escuro ? 'true' : 'false'))
+        ->assertNoJavaScriptErrors();
+})->with([
+    'instalacao clara'   => [false, false],
+    'instalacao escura'  => [false, true],
+    'organizacao clara'  => [true, false],
+    'organizacao escura' => [true, true],
+])->group('browser');

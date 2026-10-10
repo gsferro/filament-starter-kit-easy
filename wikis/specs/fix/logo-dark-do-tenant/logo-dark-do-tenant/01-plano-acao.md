@@ -17,13 +17,14 @@
 | RQ-02 | revisar a implementação e achar o que ficou de fora com organização ativa | 1, 2, 3, 6 | a revisão achou oito lacunas; as corrigidas viram os passos 1 a 3 e o texto do passo 6; as não escolhidas pelo solicitante ficam registradas, fora de escopo |
 | RQ-03 | a escura da organização troca com o modo onde a organização é usada | — | substituída por RQ-05 (Adendo 1); sem passo próprio |
 | RQ-04 | a logo da marca da instalação (clara e escura) não muda | 1, 2, 4, 5 | `logosPara(null)` devolve o que `logo()` e `logoEscura()` devolviam; CT-16 e o CT-B01 de `LogoDarkModeTest` ficam verdes sem alteração |
+| RQ-06 | o `alt` da logo da organização no topo do `/app` é o nome dela, nas duas formas; correção publicada na v0.45.3 | 8 | Adendo 2; CT-58, com controle da organização sem logo usando o nome da aplicação |
 | RQ-05 | topo do `/app` com organização aberta usa a logo da organização, clara e escura, com queda para a da instalação | 1, 2, 3, 4, 5, 6, 7 | núcleo da entrega; o passo 3 torna o caso testável (factory) e o texto do formulário verdadeiro |
 | P-01 | a tela de bloqueio já troca e não muda | 1, 4 | o passo 1 troca a implementação sem mudar a saída, em nenhum caso |
 | P-02 | a composição continua regida pela feature do cabeçalho; só muda qual logo | 2 | — |
 | P-03 | resolução por variante, independente, a da tela de bloqueio | 1, 4 | a regra está escrita uma vez, em `## Mapeamentos` |
 | P-04 | marca unificada ignora a escura da organização | 1, 4 | idem |
 | P-05 | a página de erro do Sentinel dentro de `/app/{slug}` usa a mesma marca | — | ⚠️ fora desta entrega: consequência da marca ser a mesma Closure; sem passo nem CT próprio |
-| P-06 | o `alt` das imagens da marca não muda | — | ⚠️ fora desta entrega: o `alt` com o nome da organização é da tela de bloqueio |
+| P-06 | o `alt` das imagens da marca não muda | — | substituída por RQ-06 (Adendo 2); o escopo vigente inclui a correção no passo 8 |
 
 ## Passos
 
@@ -36,6 +37,7 @@
 | 5 | Teste de navegador do swap no topo do `/app` | `tests/BrowserTenancy/IdentidadeVisualTest.php` | 2, 3 | verde em série; vermelho com o passo 2 revertido |
 | 6 | Documentação pt/en, CHANGELOG, READMEs | `docs/pt/recursos/configuracoes-do-kit.md`, `docs/en/recursos/configuracoes-do-kit.md`, `CHANGELOG.md`, `README.md`, `README.en.md` | 2 | `SiteDeDocumentacaoTest` e `RedeDeDocumentacaoTest` verdes |
 | 7 | Índice das wikis por `indice.sh` | `wikis/specs/INDEX.md` | 1 a 6 | linha de `fix/logo-dark-do-tenant` no índice |
+| 8 | Reconciliação do Adendo 2: `alt` da organização nas duas formas da marca | `app/Support/CabecalhoDoPainel.php`, `resources/views/filament/cabecalho-do-painel.blade.php`, `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` | 2, 4 | CT-58 verifica o nome da organização e o controle sem logo; correção entregue na v0.45.3 |
 
 ## Objetivo
 
@@ -49,19 +51,21 @@ A feature `logo-dark-mode` entregou a variante escura em duas camadas: a da inst
 
 ## Revisão da feature (RQ-01, RQ-02)
 
-Mapa de onde cada logo aparece hoje, lido do código na worktree. "Troca com o tema?" é a pergunta do requisito: a variante escura é entregue ao navegador e o CSS escolhe pela classe `dark` do `<html>`.
+**Registro histórico da revisão inicial (2026-10-07, antes da correção):** o mapa e as lacunas abaixo descrevem o estado investigado, não o comportamento atual. As âncoras de símbolos foram atualizadas em 2026-10-09 para localizar o código vigente.
+
+Mapa de onde cada logo aparecia na revisão inicial, lido do código na worktree. "Troca com o tema?" é a pergunta do requisito: a variante escura é entregue ao navegador e o CSS escolhe pela classe `dark` do `<html>`.
 
 | Superfície | Logo clara | Logo escura | Troca com o tema? | Fonte |
 |---|---|---|---|---|
 | Topo do `/admin` | da instalação | da instalação (só com a marca separada) | sim | `app/Providers/Filament/AdminPanelProvider.php:brandLogo():91` e `darkModeBrandLogo():94`, que delegam a `app/Support/CabecalhoDoPainel.php:marca():65` e `marcaEscura():71` |
 | Topo do `/infra` | da instalação | da instalação (marca separada) | sim | `app/Providers/Filament/InfraPanelProvider.php:brandLogo():112` e `darkModeBrandLogo():115` |
-| Topo do `/app` sem organização aberta (instalação sem tenancy, rota fora de organização) | da instalação | da instalação (marca separada) | sim | `app/Providers/Filament/AppPanelProvider.php:brandLogo():100` e `darkModeBrandLogo():103` |
+| Topo do `/app` sem organização aberta (instalação sem tenancy, rota fora de organização) | da instalação | da instalação (marca separada) | sim | `app/Providers/Filament/AppPanelProvider.php:brandLogo():101` e `darkModeBrandLogo():103` |
 | Topo do `/app/{organização}`, composição desligada (marca simples) | **da instalação** (a da organização é ignorada) | **da instalação** | sim, mas com a imagem errada para quem tem logo própria | `app/Support/CabecalhoDoPainel.php:marca():65` devolve `IdentidadeDoKit::logo()` na linha 61; `marcaEscura():71` devolve `IdentidadeDoKit::logoEscura()` na linha 73 |
 | Topo do `/app/{organização}`, composição ligada | **da instalação** | **da instalação**, dentro da composição (`fi-logo-light`/`fi-logo-dark`) | sim, mas com a imagem errada | `app/Support/CabecalhoDoPainel.php:resolverSegmentos():223`, linhas 179 e 180 (`$logoClara`, `$logoEscura`); par no `resources/views/filament/cabecalho-do-painel.blade.php` |
 | Página de erro do Sentinel dentro de `/app/{slug}` | a marca do painel (hoje a da instalação) | idem | sim | `vendor/anselmokossa/filament-sentinel/src/Support/Sentinel.php:brandLogo():144` lê `getBrandLogo()` e `getDarkModeBrandLogo()` do painel; passa a mostrar a da organização, junto com o topo (P-05) |
-| Tela de bloqueio do `/app` (rota `/app/screen/lock`, sem organização na URL) | da organização, senão da instalação | da organização, senão da instalação (marca separada); `null` com a marca unificada | **sim** (o único lugar em que a escura da organização é usada) | `app/Filament/Pages/Auth/TelaBloqueio.php:urlsDasLogos():105`; o topo dessa tela não emite a marca (comentário do CT-16 em `tests/Kit/LogoDarkModeTest.php:'[CT-16]':319`) |
+| Tela de bloqueio do `/app` (rota `/app/screen/lock`, sem organização na URL) | da organização, senão da instalação | da organização, senão da instalação (marca separada); `null` com a marca unificada | **sim** (o único lugar em que a escura da organização é usada) | `app/Filament/Pages/Auth/TelaBloqueio.php:urlsDasLogos():105`; o topo dessa tela não emite a marca (comentário do CT-16 em `tests/Kit/LogoDarkModeTest.php:'[CT-16]':321`) |
 | Login (`/login`, `/app/login`, `/admin/login`, `/infra/login`) | da instalação (marca do topo, tela de autenticação) | da instalação (marca separada) | sim | `app/Support/CabecalhoDoPainel.php:emTelaDeAutenticacao():297` devolve a marca de hoje; sem sessão não há organização. A mídia da tela é a arte (`IdentidadeDoKit::arteDoLogin()`), não a logo |
-| Cadastro da organização no `/admin`: formulário | upload `logo` | upload `logo_dark`, visível só com a marca separada | não se aplica (é upload) | `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:'logo':173`, `'logo_dark':222`; o texto de ajuda do `logo` ainda diz "Exibida na tela de bloqueio" (linha 208) |
+| Cadastro da organização no `/admin`: formulário | upload `logo` | upload `logo_dark`, visível só com a marca separada | não se aplica (é upload) | `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php:'logo':174`, `'logo_dark':222`; o texto de ajuda do `logo` ainda diz "Exibida na tela de bloqueio" (linha 208) |
 | Cadastro da organização: cabeçalho da ficha | da organização (avatar), `null` cai nas iniciais | **nunca mostrada** | não | `app/Filament/Admin/Resources/Tenants/Schemas/TenantHeader.php:avatar():39` |
 | Cadastro da organização: ficha | da organização | **nunca mostrada** | não | `app/Filament/Admin/Resources/Tenants/Schemas/TenantInfolist.php:ImageEntry:94` |
 | Cadastro da organização: listagem | da organização (coluna crua, com lightbox) | **nunca mostrada** | não | `app/Filament/Admin/Resources/Tenants/Tables/TenantsTable.php:ImageColumn:41` |
@@ -69,13 +73,13 @@ Mapa de onde cada logo aparece hoje, lido do código na worktree. "Troca com o t
 
 ### O que ficou esquecido (RQ-02)
 
-Os consumidores da logo da organização, por `grep` em `app/` e `resources/views/`, são só estes: `TelaBloqueio`, `TenantHeader`, `TenantInfolist` e `TenantsTable` (esta lê a coluna crua). A escura, `app/Models/Tenant.php:urlDaLogoEscura():215`, tem **um único consumidor**, `TelaBloqueio` (linha 110). As lacunas:
+Os consumidores da logo da organização, por `grep` em `app/` e `resources/views/`, são só estes: `TelaBloqueio`, `TenantHeader`, `TenantInfolist` e `TenantsTable` (esta lê a coluna crua). A escura, `app/Models/Tenant.php:urlDaLogoEscura():220`, tem **um único consumidor**, `TelaBloqueio` (linha 110). As lacunas:
 
 | # | Lacuna | Destino |
 |---|---|---|
 | L1 | o topo do `/app/{organização}` ignora a logo da organização, clara e escura (a escura é a queixa do requisito) | corrigida: passos 1 e 2 (RQ-05) |
 | L2 | a regra de queda mora inline em `TelaBloqueio::urlsDasLogos()`; duplicá-la no cabeçalho produziria duas regras com o mesmo nome | corrigida: passo 1 (método único, ADR-02) |
-| L3 | `TenantFactory::comIdentidadeVisual()` não aceita a escura (`database/factories/TenantFactory.php:comIdentidadeVisual():41`): todo teste que precisa de uma organização com par monta o `create()` à mão, como o CT-16 | corrigida: passo 3 |
+| L3 | `TenantFactory::comIdentidadeVisual()` não aceita a escura (`database/factories/TenantFactory.php:comIdentidadeVisual():44`): todo teste que precisa de uma organização com par monta o `create()` à mão, como o CT-16 | corrigida: passo 3 |
 | L4 | o texto de ajuda do upload `logo` diz "Exibida na tela de bloqueio de sessão do painel de negócio" e "Em branco, usa a imagem padrão", que deixam de ser a história toda; o docblock de `Tenant::urlDaLogoEscura()` diz que só a tela de bloqueio a consulta | corrigida: passo 3 |
 | L5 | a documentação diz duas vezes o contrário do que passa a valer: "a logo da composição é sempre a da instalação" e "a da organização segue aparecendo só na tela de bloqueio" (pt e en, seção do cabeçalho dos painéis de `configuracoes-do-kit.md`); já a seção "Isto não é o settings de uma organização" do mesmo arquivo afirma que a logo da organização "vence a do kit dentro de `/app/{slug}`", o que hoje é falso para o topo | corrigida: passo 6 |
 | L6 | nenhum teste de navegador cobre o swap de uma logo de **organização** (o CT-B01 de `LogoDarkModeTest` usa `master_global` sem organização, de propósito; o de `IdentidadeVisualTest` cobre a clara na tela de bloqueio) | corrigida: passo 5 |
@@ -86,11 +90,13 @@ A tela de bloqueio é o controle de "não muda" (P-01): a saída dela é idênti
 
 ## Análise dos Arquivos Existentes
 
+Registro histórico da análise anterior à implementação. As expressões "ganha", "passa a" e "não aceita" descrevem a mudança planejada naquela data; as referências de símbolos apontam os arquivos atuais.
+
 ### `app/Support/IdentidadeDoKit.php`
-- `logo()` (`app/Support/IdentidadeDoKit.php:logo():51`) e `logoEscura()` (`app/Support/IdentidadeDoKit.php:logoEscura():65`) resolvem a instalação pelo disco `public` com guarda de existência e `asset('storage/…')`; `logoEscura()` devolve `null` com a marca unificada (`unificaLogo()`, `app/Support/IdentidadeDoKit.php:unificaLogo():80`). A classe é `final`, só estáticos, e se justifica pela guarda (`doDisco()`, `app/Support/IdentidadeDoKit.php:doDisco():144`). Ganha `logosPara()`.
+- `logo()` (`app/Support/IdentidadeDoKit.php:logo():51`) e `logoEscura()` (`app/Support/IdentidadeDoKit.php:logoEscura():65`) resolvem a instalação pelo disco `public` com guarda de existência e `asset('storage/…')`; `logoEscura()` devolve `null` com a marca unificada (`unificaLogo()`, `app/Support/IdentidadeDoKit.php:unificaLogo():80`). A classe é `final`, só estáticos, e se justifica pela guarda (`doDisco()`, `app/Support/IdentidadeDoKit.php:doDisco():155`). Ganha `logosPara()`.
 
 ### `app/Models/Tenant.php`
-- `urlDaLogo()` (`app/Models/Tenant.php:urlDaLogo():188`) e `urlDaLogoEscura()` (`app/Models/Tenant.php:urlDaLogoEscura():215`) devolvem `null` com coluna em branco ou arquivo ausente do disco, em silêncio, e `asset('storage/…')` caso contrário, como pede a rule `app.md`. Não mudam; `logo_dark` está no `$fillable` (`app/Models/Tenant.php:'logo_dark':91`). Só o docblock de `urlDaLogoEscura()` muda.
+- `urlDaLogo()` (`app/Models/Tenant.php:urlDaLogo():193`) e `urlDaLogoEscura()` (`app/Models/Tenant.php:urlDaLogoEscura():220`) devolvem `null` com coluna em branco ou arquivo ausente do disco, em silêncio, e `asset('storage/…')` caso contrário, como pede a rule `app.md`. Não mudam; `logo_dark` está no `$fillable` (`app/Models/Tenant.php:'logo_dark':92`). Só o docblock de `urlDaLogoEscura()` muda.
 
 ### `app/Filament/Pages/Auth/TelaBloqueio.php`
 - `urlsDasLogos()` (`app/Filament/Pages/Auth/TelaBloqueio.php:urlsDasLogos():105`) é a regra de hoje, dentro de um `once()`. A organização vem da **sessão** (`tenant_corrente`), por `organizacaoResolvida()` (`app/Filament/Pages/Auth/TelaBloqueio.php:organizacaoResolvida():185`), porque a rota `/app/screen/lock` não tem organização na URL (ADR-03); é nessa função, e não em `getAuthDesignerConfig()`, que mora a guarda de painel (`app/Filament/Pages/Auth/TelaBloqueio.php:correnteOuPadrao():188`). A partial `media.blade.php` lê o par por `urlsDasLogos()` (`resources/views/vendor/filament-auth-designer/components/partials/media.blade.php:$logos:20`). Passa a delegar.
@@ -105,13 +111,13 @@ A tela de bloqueio é o controle de "não muda" (P-01): a saída dela é idênti
 - A organização aberta é `Filament::getTenant()`, que devolve `$this->tenant` sem olhar o painel (`vendor/filament/filament/src/FilamentManager.php:getTenant():448`); o binding `filament` é `scoped` (`vendor/filament/filament/src/FilamentServiceProvider.php:scoped:65`). Quem diz se o painel tem organização é `Panel::hasTenancy()` (`vendor/filament/filament/src/Panel/Concerns/HasTenancy.php:hasTenancy():207`).
 
 ### `database/factories/TenantFactory.php`
-- `comIdentidadeVisual()` (`database/factories/TenantFactory.php:comIdentidadeVisual():41`) recebe cor, logo e paleta, nunca a escura. Ganha `?string $logoEscura = null` no fim.
+- `comIdentidadeVisual()` (`database/factories/TenantFactory.php:comIdentidadeVisual():44`) recebe cor, logo e paleta, nunca a escura. Ganha `?string $logoEscura = null` no fim.
 
 ### Testes que fixam o comportamento atual
 - O antigo CT-07 de `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` (substituído pelo CT-49, que o código atual traz; referência histórica) afirmava que, no `/app` da Acme com logo própria, a composição mostra a logo da instalação e nenhuma de organização. **Foi substituído** (passo 4), e a aprovação dessa substituição é a resposta do solicitante no Adendo 1 do `00` (reversão da P-12 no `/app`).
-- `tests/Tenancy/CabecalhoDoPainelTenancyTest.php:'[CT-27]':676` usa `tenant('Acme', 'acme')`, uma organização **sem logo** (`tests/Pest.php:tenant():387`): com a regra nova ela cai na logo da instalação e o caso continua verde, sem edição. Ele **não** é o controle de nenhuma queda de `logosPara()` (o controle é o caso do passo 4 que declara a presença da clara da instalação).
+- `tests/Tenancy/CabecalhoDoPainelTenancyTest.php:'[CT-27]':682` usa `tenant('Acme', 'acme')`, uma organização **sem logo** (`tests/Pest.php:tenant():387`): com a regra nova ela cai na logo da instalação e o caso continua verde, sem edição. Ele **não** é o controle de nenhuma queda de `logosPara()` (o controle é o caso do passo 4 que declara a presença da clara da instalação).
 - Helpers do arquivo: `gravarCabecalhoDaTenancia()` (`tests/Tenancy/CabecalhoDoPainelTenancyTest.php:gravarCabecalhoDaTenancia():42`), `gravarLogoDaInstalacaoDaTenancia()` (`tests/Tenancy/CabecalhoDoPainelTenancyTest.php:gravarLogoDaInstalacaoDaTenancia():57`) e `imagensDaMarcaDaTenancia()` (`tests/Tenancy/CabecalhoDoPainelTenancyTest.php:imagensDaMarcaDaTenancia():77`). Como os casos novos entram **no mesmo arquivo**, os helpers continuam usados por um arquivo só e ficam onde estão; `regiaoDoHeader()` já mora em `tests/Pest.php` (`tests/Pest.php:regiaoDoHeader():1739`).
-- Ficam como estão: `tests/Kit/LogoDarkModeTest.php:'[CT-16]':319` (a tela de bloqueio, tabela de decisão), `tests/Browser/LogoDarkModeTest.php:'[CT-B01]':26` (swap no navegador sem organização), `tests/Kit/CabecalhoDoPainelTest.php` (sem tenancy) e `tests/Browser/CabecalhoDoPainelTest.php:'[CT-B02]':85` (swap da composição no `/admin`).
+- Ficam como estão: `tests/Kit/LogoDarkModeTest.php:'[CT-16]':321` (a tela de bloqueio, tabela de decisão), `tests/Browser/LogoDarkModeTest.php:'[CT-B01]':27` (swap no navegador sem organização), `tests/Kit/CabecalhoDoPainelTest.php` (sem tenancy) e `tests/Browser/CabecalhoDoPainelTest.php:'[CT-B02]':85` (swap da composição no `/admin`).
 
 ## Decisões de Desenho
 
@@ -214,7 +220,7 @@ Sem log novo; o `warning` existente de `CabecalhoDoPainel::resolverSegmentos()` 
 > Skills: `laravel-best-practices`, `ponytail`
 
 - **Path**: `app/Support/CabecalhoDoPainel.php`
-- Helper privado `organizacaoAberta(): ?Tenant`, usado nos **dois** pontos que leem a organização, o nome do segmento do painel e as logos: devolve `Filament::getTenant()` quando `Filament::getCurrentPanel()?->hasTenancy() === true` e o objeto é `Tenant`; senão `null`. **Nunca** `Paineis::correnteOuPadrao()`: sem painel corrente ele cai no `app`, que tem tenancy. É a exceção da rule `app.md` (quem não pode cair no painel padrão lê `getCurrentPanel()`), com precedente na Closure da cor da organização (`app/Providers/Filament/AppPanelProvider.php:getCurrentPanel():201`).
+- Helper privado `organizacaoAberta(): ?Tenant`, usado nos **dois** pontos que leem a organização, o nome do segmento do painel e as logos: devolve `Filament::getTenant()` quando `Filament::getCurrentPanel()?->hasTenancy() === true` e o objeto é `Tenant`; senão `null`. **Nunca** `Paineis::correnteOuPadrao()`: sem painel corrente ele cai no `app`, que tem tenancy. É a exceção da rule `app.md` (quem não pode cair no painel padrão lê `getCurrentPanel()`), com precedente na Closure da cor da organização (`app/Providers/Filament/AppPanelProvider.php:getCurrentPanel():202`).
 - Memo único (D4): a entrada do `WeakMap` por `Request` passa a guardar `segmentos` e `logos`; o par é `IdentidadeDoKit::logosPara(self::organizacaoAberta())`. `segmentos()` e `marca()`/`marcaEscura()` leem a mesma entrada; sem `Request` ligada, resolve sem memo, como hoje.
 - `marca()` devolve `logos['clara']` no ramo sem composição; `marcaEscura()` devolve `logos['escura']` **sem composição** e continua `null` com a composição ativa (o par já vai dentro dela, exatamente um `fi-logo-dark`); `resolverSegmentos()` usa o par (`$logoClara = $exibeLogo ? logos['clara'] : null`, `$logoEscura = $logoClara !== null ? logos['escura'] : null`).
 - Docblocks: o da classe diz que "com tudo desligado" a marca é a da instalação **para quem não tem organização aberta com logo própria**, e que `logosPara()` é a fonte; o de `resolverSegmentos()` troca "P-07, P-12" por "P-07; a P-12 vale fora do `/app` com organização aberta, ver `wikis/specs/fix/logo-dark-do-tenant/`".
@@ -230,7 +236,7 @@ Sem log novo; o `warning` existente de `CabecalhoDoPainel::resolverSegmentos()` 
 - **Path**: `database/factories/TenantFactory.php`, `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php`, `app/Models/Tenant.php`
 - `TenantFactory::comIdentidadeVisual()` ganha `?string $logoEscura = null` no fim da assinatura (D3) e grava `'logo_dark' => $logoEscura`; o docblock lista a nova chave.
 - `TenantForm`: o `helperText` do upload `logo` passa a dizer "Exibida no topo do painel de negócio e na tela de bloqueio de sessão. Em branco, usa a da instalação (ou o nome da aplicação, sem ela)." O do `logo_dark` ("Em branco, usa a da instalação") continua verdadeiro.
-- `Tenant::urlDaLogoEscura()`: só o docblock (`app/Models/Tenant.php:urlDaLogoEscura():215`), que deixa de dizer que apenas a tela de bloqueio a consulta.
+- `Tenant::urlDaLogoEscura()`: só o docblock (`app/Models/Tenant.php:urlDaLogoEscura():220`), que deixa de dizer que apenas a tela de bloqueio a consulta.
 - Depois de editar `app/Filament`: `vendor/bin/filacheck --fix` e `vendor/bin/pint --dirty`.
 - **Pronto quando**: `Tenant::factory()->comIdentidadeVisual('#7c3aed', 'a.png', null, 'b.png')->create()` grava `logo_dark`; `filacheck` silencioso.
 - **Atende**: RQ-02, RQ-05
@@ -242,7 +248,7 @@ Sem log novo; o `warning` existente de `CabecalhoDoPainel::resolverSegmentos()` 
 
 - **Path**: `tests/Kit/LogoDarkModeTest.php`, `tests/Tenancy/CabecalhoDoPainelTenancyTest.php`
 - O Gherkin e os IDs vêm do `04` (step 7, `feature-test-design`); os IDs desta wiki são numerados para não colidir com os que já existem em cada arquivo (o `ids-ct.sh` confere o arquivo). O inventário previsto:
-  - **A regra `logosPara()`**, em `tests/Kit/LogoDarkModeTest.php`, como CT **novo** desta wiki (o CT-16 não é editado): tabela de decisão no molde de `tests/Kit/LogoDarkModeTest.php:'[CT-16]':319`, com as linhas de `## Mapeamentos`; `null` devolve o par da instalação; organização só com a escura devolve a clara da instalação com a escura da organização; organização só com a escura e instalação sem clara devolve `clara = null` e a escura da organização.
+  - **A regra `logosPara()`**, em `tests/Kit/LogoDarkModeTest.php`, como CT **novo** desta wiki (o CT-16 não é editado): tabela de decisão no molde de `tests/Kit/LogoDarkModeTest.php:'[CT-16]':321`, com as linhas de `## Mapeamentos`; `null` devolve o par da instalação; organização só com a escura devolve a clara da instalação com a escura da organização; organização só com a escura e instalação sem clara devolve `clara = null` e a escura da organização.
   - **Requisição ao `/app/{slug}`**, em `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` (usa `tests/Pest.php:fronteiraDeRequest():777` e `tests/Pest.php:regiaoDoHeader():1739`): (a) marca simples com organização com par e marca separada: `fi-logo-light` com a clara da organização e `fi-logo-dark` com a escura; (b) composição ligada: o par da organização dentro de `kit-cabecalho`; (c) as quedas por dataset; (d) marca unificada ignora a escura da organização; (e) `/admin` e `/infra` nunca mostram logo de organização, inclusive com uma organização obsoleta no `FilamentManager` (`tests/Pest.php:noPainelDa():427` antes de visitar o `/admin`); (f) o mesmo usuário em duas organizações vê a de cada uma (molde do CT-07, que abre `/app/globex` e depois `/app/acme` com `fronteiraDeRequest()`); (g) **update Livewire da `Topbar`** mantém o par da organização: `Livewire::test(\Filament\Livewire\Topbar::class)` com o painel `app` corrente e `Filament::setTenant($org)` (D5; o POST real ao endpoint de update fica fora do arnês); (h) composição ligada + marca separada + par da organização ⇒ **exatamente um** `fi-logo-dark`, dentro de `kit-cabecalho`; (i) organização só com a escura e instalação sem clara: a composição descarta a escura (depende da clara) e a marca simples mostra o nome em texto no claro e a `<img>` escura no escuro; (j) login do `/app` sem organização continua com a da instalação.
   - **Todo caso de ausência traz o controle positivo no mesmo caso**: antes de afirmar que a logo da organização **não** aparece (e) ou que não há `fi-logo-dark` (d), o caso afirma a presença da clara esperada nas `<img class="fi-logo">` (`imagensDaMarcaDaTenancia()`) ou na região `kit-cabecalho`. O oráculo de ausência usa `assertStringNotContainsString`, nunca `not->toContain($x, $msg)` (rule `testes.md`).
   - **CT-07 substituído**: o caso invertido ganha ID desta wiki e afirma a logo da **organização** na composição; a aprovação da substituição é a resposta do solicitante no Adendo 1 (reversão da P-12 no `/app`). O docblock do arquivo passa a citar as duas wikis. O CT-27 não muda.
@@ -257,7 +263,7 @@ Sem log novo; o `warning` existente de `CabecalhoDoPainel::resolverSegmentos()` 
 > Skills: `pest-testing`
 
 - **Path**: `tests/BrowserTenancy/IdentidadeVisualTest.php` (existe; é o arquivo da identidade da organização no navegador)
-- Dois cenários novos no arquivo, molde de `tests/Browser/LogoDarkModeTest.php:'[CT-B01]':26` (uma visita por tema, `inLightMode()` e `inDarkMode()` no load, `getComputedStyle`) e do cenário da tela de bloqueio já presente nele (disk `public` **real**, usuário da organização por `usuarioComPapel()` + `$usuario->tenants()->attach()`): (B1) marca simples: no claro a `fi-logo-light` visível com `src` da clara da organização e a `fi-logo-dark` oculta; no escuro o inverso, com a escura da organização; (B2) composição ligada: o mesmo dentro de `.kit-cabecalho`, molde de `tests/Browser/CabecalhoDoPainelTest.php:'[CT-B02]':85`. O `afterEach` do arquivo passa a apagar também os arquivos novos.
+- Dois cenários novos no arquivo, molde de `tests/Browser/LogoDarkModeTest.php:'[CT-B01]':27` (uma visita por tema, `inLightMode()` e `inDarkMode()` no load, `getComputedStyle`) e do cenário da tela de bloqueio já presente nele (disk `public` **real**, usuário da organização por `usuarioComPapel()` + `$usuario->tenants()->attach()`): (B1) marca simples: no claro a `fi-logo-light` visível com `src` da clara da organização e a `fi-logo-dark` oculta; no escuro o inverso, com a escura da organização; (B2) composição ligada: o mesmo dentro de `.kit-cabecalho`, molde de `tests/Browser/CabecalhoDoPainelTest.php:'[CT-B02]':85`. O `afterEach` do arquivo passa a apagar também os arquivos novos.
 - Regras de `testes-browser.md`: o `beforeEach` só semeia; o cenário arranja o painel e **aquece pelo kernel** com um `$this->get('/app/{slug}')` antes do `visit()` (ver `tests/BrowserTenancy/CapturaDeArteTest.php:arranjarPainelApp():92`); nunca `waitForEvent('networkidle')`; sem `--parallel`.
 - Sem captura de arte nova: nenhuma linha em `KitArte::IMAGENS`.
 - **Pronto quando**: os dois cenários verdes em série, vermelhos com o passo 2 revertido.
@@ -287,6 +293,18 @@ Sem log novo; o `warning` existente de `CabecalhoDoPainel::resolverSegmentos()` 
 - **Pronto quando**: o `INDEX.md` tem a linha de `fix/logo-dark-do-tenant`.
 - **Atende**: RQ-05 (registro da entrega)
 - **Logs**: nenhum.
+
+### 8. Reconciliação do Adendo 2: `alt` da logo da organização
+
+*(alterado em 2026-10-09: o Adendo 2 vigente substitui P-06 por RQ-06; implementação já entregue na v0.45.3.)*
+
+- **Paths**: `app/Support/CabecalhoDoPainel.php`, `resources/views/filament/cabecalho-do-painel.blade.php`, `tests/Tenancy/CabecalhoDoPainelTenancyTest.php`.
+- **Comportamento**: quando a imagem é da organização aberta, as imagens clara e escura usam o nome dela no `alt`, com composição ligada ou desligada. Quando a imagem é da instalação, o `alt` mantém o nome da aplicação.
+- **Implementação vigente**: `app/Support/CabecalhoDoPainel.php:marca():65` devolve o par da organização em `Htmlable` pela blade do cabeçalho; `marcaEscura():98` devolve `null` nesse caso, evitando uma segunda imagem escura fora do par.
+- **Pronto quando**: CT-58 cobre ambas as formas e o controle da Globex sem logo; CT-52 mantém o contrato do par em `Htmlable`. Implementação: `tests/Tenancy/CabecalhoDoPainelTenancyTest.php:'[CT-58]':375`.
+- **Atende**: RQ-06 (Adendo 2).
+- **Logs**: nenhum; alteração de renderização, sem efeito persistente.
+- **Entrega**: v0.45.3, como exigido no Adendo 2. Esta reconciliação não altera o Texto Original nem os Adendos do requisito.
 
 ## Filosofia de Implementação
 
@@ -335,6 +353,7 @@ Por variante e **independente** (a escura não olha a clara), a mesma de `TelaBl
 | RQ-02 | 1, 2, 3, 6 | factory aceita a escura (usada pelos casos do passo 4); `filacheck`; L4/L5 são texto, sem teste de comportamento |
 | RQ-04 | 1, 2, 4, 5 | CT-16 e CT-B01 de `LogoDarkModeTest` verdes sem alteração; `CabecalhoDoPainelTest` (marca de fábrica sem tenancy); `logosPara(null)`; `/admin` e `/infra` sem logo de organização, com controle positivo |
 | RQ-05 | 1 a 7 | marca simples e composição com o par da organização; quedas; unificada; duas organizações; update Livewire da `Topbar`; um só `fi-logo-dark` na composição; só a escura com instalação sem clara; navegador B1 e B2; CT-07 substituído |
+| RQ-06 | 8 | CT-58: nome da organização nas duas formas; controle sem logo mantém o nome da aplicação; CT-52 verifica o par em `Htmlable` |
 | P-01 | 1, 4 | CT-16 sem alteração; linha de decisão com só a escura da organização |
 | P-02 | 2 | `CabecalhoDoPainelTest`/`CabecalhoDoPainelTelaTest` (composição sem tenancy não muda); CT-27 |
 | P-03 | 1, 4 | tabela de decisão de `logosPara()` |

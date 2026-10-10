@@ -347,6 +347,7 @@ class KitUpdate extends Command
         'phpstan.neon',
         'phpunit.xml',
         'pint.json',
+        'pestw.cmd',
 
         /*
          * O `.env.example` é ARQUIVO DE SUGESTÃO, não configuração: o que roda é o `.env`, que

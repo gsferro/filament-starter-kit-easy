@@ -218,11 +218,11 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:540`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:551`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:396`) — `KIT_TENANCY`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:406`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:400`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:
@@ -276,14 +276,21 @@ recusado. Com os dois vazios, o painel volta ao nome em texto, sem erro.
 
 **Quem troca a imagem é o navegador**, pela classe `dark` do `<html>` — o servidor não conhece o tema
 quando ele é "Sistema", então as duas `<img>` saem juntas no HTML e o CSS do Filament exibe a certa.
-Organização sem variante escura cai para a da instalação — e, sem ela, para a clara. O topo do painel do negócio
-e a tela de bloqueio usam o mesmo par: logo da **organização**, se houver; da instalação, se não.
-Com a marca separada, envie as duas variantes da logo da organização: sem a escura própria, o tema escuro mostra a escura da instalação no lugar da logo da organização.
+O topo do painel do negócio e a tela de bloqueio usam o mesmo par, conforme os interruptores
+da instalação e da organização.
 
 A organização tem o mesmo interruptor, no formulário dela: **Uma logo só, nos dois temas**. Ligado (o
 padrão), a logo enviada cobre o claro e o escuro e a empresa não precisa mandar uma segunda imagem;
 desligado, o campo da variante escura aparece. Quem já tinha `logo_dark` gravada quando o recurso
 chegou nasce com o interruptor desligado — a separação existente não é desfeita por update.
+
+Com `unifica_logo` ligado e a logo clara própria disponível, ela serve **os dois temas**;
+uma variante escura antiga da organização não é usada. Se a clara não foi enviada ou seu arquivo
+não existe mais, usa-se **o par completo da instalação**, respeitando o interruptor global.
+Com a unificação da organização desligada, o fallback é por variante: a clara própria cai para
+a clara da instalação; a escura própria cai para a escura da instalação e, sem esta, o navegador
+exibe a clara resolvida. Essa variante escura só vale com a unificação global também desligada;
+com a global ligada, a clara resolvida serve os dois temas, independentemente do interruptor da organização.
 
 ## Cabeçalho dos painéis: o que mostrar no topo
 
@@ -309,8 +316,8 @@ linha). As telas de autenticação (login,
 recuperação de senha, dois fatores, confirmação de e-mail) continuam com a marca de
 sempre: o cabeçalho é das telas internas dos painéis. No painel do negócio (`/app`), com uma
 organização aberta, a logo da composição (e a marca simples, com a composição desligada) é a da
-**organização** — a clara e, com a marca separada, a escura, trocadas pelo navegador com o tema —,
-e cai para a da instalação quando a organização não tem logo; o `alt` da imagem é o nome da organização quando a logo é dela. Nos painéis de administração e
+**organização**, com unificação e fallback conforme a seção anterior; o `alt` da imagem é o nome
+da organização quando a logo é dela. Nos painéis de administração e
 infraestrutura, a logo é a da instalação; nas telas de autenticação (login, recuperação de senha)
 também, e a tela de bloqueio usa a organização da sessão, pela mesma regra.
 

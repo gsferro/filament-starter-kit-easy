@@ -49,10 +49,10 @@ Não fatiado — 2026-10-08: 5 RQ vigentes, 11 CT, compactação: não, 0 pergun
 - [x] **`/code-review high main...HEAD` + passe de eixos (step 9)** — sem sub-agente no host; passe de eixos em linha registrado abaixo
 - [x] `php artisan kit:arte` — `seletor-organizacao.gif` montado dos dois quadros e `admin-configuracoes-seletor.png` + thumb publicados (art/)
 - [x] `rastreabilidade.sh {wiki}` silencioso — após corrigir fence do passo 6 no `01` (abria em bullet, fechava em coluna 0, engolia os passos 7/8)
-- [x] `checkbox-sem-evidencia.sh {wiki}` silencioso
+- [x] `checkbox-sem-evidencia.sh {wiki}` — reexecutar após reconciliação; resultado atual registrado no adendo abaixo
 - [x] `citacoes.sh {wiki}` silencioso — símbolo exigido em toda citação e path curto só com o completo antes no doc
-- [x] `ids-ct.sh {wiki} 'tests/**/SeletorDeOrganizacao*.php'` silencioso
-- [x] `conformidade-rules.sh {wiki} main` silencioso
+- [x] `ids-ct.sh {wiki} 'tests/**/SeletorDeOrganizacao*.php'` — exit 0 na revisão de 2026-10-09
+- [x] `conformidade-rules.sh {wiki} 47a6a60^` — exit 0 em 2026-10-09; intervalo inclui mudanças posteriores relacionadas. A execução antiga com `main` não comprovou o diff de trabalho
 - [x] Docs pt/en, CHANGELOG reconciliados com o comportamento final — mesmas frases dos testes de doc
 - [x] `git commit` — `:sparkles: feat(tenancy): opcao de ocultar o seletor de organizacao quando ha uma so`
 
@@ -65,13 +65,28 @@ Sem sub-agente no host — passe de eixos em linha sobre `main...HEAD`:
 | R1 | Segurança | `visivel()` só governa UI: `canAccessTenant()`, `/app/{tenant}` e link direto não mudam; log traz `user_id` + contagem, nada sensível | — | P-03 | — |
 | R2 | Consistência | Mesma forma das classes-dona (`CabecalhoDoPainel`, `RegistroAberto`): `final` estática, contrato config→settings→migration, `->visible()` igual `login_anti_robo_local` | — | P-01, P-04 | — |
 | R3 | Simplicidade | Curto-circuito desligado sai sem query; contagem feita uma vez e reutilizada no log | — | P-03 | — |
-| R4 | Desempenho | Ligado, `hasTenantMenu()` avalia no render da sidebar **e** da topbar — até 2× `getUserTenants()`/request | não-defeito | — | consulta barata e indexada; cache por request ficou fora (YAGNI, D4 do `01`) |
+| R4 | Desempenho | Ligado, layout normal pode avaliar 3× `getUserTenants()`/request: boot da sidebar, boot da topbar e view da sidebar | custo conhecido, sem latência medida | — | sem otimização especulativa; cada chamada hidrata a coleção completa, não apenas COUNT |
 | R5 | Efeito colateral | CT-56 (extrator `KIT_*`) e contagens do `SiteDeDocumentacaoTest` medem a árvore — o diff os invalidou | implementação | — | corrigido: READMEs, badge e `mapaOptInDaGuarda()` |
 
 ## Conformidade com Rules
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
+| `app.md` | `app/**` | aplicada | seletor governa UI; autorização existente preservada |
+| `settings.md` | `app/Settings/**` | aplicada | propriedade, mapa e migration; nova migration invalida cache antigo |
+| `support.md` | `app/Support/**` | n.a. | sem gravação de .env |
+| `config.md` | `config/**` | aplicada | booleano de UI com default false |
+| `filament.md` | `app/Filament/**` | aplicada | toggle e visibilidade seguem campos vizinhos |
+| `filament-resources.md` | `app/Filament/**/Resources/**` | aplicada | alterações relacionadas posteriores preservam form e autorização existentes |
+| `models.md` | `app/Models/**` | aplicada | atributo de unificação posterior tem fillable e cast boolean |
+| `pages.md` | `app/Filament/Admin/Pages/**` | aplicada | mesma tela de settings e autorização |
+| `commands.md` | `app/Console/Commands/**` | aplicada | arte registrada na lista existente |
+| `providers.md` | `app/Providers/**` | aplicada | closure avaliada por request |
+| `providers-filament.md` | `app/Providers/Filament/**` | aplicada | contrato nativo tenantMenu reutilizado |
+| `css-filament.md` | `app/Providers/**` | n.a. | sem alteração de CSS |
+| `testes.md` | `tests/**` | aplicada | fixtures isoladas; ambiente do novo toggle fixado no phpunit.xml |
+| `testes-browser.md` | `tests/BrowserTenancy/**` | aplicada | captura no painel arranjado; navegador em série |
+| `specs.md` | `wikis/specs/**` | aplicada | matrizes e evidências reconciliadas; relatório antigo identificado como histórico |
 
 ## Quality Gate
 

@@ -3,7 +3,7 @@
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md` (só paths, superfície, helpers e o mapa de resolução de `## Mapeamentos`, recebidos pela sessão)
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação (a correção não existia na derivação; a classe `CabecalhoDoPainel`, os helpers de teste e o `logo.blade.php` do Filament foram lidos só para nomes, classes CSS observáveis e convenção).
 > **Revisão adversarial: FEITA** em 2026-10-07 (26 achados, 6 altos; aplicados 23, recusados 3 com motivo, ver `## Revisão Adversarial`).
-> IDs desta wiki: **CT-40 a CT-57** e **CT-B01** (decisão da sessão em 2026-10-07, ver `### Colisão de IDs`).
+> IDs vigentes desta wiki: **CT-40 a CT-58** e **CT-B01** (decisão da sessão em 2026-10-07, ver `### Colisão de IDs`).
 
 ## Perfil de Derivação
 
@@ -18,7 +18,7 @@
 - Probabilidade 3 na resolução: quatro entradas (clara e escura da organização, clara e escura da instalação) mais o modo da marca, com a regra por variante que um desenvolvedor competente escreve "em bloco" por engano. Impacto 3 na área da organização do topo: errar a fonte não falha, **mostra a logo de outra organização** (dado de terceiro) no topo de quem não é cliente dela, e o dado já chegou ao navegador quando alguém nota (ADR-03). P×I 6 não chega ao perfil completo, mas o Impacto 3 disparou a revisão adversarial.
 - Técnicas aplicadas: tabela de decisão por variante (R1, com ausente ≠ vazio ≠ órfão), EP (partições da organização: com par, sem logo, só a clara, só a escura; modo unificado × separado; painel corrente × objeto aberto), rastreio de efeito negativo com controle positivo em todo cenário de ausência, 2-switch de organização no mesmo usuário nas duas ordens de vínculo (R6), estado do framework usado sem validar (R7).
 - Técnica escalada acima do perfil: R6 e R7 usam o cruzamento completo (organização × painel × vínculo) em área `padrão` porque o defeito é vazamento entre clientes, que a amostragem não pega.
-- Cenários: 18 (mais 1 CT-B no 05) · Regras: 11 · Mutantes previstos: 47 (mais 5 no 05: M36 a M39 e M48) · Sem matador: 1 (M51, por HTTP)
+- Cenários: 19 (mais 1 CT-B no 05) · Regras: 12 · Mutantes previstos: 50 (mais 5 no 05: M36 a M39 e M48) · Sem matador: 1 (M51, por HTTP)
 <!-- derivado do arquivo por grep -c (template-04 §Contagem do cabeçalho); recalcular a cada cenário novo. Os mutantes M36 a M39 e M48 de R10 vivem no 05 -->
 
 ## Varredura SFDIPOT
@@ -48,8 +48,9 @@
 | R9 — a tela de bloqueio segue com a organização da sessão e o mesmo par; a organização do topo não a contamina | organização do topo (padrão, Impacto 3) | P-01, RQ-04 | EP (fonte: sessão × gerenciador) | CT-54 |
 | R10 — a imagem visível no topo do `/app/{slug}` troca com o tema, também quando o tema é alternado sem recarregar | swap (padrão) | RQ-05, RQ-02 | EP (forma da marca × sentido da alternância) | CT-B01 (no `05`) |
 | R11 — a documentação pt e en deixa de afirmar o que a mudança desmente | documentação (mínimo) | RQ-01, RQ-02 | EP (idioma) | CT-55 |
+| R12 — o `alt` da logo da organização é o nome dela nas duas formas; imagem da instalação mantém o nome da aplicação | topo do `/app` (padrão) | RQ-06 (Adendo 2) | EP (composição ligada × desligada; organização com × sem logo) + controle positivo | CT-58 |
 
-- RQ-03 — substituída por RQ-05 (Adendo 1), sem cenário. P-06 — fora desta entrega (`## Cobertura do Requisito` do `01`), sem cenário. P-05 (revisada, ADV-24) — a página de erro do Sentinel herda a marca do painel; o que ela mostra decorre de quando o middleware fixa a organização. Comportamento decorrente, não exigido e não testado nesta entrega (a única exceção é a linha `sem vínculo` de CT-50, que mede a marca na página de recusa sem a exigir).
+- RQ-03 — substituída por RQ-05 (Adendo 1), sem cenário. P-06 — substituída por RQ-06 (Adendo 2); o escopo vigente inclui R12 e CT-58. P-05 (revisada, ADV-24) — a página de erro do Sentinel herda a marca do painel; o que ela mostra decorre de quando o middleware fixa a organização. Comportamento decorrente, não exigido e não testado nesta entrega (a única exceção é a linha `sem vínculo` de CT-50, que mede a marca na página de recusa sem a exigir).
 - RQ-01 e RQ-02 são **análise**: o entregável é a tabela `## Revisão da feature` do `01`, que não é verificável por teste. O que é verificável delas está coberto: o que ficou de fora (L1, a escura nunca no topo) por R3 a R5 e R10; a documentação que fixa o mapa (L5) por R11; a factory (L3) é provada por uso em todo cenário que precisa de organização com par; o texto de ajuda do upload (L4) e a lacuna L7 (a escura da organização invisível no cadastro) ficam em `## Cogitado e Cortado`.
 - A tabela de decisão de R1 não é duplicada por forma de renderização: R3 a R5 afirmam só a **ligação** (o topo chama a regra com a organização certa), com uma linha por partição que a ligação pode errar.
 - R1, R2 e R5 herdam `padrão` mesmo com tamanho de `mínimo`: a regra por variante é onde mora a diferença entre "em bloco" e "por variante" (M1 de R1), que EP de um valor só não distingue.
@@ -59,7 +60,7 @@
 | Grupo | Regras | Costura | Existente ou nova | Por quê esta camada | Confirmada |
 |---|---|---|---|---|---|
 | G1 Resolução do par | R1, R2 | unit de regra | existente — `tests/Kit/LogoDarkModeTest.php` (molde: tabela de decisão do `[CT-16]` da wiki ancestral `logo-dark-mode`, com `Storage::fake('public')`, `config('kit.identidade.*')` e `Tenant::factory()`) | o `Então` é um valor calculado (duas URLs); não precisa de request, rota nem painel. `tests/Kit` liga o `TestCase` da aplicação, então container, config e disco resolvem | — (preenchida pelo construtor da implementação) |
-| G2 Topo do `/app` por requisição | R3, R4, R5 | Pest feature HTTP | existente — `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` (`gravarLogoDaInstalacaoDaTenancia()`, `gravarCabecalhoDaTenancia()`, `imagensDaMarcaDaTenancia()`, `regiaoDoHeader()`) | o `Então` é o HTML do topo (as `<img>` e as classes `fi-logo-light`/`fi-logo-dark`); `tests/Tenancy` é onde `permission.teams` e a organização na rota existem | — |
+| G2 Topo do `/app` por requisição | R3, R4, R5, R12 | Pest feature HTTP | existente — `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` (`gravarLogoDaInstalacaoDaTenancia()`, `gravarCabecalhoDaTenancia()`, `imagensDaMarcaDaTenancia()`, `regiaoDoHeader()`) | o `Então` é o HTML do topo (as `<img>` e as classes `fi-logo-light`/`fi-logo-dark`); `tests/Tenancy` é onde `permission.teams` e a organização na rota existem | — |
 | G3 Organização do topo | R6, R7 | Pest feature HTTP | existente — o mesmo arquivo; CT-52 chama a marca do topo direto, "por fora" da rota, com o painel e o objeto aberto arranjados no gerenciador | a fonte da organização é estado do gerenciador do Filament, que a requisição só alcança de um jeito; o estado sem painel corrente só se arranja chamando direto | — |
 | G4 Redesenho Livewire | R8 | componente Livewire/Filament | **nova**, no mesmo arquivo de tenancy: `Livewire::test(\Filament\Livewire\Topbar::class)` e `Livewire::test(\Filament\Livewire\Sidebar::class)` com o painel `app` corrente e a organização fixada por `Filament::setTenant($org)`, o estado que o middleware persistente `IdentifyTenant` recria no update real. Nenhum teste existente renderiza a barra superior nem a lateral por componente | decidido por D5 do `01` (Q6): o POST real ao endpoint de update fica fora do arnês; o restante do mutante da rota é coberto pelos CT HTTP | — |
 | G5 Tela de bloqueio | R9 | Pest feature HTTP | existente — `tests/Kit/LogoDarkModeTest.php` (molde: sessão bloqueada do `[CT-16]` da ancestral) | o `Então` é o HTML da tela de bloqueio, resolvida pela sessão | — |
@@ -76,7 +77,7 @@ A coluna `Confirmada` é preenchida pelo construtor da implementação (decisão
 | a ordem exata da regra (`clara = org ?? inst`; `escura = unificada ? null : org ?? inst`) | é a leitura do requisito (P-03, P-04) **e** do código da tela de bloqueio; a fonte do oráculo é P-03/P-04 e a tabela do `01` `## Mapeamentos` (fonte única, decidida pela sessão na D2) | linhas da tabela de decisão de CT-40 |
 | a linha "só a escura, e a instalação sem clara" de `## Mapeamentos` (clara `null`; a composição descarta a escura; a marca simples mostra o nome em texto no claro e a `<img>` escura no escuro) | o comportamento visível **só o PRD** determina (P-03 diz só "clara da instalação com a escura da organização"); o `Então` não parte do plano: parte da consequência do comportamento nativo do Filament para marca clara nula e da dependência clara→escura que a ancestral `cabecalho-do-painel` já fixou (P-07). Marcado `@premissa` (mecanismo); não é pergunta de requisito porque nenhuma decisão nova é tomada | CT-44, CT-47 |
 | `Filament::getTenant()`, `getCurrentPanel()?->hasTenancy()`, `instanceof Tenant` | escolha de implementação (ADR-03) | detalhe de CT-52; o oráculo é "a marca devolvida é a da instalação" em cada linha, não a chamada |
-| os `alt` das imagens (P-06) | fora desta entrega no `01` | sem cenário |
+| os `alt` das imagens (P-06, substituída por RQ-06) | o corte inicial foi revogado pelo pedido explícito do Adendo 2 | R12 e CT-58; fonte do oráculo: RQ-06, não o plano |
 | a página de erro do Sentinel (P-05, revisada em ADV-24) | comportamento decorrente da marca do painel, não exigido | sem cenário próprio; só a linha `sem vínculo` de CT-50 mede a marca na página de recusa |
 | o texto exato do parágrafo novo da documentação | o `01` o propõe; o requisito não o determina | CT-55 afirma só a **ausência** dos termos-chave obsoletos e a presença de "/app" junto de "organização" na seção; o texto novo é do PRD |
 | os nomes dos arquivos de teste e do helper `gravarLogoDaInstalacaoDaTenancia(bool $unifica = true)` | escolha de implementação | Setup Global |
@@ -595,6 +596,7 @@ Funcionalidade: A logo da organização, clara e escura, no topo do `/app`
 | CT-55 | documentação pt e en não afirma mais o obsoleto | R11 | EP | G7 | unit de regra | `tests/Kit/LogoDarkModeTest.php` | M40, M41, M42 |
 | CT-56 | master_global sem vínculo abre /app/globex e vê o par da Globex | R6 | EP (vínculo) | G3 | Pest feature HTTP | `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` | M43 |
 | CT-57 | organização só com a escura e instalação com a clara, nas duas formas | R3, R4 | EP | G2 | Pest feature HTTP | `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` | M45 |
+| CT-58 | alt da logo da organização é o nome dela nas duas formas; instalação mantém o nome da aplicação | R12 | EP + controle positivo | G2 | Pest feature HTTP | `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` | M53, M54 (M55 é coberto por CT-52) |
 | CT-B01 | topo do /app da Acme troca a imagem visível com o tema, alternado sem recarregar | R10 | EP | G6 | browser | `tests/BrowserTenancy/IdentidadeVisualTest.php` | M36, M37, M38, M39, M48 (no `05`) |
 
 ### Regressão (casos de outras wikis que esta entrega obriga a manter verdes, sem ID desta wiki)
@@ -615,9 +617,11 @@ Funcionalidade: A logo da organização, clara e escura, no topo do `/app`
 
 ### Colisão de IDs
 
-Decidido pela sessão em 2026-10-07: esta wiki é numerada a partir de **CT-40** (CT-40 a CT-57; os CT-01 a CT-16 do primeiro rascunho foram renumerados em todo o `04`, nos mutantes e no `03`), para ficar ortogonal às ancestrais que vivem nos mesmos arquivos de teste: `tests/Kit/LogoDarkModeTest.php` tem CT-01 a CT-20 (`logo-dark-mode`) e `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` tem CT-04, CT-07, CT-11, CT-15, CT-27, CT-29 a CT-31 (`cabecalho-do-painel`, que vai até CT-35). O `ids-ct.sh` desta wiki sobre esses arquivos continua acusando os `[CT-nn]` da ancestral que não são desta: é esperado, e a sessão o registra no `03` em vez de tentar silenciá-lo. O CT-B fica **CT-B01**: `tests/BrowserTenancy/IdentidadeVisualTest.php` não tem nenhum `[CT-B01]` (só a menção `CT-B01`, sem colchetes, num comentário de uma ancestral).
+Decidido pela sessão em 2026-10-07: esta wiki é numerada a partir de **CT-40** (CT-40 a CT-57 na rodada inicial; CT-58 acrescentado pelo Adendo 2; os CT-01 a CT-16 do primeiro rascunho foram renumerados em todo o `04`, nos mutantes e no `03`), para ficar ortogonal às ancestrais que vivem nos mesmos arquivos de teste: `tests/Kit/LogoDarkModeTest.php` tem CT-01 a CT-20 (`logo-dark-mode`) e `tests/Tenancy/CabecalhoDoPainelTenancyTest.php` tem CT-04, CT-07, CT-11, CT-15, CT-27, CT-29 a CT-31 (`cabecalho-do-painel`, que vai até CT-35). O `ids-ct.sh` desta wiki sobre esses arquivos continua acusando os `[CT-nn]` da ancestral que não são desta: é esperado, e a sessão o registra no `03` em vez de tentar silenciá-lo. O CT-B fica **CT-B01**: `tests/BrowserTenancy/IdentidadeVisualTest.php` não tem nenhum `[CT-B01]` (só a menção `CT-B01`, sem colchetes, num comentário de uma ancestral).
 
 ## Revisão Adversarial
+
+**Registro histórico da rodada de 2026-10-07, anterior ao Adendo 2.** A recusa ADV-25 vale para o escopo daquela rodada; foi superada por RQ-06, R12 e CT-58. O registro original de achados e recusas é preservado abaixo.
 
 Rodada única, 2026-10-07: **26 achados** (ADV-01 a ADV-26), 6 altos. Aplicados 23, recusados 3 com motivo. Os mutantes trazidos pela revisão (M43, M44, M45, M46, M47, M48, M49, M50, M51, M52) não contam para o teto da regra: são achado medido.
 
@@ -657,7 +661,7 @@ Rodada única, 2026-10-07: **26 achados** (ADV-01 a ADV-26), 6 altos. Aplicados 
 | CT-B só da composição e CT-B só da marca simples | um `Esquema do Cenário` (conta 1) cobre as duas formas e os dois sentidos da alternância, que têm CSS diferente (a `.fi-logo-dark` do Filament × a do kit) |
 | POST real ao endpoint de update do Livewire para o redesenho | fora do arnês (D5); `Livewire::test` com o tenant fixado prova o par renderizado |
 | objeto aberto que não é organização mas tem um atributo `logo` (ADV-18) | recusado: ver `## Revisão Adversarial` |
-| o `alt` das imagens (P-06; ADV-25) e o desvínculo com aba aberta (ADV-26) | fora de escopo, ver `## Revisão Adversarial` |
+| o `alt` das imagens (P-06; ADV-25) e o desvínculo com aba aberta (ADV-26) | corte histórico da revisão inicial; o `alt` voltou ao escopo por RQ-06 e está coberto por R12/CT-58; desvínculo continua fora de escopo |
 
 ## Adendo 2 — CT-58 (v0.45.3)
 

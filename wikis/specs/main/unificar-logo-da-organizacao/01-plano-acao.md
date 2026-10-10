@@ -15,13 +15,13 @@
 |----|----------|------------------------|------------|
 | RQ-01 | Verificação: tenant já tem logo clara/escura | — | respondida na análise; nenhum passo |
 | RQ-02 | Opção de unificar a logo por organização | 1, 2, 3, 4 | coluna + toggle + regra |
-| RQ-03 | Unificada: a clara da organização serve os dois temas | 4 | `escura = null` → consumidor renderiza a clara |
-| RQ-04 | Fluxo padrão, tag + release ao final | todos + verificação final | — |
+| RQ-03 | Unificada: a clara da organização serve os dois temas | 4, 6 | resolução do par e visibilidade real no consumidor |
+| RQ-04 | Fluxo padrão, tag + release ao final | 5 | documentação e verificação final; tag local v0.47.0 confirmada, publicação remota não verificada |
 | P-01 | Opção por organização, não global | 1, 2 | — |
 | P-02 | Toggle só existe com a marca da instalação separada | 2 | mesmo critério do campo `logo_dark` |
-| P-03 | Vale no topo do `/app` e na tela de bloqueio | 4 | as duas leem `logosPara()` |
+| P-03 | Vale no topo do `/app` e na tela de bloqueio | 4, 6 | as duas leem `logosPara()`; a partial deve manter a clara visível no tema escuro |
 | P-04 | Backfill: quem tem `logo_dark` gravada nasce `false`; quem não tem, `true` | 1 | — |
-| P-05 | Sem tenancy/organização aberta, nada muda | 4 | organização `null` não consulta o flag |
+| P-05 | Sem tenancy/organização aberta, nada muda | — | fora da mudança: contrato ancestral preservado, coberto pelo CT-41 de LogoDarkModeTest |
 
 ## Objetivo
 
@@ -184,15 +184,22 @@ Toggle::make('unifica_logo')
 - **Path**: `app/Support/IdentidadeDoKit.php`
 
 ```php
+$logoDaOrganizacao = $organizacao?->urlDaLogo();
+
+if ($organizacao?->unifica_logo && $logoDaOrganizacao === null) {
+    return ['clara' => self::logo(), 'escura' => self::logoEscura()];
+}
+
 return [
-    'clara'  => $organizacao?->urlDaLogo() ?? self::logo(),
-    'escura' => self::unificaLogo() || ($organizacao?->unifica_logo ?? false)
+    'clara'  => $logoDaOrganizacao ?? self::logo(),
+    'escura' => self::unificaLogo() || ($organizacao !== null && $organizacao->unifica_logo)
         ? null
         : ($organizacao?->urlDaLogoEscura() ?? self::logoEscura()),
 ];
 ```
 
-- `?? false`: organização `null` cai no ramo de baixo, que já devolve o par da instalação; sem organização não há flag a consultar (P-05).
+- Antes do retorno, resolver `$logoDaOrganizacao` uma vez. Organização unificada sem clara resolvível retorna o par completo da instalação; uma escura antiga da organização não reaparece.
+- Guarda explícita de organização não nula: sem organização não há flag a consultar, e o par continua o da instalação (P-05).
 - Docblock do método ganha a frase sobre o flag por organização (antes só citava `unifica_logo_marca`).
 - **Atende**: RQ-02, RQ-03, P-03, P-05
 
@@ -206,7 +213,15 @@ return [
 - CHANGELOG: entrada no `Unreleased`/`Adicionado`.
 - **Atende**: RQ-02, RQ-04
 
+### 6. Partial do Auth Designer — logo único visível nos dois temas
+
+- **Path**: `resources/views/vendor/filament-auth-designer/components/partials/media.blade.php`.
+- Aplicar `fi-logo-light` somente quando existir variante escura; sem par, a imagem recebe apenas `fi-logo`.
+- CT-07 verifica HTML; CT-B02 verifica visibilidade, arquivo carregado e origem correta em quatro combinações.
+- **Atende**: RQ-03, P-03.
+
 ## Filosofia de Implementação
+
 
 > **Ponytail ativo em modo `full`**: uma coluna, um flag consultado no ponto único (`logosPara`), um toggle reutilizando a condição do `logo_dark`. Sem settings global, sem classe nova, sem channel novo.
 >

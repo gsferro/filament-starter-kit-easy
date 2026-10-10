@@ -152,7 +152,7 @@ chegar à tela: `IdentifyTenant` resolve o tenant da rota e já decide o 404 cha
 `canAccessTenant()` (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
 `app/Models/User.php:canAccessTenant:819`); só depois disso o `DefinirTenantDePermissoes` — o
 `tenantMiddleware` do kit — fixa o contexto de papéis por tenant
-(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:602`,
+(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:623`,
 `app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`).
 
 ```mermaid

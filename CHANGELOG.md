@@ -5,6 +5,112 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+
+- Logo unificado permanece visível no tema escuro da tela de bloqueio. Sem clara própria utilizável,
+  a organização unificada usa o par completo da instalação, mesmo com escura antiga gravada.
+- Atualização invalida cache antigo de settings sem apagar configurações do banco. Testes do seletor
+  isolam sua variável de ambiente também em `$_SERVER`.
+- Launcher Windows preserva filtros compostos, caminhos com caracteres especiais e saída real dos
+  testes. `kit:update` entrega o launcher; pontuação de mutação anterior foi invalidada e reavaliada.
+- Limpeza dos testes de instalação e arte limitada ao processo proprietário: suítes concorrentes
+  deixam de apagar fixtures umas das outras.
+- Wikis, matrizes de requisitos/testes, referências de código e documentação PT/EN reconciliadas.
+
+### Validação antes da próxima tag
+
+Correções ainda não publicadas. Quatro cenários locais concluídos em 2026-10-09. Artefato
+com `export-ignore`, `composer create-project --no-install --no-scripts` pelo repositório local,
+dependências e assets reutilizados; não comprova resolução nova de dependências ou Packagist.
+Atualizações partiram de v0.46.0, executaram `kit:update --from=v0.46.0 --no-branch --all
+--no-interaction` contra repositório temporário e `migrate --force --no-interaction`. Tenancy
+foi ativada antes do update nos cenários correspondentes e permaneceu ligada. Versão 0.47.0
+confirmada nos quatro; tag v0.47.0 original permaneceu intacta. A versão do artefato local
+não significa publicação destas correções.
+
+Comando da suíte inicial (dois processos no cenário 1, quatro nos demais):
+
+```text
+php artisan test --testsuite=Kit,Tenancy --parallel --processes=N --no-tia --compact --log-junit=storage/framework/testing/release-review.xml
+```
+
+Contagens medidas pelo JUnit; a coluna inicial preserva as falhas encontradas.
+
+| Cenário | Inicial: casos / verdes / falhas+erros / pulados | Assertions iniciais | Reexecução afetada |
+|---|---|---|---|
+| Instalação sem tenancy | 4249 / 3320 / 5 / 924 | 14957 | 163 verdes, 30 pulados, 536 assertions, zero falhas |
+| Instalação com tenancy | 4250 / 3317 / 9 / 924 | 14906 | 70 verdes, 2 pulados, 397 assertions, zero falhas |
+| Atualização sem tenancy | 4250 / 3324 / 2 / 924 | 14970 | 70 verdes, 2 pulados, 397 assertions, zero falhas |
+| Atualização com tenancy | 4250 / 3326 / 0 / 924 | 14974 | 70 verdes, 2 pulados, 397 assertions, zero falhas |
+
+Falhas iniciais: cinco na arte do cenário 1; nove na arte/instalação do cenário 2;
+duas no cenário 3 (instalação e timeout de 60 s do PHPStan); zero no cenário 4.
+Limpeza global por glob apagava fixtures de outras suítes: helpers agora incluem PID na
+criação e na limpeza. Dois processos compartilharam o mesmo diretório temporário depois
+da correção, com **43 testes/236 assertions verdes cada**. Timeout do PHPStan não foi
+relaxado; o arquivo completo passou na reexecução com menor concorrência.
+
+Reexecução dos cenários 2–4:
+
+```text
+php artisan test tests/Kit/KitArteTest.php tests/Kit/ResumoDoKitInstallTest.php tests/Kit/QualidadeDeCodigoTest.php --no-tia --compact --log-junit=storage/framework/testing/release-rerun.xml
+{"tool":"pest","result":"passed","tests":72,"passed":70,"assertions":397,"skipped":2}
+```
+
+Cenário 1 recebeu também a entrada nova do launcher em `KitUpdate::CAMINHOS_DO_KIT`
+e reexecutou os dois arquivos de entrega/launcher:
+
+```text
+php artisan test tests/Kit/KitArteTest.php tests/Kit/ResumoDoKitInstallTest.php tests/Kit/QualidadeDeCodigoTest.php tests/Kit/KitUpdateTest.php tests/Kit/CoberturaDeTestesTest.php --no-tia --compact --log-junit=storage/framework/testing/release-rerun.xml
+{"tool":"pest","result":"passed","tests":193,"passed":163,"assertions":536,"skipped":30}
+```
+
+A suíte integral não foi repetida após os ajustes finais do arnês; arquivos afetados foram
+reexecutados. Cenário 1 iniciou antes da inclusão do launcher na lista e por isso conta um
+caso a menos; a nova linha do dataset foi coberta na reexecução. No cenário 4 a suíte
+integral inicial passou; reexecução confirmou os ajustes posteriores do arnês.
+
+**Teto local candidato: 924**, medido em todos os quatro JUnits, **32 arquivos**. Aumento de
+**dois sobre o teto histórico 922**: CT-09 de `UnificaLogoDoTenantTest`, duas linhas PT/EN
+que leem `docs/`, excluído do artefato. Não foram adicionados skips para encobrir falhas.
+Decomposição completa, idêntica entre os quatro cenários:
+
+| Arquivo | Pulados |
+|---|---|
+| `tests/Kit/AcoesPinadasPorShaTest.php` | 2 |
+| `tests/Kit/AnexosPrivadosDocumentacaoTest.php` | 8 |
+| `tests/Kit/ArquiteturaDoCodigoTest.php` | 1 |
+| `tests/Kit/BlueprintForaDoPacoteTest.php` | 1 |
+| `tests/Kit/ChecklistDeReleaseTest.php` | 22 |
+| `tests/Kit/CitacoesDeCodigoTest.php` | 3 |
+| `tests/Kit/CoberturaDeTestesTest.php` | 20 |
+| `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` | 6 |
+| `tests/Kit/ConstraintDeDependenciaTest.php` | 1 |
+| `tests/Kit/DeployDockerLocalTest.php` | 3 |
+| `tests/Kit/DeployMultiambienteDockerTest.php` | 72 |
+| `tests/Kit/DiagramasDaArquiteturaTest.php` | 528 |
+| `tests/Kit/DuasRotasDeEntregaTest.php` | 3 |
+| `tests/Kit/GuardasDosDiagramasTest.php` | 47 |
+| `tests/Kit/HostLocalTest.php` | 3 |
+| `tests/Kit/KitInfoTest.php` | 2 |
+| `tests/Kit/KitUpdateTest.php` | 8 |
+| `tests/Kit/LoginSocialGoogleTest.php` | 8 |
+| `tests/Kit/LoginSocialProvedoresTest.php` | 21 |
+| `tests/Kit/LogoDarkModeTest.php` | 4 |
+| `tests/Kit/MysqlNoDockerTest.php` | 4 |
+| `tests/Kit/PageHeaderTest.php` | 3 |
+| `tests/Kit/ProxiesConfiaveisTest.php` | 1 |
+| `tests/Kit/QualidadeDeCodigoTest.php` | 2 |
+| `tests/Kit/RaizDeUrlRegistradaTest.php` | 1 |
+| `tests/Kit/RecorteDaCoberturaTest.php` | 2 |
+| `tests/Kit/RedeDeDocumentacaoTest.php` | 20 |
+| `tests/Kit/SiteDeDocumentacaoTest.php` | 68 |
+| `tests/Kit/SituacaoDaContaDocumentacaoTest.php` | 2 |
+| `tests/Kit/UnificaLogoDoTenantTest.php` | 2 |
+| `tests/Kit/UploadLimiteETiposDocumentacaoTest.php` | 6 |
+| `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | 50 |
+| **Total** | **924** |
+
 ## [0.47.0] - 2026-10-09
 
 ### Adicionado

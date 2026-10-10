@@ -153,7 +153,7 @@ reaching the screen: `IdentifyTenant` resolves the tenant from the route and alr
 (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
 `app/Models/User.php:canAccessTenant:819`); only after that does `DefinirTenantDePermissoes` — the
 kit's `tenantMiddleware` — fix the per-tenant role context
-(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:602`,
+(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:623`,
 `app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`).
 
 ```mermaid

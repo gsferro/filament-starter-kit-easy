@@ -7,6 +7,7 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Pages\SettingsPage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\File;
@@ -15,6 +16,8 @@ use Livewire\Livewire;
 use OwenIt\Auditing\Models\Audit;
 use Spatie\LaravelSettings\Events\SavingSettings;
 use Spatie\LaravelSettings\Models\SettingsProperty;
+use Spatie\LaravelSettings\SettingsContainer;
+use Spatie\LaravelSettings\Support\SettingsCacheFactory;
 use Symfony\Component\Finder\SplFileInfo;
 
 /**
@@ -302,6 +305,36 @@ it('semeia as propriedades com o valor que a configuracao tinha', function (): v
  * coerência entre a classe e a migration, que é o defeito de verdade — propriedade
  * declarada e não semeada faz o boot avisar em todo request.
  */
+it('invalida settings antigos no cache sem perder valores do banco durante a atualizacao', function (): void {
+    gravarConfiguracao('nome_da_aplicacao', 'Nome preservado');
+    gravarConfiguracao('ocultar_seletor_unico', true);
+
+    $payload = app(ConfiguracoesDoKit::class)->__serialize();
+    unset($payload['ocultar_seletor_unico']);
+
+    $classe      = ConfiguracoesDoKit::class;
+    $serializado = sprintf('O:%d:"%s"%s', strlen($classe), $classe, substr(serialize($payload), 1));
+
+    config(['settings.cache.enabled' => true, 'settings.cache.store' => 'array', 'settings.cache.prefix' => 'atualizacao']);
+    app()->forgetInstance(SettingsCacheFactory::class);
+    app()->forgetInstance(ConfiguracoesDoKit::class);
+    app(SettingsContainer::class)->registerBindings();
+
+    Cache::store('array')->put('atualizacao.settings.'.$classe::cacheKey(), $serializado);
+    Cache::store('array')->put('cache-do-negocio', 'preservado');
+
+    $migration = require database_path('settings/2026_10_09_203319_clear_kit_settings_cache_after_schema_update.php');
+    $migration->up();
+
+    $settings = app(ConfiguracoesDoKit::class);
+    $settings->aplicarNaConfig();
+
+    expect($settings->toArray()['ocultar_seletor_unico'])->toBeTrue()
+        ->and(config('kit.tenancy.ocultar_seletor_unico'))->toBeTrue()
+        ->and(config('app.name'))->toBe('Nome preservado')
+        ->and(Cache::store('array')->get('cache-do-negocio'))->toBe('preservado');
+})->group('kit');
+
 it('semeia todas as propriedades que a classe de settings declara', function (): void {
     $declaradas = array_keys(ConfiguracoesDoKit::mapaDeConfiguracao());
 

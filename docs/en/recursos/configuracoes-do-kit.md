@@ -225,11 +225,11 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:540`), called at boot by
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:551`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:396`) — `KIT_TENANCY`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:406`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:400`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:
@@ -285,15 +285,22 @@ text, with no error.
 
 **The browser swaps the image**, through the `dark` class on `<html>` — the server cannot know the
 theme when it is "System", so both `<img>` tags ship in the same HTML and Filament's CSS shows the
-right one. An organisation without a dark variant falls back to the installation's — and, without
-that, to the light one. The top of the business panel and the lock screen use the same pair: the **organisation's** logo
-if it has one, the installation's if not.
-With a split brand, upload both variants of the organisation's logo: without its own dark one, the dark theme shows the installation's dark logo in place of the organisation's logo.
+right one. The top of the business panel and the lock screen use the same pair, according to the
+installation's and the organisation's switches.
 
 The organisation has the same switch on its own form: **One logo for both themes**. On (the default),
 the uploaded logo covers light and dark and the company does not have to send a second image; off, the
 dark-variant field appears. Organisations that already had a `logo_dark` uploaded when the feature
 shipped start with the switch off — an existing split is not undone by an update.
+
+With `unifica_logo` on and the organisation's light logo available, it serves **both themes**;
+an old dark variant of the organisation is not used. If the light logo was not uploaded or its
+file no longer exists, **the installation's complete pair** is used, respecting the global switch.
+With the organisation's unification off, fallback applies per variant: its light logo falls back
+to the installation's light logo; its dark logo falls back to the installation's dark logo and,
+without that, the browser displays the resolved light logo. The dark variant only applies when
+global unification is also off; with it on, the resolved light logo serves both themes, regardless
+of the organisation's switch.
 
 ## Panel header: what to show at the top
 
@@ -321,8 +328,8 @@ ellipsis to fit on one line). Authentication screens (login, password reset,
 two-factor, e-mail verification) keep the usual brand: the header belongs to the
 panels' inner screens. In the business panel (`/app`), with an
 open organisation, the composition's logo (and the plain brand, with the composition off) is the
-**organisation's** — the light one and, with a split brand, the dark one, swapped by the browser
-with the theme — and falls back to the installation's when the organisation has none; the image's `alt` is the organisation's name when the logo is hers. In the
+**organisation's**, with unification and fallback as described in the previous section; the image's
+`alt` is the organisation's name when the logo is hers. In the
 administration and infrastructure panels it is the installation's; on authentication screens (login,
 password reset) too, and the lock screen uses the session's organisation, by the same rule.
 

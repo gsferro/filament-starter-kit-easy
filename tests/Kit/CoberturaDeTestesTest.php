@@ -23,6 +23,43 @@ function semComentarioYaml(string $yaml): string
     ));
 }
 
+it('o launcher Windows preserva filtros, caminhos e código de saída via Symfony Process', function (string $filtro, int $codigo): void {
+    $pasta = sys_get_temp_dir().'/pestw argumentos % ! ^ & '.bin2hex(random_bytes(6));
+    File::ensureDirectoryExists($pasta.'/vendor/pestphp/pest/bin');
+
+    try {
+        File::copy(base_path('pestw.cmd'), $pasta.'/pestw.cmd');
+        File::put($pasta.'/vendor/autoload.php', '<?php require '.var_export(base_path('vendor/autoload.php'), true).';');
+        File::put($pasta.'/vendor/pestphp/pest/bin/pest', '<?php echo json_encode([
+            "argumentos" => array_slice($_SERVER["argv"], 1),
+            "pcov" => ini_get("pcov.enabled"),
+            "pao" => getenv("PAO_DISABLE"),
+        ], JSON_THROW_ON_ERROR); exit('.$codigo.');');
+
+        $caminho = $pasta.'/relatorio seguro & 100%!.xml';
+        File::put($caminho, 'seguro');
+        $argumentos = ['--no-tia', $filtro, $caminho];
+        $processo   = new Process([$pasta.'/pestw.cmd', ...$argumentos], base_path());
+
+        $processo->run();
+
+        expect($processo->getErrorOutput())->toBe('');
+        expect($processo->getExitCode())->toBe($codigo);
+        expect(json_decode(ltrim($processo->getOutput(), ':'), true, 512, JSON_THROW_ON_ERROR))->toBe([
+            'argumentos' => $argumentos,
+            'pcov'       => '1',
+            'pao'        => '1',
+        ]);
+    } finally {
+        File::deleteDirectory($pasta);
+    }
+})->with([
+    'composto do plugin'          => ['--filter="UnificaLogoDoTenantTest::(.*)|LogoDarkModeTest::(.*)"', 0],
+    'composto sem aspas internas' => ['--filter=UnificaLogoDoTenantTest::(.*)|LogoDarkModeTest::(.*)', 0],
+    'simples'                     => ['--filter=UnificaLogoDoTenantTest', 0],
+    'falha real preservada'       => ['--filter="UnificaLogoDoTenantTest::(.*)"', 23],
+])->skip(fn (): bool => PHP_OS_FAMILY !== 'Windows', 'o launcher .cmd exige Windows.')->group('kit');
+
 it('[CT-19] a documentação em inglês declara os mesmos quatro números que a em português', function (): void {
     $pt = (string) file_get_contents(base_path('docs/pt/referencia/qualidade-de-codigo.md'));
     $en = (string) file_get_contents(base_path('docs/en/referencia/qualidade-de-codigo.md'));

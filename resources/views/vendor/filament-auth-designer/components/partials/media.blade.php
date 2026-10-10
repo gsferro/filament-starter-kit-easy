@@ -27,7 +27,7 @@
         <img
             src="{{ $logos['clara'] }}"
             alt="{{ $config->mediaAlt ?? 'Logo da marca' }}"
-            class="fi-logo fi-logo-light"
+            @class(['fi-logo', 'fi-logo-light' => filled($logos['escura'])])
             style="margin:0;max-width:100%;max-height:100%;object-fit:contain"
         />
         @if(filled($logos['escura']))
