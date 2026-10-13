@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# guarda-subagente.sh — hook PreToolUse dos cinco agentes fw-*: cegueira e não-edição por construção.
+# guarda-subagente.sh — hook PreToolUse dos cinco agentes fw-*: restrições nos padrões cobertos; Bash heurístico, sem isolamento.
 #
 # Uso: no frontmatter do agente (bloco idêntico nos cinco, só o perfil muda), nunca à mão:
 #   bash {skills}/feature-wiki/scripts/guarda-subagente.sh <perfil>   < JSON do PreToolUse no stdin

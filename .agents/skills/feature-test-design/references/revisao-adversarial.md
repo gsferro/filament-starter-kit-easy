@@ -1,4 +1,4 @@
-> Referência da feature-test-design 1.16.0. Lida em: revisão adversarial (ao montar o despacho do
+> Referência da feature-test-design 1.17.3. Lida em: revisão adversarial (ao montar o despacho do
 > sub-agente — o que entra, o que não entra, as oito tarefas). Fonte única de: o resumo do contrato
 > adversarial; a fonte do contrato em si é `agents/fw-adversario-ct.md`.
 
@@ -15,9 +15,9 @@ Entrada: 00-requisito.md + 04-casos-de-teste.md (e 05, se houver; e wikis/glossa
 NÃO receber: o PRD, o código, nem o raciocínio de quem derivou
 
 Tarefa: PROVAR que este conjunto deixa passar um defeito.
-  1. Escreva no mínimo 5 implementações erradas plausíveis (mais se o conjunto tiver mais de
-     20 CTs) que passariam por TODOS os cenários. Para cada uma, a RQ (ou P-nn), a regra
-     afetada e a técnica de derivação que faltou
+  1. Procure implementações erradas plausíveis que passariam por TODOS os cenários.
+     Não há quota de achados: zero é válido após percorrer o conjunto inteiro.
+     Para cada achado, a RQ (ou P-nn), a regra afetada e a técnica de derivação que faltou
   2. Aponte todo cenário cujo "Então" é fraco — isto é, que passaria com a
      implementação defeituosa (assertOk sozinho, assertSee de layout,
      assertDatabaseHas só com a chave, ausência de assertion sobre o valor) —, e toda
@@ -25,7 +25,9 @@ Tarefa: PROVAR que este conjunto deixa passar um defeito.
   3. Aponte todo cenário sem nenhum "Então" e todo cenário com mais de um "Quando"
   4. Aponte toda RQ fechada e toda P-nn vigente do 00 sem cenário que a discrimine. RQ aberta
      não tem cenário por regra: confira que o 04 a lista como "RQ-nn — aberta (Qn), sem
-     cenário até a resposta", e aponte cenário que a afirme (é requisito inventado)
+     cenário até a resposta", e aponte cenário que a afirme (é requisito inventado).
+     Pergunta nova do 04 bloqueia seu recorte, não partes já determinadas no 00;
+     aponte a suspensão indevida dessas partes como lacuna de derivação
   5. Declare as áreas e regras percorridas — a revisão cobre o conjunto inteiro, não só
      a área que a disparou; achado em outra área é achado válido
   Sondas 6–8, só quando o 00 tem o que elas sondam:
@@ -50,12 +52,14 @@ visibilidade ou notificação com link, texto livre). O caso que as motivou est�
 plano nem código, e sem ele o adversário lê o termo do `00` e do `04` num sentido que ninguém decidiu.
 O despacho da `feature-wiki` (step 7) passa `00` + `04`/`05` (+ `wikis/glossario.md`, se existir).
 
-**Cegueira**: no `fw-adversario-ct`, Read e Grep fora da lista da `Entrada` (e dos arquivos das
-próprias skills) são negados pelo hook `PreToolUse` do frontmatter — perfil `adversario-ct` do
-`guarda-subagente.sh` da `feature-wiki` ≥ 4.0.0; Glob fica permitido porque devolve só nomes. Se o
-script não está em `{skills}`, o hook nega tudo e a sessão cai na rota `general-purpose` com
-`model: opus`, em que a cegueira é de prompt: o despacho carrega a linha `Entrada` e a linha
-`NÃO receber` acima.
+**Contexto e controles**: todo host usa contexto novo sem a conversa da derivação e registra suas
+restrições efetivas conforme [hosts e subagentes](../../feature-wiki/references/hosts-e-subagentes.md).
+No adaptador Claude, o hook `PreToolUse` do frontmatter — perfil `adversario-ct` do
+`guarda-subagente.sh` — nega Read/Grep nos padrões cobertos; Glob permite nomes de arquivos.
+Se o script não está em `{skills}`, o hook nega as ferramentas cobertas, e a sessão usa outro
+contexto novo disponível. No Codex, usar o perfil TOML ou as ferramentas expostas, sem aliases
+Claude. Hook, prompt e restrição de escrita não garantem isolamento de leitura por path.
+Todo despacho carrega `Entrada` e `NÃO receber`, inclusive no fallback genérico.
 
 ## Não autorrevisar — por quê (regra: Proibição 9)
 

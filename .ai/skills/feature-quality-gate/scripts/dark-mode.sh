@@ -11,7 +11,7 @@
 # O que confere:
 #   --mecanismo  O projeto tem dark mode, e por qual mecanismo? Uma linha por evidência.
 #                Evidência (exit 1) = a dimensão G roda e o mecanismo diz como forçar o tema no CT-B.
-#                Silêncio (exit 0) = nenhum mecanismo: G é declarada não aplicável, com esta saída como prova.
+#                Silêncio (exit 0) = mecanismo não detectado: confirmar configuração/vendor/UI antes de declarar G não aplicável.
 #                Mecanismos: Tailwind 3 (`darkMode` no tailwind.config.*), Tailwind 4 (`@custom-variant dark`),
 #                variante `dark:` sem mecanismo declarado (o Tailwind 3 e o 4 aplicam `prefers-color-scheme`
 #                por padrão), `@media (prefers-color-scheme: dark)` no CSS, classe `dark` alternada por JS ou
@@ -19,7 +19,7 @@
 #   <arquivos>   Nível 1: em cada linha, classe de cor neutra (white, black, gray, slate, zinc, neutral,
 #                stone) de bg/text/border/divide/ring/placeholder sem par `dark:` do mesmo utilitário na
 #                mesma linha; hex fixo em classe arbitrária (`bg-[#fff]`) sem par; hex em `style` inline.
-#                Projeto sem mecanismo de dark mode: silêncio e exit 0 (não há par a exigir).
+#                Sem mecanismo detectado: silêncio e exit 0; esta heurística não prova ausência de tema.
 #                Confere .blade.php, .php, .html, .vue, .jsx, .tsx, .js, .ts; ignora as demais extensões.
 #
 # Quem chama: feature-quality-gate, dimensão G — `--mecanismo` antes de validar; `<arquivos>` no nível 1
@@ -113,6 +113,7 @@ function detectar($raiz) {
     }
     foreach (arquivos_em($j('resources/views'), $views) as $f) {
         foreach (linhas($f) as $n => $l) {
+            if (preg_match('/prefers-color-scheme\s*:\s*dark/', $l)) $ev[] = "$f:$n: dark mode — CSS inline @media (prefers-color-scheme: dark)";
             if (preg_match('/@fluxAppearance\b/', $l)) $ev[] = "$f:$n: dark mode — Flux, @fluxAppearance (classe dark)";
             elseif (preg_match('/<html\b[^>]*class\s*=\s*"[^"]*\bdark\b/', $l)) $ev[] = "$f:$n: dark mode — classe dark fixa no <html>";
             elseif (preg_match($toggle, $l)) $ev[] = "$f:$n: dark mode — classe dark alternada por JS inline";

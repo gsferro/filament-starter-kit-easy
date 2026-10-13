@@ -62,10 +62,10 @@ por cobertura* e passo 6 do *Fluxo de Execução*.
 |---|----------|--------|------------|
 | A | Cobertura do requisito | ✅ / ⚠️ / ❌ | {n} achados — `rastreabilidade.sh` exit {0 \| 1}; `indice.sh --check` exit {0 \| 1 \| sem `07-tickets/`} |
 | I | Segurança da superfície nova | ✅ / ⚠️ / ❌ | coberto pelo step 9, `## Revisão do Diff (step 9)` do `03` ({n} achados, {m} rejeitados) \| seção ausente: eixo 9 rodado; coberto além: {linhas da I} |
-| K | Adequação da suíte | ✅ / ⚠️ / ❌ / ⏭️ | K1 `k1-oraculo-fraco.sh` exit {…}; K2 {score, duração, sobreviventes \| não verificada — {causa}}; revisão adversarial do `04`: feita \| NÃO FEITA — {motivo} (⏭️) |
+| K | Adequação da suíte | ✅ / ⚠️ / ❌ / ⏭️ | K1 `k1-oraculo-fraco.sh` exit {…}; K2 {score, duração, processos/cache, sobreviventes e triagem \| não verificada — {causa/prova indispensável pendente}}; revisão adversarial do `04`: feita \| NÃO FEITA — {motivo} (⏭️) |
 | L | Consistência documental | ✅ / ⚠️ / ❌ | {n} achados — L1…L7; L1 `ids-ct.sh` exit {…}, L2 `citacoes.sh` exit {…}, L4 `conformidade-rules.sh` exit {…}, L6 `checkbox-sem-evidencia.sh` exit {…} |
 | B | Fronteiras e dados | ⏭️ não verificada | fora do perfil `mínimo` |
-| G | Tema e cor | n/a | `dark-mode.sh --mecanismo` sem saída (exit 0) |
+| G | Tema e cor | n/a | {configuração de tema e estilos que confirmam ausência ou desativação; exit 0 do script, sozinho, não prova n/a} |
 | J | Regressão adjacente | n/a | natureza `nova`, `Toca infra compartilhada?: não` |
 | … | | | |
 
@@ -84,5 +84,5 @@ por cobertura* e passo 6 do *Fluxo de Execução*.
 <!-- Honestidade sobre o alcance desta execução. Cada linha é débito de cobertura: impõe o teto
      APROVADO COM DÉBITO e é replicada no 03 com a causa. -->
 
-- {dimensão/caso} — motivo: {fora do perfil X | app não servido | MCP indisponível | sem driver de cobertura (prova: `php -m`) | script ausente: {nome} | sem baseline de screenshot | oráculo degradado | revisão adversarial do `04` não feita — {motivo do cabeçalho do `04`}}
+- {dimensão/caso} — motivo: {fora do perfil X | app não servido | MCP indisponível | sem driver de cobertura (prova: `php -m`) | script ausente: {nome} | sem baseline de screenshot | oráculo degradado | revisão adversarial do `04` não feita — {motivo do cabeçalho do `04`} | prova indispensável à K pendente — {o que falta}}
 ```

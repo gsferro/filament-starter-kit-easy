@@ -1,7 +1,16 @@
 # feature-quality-gate — QA no Agente
 
-> **Status: implementada — [`SKILL.md`](SKILL.md) v1.7.0.**
-> Requer `feature-wiki` ≥ **4.0.0** (que traz a `feature-test-design` ≥ 1.16.0) — o porquê de cada versão mínima, e o que degrada sem cada item, está em [Dependências](#dependências).
+## Atualização 1.8.0 — 2026-10-09
+
+Independência por capacidades do host, inclusive Codex. Fallback completo conta como verificação; intermitência exige investigação. Cobertura usa CT ou CT-B na camada que prova. Silêncio do detector de tema não prova ausência. Mutation testing considera cache, paralelismo e equivalência.
+
+Instalação Codex, controles e limites: [contrato de hosts](../feature-wiki/references/hosts-e-subagentes.md).
+Regressões e avaliação antes/depois: [README da coletânea](../../../README.md#revisão-de-portabilidade--2026-10-09)
+e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
+Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
+
+> **Status: implementada — [`SKILL.md`](SKILL.md) v1.8.0.**
+> Requer `feature-wiki` ≥ **4.1.0** (que traz a `feature-test-design` ≥ 1.17.0) — o porquê de cada versão mínima, e o que degrada sem cada item, está em [Dependências](#dependências).
 >
 > **`SKILL.md` fala com o agente; este README fala com a pessoa**: por que a skill existe, quando usar, o que ela não faz e do que depende. Procedimento, dimensões, roteamento, convergência e o template do `06` estão só no [`SKILL.md`](SKILL.md) — aqui eles são explicados e apontados, não copiados.
 >
@@ -57,7 +66,7 @@ O defeito que ela existe para pegar é a **omissão silenciosa**: cláusula do r
 
 `06-relatorio-qa.md` na wiki, com veredito (`APROVADO` / `APROVADO COM DÉBITO` / `REPROVADO → destino`), achados com repro mínima e evidência, a Matriz de Rastreabilidade (**impressa só se houver lacuna**, para não virar métrica de vaidade) e uma seção **"Não Verificado"** declarando o alcance real da execução.
 
-O veredito tem **teto por cobertura** (1.7.0): com qualquer dimensão não verificada — fora do perfil, sem app, sem MCP, oráculo degradado —, o máximo é `APROVADO COM DÉBITO`, e o débito lista cada dimensão com a causa. `APROVADO` passou a significar "tudo foi olhado e nada ficou aberto", não "o que foi olhado passou".
+O veredito tem **teto por cobertura** (1.7.0): com qualquer dimensão não verificada — fora do perfil, sem evidência dinâmica suficiente, oráculo degradado —, o máximo é `APROVADO COM DÉBITO`, e o débito lista cada dimensão com a causa. Ausência de uma ferramenta só causa débito quando nenhuma alternativa verifica a dimensão inteira. `APROVADO` passou a significar "tudo foi olhado e nada ficou aberto", não "o que foi olhado passou".
 
 `NÃO APLICÁVEL` não é veredito do gate: é o `06` mínimo que a sessão da `feature-wiki` escreve, sem rodar o gate, quando pula o step 11 porque a feature não tem superfície validável.
 
@@ -70,9 +79,9 @@ Cada achado sai com um destino — especificação, implementação, teste, infr
 - **Depende do `00-requisito.md`.** Sem ele, roda em modo degradado e declara que a omissão silenciosa não foi verificada — é o [critério eliminatório](#critério-eliminatório) do estudo.
 - **Mutation score não enxerga omissão.** Só muta código que existe: score alto não prova que o requisito foi entregue.
 - **Profundidade proporcional ao risco.** Feature de ajuste, sem UI e de domínio comum roda 5 dimensões, não 12. O que fica de fora é declarado no relatório, não verificado — e, desde a 1.7.0, segura o veredito em `APROVADO COM DÉBITO`: `APROVADO` é inalcançável nos perfis mínimo e padrão, de propósito. Isso não bloqueia nada — a feature segue para o PR, e o débito é a declaração honesta do que não foi verificado.
-- **Sem app servido, sem MCP ou sem driver de cobertura**, as dimensões que dependem deles ficam estáticas ou vão para "Não Verificado" — ver [Dependências](#dependências).
+- **Sem app servido, sem MCP ou sem driver de cobertura**, procurar a alternativa prevista para cada dimensão. O que continuar sem evidência suficiente vai para "Não Verificado" — ver [Dependências](#dependências).
 - **Metade é julgamento, e está dito onde.** A tabela *Mecânica × julgamento* do `SKILL.md` diz, por dimensão, o que é script (A, G, K1, L1, L2, L4, L6), o que é contagem ou leitura mecânica e o que é opinião do juiz. Script dá candidatos; quem decide o achado é o gate. A L4 (rules × diff) é mista: o script lista as rules que casam o diff e acusa a que não tem linha no `03`; se a rule foi aplicada, não se aplica ou foi violada continua julgamento.
-- **Só no Claude Code, com o sub-agente instalado, parte da independência é construção**: o `fw-qa-gate` não tem Edit/Write (construção) e não recebe a conversa. No `Bash`, um hook `PreToolUse` da `feature-wiki` nega os comandos que alteram a árvore — cobertura **heurística**, por padrão de comando; o `git status --porcelain` de antes e de depois, que o agente devolve, é o que a sessão confere. Em outro host, quem julga é quem escreveu, e o `06` diz isso.
+- **Independência depende do despacho e dos controles efetivos do host.** Claude e Codex podem despachar o `fw-qa-gate` com contexto novo; sem esse recurso, a execução em linha declara a perda de independência. Ausência de Edit/Write, sandbox de leitura e hook por padrões têm alcances diferentes: nenhum deles, sozinho, prova isolamento de leitura ou ausência de efeitos externos. Conferir conteúdo/hashes relevantes antes e depois, incluindo arquivos já modificados e novos; `git status` é apenas um sinal. O [contrato de hosts](../feature-wiki/references/hosts-e-subagentes.md) detalha os adaptadores.
 - **O juiz lê o `03`**, que guarda resíduo da conversa (`## Despachos`, `## Desvios do Plano`). É por desenho — a L6 confere as alegações dele —, e o perfil do hook do gate não o bloqueia.
 
 Os limites que o [estudo de 2026-09-26](https://github.com/gsferro/laravel-ai-skills/blob/main/estudos/2026-09-26-agentskills-spec-to-spec-to-tickets.md) listou em §7.4 (itens 8 e 9 do §8) foram tratados na 1.7.0: teto por cobertura, tabela mecânica × julgamento, dimensão I restrita ao que a revisão do diff (step 9) não cobriu — lido de `## Revisão do Diff (step 9)` do `03` —, retorno com delimitadores e `git status` antes/depois. Continua aberto: o custo do gate não foi medido, e o `06` de mais de ~150 linhas ainda estoura com muitos achados.
@@ -81,23 +90,23 @@ Os limites que o [estudo de 2026-09-26](https://github.com/gsferro/laravel-ai-sk
 
 | Item | Versão mínima | Para quê | Sem ele |
 |---|---|---|---|
-| `feature-wiki` | **4.0.0** | produz as entradas (`00`–`03`), os scripts que o gate roda (A, L1, L2, L4, L6), o lançador `pestw.cmd` e o hook do `fw-qa-gate`, e despacha esta skill no step 11 | sem `01`, a skill não roda; sem `00`, [oráculo degradado](SKILL.md#oráculo-degradado); sem os scripts, as checagens deles vão para "Não Verificado" |
-| `feature-test-design` | **1.16.0** (exigida pela `feature-wiki` 4.0.0) | produz o `04`/`05` auditados — com `P-nn` na origem dos CT, que a matriz cruza — e recebe todo achado de destino 3; traz a referência do `pest-plugin-browser` que a seção de [dark mode](#achado-técnico-dark-mode-inverte-a-regra-de-visão--estrutura) deste README aponta | sem `04`, a skill não roda |
+| `feature-wiki` | **4.1.0** | produz as entradas (`00`–`03`), os scripts que o gate roda (A, L1, L2, L4, L6), o lançador `pestw.cmd`, os adaptadores de host e o hook Claude do `fw-qa-gate`, e despacha esta skill no step 11 | sem `01`, a skill não roda; sem `00`, [oráculo degradado](SKILL.md#oráculo-degradado); sem os scripts, as checagens deles vão para "Não Verificado" |
+| `feature-test-design` | **1.17.0** (exigida pela `feature-wiki` 4.1.0) | produz o `04`/`05` auditados — com `P-nn` na origem dos CT, que a matriz cruza — e recebe todo achado de destino 3; traz a referência do `pest-plugin-browser` que a seção de [dark mode](#achado-técnico-dark-mode-inverte-a-regra-de-visão--estrutura) deste README aponta | sem `04`, a skill não roda |
 | `feature-tickets` | 1.0.0 | opcional: com `07-tickets/`, a coluna `Ticket` da matriz vem do `indice.sh --check` da `feature-tickets` — fonte única da alocação (cada `RQ`/`P-nn`, CT e CT-B em exatamente um ticket), das arestas e da fatia vertical; o gate não refaz a checagem | feature não fatiada — matriz sem a coluna; com `07-tickets/` e sem o script, essa checagem vai para "Não Verificado" |
 | `bash` e `php` no PATH | — | scripts desta skill e da `feature-wiki` (PHP embutido no `.sh`) | as checagens com script vão para "Não Verificado" |
 | Projeto Laravel com Pest | Pest 4 | rodar CT e CT-B existentes | — |
-| App servido na `APP_URL` | — | dimensões dinâmicas | B, C, D, E, F, G, H e I ficam estáticas |
+| App servido na `APP_URL` | — | dimensões dinâmicas | executar as alternativas disponíveis por dimensão; a parte sem evidência dinâmica suficiente fica em "Não Verificado" |
 | Pest 5 | 5 | `--parallel --tia` para regressão por impacto medido | regressão sem impacto medido, declarada em "Não Verificado" |
 | PCOV ou Xdebug | — | cobertura para o `--tia` e o `--mutate` | a dimensão K roda só o passo estático; a medição vai para "Não Verificado", depois de provar a ausência |
 | `pest-plugin-agent` (`--agent`) | Pest 5 | sondagem efêmera durante a validação | leitura estática do código; o que não foi sondado é declarado |
 | `pest-plugin-browser` | — | rodar e criar CT-B | dimensões G e H limitadas |
-| Playwright MCP | — | inventário de elementos, tema/cor, console/rede | `screenshot()`, `content()` filtrado e leitura do Blade; o resto vai para "Não Verificado" |
-| Boost MCP (`browser-logs`, `database-query`, `database-schema`, `search-docs`) | — | evidência de console e conferência de dados | o que dependia deles é declarado |
+| Playwright MCP | — | inventário de elementos, tema/cor, console/rede | `screenshot()`, `content()` filtrado e outras ferramentas disponíveis podem verificar o mesmo escopo; leitura estática não prova comportamento dinâmico. Só a lacuna restante vai para "Não Verificado" |
+| Boost MCP (`browser-logs`, `database-query`, `database-schema`, `search-docs`) | — | evidência de console e conferência de dados | buscar evidência equivalente por ferramentas disponíveis; declarar o que continuar sem prova |
 | Project Rules do Laravel Boost (`.ai/rules/*.md`) | `laravel/boost` 2.4.12 | L4: o `conformidade-rules.sh` da `feature-wiki` lista as rules cujo `paths:` casa o diff e acusa a que não tem linha no `03`; o gate confere a linha e o código | L4 não roda — declarada em "Não Verificado" |
 | Skills do [`qa-skills`](https://github.com/petrkindlmann/qa-skills) (MIT) | — | técnica de QA delegada (SBTM, triagem, repro) | fallback inline de cada uma, registrado no relatório; não rebaixa o veredito, porque a dimensão rodou — ver [Delegação](SKILL.md#delegação-a-skills-externas) |
-| Claude Code com sub-agentes | — | a skill roda como `fw-qa-gate` (`opus`, **sem Edit/Write**, hook no `Bash`), sem receber a conversa que escreveu a wiki (ver [Limites](#limites)) | roda em linha, e o `06` declara a independência degradada |
+| Host com subagente de contexto novo | — | a skill roda como `fw-qa-gate` sem receber a conversa que escreveu a wiki, com controles efetivos declarados; Claude usa o perfil Markdown e Codex o TOML | roda em linha, e o `06` declara a independência não verificada, com teto de débito |
 
-**Por que `feature-wiki` ≥ 4.0.0.** A 4.0.0 renumerou os steps (o gate é o 11; a revisão do diff, que a dimensão I lê, é o 9; a reconciliação, o 10) e trouxe o que a 1.7.0 usa: os scripts `rastreabilidade.sh` (âncora da A), `ids-ct.sh` (L1), `citacoes.sh` (L2), `conformidade-rules.sh` (L4) e `checkbox-sem-evidencia.sh` (L6), a seção `## Revisão do Diff (step 9)` do `03` (dimensão I), o `pestw.cmd` como arquivo (dimensão K no Windows), o hook `guarda-subagente.sh` do `fw-qa-gate`, as `P-nn` em `## Premissas` e as `## Perguntas ao Solicitante` no `00` (linhas `P-nn` da matriz; `RQ` aberta), e o `wikis/glossario.md` (L7). As peças mais antigas continuam: o `00-requisito.md` desde a 2.10.0, a `## Superfície Livewire` do `02` desde a 3.3.0, a `## Despachos` do `03` desde a 3.4.0. Com uma versão anterior, o que falta vai para "Não Verificado" — e segura o veredito no teto.
+**Por que `feature-wiki` ≥ 4.1.0.** A 4.1.0 acrescenta o contrato de hosts e os perfis Codex. A base de artefatos vem da 4.0.0, que renumerou os steps (o gate é o 11; a revisão do diff, que a dimensão I lê, é o 9; a reconciliação, o 10) e trouxe o que a 1.7.0 usa: os scripts `rastreabilidade.sh` (âncora da A), `ids-ct.sh` (L1), `citacoes.sh` (L2), `conformidade-rules.sh` (L4) e `checkbox-sem-evidencia.sh` (L6), a seção `## Revisão do Diff (step 9)` do `03` (dimensão I), o `pestw.cmd` como arquivo (dimensão K no Windows), o hook `guarda-subagente.sh` do `fw-qa-gate`, as `P-nn` em `## Premissas` e as `## Perguntas ao Solicitante` no `00` (linhas `P-nn` da matriz; `RQ` aberta), e o `wikis/glossario.md` (L7). As peças mais antigas continuam: o `00-requisito.md` desde a 2.10.0, a `## Superfície Livewire` do `02` desde a 3.3.0, a `## Despachos` do `03` desde a 3.4.0. Com uma versão anterior, o que falta vai para "Não Verificado" — e segura o veredito no teto.
 
 ### Instalação do sub-agente (Claude Code)
 
@@ -124,12 +133,13 @@ cada `.claude/skills/<skill>` como symlink, e copiar por cima falha. Os dois cas
 [Como Instalar no Claude Code](https://github.com/gsferro/laravel-ai-skills/blob/main/README.md#-como-instalar-no-claude-code),
 no README da coletânea.
 
-Sem a cópia, a `feature-wiki` não encontra `fw-qa-gate` e despacha um `general-purpose` com
-`model: opus` — funciona, mas com Edit/Write disponíveis e sem o hook: o "não corrige nada" passa a ser só instrução, também para a edição de arquivo.
+Sem a cópia, usar outro contexto novo disponível, com o corpo do contrato `fw-qa-gate` e os
+controles realmente expostos. Não presumir um nome de agente ou modelo. Se escrita estiver
+disponível, declarar a restrição contratual; sem contexto novo, declarar independência não verificada.
 
 O hook do agente procura `feature-wiki/scripts/guarda-subagente.sh` em `.ai/skills/`,
 `.claude/skills/` e `~/.claude/skills/`. Sem a `feature-wiki` instalada, ele **falha fechado**:
-nega toda ferramenta, o agente devolve só a mensagem do hook, e a sessão cai no mesmo fallback.
+nega as ferramentas cobertas, o agente devolve a mensagem do hook, e a sessão usa o fallback acima.
 
 ---
 
@@ -317,11 +327,11 @@ A taxonomia completa — severidade, os cinco destinos com o que fazer em cada u
 
 ## Achado técnico: dark mode inverte a regra de visão × estrutura
 
-O `pest-plugin-browser` tem ferramentas para tema, screenshot e acessibilidade. O que cada uma faz e não faz — inclusive o alcance da regra de contraste do axe — está numa fonte só: `{skills}/feature-test-design/references/pest-plugin-browser.md`, onde `{skills}` é o primeiro dos três diretórios — `.ai/skills/` (Boost), `.claude/skills/` (espelho local), `~/.claude/skills/` (global) — que contém a skill citada.
+O `pest-plugin-browser` tem ferramentas para tema, screenshot e acessibilidade. O que cada uma faz e não faz — inclusive o alcance da regra de contraste do axe — está numa fonte só: `{skills}/feature-test-design/references/pest-plugin-browser.md`, onde `{skills}` é o diretório de instalação que contém essa skill, resolvido conforme o contrato de hosts.
 
-O que é da dimensão G é a consequência: dentro do plugin, nenhuma assertion barata prova cor. Os casos graves — texto invisível no tema escuro, classe sem par `dark:`, baseline de screenshot criado com o defeito — passam, e estão tabelados na referência.
+O que é da dimensão G é a consequência: `assertSee()` não prova cor, e o primeiro baseline de screenshot pode incorporar o defeito. `assertScript()` com `getComputedStyle()` pode provar uma propriedade específica contra o valor esperado, no tema exercitado; isso não garante contraste, sobreposição ou legibilidade da tela inteira. O alcance de cada oráculo está tabelado na referência.
 
-A cobertura escolhida vai do mais barato ao mais caro: grep estático de classe de cor sem par `dark:` (o melhor custo-benefício), CT-B versionado no tema escuro e inspeção visual pelo Playwright MCP — o único caminho para "ilegível". Como o jeito de forçar o tema no teste muda com o projeto, a dimensão começa detectando o mecanismo de tema. Desde a 1.7.0 a detecção e o nível estático são um script, `scripts/dark-mode.sh`, que reconhece também o Tailwind 4 (`@custom-variant dark`, e o `prefers-color-scheme` que ele aplica por padrão quando o projeto só usa `dark:`), o Flux e o painel Filament — os greps da 1.6.0 só viam o Tailwind 4 quando o projeto declarava `@custom-variant dark`. Os comandos estão na [dimensão G](SKILL.md#g--tema-e-cor-dark-mode).
+A cobertura escolhida vai do mais barato ao mais caro: busca estática de classe de cor sem par `dark:` para levantar candidatos, CT-B versionado com oráculo específico no tema escuro e inspeção visual pelo Playwright MCP para avaliar a tela. Como o jeito de forçar o tema no teste muda com o projeto, a dimensão começa detectando o mecanismo de tema. Desde a 1.7.0 a detecção e o nível estático são um script, `scripts/dark-mode.sh`, que reconhece também o Tailwind 4 (`@custom-variant dark`, e o `prefers-color-scheme` que ele aplica por padrão quando o projeto só usa `dark:`), o Flux e o painel Filament — os greps da 1.6.0 só viam o Tailwind 4 quando o projeto declarava `@custom-variant dark`. A busca é heurística: silêncio do script exige confirmação da configuração e dos estilos antes de declarar G não aplicável. Os comandos estão na [dimensão G](SKILL.md#g--tema-e-cor-dark-mode).
 
 > **Correção de ênfase relevante.** Na análise do Playwright MCP a coletânea defende a árvore de acessibilidade contra o screenshot, pelo custo em token (os números estão na [dimensão G](SKILL.md#g--tema-e-cor-dark-mode)). **Para defeito de cor isso se inverte**: a árvore é justamente cega ao problema, porque o texto *está* lá. Cor é o caso em que a visão ganha da estrutura — e a skill precisa dizer isso explicitamente para o agente não aplicar a regra errada.
 
@@ -329,13 +339,13 @@ A cobertura escolhida vai do mais barato ao mais caro: grep estático de classe 
 
 ## Achado técnico: Playwright MCP como confronto do CT-B
 
-A coletânea já define que **o `pest-plugin-browser` atesta e o Playwright MCP observa**. Para o quality-gate, o MCP habilita três confrontos: elementos interativos da tela × elementos que o CT-B exercita; UI renderizada × tabela `## Superfície de UI` do PRD; e tema, console e rede.
+A coletânea já define que **o `pest-plugin-browser` atesta e o Playwright MCP observa**. Para o quality-gate, o MCP habilita três confrontos: elementos interativos da tela × comportamentos que os CT e CT-B exercitam; UI renderizada × tabela `## Superfície de UI` do PRD; e tema, console e rede.
 
-O primeiro é o mais valioso: elemento interativo que a tela oferece e nenhum CT-B exercita vira achado — é escopo ou scope creep? O exemplo está em [`references/delegacao-e-playwright.md`](references/delegacao-e-playwright.md).
+O primeiro é o mais valioso: comportamento que a tela oferece e nenhum teste exercita vira candidato a lacuna — é requisito omitido ou scope creep? Um controle pode estar coberto por teste de componente; CT-B é necessário quando a asserção depende do navegador. O exemplo está em [`references/delegacao-e-playwright.md`](references/delegacao-e-playwright.md).
 
-Isso é literalmente "confronto do que entrou no CT-B", e nenhuma ferramenta de teste faz — teste só sabe o que você escreveu nele.
+Isso confronta o inventário observado com a cobertura existente: teste só sabe o que você escreveu nele.
 
-O que mantém a disciplina é que sessão MCP não é cobertura: todo achado do MCP vira CT-B novo ou achado roteado, nunca "fica no relatório". A configuração, o alvo permitido e o que nunca entra em teste estão em [Playwright MCP como Confronto](SKILL.md#playwright-mcp-como-confronto).
+O que mantém a disciplina é que sessão MCP não é cobertura: toda lacuna confirmada vira CT ou CT-B na camada mais barata que prova o comportamento, via `feature-test-design`; defeito vira achado roteado. A configuração, o alvo permitido e o que nunca entra em teste estão em [Playwright MCP como Confronto](SKILL.md#playwright-mcp-como-confronto).
 
 ---
 

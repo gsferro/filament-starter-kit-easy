@@ -179,7 +179,14 @@ corpo_de() { # NN [dry] — troca @@NN@@ pela issue do bloqueador
 grava_issue() { # arquivo ref — "**Issue**: ref" logo abaixo do **Status**, no fim de linha do arquivo
   # BINMODE=3: o gawk do Git Bash (MSYS) tira o \r na leitura e regravaria o ticket CRLF em LF; os
   # outros awks ignoram a variável e não tiram o \r
-  awk -v BINMODE=3 -v ref="$2" '{ print } !feito && /^\*\*Status\*\*/ { cr = ($0 ~ /\r$/) ? "\r" : ""; print "**Issue**: " ref cr; feito = 1 }' "$1" > "$1.espelho" && mv "$1.espelho" "$1"
+  awk -v BINMODE=3 -v ref="$2" '
+    { print }
+    !feito && /^[[:space:]]*\*\*Status[[:space:]]*:?[[:space:]]*\*\*[[:space:]]*:?[[:space:]]*/ {
+      cr = ($0 ~ /\r$/) ? "\r" : ""
+      print "**Issue**: " ref cr; feito = 1
+    }
+    END { if (!feito) exit 1 }
+  ' "$1" > "$1.espelho" && mv "$1.espelho" "$1" || { rm -f -- "$1.espelho"; return 1; }
 }
 url_de() { # ref → comando que imprime a URL da issue
   case "$1" in

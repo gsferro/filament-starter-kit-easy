@@ -1,30 +1,24 @@
 ---
 name: feature-tickets
-description: >
-  Fatia a wiki de uma feature Laravel em tickets verticais quando o plano não cabe numa sessão.
-  Só o usuário invoca (/feature-tickets), por sugestão do step 8 da feature-wiki ou numa
-  refatoração larga (renomear coluna, retipar símbolo). Cada ticket é uma fatia vertical (tracer
-  bullet): RQ e P-nn do 00, os CT do 04 que ficam verdes com ele, passos do 01, costura de teste,
-  arestas de dependência e bloqueio, status. Grava 07-tickets/ depois de um quiz de granularidade,
-  acusa RQ ou CT sem ticket, sequencia expand-contract, executa um ticket por sessão nova e gera
-  o quadro por script (INDEX.md, 07-tickets/README.md, status). Não fatia o que cabe numa sessão.
-  Palavras-chave: tickets, fatiar, fatia vertical, tracer bullet, dependência, bloqueio, sessão,
-  expand-contract, refatoração larga, quadro.
+description: >-
+  Sob pedido explícito, fatia ou executa wiki Laravel em tickets verticais com RQ, CT, passos e bloqueios rastreáveis. Use quando o plano excede uma sessão ou exige expand-contract. Não invoque automaticamente nem fatie trabalho que cabe numa sessão.
 license: MIT
-compatibility: >
-  Wiki da feature-wiki 4.0.0 ou superior (00, 01, 02, 03) com o 04 da feature-test-design 1.16.0 ou
-  superior (## Costuras de Teste). scripts/indice.sh e scripts/espelho-gh.sh precisam de bash e php
-  no PATH; o espelho no GitHub precisa do gh só para executar (--aplicar).
-  disable-model-invocation é extensão do Claude Code; em outro host, a skill roda quando o usuário
-  a pede. Sub-agentes opcionais: sem eles, cada ticket roda numa sessão nova. Espelho no GitHub
-  Projects opcional, só sob pedido.
+compatibility: >-
+  Wiki feature-wiki >=4.1.0 com 04 feature-test-design >=1.17.0. Bash/PHP para índice e espelho; gh somente para --aplicar autorizado. Só usuário invoca: disable-model-invocation no Claude e agents/openai.yaml no Codex. Subagentes opcionais; sem eles, sessão nova por ticket. GitHub Projects opcional.
 metadata:
-  version: "1.0.0"
-  requires: "feature-wiki>=4.0.0; feature-test-design>=1.16.0"
+  version: "1.1.0"
+  requires: "feature-wiki>=4.1.0; feature-test-design>=1.17.0"
 disable-model-invocation: true
 ---
 
 # Feature Tickets — Fatias Verticais Ancoradas no Requisito
+
+## Host e execução
+
+O processo é independente do provedor. Use ferramentas realmente expostas e o path efetivo da skill.
+Preserve decisões e autorizações existentes; confirme apenas informação material ausente ou ação que exija autorização adicional.
+Para paths, subagentes e controles, leia o [contrato compartilhado](../feature-wiki/references/hosts-e-subagentes.md) da feature-wiki, se instalada.
+Ausência de recurso vira limitação registrada, nunca prova de aprovação.
 
 O `01` da `feature-wiki` fatia por **camada** (migration → model → policy → tela): nada se
 demonstra até o último passo, e a feature inteira roda numa sessão. Esta skill troca a unidade de
@@ -50,7 +44,7 @@ faz passar. O critério de aceite já existe — é o CT, vermelho antes por con
 | **Sessão nova** | Janela de contexto que começa sem a conversa do planejamento |
 | **`{wiki}`** | `wikis/specs/{branch}/{feature}/`; a barra da branch vira subpasta. Ex.: branch `feature/ferro-830`, feature `aprovacao-compra` → `wikis/specs/feature/ferro-830/aprovacao-compra` |
 | **`{base}`** | Branch de destino do PR, a mesma do `03` |
-| **`{skills}`** | O primeiro dos três diretórios — `.ai/skills/` (Boost), `.claude/skills/` (espelho local), `~/.claude/skills/` (global) — que **contém a skill citada**. `.ai/skills/` pode existir sem ela |
+| **`{skills}`** | Diretório de instalação que contém a skill citada, isto é, o pai da pasta dessa skill. Ex.: SKILL em .agents/skills/feature-wiki/SKILL.md resolve `{skills}` para .agents/skills. Pode variar por skill; use o path informado pelo host. |
 
 ## Índice
 

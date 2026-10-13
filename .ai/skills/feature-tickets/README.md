@@ -1,7 +1,16 @@
 # feature-tickets — Fatias Verticais Ancoradas no Requisito
 
-> **Status: nova — [`SKILL.md`](SKILL.md) v1.0.0 (2026-09-27).**
-> Requer `feature-wiki` ≥ **4.0.0** e `feature-test-design` ≥ **1.16.0** — o porquê de cada versão
+## Atualização 1.1.0 — 2026-10-09
+
+Invocação explícita preservada no Codex por agents/openai.yaml. Índice rejeita estados por prefixo e CT sem origem. Espelho grava Issue com Status recuado, preserva fim de linha e permanece idempotente no simulador gh.
+
+Instalação Codex, controles e limites: [contrato de hosts](../feature-wiki/references/hosts-e-subagentes.md).
+Regressões e avaliação antes/depois: [README da coletânea](../../../README.md#revisão-de-portabilidade--2026-10-09)
+e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
+Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
+
+> **Status: atualizada — [`SKILL.md`](SKILL.md) v1.1.0 (2026-10-09).**
+> Requer `feature-wiki` ≥ **4.1.0** e `feature-test-design` ≥ **1.17.0** — o porquê de cada versão
 > mínima está em [Dependências](#dependências).
 >
 > **Para usar**: [Como chamar](#como-chamar) tem todas as invocações, com custo e exemplo, e com o

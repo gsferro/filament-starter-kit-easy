@@ -1,4 +1,4 @@
-> Referência da feature-test-design 1.16.0. Lida em: passo 2 (formato ❓/➡️ das perguntas; costuras de
+> Referência da feature-test-design 1.17.2. Lida em: passo 2 (formato ❓/➡️ das perguntas; costuras de
 > teste), passo 6 (formato da tabela de mutantes), passo 7 (tabela de cogitado e cortado), escrita
 > do `04` (o template inteiro) e pós-implementação (contagem por `grep -c`; teste de arquitetura de
 > sincronia de IDs). Fonte única de: o template do arquivo `04-casos-de-teste.md` e o formato das
@@ -50,11 +50,13 @@ estão no `SKILL.md` §Arquivo 04 e valem mesmo que o template seja adaptado.
 
 <!-- Técnica escalada acima do perfil da área: declarar aqui, em uma linha, com o motivo. -->
 
-<!-- RQ com Estado `aberta — Qn` no 00, ou citada em `afeta:` de pergunta de requisito desta
-     derivação: uma linha, sem regra e sem cenário. Nenhum passo do 01 a implementa.
+<!-- RQ com Estado `aberta — Qn` no 00: uma linha, sem regra e sem cenário.
+     Pergunta nova em afeta: bloqueia somente o recorte dependente da resposta;
+     não elimina partes determinadas no 00. Declare cobertura parcial e CT dessas partes.
      Pergunta nova desta derivação em sub-agente: `(Q?n)` provisório, até a sessão renumerar. -->
 - RQ-05 — aberta (Q3), sem cenário até a resposta
 - RQ-06 — aberta (Q?1), sem cenário até a resposta
+- RQ-07 — cobertura parcial: CT-08 recusa justificativa ausente; teto do texto aberto (Q?2)
 
 ## Costuras de Teste
 
@@ -102,7 +104,7 @@ provisórios; a sessão renumera ao gravar):
   para pegar
 
 ### Fakes
-- `Queue::fake()` / `Mail::fake()` / `Notification::fake()` / `Http::fake()` + `Http::preventStrayRequests()`
+- `Queue::fake()` / `Mail::fake()` / `Notification::fake()` / `Http::fake(['{URL esperada}' => Http::response(...)])` + `Http::preventStrayRequests()` — sem catch-all; conferir o payload enviado
 
 ### Estratégia de DB
 - {`RefreshDatabase` global no `tests/Pest.php`, ou o que o projeto usa}
@@ -217,8 +219,9 @@ reescrever:
   responde; é a raia da maioria das perguntas da derivação) ou `desenho` (como implementar dado o
   requisito — o desenvolvedor responde). Pergunta de fato (código, schema, config) não se faz:
   descobre-se
-- **`afeta:`** — só entra pergunta que toca uma `RQ` ou `P-nn`. A `RQ` citada numa pergunta de
-  requisito é tratada como aberta: sem cenário até a resposta
+- **`afeta:`** — só entra pergunta que toca uma `RQ` ou `P-nn`. Informe o recorte que depende
+  da resposta; não suspenda as partes já determinadas por citar o ID da cláusula. RQ inteiramente
+  indecidida permanece sem cenário; RQ parcialmente determinada lista seus CT e a lacuna restante
 - **Número**: `Qn` é **uma sequência só por feature**, nas três raias. A derivação em sub-agente
   (step 7) não sabe o próximo `Qn` e numera `Q?1, Q?2…` — provisório. A sessão renumera ao gravar,
   continuando do maior `Qn` da wiki: as de requisito vão para `## Perguntas ao Solicitante` do `00`;
@@ -258,21 +261,22 @@ grep -cE '^\| M-?[0-9]+.*sem matador' 04-casos-de-teste.md                      
 
 **Teste de arquitetura sugerido** — barato, um por projeto e não por feature: lê os `[CT-nn]` dos
 testes e dos `04`/`05` e falha com o ID que existe num lado só — nas **duas** direções: ID do teste
-sem cenário na wiki, e ID do `04`/`05` sem `it('[CT-nn]…')`. O dataset é a lista declarada de
-pares (arquivo de teste, pasta da wiki); declará-la à mão é o custo, e é também o que impede um
-teste novo de nascer sem wiki.
+sem cenário na wiki, e ID do `04`/`05` sem `it('[CT-nn]…')`. O dataset declara, por wiki, a lista de
+**todos os arquivos de teste da feature**, inclusive browser. A comparação usa a união dos IDs desses
+arquivos: comparar cada arquivo com a wiki inteira acusa os cenários que estão nos arquivos irmãos.
+Manter a lista atualizada é o custo dessa sugestão.
 
 ```php
-it('todo [CT-nn] existe nos dois lados: teste e 04/05 da wiki', function (string $teste, string $wiki): void {
+it('todo [CT-nn] existe nos dois lados: testes e 04/05 da wiki', function (array $testes, string $wiki): void {
     $ids = fn (string $arquivo): array => preg_match_all('/\[(CT-B?\d{2,})\]/', file_get_contents($arquivo), $m) ? array_unique($m[1]) : [];
-    $noTeste   = $ids($teste);
+    $noTeste   = array_unique(array_merge([], ...array_map($ids, $testes)));
     $naWiki    = array_merge([], ...array_map($ids, glob("$wiki/0[45]-*.md")));
     $soNoTeste = array_diff($noTeste, $naWiki);
     $soNaWiki  = array_diff($naWiki, $noTeste);
 
     expect($soNoTeste)->toBeEmpty('IDs só no teste: '.implode(', ', $soNoTeste))
         ->and($soNaWiki)->toBeEmpty('IDs só na wiki (sem it(\'[CT-nn]…\')): '.implode(', ', $soNaWiki));
-})->with('pares teste ↔ wiki');
+})->with('arquivos de teste por wiki');
 ```
 
 ## Tabela de cogitado e cortado (passo 7, item 4)

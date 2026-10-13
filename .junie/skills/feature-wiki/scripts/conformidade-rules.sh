@@ -6,7 +6,7 @@
 #     <wiki> = wikis/specs/{branch}/{feature}
 #     <base> = branch ou commit de onde a feature saiu (main, origin/main, a1b2c3d)
 #
-# O que confere: os arquivos de `git diff --name-only {base}...HEAD` (só o que está commitado; com
+# O que confere: arquivos commitados contra a base, staged, unstaged e novos não ignorados (com
 #   --no-renames, o rename conta o path de origem e o de destino; com --relative, paths a partir da raiz
 #   do projeto, que pode ser uma subpasta do repositório) contra o `paths:` do frontmatter de cada
 #   .ai/rules/*.md — os arquivos que o Boost põe no índice: o index.md e a pasta .ai/rules/boost/ (as
@@ -20,7 +20,9 @@
 #   YAML lido de forma simplificada: lista em bloco (- item), lista entre colchetes ou valor único, com
 #   ou sem aspas. Tabela e título dentro de bloco cercado (```) ou de comentário HTML não contam.
 # O que NÃO confere: o veredito aplicada / n.a. / violada e a evidência (julgamento: step 10, item 6;
-#   quality gate, dimensão L4); linha a mais na tabela (rule que o diff não casa); arquivo não commitado.
+#   quality gate, dimensão L4); linha a mais na tabela (rule que o diff não casa).
+#   Inclui commits da feature, staged, unstaged e novos não ignorados; o mesmo path entra uma vez.
+#   Paths contendo quebra de linha não são suportados pelo formato de diagnóstico linha a linha.
 #
 # Quem chama: feature-wiki step 10 (item 6 da reconciliação); feature-quality-gate, dimensão L4.
 # Contrato: silêncio + exit 0 = OK (inclusive sem .ai/rules/ ou com diff vazio: nada a conformar);
@@ -52,7 +54,12 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "conformidade-rule
 git rev-parse --verify --quiet "$base^{commit}" >/dev/null 2>&1 || { echo "conformidade-rules.sh: base \"$base\" não é um commit deste repositório (ex.: main, origin/main)" >&2; exit 2; }
 
 # -z + tr: path com acento ou espaço sai sem aspas nem escape octal
-arqs=$(git -c core.quotepath=false diff -z --name-only --no-renames --relative "$base...HEAD" 2>/dev/null | tr '\0' '\n'; exit "${PIPESTATUS[0]}")
+arqs=$({
+  git -c core.quotepath=false diff -z --name-only --no-renames --relative "$base...HEAD" &&
+  git -c core.quotepath=false diff -z --name-only --no-renames --relative --cached &&
+  git -c core.quotepath=false diff -z --name-only --no-renames --relative &&
+  git ls-files --others --exclude-standard -z
+} | tr '\0' '\n'; exit "${PIPESTATUS[0]}")
 rc=$?
 if [ "$rc" -ne 0 ]; then
   echo "conformidade-rules.sh: git diff $base...HEAD falhou (exit $rc):" >&2
@@ -70,6 +77,7 @@ $wiki = $argv[1];
 $f03 = "$wiki/03-progresso.md";
 $arqs = [];
 foreach (preg_split('/\r?\n/', (string) stream_get_contents(STDIN)) as $l) if ($l !== '') $arqs[] = str_replace('\\', '/', $l);
+$arqs = array_values(array_unique($arqs));
 
 // ---- glob → regex (a mesma conversão do ids-ct.sh)
 function globRegex($g) {

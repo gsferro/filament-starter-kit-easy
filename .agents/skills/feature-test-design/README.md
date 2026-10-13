@@ -1,6 +1,60 @@
 # feature-test-design — Casos de Teste que Matam Defeito
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.16.0**
+## Correção 1.17.3 — revisão portável e referências coerentes
+
+A rota adversarial usa o adaptador efetivamente disponível: perfis Claude quando nesse host,
+TOML ou ferramentas expostas no Codex. O fallback não exige alias de modelo de outro provedor.
+Contexto novo e entradas restritas continuam obrigatórios; hooks e permissões de escrita não
+certificam isolamento de leitura. Aninhamento autorizado não transfere o fechamento da revisão
+à pessoa que derivou os cenários. Duas linhas residuais da referência de técnicas agora bloqueiam
+somente o recorte indecidido, acompanhando a regra 1.17.2.
+O julgamento real também encontrou cobertura de idempotência por uma tentativa isolada fora
+da etapa. A taxonomia agora exige a intenção inicialmente válida seguida da repetição, por
+tipo de decisão; cobertura de diretor não substitui cobertura de gestor.
+As armadilhas de API também registram o retorno enum de `Get` no Filament e erro do campo
+específico, após a execução real identificar callbacks inválidos e um operador ineficaz.
+
+O [antes/depois comportamental](../../../experimentos/README.md#projeto-laravel-real--2026-10-09)
+não aprovou o gate de evolução. A [avaliação completa](../../../experimentos/2026-10-09-projeto-real/RELATORIO.md)
+separa julgamento documental, testes físicos selecionados, omissões e correções posteriores.
+
+Essa correção vem da [revisão independente](../../../experimentos/2026-10-09-projeto-real/REVISAO-INDEPENDENTE.md),
+depois do congelamento A/B. Sua eficácia em nova derivação permanece não medida.
+
+## Correção 1.17.2 — perguntas bloqueiam somente seu recorte
+
+A revisão independente da aprovação de compra encontrou uma interpretação excessiva da regra
+de ambiguidade: a pergunta sobre teto de texto suspendia a justificativa obrigatória; a pergunta
+sobre visibilidade suspendia a apresentação do status; dúvidas sobre papéis acumulados suspendiam
+a alçada literal. Essas obrigações já constavam no requisito. Agora `afeta:` identifica o recorte
+indecidido, preservando cenários das partes determinadas. Uma RQ formalmente aberta no 00 continua
+sem cenário; a correção não permite responder ao solicitante nem inventar valores para os limites.
+
+O contrato adversarial e o template aplicam a mesma distinção. Essa correção posterior não pertence
+à candidata 1.17.0 medida nesta rodada. Sua eficácia em novas derivações exige nova medição;
+o fechamento da revisão original demonstra correção documental, não superioridade estatística.
+Evidência e limites: [rodada em projeto real](../../../experimentos/2026-10-09-projeto-real/README.md).
+
+## Correção 1.17.1 — contraexemplo percentual executado
+
+O exemplo antigo de 29% de 10.000 não distinguia cálculo inteiro de `float` em PHP 8.4.10.
+A referência agora usa 29% de 100: descontos 29 e 28, totais finais 71 e 72.
+A regressão executa a expressão publicada no PHP, em vez de conferir somente o texto.
+Os dois snapshots do experimento real preservam o exemplo antigo; esta correção posterior
+não será atribuída à candidata 1.17.0 já congelada.
+Evidência: [verificação das referências](../../../experimentos/2026-10-09-projeto-real/precisao-referencias-antes.json)
+e [expressão corrigida](../../../experimentos/2026-10-09-projeto-real/precisao-referencia-corrigida.json).
+
+## Atualização 1.17.0 — 2026-10-09
+
+Invocação e paths portáveis; revisão adversarial aceita zero achados após percorrer todo o conjunto. União de IDs inclui backend e browser. Fakes HTTP restritos; fatos de framework são versionados. Legado usa requisito mínimo acordado; sobreviventes passam por triagem de equivalência.
+
+Instalação Codex, controles e limites: [contrato de hosts](../feature-wiki/references/hosts-e-subagentes.md).
+Regressões e avaliação antes/depois: [README da coletânea](../../../README.md#revisão-de-portabilidade--2026-10-09)
+e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
+Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
+
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.17.3**
 > Este README fala com a **pessoa**: por que a skill existe, que problema ela resolve, a
 > evidência por trás de cada decisão e o que ela não faz. O procedimento que o agente segue
 > está no `SKILL.md` — e, sob demanda, nos arquivos de [`references/`](references/) que cada passo
@@ -111,10 +165,10 @@ defeitos reais e carrega informação que a cobertura não carrega
 o Meta industrializou geração de teste guiada por mutante em 10.795 classes
 ([ACH, FSE 2025](https://arxiv.org/pdf/2501.12862)).
 
-E o ciclo fecha com medição real: depois de implementar, `pest --mutate` mede. **Todo mutante
-sobrevivente é traduzido de volta para a lacuna de derivação que o deixou vivo** (`>` → `>=` =
-falta valor limite; `&&` → `||` = falta linha da tabela de decisão; chamada removida = falta
-assertion de efeito colateral).
+E o ciclo fecha com medição real: depois de implementar, `pest --mutate` mede. **Todo sobrevivente
+é triado**: os que mudam comportamento acordado voltam para a lacuna de derivação (`>` → `>=` pode
+ser falta de valor limite; `&&` → `||`, linha de decisão; chamada removida, efeito colateral).
+Equivalentes comprovados são encerrados com a prova; log sem requisito é conferência da dimensão D.
 
 > **Mas `pest --mutate` não substitui o passo 6, e é importante saber por quê.** Mutation testing
 > só muta **código que existe**. Cláusula do requisito que nunca virou código não gera mutante
@@ -134,8 +188,9 @@ assertion de efeito colateral).
 No perfil completo, ou com Impacto 3 em qualquer área, o conjunto vai para um sub-agente que não o
 derivou — no Claude Code, o `fw-adversario-ct`, que recebe só o `00` e o `04`/`05` (e o
 `wikis/glossario.md`, se existir: vocabulário não é plano nem código) — com a tarefa de provar que
-ele deixa passar defeito: **no mínimo** cinco implementações erradas que passam por todos os
-cenários. Cinco é piso; um número fixo virava gabarito. A revisão recebe o conjunto **inteiro**,
+ele deixa passar defeito: procurar implementações erradas plausíveis que passam por todos os
+cenários, sem quota de achados. Zero é válido depois de percorrer o conjunto e registrar as áreas
+avaliadas. A revisão recebe o conjunto **inteiro**,
 não só a área que a disparou: o achado cai onde cai. Sem sub-agente, a skill não se autorrevisa;
 declara a lacuna no `04`, e o `feature-quality-gate` a reporta como débito.
 
@@ -143,9 +198,10 @@ declara a lacuna no `04`, e o `feature-quality-gate` a reporta como débito.
 o agente tinha `Read` e `Glob` sem restrição de path, e o `01` mora na mesma pasta do `00`. Desde a
 1.16.0 o agente declara um hook `PreToolUse` que chama o `guarda-subagente.sh` da `feature-wiki`
 (perfil `adversario-ct`): `Read` e `Grep` fora do `00`, do `04`, do `05`, do glossário e dos
-arquivos das skills são negados **por construção** — desde que o hook esteja instalado (`feature-wiki`
-≥ 4.0.0). Se o script não é encontrado, o hook nega tudo, e a sessão cai no `general-purpose`, em
-que a cegueira volta a ser de prompt. `Glob` continua liberado: devolve só nomes de arquivo.
+arquivos das skills são negados nos padrões cobertos — desde que o hook esteja instalado (`feature-wiki`
+≥ 4.0.0). Isso não prova isolamento de leitura por outros caminhos. Se o script não é encontrado,
+o hook nega as ferramentas cobertas; a sessão usa outro contexto novo disponível e declara as
+restrições efetivas. `Glob` continua liberado: devolve nomes de arquivo.
 
 ## Costuras de teste e perguntas em raias (1.16.0)
 
@@ -167,8 +223,8 @@ rodadas vieram de derivação por regra, não de minimizar costuras (estudo, §3
 derivação acha uma regra que o texto não decide, ela escreve uma pergunta numerada, com raia e
 recomendação: **requisito** (só o solicitante responde) ou **desenho** (o desenvolvedor responde).
 O `Qn` é uma sequência só por feature, nas três raias; derivando em sub-agente, a skill não sabe o
-próximo número e usa `Q?1, Q?2…`, que a sessão renumera ao gravar. A `RQ` afetada fica aberta e
-sem cenário até a resposta — antes, a skill escrevia um cenário `@premissa` na direção "falha
+próximo número e usa `Q?1, Q?2…`, que a sessão renumera ao gravar. O recorte que depende da resposta
+fica aberto, preservando as partes já determinadas no requisito. Antes, a skill escrevia um cenário `@premissa` na direção "falha
 fechado", e esse cenário, materializado, forçava a implementação a seguir a interpretação de quem
 derivou. A direção "falha fechado" continua, agora como a recomendação da pergunta; o invariante
 que vale para as duas respostas continua virando cenário (estudo, §2.3). A troca tem custo, e ele fica declarado: até a resposta, some a detecção que o
@@ -256,7 +312,8 @@ que vive no domínio da regra que vive só no formulário.
 
 A skill carrega os fatos verificados do plugin que contradizem crenças comuns — e que a
 documentação anterior da coletânea trazia errados (o plugin sobe o próprio servidor, `actingAs()`
-funciona, nunca `wait()`, nunca `--parallel`). A fonte única deles é
+funciona, assertions esperam pelo estado). Série é o padrão conservador da coletânea; o plugin
+suporta paralelismo quando isolamento e capacidade foram conferidos. A fonte única deles é
 [`references/pest-plugin-browser.md`](references/pest-plugin-browser.md), que a `feature-wiki`, o
 agente `fw-executor-ctb` e o `feature-quality-gate` também referenciam.
 
@@ -316,25 +373,26 @@ opinião, são o registro do que já escapou.
 
 ## Dependências
 
-**Obrigatória**: a `feature-wiki` ≥ 4.0.0 (`metadata.requires` do `SKILL.md`). O `00-requisito.md`
-existe desde a 2.10.0 e é o oráculo do pipeline — sem ele a skill **para e pede** o requisito (nunca
-deriva do PRD) —, mas esta versão depende também do que veio depois: `## Superfície Livewire` no
+**Obrigatória**: a `feature-wiki` ≥ 4.1.0 (`metadata.requires` do `SKILL.md`), com contrato de hosts e perfis Codex. O `00-requisito.md`
+existe desde a 2.10.0 e é o oráculo do pipeline — em legado/bug sem wiki, a skill materializa um `00`
+mínimo do comportamento já acordado; sem esse acordo, para e pede o requisito (nunca deriva do PRD).
+Esta versão depende também do que veio depois: `## Superfície Livewire` no
 `02` (3.3.0), `## Despachos` no `03` (3.4.0), o `@obsoleto` para CT de elemento cortado e o
 `fw-executor-ct` (3.5.0), contagens por `grep -c` (3.5.1), o contrato de delegação que entrega o
 `02` à derivação (3.5.2) e, na 4.0.0, a derivação no step 7 (depois da auditoria Ponytail),
 `## Perguntas ao Solicitante` e `## Premissas` (`P-nn`) no `00`, o glossário `wikis/glossario.md`
-e o hook `guarda-subagente.sh`, que dá ao `fw-adversario-ct` a cegueira por construção nas
-ferramentas de arquivo, com o hook instalado (sem o script, o hook nega tudo e a revisão cai no
-`general-purpose`, com cegueira de prompt). Além disso,
+e o hook `guarda-subagente.sh`, que restringe leituras diretas do `fw-adversario-ct` no Claude,
+sob as limitações dos padrões cobertos. Sem o script, o hook nega tudo; usar um contexto novo
+permitido pelo host e declarar o alcance contratual, sem chamá-lo de isolamento técnico. Além disso,
 um projeto com testes. Degradações declaradas:
 
 | Item | O que habilita | Sem ele |
 |---|---|---|
-| `pestphp/pest-plugin-mutate` + PCOV/Xdebug | fechamento do ciclo (`pest --mutate`) | o passo 6 fica só como previsão, sem medição — declarar a ausência só com `php -m` / `ls vendor/pestphp/` colados. **No Windows o score é 100 % falso** sem o lançador `.cmd` (`feature-wiki/scripts/pestw.cmd`; explicação em [`feature-wiki/references/pest-5.md`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-wiki/references/pest-5.md)) |
+| `pestphp/pest-plugin-mutate` + PCOV/Xdebug | fechamento do ciclo (`pest --mutate`) | o passo 6 fica só como previsão, sem medição — declarar a ausência só com `php -m` / `ls vendor/pestphp/` colados. **Na pilha Windows medida em 2026-09-21, o score foi 100 % falso** sem o lançador `.cmd`; conferir execução real na pilha instalada (`feature-wiki/scripts/pestw.cmd`; explicação em [`feature-wiki/references/pest-5.md`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-wiki/references/pest-5.md)) |
 | `pest-plugin-livewire` | camada de componente | cai para `Feature` HTTP, mais cara e mais cega |
 | `pest-plugin-browser` + Playwright | CT-B executáveis | o `05` fica como roteiro manual |
 | Sub-agente disponível | revisão adversarial | perfil completo ou Impacto 3 perde o gate independente |
-| Claude Code com o agente `fw-adversario-ct` instalado | adversarial em `opus`, **sem Edit/Write/Bash**, recebendo só `00` + `04`/`05` (+ `wikis/glossario.md`, se existir); `Read`/`Grep` fora dessa lista negados por hook — por construção só com o `guarda-subagente.sh` da `feature-wiki` ≥ 4.0.0 instalado; sem o script, o hook nega tudo | cai em `general-purpose` com `model: opus` explícito; sem sub-agente nenhum, **não** autorrevisa: o `04` declara *"Revisão adversarial: NÃO FEITA — host sem sub-agente"* e o `feature-quality-gate` reporta como débito |
+| Host com o perfil `fw-adversario-ct` e contexto novo | recebe só `00` + `04`/`05` (+ `wikis/glossario.md`, se existir); Claude usa Markdown/hook e Codex o TOML, com modelo e controles realmente disponíveis. Hook e sandbox de leitura não garantem isolamento de paths | usar outro contexto novo permitido pelo host e declarar os limites; sem subagente, **não** autorrevisa: o `04` declara *"Revisão adversarial: NÃO FEITA — host sem sub-agente"* e o `feature-quality-gate` reporta como débito |
 
 ### Instalação do sub-agente (Claude Code)
 
@@ -355,7 +413,8 @@ Get-ChildItem .claude\agents\fw-*.md        # cinco arquivos
 
 O hook do agente procura `feature-wiki/scripts/guarda-subagente.sh` em `.ai/skills/`,
 `.claude/skills/` e `~/.claude/skills/`, nessa ordem. Sem a `feature-wiki` ≥ 4.0.0 em nenhum dos
-três, o agente não lê nada (o hook falha fechado), e a revisão vai pela rota `general-purpose`.
+três, o hook falha fechado nas ferramentas cobertas. Usar o fallback de contexto novo previsto no
+contrato de hosts, com controles declarados; sem contexto novo, registrar revisão não feita.
 
 Espelhar as skills em `.claude/skills/` só é preciso sem `boost.json`: com ele, o `boost:update` cria
 cada `.claude/skills/<skill>` como symlink, e copiar por cima falha. Os dois casos estão em

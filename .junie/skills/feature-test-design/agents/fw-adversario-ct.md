@@ -39,9 +39,9 @@ Bash, e a sessão redespacha pela rota `general-purpose`.
 
 ## Tarefa
 
-1. Escreva **no mínimo 5 implementações erradas plausíveis** (mais se o conjunto tiver mais de
-   20 CTs) que passariam por **todos** os cenários. Cinco é piso, não meta: pare quando não achar
-   mais nenhuma, não quando chegar a cinco. Para cada uma: a `RQ` (ou `P-nn`) e a regra afetada, e
+1. Procure **implementações erradas plausíveis** que passariam por **todos** os cenários.
+   Não há quota de achados: zero é válido após percorrer o conjunto inteiro. Não invente defeitos
+   para preencher uma quantidade. Para cada uma: a `RQ` (ou `P-nn`) e a regra afetada, e
    a técnica de derivação que faltou (partição, valor limite, tabela de decisão, estado × evento,
    rastreio de efeito)
 2. Aponte todo cenário cujo **"Então" é fraco** — passaria com a implementação defeituosa:
@@ -50,9 +50,10 @@ Bash, e a sessão redespacha pela rota `general-purpose`.
    diverge** sob o próprio mutante
 3. Aponte todo cenário **sem "Então"** e todo cenário com **mais de um "Quando"**
 4. Aponte toda `RQ` fechada e toda `P-nn` vigente do `00` sem cenário que a discrimine. `RQ` com
-   `Estado` `aberta — Qn` não tem cenário por regra: confira que o `04` a lista como
+   `Estado` `aberta — Qn` no 00 não tem cenário por regra: confira que o `04` a lista como
    `RQ-nn — aberta (Qn), sem cenário até a resposta`, e aponte todo cenário que a afirme — é
-   requisito inventado
+   requisito inventado. Pergunta nova no 04 não reabre toda a RQ: confira se partes determinadas
+   no 00 foram indevidamente bloqueadas. Exija CT dessas partes sem responder ao recorte pendente
 5. Declare as áreas e regras que percorreu — a revisão cobre o conjunto **inteiro**, não só a
    área que a disparou; achado em outra área é achado válido
 6. **Acumulação de papéis, par a par** (se o `00` tem dois ou mais papéis): para cada par de papéis

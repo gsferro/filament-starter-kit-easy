@@ -99,6 +99,12 @@ coluna também entram.
    {
        // expand–contract (ticket NN-expand): escrita dupla até o ticket contract
        static::saving(function (Cliente $cliente): void {
+           if ($cliente->isDirty('nome') && $cliente->isDirty('razao_social') && $cliente->nome !== $cliente->razao_social) {
+               throw \Illuminate\Validation\ValidationException::withMessages([
+                   'razao_social' => 'Nome e razão social devem ser iguais durante a transição.',
+               ]);
+           }
+
            if ($cliente->isDirty('nome') && ! $cliente->isDirty('razao_social')) {
                $cliente->razao_social = $cliente->nome;
            } elseif ($cliente->isDirty('razao_social') && ! $cliente->isDirty('nome')) {
@@ -109,13 +115,28 @@ coluna também entram.
    ```
 
    `razao_social` entra no `$fillable` (ou no que o model usa no lugar dele).
+   Quando as duas colunas mudam juntas, valores iguais são aceitos; valores divergentes são
+   rejeitados antes de persistir. Nunca escolher silenciosamente qual coluna vence. Factories e
+   outros escritores que preenchem ambas precisam fornecer o mesmo valor durante a transição.
 
 3. **Armadilha**: `update()` em massa pelo query builder, `DB::table()`, `insert()` e `upsert()`
    **não disparam** `saving`. Todo escritor fora do Eloquent achado no levantamento passa a gravar as
    duas colunas **neste** ticket — senão a coluna nova diverge em silêncio durante a migração.
 
 4. CT do expand (no `04`): *gravar pelo caminho antigo preenche `razao_social`; gravar pelo novo
-   preenche `nome`*.
+   preenche `nome`; gravar ambas iguais é aceito; gravar ambas divergentes falha sem alterar o banco*.
+
+   ```php
+   it('[CT-01] escrita dupla rejeita valores conflitantes sem persistir', function (): void {
+       $cliente = Cliente::factory()->create(['nome' => 'Inicial', 'razao_social' => 'Inicial']);
+
+       expect(fn () => $cliente->update(['nome' => 'Antigo', 'razao_social' => 'Novo']))
+           ->toThrow(\Illuminate\Validation\ValidationException::class);
+
+       expect($cliente->fresh()->only(['nome', 'razao_social']))
+           ->toBe(['nome' => 'Inicial', 'razao_social' => 'Inicial']);
+   });
+   ```
 
 ### Tickets migrate (um por lote)
 

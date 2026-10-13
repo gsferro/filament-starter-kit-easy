@@ -1,4 +1,4 @@
-> Referência da feature-test-design 1.16.0. Lida em: passo 3 (antes de aplicar a técnica a cada
+> Referência da feature-test-design 1.17.3. Lida em: passo 3 (antes de aplicar a técnica a cada
 > regra — o desenvolvimento, as tabelas e os exemplos de cada regra de execução). Fonte única de:
 > as regras de execução do passo 3.
 
@@ -214,7 +214,7 @@ um resultado diferente com este valor?** Se produz o mesmo, o exemplo é decorat
 
 | Defeito | Valor que **não** discrimina | Valor que discrimina |
 |---|---|---|
-| percentual em `float` em vez de inteiro | 10% de 10.000 → 1.000 nos dois | **29% de 10.000** → `(int)(10000*0.29)` = 2.899, inteiro dá 2.900 |
+| percentual em `float` em vez de inteiro | 29% de 10.000 → 2.900 nos dois | **29% de 100** → `(int)(100*0.29)` = 28, inteiro dá 29 |
 | arredondamento vs truncamento | qualquer divisão exata | resto ≠ 0 (5% de 50 → 2 ou 3) |
 | off-by-one em limite | 1 e 10 num limite de 3 | **2, 3, 4** |
 | unicidade sem normalização | `PROMO10` × `BLACKFRIDAY` | `PROMO10` × `promo10` × `" PROMO10 "` |
@@ -223,7 +223,13 @@ um resultado diferente com este valor?** Se produz o mesmo, o exemplo é decorat
 | **canal do efeito** | "uma notificação foi enviada" | o **canal** que o requisito nomeia (`mail`, e não `database`) |
 | **valor do requisito parametrizado** | injetar o limite por `config()` em todo cenário | ao menos um cenário com o **número literal do requisito** |
 | **não-efeito** | "nenhuma notificação foi enviada" num mundo sem destinatário | o destinatário existe no `Dado` e o caminho feliz o notificaria |
-| **direção da premissa** | cenário que assume "aceito" onde o requisito é silencioso | nenhum cenário da direção até a resposta (a `RQ` fica aberta); a ➡️ recomenda **falha fechado**, e o invariante vira cenário já |
+| **direção da premissa** | cenário que assume "aceito" onde o requisito é silencioso | nenhum cenário da direção até a resposta; somente o recorte indecidido fica aberto, a ➡️ recomenda **falha fechado**, e o invariante vira cenário já |
+
+O exemplo de `float` foi executado em PHP 8.4.10: para total 100, o desconto inteiro é 29
+e o total final é 71; o mutante acima desconta 28 e entrega 72. Execute o contraexemplo no
+runtime alvo antes de declarar o mutante morto. O exemplo anterior com total 10.000 não
+discriminava as implementações. Evidência e snapshots anteriores estão em
+[`experimentos/2026-10-09-projeto-real/precisao-referencias-antes.json`](../../../../experimentos/2026-10-09-projeto-real/precisao-referencias-antes.json).
 
 As três últimas linhas são a versão não-numérica do valor redondo. **Persona colapsada** é o caso
 mais comum: quando o mesmo usuário é dono, aprovador e chamador, nenhuma barreira de identidade é
@@ -272,7 +278,7 @@ Três coisas diferentes andam com o mesmo nome:
 |---|---|---|
 | **de escopo** | o comportamento **está fora** desta entrega (o agregado `Pedido` não existe) | o cenário é **inexpressável** → lacuna declarada + pergunta (raia requisito) |
 | **de mecanismo** | **como** o sistema faz o que o requisito pede (a exclusão é física; `ativo` é derivado; o valor vem por `config`) | o cenário **continua obrigatório** → a premissa (raia desenho) só fixa em que mecanismo ele é escrito, marcado `@premissa` |
-| **de comportamento** | **o que** o sistema faz quando o texto não diz: **se** aceita ou recusa algo que o requisito não decidiu (cadastrar cupom já vencido; percentual de 150; reduzir o limite abaixo dos usos feitos) | **pergunta da raia requisito** → a `RQ` fica `aberta — Qn`, sem cenário da direção até a resposta; a regra abaixo decide a **recomendação** (➡️), e o invariante vira cenário já. Mesma regra na entrevista do step 4 da `feature-wiki` e na derivação do step 7 |
+| **de comportamento** | **o que** o sistema faz quando o texto não diz: **se** aceita ou recusa algo que o requisito não decidiu (cadastrar cupom já vencido; percentual de 150; reduzir o limite abaixo dos usos feitos) | **pergunta da raia requisito** → somente o recorte indecidido fica aberto, sem cenário da direção até a resposta; a RQ inteira só fica `aberta — Qn` se toda ela depender da resposta. A regra abaixo decide a **recomendação** (➡️), e o invariante das partes determinadas vira cenário já. Mesma regra na entrevista do step 4 da `feature-wiki` e na derivação do step 7 |
 
 **A direção da premissa de comportamento — hoje, a recomendação (➡️) da pergunta de requisito — é
 escolhida por regra, não por conveniência: falha fechado.** Quando o requisito não decide se um
@@ -295,13 +301,16 @@ aplicação, o total, a comparação de uso), e o cenário mora na regra dela, c
 | "reduzir o limite abaixo dos usos feitos?" | **recusa** — cria `usos > limite`, estado que a comparação de uso já trata como esgotado | o contador não é corrigido; a trilha não é truncada |
 | "qualquer papel pode executar a ação?" | **recusa** — ausência de barreira nunca se assume | nenhum cenário afirma que a barreira não existe |
 
-**A direção não vira cenário enquanto a pergunta está aberta.** A `RQ` afetada fica
-`aberta — Qn` e nenhum passo do `01` a implementa: um cenário `@premissa` sobre ela afirmaria um
+**A direção não vira cenário enquanto a pergunta está aberta.** O recorte indecidido fica
+bloqueado; citar uma RQ na pergunta não suspende suas partes determinadas no `00`.
+Se a RQ inteira depende da resposta, ela fica `aberta — Qn` e nenhum passo do `01` a implementa.
+Um cenário `@premissa` sobre a direção afirmaria um
 comportamento que ninguém vai construir — ou forçaria a construção com a interpretação do dev, que
 é o que a raia requisito existe para impedir (estudo 2026-09-26 §2.3). O buraco na partição não
-fica cego: o `04` lista `RQ-nn — aberta (Qn), sem cenário até a resposta`, o item do passo 4
+fica cego: o `04` lista cobertura parcial com CT determinados e `recorte bloqueado — Qn`;
+somente uma cláusula integralmente dependente recebe `RQ-nn — aberta (Qn), sem cenário até a resposta`. O item do passo 4
 (*"valor abaixo do mínimo, acima do máximo e no limite — na gravação"*) responde
-`lacuna declarada: RQ-nn aberta (Qn)`, e o invariante já tem cenário. Quando a resposta entra como
+`lacuna declarada: recorte de RQ-nn dependente de Qn`, e o invariante já tem cenário. Quando a resposta entra como
 Adendo, o cenário da direção é derivado dela.
 
 **Custo declarado da troca**: a detecção medida do cenário direcional (a recusa na criação, em

@@ -18,6 +18,9 @@
 #     no 04/05 — cenário obsoleto não vira teste; o que o substitui, sim.
 # O que NÃO confere: linha de dataset × Exemplos do Gherkin e a contagem do cabeçalho do 04 (leitura,
 #   dimensão L1 do quality gate).
+#   Nomes de teste dinâmicos não são resolvidos. Só chamadas Pest it()/test() com nome literal contam;
+#   comentários, strings de fixture e IDs em asserts não substituem o nome do teste.
+#   Esta conferência prova vinculação estática, não execução ou qualidade da asserção.
 #
 # Quem chama: feature-wiki step 10 (item 4 da reconciliação); feature-quality-gate, dimensão L1 (IDs de CT).
 # Contrato: silêncio + exit 0 = OK; achado = uma linha `arquivo:linha: mensagem` + exit 1;
@@ -150,14 +153,39 @@ $noTeste = [];
 $achados = [];
 foreach (array_keys($testes) as $a) {
     $vistoAqui = [];
-    foreach (ler($a) as $i => $l) {
-        if (!preg_match_all('/\[(CT-B?\d+)\]/', $l, $m)) continue;
+    $source = @file_get_contents($a);
+    if ($source === false) { fwrite(STDERR, "ids-ct.sh: não consegui ler $a\n"); exit(2); }
+    // IDs pertencem ao nome literal de uma chamada Pest, não a comentários, fixtures ou métodos homônimos.
+    $tokens = token_get_all($source);
+    $attributeDepth = 0;
+    foreach ($tokens as $i => $token) {
+        if (is_array($token) && $token[0] === T_ATTRIBUTE) { $attributeDepth = 1; continue; }
+        if ($attributeDepth > 0) {
+            if ($token === '[') $attributeDepth++;
+            elseif ($token === ']') $attributeDepth--;
+            continue;
+        }
+        if (!is_array($token) || !in_array($token[0], [T_STRING, T_NAME_FULLY_QUALIFIED, T_NAME_QUALIFIED], true)) continue;
+        $name = strtolower(ltrim($token[1], '\\'));
+        if (!in_array($name, ['it', 'test', 'pest\\it', 'pest\\test'], true)) continue;
+        $previous = $i - 1;
+        while ($previous >= 0 && is_array($tokens[$previous]) && in_array($tokens[$previous][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) $previous--;
+        $before = $tokens[$previous] ?? null;
+        if (is_array($before) && in_array($before[0], [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_NEW, T_FUNCTION, T_ATTRIBUTE], true)) continue;
+        $j = $i + 1;
+        while (isset($tokens[$j]) && is_array($tokens[$j]) && in_array($tokens[$j][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) $j++;
+        if (($tokens[$j] ?? null) !== '(') continue;
+        $j++;
+        while (isset($tokens[$j]) && is_array($tokens[$j]) && in_array($tokens[$j][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) $j++;
+        $title = $tokens[$j] ?? null;
+        if (!is_array($title) || $title[0] !== T_CONSTANT_ENCAPSED_STRING) continue;
+        if (!preg_match_all('/\[(CT-B?\d+)\]/', $title[1], $m)) continue;
         foreach ($m[1] as $id) {
             $noTeste[$id] = true;
             if (isset($vistoAqui[$id])) continue;
             $vistoAqui[$id] = true;
-            if (!isset($def[$id])) $achados[] = [$a, $i + 1, "[$id] no teste, sem cenário definido no 04/05"];
-            elseif (isset($obs[$id])) $achados[] = [$a, $i + 1, "[$id] no teste, mas o cenário está @obsoleto/riscado/fundido no 04/05"];
+            if (!isset($def[$id])) $achados[] = [$a, $title[2], "[$id] no teste, sem cenário definido no 04/05"];
+            elseif (isset($obs[$id])) $achados[] = [$a, $title[2], "[$id] no teste, mas o cenário está @obsoleto/riscado/fundido no 04/05"];
         }
     }
 }

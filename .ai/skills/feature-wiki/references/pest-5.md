@@ -3,7 +3,7 @@
 # Execução de Testes com Pest 5
 
 A detecção da versão e as regras duras (uma suíte por comando, plausibilidade do score do
-`--mutate`, forma canônica `--parallel --tia`, nada de `--parallel` com browser, nada de `--tia` no
+`--mutate`, forma canônica `--parallel --tia`, browser em série por padrão com paralelo condicionado a isolamento/capacidade, nada de `--tia` no
 CI, `--agent` não substitui CT) ficam no corpo do `SKILL.md`, seção *Execução de Testes com Pest 5*.
 
 Instalação/upgrade (conforme a doc oficial — **não existe `php artisan pest:install`**):
@@ -23,8 +23,8 @@ Vindo de Pest 4: `"pestphp/pest": "^5.0"` no `composer.json` + todos os plugins 
   Symfony Process; o `cmd` não executa arquivo sem extensão, o subprocesso sai com código 1 em ~30 ms e
   o plugin conta **qualquer** saída não-zero como mutante morto. Sintoma: *206 mutantes em 3 s*
   para uma suíte de 200 s — e o juiz cego caiu nisso também (*"2 mutantes, 100 %"*). Regra:
-  **score só vale com `Duration` compatível com N × tempo dos testes cobridores e com a lista de
-  sobreviventes.** No Windows, lançar pelo `.cmd` poliglota que vem com a skill,
+  **confira o lançador, a lista de sobreviventes e uma prova discriminante real; duração é heurística,
+  considerando cache, paralelismo e testes selecionados.** No Windows, lançar pelo `.cmd` poliglota que vem com a skill,
   `{skills}/feature-wiki/scripts/pestw.cmd`, para que `argv[0]` seja executável pelo `cmd`. Ele acha
   o Pest pelo diretório corrente (`getcwd()`), então roda na raiz do projeto sem cópia e sem path fixo:
 

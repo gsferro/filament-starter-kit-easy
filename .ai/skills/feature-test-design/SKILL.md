@@ -1,34 +1,24 @@
 ---
 name: feature-test-design
-description: >
-  Deriva casos de teste que matam defeito a partir do requisito (00-requisito.md) —
-  não do plano e nunca do código — e escreve o 04-casos-de-teste.md e, só quando a
-  asserção depende do navegador, o 05-casos-de-teste-browser.md. Pipeline: perfil de
-  risco, varredura SFDIPOT, mapa de regras, técnica formal por regra, taxonomia de
-  defeito, cenários em Gherkin pt-BR e gate de falsificabilidade por mutantes,
-  fechado com pest --mutate e revisão adversarial. Invoque no step 7 da feature-wiki,
-  antes de implementar; quando um achado de revisão virar premissa P-nn ou o
-  feature-quality-gate rotear um achado para o destino 3 (teste); ao escrever o teste
-  de regressão de um bug de produção; para cobrir código legado sem wiki; quando
-  pest --mutate deixar mutante sobrevivente.
-  Palavras-chave: casos de teste, CT, CT-B, costuras de teste, Gherkin, mutantes, pest --mutate,
-  partição, valor limite, tabela de decisão, estado × evento, IDOR, idempotência,
-  superfície Livewire, Filament, Pest, Laravel.
+description: >-
+  Deriva CT e CT-B falsificáveis do requisito, com risco, técnicas formais e revisão adversarial. Use antes de implementar, em regressões, legado com comportamento acordado e mutantes sobreviventes. O plano e o código não definem o oráculo.
 license: MIT
-compatibility: >
-  Projeto Laravel com Pest; entrada obrigatória: o 00-requisito.md da feature-wiki
-  (sem ele a skill para e pede). pest --mutate exige pest-plugin-mutate e PCOV ou
-  Xdebug; ausência só com prova negativa; no Windows, o score só vale pelo lançador
-  .cmd. CT-B exigem pest-plugin-browser, Playwright e npm run build. Revisão
-  adversarial exige sub-agente (Claude Code: fw-adversario-ct em .claude/agents/, ou
-  general-purpose com model opus); sem ele, lacuna declarada no 04, nunca
-  autorrevisão.
+compatibility: >-
+  Laravel com Pest e requisito 00, ou comportamento acordado materializado em 00 mínimo para legado. Mutation testing exige plugin e driver compatíveis; Windows usa lançador .cmd validado. CT-B exigem runner browser instalado. Revisão adversarial usa contexto novo em qualquer host; sem ele, lacuna declarada.
 metadata:
-  version: "1.16.0"
-  requires: "feature-wiki>=4.0.0"
+  version: "1.17.3"
+  requires: "feature-wiki>=4.1.0"
 ---
 
 # Feature Test Design — Do Requisito ao Caso de Teste que Mata Defeito
+
+## Host e execução
+
+O processo é independente do provedor. Use ferramentas realmente expostas e o path efetivo da skill.
+Preserve decisões e autorizações existentes; confirme apenas informação material ausente ou ação que exija autorização adicional.
+Para paths, subagentes e controles, leia o [contrato compartilhado](../feature-wiki/references/hosts-e-subagentes.md) da feature-wiki, se instalada.
+Ausência de recurso vira limitação registrada, nunca prova de aprovação.
+
 
 ## Glossário
 
@@ -45,7 +35,7 @@ metadata:
 | **SFDIPOT** | Structure, Function, Data, Interfaces, Platform, Operations, Time |
 | **Mutante** | Implementação errada plausível. O CT que "mata" o mutante é o que falharia se ela existisse |
 | **MSI** | Mutation Score Indicator — % de mutantes mortos (`pest --mutate`) |
-| **`{skills}`** | Diretório onde as skills estão instaladas: o primeiro dos três — `.ai/skills/` (Boost), `.claude/skills/` (espelho local), `~/.claude/skills/` (global) — que **contém a skill citada** (`.ai/skills/` pode existir sem ela). É a resolução do hook `guarda-subagente.sh` |
+| **`{skills}`** | Diretório de instalação que contém a skill citada, isto é, o pai da pasta dessa skill. Ex.: SKILL em .agents/skills/feature-wiki/SKILL.md resolve `{skills}` para .agents/skills. Pode variar por skill; use o path informado pelo host. |
 
 ## Índice
 
@@ -111,10 +101,19 @@ de requisito a `## Perguntas ao Solicitante` do `00`; em sub-agente, elas voltam
 numeradas `Q?1, Q?2…` — provisório: o `Qn` é uma sequência só da feature, nas três raias, e a
 sessão renumera ao gravar.
 
-**`RQ` aberta não tem cenário**: com `Estado` `aberta — Qn` no `00`, ou citada em `afeta:` de
-pergunta de requisito da derivação, ela entra no `04` como
-`RQ-nn — aberta (Qn), sem cenário até a resposta` — nenhum passo do `01` a implementa, e cenário
-sobre a suposição é requisito inventado com cara de confirmado ([estudo 2026-09-26](https://github.com/gsferro/laravel-ai-skills/blob/main/estudos/2026-09-26-agentskills-spec-to-spec-to-tickets.md) §2.3).
+**Bloqueie somente o comportamento que depende da resposta.** Uma `RQ` com `Estado`
+`aberta — Qn` no `00` entra no `04` como `RQ-nn — aberta (Qn), sem cenário até a resposta`;
+nenhum passo do `01` a implementa. Uma pergunta nova que cita a `RQ` em `afeta:` não reabre
+automaticamente toda a cláusula: registre o recorte indecidido e preserve os cenários das partes
+explicitamente determinadas no `00`. Se não houver parte determinada independente da resposta,
+use a linha de RQ aberta. Não mude o Estado do `00` sem reconciliar a pergunta na sessão.
+Cenário sobre a suposição continua proibido ([estudo 2026-09-26](https://github.com/gsferro/laravel-ai-skills/blob/main/estudos/2026-09-26-agentskills-spec-to-spec-to-tickets.md) §2.3).
+
+Exemplos: teto de justificativa desconhecido não suspende a recusa da justificativa ausente
+quando a obrigatoriedade é literal; dúvida sobre quem consulta não suspende a exibição de status
+em acesso já autorizado; dúvida sobre zero diretores não suspende o limiar e o aviso quando há
+diretores reais. No mapa, escreva `RQ-nn — cobertura parcial: CT-xx; recorte {…} aberto (Q?n)`.
+Pergunta que contradiz uma decisão vigente do `00` exige reconciliação, não substituição silenciosa.
 **Premissa de comportamento** (o que o sistema faz quando o texto não diz) é pergunta da raia
 requisito, e a **➡️ não é livre**: recomenda
 [falha fechado](references/tecnicas-por-regra.md#premissa-escopo-apaga-mecanismo-escolhe-comportamento-falha-fechado)
@@ -146,15 +145,20 @@ mecanismo do cenário, marcado `@premissa`.
 
 | Entrada | Obrigatória | Sem ela |
 |---|---|---|
-| `00-requisito.md` com cláusulas `RQ-##` e o `Estado` de cada uma, `## Premissas` (`P-nn`) e `## Perguntas ao Solicitante` | **sim** | pedir ao usuário. Nunca derivar do PRD |
+| `00-requisito.md` com cláusulas `RQ-##` e o `Estado` de cada uma, `## Premissas` (`P-nn`) e `## Perguntas ao Solicitante` | **sim** | em legado/bug sem wiki, materializar o comportamento já acordado; sem comportamento acordado, pedir ao usuário. Nunca derivar do PRD |
 | `wikis/glossario.md` — vocabulário do domínio decidido nas features | se existir | o Gherkin usa o termo literal do `00`, sem sinônimo inventado |
-| `01-plano-acao.md` — `## Superfície de UI`, rotas, paths, stack | sim (no fluxo da wiki) | fora do fluxo da wiki, perguntar a superfície |
+| `01-plano-acao.md` — `## Superfície de UI`, rotas, paths, stack | sim (no fluxo da wiki) | fora do fluxo da wiki, usar a superfície já informada; perguntar apenas o que falta |
 | `02-decisoes-arquiteturais.md` — `## Superfície Livewire` | **sim**, sempre que a feature cria página, widget ou componente (pacote de terceiro é uma das origens, não a condição) | a superfície que o cliente realmente alcança fica fora do inventário — e é onde o defeito mora |
 | `.ai/rules/` do projeto | se existir | herdar convenção pelo código de teste existente |
 | `tests/Pest.php` + 1-2 testes existentes | sim | não saber os helpers e traits do projeto |
 | Versões: Pest, Filament, Livewire, Laravel | sim | gerar API de versão errada |
 
-**Gate**: sem `00-requisito.md`, **parar e pedir**. Derivar do plano reintroduz exatamente a
+**Gate**: sem `00-requisito.md` **e sem comportamento acordado**, parar e pedir. Para legado ou
+bug sem wiki, havendo comportamento já acordado com o usuário, criar um `00` mínimo na pasta da
+feature antes de derivar: `## Fonte` identifica esse acordo, `## Texto Original` o preserva verbatim,
+`## Decomposição em Cláusulas` numera apenas o comportamento confirmado (`RQ-nn`, Estado fechado),
+e `## Premissas`/`## Perguntas ao Solicitante` registram as lacunas. Não inventar regra lendo o código,
+nem fabricar uma wiki completa para liberar a derivação. Derivar do plano reintroduz exatamente a
 cegueira correlacionada que a separação de arquivos existe para quebrar.
 
 > **Regra de higiene de contexto**: ao derivar, **não leia a implementação da feature**
@@ -200,7 +204,7 @@ linha de base de comparação.
 Nesse caso: escrever as perguntas no próprio `04`, numa seção
 `## Perguntas para o 00-requisito.md`, **em bloco pronto para colagem** (mesmo formato da seção de
 destino), e **declarar o desvio** em uma linha. A pergunta continua bloqueando o que depende dela:
-a `RQ` que ela afeta é tratada como aberta.
+somente o recorte que exige a resposta fica aberto; as partes já determinadas seguem com seus CT.
 O que não pode acontecer é a pergunta morrer porque o arquivo de destino estava travado.
 
 ---
@@ -338,8 +342,9 @@ desenvolvimento, a tabela e o exemplo de cada regra. A regra vale mesmo sem o ex
   valor, este instante, este ambiente, este `Dado`?
 - **Lacuna fechada sem discriminar é piora** — provar em uma linha por que o cenário novo discrimina
 - **Premissa** — escopo apaga; mecanismo escolhe (raia desenho, `@premissa`) e nunca autoriza a não
-  escrever o cenário; comportamento vira pergunta de requisito com a ➡️ por falha fechado, a `RQ`
-  fica aberta e sem cenário, e o invariante das duas leituras vira cenário da regra fechada
+  escrever o cenário; comportamento vira pergunta de requisito com a ➡️ por falha fechado,
+  o recorte indecidido fica sem cenário, e partes determinadas e invariantes das duas leituras
+  continuam com seus cenários
 - **Impossibilidade de arnês é hipótese** — tentar mudar o arnês; a lacuna declara o que foi tentado
 - **Afirmação negativa é hipótese até um `grep` prová-la** — toda negativa que **dispensa um
   controle** entra na wiki com a mesma exigência de evidência que a positiva: `arquivo:símbolo:linha`
@@ -608,7 +613,8 @@ Sem costura `browser`: **não criar o arquivo** e registrar no `04` a seção `#
 Antes de qualquer CT-B, abra [`references/pest-plugin-browser.md`](references/pest-plugin-browser.md)
 (fatos do plugin, comando, seletores, tema e cor) e [`references/template-05.md`](references/template-05.md).
 Os que mais invalidam CT-B: nunca `wait($segundos)`; `assertPathIs` antes do conteúdo; `actingAs()`
-antes do `visit()`; `npm run build` antes; nunca `--parallel`; `assertNoSmoke()` só em tela própria.
+antes do `visit()`; `npm run build` antes; série como padrão conservador (`--parallel` só com
+isolamento e capacidade conferidos); `assertNoSmoke()` só em tela própria.
 
 ---
 
@@ -645,9 +651,11 @@ sobrevivente: abra [`references/mutation-testing.md`](references/mutation-testin
 - Exige driver de cobertura (**PCOV ou Xdebug** com `XDEBUG_MODE=coverage`). *"Sem driver"* e
   *"plugin ausente"* só se declaram com a prova negativa colada (`php -m | grep -i "pcov\|xdebug"`,
   `ls vendor/pestphp/`) — em 2026-09-21 as duas afirmações estavam na wiki e as duas eram falsas
-- **No Windows, `pest --mutate` dá 100 % falso** — o subprocesso que o `cmd` não executa conta como
-  morto. **Score só vale com `Duration` compatível com N × tempo dos testes cobridores e com a
-  lista de sobreviventes**; lançar pelo `.cmd` poliglota (arquivo `{skills}/feature-wiki/scripts/pestw.cmd`;
+- **Na pilha Windows medida em 2026-09-21, `pest --mutate` deu 100 % falso** — o subprocesso que o `cmd` não executa conta como
+  morto. **Conferir `Duration` como heurística**, considerando os testes cobridores selecionados,
+  processos paralelos e cache, junto da lista de sobreviventes e da execução real dos subprocessos;
+  duração curta, sozinha, não invalida o score. Dúvida indispensável à medição fica como prova
+  pendente, não score certificado; lançar pelo `.cmd` poliglota (arquivo `{skills}/feature-wiki/scripts/pestw.cmd`;
   explicação em `{skills}/feature-wiki/references/pest-5.md`)
 - **`--testsuite=A --testsuite=B` só honra o último** — uma suíte por comando
 - **Confirmar que `pestphp/pest-plugin-mutate` está declarado no `composer.json`.** Ele costuma
@@ -658,8 +666,10 @@ sobrevivente: abra [`references/mutation-testing.md`](references/mutation-testin
 - `covers(X::class)` restringe o que conta como coberto: mutante fora dele sai `uncovered` e o score vai a 0 %
 - Escopar sempre: mutar o projeto inteiro é caro e devolve ruído
 
-**Cada mutante sobrevivente é traduzido de volta para a lacuna de derivação** e vira cenário novo
-(tabela de tradução em `references/mutation-testing.md`).
+**Triar cada mutante sobrevivente antes de traduzir para lacuna de derivação**: equivalente
+comprovado é encerrado com a prova (destino 5 do quality gate); os que mudam comportamento acordado
+viram cenário novo (tabela em `references/mutation-testing.md`). Remoção de log sem `RQ` de auditoria
+é conferência da dimensão D, não origem de CT. Equivalência só alegada continua prova pendente.
 
 > **Nunca usar cobertura de linha como meta de qualidade.** Com o tamanho da suíte controlado,
 > ela não prevê eficácia — 100% de linha é compatível com zero assertion útil. O indicador é o
@@ -676,25 +686,27 @@ Antes de montar o despacho, abra [`references/revisao-adversarial.md`](reference
 [Passo 0](#passo-0--perfil-de-esforço-por-risco)). Uma única rodada cobre o `04` inteiro.
 
 Delegar a um **sub-agente que não derivou os cenários**, com o contrato de
-[`agents/fw-adversario-ct.md`](agents/fw-adversario-ct.md). No Claude Code a rota é
-`fw-adversario-ct` (`opus`, sem `Edit`/`Write`/`Bash`; definição em
-[`agents/fw-adversario-ct.md`](agents/fw-adversario-ct.md) desta skill, que o Claude Code só enxerga
-depois de `cp .ai/skills/*/agents/*.md .claude/agents/`) ou
-`general-purpose` com `model: opus` **explícito** — o mais forte disponível, porque classificar
-se um oráculo está correto é a tarefa em que modelos são comprovadamente piores do que em gerá-lo.
-**Cegueira**: o sub-agente recebe **só** o que a linha `Entrada` (abaixo) lista. No `fw-adversario-ct`,
-Read e Grep fora dela são negados **por construção** pelo hook `PreToolUse` (perfil `adversario-ct`)
-— desde que o hook esteja instalado (`guarda-subagente.sh` da `feature-wiki` ≥ 4.0.0 em `{skills}`).
-Sem o script, o hook nega tudo: o agente devolve as leituras negadas e a sessão redespacha pela rota
-`general-purpose` com `model: opus` (cegueira de prompt). O
-orquestrador registra o disparo em `## Despachos` do `03`. Quem despacha o adversário e fecha os
-achados é a **sessão principal** — um sub-agente não despacha sub-agente; se a derivação rodou em
-sub-agente, ela devolve o `04` e a sessão dispara a revisão. Host sem sub-agente: **não**
-autorrevisar; declarar no cabeçalho do `04` a lacuna `Revisão adversarial: NÃO FEITA — host sem
-sub-agente`, que o `feature-quality-gate` reporta como débito.
+[`agents/fw-adversario-ct.md`](agents/fw-adversario-ct.md), em contexto novo sem a conversa da
+derivação. Mapear rota, modelo e controles pelo [contrato de hosts](../feature-wiki/references/hosts-e-subagentes.md).
+O corpo do contrato é comum; frontmatter e hook do Markdown são exclusivos do Claude Code.
+No Claude, usar `fw-adversario-ct` instalado em `.claude/agents/` ou o fallback `general-purpose`
+com o modelo configurado no adaptador; no Codex, usar o perfil TOML ou as ferramentas expostas,
+herdando o modelo da sessão quando não houver mapeamento configurado.
 
-Linhas do contrato que todo despacho carrega — inclusive pela rota `general-purpose`, em que nenhum
-agente recusa o que não devia receber:
+**Contexto e controles**: o sub-agente recebe **só** o que a linha `Entrada` (abaixo) lista.
+O hook Claude `PreToolUse` (perfil `adversario-ct`) nega Read/Grep nos padrões cobertos quando
+instalado; sem o script, nega as ferramentas cobertas. O agente devolve as leituras negadas e a
+sessão usa outro contexto novo disponível, registrando a falta do hook e as restrições efetivas.
+Hook, prompt e restrição de escrita não provam isolamento de leitura por outros caminhos.
+
+O orquestrador registra o disparo em `## Despachos` do `03`. A **sessão principal** continua
+responsável pelo despacho e fechamento dos achados; a derivação em sub-agente devolve o `04`.
+Aninhamento só quando autorizado pela sessão e suportado pelo host, preservando contexto novo e
+responsabilidade do fechamento. Sem contexto novo independente: **não** autorrevisar; declarar
+no cabeçalho do `04` a lacuna `Revisão adversarial: NÃO FEITA — host sem contexto novo independente`,
+que o `feature-quality-gate` reporta como débito.
+
+Linhas do contrato que todo despacho carrega, inclusive em uma rota genérica sem guarda de leitura:
 
 ```text
 Entrada: 00-requisito.md + 04-casos-de-teste.md (e 05, se houver; e wikis/glossario.md, se existir)
@@ -729,7 +741,7 @@ cujos achados ninguém fecha é teatro caro.
    escrever o nome de qualquer helper.
 6. **Não marcar regra como coberta** enquanto houver mutante previsto sem matador — declarar a lacuna.
 7. **Não empurrar para o browser** o que um teste de componente prova.
-8. **Não editar o `00-requisito.md`** a não ser para acrescentar pergunta em `## Perguntas ao Solicitante` e a marca `aberta — Qn` que ela põe na `RQ` afetada.
+8. **Não editar o `00-requisito.md`** a não ser para reconciliar a pergunta na sessão autorizada. Não marque toda RQ como aberta por um recorte indecidido: preserve partes determinadas; decomposição de cláusula segue o contrato da feature-wiki. Em subagente ou 00 somente leitura, devolva a pergunta no 04.
 9. **Não autorrevisar** o conjunto no perfil completo ou com Impacto 3.
 10. **Não usar cobertura de código como critério de suficiência.** "Todo método público tem ao
     menos 1 CT" e "cada branch tem um CT" são critérios sobre um código que **ainda não existe**
@@ -754,7 +766,7 @@ cujos achados ninguém fecha é teatro caro.
 - [ ] Perfil de esforço definido por área, com P×I registrado
 - [ ] Varredura SFDIPOT preenchida; dimensão vazia **declarada** com motivo
 - [ ] Mapa de regras montado; toda `RQ` fechada e toda `P-nn` vigente do `00` gerou ao menos uma regra ou uma justificativa
-- [ ] Toda `RQ` aberta aparece como `RQ-nn — aberta (Qn), sem cenário até a resposta` — e nenhum cenário a afirma
+- [ ] Toda `RQ` com Estado aberto no `00` aparece sem cenário. Pergunta nova identifica o recorte bloqueado; partes determinadas continuam cobertas, sem responder pela suposição
 - [ ] Perguntas geradas no formato ❓/➡️ com raia (em sub-agente, numeração provisória `Q?n`, que a sessão renumera); as de requisito devolvidas para `## Perguntas ao Solicitante` do `00`
 - [ ] Técnica formal escolhida e **nomeada** por regra
 - [ ] BVA com o incremento do tipo certo (`0,01` em decimal, 1 dia em date)
@@ -795,8 +807,8 @@ cujos achados ninguém fecha é teatro caro.
 ### Pós-implementação
 - [ ] `pest --mutate --covered-only --path={escopo da feature}` executado — com **duração plausível** e sobreviventes listados (no Windows, via lançador `.cmd`); "sem driver/plugin" só com a prova negativa
 - [ ] CT cujo elemento foi cortado depois do step 7 da `feature-wiki` (achado do step 9 ou 11: filtro, ação, coluna) marcado `@obsoleto` com motivo e `~~` no índice — não apagado, não deixado órfão
-- [ ] CT novo que passa dos dois lados do `git stash`: reescrito, **ou** declarado "não falsificável nesta pilha" com o motivo (SQLite sem `VARCHAR`/`RESTRICT`)
-- [ ] Mutante sobrevivente traduzido em lacuna de derivação e convertido em cenário novo
+- [ ] CT novo exercitado com e sem somente o patch da correção numa cópia descartável, preservando o teste: se passa dos dois lados, reescrito ou declarado "não falsificável nesta pilha" com motivo; prova impossível permanece pendente, nunca resolvida por stash amplo
+- [ ] Cada sobrevivente triado: comportamento acordado divergente convertido em CT; equivalente encerrado com prova; log sem `RQ` enviado à dimensão D; prova pendente declarada
 - [ ] Índice de cenários atualizado com o arquivo de teste real de cada CT
 - [ ] **Sincronia nos dois sentidos**: todo `[CT-nn]`/`[CT-Bnn]` do teste existe no `04`/`05`, e todo CT do índice aponta um teste existente ou declara "fundido em CT-nn"; linha de dataset nova existe como Exemplo no Gherkin
 - [ ] Contagem do cabeçalho (`Cenários: {n} · Regras: {n} · Mutantes previstos: {n} · Sem matador: {n}`) recalculada pelos quatro `grep -c` de `references/template-04.md` §Contagem do cabeçalho (nunca escrita à mão — ver feature-wiki 3.5.1)

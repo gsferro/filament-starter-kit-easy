@@ -1,31 +1,24 @@
 ---
 name: feature-wiki
-description: >
-  Cria a wiki de uma feature Laravel antes de implementá-la. Invoque SEMPRE ao iniciar
-  implementação de qualquer feature nova — card, ticket, requisito ou PRD —, antes de qualquer
-  php artisan make:*, e de novo quando o pedido crescer no meio da implementação (vira Adendo
-  no 00). Grava em wikis/specs/{branch}/{feature}/ o requisito bruto imutável decomposto em
-  cláusulas RQ (00), o plano de ação (PRD) executável por outro agente (01), as decisões
-  arquiteturais em ADR (02) e o progresso com evidência (03). Os casos de teste (04/05) são
-  delegados à feature-test-design, que os deriva do requisito, não do plano. Conduz a feature até
-  o PR: pesquisa com search-docs do Laravel Boost, revisão do plano, revisão do diff por quem não
-  implementou assim que os testes passam, reconciliação wiki × código, quality gate
-  (feature-quality-gate) e candidatos a Project Rule (requirement-to-rule).
-  Para Laravel, Livewire, Filament e Pest; no Claude Code, despacha sub-agentes roteados por
-  modelo e por cegueira.
+description: >-
+  Planeja e conduz features Laravel: requisito imutável, plano, ADR, testes, implementação, revisão independente e QA. Use para nova regra ou fluxo, refatoração ampla e adendos. Não use para typo, ajuste trivial ou manutenção desta coletânea.
 license: MIT
 compatibility: >-
-  Projeto Laravel com git; bash e php para scripts/. Laravel Boost com MCP recomendado: search-docs no step 3 e
-  record-rule (Boost >= 2.4.12) no step 12. Pest 4 ou 5; assume Pest 5 (--tia e --mutate na
-  Verificação Final, --agent na implementação) e cai para --filter no Pest 4. Sub-agentes do Claude Code opcionais: sem eles tudo
-  roda em linha e a perda de independência é declarada no 03. Plugins Ponytail e Caveman
-  opcionais; sem Ponytail o step 6 vira passe manual registrado no 03.
+  Laravel com git, Bash e PHP; Boost MCP e Pest conforme versão instalada. Subagentes opcionais em qualquer host; sem contexto novo, independência não verificada. Claude usa Agent/hooks; Codex usa ferramentas expostas e perfis TOML. Ponytail/Caveman opcionais. Leia references/hosts-e-subagentes.md.
 metadata:
-  version: "4.0.0"
-  requires: "feature-test-design>=1.16.0; feature-quality-gate>=1.7.0; laravel/boost>=2.4.12"
+  version: "4.1.1"
+  requires: "feature-test-design>=1.17.0; feature-quality-gate>=1.8.0; laravel/boost>=2.4.12"
 ---
 
 # Feature Wiki — Documentação Antes de Implementar
+
+## Host e execução
+
+O processo é independente do provedor. Use ferramentas realmente expostas e o path efetivo da skill.
+Preserve decisões e autorizações existentes; confirme apenas informação material ausente ou ação que exija autorização adicional.
+Para paths, subagentes e controles, leia o [contrato compartilhado](references/hosts-e-subagentes.md).
+Ausência de recurso vira limitação registrada, nunca prova de aprovação.
+
 
 > ## O gate que mais pega defeito é o step 9 — e ele roda assim que os testes passam
 >
@@ -40,8 +33,9 @@ metadata:
 > código, premissa e CT — reconciliar antes de revisar é reconciliar duas vezes.
 >
 > **Quem revisa não pode ser quem implementou.** No Claude Code o `/code-review` roda em sub-agente
-> isolado e o passe de eixos vai para um sub-agente sem o PRD — cego por construção nas ferramentas de
-> arquivo com o hook instalado; no Bash, heurística; no fallback, prompt. Ver [Execução e Delegação](#execução-e-delegação-claude-code--roteamento-por-modelo-e-por-cegueira).
+> com contexto novo, e o passe de eixos vai para um sub-agente sem o PRD. O hook restringe ferramentas
+> nos padrões cobertos; Bash usa heurística e o fallback usa contrato de leitura. Esses controles não
+> provam isolamento de leitura. Ver [Execução e Delegação](#execução-e-delegação--capacidades-modelo-e-cegueira).
 
 ## Glossário
 
@@ -59,11 +53,11 @@ metadata:
 | **TIA** | Test Impact Analysis — engine do Pest 5 que roda só os testes afetados |
 | **estudo §n** | Seção de [`estudos/2026-09-26-agentskills-spec-to-spec-to-tickets.md`](https://github.com/gsferro/laravel-ai-skills/blob/main/estudos/2026-09-26-agentskills-spec-to-spec-to-tickets.md), de onde vêm as regras da 4.0.0 |
 | **`{base}`** | Branch de destino do PR (`main`, salvo indicação do usuário); registrada no cabeçalho do `03` |
-| **`{skills}`** | Diretório onde as skills estão instaladas: o primeiro dos três — `.ai/skills/` (Boost), `.claude/skills/` (espelho local), `~/.claude/skills/` (global) — que **contém a skill citada**. Não basta o diretório existir: `.ai/skills/` pode existir sem ela |
+| **`{skills}`** | Diretório de instalação que contém a skill citada, isto é, o pai da pasta dessa skill. Ex.: SKILL em .agents/skills/feature-wiki/SKILL.md resolve `{skills}` para .agents/skills. Pode variar por skill; use o path informado pelo host. |
 
 ## Índice
 
-- [Quando Invocar](#quando-invocar) · [Execução e Delegação (Claude Code)](#execução-e-delegação-claude-code--roteamento-por-modelo-e-por-cegueira)
+- [Quando Invocar](#quando-invocar) · [Execução e Delegação](#execução-e-delegação--capacidades-modelo-e-cegueira)
 - **Fluxo** (uma ordem só): [0. Requisito](#0-capturar-o-requisito--primeiro-ato) · [1. Branch](#1-descobrir-branch-e-estrutura-de-pasta) · [2. Nome](#2-definir-nome-da-feature) · [3. Pesquisa](#3-pesquisa-e-contexto-obrigatório-antes-de-escrever) ([Superfície Livewire](#superfície-livewire-obrigatório-em-toda-feature-que-cria-página-widget-ou-componente), [`search-docs`](#documentation-api-do-boost-search-docs)) · [4. `00`–`03`](#4-criar-os-arquivos) ([entrevista em três raias](#entrevista-em-três-raias-obrigatória-no-step-4), [path por arquivo](#path-e-número-por-arquivo)) · [5. Revisão profunda](#5-revisão-profunda-pós-escrita-obrigatório) ([classe irmã](#varredura-da-classe-irmã-obrigatória-para-toda-classe-nova)) · [6. Ponytail](#6-auditoria-da-wiki-com-ponytail-review-obrigatório) · [7. `04`/`05`](#7-derivar-os-casos-de-teste-obrigatório-depois-do-ponytail) · [8. Tickets (condicional)](#8-fatiar-em-tickets-condicional) · [Implementação](#implementação-sem-número) · [9. Revisão do diff](#9-revisão-de-código-do-diff-obrigatório-logo-após-os-testes-passarem-e-antes-da-reconciliação) · [10. Reconciliação](#10-pós-implementação-e-reconciliação-obrigatório-antes-do-pr) · [11. Quality gate e PR](#11-quality-gate-e-abertura-do-pr-obrigatório-antes-do-pr) · [12. Rules](#12-candidatos-a-rule-de-projeto-obrigatório-depois-do-veredito)
 - **Arquivos**: [00](#arquivo-00-requisito--fonte-da-verdade) ([Adendo](#adendo-ao-requisito--quando-o-pedido-cresce-durante-a-implementação)) · [01](#arquivo-01-plano-de-ação-prd) · [Padrão de Log](#padrão-de-log--classemétodo-mensagem) · [02](#arquivo-02-decisões-arquiteturais-adr) · [03](#arquivo-03-progresso--tracking) · [Glossário do projeto](#glossário-do-projeto) · [04 e 05](#arquivos-04-e-05-casos-de-teste--delegados-à-feature-test-design) ([Playwright MCP](#playwright-mcp-na-validação-opcional--ferramenta-de-observação))
 - [Pest 5](#execução-de-testes-com-pest-5) · [Citações de código](#citações-de-código--arquivosímbololinha) · [Checklist Final](#checklist-final-da-skill) · [Skills Companheiras](#skills-companheiras)
@@ -131,17 +125,15 @@ Feature fatiada no step 8: quem executa um ticket lê o arquivo do ticket e só 
 > **Bug fix com nova lógica**: se o fix introduz nova regra de negócio, novo estado ou novo fluxo → invocar a wiki.
 > **Refatoração larga** (renomear coluna, retipar símbolo compartilhado) **invoca a wiki**, com `## Natureza da Wiki: refatoração`, e o step 8 sugere a `feature-tickets` (expand → migrate em lotes → contract) — feita de uma vez, tocava migration, model, factories, telas e testes numa sessão só (estudo §4.2).
 
-## Execução e Delegação (Claude Code) — roteamento por modelo e por cegueira
+## Execução e Delegação — capacidades, modelo e cegueira
 
-> Vale quando o host expõe sub-agentes (Claude Code: ferramenta `Agent`, agentes em
-> `.claude/agents/`). Em host sem sub-agente (Windsurf, Cursor, Copilot) tudo roda em linha, e a
-> degradação é **declarada** no `03-progresso.md` → `## Despachos`: *"Sem despacho — host sem
-> sub-agente"*. O que se perde não é só custo: perde-se a **independência** dos gates, e o leitor
-> do PR precisa saber disso.
+Leia [hosts e subagentes](references/hosts-e-subagentes.md) antes do primeiro despacho.
+Em Claude Code use o adaptador Agent; em Codex, agentes TOML ou as ferramentas de subagente expostas.
+Em qualquer host, tarefa que exige independência recebe contexto novo sem a conversa da sessão.
+Sem essa capacidade, declare a perda no 03; não apresente autorrevisão como julgamento cego.
 
-A sessão principal **orquestra, decide e audita**. Tarefa de volume e tarefa de julgamento
-independente **não rodam em linha** — vão para sub-agente pela ferramenta `Agent`, com o modelo
-roteado. Delegar é o padrão; rodar em linha é exceção declarada.
+A sessão principal orquestra, decide e audita. Delegue julgamentos independentes e trabalhos extensos
+ou disjuntos. Checagem determinística barata roda localmente. Respeite autorização e concorrência reais do host.
 
 Princípio: **gerar barato, raciocinar sob demanda, auditar caro — e julgar às cegas.**
 
@@ -151,15 +143,18 @@ A validação em campo deste modelo (2026-09-21, feature completa): [`references
 
 | Eixo | Pergunta | Decide |
 |---|---|---|
-| **Complexidade** | quanto raciocínio a tarefa exige? | o **modelo** (`haiku` → `sonnet` → `opus`) |
+| **Complexidade** | quanto raciocínio a tarefa exige? | o modelo/esforço disponível; aliases Claude são apenas um mapeamento |
 | **Cegueira** | o que o executor **não pode ter visto** para o resultado valer como prova? | o **contexto** que o sub-agente recebe — e, por consequência, que a tarefa **não pode** rodar em linha |
 
 O segundo eixo quebra a **cegueira correlacionada** (o mesmo agente lê o requisito, escreve plano,
 teste, código e veredito, e erra coerentemente): sub-agente nasce **sem** o contexto da sessão, então
 *"por quem não implementou"* (step 9), *"por quem não derivou"* (step 7) e *"por quem não escreveu a
-wiki"* (step 11) viram **construção** nas ferramentas de arquivo, com o hook `guarda-subagente.sh`;
-no Bash, heurística mais a comparação do `git status --porcelain`; no fallback `general-purpose`,
-prompt (estudo §7.1 T6). Tarefa cuja validade depende de cegueira **nunca** roda em linha.
+wiki"* (step 11) exigem contextos novos e autoria independente. O hook `guarda-subagente.sh` restringe
+ferramentas nos padrões cobertos; no Bash, a guarda é heurística; no fallback, o limite é contratual
+(estudo §7.1 T6). Registre as ferramentas e vias efetivamente disponíveis. Comparação de conteúdo/hash
+observa alterações, não ausência de leitura; `git status --porcelain` é apenas auxiliar. Esses controles
+não provam isolamento de leitura. Tarefa cuja validade depende de cegueira não recebe selo de
+independente quando roda em linha; declare a degradação.
 
 ### Rotas
 
@@ -168,7 +163,7 @@ a tabela de rotas — modelo, uso nesta esteira e ferramentas de `mecânico`, `c
 `revisor-diff`, `adversário-ct`, `qa-gate`, `executor-ct`, `executor-ctb` e sessão principal.
 
 **Tier é o conceito portável; o alias é a implementação Claude**: `haiku` = econômico, `sonnet` =
-intermediário, `opus` = topo — outro provedor mapeia os três; `## Despachos` registra o modelo **efetivamente** usado.
+intermediário, `opus` = topo — outro provedor mapeia os três; `## Despachos` registra o modelo **efetivamente** usado, ou `não exposto pelo host` quando não houver essa informação.
 
 **Regras da rota `mecânico`** (casos em [`references/casos-medidos.md`](references/casos-medidos.md#rota-mecânico--2026-09-21)):
 
@@ -179,7 +174,9 @@ intermediário, `opus` = topo — outro provedor mapeia os três; `## Despachos`
   arquivos. **Sem `Explore`** (estudo §7.2): `mecânico` com trechos, um item por despacho — ou
   `general-purpose`/`sonnet` quando o mapeamento exige escolher o relevante; `## Despachos` registra o fallback
 
-Como obter as rotas, em ordem de preferência:
+No Codex use os perfis em `agents/codex/`; eles herdam o modelo/esforço da sessão. Não aplique aliases Claude. O corpo do contrato Markdown é comum; seu frontmatter e hooks são exclusivos do Claude.
+
+**Adaptador Claude Code — como obter as rotas, em ordem de preferência:**
 
 1. **Agentes do projeto** em `.claude/agents/` — se o projeto já tem `mecanico`/`construtor`/
    `analista` (ou equivalentes), usá-los pelo `subagent_type`
@@ -188,12 +185,12 @@ Como obter as rotas, em ordem de preferência:
    `fw-adversario-ct` na `feature-test-design`; `fw-qa-gate` na `feature-quality-gate`). O Claude Code
    **não lê `.ai/skills/*/agents/`**: `cp .ai/skills/*/agents/*.md .claude/agents/` uma vez e a cada
    atualização. O hook `PreToolUse` de cada um (`guarda-subagente.sh`, perfil na [tabela de rotas](references/roteamento-e-despacho.md#rotas))
-   nega por construção o Read/Grep/Glob/Edit/Write fora do contrato — no Bash, heurístico — e, sem o
-   script, nega tudo (*"guarda-subagente.sh nao encontrado"*) → item 3. Os agentes só carregam de
+   nega Read/Grep/Glob/Edit/Write nos padrões cobertos — no Bash, heurístico — e, sem o
+   script, nega as ferramentas cobertas (*"guarda-subagente.sh nao encontrado"*) → item 3. Os agentes só carregam de
    `.claude/agents/` do diretório onde a sessão foi aberta: antes do primeiro despacho,
    `ls .claude/agents/fw-*.md`; se faltar, item 3, e `## Despachos` registra *"fallback
    `general-purpose`/{model} — agente `fw-…` indisponível"* — perde a restrição de ferramenta e o
-   hook, não a cegueira de contexto, que vai no prompt
+   hook; entradas e leituras permitidas continuam limitadas por contrato no contexto novo
 3. **`general-purpose` com `model` explícito** — funciona em qualquer projeto sem instalar nada.
    **NUNCA despachar `general-purpose` sem `model`**: ele herda o modelo caro da sessão e o
    roteamento deixa de existir
@@ -240,8 +237,9 @@ cegueira. O passe de eixos do step 9, a revisão adversarial (step 7) e o step 1
 A sessão principal confere o retorno de **todo** lote antes de usá-lo:
 
 - **presença** — o agente entregou tudo o que o quadro pedia, no formato fixo?
-- **integridade** — nenhuma proibição do contrato violada: código de aplicação intacto, `00`
-  intacto, `04` intacto (`git status` e `git diff --stat` antes e depois do lote)
+- **integridade** — a sessão compara conteúdo ou hashes dos arquivos relevantes antes e depois do
+  lote, incluindo arquivos já modificados e untracked; `git status` e `git diff --stat` são sinais
+  auxiliares. Nenhuma proibição do contrato violada: código de aplicação, `00` e `04` intactos
 - **amostragem** — 2–3 itens conferidos com `Read`/`grep` direto, em todo retorno (não só no `Explore`)
 
 **Sinais que reprovam o retorno antes da amostragem** (casos em [`references/casos-medidos.md`](references/casos-medidos.md#sinais-que-reprovam-o-retorno--2026-09-21)):
@@ -282,7 +280,8 @@ nomear a feature (step 2) antes de ler o pedido é fixar uma interpretação ant
 
 ### 2. Definir Nome da Feature
 
-Derivar **do requisito capturado no step 0**, e confirmar com o usuário:
+Derivar **do requisito capturado no step 0**; usar o nome informado ou o nome mais direto. Perguntar
+somente se a escolha muda o escopo ou conflita com uma wiki existente:
 - Nome deve ser `kebab-case`
 - Deve descrever a feature, não o ticket
 - Exemplos: `envio-progresso`, `unico-jobs-progress-tracking`, `api-webhook-payments`
@@ -315,7 +314,7 @@ desconto no pedido" e **não existe `Pedido`**). É **premissa de escopo**: esco
 3. **Perguntar ao solicitante** (raia requisito do step 4), com as duas opções e o custo de cada uma
 4. Enquanto a resposta não chega: seguir com a premissa **mais estreita** (entregar o que
    existe, não criar a entidade), registrar a pergunta em `## Perguntas ao Solicitante` e deixar as
-   `RQ` dependentes `aberta — Qn` — nenhum passo do `01` as implementa, e `## Cobertura do
+   cláusulas integralmente dependentes `aberta — Qn` — nenhum passo do `01` as implementa, e `## Cobertura do
    Requisito` as marca `**Bloqueado por**` — nunca como atendidas. Premissa de escopo tomada em
    silêncio é o erro mais caro da wiki: tudo fica coerente, verde, e entrega outra coisa
 
@@ -340,7 +339,8 @@ Grosso demais **esconde omissão** (`RQ` ✅ com metade entregue); fino demais v
 
 **Quando o solicitante não responde a tempo**, a ambiguidade **não vira silêncio nem interpretação
 do desenvolvedor** (estudo §2.3): a pergunta fica em `## Perguntas ao Solicitante` com a
-recomendação, a `RQ` fica `aberta — Qn`, todo passo que dependa dela leva `**Bloqueado por**: RQ-nn
+recomendação. Só a afirmação dependente fica bloqueada; obrigações determinadas continuam no plano
+e nos CT. Se toda a cláusula depender da resposta, a `RQ` fica `aberta — Qn`; todo passo dessa cláusula leva `**Bloqueado por**: RQ-nn
 (aberta — Qn)` e o resto segue. `RQ` aberta implementada é `REPROVADO → especificação` no step 11.
 
 > **Por que isso existe**: sem o `00-requisito.md`, o único registro do que foi pedido é o PRD — que é a **interpretação** do agente. Se a interpretação estiver errada, ela contamina plano, testes, código e validação de forma coerente, e nada no ciclo detecta. Ver [Arquivo 00](#arquivo-00-requisito--fonte-da-verdade).
@@ -352,7 +352,7 @@ Antes de escrever qualquer documento:
 - Executar `php artisan model:show ModelName` para models relacionados
 - Examinar padrões existentes com `Glob "**/[padrão]/**/*.php"`
 - **Inspecionar APIs de terceiros** antes de escrever CTs — verificar vendor source ou docs oficiais para confirmar nomes de métodos, assinaturas e restrições de schema. E isso nunca basta sozinho: **toda** feature que cria página, widget ou componente preenche a [Superfície Livewire](#superfície-livewire-obrigatório-em-toda-feature-que-cria-página-widget-ou-componente)
-- Para features médias/grandes: delegar o mapeamento amplo a um agent `Explore` (sem ele, o fallback de [Rotas](#rotas)) e depois **confirmar os trechos críticos com `Read` direto** (linhas exatas, imports, assinaturas) — não confiar apenas no resumo do agent. No Claude Code, os greps prescritos nesta lista e na Superfície Livewire vão para `mecânico` (`haiku`) **em paralelo**, cada um devolvendo a tabela pronta — ver [Execução e Delegação](#execução-e-delegação-claude-code--roteamento-por-modelo-e-por-cegueira)
+- Para features médias/grandes: delegar o mapeamento amplo a um agent `Explore` (sem ele, o fallback de [Rotas](#rotas)) e depois **confirmar os trechos críticos com `Read` direto** (linhas exatas, imports, assinaturas) — não confiar apenas no resumo do agent. No Claude Code, os greps prescritos nesta lista e na Superfície Livewire vão para `mecânico` (`haiku`) **em paralelo**, cada um devolvendo a tabela pronta — ver [Execução e Delegação](#execução-e-delegação--capacidades-modelo-e-cegueira)
 - **Validar dados fornecidos pelo usuário** (CSV, listas, IDs) contra o banco via `database-query` — detectar divergências de título/chave, escolher chave estável (ID) para mapeamentos e documentar as divergências no plano
 - **Verificar existência de factories** (`Glob "database/factories/{Model}*"`) e states disponíveis antes de escrever CTs; se não houver factory, especificar `Model::create([...])` no Setup Global
 - **Confirmar padrões internos citados** no plano com grep/read (ex: seeder-em-migration, guards de environment, `$casts` property vs `casts()`) — citar `arquivo:símbolo:linha` de referência no plano ([Citações de código](#citações-de-código--arquivosímbololinha)); só com linha, o `citacoes.sh` acusa
@@ -433,7 +433,9 @@ depois dos cortes do Ponytail (estudo §7.2). A wiki completa tem os **5 arquivo
 4. **`02-decisoes-arquiteturais.md`** — só decisões que passam nos [três portões](#arquivo-02-decisões-arquiteturais-adr), mais a `## Superfície Livewire`
 5. **`03-progresso.md`** — espelha os passos do PRD, com `**Estado**: em planejamento`; os CT/CT-B entram no step 7
 6. **Confirmação registrada** — antes do step 5, `## Auditoria Pré-Implementação` do `03` ganha a linha
-   `Entendimento confirmado: {data} — {quem} — {rodadas, nº de perguntas por raia}` (estudo §2.2)
+   `Entendimento confirmado: {data} — {quem ou autorização existente} — {rodadas, nº de perguntas por raia}` (estudo §2.2).
+   Autorização de implementar já presente na conversa dispensa uma nova aprovação do plano; pergunta
+   aberta que muda o requisito continua bloqueando os passos dependentes
 
 Antes de escrever cada arquivo, leia o template dele: [`references/template-00-requisito.md`](references/template-00-requisito.md),
 [`references/template-01-plano.md`](references/template-01-plano.md), [`references/template-02-adr.md`](references/template-02-adr.md)
@@ -449,11 +451,14 @@ Antes da primeira rodada, leia [`references/entrevista-tres-raias.md`](reference
 Reabre quando os steps 5, 9 ou 11, ou o quiz da `feature-tickets`, geram pergunta (estudo §2.3:
 perguntar tudo ao desenvolvedor o faria responder pelo solicitante).
 
-- **Quem responde**: **fato** → o agente (steps 3 e 5), nunca o usuário; **desenho** → o desenvolvedor;
-  **requisito** → o solicitante — a pergunta vai para `## Perguntas ao Solicitante` do `00`, a `RQ`
-  fica `aberta — Qn` e **nenhum passo do `01` a implementa** até o Adendo
+- **Quem responde**: **fato** → o agente (steps 3 e 5), nunca o usuário; **desenho** → a sessão decide
+  escolhas rotineiras sob autorização/convenção existente; o desenvolvedor responde decisões materiais pendentes;
+  **requisito** → o solicitante — a pergunta vai para `## Perguntas ao Solicitante` do `00`.
+  Bloquear somente o recorte dependente; preservar obrigações determinadas. Só se toda a cláusula
+  depender da resposta a `RQ` fica `aberta — Qn` e **nenhum passo do `01` a implementa** até o Adendo
 - **Formato ❓/➡️**, `Qn` numa sequência **única** para as três raias, em **rodadas pela fronteira**:
-  cada rodada pergunta tudo cujo pré-requisito já foi respondido, e espera
+  cada rodada agrupa as decisões materiais ainda sem resposta; escolhas técnicas rotineiras seguem
+  as convenções e a autorização existentes. Enquanto espera, executar o trabalho independente
 - **Filtro de oráculo** — só entra pergunta que toca um `RQ` ou uma `P-nn` (estudo §2.4)
 - **Premissa de comportamento** (o que o sistema faz quando o texto não diz) é pergunta da raia
   requisito, com a `➡️` pela opção que **falha fechado** — a mesma regra da derivação no step 7
@@ -559,25 +564,29 @@ As regras duras ficam aqui:
 - **`RQ` aberta não gera cenário** — o `04` a lista como `RQ-nn — aberta (Qn), sem cenário até a resposta` (forma esperada, não achado)
 - **Pergunta devolvida** chega no formato ❓/➡️, numerada `Q?1, Q?2…` quando vem de sub-agente; a
   sessão a renumera na sequência `Qn` da feature (a partir do maior `Qn` de `00`–`03`), atualiza a
-  linha `RQ-nn — aberta (Qn)` do `04` e a leva ao solicitante (`## Perguntas ao Solicitante`) ou ao
+  linha do `04`: cobertura parcial com CT determinados + recorte bloqueado `Qn`, ou
+  `RQ-nn — aberta (Qn)` somente se a cláusula inteira depender da resposta. Leva a pergunta ao solicitante (`## Perguntas ao Solicitante`) ou ao
   desenvolvedor (raia desenho). Quem pergunta é a sessão
 - **Costuras voltam como proposta** (estudo §3.4) — `## Costuras de Teste` chega do sub-agente com
-  `Confirmada` vazia; a sessão confirma cada linha com o desenvolvedor, preenche quem e data e, se uma
-  costura muda, pede a re-derivação daquele grupo. A costura decide se o `05` existe ([Gate do `05`](#gate-do-05-browser))
+  `Confirmada` vazia; a sessão usa as convenções e a autorização existentes e registra quem decidiu
+  e data. Pergunta ao desenvolvedor apenas decisão material ainda não autorizada; costura alterada
+  pede re-derivação do grupo. A costura decide se o `05` existe ([Gate do `05`](#gate-do-05-browser))
 - **Revisão adversarial** — depois das costuras confirmadas, a sessão principal despacha o
   `fw-adversario-ct` (`00` + `04`/`05`, + `wikis/glossario.md` se existir) e fecha todos os achados:
-  sub-agente não despacha sub-agente
+  a derivação devolve o conjunto; aninhamento só quando autorizado pela sessão e suportado pelo
+  host, preservando contexto novo e a responsabilidade principal pelo fechamento
 - **O `03` ganha os CT/CT-B** — `## Testes` lista os arquivos de teste com os IDs que cada um cobre
 
 > **Não escrever o `04` inline** — o caso de teste derivado do plano confirma o plano ([Arquivos 04 e 05](#arquivos-04-e-05-casos-de-teste--delegados-à-feature-test-design)).
 > Sem a `feature-test-design` instalada, **declarar a degradação no `03`** antes de escrever o `04` à mão.
 
-Só então apresentar a wiki ao usuário para aprovação e seguir para o step 8, que decide se ela é
-fatiada ou implementada numa sessão.
+Só então apresentar a wiki e seguir para o step 8, que decide se ela é fatiada ou implementada numa
+sessão. Pedir aprovação apenas quando ela ainda for necessária para o escopo; autorização de
+implementar já presente na conversa permite continuar.
 
 ### 8. Fatiar em Tickets (CONDICIONAL)
 
-Com a wiki aprovada, decidir se a feature cabe numa sessão. **Se cabe numa sessão, não fatie**:
+Com a wiki revisada e o escopo autorizado, decidir se a feature cabe numa sessão. **Se cabe numa sessão, não fatie**:
 fatiar custa um quiz, N sessões e N fechamentos (estudo §4.1). Sugerir `/feature-tickets {wiki}`
 quando **qualquer** sinal vale — limiares são hipótese a calibrar:
 
@@ -618,10 +627,12 @@ frase de doc e de ADR. Reconciliar (10) antes de revisar é reconciliar duas vez
 step 11 repete a reconciliação por quem não a fez, então ela precisa ser a **última** coisa antes
 dele. Numeração antiga: README, *Numeração dos steps*. O `03` passa a `**Estado**: em revisão`.
 
-**Por quem não implementou** — sobre o **diff completo** da feature contra a base, mais o
-não-commitado, não sobre os arquivos que o agente lembra de ter tocado. Para o `fw-revisor-diff`, sem
-a wiki (estudo §7.1 T6 — ela vai no PR e entregaria o `01` e o `03`): `git diff {base}...HEAD -- . ':(exclude)wikis'`;
-o hook nega o `git diff` sem a exclusão.
+**Por quem não implementou** — sobre a **árvore final completa** da feature contra a base, incluindo
+commits, staged, unstaged e untracked. Para o `fw-revisor-diff`, sem a wiki (estudo §7.1 T6): ler
+`git diff {base}...HEAD -- . ':(exclude)wikis'`, `git diff --cached -- . ':(exclude)wikis'` e
+`git diff -- . ':(exclude)wikis'`; listar `git ls-files --others --exclude-standard -- . ':(exclude)wikis'`
+e ler o conteúdo dos arquivos retornados. Os diffs mostram as camadas; o conteúdo atual resolve
+alterações sobrepostas. O hook nega `git diff` sem a exclusão.
 
 **Pré-requisitos do lote** (casos em [`references/casos-medidos.md`](references/casos-medidos.md#step-9--revisão-do-diff)):
 
@@ -652,17 +663,18 @@ Os dois disparam **juntos** — são independentes. Regras dos passes:
   da branch: numa branch já pushada o "diff atual" vira só o não-commitado, e a revisão sai vazia
   parecendo limpa. Escrever `main...HEAD` (ou a base real do PR)
 - **Nível `high`.** `low`/`medium` devolvem só achado de alta confiança; aqui o achado incerto é
-  bem-vindo, porque o roteamento **obriga a rejeitar com motivo** — e relatório sem rejeição
-  parece que só procurou onde achou
+  bem-vindo, porque o roteamento permite confirmar ou rejeitar com motivo. Nenhum achado ou rejeição
+  é exigido quando a revisão não os encontrou
 - **`--fix` é proibido.** Quem julga não conserta (princípio 2 da `feature-quality-gate`), e o
   roteamento exige premissa → CT → correção **nessa ordem**; o `--fix` pula os dois primeiros e
   entrega correção sem oráculo
 - **O comando não aceita foco em texto livre** — o que vier depois do nível é lido como alvo. Por
   isso os eixos vão num sub-agente próprio, não num argumento do `/code-review` (nem pathspec: o
   passe 1 vê a wiki no diff; a cegueira ao plano é do passe 2)
-- **`git status --porcelain` antes e depois** no retorno do `fw-revisor-diff`; diferença é violação de
-  contrato (achados descartados, usuário avisado, reprovação em `## Despachos`). No Bash o hook é
-  heurístico (estudo §7.1 T7); a comparação é sinal, não prova — não vê nova edição em arquivo já modificado
+- **A sessão compara conteúdo ou hashes antes e depois** dos arquivos relevantes, inclusive já
+  modificados e untracked. Mudança fora do contrato invalida o retorno e é registrada em `## Despachos`.
+  `git status --porcelain` antes/depois é auxiliar: não detecta nova edição em arquivo já modificado.
+  O hook do Bash é heurístico (estudo §7.1 T7); independência de contexto não é sandbox
 - **Re-revisar uma única vez**, e só se alguma correção tocou eixo de fronteira (dado, superfície,
   estado de erro) — correção é código novo do mesmo agente. Teto de 2 rodadas; se a segunda ainda
   trouxer achado estrutural, o problema é o plano: registrar e escalar
@@ -710,16 +722,21 @@ precisa saber.
    `feature-tickets`); o CT de achado sobre `RQ` existente entra no ticket que já cobre a `RQ`
    (regras 4 e 5 dela); a `RQ` de um Adendo segue o item 2 do [Adendo](#adendo-ao-requisito--quando-o-pedido-cresce-durante-a-implementação).
    Sem isso, o `indice.sh --check` e a Matriz acusam *"sem ticket"*
-6. Achado **rejeitado** fica registrado com o motivo. Relatório sem rejeição parece que só procurou
-   onde achou
+6. Achado **rejeitado** fica registrado com o motivo. Revisão sem achados ou sem rejeições é válida;
+   registrar os eixos percorridos e o que não foi possível verificar
 
 Todo achado dos dois passes — ID, destino, `P-nn` gerada ou motivo da rejeição — vai para
 `## Revisão do Diff (step 9)` do `03`: é dali que a dimensão I do quality gate lê o que já foi revisto.
 
 **Falsificabilidade da correção (duro)**: antes de fechar, provar que o CT novo **falha sem** a
-correção — `git stash push -- app/`, rodar o CT, `git stash pop`. CT que passa dos dois lados não é
-oráculo, é decoração — **salvo quando a pilha de teste não consegue exibir o defeito**. Três saídas,
-e a terceira precisa estar escrita:
+correção. Criar uma cópia temporária da árvore final, com staged, unstaged, untracked e o ambiente
+de teste necessário. Nela, rodar o CT com a correção; depois reverter **somente o patch da correção**,
+mantendo o CT e o restante da feature, e rodar novamente. O patch pode atingir `app/`, `config/`,
+`routes/`, migrations ou qualquer outro arquivo: delimitar os hunks da correção, inclusive se já
+commitados. Não usar stash amplo nem trocar de branch na árvore compartilhada. Se não for possível
+isolar o patch ou reproduzir o ambiente, declarar a prova pendente. CT que passa dos dois lados não
+é oráculo — **salvo quando a pilha de teste não consegue exibir o defeito**. Três saídas, e a terceira
+precisa estar escrita:
 
 | Sem a correção, o CT… | Veredito | Registro na `## Verificação Final` |
 |---|---|---|
@@ -835,8 +852,9 @@ próprio sub-agente: ele herda as ferramentas MCP quando o arquivo do agente nã
 **Retorno do `fw-qa-gate`**: o `06` entre uma linha `<<<06` e uma linha `>>>06`; depois do
 `>>>06`, `## Para o orquestrador`, com o `git status --porcelain` de antes e o de depois. A sessão
 grava **só** o que está entre os delimitadores, **sem editar** — retorno sem eles é redespachado,
-nunca remontado à mão — e compara as duas saídas do `git status`: diferença é violação de contrato,
-o `06` não é gravado, a diferença vai ao usuário e a auditoria reprovada vai para `## Despachos`
+nunca remontado à mão — e compara conteúdo ou hashes capturados pela própria sessão antes/depois,
+incluindo arquivos já modificados e untracked; o `git status` é auxiliar. Mudança fora do contrato
+invalida o retorno: o `06` não é gravado e a auditoria reprovada vai para `## Despachos`
 (estudo §7.4, §7.6: sem delimitador, `## Para o orquestrador` caía dentro do `06`; no `Bash`, o hook
 `qa-gate` é heurístico e o `git status` é o sinal do resto). A linha em `## Despachos` leva o `Custo`;
 o custo do gate antes/depois da 4.0.0 é medição pendente (estudo §8, item 8).
@@ -921,7 +939,7 @@ promete; não tem texto original; se contradiz ou estende o pedido, gera também
 - Origem (card, arquivo + página, conversa) com data e autor
 - Texto original verbatim, ou os trechos literais normativos quando a fonte é longa
 - Decomposição em `RQ-##` com: cláusula, trecho literal de origem, tipo (funcional / autorização / não-funcional / restrição) e `Estado`
-- **Perguntas ao Solicitante** — cláusula não-testável é achado, não detalhe; a `RQ` que depende de pergunta aberta fica `aberta — Qn`
+- **Perguntas ao Solicitante** — cláusula não-testável é achado, não detalhe; bloquear o recorte dependente da pergunta. A `RQ` inteira fica `aberta — Qn` só se toda a cláusula depender da resposta; preservar CT e passos das partes determinadas
 - **Premissas** e **Fora de Escopo (declarado)**, mesmo quando vazias ("nenhuma") — e nenhum path de código ([Path e número por arquivo](#path-e-número-por-arquivo))
 
 Antes de escrever o `00`, leia o template em [`references/template-00-requisito.md`](references/template-00-requisito.md) —
@@ -1016,7 +1034,7 @@ Antes de escrever o `01`, leia o template em [`references/template-01-plano.md`]
 
 Antes de especificar os logs de cada passo do PRD, leia [`references/padrao-de-log.md`](references/padrao-de-log.md):
 por que o padrão, anatomia, os sete níveis descritos, contexto estruturado, exemplos,
-`Log::shareContext`, driver JSON, teste de log em Pest e a trait de logging do projeto.
+`Log::shareContext`, formatter JSON, teste de log em Pest e a trait de logging do projeto.
 
 ### Formato Obrigatório — em todos os logs do projeto
 
@@ -1031,19 +1049,22 @@ por que o padrão, anatomia, os sete níveis descritos, contexto estruturado, ex
 3. **Pipe `|`** entre a mensagem e os parâmetros; **hífen `-`** entre parâmetros de contexto
 4. **Parâmetro principal sempre que possível**: IDs, slugs, status — o que identifica o registro manipulado
 5. **Nível = severidade da ação**: `fail()` de Livewire → `warning`; `catch` de exception que **interrompe** → `error`; `catch` de exception **tratada/ignorada** → `warning`; sistema/API indisponível → `critical`; sucesso esperado → `info`; detalhe intermediário → `debug`
-6. **Máximo de contexto estruturado**: SEMPRE o segundo parâmetro `array $context`, com IDs, payloads e snapshots de estado; exception vai como `'exception' => $e`
+6. **Contexto estruturado seguro**: usar `array $context` com allowlist de IDs internos necessários,
+   status, contagens, códigos de erro e correlation ID. Nunca logar segredo, token, dado pessoal,
+   corpo bruto de request/resposta, formulário ou atributos completos de model; a regra vale também
+   para a mensagem. Exception pode conter esses valores: preferir classe e código de erro seguro
 
 ### Como Implementar no Plano
 
 Para **cada passo de implementação** no PRD, especificar: (1) **quais métodos** têm log e em que
 pontos (início, sucesso, falha, decisão de fluxo, `catch`, `fail()` de validação); (2) **o channel** —
 `Log::channel('{feature-name}')` em todos os logs da feature; (3) **o nível**, pela regra 5; (4) **a
-mensagem**, já escrita completa no formato; (5) **o context**, com todos os campos relevantes. Trait de
+mensagem**, já escrita completa no formato; (5) **o context**, com os campos seguros da allowlist. Trait de
 logging no projeto (`Grep` por `trait.*Logging` em `app/`): usá-la; o plano declara a abordagem.
 
 > **Anti-padrões** (NUNCA): `Log::info('...')` sem o channel da feature; mensagem genérica
 > ("Processando...", "Erro ocorrido") sem `[Classe@Método]` e parâmetro principal; log só no `catch`
-> (logar também sucesso e decisão de fluxo); context vazio; `error` em `fail()` de validação; `info`
+> (logar também sucesso e decisão de fluxo); contexto com payload bruto ou segredo; `error` em `fail()` de validação; `info`
 > em exception.
 
 ---
@@ -1211,11 +1232,11 @@ watch dos CT-B), agent plugin, por quê e uso do `scripts/pestw.cmd` no Windows 
 ficam aqui:
 
 - **`--testsuite=A --testsuite=B` só honra o último.** Uma suíte por comando, as duas saídas coladas
-- **`pest --mutate` dá 100 % falso no Windows.** Regra: **score só vale com `Duration` compatível com N × tempo dos testes cobridores e com a lista de sobreviventes.** No Windows, lançar por `{skills}/feature-wiki/scripts/pestw.cmd`, na raiz do projeto (por quê e uso em [`references/pest-5.md`](references/pest-5.md#pest---mutate-no-windows--o-lançador-cmd))
+- **O lançador pode produzir 100 % falso no Windows.** Regra: confira o runner, a lista de sobreviventes e uma prova discriminante real. Duração é heurística que considera cache, paralelismo e testes selecionados, não uma fórmula N × tempo. No Windows, lançar por `{skills}/feature-wiki/scripts/pestw.cmd`, na raiz do projeto (por quê e uso em [`references/pest-5.md`](references/pest-5.md#pest---mutate-no-windows--o-lançador-cmd))
 
 **Forma canônica: `--parallel --tia`** — não é pré-requisito técnico, mas é a invocação da doc oficial: o TIA corta **quanto** roda, o parallel **quanto tempo** leva.
 
-**Nunca `--parallel` no comando de browser** (multiplica navegadores e exige DB por worker): CT-B em série (`vendor/bin/pest tests/Browser --filter={Feature}`); `--parallel --tia` fica para o backend.
+**Browser em série por padrão** (`vendor/bin/pest tests/Browser --filter={Feature}`). Paralelo é permitido após conferir isolamento de DB/fixtures, capacidade de navegadores e suporte do runner instalado; a fonte única é `feature-test-design/references/pest-plugin-browser.md`.
 
 > ⚠️ **Nunca usar `--tia` no comando que roda o suite em CI.** A doc do Pest é explícita: o pipeline deve rodar o suite completo. O TIA em CI existe só num job dedicado de baseline (`--tia --coverage --fresh`, artefato `pest-tia-baseline`).
 
@@ -1247,7 +1268,7 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 
 ### Requisito capturado e planejamento (steps 0 a 3)
 - [ ] `00-requisito.md` criado com Fonte, Texto Original **verbatim** e Fidelidade declarada
-- [ ] Branch lida, pasta criada, wiki existente verificada (retomar/sobrescrever/incrementar), nome da feature confirmado com o usuário
+- [ ] Branch lida, pasta criada, wiki existente verificada (retomar/sobrescrever/incrementar), nome derivado do requisito ou informado pelo usuário; decisão material pendente esclarecida
 - [ ] `search-docs` consultado para **cada stack** que o PRD toca, com a origem citada no plano; lacunas (Pest 5, Playwright/`pest-plugin-browser`, pacotes de terceiros) cobertas por doc oficial; `database-schema` e leitura de arquivos feitos
 - [ ] Rotas, policies, config, composer e wikis existentes verificados; APIs de terceiros inspecionadas (vendor ou docs); dados do usuário validados contra o DB (quando aplicável); factories e states confirmados para todos os CTs
 - [ ] `wikis/glossario.md` lido (se existe); termo decidido gravado nele na hora; termo em conflito com ele virou pergunta
@@ -1274,10 +1295,10 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 ### Casos de teste (step 7)
 - [ ] **`feature-test-design` invocada** com o `00` como entrada primária — o `04` não foi escrito inline a partir do PRD, e a implementação não entrou como entrada
 - [ ] `04` recebido com perfil de risco, varredura SFDIPOT, mapa de regras, técnica por regra e **mutantes com o cenário e a `Asserção que mata`**; `RQ` aberta listada sem cenário; toda rota `create`/`edit` da `## Superfície de UI` com cenário de **gravação por componente**
-- [ ] `## Costuras de Teste` confirmada com o desenvolvedor antes da revisão adversarial (`Confirmada` em toda linha; costura trocada re-derivou o grupo); revisão adversarial despachada pela sessão principal e todos os achados fechados
+- [ ] `## Costuras de Teste` com decisão e data antes da revisão adversarial (`Confirmada` em toda linha, por autorização/convenção existente ou resposta do desenvolvedor; costura trocada re-derivou o grupo); revisão adversarial despachada pela sessão principal e todos os achados fechados
 - [ ] Perguntas devolvidas (`Q?n` renumeradas na sequência `Qn`) em `## Perguntas ao Solicitante` (raia requisito) ou decididas com o desenvolvedor (raia desenho)
 - [ ] `05` existe **se e só se** uma costura é `browser` — com as dependências de CT-B confirmadas ou como passo no PRD; sem ela, `## Sem CT-B` com o motivo no `04`
-- [ ] `## Testes` do `03` lista os arquivos de teste com os CT/CT-B de cada um; plano confirmado com o usuário antes de implementar
+- [ ] `## Testes` do `03` lista os arquivos de teste com os CT/CT-B de cada um; autorização de implementar registrada, sem repetir confirmação já dada
 
 ### Tickets (step 8, condicional)
 - [ ] Sinais do step 8 conferidos; `/feature-tickets` sugerido quando algum cruzou — nunca invocado pelo agente; sem fatiamento, `Não fatiado — …` em `## Tickets` do `03`
@@ -1285,8 +1306,8 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 
 ### Revisão do diff e reconciliação (steps 9 e 10, antes do PR)
 - [ ] **Step 9 antes da reconciliação**, por quem não implementou: cada achado confirmado que o solicitante não escreveu virou `P-nn` + CT com `Origem` = `P-nn` (pela `feature-test-design`) + correção, nessa ordem — pergunta ao solicitante quando contradiz ou estende o pedido; ticket novo no fim, com `07-tickets/`; achado que viola ou omite `RQ` existente virou CT com `Origem` = `RQ-nn` + correção, sem `P-nn` (com `07-tickets/`, o CT no ticket da `RQ`); nenhum achado entrou como Adendo; achados e rejeições em `## Revisão do Diff (step 9)` do `03`
-- [ ] No Claude Code: `/code-review high {base}...HEAD`, sem `--fix`; passe de eixos em sub-agente cego ao `01`/`03`, com alvo `git diff {base}...HEAD -- . ':(exclude)wikis'` e `git status --porcelain` igual antes e depois; `## Superfície Livewire` re-varrida sobre o código final **antes**
-- [ ] Falsificabilidade dos CTs novos provada por `git stash` — cada um falha sem a correção **ou** está declarado "não falsificável nesta pilha", com o motivo
+- [ ] No Claude Code: `/code-review high {base}...HEAD`, sem `--fix`; passe de eixos cego ao `01`/`03`, cobrindo committed, staged, unstaged e conteúdo untracked sem `wikis/`; conteúdo/hash antes/depois comparado pela sessão; `## Superfície Livewire` re-varrida sobre o código final **antes**
+- [ ] Falsificabilidade dos CTs novos provada em cópia temporária, revertendo só o patch da correção — cada um falha sem a correção **ou** está declarado "não falsificável nesta pilha" ou "prova pendente", com o motivo
 - [ ] Silenciosos, com a saída colada na Verificação Final: `rastreabilidade.sh`, `checkbox-sem-evidencia.sh`, `citacoes.sh`, `ids-ct.sh`, `conformidade-rules.sh` e, com `07-tickets/`, `indice.sh --check`
 - [ ] Todo `[x]` do `03` com evidência inline, nenhum fechado em lote; todo número com o comando que o gerou; toda degradação com a prova negativa (`php -m`, `ls vendor/…`)
 - [ ] Cada desvio do `03` com a edição no `01`/`02`/`04`/`05` de origem, marcada `*(alterado em …)*` — nenhuma afirmação do `01`/`02` contradiz o código
@@ -1299,7 +1320,7 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 - [ ] Notas de implementação e retrospectiva breve escritas
 
 ### Quality Gate e PR (step 11)
-- [ ] **`feature-quality-gate` invocado** — no Claude Code, via `fw-qa-gate` sem Edit/Write; `06` gravado verbatim com **só** o que está entre `<<<06` e `>>>06`; `git status --porcelain` de antes e de depois iguais; `Custo` em `## Despachos`; ciclo/veredito/data em `## Quality Gate` do `03`
+- [ ] **`feature-quality-gate` invocado** — no Claude Code, via `fw-qa-gate` sem Edit/Write; `06` gravado verbatim com **só** o que está entre `<<<06` e `>>>06`; conteúdo/hash antes/depois dos arquivos relevantes comparado pela sessão, inclusive já dirty e untracked; `Custo` em `## Despachos`; ciclo/veredito/data em `## Quality Gate` do `03`
 - [ ] `APROVADO` só com todas as dimensões verificadas; dimensão não verificada ou `RQ` aberta sem implementação → no máximo `APROVADO COM DÉBITO`, com as causas no `03`
 - [ ] `06-relatorio-qa.md` **existe** na pasta da wiki — a ausência dele é blocker do PR
 - [ ] Se `REPROVADO`: achado roteado ao destino (especificação / implementação / teste) e reciclado; o que o solicitante não escreveu seguiu `P-nn` → CT → correção; omissão de `RQ` existente não virou `P-nn`
@@ -1310,10 +1331,10 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 - [ ] Depois do merge: channel de log ajustado (level reduzido ou removido)
 
 ### Delegação (Claude Code, todos os steps)
-- [ ] Todo disparo em `## Despachos` do `03`, com modelo, cegueira, `Custo` e auditoria do retorno; tarefa em linha por exceção com "Sem despacho — motivo"; nenhum `general-purpose` sem `model` explícito
+- [ ] Todo disparo em `## Despachos` do `03`, com modelo efetivo (ou não exposto), contexto, controles, `Custo` e auditoria do retorno; tarefa em linha por exceção com "Sem despacho — motivo"; no adaptador Claude, fallback `general-purpose` com o modelo configurado
 - [ ] Passe de eixos do step 9, revisão adversarial (step 7) e step 11 em sub-agente **cego** — ou a degradação declarada no `03` e no cabeçalho do `06`
-- [ ] Todo retorno auditado (presença, integridade com `git diff --stat` antes/depois, amostragem); número sem comando, `git diff --stat` de untracked ou "não encontrado" sem prova negativa **reprovado e refeito**, com a reprovação no quadro
-- [ ] `ls .claude/agents/fw-*.md` antes do primeiro despacho; fallback `general-purpose`/{model} no quadro quando o agente faltou ou devolveu *"guarda-subagente.sh nao encontrado"*
+- [ ] Todo retorno auditado (presença, conteúdo/hash antes/depois incluindo dirty e untracked, amostragem); número sem comando, `git diff --stat` de untracked ou "não encontrado" sem prova negativa **reprovado e refeito**, com a reprovação no quadro
+- [ ] Perfis e ferramentas disponíveis conferidos conforme o host antes do primeiro despacho; no Claude, `ls .claude/agents/fw-*.md` e fallback `general-purpose`/{model} registrado quando faltar agente/hook; nos demais hosts, rota efetiva e limitações registradas
 - [ ] Rota `mecânico` com **um item por despacho**; sem `Explore` ou sem `SendMessage`, o fallback declarado rodou e está no quadro
 
 ### Referências (todos os steps)

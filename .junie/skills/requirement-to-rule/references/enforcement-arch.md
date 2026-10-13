@@ -86,7 +86,8 @@ do teste, a mudança mínima:
 </testsuite>
 ```
 
-O script confere isso (checagem 0) e acusa `phpunit.xml:{linha}: nenhuma suíte inclui tests/Arch nem tests/`.
+O script confere o arquivo real do teste (checagem 0) contra `directory`/`file`, `suffix` e `exclude`,
+e acusa `phpunit.xml:{linha}: nenhuma suíte inclui {teste} (directory/file, suffix e exclude conferidos)`.
 Ele lê as suítes pelo DOM do PHP, não por grep: um `<testsuite>` dentro de `<!-- … -->` não conta.
 
 ## Violação controlada

@@ -52,7 +52,7 @@ Não fatiado — {YYYY-MM-DD}: {n} RQ vigentes, {n} CT, compactação: {sim | n�
 - [ ] IDs `[CT-nn]` do teste ⊆ `04`/`05` e vice-versa: `ids-ct.sh {wiki} 'tests/**/{Feature}/*.php'` silencioso
 - [ ] Rules casadas pelo diff com linha em `## Conformidade com Rules`: `conformidade-rules.sh {wiki} {base}` silencioso
 - [ ] Alocação a ticket: `indice.sh --check {wiki}` silencioso <!-- só com 07-tickets/ -->
-- [ ] Falsificabilidade dos CTs novos: quantos falham sem o fix; os demais "não falsificável nesta pilha", com motivo
+- [ ] Falsificabilidade em cópia temporária, revertendo só o patch do fix: quantos falham sem ele; os demais "não falsificável nesta pilha" ou "prova pendente", com motivo
 - [ ] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final
 - [ ] `git commit`
 
@@ -103,7 +103,7 @@ Não fatiado — {YYYY-MM-DD}: {n} RQ vigentes, {n} CT, compactação: {sim | n�
 <!-- Saída dos steps 4 a 6, ANTES de escrever código. Não confundir com "Desvios do Plano",
      que é pós-implementação. -->
 
-Entendimento confirmado: {YYYY-MM-DD} — {quem} — {n} rodadas; perguntas: {n} fato, {n} desenho, {n} requisito
+Entendimento confirmado: {YYYY-MM-DD} — {quem ou autorização existente} — {n} rodadas; perguntas: {n} fato, {n} desenho, {n} requisito
 <!-- Obrigatória antes do step 5. O sinal de escopo do step 4, quando cruzado, também é registrado aqui. -->
 
 ### Confronto código × afirmação (step 5)
@@ -133,8 +133,8 @@ Entendimento confirmado: {YYYY-MM-DD} — {quem} — {n} rodadas; perguntas: {n}
 | # | Step | Agente / tarefa | Modelo | Não recebeu | Resultado | Custo | Auditoria do retorno |
 |---|---|---|---|---|---|---|---|
 | 1 | 3 | `mecanico` — Superfície Livewire | haiku | — | tabela, 7 linhas | {tokens · duração} | 2/7 conferidas por grep |
-| 2 | 9 | `fw-revisor-diff` — eixos sobre `main...HEAD`, sem `wikis/` | opus | `01`, `03` | 3 achados, 1 rejeitado | {tokens · duração} | 3/3 reproduzidos; `git status --porcelain` igual antes/depois |
-| 3 | 11 | `fw-qa-gate` — quality gate | opus | conversa | `06` gravado verbatim (entre `<<<06` e `>>>06`), APROVADO COM DÉBITO | {tokens · duração} | `git status --porcelain` igual antes/depois |
+| 2 | 9 | `fw-revisor-diff` — committed/staged/unstaged/untracked, sem `wikis/` | opus | `01`, `03` | 3 achados, 1 rejeitado | {tokens · duração} | 3/3 reproduzidos; conteúdo/hash antes/depois conferido, incluindo dirty e untracked |
+| 3 | 11 | `fw-qa-gate` — quality gate | opus | conversa | `06` gravado verbatim (entre `<<<06` e `>>>06`), APROVADO COM DÉBITO | {tokens · duração} | conteúdo/hash antes/depois conferido, incluindo dirty e untracked |
 
 ## Blockers
 <!-- Impedimentos encontrados durante implementação -->

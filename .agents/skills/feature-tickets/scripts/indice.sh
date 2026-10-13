@@ -383,7 +383,7 @@ function lerTickets($dir) {
             preg_match_all('/\b\d{1,3}\b/', $v, $mm);
             $t['bloq'] = array_values(array_unique(array_map(function ($x) { return sprintf('%02d', (int) $x); }, $mm[0])));
         }
-        if (isset($t['campos']['Status']) && preg_match('/^(pronto|em execução|em revisão|concluído)(.*)$/u', $t['campos']['Status'][1], $m)) {
+        if (isset($t['campos']['Status']) && preg_match('/^(pronto|em execução|em revisão|concluído)(?=\s*(?:—|$))(.*)$/u', $t['campos']['Status'][1], $m)) {
             $t['status'] = $m[1];
             $t['resto'] = $m[2];
         }
@@ -810,7 +810,10 @@ if ($modo === 'check') {
                 $orig = array_merge($orig, $d04['mapa'][$rg]['origens']);
             }
             $orig = array_values(array_unique($orig));
-            if (!$orig) continue;
+            if (!$orig) {
+                $achado($f04, $d04['ct'][$id]['linha'], "$id sem origem RQ/P-nn no Mapa de Regras — o CT não se ancora no requisito");
+                continue;
+            }
             $foraT = array_diff($orig, $ids, $antesIds);
             if ($foraT) {
                 $achado($a, $t['ids'][$id], "$id depende de " . implode(', ', $foraT) . ' (Origem no 04), fora deste ticket e dos que o bloqueiam — o CT não fica verde aqui');
@@ -889,7 +892,7 @@ if ($modo === 'check') {
                 [$l, $x, $resto] = $linhas[$t['num']];
                 // formato: - [ ] [NN](07-tickets/NN-slug.md) {entrega} — {status}[ — {data}, {evidência}]
                 $seg = preg_split('/\s+—\s+/u', $resto);
-                $st = preg_match('/^(pronto|em execução|em revisão|concluído)/u', trim($seg[1] ?? ''), $m) ? $m[1] : '?';
+                $st = preg_match('/^(pronto|em execução|em revisão|concluído)\s*$/u', trim($seg[1] ?? ''), $m) ? $m[1] : '?';
                 // a sessão nova marca só o ticket e não abre o 03 até o fechamento
                 $sessaoNova = $st === 'pronto' && $t['status'] === 'em execução' && preg_match('/sess[ãa]o nova/u', $t['resto']);
                 if ($st !== $t['status'] && !$sessaoNova) $achado($f03, $l, "ticket {$t['num']}: o 03 diz \"$st\", o ticket diz \"{$t['status']}\" — o arquivo do ticket é a fonte");

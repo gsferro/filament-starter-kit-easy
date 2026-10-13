@@ -1,6 +1,15 @@
 # requirement-to-rule — Decisão da Wiki Vira Regra Durável
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.4.0** · licença MIT
+## Atualização 1.5.0 — 2026-10-09
+
+Paths e uso de ferramentas independem do host. A prova de arch() confere o arquivo real contra directory/file, suffix e exclude da suíte XML; um teste omitido da suíte padrão não recebe prova de cobertura CI.
+
+Instalação Codex, controles e limites: [contrato de hosts](../feature-wiki/references/hosts-e-subagentes.md).
+Regressões e avaliação antes/depois: [README da coletânea](../../../README.md#revisão-de-portabilidade--2026-10-09)
+e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
+Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
+
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.5.0** · licença MIT
 > Este README fala com a **pessoa**: por que a skill existe, quando usar, o que ela não faz e do que depende. O procedimento que o agente segue (gates, escada de enforcement, prova do `arch()`, índice, poda, modelo da rule, fallback) vive só no `SKILL.md` e em `references/`. Aqui há ponteiros para ele, não cópia.
 
 ## Índice

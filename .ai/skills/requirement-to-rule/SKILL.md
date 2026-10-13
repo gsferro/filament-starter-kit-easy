@@ -1,31 +1,24 @@
 ---
 name: requirement-to-rule
-description: >
-  Transforma decisões e restrições de um requisito em Project Rules do Laravel Boost
-  (.ai/rules/), escopadas por glob, para que valham para agentes futuros em qualquer
-  sessão, não só na wiki da feature. Invoque no step 12 da feature-wiki, que delega a
-  esta skill a coleta de candidatos, os gates e a aprovação; quando o usuário pedir
-  explicitamente ("isso vira rule", "lembre disso para sempre"); ou quando uma ADR
-  aceita ou uma armadilha descoberta valer para código futuro fora da feature. Filtra
-  candidatos por 4 gates, gera e prova o teste arch() do Pest quando a restrição é
-  mecânica, grava via a tool MCP record-rule, confere o índice .ai/rules/index.md e
-  propõe poda. Palavras-chave: Project Rules, Laravel Boost, .ai/rules, record-rule,
-  índice de rules, arch(), decisão durável. Não é para conhecimento de framework nem
-  para varrer o código existente (infer-conventions do Boost).
+description: >-
+  Converte decisões duráveis de requisito ou ADR em Project Rules do Laravel Boost, com aprovação aplicável e prova arch() quando mecânica. Use no step 12 ou sob pedido. Não derive regras genéricas de framework nem varra convenções existentes.
 license: MIT
-compatibility: >
-  Projeto Laravel com laravel/boost 2.4.12 ou superior, Project Rules ativas
-  (BOOST_RULES_ENABLED diferente de false) e agente com MCP, para as tools record-rule
-  e search-docs. Sem record-rule: fallback declarado no SKILL, com gravação manual e
-  aviso ao usuário. Sem MCP, o gate 4 fica "não verificado" e o usuário decide sabendo
-  disso. Pest com arch() para o enforcement gerado. feature-wiki 4.0.0 ou superior só
-  quando os candidatos vêm da wiki (step 12).
+compatibility: >-
+  Laravel Boost >=2.4.12 com Project Rules e MCP para record-rule/search-docs; fallback manual declarado quando ausentes. Sem MCP, gate 4 não verificado. Pest arch() para regras mecânicas. Funciona em qualquer host com ferramentas equivalentes; feature-wiki só quando candidatos vêm da wiki.
 metadata:
-  version: "1.4.0"
-  requires: "laravel/boost>=2.4.12; feature-wiki>=4.0.0"
+  version: "1.5.0"
+  requires: "laravel/boost>=2.4.12; feature-wiki>=4.1.0"
 ---
 
 # Requirement → Rule — Decisão do Requisito Vira Regra Durável
+
+## Host e execução
+
+O processo é independente do provedor. Use ferramentas realmente expostas e o path efetivo da skill.
+Preserve decisões e autorizações existentes; confirme apenas informação material ausente ou ação que exija autorização adicional.
+Para paths, subagentes e controles, leia o [contrato compartilhado](../feature-wiki/references/hosts-e-subagentes.md) da feature-wiki, se instalada.
+Ausência de recurso vira limitação registrada, nunca prova de aprovação.
+
 
 ## Glossário
 
@@ -38,7 +31,7 @@ metadata:
 | **Skill** | Módulo de conhecimento carregado on-demand por tarefa |
 | **Área** | Arquivo `.ai/rules/{área}.md` que o Boost escolhe a partir dos segmentos de diretório do glob |
 | **Rule mecânica** | Restrição que um teste `arch()` do Pest verifica (herança, interface, uso de classe ou função, sufixo, `final`, trait, atributo) |
-| **`{skills}`** | O primeiro dos três diretórios (`.ai/skills/`, `.claude/skills/`, `~/.claude/skills/`) que **contém a skill citada** |
+| **`{skills}`** | Diretório de instalação que contém a skill citada, isto é, o pai da pasta dessa skill. Ex.: SKILL em .agents/skills/feature-wiki/SKILL.md resolve `{skills}` para .agents/skills. Pode variar por skill; use o path informado pelo host. |
 
 ## Referências
 

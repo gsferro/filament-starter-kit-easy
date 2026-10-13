@@ -13,7 +13,7 @@ vive cada CT), nas costuras que fecham o passo 2. O caso que originou as três l
 |---|---|
 | rota/ação que recebe `{id}` de um recurso | **IDOR / autorização horizontal**: usuário A pede o recurso de B → 403/404. Dois usuários no setup |
 | autorização declarada em policy/permission | **a ação disparada fora do caminho feliz** — não basta afirmar `can()`. Policy correta que o Resource nunca consulta passa em todo teste de `can()`. E **ao menos um** dos cenários dispara a ação **por fora do componente de UI** (gate de camada da regra — `SKILL.md` §Escolha de Camada em Laravel/Filament) |
-| qualquer operação de escrita | **idempotência**: a mesma requisição duas vezes (duplo clique, retry, webhook redundante), com a assertion **no agregado afetado** |
+| qualquer operação de escrita | **idempotência**: a mesma intenção válida duas vezes (duplo clique, retry, webhook redundante), com a assertion **no agregado afetado**. Tentativa isolada fora da etapa não substitui a primeira execução válida seguida da repetição; aprovação de diretor não cobre aprovação de gestor |
 | campo cujo domínio depende de outro campo | fronteira **por combinação** (tipo × valor), não fronteira do campo isolado |
 | todo campo, em **todo ponto de entrada** | valor abaixo do mínimo, acima do máximo e no limite — **na gravação**, não só no uso |
 | contador, saldo, estoque, limite de uso | **concorrência**: duas execuções simultâneas não ultrapassam o limite |
@@ -39,6 +39,14 @@ vive cada CT), nas costuras que fecham o passo 2. O caso que originou as três l
 > Esta tabela é **viva**: todo defeito que escapou para produção e gerou retrabalho deve virar
 > uma linha nova no checklist de taxonomia do `04`. Taxonomia alimentada pelo histórico do próprio
 > projeto é o item de maior alavancagem do pipeline inteiro.
+
+Na aprovação de compra da [rodada real](../../../../experimentos/2026-10-09-projeto-real/README.md),
+o conjunto candidato associava idempotência a tentativas isoladas fora da etapa e ao snapshot
+de outro diretor, sem duplicar a intenção elegível do gestor. Revise cada intenção de escrita,
+não apenas cada destino final. Se houver duas leituras elegíveis antes da gravação, distinga
+retry sequencial de corrida simultânea; só declare esta última com sincronização e conexões
+reais. Ausência de arnês continua dívida, nunca cobertura presumida. Essa correção posterior
+não altera o conjunto congelado nem comprova eficácia da nova versão.
 
 A linha só chega a `.ai/rules/` se passar na definição *Vale virar rule* da `requirement-to-rule`
 (step 12 da `feature-wiki`), que decide e grava; esta skill não grava rule (`SKILL.md` §Passo 4).

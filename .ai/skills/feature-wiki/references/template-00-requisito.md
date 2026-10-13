@@ -54,8 +54,10 @@ reconciliação. A `Origem` aponta o documento de onde o requisito veio, não c�
 
 ## Perguntas ao Solicitante
 
-<!-- Raia requisito: só o solicitante responde. Enquanto aberta, a RQ afetada fica `aberta — Qn`
-     e nenhum passo do 01 a implementa. A resposta entra como Adendo com fonte.
+<!-- Raia requisito: só o solicitante responde. Bloquear somente o recorte dependente da resposta;
+     preservar obrigações determinadas. Se toda cláusula depender, RQ fica `aberta — Qn` sem passo executado.
+     Se precisar separar partes, revisar a decomposição derivada, preservando o requisito bruto.
+     A resposta entra como Adendo com fonte.
      Qn é a sequência única da feature: os números que faltam aqui são perguntas de desenho (01/02). -->
 
 | ID | Pergunta | Afeta | Recomendação | Estado |

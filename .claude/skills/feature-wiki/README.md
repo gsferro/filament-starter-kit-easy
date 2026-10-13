@@ -1,6 +1,27 @@
 # feature-wiki — Documentação Antes de Implementar
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **4.0.0** · referências sob demanda em [`references/`](references/)
+## Correção 4.1.1 — controles proporcionais à capacidade do host
+
+A revisão independente da rodada real encontrou obrigações Claude ainda no checklist universal
+e promessas de cegueira além do alcance dos hooks. Rotas e instalação agora dependem do host;
+o aninhamento depende de autorização e capacidade, mantendo o fechamento sob responsabilidade
+da sessão principal. Guardas por padrões restringem operações cobertas, sem provar isolamento
+de leitura. A alteração é posterior ao tratamento 4.1.0 congelado, portanto não recebe seu DDR.
+Perguntas devolvidas também preservam CT e passos das partes determinadas; somente uma
+cláusula integralmente dependente da resposta fica aberta na matriz. Entrevista, templates
+e delegação seguem o mesmo formato parcial.
+Evidência: [revisão independente](../../../experimentos/2026-10-09-projeto-real/REVISAO-INDEPENDENTE.md).
+
+## Atualização 4.1.0 — 2026-10-09
+
+Contrato comum por capacidades, com cinco perfis Codex distribuídos nas skills donas. Revisão cobre todas as camadas Git; prova de regressão retira só o patch da correção numa cópia. Autorizações existentes dispensam confirmações repetidas. Comparação de conteúdo substitui status como único sinal de escrita.
+
+Instalação Codex, controles e limites: [contrato de hosts](references/hosts-e-subagentes.md).
+Regressões e avaliação antes/depois: [README da coletânea](../../../README.md#revisão-de-portabilidade--2026-10-09)
+e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
+Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
+
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **4.1.1** · referências sob demanda em [`references/`](references/)
 > Este README fala com a **pessoa**: por que a skill existe, quando usar, dependências e limites. O
 > procedimento que o agente segue está no `SKILL.md` e nas `references/`, e não é repetido aqui.
 
@@ -204,21 +225,25 @@ a `feature-quality-gate` — sem ela o PR não abre.
 
 | Dependência | Versão mínima | O que habilita | Sem ela |
 |---|---|---|---|
-| [`feature-test-design`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-test-design/README.md) | 1.16.0 | step 7: derivação do `04`/`05` a partir do requisito, com técnica formal e gate de mutantes. A 1.16.0 é a que acompanha a numeração 4.0.0 e a entrevista em três raias (`P-nn` como origem de CT, `RQ` aberta sem cenário, Gherkin no vocabulário do glossário); a 1.15.0 trouxe `feature-test-design/references/pest-plugin-browser.md`, a fonte única dos fatos do plugin que esta skill consulta | o `04` volta a ser gabarito preenchido a partir do PRD — a degradação mais cara da lista, declarada no `03`. Abaixo da 1.15.0 falta o `pest-plugin-browser.md`: o `fw-executor-ctb` para sem escrever CT-B, e no step 3 restam só os dois fatos que o `SKILL.md` guarda (servidor próprio, `npm run build`) |
+| [`feature-test-design`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-test-design/README.md) | 1.16.0 | step 7: derivação do `04`/`05` a partir do requisito, com técnica formal e gate de mutantes. A 1.16.0 é a que acompanha a numeração 4.0.0 e a entrevista em três raias (`P-nn` como origem de CT, `RQ` aberta sem cenário, Gherkin no vocabulário do glossário); a 1.15.0 trouxe `feature-test-design/references/pest-plugin-browser.md`, a fonte única dos fatos do plugin que esta skill consulta | o `04` é derivado em linha do `00`, declarando a perda da skill especializada e da independência no `03`; o PRD continua sem autoridade sobre o comportamento esperado. Abaixo da 1.15.0 falta o `pest-plugin-browser.md`: o `fw-executor-ctb` para sem escrever CT-B, e no step 3 restam só os dois fatos que o `SKILL.md` guarda (servidor próprio, `npm run build`) |
 | [`feature-quality-gate`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-quality-gate/README.md) | 1.7.0 | step 11: QA confrontando requisito × plano × app, com a checagem L6 (alegações da Verificação Final do `03`). A 1.7.0 é a que acompanha a numeração 4.0.0 e a entrevista em três raias (linhas `P-nn` na Matriz de Rastreabilidade, L7 — vocabulário × glossário) | o PR não abre: o `06-relatorio-qa.md` é blocker |
 | `laravel/boost` (MCP) | 2.4.12 | `search-docs`, `database-schema`, `database-query`, `browser-logs` e `record-rule` — a tool que o step 12 usa nasceu na 2.4.12 | a pesquisa cai para doc oficial e `Grep`; o step 12 não grava rule |
 | [`requirement-to-rule`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/requirement-to-rule/README.md) | 1.4.0 | step 12 inteiro: coleta os candidatos, aplica os 4 gates, faz o único prompt de aprovação, grava pelo `record-rule` e confere o índice. A 1.4.0 é a que assume o step 12 sozinha e traz a definição única de *Vale virar rule*; antes dela a wiki coletava e perguntava, e a skill perguntava de novo. Fica fora de `metadata.requires` porque o step 12 roda depois do veredito e a feature fecha sem ele | o step 12 não roda: o `03` registra a ausência, e a decisão continua na ADR |
 | [`feature-tickets`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-tickets/README.md) | 1.0.0 | step 8: fatiar em tickets verticais a wiki que não cabe numa sessão (só o usuário invoca — ver [Feature fatiada](#feature-fatiada--como-chamar-os-tickets)); step 10: `indice.sh --check`, a fonte única da alocação a ticket; step 11: regenerar `wikis/specs/INDEX.md`. Fora de `metadata.requires`: o step 8 é condicional | a feature roda numa sessão, pelos passos do `01`; o `INDEX.md` não é gerado |
 | `pestphp/pest` | 4 (5 recomendado) | no 5: `--parallel --tia`, `--agent`, `--mutate`, sharding, matchers novos | no 4: `pest --filter` |
-| `pest-plugin-browser` + Playwright | — | CT-B executáveis | o `05` fica como roteiro manual |
+| `pest-plugin-browser` + Playwright | — | CT-B executáveis | declarar execução pendente e incluir instalação no plano; um roteiro manual não substitui o teste versionado |
 | PCOV ou Xdebug | — | `--tia` e `--mutate` | suíte completa, sem mutação |
 | Playwright MCP | — | observar a página no loop de correção do CT-B | `screenshot()`, `content()` filtrado, leitura do Blade |
 | Ponytail (plugin) | — | escada de simplicidade na execução e auditoria do plano no step 6 | step 6 vira passe manual, registrado no `03` |
 | Caveman (plugin) | — | prosa terse na conversa (nunca nos arquivos wiki) | — |
-| Claude Code com sub-agentes | — | roteamento por modelo e juiz independente no step 9, na revisão adversarial (step 7) e no step 11 | tudo roda em linha, na sessão que implementou; a degradação vai no `03` e no cabeçalho do `06` |
-| `bash` e `php` no PATH | — | os `scripts/` e o hook dos agentes (no Windows, o Git Bash, que o Claude Code **não** exige). A lógica é PHP embutido no `.sh`: todo projeto Laravel tem `php` | script sai com exit 2 e a checagem fica sem prova; o hook nega tudo e a rota cai no fallback `general-purpose`. No Windows sem Git Bash, o Claude Code roda o hook no PowerShell, o comando `exec sh -c '…; exit 2'; exit 2` cai no `exit 2` (o `exec` não existe lá), e os cinco agentes negam toda ferramenta: ficam inutilizáveis até instalar o Git for Windows |
+| Host com sub-agentes (Claude Code, Codex ou equivalente) | — | contexto separado para step 9, revisão adversarial (step 7) e step 11, conforme as capacidades do host | sem sub-agentes, tudo roda em linha na sessão que implementou; a degradação vai no `03` e no cabeçalho do `06` |
+| `bash` e `php` no PATH | — | os `scripts/` e o hook dos agentes (no Windows, o Git Bash, que o Claude Code **não** exige). A lógica é PHP embutido no `.sh`: todo projeto Laravel tem `php` | script sai com exit 2 e a checagem fica sem prova; no Claude, o hook nega as ferramentas cobertas e a rota cai no fallback `general-purpose`. No Windows sem Git Bash, o Claude Code roda o hook no PowerShell, o comando `exec sh -c '…; exit 2'; exit 2` cai no `exit 2` (o `exec` não existe lá): os agentes devolvem a falha para a sessão escolher um contexto novo disponível |
 
 ## Instalação
+
+O despacho depende das capacidades do host, não de seu nome. O [adaptador de hosts e sub-agentes](references/hosts-e-subagentes.md)
+descreve Claude Code, Codex e o fallback sem delegação. Os arquivos Markdown abaixo são agentes do
+Claude Code; suas configurações não se tornam agentes Codex apenas por serem copiadas.
 
 O `boost:add-skill` copia o diretório **inteiro** da skill — `SKILL.md`, `README.md`,
 `references/`, `agents/` e `scripts/` — para `.ai/skills/feature-wiki/`, e o `boost:update` o espelha em
@@ -265,24 +290,25 @@ restrição de ferramenta e o hook. O que o agente confere antes do primeiro des
 
 ### O hook dos agentes
 
-Os cinco agentes `fw-*` declaram no frontmatter um hook `PreToolUse` que chama
+No adaptador Claude, os cinco agentes `fw-*` declaram no frontmatter um hook `PreToolUse` que chama
 `scripts/guarda-subagente.sh` com o perfil do agente. O bloco é idêntico nos cinco — muda só o
 perfil — e procura o script nos três lugares onde a skill pode estar (`.ai/skills/`,
-`.claude/skills/`, `~/.claude/skills/`). Sem o script, **nega tudo**: o agente para, e a sessão cai
-no `general-purpose` com `model` explícito. No Windows sem Git Bash, nega tudo também com o script: o
+`.claude/skills/`, `~/.claude/skills/`). Sem o script, **nega as ferramentas cobertas**: o agente para,
+e a sessão usa o fallback `general-purpose` com `model` explícito. No Windows sem Git Bash, nega as
+ferramentas cobertas também com o script: o
 hook roda no PowerShell, e o comando cai no `exit 2` (ver `bash` e `php` em
 [Dependências](#dependências)). Por que existe (estudo §7.1 T6/T7): o revisor "cego" tinha `Read` sem
 restrição de path na mesma pasta do `01`, e o *"não corrige nada"* do quality gate era só uma frase —
 o `Bash` dele gravava.
 
-| Cobre por construção | Cobre por heurística | Não cobre |
+| Ferramentas e padrões cobertos | Cobre por heurística | Não cobre |
 |---|---|---|
-| `Read`, `Grep`, `Glob`, `Edit`, `Write`, `MultiEdit`, `NotebookEdit`: o path é normalizado (Windows ou POSIX, `.` e `..`, relativo ao `cwd`) e comparado com o perfil antes de a ferramenta rodar. No `Grep`, o glob é lido como o ripgrep o lê: lista separada por espaço e vírgula, glob só negado (`!vendor/**`) casa todo o resto, glob vence `type` | `Bash`: comando que cita o `01`/`03` (o `01`/`02`, no `executor-ct`); glob e busca recursiva que alcançam `wikis/specs`; `git diff`/`git show` sem `':(exclude)wikis'` e `git archive` que alcança `wikis/`; nome montado por expansão (`$f`, `$(…)`) num comando que cita `wikis/`; o que altera a árvore — git que muda estado, `rm`, `mv`, `cp`, `tee`, `sed -i`, `perl -i`, `>` para dentro do repositório —, inclusive por `find -exec`, `xargs`, `bash -c` e `cmd /c` | escrita por interpretador (`php -r`, `python -c`), PowerShell, corpo de heredoc, `git cat-file` por hash, arquivo copiado para fora do repositório e lido de lá; ferramentas MCP herdadas (ex.: `tinker` do Boost) nos agentes sem `tools:` — `fw-executor-ct`, `fw-executor-ctb` e `fw-qa-gate`. No revisor do diff e no quality gate, o sinal do resto é a comparação do `git status --porcelain` de antes e de depois, feita pela sessão — não pega nova edição num arquivo que já estava modificado |
+| `Read`, `Grep`, `Glob`, `Edit`, `Write`, `MultiEdit`, `NotebookEdit`: o path é normalizado (Windows ou POSIX, `.` e `..`, relativo ao `cwd`) e comparado com o perfil antes de a ferramenta rodar. No `Grep`, o glob é lido como o ripgrep o lê: lista separada por espaço e vírgula, glob só negado (`!vendor/**`) casa todo o resto, glob vence `type` | `Bash`: comando que cita o `01`/`03` (o `01`/`02`, no `executor-ct`); glob e busca recursiva que alcançam `wikis/specs`; `git diff`/`git show` sem `':(exclude)wikis'` e `git archive` que alcança `wikis/`; nome montado por expansão (`$f`, `$(…)`) num comando que cita `wikis/`; o que altera a árvore — git que muda estado, `rm`, `mv`, `cp`, `tee`, `sed -i`, `perl -i`, `>` para dentro do repositório —, inclusive por `find -exec`, `xargs`, `bash -c` e `cmd /c` | escrita por interpretador (`php -r`, `python -c`), PowerShell, corpo de heredoc, `git cat-file` por hash, arquivo copiado para fora do repositório e lido de lá; ferramentas MCP herdadas (ex.: `tinker` do Boost) nos agentes sem `tools:` — `fw-executor-ct`, `fw-executor-ctb` e `fw-qa-gate`. A sessão compara conteúdo/hash antes/depois incluindo dirty e untracked; `git status --porcelain` é auxiliar e não detecta nova edição num arquivo já modificado |
 
 O que cada perfil nega está na coluna *Construção* de
 [`references/roteamento-e-despacho.md`](references/roteamento-e-despacho.md#rotas); o detalhe, no
-cabeçalho do script. "Cegueira por construção" vale, portanto, para as ferramentas de arquivo e com
-o hook instalado; no Bash, a palavra certa é heurística.
+cabeçalho do script. O hook restringe as chamadas cobertas quando instalado; no Bash, a guarda é
+heurística. Essas restrições não provam isolamento de leitura por outros caminhos.
 
 ### Teste do hook
 
@@ -360,15 +386,17 @@ A lista das `references/`, com o step em que cada uma é lida, está no índice 
 - **O corte do step 8 é hipótese.** Os limiares (18 `RQ` ou 60 CT) são o tamanho da única feature
   medida de ponta a ponta, que coube numa sessão com 48 despachos. Com um ponto só, o limiar pode estar
   alto ou baixo; a linha `Não fatiado — …` do `03` guarda os números para calibrar
-- **Fora do Claude Code** (Windsurf, Cursor, Copilot) não há sub-agente: tudo roda em linha, o juiz
-  volta a ser o autor, e a skill declara isso no `03` e no cabeçalho do `06`
-- **A cegueira é por construção só nas ferramentas de arquivo, e só com o hook instalado.** `Read`,
-  `Grep`, `Glob`, `Edit` e `Write` passam pelo `guarda-subagente.sh`; no `Bash` o hook é heurístico
-  (padrões de comando), e o sinal de que o revisor e o quality gate não editaram é a comparação do
-  `git status --porcelain` — sinal, não prova: nova edição num arquivo que já estava modificado não
-  muda o porcelain (ver [O hook dos agentes](#o-hook-dos-agentes)). Ferramenta MCP herdada não passa
-  pelo hook. O fallback `general-purpose` não tem hook nem restrição de ferramenta: ali a cegueira
-  volta a ser por instrução. O [teste ao vivo](#teste-do-hook) ainda não rodou numa feature real; nesta versão o
+- **Host sem sub-agentes**: tudo roda em linha, o juiz volta a ser o autor, e a skill declara isso
+  no `03` e no cabeçalho do `06`. Hosts com delegação usam o adaptador de capacidades; no Codex,
+  contexto herdado não satisfaz o contrato de um revisor cego
+- **O hook restringe ferramentas nos padrões cobertos quando instalado.** `Read`, `Grep`, `Glob`,
+  `Edit` e `Write` passam pelo `guarda-subagente.sh`; no `Bash` o hook é heurístico
+  (padrões de comando). A sessão compara conteúdo/hash antes/depois incluindo dirty e untracked
+  para observar alterações, não ausência de leitura; `git status --porcelain` é auxiliar e não
+  detecta nova edição em arquivo já modificado
+  (ver [O hook dos agentes](#o-hook-dos-agentes)). Isso não é sandbox. Ferramenta MCP herdada não passa
+  pelo hook. O fallback `general-purpose` não tem hook nem restrição de ferramenta: ali o limite de
+  leitura é contratual. O [teste ao vivo](#teste-do-hook) ainda não rodou numa feature real; nesta versão o
   contrato foi conferido alimentando o script com JSON de `PreToolUse`
 - **O `maxTurns` dos executores é hipótese** (40 no `fw-executor-ct`, 60 no `fw-executor-ctb`):
   nenhum despacho registrou turnos. Teto baixo demais corta o loop no meio, e o retorno volta como
@@ -393,10 +421,12 @@ Dois motivos, e o segundo é o que importa para esta coletânea:
 2. **Independência.** A coletânea inteira existe para quebrar a **cegueira correlacionada**: o
    mesmo agente lê o requisito, escreve o plano, o teste, o código e o veredito, e erra
    coerentemente. Três gates já pediam *"por quem não implementou / não derivou / não escreveu"*
-   — e rodavam **na mesma sessão**. Um sub-agente nasce sem o contexto da sessão, e isso já corta a
-   cegueira de contexto. A de ferramenta depende do hook: por construção nas ferramentas de arquivo, só
-   com o `guarda-subagente.sh` instalado; no Bash, heurística mais a comparação do `git status
-   --porcelain`; no fallback `general-purpose`, prompt. Por isso a skill roteia por **dois eixos**: complexidade escolhe o modelo; cegueira
+   — e rodavam **na mesma sessão**. Um sub-agente com contexto separado reduz esse viés;
+   é preciso verificar se o host herda a conversa. A restrição de ferramenta depende do hook:
+   nas ferramentas de arquivo, só com o `guarda-subagente.sh` instalado; no Bash, heurística,
+   com alterações observadas pela comparação de conteúdo/hash da sessão; no fallback
+   `general-purpose`, contrato no prompt. Nenhuma dessas medidas prova isolamento de leitura.
+   Por isso a skill roteia por **dois eixos**: complexidade escolhe o modelo; cegueira
    escolhe o contexto e proíbe rodar em linha.
 
 Todo disparo aparece num **quadro** antes de rodar e é reportado contra o mesmo quadro depois; o
@@ -493,7 +523,7 @@ Livewire** — milissegundos, sem Node e sem Playwright.
 
 O gate que decide se o `05` existe e o gate de tela de escrita estão no `SKILL.md`, seção
 *Gate do `05`*: desde a 4.0.0 o `05` existe se e só se o `04` declara uma costura `browser`,
-confirmada com o desenvolvedor. Feature sem tela — job, webhook, command, import de CSV — não gera CT-B, e isso é
+com decisão e data registradas pela sessão. Feature sem tela — job, webhook, command, import de CSV — não gera CT-B, e isso é
 deliberado, para o `05` não virar burocracia morta.
 
 **O que o projeto precisa ter para os CT-B** — a skill não assume que está instalado; se faltar,

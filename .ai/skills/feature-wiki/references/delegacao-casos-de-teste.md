@@ -38,12 +38,14 @@ Entrada (nesta ordem de autoridade):
 
 Saída:
   - 04-casos-de-teste.md   (sempre; RQ aberta aparece como "RQ-nn — aberta (Qn), sem cenário até a resposta")
-  - ## Costuras de Teste do 04 como PROPOSTA (em sub-agente, coluna Confirmada vazia): a sessão confirma
-    cada linha com o desenvolvedor (raia desenho) antes da revisão adversarial
+  - ## Costuras de Teste do 04 como PROPOSTA (em sub-agente, coluna Confirmada vazia): a sessão registra
+    decisão e data usando convenções/autorização existentes antes da revisão adversarial; pergunta
+    ao desenvolvedor apenas decisão material pendente
   - 05-casos-de-teste-browser.md   (só se uma linha de ## Costuras de Teste tem costura browser — SKILL.md, seção "Gate do 05")
   - perguntas novas devolvidas como saída, no formato ❓/➡️ da entrevista em três raias, numeradas
     Q?1, Q?2… (provisórias: a derivação não sabe o próximo Qn). A sessão renumera na sequência Qn da
-    feature, atualiza a linha "RQ-nn — aberta (Q?n)" do 04 e leva cada uma: raia requisito →
+    feature e atualiza a cobertura parcial: CT determinados + recorte bloqueado por Qn.
+    Usa "RQ-nn — aberta (Qn)" só se toda a cláusula depender da resposta. Leva cada pergunta: raia requisito →
     ## Perguntas ao Solicitante do 00-requisito.md; raia desenho → decide com o desenvolvedor
   - premissa de comportamento (o que o sistema faz quando o texto não diz) volta como pergunta de
     raia requisito, com a ➡️ pela opção que falha fechado — a mesma regra da entrevista do step 4
@@ -52,7 +54,7 @@ Proibido passar como entrada:
   - implementação da feature (ela ainda não existe; se existir, não é fonte de comportamento)
 ```
 
-A revisão adversarial que vem depois (despachada pela sessão, com as costuras já confirmadas)
+A revisão adversarial que vem depois (despachada pela sessão, com as decisões de costura registradas)
 recebe o `00` + `04`/`05` e, se existir, o `wikis/glossario.md` — vocabulário não é plano nem código.
 
 ### Contrato do construtor de testes (`executor-ct`)
@@ -107,11 +109,11 @@ Entrada:
 
 Tarefa:
   1. Escrever tests/Browser/{Feature}/{Nome}Test.php a partir dos CT-B
-  2. Rodar: vendor/bin/pest tests/Browser --filter={Feature}   (ou --testsuite=Browser, se o phpunit.xml define a suíte; NUNCA com --parallel)
+  2. Rodar: vendor/bin/pest tests/Browser --filter={Feature}   (ou --testsuite=Browser, se o phpunit.xml define a suíte; série por padrão, paralelo só após conferir isolamento e capacidade)
   3. Se falhar, classificar a causa ANTES de mexer em qualquer coisa:
      (a) CT-B especificado errado (seletor/rota/texto)  → corrigir o teste; a correção do 05 volta
                                                           na saída e a sessão grava (o hook nega Edit no 05)
-     (b) Implementação divergente do PRD                → NÃO corrigir; registrar divergência
+      (b) Implementação divergente do 05                 → NÃO corrigir; registrar divergência
      (c) Flake (timing/assíncrono)                      → rever a estratégia de espera e anotar
   4. Nas causas (a) e (c), se o Playwright MCP estiver disponível, observar a página ao vivo
      para descobrir o locator/estado real. Na causa (b): NÃO usar o MCP para contornar

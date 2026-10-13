@@ -84,12 +84,12 @@ na seção *Padrão de Log* e em `references/padrao-de-log.md`.
 
 ## Decisões de Desenho
 
-<!-- Raia desenho: decisão tomada com o desenvolvedor que NÃO passou nos três portões de ADR.
+<!-- Raia desenho: decisão tomada sob autorização existente ou com o desenvolvedor que NÃO passou nos três portões de ADR.
      Uma linha por decisão; a que passa nos três vira ADR no 02. "Nenhuma" é resposta válida. -->
 
 | # | Decisão | Pergunta | Portão que falta | Quem decidiu, data |
 |---|---|---|---|---|
-| D1 | {…} | Q2 | {difícil de reverter · surpreendente · trade-off} | {desenvolvedor}, {YYYY-MM-DD} |
+| D1 | {…} | Q2 ou autorização existente | {difícil de reverter · surpreendente · trade-off} | {quem decidiu}, {YYYY-MM-DD} |
 
 ## Autorização
 
@@ -216,8 +216,10 @@ falsificável na revisão.
 - **Atende**: {RQ-nn, P-nn}
 - **Bloqueado por**: RQ-nn (aberta — Qn) <!-- só se o passo implementa RQ aberta: não executar até a resposta -->
 - **Logs**:
-  - `Log::channel('{feature-name}')->info('[{Classe}@{metodo}] {mensagem da ação} | {parametro principal}')`
+  - `Log::channel('{feature-name}')->info('[{Classe}@{metodo}] {mensagem da ação} | {parametro principal seguro}', ['record_id' => $record->getKey()])`
   - Especificar cada ponto de log: início, sucesso, falha, decisões de fluxo
+  - Declarar a allowlist do contexto: IDs internos necessários, status, contagens e códigos seguros;
+    sem segredos, tokens, dados pessoais, request/formulário ou atributos completos de model
 
 ### 2. {Nome do Passo}
 ...

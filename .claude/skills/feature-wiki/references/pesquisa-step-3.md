@@ -27,17 +27,22 @@ Uma linha por ponto, com a fronteira e a evidência. A evidência é `arquivo:s�
 
 ```bash
 grep -rn "public function " app/Filament/{Painel}/{Pages,Widgets}   # ação chamável por $wire.
-grep -rn "public \$\|public ?" app/Filament app/Livewire | grep -v Locked
+grep -rnE 'public[[:space:]]+([^($;]*[[:space:]])?\$[[:alpha:]_]' app/Filament app/Livewire
 ```
 
 **No pacote de terceiro** (quando a feature monta sobre um):
 
 ```bash
 grep -rn "::find(\|whereKey(\|findOrFail(" vendor/{vendor}/{pkg}/src        # busca por id cru
-grep -rn "public \$\|public ?" vendor/{vendor}/{pkg}/src | grep -v Locked   # prop que o cliente escreve
+grep -rnE 'public[[:space:]]+([^($;]*[[:space:]])?\$[[:alpha:]_]' vendor/{vendor}/{pkg}/src   # candidatas: confirmar Locked no contexto
 grep -rn '\$arguments\[\|\$data\[' vendor/{vendor}/{pkg}/src              # argumento do cliente na ação
 grep -rn "extends Model" vendor/{vendor}/{pkg}/src/Models                    # models a escopar
 ```
+
+Os greps levantam candidatos; conferir as declarações completas e atributos nas linhas anteriores.
+`#[Locked]` costuma estar em outra linha, então `grep -v Locked` não identifica a proteção. O padrão
+de propriedades cobre declarações tipadas e sem tipo; declaração dividida em várias linhas exige
+leitura da classe. Método público inventariado também precisa ser confirmado como ação do componente.
 
 #### Documentation API do Boost (`search-docs`)
 

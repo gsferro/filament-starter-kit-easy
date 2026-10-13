@@ -12,7 +12,7 @@ fatos do plugin que mudam o que se escreve: `references/pest-plugin-browser.md`.
 
 > Runtime: `pest-plugin-browser` (Playwright). O plugin sobe o próprio servidor.
 > Costura: `browser` — linha "{grupo}" de `## Costuras de Teste` do `04`
-> Comando: `vendor/bin/pest tests/Browser --filter={Feature}` (em série — nunca `--parallel`)
+> Comando: `vendor/bin/pest tests/Browser --filter={Feature}` (série como padrão conservador; paralelismo exige isolamento e capacidade conferidos)
 <!-- `--testsuite=Browser` só se o phpunit.xml declara a suíte Browser: conferir com
      grep -n '<testsuite name="Browser"' phpunit.xml — sem saída, fica o comando acima -->
 

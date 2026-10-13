@@ -11,7 +11,7 @@
 #   O conteúdo PHP da violação controlada vem pelo stdin (modelos em references/enforcement-arch.md).
 #
 # Confere:
-#   (0) phpunit.xml (ou phpunit.xml.dist) tem uma suíte com tests/Arch ou tests/ — sem isso o CI não roda o teste;
+#   (0) phpunit.xml (ou phpunit.xml.dist) tem uma suíte que inclui o teste, respeitando suffix e exclude;
 #       as suítes são lidas pelo DOM do PHP, então <testsuite> dentro de <!-- … --> não conta
 #   (a) o teste passa no código atual — falha é violação existente: achado, não rule nova
 #   (b) com a violação controlada no lugar, o teste falha e a saída cita o arquivo da violação
@@ -82,7 +82,8 @@ locais() {
 
 # (0) O teste roda no CI? As suítes são lidas pelo DOM do PHP, não por grep: um <testsuite>
 # dentro de <!-- … --> não é suíte, e o grep o contava. Imprime vazio (alguma suíte cobre),
-# a linha de <testsuites> (nenhuma cobre) ou "erro" (o XML não parseia).
+# a linha de <testsuites> (nenhuma cobre) ou "erro" (o XML não parseia). O arquivo do teste precisa
+# estar numa directory com suffix compatível ou numa file, sem casar um exclude daquela suíte.
 xml=""
 for f in phpunit.xml phpunit.xml.dist; do
   if [ -f "$f" ]; then xml=$f; break; fi
@@ -93,19 +94,33 @@ else
   linha=$(php -r '
     $d = new DOMDocument();
     if (!@$d->load($argv[1])) { echo "erro"; exit; }
+    function path($p) {
+      $p = realpath(trim($p));
+      if ($p === false) return null;
+      $p = str_replace("\\", "/", $p);
+      return PHP_OS_FAMILY === "Windows" ? strtolower($p) : $p;
+    }
+    $teste = path($argv[2]);
+    $dentro = fn ($p) => $p !== null && ($teste === $p || str_starts_with($teste, rtrim($p, "/") . "/"));
     foreach ($d->getElementsByTagName("testsuite") as $s) {
+      foreach ($s->getElementsByTagName("exclude") as $n) {
+        if ($dentro(path($n->textContent))) continue 2;
+      }
+      foreach ($s->getElementsByTagName("file") as $n) {
+        if (path($n->textContent) === $teste) exit;
+      }
       foreach ($s->getElementsByTagName("directory") as $n) {
-        $p = rtrim(preg_replace("#^\./#", "", trim($n->textContent)), "/");
-        if ($p === "tests" || $p === "tests/Arch") { exit; }
+        $suffix = $n->hasAttribute("suffix") ? $n->getAttribute("suffix") : "Test.php";
+        if ($dentro(path($n->textContent)) && str_ends_with($argv[2], $suffix)) exit;
       }
     }
     $t = $d->getElementsByTagName("testsuites")->item(0);
     echo $t ? $t->getLineNo() : 1;
-  ' "$xml" 2>/dev/null) || linha=erro
+  ' "$xml" "$teste" 2>/dev/null) || linha=erro
   case $linha in
     "") ;;
     erro) achado "$xml:1: não foi possível ler as suítes (XML inválido ou php sem ext-dom) — confirmar como o CI roda tests/Arch" ;;
-    *) achado "$xml:$linha: nenhuma suíte inclui tests/Arch nem tests/ — vendor/bin/pest sem argumento não roda o teste; propor <testsuite name=\"Arch\"><directory>tests/Arch</directory></testsuite>" ;;
+    *) achado "$xml:$linha: nenhuma suíte inclui $teste (directory/file, suffix e exclude conferidos) — vendor/bin/pest sem argumento não roda o teste; propor <testsuite name=\"Arch\"><directory>tests/Arch</directory></testsuite>" ;;
   esac
 fi
 

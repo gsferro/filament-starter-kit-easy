@@ -54,11 +54,14 @@ vendor/bin/pest tests/Feature/{Feature} --mutate --path=app/Services --min=70
   `--ignore`, `--covered-only`, `--min`, `--everything`, `--parallel`). Se a versão instalada não
   aceitar `--path`, usar `--class='App\Services\X'`. É o mesmo conselho da dimensão K do
   `feature-quality-gate`
-- **No Windows, `pest --mutate` dá 100 % falso.** O plugin relança `argv[0]` (`vendor/bin/pest`,
+- **Na pilha Windows medida em 2026-09-21, `pest --mutate` deu 100 % falso.** O plugin relança `argv[0]` (`vendor/bin/pest`,
   proxy sem extensão — script sh ou PHP, conforme a versão do Composer) por Symfony Process; o `cmd`
   não o executa, cada subprocesso sai com código 1 em ~30 ms e o plugin conta saída não-zero como
-  mutante morto. Sintoma: *206 mutantes em 3 s* para uma suíte de 200 s. **Score só vale com
-  `Duration` compatível com N × tempo dos testes cobridores e com a lista de sobreviventes.**
+  mutante morto. Sintoma medido: *206 mutantes em 3 s* para uma suíte de 200 s. **Duração é heurística,
+  não uma igualdade `N × tempo`**: considerar os testes cobridores selecionados, processos paralelos
+  e cache, além da lista de sobreviventes e da execução dos subprocessos. Se a duração levantar
+  dúvida, repetir sem cache (`--no-cache`, quando suportado) ou conferir um mutante conhecido;
+  prova indispensável ainda pendente vai para "Não Verificado" na dimensão K, com teto de débito.
   Solução: o `.cmd` poliglota `{skills}/feature-wiki/scripts/pestw.cmd` (batch que chama `php` sobre
   si mesmo e, como PHP, faz `require` do `vendor/pestphp/pest/bin/pest` do diretório corrente),
   rodado da raiz do projeto — no Git Bash,
@@ -75,7 +78,13 @@ vendor/bin/pest tests/Feature/{Feature} --mutate --path=app/Services --min=70
 
 ## Tradução do sobrevivente em lacuna de derivação
 
-**Cada mutante sobrevivente é traduzido de volta para a lacuna de derivação** e vira cenário novo:
+**Triar o sobrevivente antes de criar cenário.** Só vira lacuna de derivação se mudar o comportamento
+acordado. Equivalente comprovado é destino 5 do quality gate, com a prova registrada: por exemplo,
+`if ($x > 0) return $x; return 0;` e a troca por `>=` devolvem o mesmo valor para todo `x` inteiro
+do domínio. Equivalência só alegada permanece prova pendente; se indispensável à K, limita o veredito
+a `APROVADO COM DÉBITO`. Remoção de log sem `RQ` de auditoria é conferida na dimensão D, sem CT de log.
+
+Para os sobreviventes que mudam comportamento acordado:
 
 | Mutante sobreviveu | Lacuna | O que escrever |
 |---|---|---|
@@ -83,3 +92,5 @@ vendor/bin/pest tests/Feature/{Feature} --mutate --path=app/Services --min=70
 | `&&` → `\|\|` | linha da tabela de decisão faltando | cenário da combinação |
 | `return $x` → `return null` | oráculo fraco | assertion sobre o **valor** |
 | chamada removida | efeito colateral não verificado | cenário de rastreio de efeito |
+
+Opções de cache e paralelismo: [documentação oficial do Pest](https://pestphp.com/docs/mutation-testing).

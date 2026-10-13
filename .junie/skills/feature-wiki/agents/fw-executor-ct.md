@@ -100,5 +100,6 @@ teste confirmada no vendor) e depois **só** as regras e cenários do seu lote, 
 ## Saída do pest e do pint (literal)
 ```
 
-O orquestrador audita o retorno: presença dos blocos, `git diff --stat` do lote (nada fora do seu
-arquivo) e amostragem de 2–3 testes. Retorno sem a saída literal do `pest` é devolvido.
+O orquestrador audita presença dos blocos, conteúdo/hash antes/depois incluindo dirty e untracked
+(nada fora dos arquivos do lote), e amostra 2–3 testes. `git diff --stat` é auxiliar. O hook limita
+algumas ferramentas; não oferece sandbox. Retorno sem a saída literal do `pest` é devolvido.

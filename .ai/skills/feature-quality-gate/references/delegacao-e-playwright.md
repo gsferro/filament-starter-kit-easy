@@ -16,20 +16,23 @@ MCP não é cobertura (seção *Playwright MCP como Confronto*).
 | Severidade e root cause | `ai-bug-triage` | tabela de severidade do `SKILL.md` (seção *Severidade*) |
 | Repro mínima | `bug-reproduction` | reduzir passos até o mínimo que reproduz; sem repro → "Suspeitas Não Confirmadas" |
 | Avaliar os próprios CT/CT-B | `ai-qa-review` | perguntar de cada CT: "se eu quebrar a regra, ele falha?" |
-| Flake × bug real | `test-reliability` | rodar 3× — falha intermitente é flake (destino 4), não defeito |
+| Flake × bug real | `test-reliability` | rodar 3× e investigar a causa da intermitência; destino 4 só com evidência de problema no teste ou ambiente. Corrida no produto segue o destino 2 ou 3; causa desconhecida vai para "Suspeitas Não Confirmadas" |
 | Podar suíte na regressão | `test-suite-curation` | só listar CT redundante, sem remover |
 
 ## Os três confrontos do Playwright MCP
 
-### 1. Inventário de elementos × cobertura do CT-B
+### 1. Inventário de elementos × cobertura dos CT/CT-B
 
-`browser_snapshot` devolve o inventário de elementos interativos da tela. O CT-B declara quais exercita. **A diferença é lacuna de cobertura, mensurável**:
+`browser_snapshot` devolve o inventário de elementos interativos da tela. Conferir os comportamentos
+de cada elemento contra o `04` e o `05`: filtro, gravação ou ação pode estar provado por componente
+Livewire, sem CT-B. **Só comportamento sem teste na camada que o prova é lacuna de cobertura**:
 
 ```
 Tela /relatorios/lote — elementos interativos observados: 7
-CT-B01 + CT-B02 exercitam: 4
+CT-01 + CT-02 (componente) + CT-B01 (browser) exercitam: 4
 Não exercitados: botão "Exportar CSV", select "Período", checkbox "Incluir inativos"
-→ QA-0X (dimensão A, destino 3): 3 elementos sem CT-B
+→ QA-0X (dimensão A, destino 3): 3 comportamentos sem CT/CT-B
+→ feature-test-design escolhe a camada mais barata que prova cada um; browser só para JS, pixel ou acessibilidade
 ```
 
 ### 2. UI renderizada × `## Superfície de UI` do PRD

@@ -1,35 +1,23 @@
 ---
 name: feature-quality-gate
-description: >
-  Etapa de QA dentro do agente, antes do PR. Invoque no step 11 da
-  feature-wiki, com a implementação e os testes verdes, ou sempre que precisar
-  validar se uma feature entregue atende ao que foi pedido: a pedido (revisar
-  como QA) ou antes de abrir PR com UI ou regra de negócio sensível.
-  Confronta 00-requisito.md x 01-plano-acao.md x app rodando; monta a Matriz
-  de Rastreabilidade para achar omissão silenciosa (cláusula RQ que nunca
-  virou passo, teste nem código); roda as dimensões do perfil de risco
-  (cobertura do requisito, fronteiras, matriz de permissão, log real, N+1, UX
-  de erro, dark mode, acessibilidade, segurança da superfície nova,
-  regressão, oráculo fraco e mutation score via pest --mutate, consistência
-  documental: PRD/ADR x código, rules x diff, docs x CHANGELOG, glossário); e
-  roteia cada achado por severidade a um destino: especificação,
-  implementação, teste, infra ou não-defeito. Não corrige nada: lê, reproduz
-  e reporta em 06-relatorio-qa.md. Palavras-chave: QA, quality gate.
+description: >-
+  Revisa como QA requisito, plano, código e aplicação antes do PR. Verifica rastreabilidade, fronteiras, permissões, testes e UX conforme risco; entrega 06-relatorio-qa.md com achados e limites. Não corrige a implementação.
 license: MIT
-compatibility: >
-  Projeto Laravel com Pest 4 ou 5; bash e php no PATH para os scripts. No
-  Claude Code roda como sub-agente fw-qa-gate, sem Edit/Write e com hook no
-  Bash; em outro host roda em linha e o 06 declara a independência degradada.
-  Opcionais, declarados no 06 quando faltam: app na APP_URL, Pest 5 (--tia),
-  pest-plugin-agent (--agent), PCOV ou Xdebug (--mutate), pest-plugin-browser,
-  Playwright MCP, Boost MCP, petrkindlmann/qa-skills. A falta só rebaixa o
-  veredito quando deixa uma dimensão não verificada.
+compatibility: >-
+  Laravel com Pest, Bash e PHP. Revisor independente em host com subagentes, incluindo Claude e Codex; sem contexto novo, declare independência não verificada. App, MCP, driver e plugins são opcionais conforme dimensões aplicáveis. Falta de capacidade só rebaixa quando deixa dimensão ou independência não verificada.
 metadata:
-  version: "1.7.0"
-  requires: "feature-wiki>=4.0.0"
+  version: "1.8.0"
+  requires: "feature-wiki>=4.1.0"
 ---
 
 # Feature Quality Gate — QA no Agente, com Roteamento
+
+## Host e execução
+
+O processo é independente do provedor. Use ferramentas realmente expostas e o path efetivo da skill.
+Preserve decisões e autorizações existentes; confirme apenas informação material ausente ou ação que exija autorização adicional.
+Para paths, subagentes e controles, leia o [contrato compartilhado](../feature-wiki/references/hosts-e-subagentes.md) da feature-wiki, se instalada.
+Ausência de recurso vira limitação registrada, nunca prova de aprovação.
 
 ## Glossário
 
@@ -43,7 +31,7 @@ metadata:
 | **PRD** | Plano de ação (`01-plano-acao.md`) |
 | **SBTM** | Session-Based Test Management — exploratório com charter e time-box |
 | **RCRCRC** | Heurística de regressão: Recent, Core, Risk, Configuration, Repaired, Chronic |
-| **`{skills}`** | Diretório onde a skill citada está instalada: o primeiro dos três — `.ai/skills/` (Boost), `.claude/skills/` (espelho local), `~/.claude/skills/` (global) — que **contém a skill citada**. Não "o primeiro que existir": `.ai/skills/` pode existir sem a skill. `{skills}/feature-wiki/scripts/` e `{skills}/feature-quality-gate/scripts/` podem estar em diretórios diferentes |
+| **`{skills}`** | Diretório de instalação que contém a skill citada, isto é, o pai da pasta dessa skill. Ex.: SKILL em .agents/skills/feature-wiki/SKILL.md resolve `{skills}` para .agents/skills. Pode variar por skill; use o path informado pelo host. |
 | **`{wiki}`** | Pasta da feature: `wikis/specs/{branch}/{feature}/` |
 | **estudo §n** | Seção do [estudo de 2026-09-26](https://github.com/gsferro/laravel-ai-skills/blob/main/estudos/2026-09-26-agentskills-spec-to-spec-to-tickets.md) (spec Agent Skills × `to-spec` × `to-tickets`), de onde vêm as regras novas da 1.7.0 |
 
@@ -291,7 +279,7 @@ comando como repro; rejeitada, fica registrada com o motivo. Exit 2, ou script a
 checagem vai para "Não Verificado" com a mensagem. Por quê (estudo §7.4): metade das dimensões era
 opinião sem regra, e L1/L2/L4 reexecutavam num `opus` greps que o step 10 já tinha. **Exceção**:
 `dark-mode.sh --mecanismo` — exit 1 = mecanismo detectado (a G roda; as linhas são evidência, não
-candidatas a achado), exit 0 = G não aplicável.
+candidatas a achado), exit 0 = mecanismo não detectado; não aplicabilidade exige a confirmação descrita na G.
 
 | Dim. | Natureza | Instrumento |
 |---|---|---|
@@ -411,8 +399,10 @@ Achado: contagem que cresce com o número de registros (N+1), query sem índice 
 
 **Primeiro, detectar o mecanismo do projeto**: `bash {skills}/feature-quality-gate/scripts/dark-mode.sh --mecanismo`.
 Evidência (exit 1) = G roda, e o mecanismo diz como forçar o tema no CT-B (classe `dark` no
-`<html>` × `prefers-color-scheme`). Silêncio (exit 0) = projeto sem dark mode: pular a dimensão
-declarando o motivo, com a saída como prova de não aplicável. O script reconhece Tailwind 3
+`<html>` × `prefers-color-scheme`). Silêncio (exit 0) = mecanismo não detectado pela heurística:
+conferir a configuração de tema e os estilos da UI. Só declarar G não aplicável com evidência
+adicional de ausência ou desativação do tema; sem confirmação, registrar G em "Não Verificado".
+O script reconhece Tailwind 3
 (`darkMode`), Tailwind 4 (`@custom-variant dark`, e o `prefers-color-scheme` padrão quando só há
 `dark:`), CSS `prefers-color-scheme`, classe `dark` alternada por JS, Flux e painel Filament.
 
@@ -427,6 +417,11 @@ Também: hex hardcoded fora do arquivo de tokens, e cor semântica trocada (erro
 ```php
 visit('/rota')->inDarkMode()->assertNoAccessibilityIssues();
 ```
+
+Esse exemplo emula `prefers-color-scheme`. Para tema por classe ou preferência própria, ativar
+o mecanismo do projeto e conferir o tema efetivo antes da asserção. Para cor específica, usar
+`assertScript()` com `getComputedStyle()` e o valor esperado; isso não substitui a avaliação
+visual completa. O alcance desses oráculos está na referência do plugin citada acima.
 
 3. **Visual via Playwright MCP** — screenshot nos dois temas e o agente **olha**: texto ilegível, ícone que desaparece, borda que some, sombra invertida, imagem com fundo branco cravado.
 
@@ -480,6 +475,9 @@ de linha é compatível com zero assertion útil.
 **Antes dos dois passos**: `Revisão adversarial: NÃO FEITA — {motivo}` no cabeçalho do `04` (host sem
 sub-agente) vai para `## Não Verificado` e conta como K não verificada. Por quê (estudo §7.3): a lacuna
 declarada substituiu a autorrevisão, e a `feature-test-design` promete que o gate a reporta como débito.
+Prova pendente indispensável à K — execução real dos subprocessos, mutante relevante ainda sem triagem
+ou equivalência apenas alegada — também torna K não verificada e impõe `APROVADO COM DÉBITO` como teto.
+Um equivalente comprovado e encerrado no destino 5 não é prova pendente.
 
 **Como verificar** — dois passos, o segundo só no perfil completo:
 
@@ -516,10 +514,12 @@ devolve ruído.
 `argv[0]` (`vendor/bin/pest`, script sh) e o `cmd` não o executa — cada subprocesso morre em
 ~30 ms com código 1 e o plugin conta como mutante **morto**. Resultado: *206 mutantes, 100 %,
 3 s* para uma suíte de 200 s — e este gate, na primeira execução cega, aceitou um *"2 mutantes,
-100 %"* sem desconfiar. Regra: **score sem `Duration` compatível com N × tempo dos testes
-cobridores, ou sem a lista de sobreviventes, é "Não Verificado"**, não 100 %. No Windows, rodar
-pelo `pestw.cmd` acima. Timeout conta como
-morto no score; o achado é sempre o **sobrevivente nomeado**.
+100 %"* sem desconfiar. **`Duration` é heurística**, considerando testes cobridores selecionados,
+processos paralelos e cache; duração curta, sozinha, não prova falha do arnês. Conferir a execução
+dos subprocessos e a lista de sobreviventes. Se houver dúvida, repetir com `--no-cache` (quando
+suportado) ou conferir um mutante conhecido. Prova indispensável pendente é "Não Verificado",
+com teto de débito, não score certificado. No Windows, rodar pelo `pestw.cmd` acima. Timeout conta
+como morto no score; o achado é sempre o **sobrevivente nomeado**, depois da triagem abaixo.
 
 > **Armadilha verificada**: `covers(X::class)` no arquivo de teste **restringe o que conta como
 > coberto**. Mutantes em classe fora do `covers()` são reportados como `uncovered` e o score vai a
@@ -538,19 +538,25 @@ morto no score; o achado é sempre o **sobrevivente nomeado**.
 > Portanto: score alto **não** absolve a dimensão A. Score baixo é achado; score alto é apenas
 > ausência de um achado específico — o de assertion fraca.
 
-**Como ler o resultado** — cada mutante sobrevivente é um **defeito que ninguém detectaria**, e o
-operador diz qual lacuna de derivação o deixou vivo:
+**Como ler o resultado** — sobrevivente é candidato a lacuna, não prova automática de defeito.
+Primeiro conferir se muda o comportamento acordado: equivalente **comprovado** é destino 5,
+com a prova no `06`; equivalência só alegada permanece pendente. Para os mutantes que mudam o
+comportamento, o operador indica qual lacuna de derivação pode tê-los deixado vivos:
 
 | Mutante sobreviveu | Lacuna | Destino |
 |---|---|---|
 | `>` → `>=` | falta valor limite | **3** |
 | `&&` → `\|\|` | falta linha da tabela de decisão | **3** |
 | `return $x` → `return null` | oráculo fraco sobre o retorno | **3** |
-| chamada removida (e-mail, log, `increment`) | falta assertion de efeito colateral | **3** |
+| chamada removida (e-mail, `increment`) que muda comportamento acordado | falta assertion de efeito colateral | **3** |
+| log removido sem `RQ` de auditoria | observabilidade do PRD a conferir pela dimensão D; não gerar CT de log | pelo achado confirmado da **D** |
+| equivalente comprovado | nenhuma diferença observável no domínio acordado | **5** |
 | linha **uncovered** | comportamento sem nenhum teste | **3**, e possivelmente **1** se for `RQ` sem plano |
 
-**Roteamento**: todo achado desta dimensão vai para o **destino 3**, e a correção é invocar a
-`feature-test-design` com o mutante como entrada — ela fecha a **classe** de lacuna, não só o caso.
+**Roteamento**: achado confirmado de lacuna de teste vai para o **destino 3**, e a correção é invocar
+a `feature-test-design` com o mutante como entrada — ela fecha a **classe** de lacuna, não só o caso.
+Equivalentes comprovados vão para 5; logs sem requisito são julgados na D. Quando o requisito pede
+auditoria, o CT afirma o registro exigido, conforme a Proibição 12 da `feature-test-design`.
 
 **Piso sugerido**: 70% de mutation score nas classes de regra de negócio da feature — abaixo disso,
 **investigar**; o achado registrado é sempre o mutante nomeado que sobreviveu (nunca o percentual).
@@ -591,7 +597,7 @@ implementador **declarou**; esta dimensão confere a declaração.
 | L3 | PRD/ADR × código | para cada passo do `01` e cada "Decisão"/"Consequências" do `02`, abrir o arquivo citado e conferir a afirmação. **Toda afirmação com número é conferida por `grep -rn` do valor na wiki inteira**, não lendo o arquivo onde ela é esperada — número duplicado entre `01` e `02` é o que sobrevive ao gate | afirmação que o código contradiz sem marca `*(alterado em …)*`; desvio que existe só no `03`; número certo num arquivo e velho em outro |
 | L4 | Rules × diff | `bash {skills}/feature-wiki/scripts/conformidade-rules.sh {wiki} {base}` lista as rules cujo `paths:` casa um arquivo de `git diff --name-only {base}...HEAD` e acusa cada uma sem linha em `## Conformidade com Rules` do `03`. O veredito aplicada / n.a. / violada continua julgamento: para cada rule casada, conferir a linha do `03` **e** o código | rule sem linha na tabela; "aplicada" sem evidência; rule violada (`group` errado, chave de env fora do `phpunit.xml`, par de cenário exigido pela rule ausente) |
 | L5 | Docs × comportamento × rastro | docs pt × en × CHANGELOG × README contra o comportamento final; cada frase nova procurada no `00`/`02`. Passo sem `RQ` que o `rastreabilidade.sh` listou é o mesmo crescimento, do lado do plano | pt e en dizem coisas diferentes; consequência invalidada ainda descrita; frase em doc de usuário **sem `RQ` nem ADR** de origem — crescimento sem rastro, o mesmo padrão que a matriz chama de "código sem `RQ`" |
-| **L6** | Alegações da `## Verificação Final` e de `## Despachos` do `03` | primeiro `bash {skills}/feature-wiki/scripts/checkbox-sem-evidencia.sh {wiki}` (`[x]` sem ` — {evidência}`); depois, cada `[x]` com **número**: reproduzir o comando que o gera (`grep -c`, `citacoes.sh`, `pest`); cada **degradação declarada** ("sem PCOV", "plugin ausente", "MCP indisponível"): prova negativa (`php -m`, `ls vendor/…`); cada `Duration` de `--mutate`: plausível para N × testes. A coluna `Custo` de `## Despachos` (tokens · duração) é o que o host reportou, e `—` quando ele não reporta: não é número a reproduzir, e `—` não é achado | checkbox fechado sem evidência; célula de `Custo` vazia (nem valor nem `—`); número que nenhum comando reproduz; degradação declarada com a ferramenta presente; score de mutação com duração implausível. **É a checagem que acusa o orquestrador**, e só um juiz que não viu a conversa a faz sem viés |
+| **L6** | Alegações da `## Verificação Final` e de `## Despachos` do `03` | primeiro `bash {skills}/feature-wiki/scripts/checkbox-sem-evidencia.sh {wiki}` (`[x]` sem ` — {evidência}`); depois, cada `[x]` com **número**: reproduzir o comando que o gera (`grep -c`, `citacoes.sh`, `pest`); cada **degradação declarada** ("sem PCOV", "plugin ausente", "MCP indisponível"): prova negativa (`php -m`, `ls vendor/…`); cada `Duration` de `--mutate`: heurística considerando testes selecionados, processos e cache; dúvida indispensável à K é prova pendente. A coluna `Custo` de `## Despachos` (tokens · duração) é o que o host reportou, e `—` quando ele não reporta: não é número a reproduzir, e `—` não é achado | checkbox fechado sem evidência; célula de `Custo` vazia (nem valor nem `—`); número que nenhum comando reproduz; degradação declarada com a ferramenta presente; score declarado certificado com prova indispensável ainda pendente. **É a checagem que acusa o orquestrador**, e só um juiz que não viu a conversa a faz sem viés |
 | **L7** | Vocabulário × glossário | ler `wikis/glossario.md`; para cada termo, `grep -rn` do termo e do "Não confundir com" no `00`, `01`, `04`, `05` e nas views do diff; conferir os termos decididos na feature (resposta de pergunta de significado, `## Decisões de Desenho` do `01`) contra o glossário | termo do `01`/`04`/UI com sentido diferente do glossário, ou trocado pelo "Não confundir com"; termo do `00` com sentido diferente do glossário sem pergunta registrada; termo decidido na feature que não entrou no glossário |
 
 Por que a L7 existe (estudo §2.5, item 4): o glossário é o único lugar durável e global para o
@@ -644,16 +650,19 @@ que o Gherkin e a UI propagam, e quem escreveu a wiki não o vê.
 ### Veredito e teto por cobertura
 
 **Dimensão verificada** = rodou inteira no escopo dela, ou foi provada **não aplicável** com a
-prova no `06` (natureza `nova` com **Toca infra compartilhada?** `não` → J; `dark-mode.sh --mecanismo`
-em silêncio → G; sem UI no `01` nem no diff → G e H). **Não verificada**, por qualquer causa = fora
-do perfil, rodada em parte (K sem o K2 ou com `Revisão adversarial: NÃO FEITA` no `04`, dimensão
+prova no `06` (natureza `nova` com **Toca infra compartilhada?** `não` → J; configuração de tema e
+estilos confirmando ausência ou desativação de dark mode → G; sem UI no `01` nem no diff → G e H).
+Silêncio do `dark-mode.sh --mecanismo`, sozinho, não prova não aplicabilidade. **Não verificada**, por qualquer causa = fora
+do perfil, rodada em parte (K sem o K2, com `Revisão adversarial: NÃO FEITA` no `04` ou com prova
+pendente indispensável à sua conclusão, dimensão
 dinâmica rodada estática sem app, checagem com script ausente), sem a ferramenta (MCP, driver de
-cobertura), ou a A em oráculo degradado. Skill do `qa-skills` trocada pelo fallback inline não conta.
+cobertura), ou a A em oráculo degradado. O fallback inline de uma skill do `qa-skills` conta como
+verificação quando executa toda a dimensão no escopo dela; a troca de ferramenta, sozinha, não rebaixa o veredito.
 
 | Veredito | Condição |
 |---|---|
-| `APROVADO` | nenhum achado aberto **e** as 12 dimensões verificadas |
-| `APROVADO COM DÉBITO` | nenhum Blocker/Major, e ao menos um de: Minor/Cosmético aberto; dimensão não verificada; `RQ` `aberta` que nenhum passo nem código implementa. O débito lista cada achado e cada dimensão com a causa, e vai para o `03-progresso.md` |
+| `APROVADO` | nenhum achado aberto, as 12 dimensões verificadas e revisão independente verificada |
+| `APROVADO COM DÉBITO` | nenhum Blocker/Major, e ao menos um de: Minor/Cosmético aberto; dimensão ou independência não verificada; `RQ` `aberta` que nenhum passo nem código implementa. O débito lista cada achado e cada lacuna com a causa, e vai para o `03-progresso.md` |
 | `REPROVADO → {destino}` | ≥ 1 Blocker ou Major, roteado ao destino de maior prioridade |
 
 **`APROVADO` é inalcançável nos perfis Mínimo e Padrão, de propósito**: o teto ali é `APROVADO COM
@@ -754,7 +763,7 @@ Ao delegar, **registrar no relatório** qual skill foi usada. Ao cair no fallbac
 
 ## Playwright MCP como Confronto
 
-A `feature-wiki` já fixa a regra: **o `pest-plugin-browser` atesta, o Playwright MCP observa**. Aqui o MCP habilita três confrontos que nenhuma ferramenta de teste faz: inventário de elementos da tela × elementos que o CT-B exercita (a diferença é lacuna de cobertura, mensurável); UI renderizada × `## Superfície de UI` do PRD; e tema, console e rede. O que cada um mede, com o exemplo, está em [`references/delegacao-e-playwright.md`](references/delegacao-e-playwright.md) — leia antes de subir o MCP.
+A `feature-wiki` já fixa a regra: **o `pest-plugin-browser` atesta, o Playwright MCP observa**. Aqui o MCP habilita três confrontos: inventário de elementos da tela × comportamentos que os CT e CT-B exercitam; UI renderizada × `## Superfície de UI` do PRD; e tema, console e rede. Elemento sem CT-B pode estar coberto por componente: a lacuna é de comportamento sem teste na camada que o prova. O que cada confronto mede, com o exemplo, está em [`references/delegacao-e-playwright.md`](references/delegacao-e-playwright.md) — leia antes de subir o MCP.
 
 ### Regras
 
@@ -763,7 +772,7 @@ A `feature-wiki` já fixa a regra: **o `pest-plugin-browser` atesta, o Playwrigh
 - `ref=e5` é efêmero (*"valid until the next page change"*) e **nunca** entra em teste — só o resultado de `browser_generate_locator`
 - `browser_find` antes de `browser_snapshot` cru
 - Proibido `browser_run_code_unsafe` e `--caps=vision`
-- **Sessão MCP não é cobertura.** Todo achado do MCP tem dois destinos: lacuna de cobertura → **vira CT-B** no `05`; defeito → **achado roteado**. Nunca "fica no relatório e pronto"
+- **Sessão MCP não é cobertura.** Todo achado do MCP tem dois destinos: lacuna de cobertura → **vira CT ou CT-B** via `feature-test-design`, na camada mais barata que prova o comportamento; defeito → **achado roteado**. CT-B no `05` só quando a asserção depende do navegador. Nunca "fica no relatório e pronto"
 - Antes de subir o MCP, checar se o **`browser-logs` (Browser Logs) do Boost MCP** já resolve o caso de console/erro
 
 Sem MCP: `screenshot()` no ponto de interesse, `content()` filtrado com `Grep`, leitura do Blade/componente. Registrar em "Não Verificado" o que ficou fora.
@@ -852,9 +861,9 @@ Violação de qualquer uma invalida a execução:
 - [ ] Dimensão L conferiu IDs de CT, citações, PRD/ADR × código, rules × diff, docs pt × en × CHANGELOG e vocabulário × glossário — inclusive a declaração do `03`
 - [ ] **L6**: todo número da `## Verificação Final` reproduzido pelo comando; toda degradação declarada conferida com a prova negativa; `Duration` do `--mutate` plausível
 - [ ] Todo achado que envolve um valor numérico sai com o `grep -rn` do valor na wiki inteira — a ação exigida nomeia cada arquivo que o repete
-- [ ] Dimensão K: cabeçalho do `04` lido (`Revisão adversarial: NÃO FEITA` → "Não Verificado"); score de mutação só aceito com duração plausível e sobreviventes nomeados — senão "Não Verificado"
+- [ ] Dimensão K: cabeçalho do `04` lido (`Revisão adversarial: NÃO FEITA` → "Não Verificado"); subprocessos e sobreviventes conferidos, com duração julgada considerando testes selecionados, processos e cache; prova indispensável pendente → "Não Verificado" e teto de débito; equivalente só fechado com prova
 - [ ] Dimensão G detectou o mecanismo de tema do projeto antes de validar
-- [ ] Achados do MCP convertidos em CT-B novo ou em achado roteado
+- [ ] Achados do MCP convertidos em CT/CT-B novo na camada mais barata que prova o comportamento, ou em achado roteado
 
 ### Saída
 

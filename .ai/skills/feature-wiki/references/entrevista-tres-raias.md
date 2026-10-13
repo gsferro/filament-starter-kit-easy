@@ -26,7 +26,8 @@ Numerada, com raia, o que ela afeta, de que pergunta depende e a resposta recome
   quiz de granularidade da `feature-tickets`. A próxima `Qn` é a maior já usada em `00`–`03`, mais um
 - **Sub-agente não sabe o próximo `Qn`**: a derivação do step 7 (e qualquer sub-agente que devolva
   pergunta) numera `Q?1, Q?2…`; a sessão renumera ao gravar e atualiza toda referência a ela — no
-  `04`, a linha `RQ-nn — aberta (Q?1)` passa a `RQ-nn — aberta (Q7)`
+  `04`, `recorte bloqueado — Q?1` passa a `recorte bloqueado — Q7`, preservando os CT determinados.
+  A forma `RQ-nn — aberta (Q?1)` só se aplica à cláusula integralmente dependente e recebe o mesmo Q7
 - Sem dependência, `depende de: —`
 - A recomendação é da sessão. Ela não decide: facilita a resposta e deixa explícito o que a sessão
   faria se ninguém respondesse — o que, na raia requisito, **não** autoriza implementar
@@ -36,8 +37,8 @@ Numerada, com raia, o que ela afeta, de que pergunta depende e a resposta recome
 | Raia | Pergunta sobre | Quem responde | Onde aterrissa | Bloqueio |
 |---|---|---|---|---|
 | **fato** | código, schema, config, doc do framework | **o agente** (steps 3/5); nunca perguntar ao usuário o que dá para descobrir | `01` (Análise dos Arquivos Existentes) | — |
-| **desenho** | como implementar dado o requisito (costura de teste, cache, evento × observer…) | **o desenvolvedor** (usuário da sessão), em rodadas com recomendação | `02` se passar os três portões de ADR; senão, uma linha em `## Decisões de Desenho` do `01` | — |
-| **requisito** | o que o sistema deve fazer quando o texto não diz | **o solicitante** (não o dev). Pergunta registrada em `## Perguntas ao Solicitante` do `00` | resposta entra como **Adendo** com fonte | a `RQ` fica `aberta — Qn`; **nenhum passo do `01` a implementa**: passo dependente é marcado `**Bloqueado por**: RQ-nn (aberta — Qn)` |
+| **desenho** | como implementar dado o requisito (costura de teste, cache, evento × observer…) | **a sessão** usa convenções e autorização existentes; **o desenvolvedor** decide quando há escolha material pendente, em rodada com recomendação | `02` se passar os três portões de ADR; senão, uma linha em `## Decisões de Desenho` do `01` | — |
+| **requisito** | o que o sistema deve fazer quando o texto não diz | **o solicitante** (não o dev). Pergunta registrada em `## Perguntas ao Solicitante` do `00` | resposta entra como **Adendo** com fonte | somente o recorte dependente fica bloqueado; obrigações determinadas seguem. Se toda cláusula depender da resposta, `RQ` fica `aberta — Qn` e seu passo recebe `**Bloqueado por** |
 
 Como separar desenho de requisito: se a resposta muda **o que o usuário do sistema observa**
 (quem vê, quem pode, o que acontece, qual o limite), é requisito. Se muda só **como** o código chega
@@ -46,10 +47,11 @@ ao mesmo comportamento observável, é desenho.
 ## Rodadas pela fronteira
 
 - **Fronteira** = as perguntas cujos pré-requisitos já estão respondidos
-- Cada rodada pergunta a fronteira **inteira** e espera. Pergunta que depende de outra ainda aberta
-  vai para a rodada seguinte
+- Cada rodada agrupa a fronteira de **decisões materiais pendentes**. Não repetir confirmação já
+  dada nem perguntar escolhas técnicas rotineiras. Pergunta que depende de outra ainda aberta vai
+  para a rodada seguinte; executar o trabalho independente enquanto a resposta não chega
 - A entrevista termina quando a fronteira fica vazia; então a sessão registra no `03` a linha
-  `Entendimento confirmado: {data} — {quem} — {rodadas, nº de perguntas por raia}`
+  `Entendimento confirmado: {data} — {quem ou autorização existente} — {rodadas, nº de perguntas por raia}`
 
 Exemplo — a Q3 só entra na segunda rodada porque depende da Q1:
 
@@ -84,7 +86,8 @@ Quando o texto não diz o que o sistema faz num caso (aceita ou recusa, mostra o
 não), isso é pergunta da **raia requisito** — nunca uma premissa assumida em silêncio. A `➡️` recomenda
 a opção que **falha fechado**: recusa, esconde, não executa. É a mesma regra que a `feature-test-design`
 usa na derivação do step 7, para as duas skills não recomendarem direções opostas; o invariante que
-vale sob qualquer resposta vira cenário da regra fechada, e a `RQ` fica `aberta — Qn` até a resposta.
+vale sob qualquer resposta vira cenário da regra fechada. Somente a direção indecidida fica
+bloqueada; `RQ` inteira só recebe `aberta — Qn` quando toda a cláusula depende da resposta.
 
 ```text
 ❓ Q4 · raia: requisito · afeta: RQ-06 · depende de: —
