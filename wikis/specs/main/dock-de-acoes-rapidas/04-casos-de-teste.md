@@ -1,6 +1,6 @@
 # Casos de Teste — Dock de ações rápidas (favoritos do usuário)
 
-> Requisito: `00-requisito.md` (com os Adendos 1 a 5) · Plano: `01-plano-acao.md`
+> Requisito: `00-requisito.md` (com os Adendos 1 a 5 e as premissas P-02, P-03, P-04) · Plano: `01-plano-acao.md`
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação (o pacote nem está instalado; `app/` só foi consultado para nomes de classe e por `grep` de `SoftDeletes`).
 > Revisão adversarial: **duas rodadas feitas** pelo `fw-adversario-ct` (contexto novo, sem o plano) — rodada 1 com 21 achados (ADV-01…ADV-21) e rodada 2, a última pelo teto de 2, com 3 reaberturas (ADV-03, ADV-06, ADV-07) e 10 achados novos (ADV-22…ADV-31). Fechamento em `## Revisão Adversarial`. Não há rodada 3.
 
@@ -21,8 +21,9 @@
 - Re-derivação de 2026-10-13 (Adendos 2 e 3): CT-38…CT-50 novos; oráculo ajustado, sem renumerar, em CT-15, CT-16, CT-17, CT-28, CT-33, CT-34; nenhum CT ficou obsoleto
 - Rodada final de 2026-10-13 (Adendo 4 + revisão adversarial): CT-51…CT-60 novos; oráculo ajustado, sem renumerar, em CT-01, CT-02, CT-08, CT-22, CT-25, CT-27, CT-29, CT-33, CT-42, CT-45, CT-46, CT-47, CT-49; nenhum CT ficou obsoleto
 - Fechamento da rodada 2 e Adendo 5 (RQ-35 substitui RQ-34): CT-61…CT-65 novos; oráculo ajustado, sem renumerar, em CT-25, CT-36, CT-47, CT-52, CT-55, CT-56, CT-57; costura de CT-59 trocada para G2; nenhum CT ficou obsoleto
+- Achados do step 9 (revisão do diff, 2026-10-14): CT-66…CT-75 novos em R23…R28, com origem em RQ (RD-01, CR-01, CR-05/RD-02) e nas premissas P-01 (substituída por P-04), P-02, P-03; nenhum CT existente mudou de oráculo. A R27 deriva a direção da P-02 pela ➡️ da Q28 (aberta), por instrução da sessão — divergência declarada com a skill (princípio 5)
 - Estouros trazidos pela revisão adversarial (não contam para o teto — passo 6, item 1; marcados `— revisão adversarial ADV-nn` na tabela): R1, R3, R9, R13, R14, R16, R17, R19, R22 (cenários e mutantes). R19 tem 6 cenários no perfil completo (teto 5) porque CT-53 e CT-54 são ADV-04 e ADV-05; R14 tem 2 cenários no perfil mínimo pelo mesmo motivo (CT-59 é ADV-12)
-- Cenários: 65 · Regras: 22 · Mutantes previstos: 131 · Sem matador: 2
+- Cenários: 75 · Regras: 28 · Mutantes previstos: 149 · Sem matador: 2
 <!-- contagem pelos quatro grep -c de references/template-04.md §Contagem do cabeçalho; recalcular a cada cenário novo -->
 
 ## Varredura SFDIPOT
@@ -30,12 +31,12 @@
 | Letra | O que existe nesta feature | Cenários gerados |
 |---|---|---|
 | S | pacote de terceiro + assets JS; plugin registrado nos 3 painéis; permissão nova (`Usar:Dock`) + seeder; 3 propriedades novas no settings da instalação + migration de settings; 2 colunas novas em `users` (favoritos, layout próprio) | CT-06, CT-08, CT-19, CT-37, CT-B01 |
-| F | decidir se o dock renderiza; montar o catálogo (com rótulo por painel/organização); gravar e ordenar favoritos pelo slideover; adicionar a página atual; recusar o 11º com aviso; preservar o oculto; resolver layout/estilo; autorizar favorito de outro painel/organização; tela de configurações; semeadura da permissão | CT-01…CT-34, CT-38…CT-65 |
+| F | decidir se o dock renderiza; montar o catálogo (com rótulo por painel/organização); gravar e ordenar favoritos pelo slideover; adicionar a página atual; recusar o 11º com aviso; preservar o oculto; resolver layout/estilo; autorizar favorito de outro painel/organização; tela de configurações; semeadura da permissão | CT-01…CT-34, CT-38…CT-75 |
 | D | chave de favorito válida / fora do catálogo / forjada / de outra organização / de organização excluída; 0, 1, 9, 10, 11 favoritos (visíveis + ocultos); destino repetido; ordem escolhida; favoritos de outro usuário; layout nulo × gravado × inválido; lista de painéis vazia × com id inexistente | CT-07, CT-12, CT-13, CT-14, CT-17, CT-18, CT-22, CT-27, CT-28, CT-33, CT-34, CT-40, CT-45, CT-46, CT-47, CT-48, CT-52, CT-54, CT-61, CT-62, CT-63, CT-64 |
-| I | endpoint Livewire do componente do vendor (`mountAction`/`callMountedAction`, props `#[Locked]`); formulário da tela de configurações; HTML do painel por HTTP; atribuição em massa no model `User`; JavaScript do dock no navegador | CT-02, CT-05, CT-09, CT-19, CT-32, CT-56, CT-59, CT-65, CT-B01 |
+| I | endpoint Livewire do componente do vendor (`mountAction`/`callMountedAction`, props `#[Locked]`); formulário da tela de configurações; HTML do painel por HTTP; atribuição em massa no model `User`; JavaScript do dock no navegador | CT-02, CT-05, CT-09, CT-19, CT-32, CT-56, CT-59, CT-65, CT-69, CT-70, CT-B01 |
 | P | SQLite `:memory:` (sem concorrência real); cache de permissões do spatie (store `array` — o que deixa o cache em store de banco sem cenário, M130); `Panel::boot()` só por middleware (`noPainelBootado`; `/app` boota por GET real — `.ai/rules/testes.md`); assets do pacote publicados por `filament:assets`; `permission.teams` só na suíte Tenancy | CT-04, CT-B01; concorrência: lacuna declarada |
 | O | personas `panel_user`, `admin`, `infra`, `master_global`, `admin_app` (só Tenancy); um usuário em vários painéis e várias organizações; usuário que perde e recupera papel, vínculo ou permissão | CT-01, CT-20, CT-22, CT-24, CT-27, CT-29, CT-41, CT-42 |
-| T | permissão revogada e restaurada (2-switch); organização excluída depois do favorito gravado; avaliação a cada request (sem memória entre requests); concorrência de duas adições no 9º favorito | CT-25, CT-27 (2-switch com renderização intermediária observada), CT-29; concorrência: lacuna declarada |
+| T | permissão revogada e restaurada (2-switch); organização excluída depois do favorito gravado; avaliação a cada request (sem memória entre requests); concorrência de duas adições no 9º favorito | CT-25, CT-27 (2-switch com renderização intermediária observada), CT-29, CT-69 (re-render depois de gravar), CT-75 (corrida entre abas); concorrência: lacuna declarada |
 
 ## Mapa de Regras
 
@@ -63,6 +64,12 @@
 | R20 — a ordem dos atalhos é a escolhida pelo usuário; a página adicionada entra no fim | fronteira (completo) | RQ-30, RQ-33, RQ-20 | EP (ordem ≠ alfabética ≠ catálogo ≠ painel) + 2-switch (grava → reordena) | CT-48, CT-49 |
 | R21 — o rótulo de cada destino no slideover traz o painel (e, no `/app`, a organização) antes do grupo e da tela | autorização (completo) | RQ-31 | EP (destinos homônimos em painéis/organizações diferentes) | CT-50 |
 | R22 — em qualquer slideover, todo favorito gravado que o usuário ainda abre aparece entre os escolhidos, com rótulo de painel (e organização), e pode ser removido ou reordenado; só as novas opções variam por onde o slideover abre; o envio aceita esses favoritos e o catálogo corrente, e recusa por inteiro qualquer outra chave | autorização (completo) | RQ-35, RQ-25, RQ-29, RQ-27 | tabela de decisão (onde abre × chave no envio: já gravada e abrível / não gravada fora do catálogo corrente / gravada sem acesso) | CT-52, CT-55, CT-61, CT-62 |
+| R23 — Page de outro painel sem a permissão dela não vale como favorito, mesmo com o mapa de Pages do painel corrente já montado no request | autorização (completo) | RQ-04, RQ-15 (RD-01) | matriz papel × tela com estado do framework fixado + controle positivo | CT-66, CT-67, CT-68 |
+| R24 — depois de salvar no slideover, o dock da mesma requisição já mostra os favoritos novos, na ordem nova | fronteira (completo) | RQ-10, RQ-30 (CR-01) | 2-switch no mesmo componente | CT-69 |
+| R25 — payload forjado nos métodos públicos tipados do componente não estoura e não grava | autorização (completo) | RQ-13 (CR-05, RD-02) | EP de tipo errado | CT-70 |
+| R26 — favorito do painel e da organização correntes não recarrega papéis nem busca a organização; admite só a consulta da autorização da tela | settings (padrão) | P-04 (CR-02; substitui P-01) | contagem 0 × 3 com atribuição pela pilha + limite superior, mesmo aquecimento | CT-71, CT-72 |
+| R27 — favorito de organização excluída não aparece no slideover e sai ao salvar | fronteira (completo) | P-02 (CR-03), RQ-27 | estado × operação + BVA do teto | CT-73, CT-74 |
+| R28 — "adicionar esta página" que não pode mais ser feito avisa e não muda nada | fronteira (completo) | P-03 (RD-03), RQ-21, RQ-28 | EP do motivo + rastreio de não-efeito | CT-75 |
 
 - RQ-01 — sem cenário: entregável documental (análise do pacote), sem comportamento de sistema a falsificar; conferência pelo quality gate
 - RQ-03, RQ-05, RQ-06, RQ-07, RQ-09 — substituídas no Adendo 1 (por RQ-10, RQ-13, RQ-14, RQ-15, RQ-16/RQ-17); fora da cobrança
@@ -80,10 +87,17 @@
 - RQ-33 — coberta: CT-33, CT-49
 - RQ-34 — substituída por RQ-35 (Adendo 5); fora da cobrança
 - RQ-35 — coberta: CT-52, CT-55, CT-61, CT-62
+- RQ-04, RQ-15 — também em CT-66, CT-67, CT-68 (RD-01: Page de outro painel com o mapa de Pages do painel corrente montado)
+- RQ-10, RQ-30 — também em CT-69 (CR-01: re-render na mesma requisição)
+- RQ-13 — também em CT-70 (CR-05/RD-02: métodos públicos tipados)
+- P-01 — substituída por P-04 (2026-10-14); fora da cobrança
+- P-04 — coberta: CT-71, CT-72
+- P-02 — cobertura: CT-73 (invariante das duas leituras da Q28); CT-74 (direção "descartar", **derivada pela ➡️ da Q28 aberta**, por instrução da sessão — vira `@obsoleto` se a resposta for "manter")
+- P-03 — coberta: CT-75
 
 ## Matriz estado × operação do favorito
 
-Estados (derivados no uso, não gravados): **visível** (destino que o usuário abre), **oculto** (destino válido que ele deixou de poder abrir — RQ-19, RQ-27), **inválido** (chave gravada que nunca foi destino do catálogo — RQ-11, RQ-27), **de outra organização** (destino do `/app` que ele abre, gravado em organização diferente da corrente, ou visto de outro painel — RQ-25, RQ-35). O favorito de organização à qual ele **perdeu** o acesso é estado **oculto**. Operações: exibir no dock · regravar o slideover sem tocá-lo · remover pelo slideover · contar no teto.
+Estados (derivados no uso, não gravados): **visível** (destino que o usuário abre), **oculto** (destino válido que ele deixou de poder abrir — RQ-19, RQ-27), **inválido** (chave gravada que nunca foi destino do catálogo — RQ-11, RQ-27 — ou favorito de organização excluída — P-02), **de outra organização** (destino do `/app` que ele abre, gravado em organização diferente da corrente, ou visto de outro painel — RQ-25, RQ-35). O favorito de organização à qual ele **perdeu** o acesso é estado **oculto**. Operações: exibir no dock · regravar o slideover sem tocá-lo · remover pelo slideover · contar no teto.
 **4 estados × 4 operações = 16 células** — 11 válidas (✅), 5 inválidas (❌), 0 lacunas.
 Legenda (auditada célula a célula):
 - ✅ = a operação produz o efeito que o requisito manda, e o `Então` afirma o valor gravado/exibido
@@ -95,7 +109,7 @@ Legenda (auditada célula a célula):
 |---|---|---|---|---|
 | visível | ✅ CT-15, CT-23 | ✅ CT-16 (linha "mesma lista") | ✅ CT-16 (linha "troca"), CT-53 (de outro painel) | ✅ CT-33, CT-34 |
 | oculto | ❌ CT-24, CT-27, CT-58 | ✅ preservado — CT-60, CT-62 (organização sem acesso) | ❌ não é opção nem escolhido — CT-45, CT-61 | ✅ conta — CT-47 |
-| inválido | ❌ CT-18 | ❌ descartado — CT-46 (linha "mesma lista") | ❌ descartado — CT-46 (linha "troca") | ✅ conta — CT-47 (linhas "inválida", RQ-32) |
+| inválido | ❌ CT-18 | ❌ descartado — CT-46 (linha "mesma lista"), CT-74 (organização excluída) | ❌ descartado — CT-46 (linha "troca"), CT-73 (não é opção nem escolhido) | ✅ conta — CT-47 (linhas "inválida", RQ-32) |
 | de outra organização | ✅ CT-26 | ✅ preservado — CT-44 (linha "salva sem tocar"), CT-52 (linha "/admin, sem tocar") | ✅ removível — CT-52 (linhas "remover" no /app/acme e no /admin, RQ-35) | ✅ conta — CT-44 (linha "teto") |
 
 Personas da matriz: `ana` (só `/app`), `bruno` (`/admin` + `/app`) e, na linha "de outra organização", o `usuario` de `duasOrganizacoes()` — o destino oculto é de painel diferente do painel em que o dock é visto (CT-24), e o de outra organização é visto de dentro da organização corrente (CT-44).
@@ -104,11 +118,11 @@ Personas da matriz: `ana` (só `/app`), `bruno` (`/admin` + `/app`) e, na linha 
 
 | Grupo | Regras | Costura | Existente ou nova | Por quê esta camada | Confirmada |
 |---|---|---|---|---|---|
-| G1 — Componente do dock (Kit) | R1, R4, R5, R6, R7, R8, R11, R12, R15, R16, R19, R20 | componente Livewire/Filament | nova — `tests/Kit/DockDeAtalhosTest.php`; nenhum teste cobre o componente do vendor (padrão de arranjo herdado de `tests/Kit/DashboardDinamicoTest.php`) | o observável é o HTML do componente e o efeito das actions do vendor (`callAction`/`mountAction`) — é o próprio endpoint que o cliente alcança | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
-| G2 — Fronteira HTTP do dock (Kit) | R1, R2, R6, R8, R13, R14 | Pest feature HTTP | nova — mesmo arquivo de G1 | gate de camada da regra: render e autorização provados pelo HTML da página real; settings → config pelo boot; contagem de consultas por request; atribuição em massa no model | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
+| G1 — Componente do dock (Kit) | R1, R4, R5, R6, R7, R8, R11, R12, R15, R16, R19, R20, R23, R24, R25, R28 | componente Livewire/Filament | nova — `tests/Kit/DockDeAtalhosTest.php`; nenhum teste cobre o componente do vendor (padrão de arranjo herdado de `tests/Kit/DashboardDinamicoTest.php`) | o observável é o HTML do componente e o efeito das actions do vendor (`callAction`/`mountAction`) — é o próprio endpoint que o cliente alcança | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
+| G2 — Fronteira HTTP do dock (Kit) | R1, R2, R6, R8, R13, R14, R23, R26 | Pest feature HTTP | nova — mesmo arquivo de G1 | gate de camada da regra: render e autorização provados pelo HTML da página real; settings → config pelo boot; contagem de consultas por request; atribuição em massa no model | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
 | G3 — Tela de configurações | R3 | componente Livewire/Filament | existente — `tests/Kit/ConfiguracoesDoKitTelaTest.php` (padrão "grava as quatro famílias" e "recusa campo fora do domínio") | gate de tela de escrita: gravação por `fillForm` → `call('save')` | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
-| G4 — Organização (componente) | R1, R7, R9, R10, R16, R18, R21, R22 | componente Livewire/Filament | nova — `tests/Tenancy/DockDeAtalhosTenancyTest.php`; `permission.teams` só existe na suíte Tenancy | papéis por organização (`team_id`) e `Filament::setTenant()` só são observáveis com `TenancyTestCase` | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
-| G5 — Organização (HTTP) | R9 | Pest feature HTTP | nova — mesmo arquivo de G4 | perda de vínculo/organização provada pelo HTML de `/app/{slug}` real, por fora do componente | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
+| G4 — Organização (componente) | R1, R7, R9, R10, R16, R18, R21, R22, R27 | componente Livewire/Filament | nova — `tests/Tenancy/DockDeAtalhosTenancyTest.php`; `permission.teams` só existe na suíte Tenancy | papéis por organização (`team_id`) e `Filament::setTenant()` só são observáveis com `TenancyTestCase` | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
+| G5 — Organização (HTTP) | R9, R26 | Pest feature HTTP | nova — mesmo arquivo de G4 | perda de vínculo/organização provada pelo HTML de `/app/{slug}` real, por fora do componente | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
 | G6 — Inventário da permissão | R14, R17 | Pest feature HTTP | existente — `tests/Kit/PermissoesDeAcoesTest.php` (CT-15/CT-16 daquele arquivo: permissão nova no banco e na tela de papéis) | o observável é registro no banco e opção na tela de papéis | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
 | G7 — Dock no navegador | — (CT-B01, RQ-02/RQ-13) | browser | nova — `tests/Browser/DockDeAtalhosTest.php` | o dock abre por JavaScript do pacote (Alpine + assets publicados por `filament:assets`); nenhum teste de componente prova que ele abre e navega | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
 | G8 — Inventário da permissão (Tenancy) | R17 | Pest feature HTTP | existente — `tests/Tenancy/PermissoesDeAcoesTenancyTest.php` | `admin_app` só é semeado com tenancy ligada (`.ai/rules/testes.md` §"Nem todo papel do kit existe em toda suíte") | sessão, 2026-10-13 — convenção do projeto (`.ai/rules/testes.md`) |
@@ -161,6 +175,7 @@ Personas da matriz: `ana` (só `/app`), `bruno` (`/admin` + `/app`) e, na linha 
 - **Observável de layout/estilo**: depois do `composer require`, o executor confirma no vendor a marca que o HTML do dock carrega por layout e por estilo (classe ou atributo) e cita `arquivo:símbolo:linha`; o oráculo é essa marca, nunca a presença do dock
 
 ### Fakes
+- Aviso de "não dá para adicionar" (P-03): `assertNotified()` com a notificação de status de aviso — o texto não é cláusula
 - Aviso do limite (RQ-26): `assertNotified()`, com o texto da notificação contendo "10" — o texto exato não é cláusula
 - Nenhum fake de e-mail, fila ou job: o requisito não pede esses efeitos (o aviso de RQ-26 é notificação de tela, conferida acima). Contagem de consultas: `DB::listen()` com `debug_backtrace()` (R13 — `@premissa` de mecanismo)
 
@@ -1328,18 +1343,224 @@ Nota CT-61/CT-62: PG desvinculado é favorito **oculto** (RQ-19, RQ-27): fica fo
 
 ---
 
+## Regra R23 — Page de outro painel sem a permissão dela não vale como favorito, mesmo com o mapa de Pages do painel corrente já montado no request
+
+> Origem: `RQ-04`, `RQ-15` (achado RD-01 do step 9) · perfil **completo** · técnica: **matriz papel × tela** com o estado do framework fixado (mapa de permissões das Pages do painel corrente montado antes do dock) + **controle positivo** no mesmo `Dado` (outra Page do mesmo painel, ainda permitida)
+
+```gherkin
+  Regra: a permissão de uma Page é conferida no painel dela, não no mapa de Pages do painel em que o dock está
+
+    Cenário: [CT-66] Page do /infra sem a permissão dela some do dock do /admin, com a barra lateral do /admin já renderizada
+      Dado o dock ligado no /admin e bruno (admin + infra), com Usar:Dock, com os favoritos "Pulse" (Page do /infra) e "execuções de backup" (outra Page do /infra)
+      E a permissão de ver a Page Pulse revogada do papel infra, e a de ver a Page de execuções de backup mantida
+      Quando bruno abre a página inicial do /admin por HTTP (a barra lateral do /admin é renderizada antes do dock)
+      Então o HTML não contém o link da Page Pulse
+      E o HTML contém o link da Page de execuções de backup
+
+    Cenário: [CT-67] o catálogo não oferece a Page do /infra sem permissão, com o mapa de Pages do /admin já montado
+      Dado o dock ligado no /admin, bruno (admin + infra) com Usar:Dock e a permissão de ver a Page Pulse revogada do papel infra
+      E no arranjo, o /admin bootado e a navegação dele montada antes do slideover, sem reconstruir o mapa de Pages entre painéis
+      Quando bruno abre o slideover de gerenciar atalhos no /admin
+      Então as opções de destino não incluem a Page Pulse
+      E incluem a Page de execuções de backup
+
+    Cenário: [CT-68] a gravação recusa a Page do /infra sem permissão, com o mapa de Pages do /admin já montado
+      Dado o dock ligado no /admin, bruno (admin + infra) com Usar:Dock, o favorito X gravado e a permissão de ver a Page Pulse revogada do papel infra
+      E no arranjo, o /admin bootado e a navegação dele montada antes do envio, sem reconstruir o mapa de Pages entre painéis
+      Quando o cliente envia pelo slideover atalhos = [X, a Page Pulse]
+      Então os favoritos gravados de bruno continuam exatamente [X]
+```
+
+Nota R23 (`@premissa` de mecanismo): o defeito mora num mapa de permissões de Pages memorizado por painel (ver M58, o caso inverso, ainda sem matador). Por isso CT-66 entra por HTTP — a barra lateral do `/admin` monta o mapa no mesmo request, antes do dock — e CT-67/CT-68 reproduzem essa ordem no arranjo. **Nenhum dos três usa `noPainelDoShield()`** (o helper descarta o mapa e esconderia o defeito). A Page de execuções de backup é o controle positivo: sem ela, "não contém Pulse" passaria com o dock quebrado.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M132 | a permissão de Page de outro painel é consultada no mapa de Pages do painel corrente; a Page ausente dele cai em "permitida" (falha aberta) — achado RD-01 | CT-66 | HTML sem o link de Pulse; o mutante o mostra |
+| M133 | o catálogo filtra Pages de outros painéis pelo mesmo mapa memorizado do painel corrente | CT-67 | opções sem Pulse; o mutante oferece |
+| M134 | a gravação confere a Page de outro painel pelo mapa memorizado do painel corrente | CT-68 | gravados = [X]; o mutante grava [X, Pulse] |
+
+---
+
+## Regra R24 — depois de salvar no slideover, o dock da mesma requisição já mostra os favoritos novos, na ordem nova
+
+> Origem: `RQ-10`, `RQ-30` (achado CR-01 do step 9) · perfil **completo** · técnica: **2-switch** dentro do mesmo componente (grava → re-renderiza sem novo request), com troca de conjunto **e** de ordem no mesmo envio
+
+```gherkin
+  Regra: o dock re-renderizado depois da gravação reflete o que foi gravado
+
+    Cenário: [CT-69] o dock re-renderizado na mesma requisição Livewire mostra os favoritos novos na ordem nova
+      Dado o dock ligado no /admin e bruno, com Usar:Dock e os favoritos gravados [A, B], com o componente do dock já renderizado mostrando A e B
+      Quando ele salva o slideover com [C, A], no mesmo componente, sem novo request
+      Então o HTML re-renderizado pelo componente contém os links de C e de A, nessa ordem
+      E não contém o link de B
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M135 | a lista de atalhos é memorizada na montagem do componente e não é recalculada depois da gravação — achado CR-01 | CT-69 | HTML com C e A, sem B; o mutante continua mostrando A e B |
+| M136 | a lista é recalculada, mas a ordem vem da memória anterior | CT-69 | ordem C, A; o mutante mostra A, C |
+| M137 | a lista recalculada é a união da antiga com a nova (o removido continua) | CT-69 | sem B; o mutante mostra C, A, B |
+
+---
+
+## Regra R25 — payload forjado nos métodos públicos tipados do componente não estoura e não grava
+
+> Origem: `RQ-13` (achados CR-05 e RD-02 do step 9; extensão de CT-05) · perfil **completo** · técnica: **EP de tipo errado** em cada método público alcançável por `$wire` (uma partição inválida por linha)
+
+```gherkin
+  Regra: o componente do dock recusa, sem erro, chamada pública com argumento forjado
+
+    Esquema do Cenário: [CT-70] chamada pública forjada no componente do dock não estoura e não grava
+      Dado bruno, com Usar:Dock e o favorito X gravado, no /admin com o dock ligado
+      Quando o cliente chama no componente <chamada>
+      Então o componente responde sem exceção
+      E os favoritos gravados de bruno continuam exatamente [X]
+
+      Exemplos:
+        | chamada                                                                                   | # partição                                       |
+        | mountAction('gerenciarAtalhos', 'x')                                                      | argumentos como texto, não lista                 |
+        | callMountedAction('x')                                                                    | argumentos como texto, sem action montada        |
+        | callMountedAction(['atalhos' => ['https://exemplo.invalido/x']])                          | sem action montada, payload de favoritos        |
+        | mountAction('gerenciarAtalhos', ['atalhos' => ['https://exemplo.invalido/x']]) e callMountedAction() | favoritos forjados nos argumentos, não no formulário |
+        | mountAction(42)                                                                           | nome da action de tipo errado                    |
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M138 | argumento tipado recebe texto e estoura `TypeError` (500) — achados CR-05/RD-02 | CT-70 | linhas "texto": sem exceção; o mutante lança |
+| M139 | `callMountedAction` sem action montada cai num caminho que grava ou lança | CT-70 | linhas "sem action montada": sem exceção e [X]; o mutante lança ou grava |
+| M140 | a action lê os favoritos dos argumentos da chamada em vez do formulário validado | CT-70 | linha "favoritos forjados nos argumentos": [X]; o mutante grava a URL |
+
+---
+
+## Regra R26 — favorito do painel e da organização correntes não recarrega papéis nem resolve a organização por favorito; admite só a consulta da autorização da própria tela
+
+> Origem: `P-04` (achado CR-02 do step 9; substitui a P-01) · perfil **padrão** · técnica: **contagem de consultas** 0 × 3 favoritos, com **atribuição pela pilha** (como CT-35) para o que a P-04 proíbe e **limite superior** (no máximo uma consulta por favorito) para o que ela admite, medidas simétricas e no mesmo aquecimento (como CT-56)
+
+```gherkin
+  Regra: cada favorito do contexto corrente custa no máximo a consulta da autorização da própria tela, e nenhuma recarga de papéis nem busca de organização
+
+    Esquema do Cenário: [CT-71] três favoritos do /admin não recarregam papéis e custam no máximo uma consulta cada
+      Dado bruno, com Usar:Dock e o dock ligado no /admin, e a página inicial do /admin já aberta uma vez com 0 e uma vez com 3 favoritos do /admin, antes das medidas (aquecimento)
+      E a página, aberta de novo com 0 favoritos, fez T consultas ao banco, em qualquer tabela
+      Quando bruno abre a mesma página com 3 favoritos do /admin gravados, com as consultas registradas
+      Então <afirmacao>
+
+      Exemplos:
+        | afirmacao                                                                                                  | # o que a P-04 decide        |
+        | nenhuma consulta que seleciona papéis em `model_has_roles` tem, na pilha, código do dock                   | proíbe: recarga de papéis    |
+        | a página faz no máximo T + 3 consultas ao banco                                                            | admite: 1 por favorito       |
+
+    Esquema do Cenário: [CT-72] três favoritos da organização corrente não recarregam papéis nem buscam a organização, e custam no máximo uma consulta cada
+      Dado o usuario de duasOrganizacoes, com Usar:Dock e o dock ligado no /app, e a página inicial de /app/acme já aberta uma vez com 0 e uma vez com 3 favoritos da Acme, antes das medidas (aquecimento)
+      E a página, aberta de novo com 0 favoritos, fez T consultas ao banco, em qualquer tabela
+      Quando ele abre a mesma página com 3 favoritos da Acme gravados, com as consultas registradas
+      Então <afirmacao>
+
+      Exemplos:
+        | afirmacao                                                                                                  | # o que a P-04 decide        |
+        | nenhuma consulta que seleciona papéis em `model_has_roles` tem, na pilha, código do dock                   | proíbe: recarga de papéis    |
+        | nenhuma consulta a `tenants` tem, na pilha, código do dock                                                 | proíbe: busca da organização |
+        | a página faz no máximo T + 3 consultas ao banco                                                            | admite: 1 por favorito       |
+```
+
+Nota R26: a P-04 admite exatamente uma consulta por favorito do contexto corrente — a da autorização da tela (`Gate::before` → `User::isMasterGlobal()`), a mesma de cada item da barra lateral. Por isso o total não é mais "exatamente T": o oráculo é o **limite** T + 3. O que a P-04 proíbe é afirmado à parte, pela pilha (mecanismo de CT-35, `@premissa` decidida em Q20). Cada linha do `Exemplos` mede o mesmo request; a separação em linhas existe só para cada asserção ter o seu matador. P-04 cobre só favoritos do painel **e** da organização correntes; favorito de outro painel ou organização pode exigir troca de contexto (R10). O `phpunit.xml` usa `CACHE_STORE=array` (ver M130).
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M141 | os papéis do usuário são recarregados a cada favorito para autorizar o destino — achado CR-02 | CT-71, CT-72 | linha "recarga de papéis": nenhuma consulta de papéis com frame do dock; o mutante faz 3 |
+| M142 | a organização da chave é buscada no banco a cada favorito (`find` da organização) | CT-72 | linha "busca da organização": nenhuma consulta a `tenants` com frame do dock; o mutante faz 3 |
+| M149 | cada favorito custa mais de uma consulta admitida (por exemplo, a do `Gate` mais uma leitura da permissão da tela fora do cache) | CT-71, CT-72 | linha "1 por favorito": no máximo T + 3; o mutante faz T + 6 |
+
+---
+
+## Regra R27 — favorito de organização excluída não aparece no slideover e sai quando o usuário salva
+
+> Origem: `P-02` (achado CR-03 do step 9) · perfil **completo** · técnica: **estado × operação** (estado "organização excluída", contraste do oculto de R22) + **BVA** do teto depois do descarte · **direção derivada pela ➡️ da Q28, aberta, por instrução da sessão** (descartar falha fechado contra o teto travado)
+
+```gherkin
+  Regra: o favorito de organização que não existe mais não é oferecido nem escolhido, e sai da gravação
+
+    Cenário: [CT-73] favorito de organização excluída não aparece no slideover
+      Dado o usuario de duasOrganizacoes, com Usar:Dock, com os favoritos gravados [PA, PX], em que PX é de uma organização excluída depois de gravado
+      Quando ele abre o slideover de gerenciar atalhos em /app/acme
+      Então nem os escolhidos nem as novas opções do slideover incluem PX
+      E o slideover abre sem exceção
+
+    Esquema do Cenário: [CT-74] favorito de organização excluída sai quando o slideover é salvo e deixa de ocupar vaga
+      Dado o usuario de duasOrganizacoes, com Usar:Dock, em /app/acme, com os favoritos gravados <antes>, em que PX é de uma organização excluída depois de gravado
+      Quando ele salva o slideover com <envio>
+      Então os favoritos gravados são exatamente <depois>
+      E <aviso>
+
+      Exemplos:
+        | antes                        | envio                         | depois                        | aviso                            | # célula                          |
+        | [PA, PX]                     | [PA]                          | [PA]                          | nenhum aviso de limite é exibido | descarte ao salvar               |
+        | 9 destinos da Acme e PX (10) | 10 destinos da Acme visíveis  | exatamente os 10 enviados     | nenhum aviso de limite é exibido | 9 + 1 excluída → 10, sem vaga presa |
+```
+
+Nota R27: CT-73 é o **invariante das duas leituras** da Q28 (um favorito cujo destino não existe não pode aparecer). CT-74 é a **direção** recomendada (descartar), derivada antes da resposta por instrução da sessão — divergência declarada com a skill, que manteria o recorte sem cenário até a resposta. Se a Q28 for respondida "manter", CT-74 vira `@obsoleto` e a linha "teto" troca de oráculo. A organização excluída não é estado **oculto** (RQ-27 preserva o oculto, porque ele pode voltar; a organização excluída não volta).
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M143 | o favorito de organização excluída entra nos escolhidos, ou o slideover estoura ao montar o rótulo dele | CT-73 | escolhidos sem PX e abertura sem exceção; o mutante inclui ou lança |
+| M144 | o favorito de organização excluída é tratado como oculto e preservado ao salvar — achado CR-03 | CT-74 | linha "descarte": exatamente [PA]; o mutante mantém PX |
+| M145 | o teto do slideover conta o favorito de organização excluída que a gravação vai descartar | CT-74 | linha "teto": os 10 enviados, sem aviso; o mutante recusa com aviso |
+
+---
+
+## Regra R28 — "adicionar esta página" que não pode mais ser feito avisa e não muda nada
+
+> Origem: `P-03` (achado RD-03 do step 9), `RQ-21`, `RQ-28` · perfil **completo** · técnica: **EP** do motivo pelo qual a adição deixou de ser possível depois da renderização (corrida entre abas) + **rastreio de não-efeito**
+
+```gherkin
+  Regra: a opção clicada que já não pode adicionar a página mostra um aviso, e os favoritos ficam como estavam
+
+    Esquema do Cenário: [CT-75] clicar em "adicionar esta página" quando ela já não pode ser adicionada avisa e não grava
+      Dado bruno, com Usar:Dock, no /admin ligado, com o componente do dock renderizado na lista de usuários do /admin e a opção de adicionar visível
+      E, depois dessa renderização, <mudanca>
+      Quando ele clica na opção de adicionar a página atual
+      Então uma notificação de aviso é exibida
+      E os favoritos gravados de bruno continuam exatamente <gravados>
+
+      Exemplos:
+        | mudanca                                                                 | gravados              | # partição                          |
+        | a lista de usuários foi favoritada em outra aba (gravados [B, A])       | [B, A]                | já é favorita (duas abas)           |
+        | a permissão de listar usuários foi revogada do papel admin (gravados [B]) | [B]                 | o destino deixou de ser abrível     |
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M146 | a action reconfere e sai calada, sem aviso — achado RD-03 | CT-75 | as duas linhas: notificação de aviso; o mutante não notifica |
+| M147 | a action confia na visibilidade calculada na renderização e grava sem reconferir o destino | CT-75 | linha "deixou de ser abrível": [B]; o mutante grava [B, A] |
+| M148 | o aviso é exibido, mas a gravação acontece assim mesmo (duplicata ou destino sem acesso) | CT-75 | linha "duas abas": exatamente [B, A]; o mutante grava [B, A, A] |
+
+---
+
 ## Checklist de Taxonomia
 
 | Item | Cenário que mata | Grupo |
 |---|---|---|
 | IDOR / autorização horizontal | CT-13 (usuário × usuário), CT-28 (organização), CT-43 e CT-52 linhas "não gravado" (organização vinculada, mas não a corrente, e chave do /app enviada do /admin), CT-61 (organização sem acesso), CT-17 linha "destino que ana não pode abrir" | G1, G4 |
-| Autorização exercida na ação (não só `can()`) | CT-03 (as duas actions), CT-05, CT-39 (action escondida chamada direto em tela de registro), CT-59 (concessão real pela tela de papéis) | G1 |
-| Idempotência (ancorada no agregado) | CT-16 linha "mesma lista" e CT-40 (a mesma página adicionada de novo; chave repetida no envio), ambos sobre os favoritos gravados; CT-64 (o mesmo Resource em outra organização **não** é repetição) | G1, G4 |
+| Autorização exercida na ação (não só `can()`) | CT-03 (as duas actions), CT-05, CT-39 (action escondida chamada direto em tela de registro), CT-59 (concessão real pela tela de papéis), CT-68 (Page de outro painel na gravação), CT-75 (reconferência no clique) | G1, G2 |
+| Idempotência (ancorada no agregado) | CT-75 linha "duas abas" (adição repetida por corrida entre abas), CT-16 linha "mesma lista" e CT-40 (a mesma página adicionada de novo; chave repetida no envio), ambos sobre os favoritos gravados; CT-64 (o mesmo Resource em outra organização **não** é repetição) | G1, G4 |
 | Cache em store de banco (RQ-22) | lacuna declarada (pilha): `CACHE_STORE=array` no `phpunit.xml` torna a leitura de cache invisível à contagem — M130; tentativa prevista em R13 | G2 |
 | Concorrência | lacuna declarada: duas adições simultâneas no 9º favorito; SQLite `:memory:` usa uma conexão só, e dois componentes no mesmo teste compartilham o mesmo model autenticado (`actingAs`) — o arnês não produz leitura defasada; tentado: dois `Livewire::test()` montados antes da primeira chamada | G1 |
 | Fronteira no ponto de entrada (gravação) | CT-33, CT-34 (teto nas duas entradas), CT-47 (teto com oculto e com inválida), CT-09, CT-08 linha [] e CT-57 (settings) | G1, G3 |
 | Domínio condicionado | CT-28 (a parte "organização" da chave só vale no /app: sem organização e organização inexistente), CT-43 (tela do /app só da organização corrente) | G4 |
-| Estado × operação de escrita | matriz do favorito (16 células, 0 lacunas): CT-15, CT-16, CT-18, CT-23, CT-24, CT-26, CT-27, CT-33, CT-34, CT-44, CT-45, CT-46, CT-47, CT-52, CT-53, CT-58, CT-60, CT-61, CT-62 | G1, G2, G4, G5 |
+| Estado × operação de escrita | matriz do favorito (16 células, 0 lacunas): CT-15, CT-16, CT-18, CT-23, CT-24, CT-26, CT-27, CT-33, CT-34, CT-44, CT-45, CT-46, CT-47, CT-52, CT-53, CT-58, CT-60, CT-61, CT-62, CT-73, CT-74 | G1, G2, G4, G5 |
 | Ausente ≠ null ≠ vazio | CT-14 (favoritos nulos × []), CT-10 (layout nulo → settings) | G1 |
 | Paginação / ordenação | paginação: não se aplica (o dock não pagina) · ordenação: CT-48, CT-49 (a ordem é a do usuário — RQ-30; o exemplo foge da ordem alfabética, da do catálogo e da por painel) | G1 |
 | Timezone / DST | não se aplica: nenhum dado temporal no requisito | — |
@@ -1349,8 +1570,8 @@ Nota CT-61/CT-62: PG desvinculado é favorito **oculto** (RQ-19, RQ-27): fica fo
 | Mass assignment | CT-19 (`users`), CT-12 linha `estilo` (payload do slideover) | G2, G1 |
 | Upload | não se aplica: sem upload | — |
 | Precisão monetária | não se aplica: sem valor monetário | — |
-| Superfície Livewire (método público, prop pública, estado do framework) | props `#[Locked]`: CT-32 · `mountAction`/`callMountedAction` fora da lista e tipo errado: CT-05 · `atalho_{n}`: CT-05 linha `atalho_99` · `adicionarPaginaAtual`: CT-30, CT-31, CT-33, CT-39, CT-40, CT-51 · campo `atalhos`: CT-17 (fora do domínio + tipo errado), CT-52, CT-54 (chaves já gravadas reenviadas) · campo `layout`: CT-12 · campos da tela de configurações: CT-09 | G1, G3 |
-| Estado do framework usado sem validar | CT-32 (`routeName`/`routeParameters`/`path`), CT-17 (chave como índice e nome de classe) | G1 |
+| Superfície Livewire (método público, prop pública, estado do framework) | props `#[Locked]`: CT-32 · `mountAction`/`callMountedAction` fora da lista e tipo errado: CT-05, CT-70 (argumentos tipados forjados) · re-render depois de gravar: CT-69 · `atalho_{n}`: CT-05 linha `atalho_99` · `adicionarPaginaAtual`: CT-30, CT-31, CT-33, CT-39, CT-40, CT-51 · campo `atalhos`: CT-17 (fora do domínio + tipo errado), CT-52, CT-54 (chaves já gravadas reenviadas) · campo `layout`: CT-12 · campos da tela de configurações: CT-09 | G1, G3 |
+| Estado do framework usado sem validar | CT-32 (`routeName`/`routeParameters`/`path`), CT-17 (chave como índice e nome de classe), CT-66…CT-68 (mapa de permissões de Pages memorizado do painel corrente) | G1, G2 |
 | IDOR por entidade (uma linha por tabela) | `users` (colunas do dock): CT-13, CT-28, CT-43, CT-52 · `settings` (3 propriedades): permissão da tela já coberta em `tests/Kit/ConfiguracoesDoKitTelaTest.php` ("recusa a tela de configurações a quem não tem a permissão", linha 183) · `permissions`: não se aplica — só o seeder escreve | G1, G4, G3 |
 | Escopo com discriminante nulo | CT-26 linha "/admin (sem organização)", CT-28 linha "/app sem organização", CT-43 linha "aberto no /admin" e CT-58 (vínculo conferido sem organização corrente) — fecha (não abre para todas) | G4, G5 |
 | Saída do estado de erro | não se aplica: nenhum cenário termina em 4xx ou redirect; as recusas (CT-09, e o teto em CT-33/CT-34 com aviso) mantêm a pessoa na tela, com os favoritos intactos | — |
@@ -1424,6 +1645,16 @@ Nota CT-61/CT-62: PG desvinculado é favorito **oculto** (RQ-19, RQ-27): fica fo
 | CT-63 | mesma tela em outra organização oferece "adicionar esta página" | R16 | EP | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M128 |
 | CT-64 | mesma tela em outra organização é gravada como favorito novo | R16 | EP | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M128 |
 | CT-65 | dock desligado consulta a settings tanto quanto um painel sem o plugin | R13 | contagem | G2 | Pest feature HTTP | `tests/Kit/DockDeAtalhosTest.php` | M131 |
+| CT-66 | Page do /infra sem permissão some do dock do /admin com a barra lateral já renderizada | R23 | matriz papel × tela | G2 | Pest feature HTTP | `tests/Kit/DockDeAtalhosTest.php` | M132 |
+| CT-67 | catálogo não oferece Page do /infra sem permissão com o mapa do /admin montado | R23 | matriz papel × tela | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M133 |
+| CT-68 | gravação recusa Page do /infra sem permissão com o mapa do /admin montado | R23 | matriz papel × tela | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M134 |
+| CT-69 | dock re-renderizado na mesma requisição mostra os favoritos novos na ordem nova | R24 | 2-switch | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M135, M136, M137 |
+| CT-70 | chamada pública forjada no componente não estoura e não grava | R25 | EP tipo errado | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M138, M139, M140 |
+| CT-71 | três favoritos do /admin não recarregam papéis e custam no máximo uma consulta cada | R26 | contagem com atribuição + limite | G2 | Pest feature HTTP | `tests/Kit/DockDeAtalhosTest.php` | M141, M149 |
+| CT-72 | três favoritos da organização corrente não recarregam papéis nem buscam a organização, e custam no máximo uma consulta cada | R26 | contagem com atribuição + limite | G5 | Pest feature HTTP | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M141, M142, M149 |
+| CT-73 | favorito de organização excluída não aparece no slideover | R27 | estado × operação | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M143 |
+| CT-74 | favorito de organização excluída sai ao salvar e deixa de ocupar vaga | R27 | estado × operação + BVA | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M144, M145 |
+| CT-75 | "adicionar esta página" que não pode mais ser feito avisa e não grava | R28 | EP + não-efeito | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M146, M147, M148 |
 
 ## Cogitado e cortado
 
@@ -1487,6 +1718,17 @@ Nota CT-61/CT-62: PG desvinculado é favorito **oculto** (RQ-19, RQ-27): fica fo
 | ADV-29 | — (costura) | CT-59 movido para G2 (o `Então` é o HTML da página) | CT-59 |
 | ADV-30 | — (escrita) | CT-25 com a restauração no `Dado`, depois da renderização intermediária; um único `Quando` | CT-25 |
 | ADV-31 | RQ-35 | mesmo eixo do ADV-26: salvar no `/admin` sem tocar nos favoritos do `/app` os preserva | CT-52 linha 7 — M125 |
+
+## Achados da revisão do diff (step 9)
+
+| Achado | Origem do CT | Destino |
+|---|---|---|
+| RD-01 (`fw-revisor-diff`) | RQ-04, RQ-15 | R23 — CT-66, CT-67, CT-68 (M132…M134); vizinho de M58, que segue sem matador (o caso inverso: memo do painel avaliado depois da troca) |
+| CR-01 (`/code-review`) | RQ-10, RQ-30 | R24 — CT-69 (M135…M137) |
+| CR-05 (`/code-review`), RD-02 (`fw-revisor-diff`) | RQ-13 | R25 — CT-70 (M138…M140), extensão de CT-05 |
+| CR-02 (`/code-review`) | P-04 (substitui P-01) | R26 — CT-71, CT-72 (M141, M142, M149) |
+| CR-03 (`/code-review`) | P-02 | R27 — CT-73 (invariante), CT-74 (direção pela ➡️ da Q28, aberta) (M143…M145) |
+| RD-03 (`fw-revisor-diff`) | P-03 | R28 — CT-75 (M146…M148) |
 
 ## CT-B
 

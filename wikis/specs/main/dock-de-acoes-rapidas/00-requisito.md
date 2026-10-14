@@ -46,6 +46,7 @@
 | Q11 | A opção "adicionar a página atual aos atalhos" aparece em qualquer página, ou só onde a página é um destino do catálogo (lista de um Resource ou Page avulsa)? Em tela de registro (criar/editar/ver), ela favorita a lista do Resource? | RQ-21 | Só onde a página atual É um destino do catálogo; em tela de registro ela não aparece. Favoritar a lista estando no formulário de um registro surpreende, e registro individual está fora do catálogo (Q2) | respondida no Adendo 2 |
 | Q13 | No slideover, quais telas do painel de organização podem ser escolhidas: só as da organização em que o usuário está, ou as de todas as organizações dele? Fora do painel de organização, elas aparecem? | RQ-12, RQ-16 | Só as da organização corrente, e só quando o slideover é aberto dentro do painel de organização; os favoritos já gravados de outras organizações continuam no dock. Listar todas custa uma checagem de permissão por organização × tela a cada abertura | respondida no Adendo 2 |
 | Q12 | Quais papéis recebem a permissão do dock numa instalação nova? | RQ-13 | Os papéis de administração dos três painéis (pela matriz do seeder); o papel de usuário comum (`panel_user`) não — o administrador concede pela tela de papéis | respondida no Adendo 2 |
+| Q28 | Favorito de uma organização que foi excluída: some e é descartado ao salvar (P-02), ou fica gravado e ocupando vaga para sempre? | P-02, RQ-27 | Descartar — a organização não volta, e mantê-lo trava o limite de 10 sem que o usuário consiga removê-lo pela tela | aberta |
 | Q14 | Com 10 favoritos gravados, o que acontece ao "adicionar a página atual" ou ao enviar 11 destinos pelo slideover: recusa com aviso, corte silencioso do 11º ou substituição de um antigo? | RQ-18 | Recusar sem mudar os 10 gravados, com aviso do limite — falha fechado; cortar descarta a escolha sem avisar, substituir apaga favorito não pedido | respondida no Adendo 3 |
 | Q15 | O favorito oculto (sem permissão) ou inválido: (a) aparece no slideover? (b) sobrevive quando o usuário salva o slideover sem mexer nele? (c) conta no teto de 10? | RQ-19, RQ-18 | (a) não aparece; (b) o oculto é preservado (RQ-19) e a chave que nunca foi destino é descartada; (c) o oculto conta no teto — nunca mais de 10 gravados | respondida no Adendo 3 |
 | Q16 | O mesmo destino pode ser favorito duas vezes (adicionando página já favorita ou repetindo no slideover)? | RQ-21, RQ-10 | Não; fica um só, e "adicionar a página atual" não aparece quando a página já é favorita | respondida no Adendo 3 |
@@ -59,7 +60,12 @@
 
 ## Premissas
 
-nenhuma
+| ID | Premissa | Origem | Data | Afeta | Estado |
+|----|----------|--------|------|-------|--------|
+| P-01 | Favorito do painel e da organização correntes é exibido sem trocar contexto nem recarregar papéis: custa no máximo a consulta que a autorização da própria tela já custa no resto do kit (uma por destino que passa pelo `Gate`) | step 9 — CR-02 (`/code-review`) | 2026-10-14 | RQ-22, RQ-15 | substituída por P-04 |
+| P-04 | Favorito do painel e da organização correntes é exibido sem trocar contexto nem recarregar papéis; a única consulta por favorito admitida é a da autorização da própria tela (`Gate::before` → `User::isMasterGlobal()`), a mesma de cada item da barra lateral | step 9 — CR-02 (`/code-review`), revisão da P-01 após a correção: memorizar `isMasterGlobal()` muda a autorização do kit inteiro e fica fora desta feature | 2026-10-14 | RQ-22, RQ-15 | vigente |
+| P-02 | Favorito de organização que não existe mais é descartado quando o usuário salva o slideover, como a chave que não é mais destino | step 9 — CR-03 (`/code-review`) | 2026-10-14 | RQ-27, RQ-19 | vigente |
+| P-03 | Clicar em "Adicionar esta página" quando a página já não pode ser adicionada mostra um aviso, em vez de não fazer nada | step 9 — RD-03 (`fw-revisor-diff`) | 2026-10-14 | RQ-21, RQ-28 | vigente |
 
 ## Fora de Escopo (declarado)
 

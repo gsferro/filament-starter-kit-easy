@@ -1,6 +1,6 @@
 # Progresso — Dock de ações rápidas
 
-**Estado**: em implementação
+**Estado**: em revisão
 
 ## 1. Dependência
 
@@ -98,8 +98,24 @@ Fatiamento confirmado: 2026-10-13 — gsferro — 1 rodada, 3 perguntas (Q25–Q
 
 ## Revisão do Diff (step 9)
 
+Falsificabilidade (2026-10-14, no próprio repositório, escopo estreito — sem agente concorrente): 4 arquivos de `app/` copiados e com md5 anotado, restaurados para o commit 513a500 (sem as correções), CT-66…70, 72…75 rodados, arquivos devolvidos e `md5sum -c` OK. Árvore temporária (`git worktree` + junção do `vendor`) descartada: o Pest resolvia as classes de teste no caminho original. **6 de 9 falham sem a correção**: CT-66, 69, 70, 72, 74, 75. CT-67 e CT-68: prova pendente — o arranjo não monta o mapa do Shield antes do slideover (a `@premissa` de mecanismo que o 04 declara); RD-01 segue provado pelo CT-66 por HTTP. CT-73: invariante que já valia antes da correção (as duas leituras da Q28). CT-71 não entrou na rodada (vermelho com e sem correção até o ajuste da P-04)
+
+
 | ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
 |---|---|---|---|---|---|
+| RD-01 | eixos | memo `once()` do Shield não troca com o painel em `noContexto()`: Page de outro painel abre sem `View:` (fail-open do `HasPageShield`) | teste (viola RQ-04, RQ-15) → CT → correção | — / CT a derivar | — |
+| CR-01 | `/code-review` | após salvar no slideover, o componente do vendor reaproveita `cachedActions` e o dock mostra os atalhos antigos no mesmo request | teste (viola RQ-10, RQ-30) → CT → correção | — / CT a derivar | — |
+| CR-02 | `/code-review` | `avaliar()` troca contexto e recarrega papéis por favorito do painel corrente | premissa → CT → correção | P-01 / CT a derivar | — |
+| CR-03 | `/code-review` | favorito de organização excluída preservado para sempre e contando no teto | premissa → CT → correção; pergunta Q28 | P-02 / CT a derivar | — |
+| CR-05 / RD-02 | ambos | hook `call` só cobre o 1º argumento de `mountAction`; `callMountedAction('x')` etc. dão 500 | teste (viola RQ-13, CT-05) → CT → correção | — / CT a derivar | — |
+| RD-03 | eixos | "Adicionar esta página" que vira no-op não dá retorno | premissa → CT → correção | P-03 / CT a derivar | — |
+| CR-04 | `/code-review` | `catalogo()` sem memo por request | correção (custo, sem mudança de comportamento) | — | — |
+| RD-04 | eixos | comentário que dispensa `canAccessPanel` no painel corrente sem citar o vendor | correção do comentário | — | — |
+| RD-05 | eixos | `canAccessPanel()` chamado pelo dock grava warning no canal `autenticacao` | correção (log não é CT) | — | — |
+| CR-08 | `/code-review` | `->in()` redundante em `dock_layout`/`dock_estilo` | simplificação | — | — |
+| CR-09 | `/code-review` | comentários inline (um falso, ver CR-01) | correção com CR-01 | — | — |
+| CR-06 | `/code-review` | duplica o filtro de `DescobreCardsDoPainel` | — | — | rejeitado: o concern é dos cards do hub (rule `filament.md` cobre CardItem); reaproveitar exige refatorar o hub, fora do escopo |
+| CR-07 | `/code-review` | id de organização não canônico ('07') duplica destino | — | — | rejeitado: só alcançável editando o banco; `gravar()` só aceita chaves que o catálogo gera, canônicas |
 
 ## Conformidade com Rules
 
@@ -181,6 +197,11 @@ Baseline `main` (2026-10-13): `php artisan test --testsuite=Unit,Feature,Kit,Ten
 | 18 | ticket 07 (testes) | Codex CLI (`codex exec --yolo`) com contrato do `fw-executor-ct` — CT-26…29, 40, 43, 44, 51, 52, 55, 58, 61…64 | modelo padrão do Codex (não exposto) | `01`, `02`, `03`, outros tickets | 15 CT (36 execuções) escritos; todos verdes menos CT-44 "teto" (não reexecutado: teto de iterações); comportamento já entregue pelos tickets 03 e 05 | — | `git status` sem arquivo novo; LF nos dois arquivos |
 | 19 | tickets 05–07 | Sem despacho — correção (a) de teste pela sessão: `ocorrenciasDoLink()`/ordem dos links por caminho, independente do host (CT-30, 48, 49); leitura do aviso antes do `assertNotified()`, nas chaves `filament.notifications` e `claimed_notifications` (CT-33, 34, 47, 44) | — | — | Kit 111/111, Tenancy 38/38 | — | suíte completa: 4424 testes, 1 falha = `AgentesDaEsteiraTest` da baseline; CT-B01 verde (1º run timeout de navegador frio, c) |
 | 20 | ticket 07 (passo 10) | `general-purpose` — docs pt/en, CHANGELOG, números do README | sonnet | `03`, outros tickets | docs pt/en (`hub-de-navegacao.md`, `configuracoes-do-kit.md`), CHANGELOG, READMEs (números) — cada parágrafo com RQ declarada; 2 frases sem RQ apontadas pelo próprio agente: `mod+.` (removida pela sessão, regra do step 10 item 7) e rótulos de layout/estilo, que seguem o código e divergem da tabela Mapeamentos do `01` (reconciliar o `01`) | 89.706 tokens · 886 s | 13 arquivos de teste de docs rodados pela sessão, todos verdes; LF conferido pelo agente |
+| 21 | 9 | `fw-revisor-diff` — passe de eixos sobre `main...HEAD` sem `wikis/` (commits 27156e3, 513a500) | opus (agente) | `01`, `03`, raciocínio da sessão | 5 achados (RD-01 major; RD-02…RD-05 minor) + eixos percorridos + não verificado declarado | 139.270 tokens · 382 s | `git status` antes × depois: só `03-progresso.md`, gravado pela sessão (registro do despacho #22) durante a revisão — explicado, achados aceitos; RD-01 conferido pela sessão em `Paineis.php` (comentário do `once()`) e `tests/Pest.php` (`noPainelDoShield`) |
+| 22 | 9 | `/code-review high main...HEAD` (skill, execução em fork) | o do comando (não exposto) | conversa | 9 achados não verificados (CR-01…CR-09): dock com atalhos velhos após salvar no mesmo request; troca de contexto por favorito do painel corrente; favorito de organização excluída preservado para sempre; `catalogo()` sem memo; guarda do hook só no 1º parâmetro; duplicação de `DescobreCardsDoPainel`; id de organização não canônico; `->in()` redundante; comentários inline | 118.941 tokens · 227 s | consolidação com o passe de eixos (#21) antes do roteamento |
+| 23 | 9 | derivador (`general-purpose`, retomado) — CT dos achados do step 9 via `feature-test-design` | opus | `01`, `03`, código | CT-66…CT-75 em R23…R28 (origem RQ-04/15, RQ-10/30, RQ-13, P-01, P-02, P-03); nenhum CT antigo mudou; 75 CT, 148 mutantes | 773.712 tokens · 595 s | `Cenários: 75` na linha 26; `rastreabilidade.sh` exit 0, 2026-10-14; P-02 derivada pela ➡️ da Q28 aberta, por instrução da sessão — divergência declarada no `04` |
+| 24 | 9 | Codex CLI (`--yolo`) — testes CT-66…CT-75 | modelo padrão do Codex (não exposto) | `01`, `02`, `03` | 10 CT (16 execuções): 12 verdes contra a correção em andamento (#25); 4 vermelhos (b): CT-71/72 (+2 consultas), CT-75 (sem aviso) | — | `git status` antes × depois: tests/ só nos 2 arquivos combinados; mudanças em `app/` são do #25, concorrente |
+| 25 | 9 | `general-purpose` como `construtor` — correções RD-01, CR-01…05, CR-08, CR-09, RD-03…05 | opus | `03`, raciocínio da sessão | 7 achados corrigidos (RD-01, CR-01, CR-03, CR-04, CR-05/RD-02, RD-03, RD-04, RD-05, CR-09), CR-08 mantido (tirar `->in()` quebrou o CT-09), CR-02 parcial: 1 consulta por favorito Resource vinda do `Gate::before` → `isMasterGlobal()` (global, sem memo) — premissa P-01 substituída por P-04 pela sessão; `Paineis::shieldNovo()` público; `User::motivoDaNegativaDoPainel()` sem log | 237.456 tokens · 1.482 s | pint, filacheck, PHPStan limpos (relato); Kit 122/123, Tenancy 41/42 (CT-71/72); 8 suítes de User/Paineis 826/826 (relato); citações de `tests/` deslocadas corrigidas pela sessão (`CitacoesDeCodigoTest` 3/3) |
 
 ## Blockers
 
