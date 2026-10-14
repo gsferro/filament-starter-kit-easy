@@ -42,10 +42,10 @@ The "Pending" label hides `ativo`: a pending account can be deactivated without 
 Pending, and only when approved does it reveal whether it was active (goes to Active) or
 deactivated (goes to Inactive) - that is why the condition sits on the `approve` arrow.
 `rotuloDaSituacao()` returns Pending before Inactive before Active
-(`app/Models/User.php:rotuloDaSituacao:540`, `:'Pendente':504`); `aprovar()` only clears the
-pending flag, without touching `ativo` (`app/Models/User.php:aprovar:559`, `:526`); `desativar()`
+(`app/Models/User.php:rotuloDaSituacao:550`, `:'Pendente':504`); `aprovar()` only clears the
+pending flag, without touching `ativo` (`app/Models/User.php:aprovar:569`, `:526`); `desativar()`
 refuses the own account and the last active `master_global`
-(`app/Models/User.php:desativar:295`, `:propria_conta:349`, `:ultimo_master_global:350`); deletion
+(`app/Models/User.php:desativar:305`, `:propria_conta:349`, `:ultimo_master_global:350`); deletion
 is logical (`SoftDeletes`) and overrides the Pending/Active/Inactive display
 (`app/Models/User.php:SoftDeletes:86`); `restore()` (native to `SoftDeletes`, triggered by the
 `/admin` `RestoreAction`) returns the state saved before deletion.

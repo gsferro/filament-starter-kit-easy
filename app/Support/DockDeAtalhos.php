@@ -41,15 +41,21 @@ use WeakMap;
  * Um favorito pode ser de outro painel e, no `/app`, de outra organização. `canAccess()` chamado
  * "direto" daria a resposta do contexto errado — e, para Page, `true` para todo mundo, pelo
  * fail-open que `App\Filament\Concerns\ExigePermissaoDaTela` herda do `HasPageShield` quando o
- * painel corrente não é o da Page. Por isso cada favorito é avaliado em `noContexto()`, que fixa
- * painel, organização e `team_id` do spatie e restaura os três no `finally`.
+ * painel corrente não é o da Page. Por isso favorito de OUTRO painel ou de OUTRA organização é
+ * avaliado em `noContexto()`, que fixa painel, organização, `team_id` do spatie e o mapa de Pages
+ * do Shield, e restaura os quatro no `finally`.
  *
- * ## Memo por request (D8)
+ * Favorito do painel E da organização deste request não troca nada (P-01): o middleware do painel
+ * já fixou os três e já conferiu painel e organização — ver `organizacaoDoRequest()`.
+ *
+ * ## Memo por request (D8, CR-04)
  *
  * O componente do pacote avalia as actions duas vezes por request
- * (`QuickActionDock::cacheDockActions()` no `mount()`/`hydrate()` e `getDockGroups()` no render).
- * `atalhosVisiveis()` guarda o resultado num `WeakMap` com a `Request` corrente como chave, como
- * `CabecalhoDoPainel`: some com o request e não vaza entre requests do mesmo processo.
+ * (`QuickActionDock::cacheDockActions()` no `mount()`/`hydrate()` e `getDockGroups()` no render), e
+ * o slideover pede o catálogo ao montar o formulário e de novo ao validar o envio.
+ * `atalhosVisiveis()` e `catalogo()` guardam o resultado num `WeakMap` com a `Request` corrente
+ * como chave, como `CabecalhoDoPainel`: some com o request e não vaza entre requests do mesmo
+ * processo. `gravar()` e `adicionarPaginaAtual()` descartam o memo inteiro.
  *
  * ## Catálogo e gravação (RQ-11, RQ-12, RQ-29, RQ-35)
  *
@@ -74,7 +80,7 @@ final class DockDeAtalhos
     /** O teto de favoritos gravados por usuário, contando os ocultos (RQ-18, RQ-32). */
     public const MAXIMO_DE_ATALHOS = 10;
 
-    /** @var WeakMap<Request, array<int|string, list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}>>>|null */
+    /** @var WeakMap<Request, array<string, mixed>>|null */
     private static ?WeakMap $memo = null;
 
     /**
@@ -151,22 +157,8 @@ final class DockDeAtalhos
      */
     public static function atalhosVisiveis(User $usuario): array
     {
-        $request = app()->bound('request') ? app('request') : null;
-
-        if (! $request instanceof Request) {
-            return self::resolverAtalhosVisiveis($usuario);
-        }
-
-        self::$memo ??= new WeakMap;
-
-        $porUsuario = self::$memo[$request] ?? [];
-
-        if (! array_key_exists($usuario->getKey(), $porUsuario)) {
-            $porUsuario[$usuario->getKey()] = self::resolverAtalhosVisiveis($usuario);
-            self::$memo[$request]           = $porUsuario;
-        }
-
-        return $porUsuario[$usuario->getKey()];
+        /** @var list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}> */
+        return self::memorizado('atalhos|'.$usuario->getKey(), static fn (): array => self::resolverAtalhosVisiveis($usuario));
     }
 
     /**
@@ -178,15 +170,29 @@ final class DockDeAtalhos
      * quando é o painel corrente e há organização aberta, e só com a organização aberta (D7,
      * RQ-25): avaliar todas as organizações do usuário custaria uma troca por organização.
      *
+     * Memorizado por request (CR-04), com o painel e a organização correntes na chave do memo,
+     * porque são eles que decidem quais painéis com tenancy entram.
+     *
      * @return array<string, string>
      */
     public static function catalogo(User $usuario): array
+    {
+        $chaveDoMemo = 'catalogo|'.$usuario->getKey().'|'.Filament::getCurrentPanel()?->getId().'|'.Filament::getTenant()?->getKey();
+
+        /** @var array<string, string> */
+        return self::memorizado($chaveDoMemo, static fn (): array => self::resolverCatalogo($usuario));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function resolverCatalogo(User $usuario): array
     {
         $catalogo = [];
 
         foreach (Filament::getPanels() as $painel) {
             try {
-                if (! $usuario->canAccessPanel($painel)) {
+                if (! self::acessaPainel($usuario, $painel)) {
                     continue;
                 }
 
@@ -236,10 +242,16 @@ final class DockDeAtalhos
      *    envio INTEIRO (RQ-29) — a interface nunca envia chave inválida, só cliente adulterado.
      * 2. Repetição vira uma só (RQ-28), na ordem enviada (RQ-30).
      * 3. Favorito oculto (destino que existe e o usuário deixou de abrir) é preservado no fim
-     *    (RQ-19, RQ-27); chave gravada que nunca foi destino é descartada.
-     * 4. Mais de 10 no resultado — contando os ocultos — recusa, sem gravar nada, e devolve
-     *    `false` para quem chamou avisar o limite (RQ-18, RQ-26, RQ-32). Nunca corta em silêncio.
+     *    (RQ-19, RQ-27); chave gravada que nunca foi destino é descartada, e também a de
+     *    organização que não existe mais (P-02) — ela não volta, ao contrário do oculto
+     *    (`destinoExiste()`).
+     * 4. Mais de 10 no resultado — contando os ocultos, já sem os descartados — recusa, sem gravar
+     *    nada, e devolve `false` para quem chamou avisar o limite (RQ-18, RQ-26, RQ-32). Nunca
+     *    corta em silêncio.
      * 5. Layout fora do enum do pacote vira `null` (padrão da instalação).
+     * 6. Gravou: o memo do request é descartado, e `atalhosVisiveis()`/`catalogo()` releem os
+     *    favoritos na próxima chamada. Quem re-renderiza o dock na mesma requisição ainda tem de
+     *    trocar as actions já cacheadas no componente (`PluginDoDock::recachearAtalhos()`, CR-01).
      *
      * @param  array<mixed>  $chaves
      * @return bool `true` quando gravou; `false` quando recusou pelo teto (nada gravado)
@@ -272,7 +284,7 @@ final class DockDeAtalhos
         $ocultas = array_filter(
             self::chavesGravadas($usuario),
             static fn (string $chave): bool => ! in_array($chave, $permitidas, true)
-                && self::destinoDaChave($chave) !== null,
+                && self::destinoExiste($chave),
         );
 
         $atalhos = array_values(array_unique([...$escolhidas, ...$ocultas]));
@@ -286,7 +298,6 @@ final class DockDeAtalhos
             'dock_layout'  => DockLayout::tryFrom((string) $layout)?->value,
         ])->save();
 
-        // O dock relê os favoritos no próximo render deste mesmo request.
         self::$memo = null;
 
         Log::channel('dock-de-acoes-rapidas')->info(
@@ -308,6 +319,10 @@ final class DockDeAtalhos
      * para um destino: painel acessível, organização aberta no painel com tenancy (D7) e
      * `abreNoContexto()` no contexto do painel (ADR-01) — trocado por `noContexto()` só quando a
      * rota é de outro painel que o corrente. Já favorita → `null` (RQ-28).
+     *
+     * Página do painel deste request não reconfere painel nem organização, nem troca o contexto:
+     * o middleware do painel já fez as duas coisas (ver `organizacaoDoRequest()`), e reconferir só
+     * recarregaria os papéis — consulta a mais em toda página (RQ-22).
      */
     public static function paginaAtualComoAtalho(User $usuario): ?string
     {
@@ -321,9 +336,6 @@ final class DockDeAtalhos
 
         try {
             if (Filament::getCurrentPanel()?->getId() === $painel->getId()) {
-                // Página do painel deste request: o middleware do painel já conferiu o acesso ao
-                // painel e à organização aberta, e o contexto de papéis já é o dela. Reconferir ou
-                // trocar o contexto só recarregaria os papéis — consulta a mais em toda página (RQ-22).
                 $aberta      = Filament::getTenant();
                 $organizacao = $painel->hasTenancy() && $aberta instanceof Tenant ? $aberta : null;
 
@@ -333,7 +345,7 @@ final class DockDeAtalhos
 
                 $abre = self::abreNoContexto($destino);
             } else {
-                $organizacao = $usuario->canAccessPanel($painel) ? self::organizacaoDoCatalogo($painel, $usuario) : false;
+                $organizacao = self::acessaPainel($usuario, $painel) ? self::organizacaoDoCatalogo($painel, $usuario) : false;
 
                 if ($organizacao === false) {
                     return null;
@@ -369,7 +381,8 @@ final class DockDeAtalhos
      * destino inclusive, porque esta adição não descarta nada (RQ-18, RQ-26, RQ-32).
      *
      * @return bool|null `true` gravou; `false` recusou pelo teto (nada gravado); `null` não havia
-     *                   o que adicionar
+     *                   o que adicionar — já favorita, ou o destino deixou de ser abrível entre o
+     *                   render e o clique; quem chamou avisa (P-03)
      */
     public static function adicionarPaginaAtual(User $usuario): ?bool
     {
@@ -407,11 +420,27 @@ final class DockDeAtalhos
     }
 
     /**
-     * Roda `$callback` com o painel, a organização e o `team_id` do spatie do destino, e restaura os
-     * três no `finally` — contexto que não volta contamina o resto do request (ADR-01, riscos).
+     * Roda `$callback` com o painel, a organização, o `team_id` do spatie e o mapa de Pages do
+     * Shield do destino, e restaura os quatro no `finally` — contexto que não volta contamina o
+     * resto do request (ADR-01, riscos).
      *
      * A organização é fixada com `isQuiet`: o evento `TenantSet` do Filament é de troca de
      * organização pelo usuário, não de avaliação (`FilamentManager::setTenant()`).
+     *
+     * ## O mapa de Pages do Shield (RD-01)
+     *
+     * `HasPageShield::getPagePermission()` acha a permissão da Page em `FilamentShield::getPages()`,
+     * que é memoizado com `once()` POR INSTÂNCIA
+     * (`vendor/bezhansalleh/filament-shield/src/FilamentShield.php:getPages:71`) e só lista as Pages
+     * do painel corrente no momento da primeira chamada (`config/filament-shield.php`
+     * `discover_all_pages => false`). Trocar o painel não invalida o mapa: com a barra lateral do
+     * painel corrente já montada no request, a Page de outro painel não é achada, a chave não
+     * resolve e `HasPageShield::canAccess()` LIBERA (fail-open descrito em
+     * `App\Filament\Concerns\ExigePermissaoDaTela`). Por isso, quando o destino é de OUTRO painel, a
+     * instância do Shield é descartada antes da avaliação — o mapa passa a ser o do destino — e de
+     * novo no `finally`, para o mapa do painel corrente voltar a valer. É o mesmo descarte de
+     * `Paineis::shieldNovo()` e do `noPainelDoShield()` de `tests/Pest.php`. Mesmo painel não
+     * descarta nada: o mapa memoizado já é o certo.
      *
      * @template T
      *
@@ -422,8 +451,13 @@ final class DockDeAtalhos
     {
         $painelAnterior      = Filament::getCurrentPanel();
         $organizacaoAnterior = Filament::getTenant();
+        $trocaDePainel       = $painelAnterior?->getId() !== $painel->getId();
 
         try {
+            if ($trocaDePainel) {
+                Paineis::shieldNovo();
+            }
+
             Filament::setCurrentPanel($painel);
             Filament::setTenant($organizacao, isQuiet: true);
 
@@ -433,6 +467,10 @@ final class DockDeAtalhos
         } finally {
             Filament::setCurrentPanel($painelAnterior);
             Filament::setTenant($organizacaoAnterior, isQuiet: true);
+
+            if ($trocaDePainel) {
+                Paineis::shieldNovo();
+            }
         }
     }
 
@@ -483,8 +521,12 @@ final class DockDeAtalhos
      *
      * A ordem das barreiras é a do ADR-01: formato, painel existente, destino registrado NAQUELE
      * painel (o FQCN vira nome de classe — só classe que o painel já registra é chamada),
-     * `canAccessPanel()`, organização e `canAccessTenant()` no painel com tenancy, e só então
+     * acesso ao painel (`acessaPainel()`), organização e `canAccessTenant()` no painel com tenancy, e só então
      * `shouldRegisterNavigation()` e `canAccess()` dentro do contexto do destino.
+     *
+     * Favorito do painel e da organização deste request pula as conferências de painel e de
+     * organização e a troca de contexto (P-01, `organizacaoDoRequest()`): ele custa zero consulta
+     * a mais que a página já fez.
      *
      * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}|null
      */
@@ -499,7 +541,13 @@ final class DockDeAtalhos
         [$painel, $destino, $idDaOrganizacao] = $partes;
 
         try {
-            if (! $usuario->canAccessPanel($painel)) {
+            $doRequest = self::organizacaoDoRequest($painel, $idDaOrganizacao);
+
+            if ($doRequest !== false) {
+                return self::montarAtalho($painel, $doRequest, $destino);
+            }
+
+            if (! self::acessaPainel($usuario, $painel)) {
                 return null;
             }
 
@@ -509,22 +557,7 @@ final class DockDeAtalhos
                 return null;
             }
 
-            return self::noContexto($painel, $organizacao, $usuario, static function () use ($destino, $painel, $organizacao): ?array {
-                if (! self::abreNoContexto($destino)) {
-                    return null;
-                }
-
-                $url = is_subclass_of($destino, Resource::class)
-                    ? $destino::getUrl('index', panel: $painel->getId(), tenant: $organizacao)
-                    : $destino::getUrl(panel: $painel->getId(), tenant: $organizacao);
-
-                return [
-                    'url'            => $url,
-                    'rotulo'         => (string) $destino::getNavigationLabel(),
-                    'rotuloCompleto' => self::rotuloNoCatalogo($painel, $organizacao, $destino),
-                    'icone'          => $destino::getNavigationIcon(),
-                ];
-            });
+            return self::noContexto($painel, $organizacao, $usuario, static fn (): ?array => self::montarAtalho($painel, $organizacao, $destino));
         } catch (Throwable $erro) {
             Log::channel('dock-de-acoes-rapidas')->warning(
                 "[DockDeAtalhos@podeAbrir] Falha ao avaliar destino, negado | user: {$usuario->getKey()} - painel: {$painel->getId()}",
@@ -536,9 +569,126 @@ final class DockDeAtalhos
     }
 
     /**
-     * As partes de uma chave que aponta para um destino que EXISTE: painel registrado e classe
+     * O atalho do destino no contexto CORRENTE — o do request, ou o fixado por `noContexto()`.
+     *
+     * @param  class-string<resource>|class-string<Page>  $destino
+     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}|null
+     */
+    private static function montarAtalho(Panel $painel, ?Tenant $organizacao, string $destino): ?array
+    {
+        if (! self::abreNoContexto($destino)) {
+            return null;
+        }
+
+        $url = is_subclass_of($destino, Resource::class)
+            ? $destino::getUrl('index', panel: $painel->getId(), tenant: $organizacao)
+            : $destino::getUrl(panel: $painel->getId(), tenant: $organizacao);
+
+        return [
+            'url'            => $url,
+            'rotulo'         => (string) $destino::getNavigationLabel(),
+            'rotuloCompleto' => self::rotuloNoCatalogo($painel, $organizacao, $destino),
+            'icone'          => $destino::getNavigationIcon(),
+        ];
+    }
+
+    /**
+     * A organização do favorito quando ele é do painel E da organização deste request: `null` em
+     * painel sem tenancy, a organização aberta no `/app`; `false` em qualquer outro caso (P-01).
+     *
+     * Nesse caso não há o que conferir nem o que trocar. O Filament registra `Authenticate`,
+     * `IdentifyTenant` e `SetUpPanel` como middleware PERSISTENTE do Livewire
+     * (`vendor/filament/filament/src/FilamentServiceProvider.php:addPersistentMiddleware:106`),
+     * então eles rodam na página e em todo update do componente do dock: `Authenticate` já
+     * respondeu 403 a quem não abre o painel (`vendor/filament/filament/src/Http/Middleware/Authenticate.php:canAccessPanel:37`),
+     * `IdentifyTenant` já respondeu 404 a quem não acessa a organização da rota e a fixou
+     * (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
+     * `vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:setTenant:44`), e o `DefinirTenantDePermissoes` do `/app` (middleware de tenant
+     * persistente, `App\Providers\Filament\AppPanelProvider`) já fixou o `team_id` dela — fora do
+     * `/app` vale o contexto global do boot (`KitServiceProvider::configureTenancy()`).
+     * Reconferir chamaria `canAccessTenant()` (uma consulta por favorito) e trocar o contexto
+     * recarregaria os papéis (outra), sem mudar a resposta.
+     */
+    private static function organizacaoDoRequest(Panel $painel, string $idDaOrganizacao): Tenant|false|null
+    {
+        if (Filament::getCurrentPanel()?->getId() !== $painel->getId()) {
+            return false;
+        }
+
+        if (! $painel->hasTenancy()) {
+            return $idDaOrganizacao === '' ? null : false;
+        }
+
+        $aberta = Filament::getTenant();
+
+        return $aberta instanceof Tenant && (string) $aberta->getKey() === $idDaOrganizacao ? $aberta : false;
+    }
+
+    /**
+     * O usuário abre o painel? A decisão de `User::canAccessPanel()`, sem o `warning` que ele
+     * registra no canal `autenticacao` a cada negativa (RD-05): o dock CONSULTA todos os painéis em
+     * todo render, e painel que o usuário não abre não é tentativa de entrada.
+     */
+    private static function acessaPainel(User $usuario, Panel $painel): bool
+    {
+        return $usuario->motivoDaNegativaDoPainel($painel) === null;
+    }
+
+    /**
+     * A chave ainda aponta para um destino que existe? Painel e classe registrados
+     * (`destinoDaChave()`) e, no painel com tenancy, organização que existe no banco — favorito de
+     * organização excluída não volta, então não é oculto: é descartado ao gravar (P-02). Fora do
+     * painel com tenancy a parte da organização tem de vir vazia.
+     */
+    private static function destinoExiste(string $chave): bool
+    {
+        $partes = self::destinoDaChave($chave);
+
+        if ($partes === null) {
+            return false;
+        }
+
+        [$painel, , $idDaOrganizacao] = $partes;
+
+        if (! $painel->hasTenancy()) {
+            return $idDaOrganizacao === '';
+        }
+
+        return ctype_digit($idDaOrganizacao) && Tenant::query()->whereKey((int) $idDaOrganizacao)->exists();
+    }
+
+    /**
+     * O valor de `$resolver` memorizado na `Request` corrente sob `$chave` (D8). Fora de request
+     * (console sem `request` no container), resolve sempre.
+     *
+     * @param  Closure(): mixed  $resolver
+     */
+    private static function memorizado(string $chave, Closure $resolver): mixed
+    {
+        $request = app()->bound('request') ? app('request') : null;
+
+        if (! $request instanceof Request) {
+            return $resolver();
+        }
+
+        $memo      = self::$memo ??= new WeakMap;
+        $doRequest = $memo[$request] ?? [];
+
+        if (! array_key_exists($chave, $doRequest)) {
+            $doRequest[$chave] = $resolver();
+            $memo[$request]    = $doRequest;
+        }
+
+        return $doRequest[$chave];
+    }
+
+    /**
+     * As partes de uma chave que aponta para um destino registrado: painel registrado e classe
      * registrada naquele painel. Não diz nada sobre acesso — é o que separa o favorito oculto
      * (preservado ao gravar) da chave que nunca foi destino (descartada, RQ-27).
+     *
+     * O destino devolvido é o da lista do painel, não a string recebida: só classe que o painel já
+     * registra é chamada.
      *
      * @return array{0: Panel, 1: class-string<resource>|class-string<Page>, 2: string}|null
      */
@@ -558,8 +708,6 @@ final class DockDeAtalhos
             return null;
         }
 
-        // O destino devolvido é o da lista do painel, não a string recebida: só classe que o
-        // painel já registra é chamada.
         foreach (self::destinosDoPainel($painel) as $registrado) {
             if ($registrado === $destino) {
                 return [$painel, $registrado, $idDaOrganizacao];

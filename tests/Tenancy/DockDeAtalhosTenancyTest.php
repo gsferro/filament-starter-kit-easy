@@ -544,3 +544,136 @@ it('[CT-64] mesma tela em outra organização grava novo favorito no fim', funct
 
     expect(atalhosGravados($usuario))->toBe([$chaves['PA'], $chaves['PG']]);
 });
+
+use App\Settings\ConfiguracoesDoKit;
+use Illuminate\Support\Facades\DB;
+
+it('[CT-72] três favoritos da organização corrente não recarregam papéis nem buscam a organização e custam no máximo uma consulta cada', function (string $afirmacao): void {
+    config(['kit.hub' => true]);
+    ['acme' => $acme, 'usuario' => $usuario, 'chaves' => $chaves] = arranjarFavoritosDoDockTenancy();
+    $tres                                                         = [
+        $chaves['PA'],
+        $chaves['PA2'],
+        chaveDeAtalho('app', HubDoNegocio::class, $acme->getKey()),
+    ];
+    $medir = function (array $favoritos) use ($usuario, $acme): array {
+        gravarAtalhos($usuario, $favoritos);
+        fronteiraDeRequest();
+        app()->forgetInstance(ConfiguracoesDoKit::class);
+        noPainelDa($acme);
+        $this->actingAs(User::query()->findOrFail($usuario->getKey()));
+        $consultas = [];
+        $ativo     = true;
+        DB::listen(function ($consulta) use (&$consultas, &$ativo): void {
+            if (! $ativo) {
+                return;
+            }
+
+            $consultas[] = [
+                'sql'      => $consulta->sql,
+                'arquivos' => array_column(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 'file'),
+            ];
+        });
+
+        try {
+            $this->get('/app/'.$acme->slug)->assertOk();
+        } finally {
+            $ativo = false;
+        }
+
+        return $consultas;
+    };
+    $medir([]);
+    $medir($tres);
+
+    // Como CT-56, as somas simétricas cancelam a deriva linear dos requests no mesmo processo.
+    $zeroAntes  = $medir([]);
+    $tresDepois = $medir($tres);
+    $tresAntes  = $medir($tres);
+    $zeroDepois = $medir([]);
+
+    expect($zeroAntes)->not->toBeEmpty();
+
+    if ($afirmacao === 'limite') {
+        expect(count($tresDepois) + count($tresAntes))->toBeLessThanOrEqual(count($zeroAntes) + count($zeroDepois) + 6);
+
+        return;
+    }
+
+    $pilhaDoDock = static function (array $arquivos): bool {
+        $pacote = str_replace('\\', '/', base_path('vendor/hoceineel'));
+        $app    = str_replace('\\', '/', app_path());
+
+        foreach ($arquivos as $arquivo) {
+            $arquivo = str_replace('\\', '/', $arquivo);
+
+            if (str_starts_with($arquivo, $pacote)) {
+                return true;
+            }
+
+            if (str_starts_with($arquivo, $app) && preg_match('~/Dock(/|DeAtalhos)~', $arquivo) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+    $proibidas = array_values(array_filter(
+        [...$tresDepois, ...$tresAntes],
+        static fn (array $consulta): bool => $pilhaDoDock($consulta['arquivos']) && ($afirmacao === 'papeis'
+            ? preg_match('/^\s*select\s+(?!exists\b).*\bfrom\s+[`"\[]?roles[`"\]]?(\s|$)/is', $consulta['sql']) === 1 && str_contains($consulta['sql'], 'model_has_roles')
+            : preg_match('/\b(from|into|update|join)\s+[`"\[]?tenants[`"\]]?(\s|$)/i', $consulta['sql']) === 1),
+    ));
+
+    expect(array_column($proibidas, 'sql'))->toBe([]);
+})->with([
+    'nenhuma recarga de papéis pelo dock'    => ['papeis'],
+    'nenhuma busca da organização pelo dock' => ['organizacao'],
+    'no máximo T + 3 consultas'              => ['limite'],
+]);
+
+it('[CT-73] favorito de organização excluída fica fora das opções e dos escolhidos', function (): void {
+    ['acme' => $acme, 'globex' => $globex, 'usuario' => $usuario, 'chaves' => $chaves] = arranjarFavoritosDoDockTenancy();
+    gravarAtalhos($usuario, [$chaves['PA'], $chaves['PG']]);
+    $globex->delete();
+    $dock = abrirDockTenancy('app', $acme);
+
+    $opcoes = array_keys(opcoesDoSlideover($dock));
+
+    $dock->assertHasNoErrors();
+    expect($opcoes)->toContain($chaves['PA'])->not->toContain($chaves['PG']);
+    expect($dock->get('mountedActions.0.data.atalhos'))->toContain($chaves['PA'])->not->toContain($chaves['PG']);
+});
+
+it('[CT-74] salvar descarta organização excluída e libera sua vaga sem aviso de limite', function (string $celula): void {
+    ['acme' => $acme, 'globex' => $globex, 'usuario' => $usuario, 'chaves' => $chaves] = arranjarFavoritosDoDockTenancy();
+    $envio                                                                             = [$chaves['PA']];
+    if ($celula === 'teto') {
+        papelNaOrganizacao($usuario, 'admin_app', $acme);
+        $painel  = Filament::getPanel('app');
+        $paginas = [PaginaTetoDock1::class, PaginaTetoDock2::class, PaginaTetoDock3::class, PaginaTetoDock4::class, PaginaTetoDock5::class, PaginaTetoDock6::class, PaginaTetoDock7::class, PaginaTetoDock8::class, PaginaTetoDock9::class];
+        $painel->pages($paginas);
+        foreach ($paginas as $indice => $pagina) {
+            Route::get('/app/{tenant}/teto-dock-'.$indice, static fn (): string => '')->name($pagina::getRouteName($painel));
+        }
+        Route::getRoutes()->refreshNameLookups();
+        $opcoes = array_keys(opcoesDoSlideover(abrirDockTenancy('app', $acme)));
+        $daAcme = array_values(array_filter($opcoes, static fn (string $chave): bool => str_starts_with($chave, 'app|') && str_ends_with($chave, '|'.$acme->getKey())));
+        expect(count($daAcme))->toBeGreaterThanOrEqual(10);
+        $envio = array_slice($daAcme, 0, 10);
+    }
+    $antes = [...array_slice($envio, 0, $celula === 'teto' ? 9 : 1), $chaves['PG']];
+    gravarAtalhos($usuario, $antes);
+    $globex->delete();
+    $dock = abrirDockTenancy('app', $acme);
+    session()->forget(['filament.notifications', 'filament.claimed_notifications']);
+
+    $dock->callAction('gerenciarAtalhos', ['atalhos' => $envio])->assertHasNoErrors();
+
+    $avisos = [...session()->get('filament.notifications', []), ...session()->get('filament.claimed_notifications', [])];
+    expect(array_filter($avisos, static fn (array $aviso): bool => str_contains(($aviso['title'] ?? '').' '.($aviso['body'] ?? ''), '10')))->toBe([]);
+    expect(atalhosGravados($usuario))->toBe($envio);
+})->with([
+    'descarte ao salvar PA'                          => ['descarte'],
+    'nove destinos e excluída permitem dez enviados' => ['teto'],
+]);

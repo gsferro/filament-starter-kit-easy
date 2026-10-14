@@ -1497,3 +1497,169 @@ it('[CT-40] o mesmo destino nunca é gravado duas vezes', function (string $oper
     'duplo clique'                => ['duplo clique', 2],
     'chave repetida no slideover' => ['slideover', 2],
 ]);
+
+use App\Filament\Infra\Pages\BackupRunsPage;
+use App\Filament\Infra\Pages\Pulse;
+
+/** Bruno nos dois painéis, sem limpar o mapa de Pages do Shield. */
+function brunoComPageDoInfraRevogada(): User
+{
+    config(['kit.hub' => true]);
+    $bruno = usuarioDoKit('admin', 'bruno@example.com');
+    $bruno->assignRole('infra');
+    concederDock('admin', 'infra');
+    ligarDock(['admin']);
+    semAPermissao('infra', 'View:Pulse');
+    test()->actingAs($bruno);
+
+    return $bruno;
+}
+
+it('[CT-66] Pulse sem permissão some do admin com a navegação já renderizada', function (): void {
+    $bruno = brunoComPageDoInfraRevogada();
+    gravarAtalhos($bruno, [
+        chaveDeAtalho('infra', Pulse::class),
+        chaveDeAtalho('infra', BackupRunsPage::class),
+    ]);
+
+    $resposta = $this->get('/admin')->assertOk();
+
+    expect(ocorrenciasDoLink($resposta->getContent(), BackupRunsPage::getUrl(panel: 'infra')))->toBeGreaterThan(0);
+    expect(ocorrenciasDoLink($resposta->getContent(), Pulse::getUrl(panel: 'infra')))->toBe(0);
+});
+
+it('[CT-67] o catálogo recusa Pulse com o mapa de Pages do admin montado', function (): void {
+    brunoComPageDoInfraRevogada();
+    $this->get('/admin')->assertOk();
+    Filament::getNavigation();
+
+    $opcoes = array_keys(opcoesDoSlideover(dockEmRequestNovo('admin')));
+
+    expect($opcoes)->not->toContain(chaveDeAtalho('infra', Pulse::class));
+    expect($opcoes)->toContain(chaveDeAtalho('infra', BackupRunsPage::class));
+});
+
+it('[CT-68] o envio de Pulse sem permissão preserva X com o mapa do admin montado', function (): void {
+    $bruno = brunoComPageDoInfraRevogada();
+    $x     = chaveDeAtalho('admin', UserResourceDoAdmin::class);
+    gravarAtalhos($bruno, [$x]);
+    $this->get('/admin')->assertOk();
+    Filament::getNavigation();
+
+    chamarActionDoDockDireto(dockEmRequestNovo('admin'), 'gerenciarAtalhos', [
+        'atalhos' => [$x, chaveDeAtalho('infra', Pulse::class)],
+    ]);
+
+    expect(atalhosGravados($bruno))->toBe([$x]);
+});
+
+it('[CT-69] salvar C e A re-renderiza o mesmo dock nessa ordem e remove B', function (): void {
+    $bruno = brunoParaAdicionarNoDock();
+    $a     = chaveDeAtalho('admin', UserResourceDoAdmin::class);
+    $b     = chaveDeAtalho('admin', DashboardClassico::class);
+    $c     = chaveDeAtalho('admin', HubDeAdministracao::class);
+    gravarAtalhos($bruno, [$a, $b]);
+    $dock = dockEmRequestNovo('admin');
+    $urlA = UserResourceDoAdmin::getUrl('index', panel: 'admin');
+    $urlB = DashboardClassico::getUrl(panel: 'admin');
+    $urlC = HubDeAdministracao::getUrl(panel: 'admin');
+    expect(ocorrenciasDoLink($dock->html(), $urlA))->toBe(1, 'A aparece no componente antes de salvar');
+    expect(ocorrenciasDoLink($dock->html(), $urlB))->toBe(1, 'B aparece no componente antes de salvar');
+
+    $dock->callAction('gerenciarAtalhos', ['atalhos' => [$c, $a]])->assertHasNoErrors();
+
+    expect(atalhosGravados($bruno))->toBe([$c, $a]);
+    afirmarOrdemDosLinksDoDock($dock->html(), [$urlC, $urlA]);
+    expect(ocorrenciasDoLink($dock->html(), $urlB))->toBe(0);
+});
+
+it('[CT-70] chamada pública forjada não estoura nem altera X', function (array $chamadas): void {
+    $bruno = brunoParaAdicionarNoDock();
+    $x     = chaveDeAtalho('admin', UserResourceDoAdmin::class);
+    gravarAtalhos($bruno, [$x]);
+    $dock = dockEmRequestNovo('admin');
+
+    foreach ($chamadas as [$metodo, $argumentos]) {
+        $dock->call($metodo, ...$argumentos);
+    }
+
+    expect(atalhosGravados($bruno))->toBe([$x]);
+})->with([
+    'mountAction com argumentos como texto'        => [[['mountAction', ['gerenciarAtalhos', 'x']]]],
+    'callMountedAction com texto sem action'       => [[['callMountedAction', ['x']]]],
+    'payload sem action montada'                   => [[['callMountedAction', [['atalhos' => ['https://exemplo.invalido/x']]]]]],
+    'favoritos nos argumentos e não no formulário' => [[
+        ['mountAction', ['gerenciarAtalhos', ['atalhos' => ['https://exemplo.invalido/x']]]],
+        ['callMountedAction', []],
+    ]],
+    'nome da action de tipo errado' => [[['mountAction', [42]]]],
+]);
+
+it('[CT-71] três favoritos do admin não recarregam papéis e custam no máximo uma consulta cada', function (string $afirmacao): void {
+    $bruno = brunoParaAdicionarNoDock();
+    $tres  = [
+        chaveDeAtalho('admin', UserResourceDoAdmin::class),
+        chaveDeAtalho('admin', DashboardClassico::class),
+        chaveDeAtalho('admin', HubDeAdministracao::class),
+    ];
+    $medir = function (array $chaves) use ($bruno): array {
+        gravarAtalhos($bruno, $chaves);
+
+        return consultasDaPaginaInicialDoAdmin(true);
+    };
+    $medir([]);
+    $medir($tres);
+
+    // Como CT-56, as somas simétricas cancelam a deriva linear dos requests no mesmo processo.
+    $zeroAntes  = $medir([]);
+    $tresDepois = $medir($tres);
+    $tresAntes  = $medir($tres);
+    $zeroDepois = $medir([]);
+
+    expect($zeroAntes)->not->toBeEmpty();
+
+    if ($afirmacao === 'limite') {
+        expect(count($tresDepois) + count($tresAntes))->toBeLessThanOrEqual(count($zeroAntes) + count($zeroDepois) + 6);
+
+        return;
+    }
+
+    $proibidas = array_values(array_filter(
+        [...$tresDepois, ...$tresAntes],
+        static fn (array $consulta): bool => preg_match('/^\s*select\s+(?!exists\b).*\bfrom\s+[`"\[]?roles[`"\]]?(\s|$)/is', $consulta['sql']) === 1
+            && str_contains($consulta['sql'], 'model_has_roles')
+            && pilhaComCodigoDoDock($consulta['arquivos']),
+    ));
+
+    expect(array_column($proibidas, 'sql'))->toBe([]);
+})->with([
+    'nenhuma recarga de papéis pelo dock' => ['papeis'],
+    'no máximo T + 3 consultas'           => ['limite'],
+]);
+
+it('[CT-75] adicionar uma página que deixou de poder ser adicionada avisa sem gravar', function (string $mudanca): void {
+    $bruno = brunoParaAdicionarNoDock();
+    $b     = chaveDeAtalho('admin', DashboardClassico::class);
+    $a     = chaveDeAtalho('admin', UserResourceDoAdmin::class);
+    gravarAtalhos($bruno, [$b]);
+    $dock = dockNaUrlAtual(UserResourceDoAdmin::getUrl('index', panel: 'admin'));
+    $dock->assertActionVisible('adicionarPaginaAtual');
+    $esperados = [$b];
+    if ($mudanca === 'duas abas') {
+        $esperados = [$b, $a];
+        gravarAtalhos($bruno, $esperados);
+    } else {
+        semAPermissao('admin', 'ViewAny:User');
+    }
+    session()->forget(['filament.notifications', 'filament.claimed_notifications']);
+
+    chamarActionDoDockDireto($dock, 'adicionarPaginaAtual');
+
+    $avisos = [...session()->get('filament.notifications', []), ...session()->get('filament.claimed_notifications', [])];
+    expect(atalhosGravados($bruno))->toBe($esperados);
+    expect(array_filter($avisos, static fn (array $aviso): bool => ($aviso['status'] ?? null) === 'warning'))->not->toBeEmpty();
+    $dock->assertNotified();
+})->with([
+    'já favorita em outra aba'      => ['duas abas'],
+    'destino deixou de ser abrível' => ['permissão revogada'],
+]);

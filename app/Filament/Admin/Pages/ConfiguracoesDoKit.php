@@ -993,6 +993,9 @@ class ConfiguracoesDoKit extends SettingsPage
                             ->label('Layout padrão')
                             ->helperText('Cada usuário pode trocar o layout dele no próprio dock; o estilo vale para todos.')
                             ->options(DockDeAtalhos::opcoesDeLayout())
+                            // O `in` automático do Select não basta aqui: sem este, o layout
+                            // enviado como lista (`['speed-dial']`) passa pela validação e estoura
+                            // `TypeError` ao gravar o settings (medido: CT-09, "layout como lista").
                             ->in(array_keys(DockDeAtalhos::opcoesDeLayout()))
                             ->selectablePlaceholder(false)
                             ->required(),
@@ -1000,6 +1003,7 @@ class ConfiguracoesDoKit extends SettingsPage
                         Select::make('dock_estilo')
                             ->label('Estilo')
                             ->options(DockDeAtalhos::opcoesDeEstilo())
+                            // Mesmo motivo do `in` do layout acima.
                             ->in(array_keys(DockDeAtalhos::opcoesDeEstilo()))
                             ->selectablePlaceholder(false)
                             ->required(),
