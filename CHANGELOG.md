@@ -5,6 +5,22 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+
+- Projeto atualizado pelo `kit:update` sem o pacote do dock (`hoceineel/filament-quick-action-dock`)
+  volta a subir. O `composer.json` nunca é aplicado no update, e na v0.48.0 todo comando morria no
+  boot dos painéis com `Class "HoceineEl\QuickActionDock\QuickActionDockPlugin" not found`, antes de o
+  usuário conseguir rodar o `composer require` que o próprio update pede. Agora os painéis sobem sem
+  o dock, e a seção "Dock de atalhos" da aba Kit de `/admin/configuracoes-da-aplicacao` diz o que
+  falta instalar.
+
+### Documentação
+
+- `comecar/atualizando-o-projeto` (pt/en) registra o `composer require` do pacote do dock para quem
+  atualiza para a v0.48.0.
+- `wikis/checklist-de-release.md`: os cenários 3 e 4 seguem o passo de dependência nova
+  (`composer require` + `filament:assets`) quando o relatório do `kit:update` listar pacote novo.
+
 ## [0.48.0] - 2026-10-14
 
 ### Adicionado
@@ -35,6 +51,13 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - Quality gate da feature: APROVADO COM DÉBITO (`wikis/specs/main/dock-de-acoes-rapidas/06-relatorio-qa.md`).
 - Os quatro cenários de `wikis/checklist-de-release.md` (create-project e `kit:update`, com e
   sem tenancy) não foram executados neste fechamento.
+
+### Atualizando
+
+- Quem atualiza pelo `kit:update` precisa instalar o pacote do dock à mão, antes de qualquer outro
+  comando: `composer require hoceineel/filament-quick-action-dock:^0.2`, `php artisan
+  filament:assets` e `php artisan migrate --force`. Sem o pacote, todo `php artisan` falha no boot
+  (achado da validação pós-publicação; corrigido na versão seguinte).
 
 ## [0.47.2] - 2026-10-10
 
