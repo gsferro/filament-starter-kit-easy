@@ -81,6 +81,6 @@ accDescr: After login, the session moves between authenticated, awaiting 2FA, lo
 The 2FA challenge only exists for whoever already confirmed it before — it is the same
 `MustTwoFactor` from the diagram above. The idle lock uses `config('lockscreen.idle_timeout')` =
 1800 (`config/lockscreen.php:idle_timeout:16`); the three panels share the same attempt limit with
-forced logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:267`,
-`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:382`,
-`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:290`).
+forced logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:268`,
+`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:383`,
+`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:291`).

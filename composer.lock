@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a285ae7ef075b45564ebaa52f1491f61",
+    "content-hash": "40048b4aeef279057b4ef96d924a71cf",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -4427,6 +4427,75 @@
                 }
             ],
             "time": "2026-09-03T16:52:43+00:00"
+        },
+        {
+            "name": "hoceineel/filament-quick-action-dock",
+            "version": "v0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/HoceineEl/filament-quick-action-dock.git",
+                "reference": "86ac2ddee8ab35990a6257cfa4481955f0ad068f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/HoceineEl/filament-quick-action-dock/zipball/86ac2ddee8ab35990a6257cfa4481955f0ad068f",
+                "reference": "86ac2ddee8ab35990a6257cfa4481955f0ad068f",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^4.0|^5.0",
+                "illuminate/contracts": "^11.0|^12.0|^13.0",
+                "php": "^8.3",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.24",
+                "orchestra/testbench": "^10.0|^11.0",
+                "pestphp/pest": "^4.0",
+                "pestphp/pest-plugin-laravel": "^4.0",
+                "pestphp/pest-plugin-livewire": "^4.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "HoceineEl\\QuickActionDock\\QuickActionDockServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "HoceineEl\\QuickActionDock\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Hoceine El Idrissi",
+                    "email": "contact@hoceine.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A floating launcher for the Filament actions people reach for most, on every page of a panel.",
+            "homepage": "https://github.com/HoceineEl/filament-quick-action-dock",
+            "keywords": [
+                "actions",
+                "dock",
+                "filament",
+                "hoceineel",
+                "laravel",
+                "launcher",
+                "speed-dial"
+            ],
+            "support": {
+                "issues": "https://github.com/HoceineEl/filament-quick-action-dock/issues",
+                "source": "https://github.com/HoceineEl/filament-quick-action-dock/tree/v0.2.0"
+            },
+            "time": "2026-10-08T21:38:38+00:00"
         },
         {
             "name": "jeffgreco13/filament-breezy",

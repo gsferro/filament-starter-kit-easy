@@ -14,7 +14,7 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) |
 | **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) |
-| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível |
+| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
@@ -181,6 +181,24 @@ O que faz dela um interruptor, e não um caminho sem volta, são duas decisões:
 Ver não é montar: quem arrasta e salva a grade é quem tem a permissão `Manage:Dashboard` do
 Shield — os demais veem a mesma tela sem poder editá-la.
 
+## O dock de atalhos: três opções, nenhum painel de partida
+
+Ainda na aba **Kit**, a seção *Dock de atalhos* configura o botão flutuante com os favoritos de
+cada usuário ([como ele funciona](../dock-de-atalhos/)):
+
+| Opção | O que define | Nasce |
+|---|---|---|
+| **Painéis onde o dock aparece** | os painéis (admin, app, infra) em que o dock aparece | **nenhum** |
+| **Layout padrão** | `Leque (speed dial)` ou `Barra`; cada usuário pode trocar o dele | `Leque (speed dial)` |
+| **Estilo** | `Nativo`, `Contorno`, `Contraste` ou `Tingido`; vale para todos, o usuário não o troca | `Nativo` |
+
+A lista de painéis nasce da variável `KIT_DOCK_PAINEIS` (ids separados por vírgula, em
+`config/kit.php` → `dock.paineis`), vazia no `.env.example`. **Vazia significa nenhum painel** — o
+oposto do *Painéis onde vale* do dashboard dinâmico, logo acima, em que em branco significa todos.
+Layout e estilo não têm variável: quem os muda é esta tela. Como no restante da aba, o banco vence
+o `.env` e salvar vale no próximo F5. Quem vê o dock continua sendo definido pela permissão
+`Usar:Dock`, não por esta seção.
+
 ## Um seletor para quem não tem o que trocar
 
 Com a multi-organização ligada, a aba **Kit** ganha *Ocultar o seletor quando houver uma
@@ -218,11 +236,11 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:551`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:574`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:406`) — `KIT_TENANCY`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:421`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:400`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:

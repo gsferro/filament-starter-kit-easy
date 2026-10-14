@@ -2,6 +2,7 @@
 
 use App\Filament\Admin\Resources\Convites\ConviteResource;
 use App\Filament\Admin\Resources\Convites\Pages\ListConvites;
+use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Tenants\TenantResource;
 use App\Filament\Infra\Resources\AiRuns\Pages\ListAiRuns;
 use App\Support\Paineis;
@@ -141,6 +142,7 @@ it('cria a permissão nova de Action no banco', function (string $permissao): vo
     ['AtribuirPapeis:Tenant'],
     ['Aceitar:Convite'],
     ['Recusar:Convite'],
+    ['Usar:Dock'],
 ]);
 
 /**
@@ -587,6 +589,17 @@ function inventarioDeAutorizacao(): array
          * `shouldRegisterNavigation()`.
          */
         'app/Filament/Spotlight/AcoesDeCriacao.php::criar-' => 'policy',
+
+        /*
+         * Dock de atalhos (wiki `dock-de-acoes-rapidas`). As três com `->authorize('Usar:Dock')`,
+         * e o plugin inteiro também — sem a permissão, o componente nem registra as actions
+         * (`QuickActionDock::cacheDockActions()` só roda com `shouldRender()`). O favorito tem nome
+         * dinâmico (`'atalho_'.$indice`), então a varredura casa o prefixo literal; ele só navega,
+         * para URL de destino já autorizado no contexto do painel dele (ADR-01).
+         */
+        'app/Filament/Dock/PluginDoDock.php::atalho_'              => 'permissao',
+        'app/Filament/Dock/PluginDoDock.php::adicionarPaginaAtual' => 'permissao',
+        'app/Filament/Dock/PluginDoDock.php::gerenciarAtalhos'     => 'permissao',
     ];
 }
 
@@ -607,3 +620,41 @@ function inventarioDeRelationManager(): array
         "{$arquivo}::DetachAction" => 'permissao',
     ];
 }
+
+/*
+|--------------------------------------------------------------------------
+| Dock de atalhos — a permissão Usar:Dock (wiki `dock-de-acoes-rapidas`)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * CT-37 — a permissão do dock existe depois dos seeders e é oferecida na tela de papéis.
+ *
+ * O oráculo de "concedível" é o mesmo do CT-16 desta suíte: o conjunto de opções que a tela de
+ * papéis monta (`FilamentShield::getCustomPermissions()`), mais a abertura da edição de um papel do
+ * /app, que é onde o administrador a marca.
+ */
+it('[CT-37] a permissão do dock existe depois dos seeders e é oferecida na tela de papéis', function (): void {
+    noPainelDoShield('admin');
+    noPainelBootado('admin');
+
+    $this->actingAs(usuarioCom('master_global'));
+
+    Livewire::test(EditRole::class, ['record' => papelDoKit('panel_user')->getRouteKey()])
+        ->assertSuccessful();
+
+    expect(Permission::query()->where('name', 'Usar:Dock')->where('guard_name', 'web')->exists())
+        ->toBeTrue('a permissão Usar:Dock não foi gerada — ressemeie o ShieldPermissionsSeeder')
+        ->and(array_keys((array) FilamentShield::getCustomPermissions()))->toContain('Usar:Dock');
+});
+
+/**
+ * CT-41 — a semeadura single-tenant entrega o dock ao admin e ao infra, e não ao panel_user.
+ */
+it('[CT-41] a semeadura single-tenant entrega o dock ao admin e ao infra, não ao panel_user', function (string $papel, bool $tem): void {
+    expect(papelDoKit($papel)->hasPermissionTo('Usar:Dock'))->toBe($tem);
+})->with([
+    'admin (/admin)'                => ['admin', true],
+    'infra (/infra)'                => ['infra', true],
+    'panel_user (usuário comum)'    => ['panel_user', false],
+]);

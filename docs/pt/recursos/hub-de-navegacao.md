@@ -27,3 +27,9 @@ O teste de navegador é `tests/Browser/HubDeCardsTest.php`: a grade do `/infra` 
 descrição dentro do cartão — porque o pacote não registra CSS e sem
 `resources/css/filament/cards.css` o HTML é o mesmo e a grade vira lista de links soltos.
 
+
+## Dock de atalhos
+
+O dock é um botão flutuante com os atalhos favoritos de cada usuário: até 10 telas de qualquer painel,
+gerenciadas num slideover. Aparece só para quem tem a permissão `Usar:Dock` e nos painéis ligados nas
+configurações do kit. Tudo sobre ele está em [Dock de atalhos](../dock-de-atalhos/).

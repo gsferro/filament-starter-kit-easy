@@ -28,3 +28,9 @@ The browser test is `tests/Browser/HubDeCardsTest.php`: the `/infra` grid **pain
 description inside the card — because the package registers no CSS and without
 `resources/css/filament/cards.css` the HTML is the same and the grid becomes a list of loose links.
 
+
+## Shortcut dock
+
+The dock is a floating button with each user's favourite shortcuts: up to 10 screens from any panel,
+managed in a slideover. It only shows for users with the `Usar:Dock` permission and on the panels turned
+on in the kit settings. Everything about it is in [Shortcut dock](../dock-de-atalhos/).

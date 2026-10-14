@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\KitUpdate;
+use App\Filament\Pages\DashboardClassico;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -10,10 +11,13 @@ use App\Settings\ConfiguracoesDoKit;
 use App\Support\ProvedorSocial;
 use Filament\Facades\Filament;
 use Filament\FilamentManager;
+use Filament\Forms\Components\Select;
 use Filament\Panel;
 use Filament\PanelRegistry;
 use Filament\Support\Assets\AssetManager;
 use Filament\Support\Colors\ColorManager;
+use HoceineEl\QuickActionDock\Livewire\QuickActionDock;
+use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +26,11 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
+use Livewire\Features\SupportTesting\Testable;
+use Livewire\Livewire;
 use Psr\Log\LoggerInterface;
 use Spatie\LaravelSettings\Models\SettingsProperty;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TenancyTestCase;
 use Tests\TestCase;
@@ -524,6 +531,85 @@ function ligarDashboardDinamico(bool $ligado = true, array $paineis = []): void
 {
     config()->set('kit.dashboard_dinamico.habilitado', $ligado);
     config()->set('kit.dashboard_dinamico.paineis', $paineis);
+}
+
+/**
+ * Liga o dock de atalhos nos painéis dados (`[]` = nenhum painel: o dock nasce desligado em todos).
+ *
+ * Aqui e não num arquivo de teste porque as suítes Kit e Tenancy do dock a usam
+ * (`tests/Kit/DockDeAtalhosTest.php` e `tests/Tenancy/DockDeAtalhosTenancyTest.php`) — `.ai/rules/testes.md`.
+ *
+ * @param  list<string>  $paineis
+ */
+function ligarDock(array $paineis = ['admin', 'app', 'infra']): void
+{
+    config()->set('kit.dock.paineis', $paineis);
+}
+
+/**
+ * Concede `Usar:Dock` aos papéis, criando a permissão se a semeadura ainda não a criou.
+ *
+ * O `findOrCreate` mantém o arranjo independente da semeadura: quem prova a semeadura são
+ * CT-37, CT-41 e CT-42, e os demais casos só precisam de "papel com a permissão".
+ */
+function concederDock(string ...$papeis): void
+{
+    Permission::findOrCreate('Usar:Dock', 'web');
+
+    foreach ($papeis as $papel) {
+        papelDoKit($papel)->givePermissionTo('Usar:Dock');
+    }
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+}
+
+/** A chave de favorito do dock: `{painel}|{FQCN do destino}|{id da organização ou vazio}`. */
+function chaveDeAtalho(string $painel, string $destino, int|string|null $organizacao = null): string
+{
+    return "{$painel}|{$destino}|{$organizacao}";
+}
+
+/**
+ * Grava os favoritos direto na coluna, sem passar pelas actions do dock (o favorito não tem
+ * máquina de estados: o `04` autoriza a partida por gravação direta). Pelo query builder, e não
+ * pelo model, para não depender do cast nem do `$fillable`.
+ *
+ * @param  list<string>  $chaves
+ */
+function gravarAtalhos(User $usuario, array $chaves): void
+{
+    DB::table('users')->where('id', $usuario->getKey())->update(['dock_atalhos' => json_encode($chaves)]);
+}
+
+/**
+ * Os favoritos gravados do usuário, lidos da coluna.
+ *
+ * @return list<string>
+ */
+function atalhosGravados(User $usuario): array
+{
+    $bruto = DB::table('users')->where('id', $usuario->getKey())->value('dock_atalhos');
+
+    return $bruto === null ? [] : array_values((array) json_decode((string) $bruto, associative: true));
+}
+
+/**
+ * O componente do dock montado como se a página corrente fosse `$pagina` (por padrão a dashboard
+ * clássica, que existe nos três painéis).
+ *
+ * Teste de componente não atravessa o request: quem informa a página ao dock é o `DockContext`.
+ */
+function dockNaPagina(string $painel, ?Tenant $organizacao = null, string $pagina = DashboardClassico::class): Testable
+{
+    $url = $pagina::getUrl(panel: $painel, tenant: $organizacao);
+
+    DockContext::current()->set(
+        $pagina::getRouteName(Filament::getPanel($painel)),
+        $organizacao === null ? [] : ['tenant' => $organizacao->slug],
+        (string) parse_url($url, PHP_URL_PATH),
+    );
+
+    return Livewire::test(QuickActionDock::class);
 }
 
 /**
@@ -2367,7 +2453,7 @@ function resultadoDoFluxo(array $grafo, callable $avaliar): string
 
 /**
  * O avaliador das perguntas de DG-03 — a MESMA ordem de `User::canAccessPanel()`
- * (`app/Models/User.php:canAccessPanel:157`): indisponibilidade, pendência, master_global,
+ * (`app/Models/User.php:canAccessPanel:166`): indisponibilidade, pendência, master_global,
  * contexto do painel (tenancy), papel do painel.
  */
 function avaliadorDoDG03(User $user, Panel $painel): Closure
@@ -2446,4 +2532,43 @@ function ligarLoginComGoogleDoKit(array $credenciais = []): void
         'client_secret' => 'segredo-de-teste',
         'redirect'      => '/auth/google/callback',
     ], $credenciais));
+}
+
+/**
+ * As opções de destino que o slideover `gerenciarAtalhos` oferece, `chave => rótulo`.
+ *
+ * Lê as OPÇÕES do `Select` do campo `atalhos`, e não o HTML: o Filament não imprime o conteúdo do
+ * modal no HTML do componente pai (mesma razão de `tests/Tenancy/TelaDePapeisTenancyTest.php`).
+ * Opções agrupadas (`grupo => [chave => rótulo]`) são achatadas.
+ *
+ * Aqui e não num arquivo de teste porque as suítes Kit e Tenancy do dock a usam
+ * (`.ai/rules/testes.md`).
+ *
+ * @return array<string, string>
+ */
+function opcoesDoSlideover(Testable $dock): array
+{
+    $opcoes = [];
+
+    $dock->mountAction('gerenciarAtalhos')->assertSchemaComponentExists(
+        'atalhos',
+        'mountedActionSchema0',
+        function (Select $campo) use (&$opcoes): bool {
+            foreach ($campo->getOptions() as $chave => $rotulo) {
+                if (is_array($rotulo)) {
+                    foreach ($rotulo as $chaveInterna => $rotuloInterno) {
+                        $opcoes[(string) $chaveInterna] = (string) $rotuloInterno;
+                    }
+
+                    continue;
+                }
+
+                $opcoes[(string) $chave] = (string) $rotulo;
+            }
+
+            return true;
+        },
+    );
+
+    return $opcoes;
 }

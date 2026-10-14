@@ -201,9 +201,15 @@ final class Paineis
     /**
      * Uma instância limpa do Shield — container e facade.
      *
+     * `FilamentShield` é `scoped` e memoiza `getPages()`/`getResources()`/`getWidgets()` com
+     * `once()`, por INSTÂNCIA (`vendor/bezhansalleh/filament-shield/src/FilamentShield.php:getPages:71`):
+     * trocar o painel corrente não invalida o mapa, e a facade ainda guarda o objeto. Quem avalia
+     * telas de mais de um painel no mesmo processo descarta os dois — este método e
+     * `App\Support\DockDeAtalhos::noContexto()`.
+     *
      * @return FilamentShield
      */
-    private static function shieldNovo(): object
+    public static function shieldNovo(): object
     {
         app()->forgetInstance('filament-shield');
         Facade::clearResolvedInstance('filament-shield');

@@ -43,11 +43,12 @@ No prompt:
 1. Escrever `tests/Browser/{Feature}/{Nome}Test.php` a partir dos CT-B, com o ID `[CT-Bnn]` no
    nome de cada teste
 2. Rodar `vendor/bin/pest tests/Browser --filter={Feature}` (ou `--testsuite=Browser`, se o
-   `phpunit.xml` define a suíte; **nunca** com `--parallel`)
+   `phpunit.xml` define a suíte; série por padrão, paralelo só após conferir isolamento e capacidade)
 3. Se falhar, **classificar a causa antes de mexer em qualquer coisa**:
    - **(a)** CT-B especificado errado (seletor, rota, texto) → corrigir o teste; a correção do
      CT-B no `05` volta na saída (*Correções do 05*) e a sessão grava — o hook nega Edit no `05`
-   - **(b)** implementação divergente do PRD → **não corrigir**; registrar a divergência
+   - **(b)** implementação divergente do `05` → **não corrigir**; registrar a divergência.
+     A `## Superfície de UI` do PRD serve para o roteiro de tela, não para substituir o `Então`
    - **(c)** flake (timing, assíncrono) → rever a estratégia de espera e anotar
 4. Nas causas (a) e (c), se o Playwright MCP estiver disponível, observar a página ao vivo para
    descobrir o locator ou o estado real. Na causa (b), **não** usar o MCP para contornar
@@ -62,9 +63,9 @@ No prompt:
 
 Antes de escrever o primeiro teste, leia `{skills}/feature-test-design/references/pest-plugin-browser.md`
 — a fonte única dos fatos do plugin (servidor, autenticação, esperas, ordem das asserções, build
-dos assets). `{skills}` é o primeiro dos três diretórios — `.ai/skills/`, `.claude/skills/`,
-`~/.claude/skills/` — que **contém** a `feature-test-design` (não basta o diretório existir). Se o
-arquivo não existir em nenhum dos três, **pare** e devolva só isso:
+dos assets). `{skills}` é o diretório de instalação que contém a pasta `feature-test-design`, informado pelo host.
+Se precisar resolver, siga `references/hosts-e-subagentes.md` da feature-wiki: inclui `.agents/skills/`
+e instalações pessoais Codex/Claude, por skill. Se a referência realmente estiver ausente, **pare** e devolva só isso:
 *"pest-plugin-browser.md não encontrado"*, sem escrever nenhum teste.
 
 ## Proibido
@@ -101,4 +102,5 @@ arquivo não existir em nenhum dos três, **pare** e devolva só isso:
 ## Saída do pest (literal)
 ```
 
-Retorno sem a saída **literal** do `pest` (não resumo) é devolvido pelo orquestrador.
+O orquestrador compara conteúdo/hash antes/depois incluindo dirty e untracked; o hook não oferece
+sandbox. Retorno sem a saída **literal** do `pest` (não resumo) é devolvido pelo orquestrador.

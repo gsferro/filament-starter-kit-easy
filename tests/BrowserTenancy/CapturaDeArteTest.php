@@ -1,14 +1,19 @@
 <?php
 
+use App\Filament\Admin\Resources\Tenants\TenantResource;
+use App\Filament\Admin\Resources\Users\UserResource;
 use App\Filament\App\Resources\Projetos\ProjetoResource;
+use App\Filament\Infra\Pages\BackupRunsPage;
 use App\Models\Projeto;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Settings\ConfiguracoesDoKit;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Support\Facades\Route;
+use Pest\Browser\Api\PendingAwaitablePage;
 use Tests\TenancyTestCase;
 
 /**
@@ -935,4 +940,186 @@ it('captura o interruptor de ocultar o seletor na tela de configurações', func
         ->click('Kit')
         ->assertSee('Ocultar o seletor quando houver uma organização só')
         ->screenshot(fullPage: false, filename: 'admin-configuracoes-seletor');
+})->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
+| Dock de atalhos (wiki dock-de-acoes-rapidas)
+|--------------------------------------------------------------------------
+| Os quatro primeiros quadros do clipe `dock-de-atalhos` nascem de UM cenário, na mesma tela e
+| no mesmo banco; o quinto (`dock-barra`) tem cenário próprio, com o mesmo arranjo — o motivo
+| está no docblock dele. `dock-aberto`, `dock-gerenciar` e `dock-barra` são também IMAGENS
+| declaradas (o padrão `densidade-*`).
+|
+| Arranja e visita só o /admin — os favoritos de /infra e /app aparecem no dock de qualquer
+| painel (RQ-35), então não é preciso atravessar painel para mostrá-los.
+*/
+
+/**
+ * Liga o dock nos três painéis, dá ao usuário três favoritos — um de cada painel — e cria as
+ * organizações que a listagem de fundo mostra.
+ *
+ * A tela de fundo é `/admin/organizacoes`, e não a lista de usuários: ela NÃO é favorita, então
+ * o dock oferece "Adicionar esta página", que é o quadro `dock-adicionar`.
+ */
+function arranjarDockParaArte(TenancyTestCase $teste, User $usuario, Tenant $organizacao): void
+{
+    ligarDock(['admin', 'app', 'infra']);
+
+    tenant('Globex Brasil', 'globex');
+    tenant('Initech Soluções', 'initech');
+
+    gravarAtalhos($usuario, [
+        chaveDeAtalho('admin', UserResource::class),
+        chaveDeAtalho('infra', BackupRunsPage::class),
+        chaveDeAtalho('app', ProjetoResource::class, $organizacao->getKey()),
+    ]);
+
+    // Aquece o /admin, e só ele.
+    $teste->get('/admin/organizacoes');
+}
+
+/**
+ * A visita de uma captura do dock, com o tema DECLARADO — nunca herdado.
+ *
+ * `inDarkMode()`/`inLightMode()` só valem no load e a emulação vaza para o cenário seguinte
+ * (`.ai/rules/testes-browser.md`): por isso o claro também pede o tema dele, e os dois conferem a
+ * classe `dark` do `<html>`, que é o tema do Filament — `assertSee` não valida tema.
+ *
+ * O `visit()` chega pronto do `it()`, e não é chamado aqui: o `pest-plugin-browser` só sobe o
+ * navegador para o cenário cujo closure chama `visit` (`BrowserTestIdentifier::isBrowserTest()`),
+ * e fora de `tests/Browser/` um `visit()` só dentro de helper dá "WebSocket client is not
+ * connected". A página é preguiçosa — só abre na primeira ação, depois do arranjo.
+ */
+function visitarDockNoTema(PendingAwaitablePage $pendente, bool $escuro): mixed
+{
+    return ($escuro ? $pendente->inDarkMode() : $pendente->inLightMode())
+        ->resize(1400, 875)
+        ->assertScript("document.documentElement.classList.contains('dark') === ".($escuro ? 'true' : 'false'));
+}
+
+/**
+ * Os quatro primeiros quadros do clipe do dock — fechado, aberto, slideover de gerenciar e
+ * "Adicionar esta página" —, no tema pedido. Os nomes chegam literais de quem chama: o `[CT-50]`
+ * de `tests/Kit/KitArteTest.php` procura cada quadro como string de código neste arquivo.
+ */
+function capturarQuadrosDoDock(TenancyTestCase $teste, PendingAwaitablePage $visita, bool $escuro, string $fechado, string $aberto, string $gerenciar, string $adicionar): void
+{
+    $teste->usuario->forceFill(['name' => 'Bruno Carvalho'])->save();
+
+    arranjarDockParaArte($teste, $teste->usuario, $teste->organizacao);
+
+    $gatilho = '[data-layout] button[x-ref="trigger"]';
+
+    $pagina = visitarDockNoTema($visita, $escuro)
+        ->assertSee('Globex Brasil')
+        ->assertVisible($gatilho)
+        // Pausa pela animação dos cartões de estatística, que contam a partir de zero: sem ela
+        // o fundo do quadro mostra "0 organizações" ao lado de uma tabela com três.
+        ->wait(2)
+        ->screenshot(fullPage: false, filename: $fechado)
+        ->click($gatilho)
+        ->assertVisible('[data-layout] a[href$="/admin/users"]')
+        ->assertAttribute('[data-layout]', 'data-open', 'true')
+        ->screenshot(fullPage: false, filename: $aberto)
+        ->click('[data-layout] [wire\:click*="gerenciarAtalhos"]')
+        ->assertSee('Escolha as telas que aparecem no seu dock e arraste para ordenar.')
+        ->assertSee('Infraestrutura — Backups');
+
+    // Abre a lista do campo "Atalhos" (o primeiro select do slideover) para o catálogo aparecer
+    // na foto. Por script: `.fi-select-input-btn` casa os dois selects, e o Playwright recusa.
+    $pagina->script("document.querySelector('.fi-modal-window .fi-select-input-btn').click()");
+
+    $pagina
+        ->assertScript("document.querySelectorAll('.fi-modal-window .fi-select-input-option').length > 3")
+        ->screenshot(fullPage: false, filename: $gerenciar)
+        ->press('Cancelar')
+        ->assertDontSee('Escolha as telas que aparecem no seu dock e arraste para ordenar.')
+        ->click($gatilho)
+        ->click('[data-layout] [wire\:click*="adicionarPaginaAtual"]')
+        ->assertSee('Página adicionada aos atalhos')
+        ->screenshot(fullPage: false, filename: $adicionar);
+}
+
+/**
+ * O último quadro do clipe: o mesmo dock em layout barra, já com os quatro favoritos (os três do
+ * arranjo e "Organizações", que o quadro anterior adicionou).
+ *
+ * Cenário separado, e não uma segunda visita no anterior: a segunda `visit()` no mesmo cenário
+ * renderiza a topbar com os ícones repetidos (medido: nove em vez de dois). O banco é recriado,
+ * mas o arranjo é o mesmo e o quarto favorito é gravado aqui, então a sequência do GIF continua.
+ */
+function capturarDockEmBarra(TenancyTestCase $teste, PendingAwaitablePage $visita, bool $escuro, string $barra): void
+{
+    $teste->usuario->forceFill(['name' => 'Bruno Carvalho', 'dock_layout' => 'bar'])->save();
+
+    arranjarDockParaArte($teste, $teste->usuario, $teste->organizacao);
+
+    gravarAtalhos($teste->usuario, [...atalhosGravados($teste->usuario), chaveDeAtalho('admin', TenantResource::class)]);
+
+    visitarDockNoTema($visita, $escuro)
+        ->assertSee('Globex Brasil')
+        ->assertAttribute('[data-layout]', 'data-layout', 'bar')
+        ->assertVisible('[data-layout] a[href$="/admin/organizacoes"]')
+        // A mesma pausa do `dock-fechado`: os cartões contam a partir de zero.
+        ->wait(2)
+        ->screenshot(fullPage: false, filename: $barra);
+}
+
+it('captura os quadros do dock de atalhos', function (): void {
+    capturarQuadrosDoDock($this, visit('/admin/organizacoes'), false, 'dock-fechado', 'dock-aberto', 'dock-gerenciar', 'dock-adicionar');
+})->group('browser', 'art');
+
+it('captura o dock de atalhos no layout barra', function (): void {
+    capturarDockEmBarra($this, visit('/admin/organizacoes'), false, 'dock-barra');
+})->group('browser', 'art');
+
+/**
+ * A seção "Dock de atalhos" da aba Kit das configurações, preenchida.
+ *
+ * Grava no banco e realinha, como a densidade: a tela lê o settings, e o dock da própria tela
+ * lê a config.
+ */
+it('captura a seção Dock de atalhos das configurações', function (): void {
+    gravarConfiguracao('dock_paineis', ['admin', 'app', 'infra']);
+    gravarConfiguracao('dock_layout', 'speed-dial');
+    gravarConfiguracao('dock_estilo', 'tinted');
+    alinharConfiguracoesDoKit();
+
+    // Aquece o /admin, e só ele.
+    $this->get('/admin/configuracoes-da-aplicacao');
+
+    $pagina = visit('/admin/configuracoes-da-aplicacao')
+        ->resize(1400, 875)
+        ->click('Kit')
+        ->assertSee('Painéis onde o dock aparece');
+
+    // A seção fica abaixo da dobra da aba Kit: rola até ela, sem clicar no título (que a colapsa).
+    $pagina->script(<<<'JS'
+        [...document.querySelectorAll('.fi-section-header-heading')]
+            .find((titulo) => titulo.textContent.trim() === 'Dock de atalhos')
+            .closest('section')
+            .scrollIntoView({ block: 'center' })
+    JS);
+
+    $pagina
+        ->assertSee('Dock de atalhos')
+        ->screenshot(fullPage: false, filename: 'admin-configuracoes-dock');
+})->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
+| Dock de atalhos em tema escuro
+|--------------------------------------------------------------------------
+| Os mesmos estados e a mesma viewport do clipe `dock-de-atalhos`, com o tema escuro do Filament
+| (`inDarkMode()` no load, classe `dark` no `<html>`). Ficam no FIM do arquivo porque a emulação
+| do tema vaza para o cenário seguinte, e nenhum cenário de captura daqui herdaria o escuro.
+*/
+
+it('captura os quadros do dock de atalhos em tema escuro', function (): void {
+    capturarQuadrosDoDock($this, visit('/admin/organizacoes'), true, 'dock-fechado-escuro', 'dock-aberto-escuro', 'dock-gerenciar-escuro', 'dock-adicionar-escuro');
+})->group('browser', 'art');
+
+it('captura o dock de atalhos no layout barra em tema escuro', function (): void {
+    capturarDockEmBarra($this, visit('/admin/organizacoes'), true, 'dock-barra-escuro');
 })->group('browser', 'art');

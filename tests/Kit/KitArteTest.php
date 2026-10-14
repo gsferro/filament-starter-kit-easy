@@ -28,9 +28,9 @@ use Illuminate\Support\Str;
  * ## Arnês do ffmpeg de teste (Setup Global, hipótese confirmada nesta sessão)
  *
  * `Process::run()` do Symfony, chamado por `KitArte::montarClipe()` (por sua vez chamado em laço
- * por `montarGif()`) SEM `$env` explícito (`app/Console/Commands/KitArte.php:new Process([:332`),
+ * por `montarGif()`) SEM `$env` explícito (`app/Console/Commands/KitArte.php:new Process([:381`),
  * herda o ambiente do processo PHP corrente — e
- * `putenv()`/`$_ENV`/`$_SERVER` (as três, como `tests/Pest.php:kitConfigCom:583` já faz por
+ * `putenv()`/`$_ENV`/`$_SERVER` (as três, como `tests/Pest.php:kitConfigCom:669` já faz por
  * outro motivo) SIM alteram essa herança: confirmado empiricamente nesta sessão com um
  * executável de nome não-colidente prefixado ao `PATH`. Ressalva medida no mesmo teste: neste
  * ambiente Windows específico, com um `ffmpeg` REAL já instalado via WinGet, prefixar o `PATH`
@@ -138,19 +138,27 @@ function pngValidoCor(int $tom): string
 
 /**
  * O conteúdo de teste para o quadro `$indice` do clipe `$clipe`: PNG de verdade (cor variando
- * pela posição) para `densidade` — porque `densidade-*` também é IMAGEM DECLARADA (ver
- * `pngValidoCor()`) —, texto identificando clipe+posição para os demais.
+ * pela posição) para o clipe com algum quadro que também é IMAGEM DECLARADA (`densidade`,
+ * `dock-de-atalhos` — ver `pngValidoCor()`), texto identificando clipe+posição para os demais.
  */
 function conteudoDoQuadroDeTeste(string $clipe, int $indice, string $prefixoDeTexto = 'conteudo'): string
 {
-    return $clipe === 'densidade'
+    return clipeTemImagemDeclarada($clipe)
         ? pngValidoCor(30 + $indice * 70)
         : "{$prefixoDeTexto}-{$clipe}-{$indice}";
 }
 
+/** Algum quadro do clipe também está em `KitArte::IMAGENS` (e passa pelo `Image::load()` de `publicar()`)? */
+function clipeTemImagemDeclarada(string $clipe): bool
+{
+    $imagens = (new ReflectionClassConstant(KitArte::class, 'IMAGENS'))->getValue();
+
+    return array_intersect(clipesDoKitArte()[$clipe] ?? [], $imagens) !== [];
+}
+
 /**
  * Instala o ffmpeg de teste à FRENTE do `PATH` do processo (as três formas —
- * `.ai/rules` não documenta isso, mas `tests/Pest.php:kitConfigCom:583` estabelece o padrão de
+ * `.ai/rules` não documenta isso, mas `tests/Pest.php:kitConfigCom:669` estabelece o padrão de
  * mudar as três para valer em todo lugar que lê env).
  *
  * @return string o diretório do executável — só para depuração; nunca precisa ser lido pelo teste.
@@ -265,7 +273,7 @@ function todosOsQuadrosDoKitArte(): array
     return array_merge(...array_values(clipesDoKitArte()));
 }
 
-/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:313`): traços viram espaços. */
+/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:344`): traços viram espaços. */
 function saidaNomeiaOClipe(string $saida, string $clipe): bool
 {
     $minuscula = mb_strtolower($saida);

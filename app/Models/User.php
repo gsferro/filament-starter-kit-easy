@@ -97,6 +97,9 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     protected $hidden = [
         'password',
         'remember_token',
+        // Preferências pessoais do dock: não saem na serialização do registro (ex.: `getPageHeaderRecord`).
+        'dock_atalhos',
+        'dock_layout',
     ];
 
     /**
@@ -136,6 +139,12 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
             'aprovacao_pendente' => 'boolean',
             // Mesmo regime: fora do `$fillable`, só `forceFill` em `desativar()`/`reativar()`.
             'ativo'              => 'boolean',
+            /*
+             * Favoritos e layout do dock de atalhos: fora do `$fillable`, escritos só por
+             * `forceFill` — a chave do favorito vira nome de classe na leitura, então nunca entra
+             * por atribuição em massa (ADR-02 da wiki `dock-de-acoes-rapidas`).
+             */
+            'dock_atalhos'       => 'array',
             'email_verified_at'  => 'datetime',
             'password'           => 'hashed',
         ];
@@ -156,16 +165,30 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
 
     public function canAccessPanel(Panel $panel): bool
     {
-        /*
-         * Conta inativa ou excluída não entra em painel NENHUM — antes até da pendência, pelo
-         * mesmo argumento de ordem escrito logo abaixo. É a única decisão: a tela de login por
-         * senha, o login social e o middleware do painel (a cada request de quem já está dentro)
-         * perguntam aqui. Quem EXPLICA a negativa para a pessoa é `TelaLogin` e o
-         * `LoginSocialController`, via `motivoDeIndisponibilidade()`. ADR-01 da wiki
-         * `status-e-exclusao-logica-de-usuario`.
-         */
-        if (($motivo = $this->motivoDeIndisponibilidade()) !== null) {
-            Log::channel('autenticacao')->warning(
+        $motivo = $this->motivoDaNegativaDoPainel($panel);
+
+        if ($motivo === null) {
+            return true;
+        }
+
+        match ($motivo) {
+            'aprovacao_pendente' => Log::channel('autenticacao')->warning(
+                "[User@canAccessPanel] Acesso negado: cadastro pendente de aprovacao | user: {$this->id} - painel: {$panel->getId()}",
+                [
+                    'user_id' => $this->id,
+                    'painel'  => $panel->getId(),
+                    'motivo'  => 'aprovacao_pendente',
+                ],
+            ),
+            'sem_papel_do_painel' => Log::channel('autenticacao')->warning(
+                "[User@canAccessPanel] Acesso a painel negado | user: {$this->id} - painel: {$panel->getId()}",
+                [
+                    'user_id' => $this->id,
+                    'painel'  => $panel->getId(),
+                    'motivo'  => 'sem_papel_do_painel',
+                ],
+            ),
+            default => Log::channel('autenticacao')->warning(
                 "[User@canAccessPanel] Acesso negado: {$motivo} | user: {$this->id} - painel: {$panel->getId()}",
                 [
                     'user_id'     => $this->id,
@@ -174,63 +197,59 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
                     'email'       => Str::mask((string) $this->email, '*', 3),
                     'excluida_em' => $this->deleted_at?->toIso8601String(),
                 ],
-            );
+            ),
+        };
 
-            return false;
+        return false;
+    }
+
+    /**
+     * A decisão de `canAccessPanel()`, sem registrar nada: `null` quando o painel abre, o motivo
+     * da negativa (`conta_excluida`, `conta_inativa`, `aprovacao_pendente`, `sem_papel_do_painel`)
+     * quando não abre.
+     *
+     * Existe para quem só CONSULTA o acesso a um painel para montar a interface — o dock de atalhos
+     * pergunta por todos os painéis em todo render (`App\Support\DockDeAtalhos`) — e não pode
+     * escrever um `warning` no canal `autenticacao` por painel que o usuário não abre: a negativa
+     * ali não é tentativa de entrada, e o ruído soterraria a trilha. Quem DECIDE entrada continua
+     * sendo `canAccessPanel()`, que chama este método e registra a negativa.
+     *
+     * A ordem é a decisão:
+     *
+     * 1. Conta inativa ou excluída não entra em painel NENHUM — antes até da pendência. É a única
+     *    decisão: a tela de login por senha, o login social e o middleware do painel (a cada
+     *    request de quem já está dentro) perguntam aqui. Quem EXPLICA a negativa para a pessoa é
+     *    `TelaLogin` e o `LoginSocialController`, via `motivoDeIndisponibilidade()`. ADR-01 da wiki
+     *    `status-e-exclusao-logica-de-usuario`.
+     * 2. Pendente de aprovação, depois da indisponibilidade e antes do `master_global`. "Pendente"
+     *    tem de significar painel NENHUM, sem exceção: posta depois do atalho do `master_global`,
+     *    esta guarda teria um furo que ninguém veria, porque o atalho devolve `true` sem consultar
+     *    mais nada. Na prática quem nasce pendente nasce SEM papel — `RegistroAberto::registrar()`
+     *    só atribui o papel depois da aprovação —, e esta é a segunda barreira, deliberadamente
+     *    redundante, para qualquer caminho futuro que marque alguém pendente já com papel.
+     * 3. `master_global` abre tudo.
+     * 4. Painel COM tenancy (/app): basta ter o papel em ALGUMA organização — qual organização é
+     *    decidido depois, por `canAccessTenant()`. Painel SEM tenancy (/admin, /infra) governa a
+     *    instalação inteira, então o papel tem de estar atribuído no contexto global: ser `admin`
+     *    dentro de uma organização não é credencial para administrar o sistema.
+     */
+    public function motivoDaNegativaDoPainel(Panel $panel): ?string
+    {
+        if (($motivo = $this->motivoDeIndisponibilidade()) !== null) {
+            return $motivo;
         }
 
-        /*
-         * Depois da indisponibilidade e antes do master_global — e a ordem é a decisão.
-         *
-         * "Pendente de aprovação" tem de significar painel NENHUM, sem exceção. Posta depois do
-         * atalho do `master_global`, esta guarda teria um furo que ninguém veria: o atalho
-         * devolve `true` sem consultar mais nada.
-         *
-         * Na prática, quem nasce pendente nasce SEM papel — `RegistroAberto::registrar()` só
-         * atribui o papel depois da aprovação —, então nenhum painel abriria de qualquer forma.
-         * Esta é a segunda barreira, deliberadamente redundante: ela vale para qualquer caminho
-         * futuro que marque alguém como pendente, inclusive um que já tenha papel.
-         */
         if ($this->aprovacao_pendente) {
-            Log::channel('autenticacao')->warning(
-                "[User@canAccessPanel] Acesso negado: cadastro pendente de aprovacao | user: {$this->id} - painel: {$panel->getId()}",
-                [
-                    'user_id' => $this->id,
-                    'painel'  => $panel->getId(),
-                    'motivo'  => 'aprovacao_pendente',
-                ],
-            );
-
-            return false;
+            return 'aprovacao_pendente';
         }
 
         if ($this->isMasterGlobal()) {
-            return true;
+            return null;
         }
 
-        /*
-         * Painel COM tenancy (/app): basta ter o papel em ALGUMA organização — qual
-         * organização é decidido depois, por canAccessTenant(). Painel SEM tenancy
-         * (/admin, /infra) governa a instalação inteira, então o papel tem de estar
-         * atribuído no contexto global: ser `admin` dentro de uma organização não é
-         * credencial para administrar o sistema.
-         */
         $contexto = $panel->hasTenancy() ? null : $this->contextoGlobal();
 
-        if ($this->temPapelDoPainel($panel->getId(), $contexto)) {
-            return true;
-        }
-
-        Log::channel('autenticacao')->warning(
-            "[User@canAccessPanel] Acesso a painel negado | user: {$this->id} - painel: {$panel->getId()}",
-            [
-                'user_id' => $this->id,
-                'painel'  => $panel->getId(),
-                'motivo'  => 'sem_papel_do_painel',
-            ],
-        );
-
-        return false;
+        return $this->temPapelDoPainel($panel->getId(), $contexto) ? null : 'sem_papel_do_painel';
     }
 
     /*

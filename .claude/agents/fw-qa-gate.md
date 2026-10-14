@@ -74,8 +74,10 @@ Preencha a linha `> Independência:` que já existe no cabeçalho do template �
 segunda:
 
 ```
-> Independência: sub-agente fw-qa-gate/opus, sem acesso à conversa
+> Independência: sub-agente fw-qa-gate/{modelo efetivo ou não informado}, contexto novo sem a conversa
 ```
+
+Preencha o modelo informado pelo host, nunca um alias presumido. `opus` só vale quando foi realmente usado no Claude.
 
 Depois do `>>>06`, e só depois, em seção separada `## Para o orquestrador`, liste: veredito em uma
 linha (com o teto aplicado, se houver), destino de cada achado Blocker/Major, o que **não** conseguiu
@@ -104,7 +106,7 @@ motivo, como a skill exige —, candidato a rule só se passar na definição *V
   prova negativa (`php -m`, `ls vendor/…`). A coluna `Custo` de `## Despachos` é o que o host
   reportou (tokens · duração, `—` se não reporta): não se reproduz. Na primeira execução cega deste
   agente, as duas alegações conferidas eram falsas — e eram do orquestrador, não do código
-- **K — plausibilidade do `--mutate`.** Score com `Duration` incompatível com N mutantes × tempo
-  dos testes cobridores é arnês quebrado (no Windows, `argv[0]` sh não executa e todo mutante
-  "morre" em 30 ms), não 100 %. Sem `Duration` plausível e lista de sobreviventes: "Não
-  Verificado". Este agente aceitou um *"2 mutantes, 100 %"* em 2026-09-21 e não devia
+- **K — plausibilidade do `--mutate`.** Duração curta é sinal para investigar, não prova de arnês quebrado.
+  Considere cache, paralelismo e testes selecionados; exija um teste cobridor real que falhe sob um mutante discriminante.
+  No Windows, confirme o lançador validado. Sem prova indispensável à conclusão ou lista de sobreviventes: "Não Verificado".
+  Este agente aceitou um *"2 mutantes, 100 %"* em 2026-09-21 sem conferir o arnês e não devia

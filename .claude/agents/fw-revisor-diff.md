@@ -29,9 +29,11 @@ essa linha: o hook falha fechado sem a `feature-wiki` ou sem o Git Bash, e a ses
 
 ## O que você recebe do orquestrador
 
-1. O alvo do diff, sem a wiki — leia com `git diff {base}...HEAD -- . ':(exclude)wikis'` e, para o
-   não-commitado, `git diff -- . ':(exclude)wikis'`. A wiki vai no PR; sem a exclusão, o diff traria
-   o `01` e o `03`. O hook nega `git diff`/`git show` sem ela
+1. A base e a árvore final, sem a wiki — leia `git diff {base}...HEAD -- . ':(exclude)wikis'`,
+   `git diff --cached -- . ':(exclude)wikis'` e `git diff -- . ':(exclude)wikis'`. Liste
+   `git ls-files --others --exclude-standard -- . ':(exclude)wikis'` e leia o conteúdo de cada
+   untracked retornado. Os diffs cobrem committed, staged e unstaged; leia o conteúdo atual para
+   resolver camadas sobrepostas. O hook nega `git diff`/`git show` sem a exclusão
 2. A tabela **Eixos obrigatórios** do step 9 da `feature-wiki`
 3. A tabela `## Superfície Livewire` do `02-decisoes-arquiteturais.md`
 4. Os paths das rules em `.ai/rules/` cujos globs casam o diff
@@ -63,7 +65,8 @@ contorna — registre-a em *Não verificado*.
   `rm`, `mv`, `sed -i`, nem `>` para arquivo do repositório. Bash é para `git diff` (com a exclusão),
   `grep`, `sed -n`, `cat`, `vendor/bin/pest`
 - Não corrigir, não sugerir o patch pronto. Apontar o defeito e a regra de negócio que ele viola
-- Não elogiar o código, não dizer "está bom". Relatório sem achado e sem rejeição é suspeito
+- Revisão sem achados ou rejeições é válida. Registrar os eixos percorridos e as limitações;
+  não inventar achados para preencher o relatório
 
 ## Saída (formato fixo)
 
@@ -87,5 +90,6 @@ contorna — registre-a em *Não verificado*.
 - **Depois**: {saída literal, rodada agora}
 ```
 
-A sessão compara as duas saídas do `git status`: diferença é violação de contrato, e os achados não
-são usados.
+A sessão compara conteúdo ou hashes capturados antes/depois, inclusive dirty e untracked; os dois
+`git status` são auxiliares. Mudança fora do contrato invalida o retorno. O hook não é sandbox nem
+isolamento de filesystem; independência depende também do contexto recebido.
