@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.48.0] - 2026-10-14
+
 ### Adicionado
 
 - Dock de atalhos por usuário (`hoceineel/filament-quick-action-dock`): botão flutuante com até 10
@@ -13,6 +15,26 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   novas, só os papéis de administração) e nasce sem painel ligado; painéis, layout e estilo
   padrão ficam na aba Kit de `/admin/configuracoes-da-aplicacao` (`KIT_DOCK_PAINEIS`). Página nova no site, `recursos/dock-de-atalhos` (pt/en), com
   animação e capturas.
+- Dock no tema escuro: a superfície do dock e dos itens acompanha o tema do painel (inclusive o
+  escolhido no próprio painel), com capturas e GIF em tema escuro na página do dock.
+
+### Corrigido
+
+- `.claude/agents` sincronizado com os agentes das skills (`.ai/skills/*/agents`): o
+  `AgentesDaEsteiraTest` reprovava o CI desde a atualização das skills.
+- A captura `infra-hub` declara o tema claro: no `composer art` ela roda depois das capturas
+  escuras e herdava o modo escuro.
+
+### Validação
+
+- PR #160 com CI verde em todos os jobs (qualidade, telas, site, instalação, segurança).
+- Suíte local `Unit,Feature,Kit,Tenancy --parallel`: 4.443 testes, só a falha pré-existente de
+  `AgentesDaEsteiraTest`, corrigida neste release. Navegador: CT-B01 e CT-B02 verdes.
+- Mutação de `App\Support\DockDeAtalhos` (Kit + Tenancy): 396 mutantes, 0 sobreviventes
+  cobertos, 31 não cobertos (92,17 %) — débito registrado na wiki da feature.
+- Quality gate da feature: APROVADO COM DÉBITO (`wikis/specs/main/dock-de-acoes-rapidas/06-relatorio-qa.md`).
+- Os quatro cenários de `wikis/checklist-de-release.md` (create-project e `kit:update`, com e
+  sem tenancy) não foram executados neste fechamento.
 
 ## [0.47.2] - 2026-10-10
 
