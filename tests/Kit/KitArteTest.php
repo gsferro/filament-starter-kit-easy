@@ -138,14 +138,22 @@ function pngValidoCor(int $tom): string
 
 /**
  * O conteúdo de teste para o quadro `$indice` do clipe `$clipe`: PNG de verdade (cor variando
- * pela posição) para `densidade` — porque `densidade-*` também é IMAGEM DECLARADA (ver
- * `pngValidoCor()`) —, texto identificando clipe+posição para os demais.
+ * pela posição) para o clipe com algum quadro que também é IMAGEM DECLARADA (`densidade`,
+ * `dock-de-atalhos` — ver `pngValidoCor()`), texto identificando clipe+posição para os demais.
  */
 function conteudoDoQuadroDeTeste(string $clipe, int $indice, string $prefixoDeTexto = 'conteudo'): string
 {
-    return $clipe === 'densidade'
+    return clipeTemImagemDeclarada($clipe)
         ? pngValidoCor(30 + $indice * 70)
         : "{$prefixoDeTexto}-{$clipe}-{$indice}";
+}
+
+/** Algum quadro do clipe também está em `KitArte::IMAGENS` (e passa pelo `Image::load()` de `publicar()`)? */
+function clipeTemImagemDeclarada(string $clipe): bool
+{
+    $imagens = (new ReflectionClassConstant(KitArte::class, 'IMAGENS'))->getValue();
+
+    return array_intersect(clipesDoKitArte()[$clipe] ?? [], $imagens) !== [];
 }
 
 /**
@@ -265,7 +273,7 @@ function todosOsQuadrosDoKitArte(): array
     return array_merge(...array_values(clipesDoKitArte()));
 }
 
-/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:313`): traços viram espaços. */
+/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:330`): traços viram espaços. */
 function saidaNomeiaOClipe(string $saida, string $clipe): bool
 {
     $minuscula = mb_strtolower($saida);

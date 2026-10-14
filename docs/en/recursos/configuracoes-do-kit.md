@@ -190,7 +190,7 @@ Viewing is not building: dragging and saving the grid belongs to whoever has Shi
 ## The shortcut dock: three options, no starting panel
 
 Still in the **Kit** tab, the *Dock de atalhos* section configures the floating button with each
-user's favourites ([how it works](../hub-de-navegacao/#shortcut-dock)):
+user's favourites ([how it works](../dock-de-atalhos/)):
 
 | Option | What it sets | Born |
 |---|---|---|

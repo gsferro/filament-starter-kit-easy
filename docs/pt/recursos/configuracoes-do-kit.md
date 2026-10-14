@@ -184,7 +184,7 @@ Shield — os demais veem a mesma tela sem poder editá-la.
 ## O dock de atalhos: três opções, nenhum painel de partida
 
 Ainda na aba **Kit**, a seção *Dock de atalhos* configura o botão flutuante com os favoritos de
-cada usuário ([como ele funciona](../hub-de-navegacao/#dock-de-atalhos)):
+cada usuário ([como ele funciona](../dock-de-atalhos/)):
 
 | Opção | O que define | Nasce |
 |---|---|---|

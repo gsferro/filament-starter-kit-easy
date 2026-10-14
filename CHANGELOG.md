@@ -11,7 +11,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   favoritos de qualquer painel, só de telas que o usuário pode abrir, gerenciados num slideover
   e adicionáveis pela opção "Adicionar esta página". Exige a permissão `Usar:Dock` (nas instalações
   novas, só os papéis de administração) e nasce sem painel ligado; painéis, layout e estilo
-  padrão ficam na aba Kit de `/admin/configuracoes-da-aplicacao` (`KIT_DOCK_PAINEIS`).
+  padrão ficam na aba Kit de `/admin/configuracoes-da-aplicacao` (`KIT_DOCK_PAINEIS`). Página nova no site, `recursos/dock-de-atalhos` (pt/en), com
+  animação e capturas.
 
 ## [0.47.2] - 2026-10-10
 

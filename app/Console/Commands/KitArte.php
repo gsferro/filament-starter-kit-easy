@@ -92,6 +92,15 @@ class KitArte extends Command
             'seletor-organizacao-1-visivel',
             'seletor-organizacao-2-oculto',
         ],
+        // Dock de atalhos (wiki dock-de-acoes-rapidas). `dock-aberto`, `dock-gerenciar` e
+        // `dock-barra` também são IMAGENS, como `densidade-*`.
+        'dock-de-atalhos' => [
+            'dock-fechado',
+            'dock-aberto',
+            'dock-gerenciar',
+            'dock-adicionar',
+            'dock-barra',
+        ],
     ];
 
     /**
@@ -141,6 +150,14 @@ class KitArte extends Command
         // O interruptor "ocultar o seletor" na tela de configurações
         // (wiki ocultar-seletor-de-organizacao-unica, RQ-05).
         'admin-configuracoes-seletor',
+
+        // Dock de atalhos: aberto, slideover de gerenciar, layout barra e a seção das
+        // configurações (wiki dock-de-acoes-rapidas). As três primeiras são também quadros
+        // do clipe `dock-de-atalhos`.
+        'dock-aberto',
+        'dock-gerenciar',
+        'dock-barra',
+        'admin-configuracoes-dock',
 
         // As duas telas de login com o desafio no ar, cada uma com chave real do
         // provedor. Só são geradas por quem tem as chaves no ambiente — os cenários
