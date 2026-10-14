@@ -10,6 +10,13 @@ application, from any panel, one click away (`hoceineel/filament-quick-action-do
 
 ![Animation of the shortcut dock: the floating button opens the fan of favourites, the Manage shortcuts slideover picks and reorders destinations and the Add this page option favourites the current screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-de-atalhos.gif)
 
+<details>
+<summary>The same animation in dark theme</summary>
+
+![Animation of the shortcut dock in dark theme: the dock follows the panel theme](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-de-atalhos-escuro.gif)
+
+</details>
+
 ## Who it is for
 
 Only users with the **`Usar:Dock`** permission, granted to roles on the roles screen. Without it the
@@ -32,7 +39,9 @@ nowhere until someone turns it on. See the options in [Configuration](#configura
 | Speed dial | the shortcuts fan out from the button |
 | Bar | the shortcuts sit in a bar |
 
-[![Dock open in the admin panel, with the favourite shortcuts listed from the floating button](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-aberto.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-aberto.png)
+| Light theme | Dark theme |
+|---|---|
+| [![Dock open in the admin panel, light theme, with three favourites from different panels and the Atalhos group](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-aberto.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-aberto.png) | [![Dock open in the admin panel, dark theme, with dark surface and labels](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-aberto-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-aberto-escuro.png) |
 
 ## Managing shortcuts
 
@@ -53,7 +62,9 @@ before the group and the screen, to tell same-named screens apart.
 | Invalid submission | a submission with a key outside the catalogue is refused as a whole, saving nothing |
 | Destinations only | a favourite is always a catalogue destination — the list page of a Resource or a standalone Page —, never a typed URL |
 
-[![Manage shortcuts slideover, with the destination catalogue, the chosen shortcuts in order and the layout selector](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-gerenciar.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-gerenciar.png)
+| Light theme | Dark theme |
+|---|---|
+| [![Manage shortcuts slideover, light theme, with the chosen ones labelled by panel and organisation and the catalogue open](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-gerenciar.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-gerenciar.png) | [![Manage shortcuts slideover, dark theme](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-gerenciar-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-gerenciar-escuro.png) |
 
 ## Add this page
 
@@ -79,7 +90,9 @@ counts toward the cap of 10.
 **Deleted organisation.** A favourite of an organisation that no longer exists is discarded when the
 user saves the slideover, like a key that was never a destination.
 
-[![Dock bar in the app panel, with the favourites in bar layout](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-barra.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-barra.png)
+| Light theme | Dark theme |
+|---|---|
+| [![Dock in bar layout, light theme, at the bottom of the admin panel](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-barra.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-barra.png) | [![Dock in bar layout, dark theme](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-barra-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-barra-escuro.png) |
 
 ## Layout and style
 
@@ -97,6 +110,10 @@ The default **layout** and **style** are set in the kit settings. The user chang
 | `outline` | Contorno |
 | `contrast` | Contraste |
 | `tinted` | Tingido |
+
+## Dark theme
+
+The dock follows the panel theme with no configuration: when the panel is in dark mode, the dock surface, its items and the slideover use the dark colours, including when dark mode is chosen in the panel itself while the operating system is in light mode. All four style options have a dark variant. The images on this page show both themes side by side.
 
 ## Configuration
 

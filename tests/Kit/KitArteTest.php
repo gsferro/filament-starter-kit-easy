@@ -28,7 +28,7 @@ use Illuminate\Support\Str;
  * ## Arnês do ffmpeg de teste (Setup Global, hipótese confirmada nesta sessão)
  *
  * `Process::run()` do Symfony, chamado por `KitArte::montarClipe()` (por sua vez chamado em laço
- * por `montarGif()`) SEM `$env` explícito (`app/Console/Commands/KitArte.php:new Process([:332`),
+ * por `montarGif()`) SEM `$env` explícito (`app/Console/Commands/KitArte.php:new Process([:381`),
  * herda o ambiente do processo PHP corrente — e
  * `putenv()`/`$_ENV`/`$_SERVER` (as três, como `tests/Pest.php:kitConfigCom:669` já faz por
  * outro motivo) SIM alteram essa herança: confirmado empiricamente nesta sessão com um
@@ -273,7 +273,7 @@ function todosOsQuadrosDoKitArte(): array
     return array_merge(...array_values(clipesDoKitArte()));
 }
 
-/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:330`): traços viram espaços. */
+/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:344`): traços viram espaços. */
 function saidaNomeiaOClipe(string $saida, string $clipe): bool
 {
     $minuscula = mb_strtolower($saida);

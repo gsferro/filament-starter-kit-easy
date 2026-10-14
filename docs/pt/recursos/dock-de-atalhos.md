@@ -10,6 +10,13 @@ aplicação, de qualquer painel, a um clique de distância (`hoceineel/filament-
 
 ![Animação do dock de atalhos: o botão flutuante abre o leque de favoritos, o slideover Gerenciar atalhos escolhe e reordena destinos e a opção Adicionar esta página favorita a tela atual](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-de-atalhos.gif)
 
+<details>
+<summary>A mesma animação em tema escuro</summary>
+
+![Animação do dock de atalhos em tema escuro: o dock acompanha o tema do painel](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-de-atalhos-escuro.gif)
+
+</details>
+
 ## Para quem
 
 Só quem tem a permissão **`Usar:Dock`**, concedida a papéis na tela de papéis. Sem ela o dock não
@@ -32,7 +39,9 @@ aparece em lugar nenhum até alguém ligá-lo. Veja as opções em [Configuraç�
 | Leque (speed dial) | os atalhos abrem em leque a partir do botão |
 | Barra | os atalhos ficam numa barra |
 
-[![Dock aberto no painel admin, com os atalhos favoritos listados a partir do botão flutuante](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-aberto.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-aberto.png)
+| Tema claro | Tema escuro |
+|---|---|
+| [![Dock aberto no painel admin em tema claro, com três favoritos de painéis diferentes e o grupo Atalhos](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-aberto.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-aberto.png) | [![Dock aberto no painel admin em tema escuro, com superfície e rótulos escuros](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-aberto-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-aberto-escuro.png) |
 
 ## Gerenciar atalhos
 
@@ -53,7 +62,9 @@ da tela, para distinguir telas de mesmo nome.
 | Envio inválido | um envio com chave fora do catálogo é recusado por inteiro, sem gravar nada |
 | Só destinos | um favorito é sempre um destino do catálogo — a lista de um Resource ou uma Page avulsa —, nunca uma URL digitada |
 
-[![Slideover Gerenciar atalhos, com o catálogo de destinos, os atalhos escolhidos em ordem e o seletor de layout](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-gerenciar.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-gerenciar.png)
+| Tema claro | Tema escuro |
+|---|---|
+| [![Slideover Gerenciar atalhos em tema claro, com os escolhidos rotulados por painel e organização e o catálogo aberto](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-gerenciar.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-gerenciar.png) | [![Slideover Gerenciar atalhos em tema escuro](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-gerenciar-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-gerenciar-escuro.png) |
 
 ## Adicionar esta página
 
@@ -79,7 +90,9 @@ volta se o acesso voltar, é preservado quando o usuário salva o slideover e co
 **Organização excluída.** O favorito de uma organização que não existe mais é descartado quando o
 usuário salva o slideover, assim como a chave que nunca foi destino.
 
-[![Barra do dock no painel app, com os favoritos em layout de barra](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-barra.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-barra.png)
+| Tema claro | Tema escuro |
+|---|---|
+| [![Dock no layout barra, em tema claro, no rodapé do painel admin](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-barra.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-barra.png) | [![Dock no layout barra, em tema escuro](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/dock-barra-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-barra-escuro.png) |
 
 ## Layout e estilo
 
@@ -97,6 +110,10 @@ O **layout** e o **estilo** padrão são definidos nas configurações do kit. O
 | `outline` | Contorno |
 | `contrast` | Contraste |
 | `tinted` | Tingido |
+
+## Tema escuro
+
+O dock acompanha o tema do painel, sem nenhuma configuração: quando o painel está em modo escuro, a superfície do dock, os itens e o slideover usam as cores escuras, inclusive quando o tema escuro é escolhido no próprio painel e o sistema operacional está em modo claro. As quatro opções de estilo têm variante escura. As imagens desta página mostram os dois temas lado a lado.
 
 ## Configuração
 

@@ -101,6 +101,15 @@ class KitArte extends Command
             'dock-adicionar',
             'dock-barra',
         ],
+        // O mesmo clipe em tema escuro: mesmos estados, mesma viewport. `dock-aberto-escuro`,
+        // `dock-gerenciar-escuro` e `dock-barra-escuro` também são IMAGENS.
+        'dock-de-atalhos-escuro' => [
+            'dock-fechado-escuro',
+            'dock-aberto-escuro',
+            'dock-gerenciar-escuro',
+            'dock-adicionar-escuro',
+            'dock-barra-escuro',
+        ],
     ];
 
     /**
@@ -158,6 +167,11 @@ class KitArte extends Command
         'dock-gerenciar',
         'dock-barra',
         'admin-configuracoes-dock',
+
+        // As mesmas três do dock em tema escuro, quadros do clipe `dock-de-atalhos-escuro`.
+        'dock-aberto-escuro',
+        'dock-gerenciar-escuro',
+        'dock-barra-escuro',
 
         // As duas telas de login com o desafio no ar, cada uma com chave real do
         // provedor. Só são geradas por quem tem as chaves no ambiente — os cenários

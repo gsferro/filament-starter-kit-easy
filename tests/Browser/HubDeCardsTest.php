@@ -74,6 +74,10 @@ it('desenha a grade de cartões do hub de infraestrutura', function (): void {
  */
 it('desenha a descrição dentro do cartão do hub de infraestrutura', function (): void {
     visit('/infra/hub-de-infraestrutura')
+        // Tema declarado, não herdado: no `composer art` este arquivo roda depois das capturas
+        // escuras do dock, e a emulação de `inDarkMode()` vaza para o cenário seguinte
+        // (`.ai/rules/testes-browser.md`) — sem isto, `art/infra-hub.png` sairia escura.
+        ->inLightMode()
         // 1400x875 é a proporção da galeria da documentação (thumb 760x475). Este cenário é o
         // ÚNICO lugar onde a tela do hub é capturada, e é ele que alimenta `art/infra-hub.png`
         // pelo `composer art` — ver ADR-05 da wiki `hub-de-cards-opcional`.
