@@ -517,10 +517,16 @@ it('documenta a lista do destino e o contorno para instalações anteriores, nos
  * `RedeDeDocumentacaoTest` atribui ao caso anterior tudo que vem antes do próximo `it(`. */
 function tagAnteriorNoCheckout(): bool
 {
-    $processo = new Process(['git', 'rev-parse', '--verify', '--quiet', 'v0.45.0^{commit}'], base_path(), timeout: 60);
-    $processo->run();
+    foreach (['v0.45.0', 'v0.45.1'] as $tag) {
+        $processo = new Process(['git', 'rev-parse', '--verify', '--quiet', $tag.'^{commit}'], base_path(), timeout: 60);
+        $processo->run();
 
-    return $processo->isSuccessful();
+        if (! $processo->isSuccessful()) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
@@ -1090,8 +1096,10 @@ it('[CT-16] a saída do git diff --name-status vira rótulo conforme haja origem
 ])->group('kit');
 
 /*
-| R9 — CT-18, só a parte automatizável: o diff da tag anterior até HEAD traz as dez views
-| autorais e nenhuma de pasta crua. O `kit:update --dry-run` com a classe antiga continua
+| R9 — CT-18, só a parte automatizável: o diff da tag anterior até a release que entregou o #148
+| (v0.45.1) traz as dez views autorais e nenhuma de pasta crua. Até a v0.45.1 e não até HEAD:
+| republicar uma pasta crua depois de um bump do pacote é o remédio que o CT-06 manda, e não pode
+| reprovar a checagem daquela release. O `kit:update --dry-run` com a classe antiga continua
 | procedimento da sessão (evidência do `03`).
 */
 
@@ -1110,7 +1118,7 @@ const VIEWS_AUTORAIS_DESTA_RELEASE = [
 ];
 
 it('[CT-18] cada view autoral difere da tag anterior, e nenhuma de pasta crua', function (): void {
-    $processo = new Process(['git', '-c', 'core.quotepath=off', 'diff', '--name-only', 'v0.45.0', 'HEAD', '--', 'resources/views/vendor'], base_path(), timeout: 120);
+    $processo = new Process(['git', '-c', 'core.quotepath=off', 'diff', '--name-only', 'v0.45.0', 'v0.45.1', '--', 'resources/views/vendor'], base_path(), timeout: 120);
     $processo->run();
 
     expect($processo->isSuccessful())->toBeTrue('git diff falhou: '.$processo->getErrorOutput());
@@ -1142,5 +1150,5 @@ it('[CT-18] cada view autoral difere da tag anterior, e nenhuma de pasta crua', 
     expect($deCrua)->toBe([], 'o diff da release toca views de pasta publish cru');
 })
     ->skip(fn (): bool => ! naArvoreDoKit(), 'a tag anterior só existe no git do kit')
-    ->skip(fn (): bool => ! tagAnteriorNoCheckout(), 'a tag anterior v0.45.0 não está neste checkout (checkout raso do CI)')
+    ->skip(fn (): bool => ! tagAnteriorNoCheckout(), 'as tags v0.45.0 e v0.45.1 não estão neste checkout (checkout raso do CI)')
     ->group('kit');

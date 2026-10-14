@@ -32,13 +32,14 @@ declare(strict_types=1);
  * Só `rgb(<número>` conta: `var(--primary-*)` é o pacote fazendo a coisa certa, e a regra do
  * próprio Filament não é problema nenhum.
  *
+ * @param  list<string>|null  $folhas  nulo = as folhas de `vendor/` em runtime
  * @return array<string, array{arquivo: string, seletor: string}> classe escapada => origem
  */
-function regrasDeVendorComCorPrimariaCravada(): array
+function regrasDeVendorComCorPrimariaCravada(?array $folhas = null): array
 {
     $encontradas = [];
 
-    $folhas = array_merge(
+    $folhas ??= array_merge(
         glob(base_path('vendor/*/*/resources/dist/*.css')) ?: [],
         glob(base_path('vendor/*/*/dist/*.css')) ?: [],
     );
@@ -149,13 +150,27 @@ it('conhece a especificidade das formas que decidem este arquivo', function (): 
 });
 
 it('encontra as regras de vendor que cravam cor primaria', function (): void {
-    // Sem controle positivo, uma regex quebrada devolve lista vazia e todo `foreach`
-    // abaixo fica verde sem exercitar nada.
-    $regras = regrasDeVendorComCorPrimariaCravada();
+    /*
+     * Sem controle positivo, uma regex quebrada devolve lista vazia e todo `foreach`
+     * abaixo fica verde sem exercitar nada. O controle é uma folha com as regras que o
+     * `croustibat/filament-jobs-monitor` 4.x publicava, e não o `vendor/` de hoje: a 5.x passou
+     * a usar `var(--primary-*)`, e uma varredura viva vazia é o resultado CERTO enquanto nenhum
+     * pacote cravar cor.
+     */
+    $folha = sys_get_temp_dir().'/cor-primaria-'.uniqid().'.css';
+    file_put_contents($folha, '@layer components{.bg-primary-500{--tw-bg-opacity:1;background-color:rgb(245 158 11/var(--tw-bg-opacity,1))}'
+        .'.text-primary-600{--tw-text-opacity:1;color:rgb(217 119 6/var(--tw-text-opacity,1))}'
+        .'.dark\:text-primary-400:is(.dark *){--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}'
+        .'.text-primary-700{color:var(--primary-700)}}');
 
-    expect($regras)->not->toBeEmpty(
-        'nenhum vendor crava cor primária — ou a varredura quebrou, ou o bloco do kit.css pode sair.',
-    )->and($regras)->toHaveKey('text-primary-600');
+    try {
+        $regras = regrasDeVendorComCorPrimariaCravada([$folha]);
+    } finally {
+        unlink($folha);
+    }
+
+    expect(array_keys($regras))->toEqualCanonicalizing(['bg-primary-500', 'text-primary-600', 'dark\:text-primary-400'])
+        ->and($regras['dark\:text-primary-400']['seletor'])->toBe('.dark\:text-primary-400:is(.dark *)');
 });
 
 it('corrige a MESMA classe que o vendor emite, e nao uma parecida', function (): void {
