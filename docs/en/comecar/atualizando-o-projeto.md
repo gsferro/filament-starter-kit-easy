@@ -167,7 +167,7 @@ section above, "A new kit dependency").
 
 A path that **entered** `CAMINHOS_DO_KIT` after your version — such as the authored folders under
 `resources/views/vendor` — is compared against **your tree**, not only tag against tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:693`): the file you do not have shows up as
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:695`): the file you do not have shows up as
 "novo no kit" even if the kit has not changed it since your version, and a file your project does not
 have shows up as "novo no kit" even if the kit changed it between the tags — that is the label `--only-new`
 applies. This behaviour holds from the version that introduced it (the class that runs is the installed

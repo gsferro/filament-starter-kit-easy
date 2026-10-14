@@ -166,7 +166,7 @@ viaja no `create-project`, mas no `kit:update` é **só relatório**, nunca apli
 
 Caminho que **entrou** em `CAMINHOS_DO_KIT` depois da sua versão — como as pastas autorais de
 `resources/views/vendor` — é comparado com a **sua árvore**, e não só tag com tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:693`): o arquivo que você não tem aparece como
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:695`): o arquivo que você não tem aparece como
 "novo no kit" mesmo que o kit não o tenha mudado desde a sua versão, e arquivo que o seu projeto não tem
 aparece como "novo no kit" ainda que o kit o tenha mudado entre as tags — é o rótulo que o `--only-new`
 aplica. Esse comportamento vale a partir da versão em que ele entrou (a classe que roda é a instalada):
