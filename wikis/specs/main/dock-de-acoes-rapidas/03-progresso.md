@@ -1,6 +1,6 @@
 # Progresso — Dock de ações rápidas
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-10-14
 
 ## 1. Dependência
 
@@ -84,7 +84,7 @@ Fatiamento confirmado: 2026-10-13 — gsferro — 1 rodada, 3 perguntas (Q25–Q
 - [x] Testes do dock — `pest tests/Kit/DockDeAtalhosTest.php` 124/124, `pest tests/Tenancy/DockDeAtalhosTenancyTest.php` 44/44, `ConfiguracoesDoKitTelaTest` 38/38, `PermissoesDeAcoes*` verdes, 2026-10-14
 - [x] `pest tests/Browser/DockDeAtalhosTest.php` — CT-B01 1/1 (1º run timeout de navegador frio, c; 2º verde sem alteração), 2026-10-14
 - [x] Suíte completa contra a baseline de `main` — `php artisan test --testsuite=Unit,Feature,Kit,Tenancy --parallel`: 4443 testes, falhas = `AgentesDaEsteiraTest` (baseline) + badge do README (corrigido, `SiteDeDocumentacaoTest` 68/68), 2026-10-14
-- [x] `pest --mutate --path=app/Support/DockDeAtalhos.php` (no Windows via `pestw.cmd`) — `XDEBUG_MODE=coverage cmd //c pestw.cmd tests/Kit/DockDeAtalhosTest.php --mutate --path=app/Support/DockDeAtalhos.php --covered-only --parallel`: 316 mutantes, 312 tested + 4 timeout, 0 sobreviventes, score 100,00 %, 671,57 s (duração plausível; falsificabilidade dos CT do step 9 provada à parte); `.env` md5 OK antes/depois, 2026-10-14
+- [x] `pest --mutate --path=app/Support/DockDeAtalhos.php` (no Windows via `pestw.cmd`) — sessão: `tests/Kit/DockDeAtalhosTest.php --mutate --path=app/Support/DockDeAtalhos.php --covered-only --parallel` = 316 mutantes cobertos, 0 sobreviventes, 671,57 s; **sem `--covered-only`** (medido pelo gate, ciclo 2): Kit sozinho 80 não cobertos, 79,80 %, 605,75 s; Kit + Tenancy (`--testsuite=Kit,Tenancy --filter=DockDeAtalhos --no-cache`) 396 mutantes, 364 tested + 1 timeout, 0 sobreviventes cobertos, **31 não cobertos, 92,17 %**, 658,29 s — os 31 viram débito QA-06 *(alterado em 2026-10-14: QA-07, ciclo 2 do quality gate)*; `.env` md5 OK antes/depois, 2026-10-14
 - [x] Custo medido — CT-35, 36, 56, 65 (ligado × desligado × sem plugin) e CT-71, 72 (0 × 3 favoritos, P-04) verdes, 2026-10-14
 - [x] `/code-review high main...HEAD` + passe de eixos (step 9) — 14 achados, 12 confirmados e roteados, 2 rejeitados com motivo (`## Revisão do Diff`), 2026-10-14
 - [x] Desvios propagados — `01` (passos 4/6, Mapeamentos) e `02` (ADR-01, Superfície Livewire) com `*(alterado em 2026-10-14: …)*`, 2026-10-14
@@ -140,12 +140,20 @@ Falsificabilidade (2026-10-14, no próprio repositório, escopo estreito — sem
 
 ## Quality Gate
 
-- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-10-14 — 0 Blocker, 2 Major (QA-01, QA-02: o `01` afirmava cast de `dock_layout` e barreiras que o código não tem), 2 Minor (QA-03 termo do glossário; QA-04 passe Ponytail), 1 Cosmético (QA-05); não verificadas D (parcial), G, H, K2 (o `--mutate` ainda rodava). Correções só de texto: `01` passos 6/7 e `## Autorização`, "organização aberta" no `01`/`04`/docs, 3 termos no `wikis/glossario.md`, linha do Ponytail e checklists dos passos no `03`; K2 fechada depois (316 mutantes, 0 sobreviventes)
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-10-14 — 0 Blocker, 2 Major (QA-01, QA-02: o `01` afirmava cast de `dock_layout` e barreiras que o código não tem), 2 Minor (QA-03 termo do glossário; QA-04 passe Ponytail), 1 Cosmético (QA-05); não verificadas D (parcial), G, H, K2 (o `--mutate` ainda rodava). Correções só de texto: `01` passos 6/7 e `## Autorização`, "organização aberta" no `01`/`04`/docs, 3 termos no `wikis/glossario.md`, linha do Ponytail e checklists dos passos no `03`; K2 fechada depois pela sessão com `--covered-only` (316 cobertos, 0 sobreviventes) — o número completo está no ciclo 2
+- **Ciclo**: 2 · **Veredito**: APROVADO COM DÉBITO · **Data**: 2026-10-14 — 0 Blocker, 0 Major, 3 Minor, 1 Cosmético; teto por D (parcial), G e H não verificadas (sem Playwright MCP, sem CT-B em tema escuro nem `assertNoAccessibilityIssues()`, log real não lido)
 - **Relatório**: `06-relatorio-qa.md`
+- **Débito**:
+  - QA-03 (Minor) — "organização corrente" no `02`, `04` e doc en: **corrigido depois do ciclo 2** pela sessão (só texto), 2026-10-14
+  - QA-06 (Minor) — 31 mutantes não cobertos em `DockDeAtalhos` (recusa do servidor em `gravar()` atrás do `Select`; chaves adulteradas no JSON; `habilitadoNoPainel(null)`; logs) — **aberto**, destino `feature-test-design`
+  - QA-07 (Minor) — score sem os não cobertos: **corrigido depois do ciclo 2** na `## Verificação Final`, 2026-10-14
+  - QA-08 (Cosmético) — docblocks com P-01: **corrigido depois do ciclo 2** (só comentário em `DockDeAtalhos.php`), 2026-10-14
+  - Dimensões não verificadas: D (log real), G (tema escuro), H (acessibilidade) — sem Playwright MCP
+  - Dívida do passe de complexidade (`## Verificação Final`) e Q28 aberta ao solicitante (P-02 implementada pela recomendação)
 
 ## Candidatos a Rule
 
-<!-- Step 12. -->
+- 2026-10-14 — não executado: a `requirement-to-rule` exige o próprio prompt de aprovação ao solicitante antes de gravar rule, e a execução foi autorizada sem perguntas; o gate (ciclos 1 e 2) não apontou candidato que passe em *Vale virar rule*. Pendente para o solicitante invocar
 
 ## Auditoria Pré-Implementação
 
@@ -221,6 +229,7 @@ Baseline `main` (2026-10-13): `php artisan test --testsuite=Unit,Feature,Kit,Ten
 | 25 | 9 | `general-purpose` como `construtor` — correções RD-01, CR-01…05, CR-08, CR-09, RD-03…05 | opus | `03`, raciocínio da sessão | 7 achados corrigidos (RD-01, CR-01, CR-03, CR-04, CR-05/RD-02, RD-03, RD-04, RD-05, CR-09), CR-08 mantido (tirar `->in()` quebrou o CT-09), CR-02 parcial: 1 consulta por favorito Resource vinda do `Gate::before` → `isMasterGlobal()` (global, sem memo) — premissa P-01 substituída por P-04 pela sessão; `Paineis::shieldNovo()` público; `User::motivoDaNegativaDoPainel()` sem log | 237.456 tokens · 1.482 s | pint, filacheck, PHPStan limpos (relato); Kit 122/123, Tenancy 41/42 (CT-71/72); 8 suítes de User/Paineis 826/826 (relato); citações de `tests/` deslocadas corrigidas pela sessão (`CitacoesDeCodigoTest` 3/3) |
 | 26 | 9 | Codex CLI (`--yolo`) — reescrita de CT-71/72 para a P-04 | modelo padrão do Codex (não exposto) | `01`, `02`, `03` | CT-71 2/2, CT-72 3/3; arquivos inteiros Kit 124/124, Tenancy 44/44 | — | `git status` sem arquivo novo; LF |
 | 27 | 11 | `fw-qa-gate` — quality gate (`.claude/agents/fw-qa-gate.md` de versão anterior à de `.ai/skills`: falha pré-existente do `AgentesDaEsteiraTest`, não alterada neste PR) | opus (agente) | conversa | `06` ciclo 1: REPROVADO → especificação (2 Major de texto, 2 Minor, 1 Cosmético); 8/12 dimensões | 262.774 tokens · 1.402 s | `06` gravado verbatim entre `<<<06`/`>>>06` (o transcript não expôs o texto final ao script; gravado a partir do retorno, só com o escape HTML desfeito); `git status` antes = depois; md5 de `app/` igual; o `03` mudou por edição da sessão (registro da mutação) |
+| 28 | 11 | `fw-qa-gate` — ciclo 2 | opus (agente) | conversa | `06` ciclo 2: APROVADO COM DÉBITO (3 Minor, 1 Cosmético); 9/12 dimensões; K2 refeita sem `--covered-only` | 210.525 tokens · 2.863 s | `06` gravado verbatim a partir do retorno; `git status` antes = depois; md5 de `app/` e wiki iguais (exceto o `06`, regravado pela sessão) |
 
 ## Blockers
 

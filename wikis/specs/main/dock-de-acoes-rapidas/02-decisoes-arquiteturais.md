@@ -20,7 +20,7 @@ Chamar `$destino::canAccess()` a partir de outro painel daria a resposta do cont
 
 `DockDeAtalhos::podeAbrir()` avalia cada favorito **dentro do contexto do painel dele**: fixa o painel corrente (`Filament::setCurrentPanel`), a organização (`Filament::setTenant`, só no `/app`) e o `team_id` (`ContextoDePapeis::em`, com `CONTEXTO_GLOBAL` fora do `/app`), e restaura os três no `finally`. Antes de qualquer troca, exige: painel existente, destino presente em `getResources()`/`getPages()` daquele painel, `canAccessPanel()` e, no `/app`, `canAccessTenant()`. Qualquer exceção na avaliação nega o favorito.
 
-*(alterado em 2026-10-14: step 9)* Duas complementações: (1) a troca de contexto também descarta o `FilamentShield` memorizado (`Paineis::shieldNovo()`) antes de avaliar destino de outro painel e de novo no `finally` — o mapa de Pages do Shield é memorizado por instância e, sem isso, Page de outro painel caía no fail-open do `HasPageShield` (achado RD-01); (2) favorito do painel **e** da organização correntes não troca contexto nem confere `canAccessPanel()`/`canAccessTenant()`: o middleware persistente do painel já fixou painel, tenant e `team_id` (premissa P-04, achado CR-02). A consulta de acesso a painel do dock usa `User::motivoDaNegativaDoPainel()`, que não grava log (achado RD-05).
+*(alterado em 2026-10-14: step 9)* Duas complementações: (1) a troca de contexto também descarta o `FilamentShield` memorizado (`Paineis::shieldNovo()`) antes de avaliar destino de outro painel e de novo no `finally` — o mapa de Pages do Shield é memorizado por instância e, sem isso, Page de outro painel caía no fail-open do `HasPageShield` (achado RD-01); (2) favorito do painel **e** da organização abertos não troca contexto nem confere `canAccessPanel()`/`canAccessTenant()`: o middleware persistente do painel já fixou painel, tenant e `team_id` (premissa P-04, achado CR-02). A consulta de acesso a painel do dock usa `User::motivoDaNegativaDoPainel()`, que não grava log (achado RD-05).
 
 ### Alternativas Consideradas
 
@@ -31,7 +31,7 @@ Chamar `$destino::canAccess()` a partir de outro painel daria a resposta do cont
 ### Consequências
 
 - **Positivas**: a resposta do dock é a mesma que a tela daria se o usuário a abrisse; nenhum destino de outro painel aparece por fail-open
-- **Negativas**: até 10 trocas de contexto por montagem do dock (memo por request, D8); o catálogo do `/app` fica restrito à organização corrente (D7) para não multiplicar trocas por organização
+- **Negativas**: até 10 trocas de contexto por montagem do dock (memo por request, D8); o catálogo do `/app` fica restrito à organização aberta (D7) para não multiplicar trocas por organização
 - **Riscos**: contexto que não é restaurado contamina o resto do request (painel ou `team_id` errados) — mitigado pelo `finally` e por CT que confere painel, tenant e `team_id` depois da montagem
 
 ### Referências

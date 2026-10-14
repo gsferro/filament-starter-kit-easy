@@ -54,7 +54,7 @@ destination cannot be added twice.
 **Managing.** The **Manage shortcuts** option of the dock opens a slideover, where the user picks
 destinations, removes them and **reorders** them — the dock order is the one they choose. Each
 destination carries the panel (and, in the organisation panel, the organisation) before the group
-and the screen. In the organisation panel, the new screens offered are only those of the current
+and the screen. In the organisation panel, the new screens offered are only those of the open
 organisation; already-saved favourites the user can still open show among the chosen ones in any
 panel, with the panel and organisation label, and can be removed or reordered. A submission with a
 key outside the catalogue is refused as a whole, saving nothing.

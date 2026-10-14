@@ -97,7 +97,7 @@
 
 ## Matriz estado × operação do favorito
 
-Estados (derivados no uso, não gravados): **visível** (destino que o usuário abre), **oculto** (destino válido que ele deixou de poder abrir — RQ-19, RQ-27), **inválido** (chave gravada que nunca foi destino do catálogo — RQ-11, RQ-27 — ou favorito de organização excluída — P-02), **de outra organização** (destino do `/app` que ele abre, gravado em organização diferente da corrente, ou visto de outro painel — RQ-25, RQ-35). O favorito de organização à qual ele **perdeu** o acesso é estado **oculto**. Operações: exibir no dock · regravar o slideover sem tocá-lo · remover pelo slideover · contar no teto.
+Estados (derivados no uso, não gravados): **visível** (destino que o usuário abre), **oculto** (destino válido que ele deixou de poder abrir — RQ-19, RQ-27), **inválido** (chave gravada que nunca foi destino do catálogo — RQ-11, RQ-27 — ou favorito de organização excluída — P-02), **de outra organização** (destino do `/app` que ele abre, gravado em organização diferente da aberta, ou visto de outro painel — RQ-25, RQ-35). O favorito de organização à qual ele **perdeu** o acesso é estado **oculto**. Operações: exibir no dock · regravar o slideover sem tocá-lo · remover pelo slideover · contar no teto.
 **4 estados × 4 operações = 16 células** — 11 válidas (✅), 5 inválidas (❌), 0 lacunas.
 Legenda (auditada célula a célula):
 - ✅ = a operação produz o efeito que o requisito manda, e o `Então` afirma o valor gravado/exibido
@@ -1096,7 +1096,7 @@ Nota CT-40: a linha do slideover não afirma se o envio é gravado sem a repeti�
       Exemplos:
         | onde       | de_qual     | inclui_ou_nao | # célula                                  |
         | /app/acme  | da Acme     | incluem       | organização aberta                      |
-        | /app/acme  | da Globex   | não incluem   | organização vinculada, mas não a corrente |
+        | /app/acme  | da Globex   | não incluem   | organização vinculada, mas não a aberta |
         | /admin     | da Acme     | não incluem   | aberto fora do /app                       |
         | /admin     | da Globex   | não incluem   | aberto fora do /app                       |
 
@@ -1553,7 +1553,7 @@ Nota R27: CT-73 é o **invariante das duas leituras** da Q28 (um favorito cujo d
 
 | Item | Cenário que mata | Grupo |
 |---|---|---|
-| IDOR / autorização horizontal | CT-13 (usuário × usuário), CT-28 (organização), CT-43 e CT-52 linhas "não gravado" (organização vinculada, mas não a corrente, e chave do /app enviada do /admin), CT-61 (organização sem acesso), CT-17 linha "destino que ana não pode abrir" | G1, G4 |
+| IDOR / autorização horizontal | CT-13 (usuário × usuário), CT-28 (organização), CT-43 e CT-52 linhas "não gravado" (organização vinculada, mas não a aberta, e chave do /app enviada do /admin), CT-61 (organização sem acesso), CT-17 linha "destino que ana não pode abrir" | G1, G4 |
 | Autorização exercida na ação (não só `can()`) | CT-03 (as duas actions), CT-05, CT-39 (action escondida chamada direto em tela de registro), CT-59 (concessão real pela tela de papéis), CT-68 (Page de outro painel na gravação), CT-75 (reconferência no clique) | G1, G2 |
 | Idempotência (ancorada no agregado) | CT-75 linha "duas abas" (adição repetida por corrida entre abas), CT-16 linha "mesma lista" e CT-40 (a mesma página adicionada de novo; chave repetida no envio), ambos sobre os favoritos gravados; CT-64 (o mesmo Resource em outra organização **não** é repetição) | G1, G4 |
 | Cache em store de banco (RQ-22) | lacuna declarada (pilha): `CACHE_STORE=array` no `phpunit.xml` torna a leitura de cache invisível à contagem — M130; tentativa prevista em R13 | G2 |

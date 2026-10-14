@@ -45,7 +45,7 @@ use WeakMap;
  * avaliado em `noContexto()`, que fixa painel, organização, `team_id` do spatie e o mapa de Pages
  * do Shield, e restaura os quatro no `finally`.
  *
- * Favorito do painel E da organização deste request não troca nada (P-01): o middleware do painel
+ * Favorito do painel E da organização deste request não troca nada (P-04): o middleware do painel
  * já fixou os três e já conferiu painel e organização — ver `organizacaoDoRequest()`.
  *
  * ## Memo por request (D8, CR-04)
@@ -525,8 +525,9 @@ final class DockDeAtalhos
      * `shouldRegisterNavigation()` e `canAccess()` dentro do contexto do destino.
      *
      * Favorito do painel e da organização deste request pula as conferências de painel e de
-     * organização e a troca de contexto (P-01, `organizacaoDoRequest()`): ele custa zero consulta
-     * a mais que a página já fez.
+     * organização e a troca de contexto (P-04, `organizacaoDoRequest()`): sem recarga de papéis nem
+     * busca da organização; a única consulta admitida é a da autorização da própria tela
+     * (`Gate::before` → `User::isMasterGlobal()`), a mesma de cada item da barra lateral.
      *
      * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}|null
      */
@@ -594,7 +595,7 @@ final class DockDeAtalhos
 
     /**
      * A organização do favorito quando ele é do painel E da organização deste request: `null` em
-     * painel sem tenancy, a organização aberta no `/app`; `false` em qualquer outro caso (P-01).
+     * painel sem tenancy, a organização aberta no `/app`; `false` em qualquer outro caso (P-04).
      *
      * Nesse caso não há o que conferir nem o que trocar. O Filament registra `Authenticate`,
      * `IdentifyTenant` e `SetUpPanel` como middleware PERSISTENTE do Livewire
