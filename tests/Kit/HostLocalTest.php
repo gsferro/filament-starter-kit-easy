@@ -139,6 +139,11 @@ function responderPerguntas(array $respostas, array &$feitas): void
         return array_shift($respostas);
     };
 
+    // O framework zera o estado estático do Prompts entre os casos (`Prompt::flushState()`), e
+    // com ele a chave que o `configurePrompts()` ligou no primeiro comando: sem religá-la aqui, o
+    // fallback registrado abaixo nunca é chamado.
+    Prompt::fallbackWhen(true);
+
     ConfirmPrompt::fallbackUsing(static function (ConfirmPrompt $prompt) use ($proxima, &$feitas): bool {
         $feitas[]  = ['label' => $prompt->label, 'default' => $prompt->default, 'hint' => $prompt->hint];
         $resposta  = $proxima();
