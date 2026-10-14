@@ -86,7 +86,7 @@
 | `main` | `convite-para-usuario-existente` | 55/56 itens | não fatiada | `[█████████░] 98 %` do 03 | — | — | [03](main/convite-para-usuario-existente/03-progresso.md) |
 | `main` | `customizador-de-instalacao` | 58/58 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](main/customizador-de-instalacao/03-progresso.md) |
 | `main` | `dashboard-dinamico-nos-paineis` | 28/28 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](main/dashboard-dinamico-nos-paineis/03-progresso.md) |
-| `main` | `dock-de-acoes-rapidas` | 7/53 itens · em implementação | 7: concluído 7 | `[██████████] 100 %` 7/7 tickets | todos concluídos | — | [03](main/dock-de-acoes-rapidas/03-progresso.md) · [quadro](main/dock-de-acoes-rapidas/07-tickets/README.md) |
+| `main` | `dock-de-acoes-rapidas` | 8/54 itens · em revisão | 8: concluído 8 | `[██████████] 100 %` 8/8 tickets | todos concluídos | — | [03](main/dock-de-acoes-rapidas/03-progresso.md) · [quadro](main/dock-de-acoes-rapidas/07-tickets/README.md) |
 | `main` | `graficos-com-apexcharts` | 50/50 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](main/graficos-com-apexcharts/03-progresso.md) |
 | `main` | `hub-de-navegacao-em-cards` | 39/40 itens | não fatiada | `[█████████░] 97 %` do 03 | — | — | [03](main/hub-de-navegacao-em-cards/03-progresso.md) |
 | `main` | `insights-das-organizacoes` | 42/42 itens | não fatiada | `[██████████] 100 %` do 03 | — | APROVADO (ciclo 2) | [03](main/insights-das-organizacoes/03-progresso.md) |

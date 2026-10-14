@@ -2,7 +2,7 @@
 
 **Entrega**: O favorito de um painel aparece no dock de qualquer painel com o dock ligado e abre no painel dele; quando o usuário perde o acesso, o favorito some do dock e do slideover, continua gravado, conta no limite e volta com o acesso.
 **RQ cobertas**: RQ-15, RQ-19, RQ-27, RQ-32
-**CT que ficam verdes**: CT-23, CT-24, CT-25, CT-45, CT-46, CT-47, CT-53, CT-54, CT-60
+**CT que ficam verdes**: CT-23, CT-24, CT-25, CT-45, CT-46, CT-47, CT-53, CT-54, CT-60, CT-66, CT-67, CT-68
 **CT-B**: —
 **Passos do 01 envolvidos**: 7, 8 — [01 › Estrutura de Implementação](../01-plano-acao.md#estrutura-de-implementação)
 **Bloqueado por**: 03, 05

@@ -53,7 +53,7 @@ entra duas vezes.
 **Gerenciar.** A opção **Gerenciar atalhos** do dock abre um slideover, onde o usuário escolhe
 os destinos, remove e **reordena** — a ordem do dock é a que ele escolhe. Cada destino traz o
 painel (e, no painel de organização, a organização) antes do grupo e da tela. No painel de
-organização, as telas novas oferecidas são só as da organização corrente; os favoritos já
+organização, as telas novas oferecidas são só as da organização aberta; os favoritos já
 gravados que o usuário ainda pode abrir aparecem entre os escolhidos em qualquer painel, com o
 rótulo de painel e organização, e podem ser removidos ou reordenados. Um envio com chave fora do
 catálogo é recusado por inteiro, sem gravar nada.

@@ -59,7 +59,7 @@
 | R15 — a opção "adicionar esta página" só aparece em destino do catálogo que ainda não é favorito | fronteira (completo) | RQ-23, RQ-28 | EP (tipo de página) + autorização na ação | CT-38, CT-39 |
 | R16 — o mesmo destino nunca fica gravado duas vezes; o mesmo Resource em outra organização é outro destino | fronteira (completo) | RQ-28, RQ-16 | EP (entrada: página atual × slideover; organização igual × diferente) + idempotência no agregado | CT-40, CT-63, CT-64 |
 | R17 — a instalação nova concede o dock aos papéis de administração dos três painéis e não ao `panel_user` | inventário (mínimo) | RQ-24 | matriz papel × permissão | CT-41, CT-42 |
-| R18 — o catálogo do `/app` é só da organização corrente e só dentro do `/app`; favoritos de outras organizações continuam | autorização (completo) | RQ-25, RQ-12, RQ-16, RQ-32 | tabela de decisão (onde abre × organização da tela) + estado × operação | CT-43, CT-44 |
+| R18 — o catálogo do `/app` é só da organização aberta e só dentro do `/app`; favoritos de outras organizações continuam | autorização (completo) | RQ-25, RQ-12, RQ-16, RQ-32 | tabela de decisão (onde abre × organização da tela) + estado × operação | CT-43, CT-44 |
 | R19 — o favorito oculto fica fora do slideover, é preservado ao salvar e conta no teto; chave que nunca foi destino é descartada ao salvar e, enquanto gravada, ocupa vaga | fronteira (completo) | RQ-27, RQ-32, RQ-19, RQ-18, RQ-15 | tabela estado × operação + BVA com oculto e com inválida | CT-45, CT-46, CT-47, CT-53, CT-54, CT-60 |
 | R20 — a ordem dos atalhos é a escolhida pelo usuário; a página adicionada entra no fim | fronteira (completo) | RQ-30, RQ-33, RQ-20 | EP (ordem ≠ alfabética ≠ catálogo ≠ painel) + 2-switch (grava → reordena) | CT-48, CT-49 |
 | R21 — o rótulo de cada destino no slideover traz o painel (e, no `/app`, a organização) antes do grupo e da tela | autorização (completo) | RQ-31 | EP (destinos homônimos em painéis/organizações diferentes) | CT-50 |
@@ -67,7 +67,7 @@
 | R23 — Page de outro painel sem a permissão dela não vale como favorito, mesmo com o mapa de Pages do painel corrente já montado no request | autorização (completo) | RQ-04, RQ-15 (RD-01) | matriz papel × tela com estado do framework fixado + controle positivo | CT-66, CT-67, CT-68 |
 | R24 — depois de salvar no slideover, o dock da mesma requisição já mostra os favoritos novos, na ordem nova | fronteira (completo) | RQ-10, RQ-30 (CR-01) | 2-switch no mesmo componente | CT-69 |
 | R25 — payload forjado nos métodos públicos tipados do componente não estoura e não grava | autorização (completo) | RQ-13 (CR-05, RD-02) | EP de tipo errado | CT-70 |
-| R26 — favorito do painel e da organização correntes não recarrega papéis nem busca a organização; admite só a consulta da autorização da tela | settings (padrão) | P-04 (CR-02; substitui P-01) | contagem 0 × 3 com atribuição pela pilha + limite superior, mesmo aquecimento | CT-71, CT-72 |
+| R26 — favorito do painel e da organização abertas não recarrega papéis nem busca a organização; admite só a consulta da autorização da tela | settings (padrão) | P-04 (CR-02; substitui a premissa anterior) | contagem 0 × 3 com atribuição pela pilha + limite superior, mesmo aquecimento | CT-71, CT-72 |
 | R27 — favorito de organização excluída não aparece no slideover e sai ao salvar | fronteira (completo) | P-02 (CR-03), RQ-27 | estado × operação + BVA do teto | CT-73, CT-74 |
 | R28 — "adicionar esta página" que não pode mais ser feito avisa e não muda nada | fronteira (completo) | P-03 (RD-03), RQ-21, RQ-28 | EP do motivo + rastreio de não-efeito | CT-75 |
 
@@ -112,7 +112,7 @@ Legenda (auditada célula a célula):
 | inválido | ❌ CT-18 | ❌ descartado — CT-46 (linha "mesma lista"), CT-74 (organização excluída) | ❌ descartado — CT-46 (linha "troca"), CT-73 (não é opção nem escolhido) | ✅ conta — CT-47 (linhas "inválida", RQ-32) |
 | de outra organização | ✅ CT-26 | ✅ preservado — CT-44 (linha "salva sem tocar"), CT-52 (linha "/admin, sem tocar") | ✅ removível — CT-52 (linhas "remover" no /app/acme e no /admin, RQ-35) | ✅ conta — CT-44 (linha "teto") |
 
-Personas da matriz: `ana` (só `/app`), `bruno` (`/admin` + `/app`) e, na linha "de outra organização", o `usuario` de `duasOrganizacoes()` — o destino oculto é de painel diferente do painel em que o dock é visto (CT-24), e o de outra organização é visto de dentro da organização corrente (CT-44).
+Personas da matriz: `ana` (só `/app`), `bruno` (`/admin` + `/app`) e, na linha "de outra organização", o `usuario` de `duasOrganizacoes()` — o destino oculto é de painel diferente do painel em que o dock é visto (CT-24), e o de outra organização é visto de dentro da organização aberta (CT-44).
 
 ## Costuras de Teste
 
@@ -146,7 +146,7 @@ Personas da matriz: `ana` (só `/app`), `bruno` (`/admin` + `/app`) e, na linha 
 | `DockPosition::BottomCenter`, atalho `mod+.` | posição está em Fora de Escopo; atalho de teclado sem RQ | sem cenário |
 | `->authorize('Usar:Dock')` nas actions | o oráculo vem de RQ-13 + taxonomia (autorização na ação), não do PRD | CT-03 |
 | papéis que recebem `Usar:Dock` no seeder; subtração do `panel_user` | agora determinado por RQ-24; o mapa de painéis da permissão no seeder é do plano | CT-41, CT-42 afirmam papel × tem/não tem |
-| catálogo só da organização corrente (D7) | agora determinado por RQ-25 (novas opções) e RQ-35 (escolhidos em qualquer slideover) | CT-43, CT-44, CT-52, CT-55, CT-61 |
+| catálogo só da organização aberta (D7) | agora determinado por RQ-25 (novas opções) e RQ-35 (escolhidos em qualquer slideover) | CT-43, CT-44, CT-52, CT-55, CT-61 |
 | "`gravar()` aceita chave do catálogo **ou** favorito já gravado ainda autorizado" | com RQ-35 o plano coincide no aceite do favorito já gravado e ainda abrível; diverge em dois pontos: a chave inválida já gravada recusa o envio (RQ-29) e o favorito gravado sem acesso é preservado (RQ-27), não descartado | CT-52, CT-54, CT-62 (M121 e M127 são as leituras do plano) |
 | linhas de log do channel `dock-de-acoes-rapidas` | log não é cláusula (Proibição 12) | dimensão D do quality gate |
 | notificação de sucesso de `adicionarPaginaAtual` | o requisito só pede aviso na **recusa** (RQ-26) | sem cenário |
@@ -553,7 +553,7 @@ Nota CT-04: a linha da Acme é o **controle positivo** — sem ela, "não conté
 
 ## Regra R7 — o catálogo é gerado das telas que o usuário pode abrir
 
-> `RQ-12`, `RQ-11`, `RQ-04` · perfil **completo** · técnica: **matriz papel × tela** (persona discriminante: mesmo papel com e sem a permissão da tela) · o recorte do `/app` por organização corrente está em R18 (RQ-25)
+> `RQ-12`, `RQ-11`, `RQ-04` · perfil **completo** · técnica: **matriz papel × tela** (persona discriminante: mesmo papel com e sem a permissão da tela) · o recorte do `/app` por organização aberta está em R18 (RQ-25)
 
 ```gherkin
   Regra: o slideover oferece todas as telas que o usuário abre, em todos os painéis que acessa, e nenhuma outra
@@ -653,7 +653,7 @@ Nota CT-21 (`@premissa` de mecanismo): `painelRegistradoEmTeste()` + uma Page re
 
 ## Regra R9 — favorito do painel de organização guarda a organização, abre nela e some sem o acesso
 
-> `RQ-16`, `RQ-19`, `RQ-21` · perfil **completo** · técnica: **tabela de decisão** (vínculo × papel na organização × organização existe) + **2-switch** com uso intermediário observado (desvincula → abre → revincula) + IDOR por organização + discriminante nulo (dock fora do `/app`, sem organização corrente: CT-26, CT-58) + organização da rota × da sessão (CT-51)
+> `RQ-16`, `RQ-19`, `RQ-21` · perfil **completo** · técnica: **tabela de decisão** (vínculo × papel na organização × organização existe) + **2-switch** com uso intermediário observado (desvincula → abre → revincula) + IDOR por organização + discriminante nulo (dock fora do `/app`, sem organização aberta: CT-26, CT-58) + organização da rota × da sessão (CT-51)
 
 ```gherkin
   Regra: o favorito do /app pertence à organização em que foi criado
@@ -666,7 +666,7 @@ Nota CT-21 (`@premissa` de mecanismo): `painelRegistradoEmTeste()` + uma Page re
 
       Exemplos:
         | onde                       | # partição                       |
-        | /app/acme                  | outra organização corrente       |
+        | /app/acme                  | outra organização aberta       |
         | /admin (sem organização)   | discriminante nulo               |
 
     Esquema do Cenário: [CT-27] sem acesso à organização, o favorito dela some da página e continua gravado
@@ -714,14 +714,14 @@ Nota CT-27: a organização **excluída** depois do favorito gravado fica no CT-
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M48 | organização não guardada; o favorito abre na organização corrente | CT-26 | linha /app/acme: href da Globex; o mutante gera da Acme |
-| M49 | sem organização corrente (/admin), o favorito do /app quebra ou some | CT-26 | linha /admin: href da Globex presente; o mutante lança ou omite |
+| M48 | organização não guardada; o favorito abre na organização aberta | CT-26 | linha /app/acme: href da Globex; o mutante gera da Acme |
+| M49 | sem organização aberta (/admin), o favorito do /app quebra ou some | CT-26 | linha /admin: href da Globex presente; o mutante lança ou omite |
 | M50 | vínculo com a organização não conferido no uso | CT-27 | linha "perdeu o vínculo": sem PG; o mutante mostra |
-| M51 | permissão do favorito avaliada com o papel da organização corrente (Acme) | CT-27 | linha "papel na organização": sem PG; o mutante usa o papel da Acme e mostra |
+| M51 | permissão do favorito avaliada com o papel da organização aberta (Acme) | CT-27 | linha "papel na organização": sem PG; o mutante usa o papel da Acme e mostra |
 | M52 | favorito de organização sem acesso apagado no uso | CT-27 | linha 2-switch: a abertura intermediária sem vínculo é o uso; depois de revincular, PG volta e gravados continuam PA e PG; o mutante apagou na abertura intermediária |
 | M53 | gravação aceita qualquer id de organização na chave | CT-28 | linha "sem vínculo": favoritos = [PA]; o mutante grava [PA, chave] |
 | M106 | a página adicionada guarda a organização da sessão ou a primeira vinculada, não a da rota — revisão adversarial ADV-02 | CT-51 | favorito = projetos da Globex; o mutante grava os da Acme |
-| M107 | fora do /app (sem organização corrente) o vínculo não é conferido — revisão adversarial ADV-11 | CT-58 | HTML do /admin sem o link de PG; o mutante mostra |
+| M107 | fora do /app (sem organização aberta) o vínculo não é conferido — revisão adversarial ADV-11 | CT-58 | HTML do /admin sem o link de PG; o mutante mostra |
 
 ---
 
@@ -737,7 +737,7 @@ Nota CT-27: a organização **excluída** depois do favorito gravado fica no CT-
       E a permissão K, que o admin_app e o admin global têm e o panel_user não tem (ex.: listar usuários), conferida no arranjo nos três papéis
       E dani com o favorito <favorito>, no /app/acme, onde ela não tem K (o papel global não vale dentro da organização)
       Quando o componente do dock é renderizado na Acme
-      Então o painel corrente é o /app, a organização corrente é a Acme e o `team_id` de permissões é o da Acme
+      Então o painel corrente é o /app, a organização aberta é a Acme e o `team_id` de permissões é o da Acme
       E dani não tem K
 
       Exemplos:
@@ -755,7 +755,7 @@ Nota CT-29: a linha "outro painel" só discrimina porque K vale no contexto glob
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M54 | painel corrente trocado para avaliar e não restaurado | CT-29 | linha "outro painel": painel corrente = app; o mutante deixa admin |
-| M55 | organização corrente trocada e não restaurada | CT-29 | linha "outra organização": organização = Acme; o mutante deixa Globex |
+| M55 | organização aberta trocada e não restaurada | CT-29 | linha "outra organização": organização = Acme; o mutante deixa Globex |
 | M56 | `team_id` de permissões trocado e não restaurado | CT-29 | linhas "outro painel" e "outra organização": dani não tem K; o mutante deixa o contexto global ou o da Globex, onde ela tem K |
 | M57 | restauração fora do `finally`: exceção na avaliação deixa o contexto trocado | CT-29 | linha "lança depois da troca": painel /app, Acme e `team_id` da Acme; o mutante fica no painel de teste |
 | M58 | memo do Shield (lista de telas por painel) do painel avaliado sobrevive à troca | ⚠️ **sem matador** — o efeito só aparece em telas do Shield renderizadas DEPOIS do dock no mesmo request; o dock fica no fim do `BODY`, então nenhuma tela observável roda depois; tentado: expor pela própria `canAccess()` de uma Page do /app chamada após o render — mede o vendor, não o requisito | — (lacuna declarada) |
@@ -1081,21 +1081,21 @@ Nota CT-40: a linha do slideover não afirma se o envio é gravado sem a repeti�
 
 ---
 
-## Regra R18 — o catálogo do `/app` é só da organização corrente e só dentro do `/app`; favoritos de outras organizações continuam
+## Regra R18 — o catálogo do `/app` é só da organização aberta e só dentro do `/app`; favoritos de outras organizações continuam
 
 > `RQ-25`, `RQ-12`, `RQ-16`, `RQ-32` · perfil **completo** · técnica: **tabela de decisão** (onde o slideover abre × organização da tela) + **estado × operação** (linha "de outra organização" da matriz)
 
 ```gherkin
   Regra: o slideover oferece telas do /app só da organização em que está aberto, e salvar não apaga favorito de outra organização
 
-    Esquema do Cenário: [CT-43] telas do /app oferecidas só da organização corrente e só dentro do /app
+    Esquema do Cenário: [CT-43] telas do /app oferecidas só da organização aberta e só dentro do /app
       Dado o usuario de duasOrganizacoes (panel_user na Acme e na Globex, admin global), com Usar:Dock, e o dock ligado no /app e no /admin
       Quando ele abre o slideover de gerenciar atalhos em <onde>
       Então as opções de destino <inclui_ou_nao> a lista de projetos <de_qual>
 
       Exemplos:
         | onde       | de_qual     | inclui_ou_nao | # célula                                  |
-        | /app/acme  | da Acme     | incluem       | organização corrente                      |
+        | /app/acme  | da Acme     | incluem       | organização aberta                      |
         | /app/acme  | da Globex   | não incluem   | organização vinculada, mas não a corrente |
         | /admin     | da Acme     | não incluem   | aberto fora do /app                       |
         | /admin     | da Globex   | não incluem   | aberto fora do /app                       |
@@ -1119,7 +1119,7 @@ Nota CT-40: a linha do slideover não afirma se o envio é gravado sem a repeti�
 | M87 | catálogo do /app percorre todas as organizações vinculadas | CT-43 | linha "/app/acme · da Globex": não inclui; o mutante inclui |
 | M88 | telas do /app oferecidas também fora do /app (organização "primeira" ou da sessão) | CT-43 | linhas "/admin": não inclui; o mutante oferece a Acme |
 | M89 | salvar o slideover reconstrói os favoritos só a partir do catálogo corrente e apaga os de outra organização | CT-44 | linha "salva sem tocar": PA e PG gravados e link de PG; o mutante grava só PA |
-| M103 | o teto conta só os favoritos da organização corrente | CT-44 | linha "teto": exatamente os 10 do Dado e aviso; o mutante conta 9 e grava o 11º |
+| M103 | o teto conta só os favoritos da organização aberta | CT-44 | linha "teto": exatamente os 10 do Dado e aviso; o mutante conta 9 e grava o 11º |
 
 Nota: M89 e M103 são a mesma família de M91/M93 de R19, na organização — a linha "de outra organização" da matriz não herda evidência da linha "oculto".
 
@@ -1333,7 +1333,7 @@ Nota CT-61/CT-62: PG desvinculado é favorito **oculto** (RQ-19, RQ-27): fica fo
 | M109 | o envio recusa o favorito já gravado que não está no catálogo corrente | CT-52 | linhas 3, 4, 6 e 7: o envio é aceito; o mutante recusa e mantém o Dado |
 | M110 | o favorito de outra organização ou de outro painel é sempre preservado ao salvar (não removível dali) | CT-52 | linhas 4 e 6: exatamente [PA] / [A]; o mutante mantém PG / PA e PG |
 | M111 | favorito gravado fica fora dos escolhidos quando o slideover abre em outra organização ou em outro painel | CT-55 | escolhidos = [PA, PG] / [A, PA, PG]; o mutante mostra só os do contexto corrente |
-| M112 | rótulo do escolhido sem o painel, sem a organização dele, com a organização corrente ou fora de ordem — revisão adversarial ADV-28 | CT-55 | rótulo de PG: painel /app, depois "Globex", antes do grupo e da tela, sem "Acme"; o mutante diverge em um dos segmentos |
+| M112 | rótulo do escolhido sem o painel, sem a organização dele, com a organização aberta ou fora de ordem — revisão adversarial ADV-28 | CT-55 | rótulo de PG: painel /app, depois "Globex", antes do grupo e da tela, sem "Acme"; o mutante diverge em um dos segmentos |
 | M113 | telas do contexto do favorito escolhido passam a ser oferecidas como novas opções | CT-55 | novas opções sem PG2 (/app/acme) e sem telas do /app (/admin); o mutante as oferece |
 | M123 | do /admin, o envio aceita chave do /app não gravada (o catálogo do /admin passa a incluir o /app) — revisão adversarial ADV-03 (rodada 2) | CT-52 | linha 5: gravados = [A]; o mutante grava [A, PA] |
 | M124 | o slideover do /admin trata os favoritos do /app como intocáveis e os preserva sempre — revisão adversarial ADV-26 | CT-52 | linha 6: exatamente [A]; o mutante mantém PA e PG |
@@ -1439,7 +1439,7 @@ Nota R23 (`@premissa` de mecanismo): o defeito mora num mapa de permissões de P
 
 ---
 
-## Regra R26 — favorito do painel e da organização correntes não recarrega papéis nem resolve a organização por favorito; admite só a consulta da autorização da própria tela
+## Regra R26 — favorito do painel e da organização abertas não recarrega papéis nem resolve a organização por favorito; admite só a consulta da autorização da própria tela
 
 > Origem: `P-04` (achado CR-02 do step 9; substitui a P-01) · perfil **padrão** · técnica: **contagem de consultas** 0 × 3 favoritos, com **atribuição pela pilha** (como CT-35) para o que a P-04 proíbe e **limite superior** (no máximo uma consulta por favorito) para o que ela admite, medidas simétricas e no mesmo aquecimento (como CT-56)
 
@@ -1457,7 +1457,7 @@ Nota R23 (`@premissa` de mecanismo): o defeito mora num mapa de permissões de P
         | nenhuma consulta que seleciona papéis em `model_has_roles` tem, na pilha, código do dock                   | proíbe: recarga de papéis    |
         | a página faz no máximo T + 3 consultas ao banco                                                            | admite: 1 por favorito       |
 
-    Esquema do Cenário: [CT-72] três favoritos da organização corrente não recarregam papéis nem buscam a organização, e custam no máximo uma consulta cada
+    Esquema do Cenário: [CT-72] três favoritos da organização aberta não recarregam papéis nem buscam a organização, e custam no máximo uma consulta cada
       Dado o usuario de duasOrganizacoes, com Usar:Dock e o dock ligado no /app, e a página inicial de /app/acme já aberta uma vez com 0 e uma vez com 3 favoritos da Acme, antes das medidas (aquecimento)
       E a página, aberta de novo com 0 favoritos, fez T consultas ao banco, em qualquer tabela
       Quando ele abre a mesma página com 3 favoritos da Acme gravados, com as consultas registradas
@@ -1470,7 +1470,7 @@ Nota R23 (`@premissa` de mecanismo): o defeito mora num mapa de permissões de P
         | a página faz no máximo T + 3 consultas ao banco                                                            | admite: 1 por favorito       |
 ```
 
-Nota R26: a P-04 admite exatamente uma consulta por favorito do contexto corrente — a da autorização da tela (`Gate::before` → `User::isMasterGlobal()`), a mesma de cada item da barra lateral. Por isso o total não é mais "exatamente T": o oráculo é o **limite** T + 3. O que a P-04 proíbe é afirmado à parte, pela pilha (mecanismo de CT-35, `@premissa` decidida em Q20). Cada linha do `Exemplos` mede o mesmo request; a separação em linhas existe só para cada asserção ter o seu matador. P-04 cobre só favoritos do painel **e** da organização correntes; favorito de outro painel ou organização pode exigir troca de contexto (R10). O `phpunit.xml` usa `CACHE_STORE=array` (ver M130).
+Nota R26: a P-04 admite exatamente uma consulta por favorito do contexto corrente — a da autorização da tela (`Gate::before` → `User::isMasterGlobal()`), a mesma de cada item da barra lateral. Por isso o total não é mais "exatamente T": o oráculo é o **limite** T + 3. O que a P-04 proíbe é afirmado à parte, pela pilha (mecanismo de CT-35, `@premissa` decidida em Q20). Cada linha do `Exemplos` mede o mesmo request; a separação em linhas existe só para cada asserção ter o seu matador. P-04 cobre só favoritos do painel **e** da organização abertas; favorito de outro painel ou organização pode exigir troca de contexto (R10). O `phpunit.xml` usa `CACHE_STORE=array` (ver M130).
 
 #### Mutantes previstos
 
@@ -1559,7 +1559,7 @@ Nota R27: CT-73 é o **invariante das duas leituras** da Q28 (um favorito cujo d
 | Cache em store de banco (RQ-22) | lacuna declarada (pilha): `CACHE_STORE=array` no `phpunit.xml` torna a leitura de cache invisível à contagem — M130; tentativa prevista em R13 | G2 |
 | Concorrência | lacuna declarada: duas adições simultâneas no 9º favorito; SQLite `:memory:` usa uma conexão só, e dois componentes no mesmo teste compartilham o mesmo model autenticado (`actingAs`) — o arnês não produz leitura defasada; tentado: dois `Livewire::test()` montados antes da primeira chamada | G1 |
 | Fronteira no ponto de entrada (gravação) | CT-33, CT-34 (teto nas duas entradas), CT-47 (teto com oculto e com inválida), CT-09, CT-08 linha [] e CT-57 (settings) | G1, G3 |
-| Domínio condicionado | CT-28 (a parte "organização" da chave só vale no /app: sem organização e organização inexistente), CT-43 (tela do /app só da organização corrente) | G4 |
+| Domínio condicionado | CT-28 (a parte "organização" da chave só vale no /app: sem organização e organização inexistente), CT-43 (tela do /app só da organização aberta) | G4 |
 | Estado × operação de escrita | matriz do favorito (16 células, 0 lacunas): CT-15, CT-16, CT-18, CT-23, CT-24, CT-26, CT-27, CT-33, CT-34, CT-44, CT-45, CT-46, CT-47, CT-52, CT-53, CT-58, CT-60, CT-61, CT-62, CT-73, CT-74 | G1, G2, G4, G5 |
 | Ausente ≠ null ≠ vazio | CT-14 (favoritos nulos × []), CT-10 (layout nulo → settings) | G1 |
 | Paginação / ordenação | paginação: não se aplica (o dock não pagina) · ordenação: CT-48, CT-49 (a ordem é a do usuário — RQ-30; o exemplo foge da ordem alfabética, da do catálogo e da por painel) | G1 |
@@ -1573,7 +1573,7 @@ Nota R27: CT-73 é o **invariante das duas leituras** da Q28 (um favorito cujo d
 | Superfície Livewire (método público, prop pública, estado do framework) | props `#[Locked]`: CT-32 · `mountAction`/`callMountedAction` fora da lista e tipo errado: CT-05, CT-70 (argumentos tipados forjados) · re-render depois de gravar: CT-69 · `atalho_{n}`: CT-05 linha `atalho_99` · `adicionarPaginaAtual`: CT-30, CT-31, CT-33, CT-39, CT-40, CT-51 · campo `atalhos`: CT-17 (fora do domínio + tipo errado), CT-52, CT-54 (chaves já gravadas reenviadas) · campo `layout`: CT-12 · campos da tela de configurações: CT-09 | G1, G3 |
 | Estado do framework usado sem validar | CT-32 (`routeName`/`routeParameters`/`path`), CT-17 (chave como índice e nome de classe), CT-66…CT-68 (mapa de permissões de Pages memorizado do painel corrente) | G1, G2 |
 | IDOR por entidade (uma linha por tabela) | `users` (colunas do dock): CT-13, CT-28, CT-43, CT-52 · `settings` (3 propriedades): permissão da tela já coberta em `tests/Kit/ConfiguracoesDoKitTelaTest.php` ("recusa a tela de configurações a quem não tem a permissão", linha 183) · `permissions`: não se aplica — só o seeder escreve | G1, G4, G3 |
-| Escopo com discriminante nulo | CT-26 linha "/admin (sem organização)", CT-28 linha "/app sem organização", CT-43 linha "aberto no /admin" e CT-58 (vínculo conferido sem organização corrente) — fecha (não abre para todas) | G4, G5 |
+| Escopo com discriminante nulo | CT-26 linha "/admin (sem organização)", CT-28 linha "/app sem organização", CT-43 linha "aberto no /admin" e CT-58 (vínculo conferido sem organização aberta) — fecha (não abre para todas) | G4, G5 |
 | Saída do estado de erro | não se aplica: nenhum cenário termina em 4xx ou redirect; as recusas (CT-09, e o teto em CT-33/CT-34 com aviso) mantêm a pessoa na tela, com os favoritos intactos | — |
 
 ## Índice de Cenários
@@ -1622,7 +1622,7 @@ Nota R27: CT-73 é o **invariante das duas leituras** da Q28 (um favorito cujo d
 | CT-40 | mesmo destino nunca gravado duas vezes | R16 | EP + idempotência | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M81, M82, M83 |
 | CT-41 | semeadura single-tenant: admin e infra sim, panel_user não | R17 | matriz papel × permissão | G6 | Pest feature HTTP | `tests/Kit/PermissoesDeAcoesTest.php` | M84, M85 |
 | CT-42 | semeadura com tenancy: admin_app, admin e infra sim, panel_user não | R17 | matriz papel × permissão | G8 | Pest feature HTTP | `tests/Tenancy/PermissoesDeAcoesTenancyTest.php` | M84, M86, M120 |
-| CT-43 | telas do /app só da organização corrente e só dentro do /app | R18 | tabela de decisão | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M87, M88 |
+| CT-43 | telas do /app só da organização aberta e só dentro do /app | R18 | tabela de decisão | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M87, M88 |
 | CT-44 | favorito de outra organização preservado e no teto | R18 | estado × operação | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M89, M103 |
 | CT-45 | oculto não é oferecido no slideover | R19 | estado × operação | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M90 |
 | CT-46 | chave que nunca foi destino descartada ao salvar | R19 | estado × operação | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M92 |
@@ -1651,7 +1651,7 @@ Nota R27: CT-73 é o **invariante das duas leituras** da Q28 (um favorito cujo d
 | CT-69 | dock re-renderizado na mesma requisição mostra os favoritos novos na ordem nova | R24 | 2-switch | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M135, M136, M137 |
 | CT-70 | chamada pública forjada no componente não estoura e não grava | R25 | EP tipo errado | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M138, M139, M140 |
 | CT-71 | três favoritos do /admin não recarregam papéis e custam no máximo uma consulta cada | R26 | contagem com atribuição + limite | G2 | Pest feature HTTP | `tests/Kit/DockDeAtalhosTest.php` | M141, M149 |
-| CT-72 | três favoritos da organização corrente não recarregam papéis nem buscam a organização, e custam no máximo uma consulta cada | R26 | contagem com atribuição + limite | G5 | Pest feature HTTP | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M141, M142, M149 |
+| CT-72 | três favoritos da organização aberta não recarregam papéis nem buscam a organização, e custam no máximo uma consulta cada | R26 | contagem com atribuição + limite | G5 | Pest feature HTTP | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M141, M142, M149 |
 | CT-73 | favorito de organização excluída não aparece no slideover | R27 | estado × operação | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M143 |
 | CT-74 | favorito de organização excluída sai ao salvar e deixa de ocupar vaga | R27 | estado × operação + BVA | G4 | componente Livewire/Filament | `tests/Tenancy/DockDeAtalhosTenancyTest.php` | M144, M145 |
 | CT-75 | "adicionar esta página" que não pode mais ser feito avisa e não grava | R28 | EP + não-efeito | G1 | componente Livewire/Filament | `tests/Kit/DockDeAtalhosTest.php` | M146, M147, M148 |

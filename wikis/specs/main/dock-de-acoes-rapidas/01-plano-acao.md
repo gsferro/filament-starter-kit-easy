@@ -36,7 +36,7 @@
 | RQ-21 | Opção do dock adiciona a página atual | 7, 8 | — |
 | RQ-23 | "Adicionar esta página" só em destino do catálogo | 7, 8 | Adendo 2 (Q11) |
 | RQ-24 | Permissão padrão: administração sim, `panel_user` não | 5 | Adendo 2 (Q12) |
-| RQ-25 | Catálogo do `/app` só da organização corrente, só dentro do `/app` | 7, 8 | Adendo 2 (Q13) |
+| RQ-25 | Catálogo do `/app` só da organização aberta, só dentro do `/app` | 7, 8 | Adendo 2 (Q13) |
 | RQ-26 | Acima de 10: recusa com aviso, nada muda | 7, 8 | Adendo 3 (Q14) |
 | RQ-27 | Oculto: fora do slideover, preservado ao salvar, conta no teto; inválido descartado | 7, 8 | Adendo 3 (Q15) |
 | RQ-28 | Sem duplicata; "adicionar" some se a página já é favorita | 7, 8 | Adendo 3 (Q16) |
@@ -113,9 +113,9 @@ Lido no GitHub, tag `v0.2.0` (vendor ausente — a reconciliação reconfere em 
 
 ### Testes de inventário (listas paralelas)
 
-- `tests/Kit/PermissoesDeAcoesTest.php:inventarioDeAutorizacao():539` varre `app/Filament` e `app/Providers/Filament` e fica vermelho com Action nova sem declaração de autorização
+- `tests/Kit/PermissoesDeAcoesTest.php:inventarioDeAutorizacao():541` varre `app/Filament` e `app/Providers/Filament` e fica vermelho com Action nova sem declaração de autorização
 - `tests/Kit/PermissoesDeAcoesTest.php` CT-15 lista por nome as permissões novas de Action; CT-19 cruza `custom_permissions` × `paineisDasPermissoesCustomizadas()`
-- `tests/Kit/KitInfoTest.php:toHaveCount():188` — âncora do número de propriedades do settings (63 hoje)
+- `tests/Kit/KitInfoTest.php:toHaveCount():189` — âncora do número de propriedades do settings (63 hoje)
 
 ## Decisões de Desenho
 
@@ -127,7 +127,7 @@ Lido no GitHub, tag `v0.2.0` (vendor ausente — a reconciliação reconfere em 
 | D4 | Settings entra pelo `mapaDeConfiguracao()` → `kit.dock.*`; o dock só lê `config()`. Nenhum `app(ConfiguracoesDoKit::class)` no caminho do request | RQ-22 | surpreendente (é o padrão do kit) | sessão, 2026-10-13 — convenção existente |
 | D5 | Posição padrão `DockPosition::BottomCenter`: os cantos inferiores direitos já têm "voltar ao topo" e o chat | — | difícil de reverter | sessão, 2026-10-13 |
 | D6 | A chave de opção do catálogo é `{painel}\|{FQCN}\|{organização ou vazio}`; a gravação só aceita chave presente no catálogo recalculado no servidor | RQ-11 | surpreendente | sessão, 2026-10-13 |
-| D7 | No slideover, o catálogo oferece destinos do `/app` **só da organização corrente** (quando aberto no `/app`); fora do `/app`, só os favoritos já gravados aparecem para o `/app`. Avaliar destinos de N organizações custa N trocas de contexto por abertura | Q13 → RQ-25 | difícil de reverter | solicitante, 2026-10-13 (Adendo 2) |
+| D7 | No slideover, o catálogo oferece destinos do `/app` **só da organização aberta** (quando aberto no `/app`); fora do `/app`, só os favoritos já gravados aparecem para o `/app`. Avaliar destinos de N organizações custa N trocas de contexto por abertura | Q13 → RQ-25 | difícil de reverter | solicitante, 2026-10-13 (Adendo 2) |
 | D8 | Memo da montagem dos favoritos por request (`WeakMap` com a `Request`), como `App\Support\CabecalhoDoPainel` — o componente avalia as actions 2× por request | RQ-22 | surpreendente | sessão, 2026-10-13 — convenção existente |
 | D9 | RQ-22 é provada atribuindo cada consulta à tabela `settings` pela pilha (`DB::listen()` + `debug_backtrace()`), não só pelo total do request | Q20 (devolvida pela derivação) | difícil de reverter | sessão, 2026-10-13 — sem alternativa que separe a consulta do dock da de outro recurso |
 
@@ -135,7 +135,7 @@ Lido no GitHub, tag `v0.2.0` (vendor ausente — a reconciliação reconfere em 
 
 - **Permissão nova**: `Usar:Dock` (custom permission `usar:dock`), válida nos três painéis via `PapeisSeeder::paineisDasPermissoesCustomizadas()`; subtraída do `panel_user` (RQ-24)
 - **Dock**: `QuickActionDockPlugin::authorize('Usar:Dock')` — sem ela o componente não renderiza nem registra actions (vendor: `shouldRender()`)
-- **Cada favorito**: `DockDeAtalhos::podeAbrir()` — painel do favorito existe, `canAccessPanel()`, no `/app` `canAccessTenant()`, destino pertence ao catálogo do painel e `canAccess()` do destino, avaliado **no painel e no contexto de papéis do favorito** (ADR-01). Qualquer exceção → `false`
+- **Cada favorito**: `DockDeAtalhos::podeAbrir()` — painel do favorito existe, `canAccessPanel()`, no `/app` `canAccessTenant()`, destino pertence ao catálogo do painel e `canAccess()` do destino, avaliado **no painel e no contexto de papéis do favorito** (ADR-01). Qualquer exceção → `false`. Exceção (P-04): favorito do painel **e** da organização abertos não troca contexto nem confere `canAccessPanel()`/`canAccessTenant()` — o middleware persistente do painel já fixou painel, tenant e `team_id`; a consulta de acesso a painel usa `User::motivoDaNegativaDoPainel()`, sem log (RD-05) *(alterado em 2026-10-14: QA-02, ciclo 1 do quality gate)*
 - **Gravação**: só pelo slideover e pela opção "adicionar esta página", ambas com `->authorize('Usar:Dock')`; os valores chegam do cliente e são filtrados contra o catálogo do servidor
 - **Policies / Gates / Middleware / Guards**: nenhum novo
 
@@ -243,7 +243,7 @@ Nenhuma nova. O dock usa o endpoint `livewire/update` existente.
 > Skills: `laravel-best-practices`, `filament-development`
 
 - **Path**: `app/Settings/ConfiguracoesDoKit.php` — `public array $dock_paineis; public string $dock_layout; public string $dock_estilo;` + linhas `'dock_paineis' => 'kit.dock.paineis'`, `'dock_layout' => 'kit.dock.layout'`, `'dock_estilo' => 'kit.dock.estilo'` no `mapaDeConfiguracao()`
-- **Path**: `database/settings/2026_10_13_100000_add_dock_to_kit_settings.php` — `add()` semeado de `config('kit.dock.*')`; `up()` e `down()` limpam o cache do repositório (`SettingsCacheFactory`, como a migration de 2026-10-09)
+- **Path**: `database/settings/2026_10_14_030956_add_dock_to_kit_settings.php` *(alterado em 2026-10-14: nome gerado pelo artisan)* — `add()` semeado de `config('kit.dock.*')`; `up()` e `down()` limpam o cache do repositório (`SettingsCacheFactory`, como a migration de 2026-10-09)
 - **Path**: `app/Filament/Admin/Pages/ConfiguracoesDoKit.php` — aba `Kit`, `Section` "Dock de atalhos": `Select::make('dock_paineis')->multiple()->options(Paineis::opcoes())` (helper: "Em branco = nenhum painel"), `Select::make('dock_layout')->options(...)->required()->in(...)` e `Select::make('dock_estilo')` com as opções dos enums do pacote em pt-BR
 - **Atende**: RQ-08, RQ-14, RQ-17, RQ-22
 - **Logs**: nenhum novo — a gravação já é auditada
@@ -261,9 +261,9 @@ Nenhuma nova. O dock usa o endpoint `livewire/update` existente.
 
 > Skills: `laravel-best-practices`
 
-- **Path**: migration `add_dock_to_users_table` — `dock_atalhos` `json` nullable, `dock_layout` `string(20)` nullable (ADR-02)
+- **Path**: migration `2026_10_14_031048_add_dock_to_users_table` *(alterado em 2026-10-14: nome gerado pelo artisan)* — `dock_atalhos` `json` nullable, `dock_layout` `string(20)` nullable (ADR-02)
 - `dock_atalhos` guarda `list<string>` com a própria chave D6 (`{painel}|{FQCN}|{organização ou vazio}`), na ordem do usuário — sem DTO *(alterado em 2026-10-13: Ponytail #1)*
-- **Path**: `app/Models/User.php` — casts `dock_atalhos` → `array`, `dock_layout` → `DockLayout::class` (nullable); **fora** do `$fillable`. Sem método novo: quem grava é `DockDeAtalhos::gravar()` com `forceFill()` *(alterado em 2026-10-13: Ponytail #2/#3)*
+- **Path**: `app/Models/User.php` — cast só em `dock_atalhos` → `array`; `dock_layout` fica texto (nulo = padrão da instalação), lido por `DockLayout::tryFrom()` *(alterado em 2026-10-14: QA-01, ciclo 1 do quality gate)*; **fora** do `$fillable` e **dentro** do `$hidden` (o `PageHeaderTest` trava as colunas expostas do usuário) *(alterado em 2026-10-14: ticket 01)*. Sem método novo: quem grava é `DockDeAtalhos::gravar()` com `forceFill()` *(alterado em 2026-10-13: Ponytail #2/#3)*
 - **Atende**: RQ-10, RQ-16, RQ-17
 - **Logs**: nenhum
 
@@ -273,11 +273,11 @@ Nenhuma nova. O dock usa o endpoint `livewire/update` existente.
 
 - **Path**: `app/Support/DockDeAtalhos.php` (só estáticos, como `CabecalhoDoPainel`)
 - `habilitadoNoPainel(Panel $painel): bool` — `in_array($painel->getId(), config('kit.dock.paineis'), true)`. Zero query (RQ-14, RQ-22)
-- `layoutPara(?User $usuario): DockLayout` — `$usuario?->dock_layout ?? DockLayout::tryFrom(config('kit.dock.layout')) ?? DockLayout::SpeedDial`; `estilo(): DockStyle` análogo (RQ-17)
-- `catalogo(User $usuario): array<string, string>` — chave D6 → rótulo `/{painel} — {organização, no /app} — {grupo} — {tela}` (RQ-31). Para cada painel em que `canAccessPanel()`: `[...getResources(), ...getPages()]` filtrado por `shouldRegisterNavigation()` e `canAccess()` **dentro de `noContexto()`**; para o `app`, só a organização corrente (D7) (RQ-11, RQ-12)
+- `layoutPara(?User $usuario): DockLayout` — `DockLayout::tryFrom((string) $usuario?->dock_layout) ?? DockLayout::tryFrom(config('kit.dock.layout')) ?? DockLayout::SpeedDial` *(alterado em 2026-10-14: QA-01, ciclo 1 do quality gate)*; `estilo(): DockStyle` análogo (RQ-17)
+- `catalogo(User $usuario): array<string, string>` — chave D6 → rótulo `/{painel} — {organização, no /app} — {grupo} — {tela}` (RQ-31). Para cada painel em que `canAccessPanel()`: `[...getResources(), ...getPages()]` filtrado por `shouldRegisterNavigation()` e `canAccess()` **dentro de `noContexto()`**; para o `app`, só a organização aberta (D7) (RQ-11, RQ-12)
 - `atalhosVisiveis(User $usuario): list<array{chave: string, url: string, rotulo: string, icone: ?string}>` — memo por `Request` (D8); cada atalho passa por `podeAbrir()`; URL por `$destino::getUrl(panel: …, tenant: …)` (RQ-04, RQ-15, RQ-16, RQ-19)
-- `podeAbrir(User, string $chave): bool` — chave tem 3 partes; painel existe; destino é classe dentre `getResources()/getPages()` do painel; `canAccessPanel()`; no `app`, organização existe e `canAccessTenant()`; `noContexto(...)` → `shouldRegisterNavigation() && canAccess()`. `catch (Throwable)` → `false` (ADR-01)
-- `noContexto(Panel $painel, ?Tenant $organizacao, User $usuario, Closure $callback): mixed` — guarda painel corrente e tenant, `Filament::setCurrentPanel()`, `Filament::setTenant()`, `ContextoDePapeis::em($organizacao?->getKey() ?? Tenant::CONTEXTO_GLOBAL, ...)`, restaura tudo no `finally`
+- `podeAbrir(User, string $chave): bool` — chave tem 3 partes; painel existe; destino é classe dentre `getResources()/getPages()` do painel; `canAccessPanel()`; no `app`, organização existe e `canAccessTenant()`; `noContexto(...)` → `shouldRegisterNavigation() && canAccess()`. `catch (Throwable)` → `false` (ADR-01). Favorito do painel e da organização abertos: direto em `shouldRegisterNavigation() && canAccess()`, sem `noContexto` (P-04) *(alterado em 2026-10-14: QA-02, ciclo 1 do quality gate)*
+- `noContexto(Panel $painel, ?Tenant $organizacao, User $usuario, Closure $callback): mixed` — guarda painel corrente e tenant, `Filament::setCurrentPanel()`, `Filament::setTenant()`, `ContextoDePapeis::em($organizacao?->getKey() ?? Tenant::CONTEXTO_GLOBAL, ...)`, restaura tudo no `finally`; antes de avaliar destino de outro painel, e de novo no `finally`, descarta o `FilamentShield` memorizado (`Paineis::shieldNovo()`, RD-01) *(alterado em 2026-10-14: QA-02, ciclo 1 do quality gate)*
 - `paginaAtualComoAtalho(User): ?string` (chave) — `DockContext::current()->getPageClass()`; se for a página `index` de um Resource, o Resource; se for Page avulsa, a Page; senão `null` (RQ-23). Só devolve se a chave está no catálogo e ainda não é favorita (RQ-23, RQ-28); a adição anexa no fim (RQ-33) e conta toda entrada gravada no teto (RQ-32)
 - `gravar(User, list<string> $chaves, ?string $layout): void` *(alterado em 2026-10-13: Adendos 3 e 4)* — (1) qualquer chave fora do `catalogo()` **e** fora dos favoritos já gravados ainda abríveis (RQ-35) → recusa o envio inteiro, nada gravado, `ValidationException` no campo (RQ-29); (2) dedup (RQ-28); (3) resultado = chaves enviadas, **na ordem enviada** (RQ-30), + favoritos gravados que hoje estão ocultos (`! podeAbrir()` mas chave bem formada de destino existente no painel), preservados no fim; chave gravada que nunca foi destino (classe/painel inexistente, malformada) é descartada (RQ-27); (4) total > 10 — contando toda entrada gravada que permanece (RQ-32) — → recusa com aviso "limite de 10 atalhos", nada gravado (RQ-18, RQ-26); (5) layout por `DockLayout::tryFrom()`; `forceFill(['dock_atalhos' => …, 'dock_layout' => …])->save()`
 - **Atende**: RQ-04, RQ-11, RQ-12, RQ-14, RQ-15, RQ-16, RQ-18, RQ-19, RQ-22, RQ-23, RQ-25, RQ-26, RQ-27, RQ-28, RQ-29, RQ-30, RQ-31, RQ-32, RQ-33, RQ-35
@@ -330,12 +330,14 @@ Nenhuma nova. O dock usa o endpoint `livewire/update` existente.
 
 | Valor gravado | Rótulo pt-BR |
 |---|---|
-| `speed-dial` | Lista vertical (speed dial) |
-| `bar` | Barra horizontal |
-| `native` | Padrão |
+| `speed-dial` | Leque (speed dial) |
+| `bar` | Barra |
+| `native` | Nativo |
 | `outline` | Contorno |
 | `contrast` | Contraste |
-| `tinted` | Cor primária |
+| `tinted` | Tingido |
+
+*(alterado em 2026-10-14: rótulos seguem `DockDeAtalhos::opcoesDeLayout()`/`opcoesDeEstilo()` e as docs)*
 
 ## Testes
 

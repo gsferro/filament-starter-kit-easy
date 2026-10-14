@@ -4,65 +4,65 @@
 
 ## 1. Dependência
 
-- [ ] `composer require hoceineel/filament-quick-action-dock:^0.2` e `php artisan filament:assets`
-- [ ] Afirmações sobre o vendor reconferidas em `vendor/` com citação por símbolo
+- [x] `composer require hoceineel/filament-quick-action-dock:^0.2` e `php artisan filament:assets` — ticket 01 concluído, 2026-10-14
+- [x] Afirmações sobre o vendor reconferidas em `vendor/` com citação por símbolo — ticket 01 concluído, 2026-10-14
 
 ## 2. Channel de log
 
-- [ ] Channel `dock-de-acoes-rapidas` em `config/logging.php`
+- [x] Channel `dock-de-acoes-rapidas` em `config/logging.php` — ticket 01 concluído, 2026-10-14
 
 ## 3. Config `kit.dock`
 
-- [ ] Bloco `dock` em `config/kit.php` (lista vazia = nenhum painel)
-- [ ] `KIT_DOCK_PAINEIS` em `.env.example`
+- [x] Bloco `dock` em `config/kit.php` (lista vazia = nenhum painel) — tickets 01/04 concluído, 2026-10-14
+- [x] `KIT_DOCK_PAINEIS` em `.env.example` — tickets 01/04 concluído, 2026-10-14
 
 ## 4. Settings
 
-- [ ] Três propriedades em `ConfiguracoesDoKit` + linhas no `mapaDeConfiguracao()`
-- [ ] Migration de settings nova, com limpeza do cache no `up()` e no `down()`
-- [ ] Seção "Dock de atalhos" na aba Kit
+- [x] Três propriedades em `ConfiguracoesDoKit` + linhas no `mapaDeConfiguracao()` — tickets 01/04 concluído, 2026-10-14
+- [x] Migration de settings nova, com limpeza do cache no `up()` e no `down()` — tickets 01/04 concluído, 2026-10-14
+- [x] Seção "Dock de atalhos" na aba Kit — tickets 01/04 concluído, 2026-10-14
 
 ## 5. Permissão `Usar:Dock`
 
-- [ ] `custom_permissions` + mapa de painel do `PapeisSeeder` + subtração do `panel_user`
+- [x] `custom_permissions` + mapa de painel do `PapeisSeeder` + subtração do `panel_user` — ticket 01 concluído, 2026-10-14
 
 ## 6. Preferências do usuário
 
-- [ ] Migration `dock_atalhos`/`dock_layout` em `users`
-- [ ] Casts no `User`, colunas fora do `$fillable`
+- [x] Migration `dock_atalhos`/`dock_layout` em `users` — tickets 01/03 concluído, 2026-10-14
+- [x] Casts no `User`, colunas fora do `$fillable` — tickets 01/03 concluído, 2026-10-14
 
 ## 7. `DockDeAtalhos`
 
-- [ ] Settings (`habilitadoNoPainel`, `layoutPara`, `estilo`)
-- [ ] `noContexto` com restauração no `finally`
-- [ ] `podeAbrir`, `atalhosVisiveis` (memo por request), `catalogo`
-- [ ] `paginaAtualComoAtalho`, `gravar`
+- [x] Settings (`habilitadoNoPainel`, `layoutPara`, `estilo`) — tickets 01/03/05/06/07/08 concluído, 2026-10-14
+- [x] `noContexto` com restauração no `finally` — tickets 01/03/05/06/07/08 concluído, 2026-10-14
+- [x] `podeAbrir`, `atalhosVisiveis` (memo por request), `catalogo` — tickets 01/03/05/06/07/08 concluído, 2026-10-14
+- [x] `paginaAtualComoAtalho`, `gravar` — tickets 01/03/05/06/07/08 concluído, 2026-10-14
 
 ## 8. `PluginDoDock`
 
-- [ ] Plugin com `authorize`, `visible`, `layout`, `style`, `position`
-- [ ] Actions de favorito, `adicionarPaginaAtual`, `gerenciarAtalhos` (slideover)
+- [x] Plugin com `authorize`, `visible`, `layout`, `style`, `position` — tickets 01/03/05/08 concluído, 2026-10-14
+- [x] Actions de favorito, `adicionarPaginaAtual`, `gerenciarAtalhos` (slideover) — tickets 01/03/05/08 concluído, 2026-10-14
 
 ## 9. Registro nos três painéis e inventário
 
-- [ ] `PluginDoDock::make()` nos três providers
-- [ ] Linhas no inventário de `PermissoesDeAcoesTest` e `Usar:Dock` no dataset do CT-15
-- [ ] Âncora do `KitInfoTest` 63 → 66
+- [x] `PluginDoDock::make()` nos três providers — ticket 01 concluído, 2026-10-14
+- [x] Linhas no inventário de `PermissoesDeAcoesTest` e `Usar:Dock` no dataset do CT-15 — ticket 01 concluído, 2026-10-14
+- [x] Âncora do `KitInfoTest` 63 → 66 — ticket 01 concluído, 2026-10-14
 
 ## 10. Documentação e CHANGELOG
 
-- [ ] Seção "Dock de atalhos" em `docs/{pt,en}/recursos/hub-de-navegacao.md`
-- [ ] Opções do dock em `docs/{pt,en}/recursos/configuracoes-do-kit.md`
-- [ ] `CHANGELOG.md`
+- [x] Seção "Dock de atalhos" em `docs/{pt,en}/recursos/hub-de-navegacao.md` — ticket 07 concluído, 2026-10-14
+- [x] Opções do dock em `docs/{pt,en}/recursos/configuracoes-do-kit.md` — ticket 07 concluído, 2026-10-14
+- [x] `CHANGELOG.md` — ticket 07 concluído, 2026-10-14
 
 ## Testes
 
-- [ ] `tests/Kit/DockDeAtalhosTest.php` (CT-01, CT-02, CT-03, CT-05, CT-06, CT-07, CT-10–CT-21, CT-23–CT-25, CT-30–CT-36, CT-38–CT-40, CT-45–CT-49, CT-53, CT-54, CT-56, CT-59, CT-60, CT-65)
-- [ ] `tests/Tenancy/DockDeAtalhosTenancyTest.php` (CT-04, CT-22, CT-26–CT-29, CT-43, CT-44, CT-50, CT-51, CT-52, CT-55, CT-58, CT-61–CT-64)
-- [ ] `tests/Kit/ConfiguracoesDoKitTelaTest.php` (CT-08, CT-09, CT-57)
-- [ ] `tests/Kit/PermissoesDeAcoesTest.php` (CT-37, CT-41)
-- [ ] `tests/Tenancy/PermissoesDeAcoesTenancyTest.php` (CT-42)
-- [ ] `tests/Browser/DockDeAtalhosTest.php` (CT-B01)
+- [x] `tests/Kit/DockDeAtalhosTest.php` (CT-01, CT-02, CT-03, CT-05, CT-06, CT-07, CT-10–CT-21, CT-23–CT-25, CT-30–CT-36, CT-38–CT-40, CT-45–CT-49, CT-53, CT-54, CT-56, CT-59, CT-60, CT-65) — testes verdes: Kit 124/124, Tenancy 44/44, ConfiguracoesDoKitTela 38/38, Browser CT-B01 1/1 concluído, 2026-10-14
+- [x] `tests/Tenancy/DockDeAtalhosTenancyTest.php` (CT-04, CT-22, CT-26–CT-29, CT-43, CT-44, CT-50, CT-51, CT-52, CT-55, CT-58, CT-61–CT-64) — testes verdes: Kit 124/124, Tenancy 44/44, ConfiguracoesDoKitTela 38/38, Browser CT-B01 1/1 concluído, 2026-10-14
+- [x] `tests/Kit/ConfiguracoesDoKitTelaTest.php` (CT-08, CT-09, CT-57) — testes verdes: Kit 124/124, Tenancy 44/44, ConfiguracoesDoKitTela 38/38, Browser CT-B01 1/1 concluído, 2026-10-14
+- [x] `tests/Kit/PermissoesDeAcoesTest.php` (CT-37, CT-41) — testes verdes: Kit 124/124, Tenancy 44/44, ConfiguracoesDoKitTela 38/38, Browser CT-B01 1/1 concluído, 2026-10-14
+- [x] `tests/Tenancy/PermissoesDeAcoesTenancyTest.php` (CT-42) — testes verdes: Kit 124/124, Tenancy 44/44, ConfiguracoesDoKitTela 38/38, Browser CT-B01 1/1 concluído, 2026-10-14
+- [x] `tests/Browser/DockDeAtalhosTest.php` (CT-B01) — testes verdes: Kit 124/124, Tenancy 44/44, ConfiguracoesDoKitTela 38/38, Browser CT-B01 1/1 concluído, 2026-10-14
 
 ## Tickets
 
@@ -75,25 +75,26 @@ Fatiamento confirmado: 2026-10-13 — gsferro — 1 rodada, 3 perguntas (Q25–Q
 - [x] [05](07-tickets/05-adicionar-esta-pagina-com-teto.md) adicionar a página atual aos favoritos, até 10 — concluído — 2026-10-14, aprovado por gsferro (autorização de execução contínua); CT-30…34, 38, 39, 48, 49 verdes (`pest tests/Kit/DockDeAtalhosTest.php` 111/111); suíte completa 4424 testes, só a falha pré-existente da baseline
 - [x] [06](07-tickets/06-favoritos-entre-paineis-e-ocultos.md) favoritos de outro painel e favoritos ocultos — concluído — 2026-10-14, aprovado por gsferro (autorização de execução contínua); CT-23, 24, 25, 45, 46, 47, 53, 54, 60 verdes (`pest tests/Kit/DockDeAtalhosTest.php` 111/111) — comportamento entregue pelo código dos tickets 03 e 05; suíte completa sem regressão
 - [x] [07](07-tickets/07-favoritos-presos-a-organizacao.md) favoritos do painel de organização presos à organização — concluído — 2026-10-14, aprovado por gsferro (autorização de execução contínua); CT-26…29, 40, 43, 44, 51, 52, 55, 58, 61…64 verdes (`pest tests/Tenancy/DockDeAtalhosTenancyTest.php` 38/38, Kit 111/111); passo 10 (docs pt/en, CHANGELOG, READMEs) com os 24 testes de docs de `tests/Kit` verdes; suíte completa 4424 testes, só a falha pré-existente da baseline
+- [x] [08](07-tickets/08-achados-da-revisao-do-diff.md) achados da revisão do diff — concluído — 2026-10-14, aprovado por gsferro (autorização de execução contínua); CT-71…75 verdes
 
 ## Verificação Final
 
-- [ ] `/ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent` e `vendor/bin/filacheck --fix`
-- [ ] `vendor/bin/pest --filter=Dock --compact`
-- [ ] `vendor/bin/pest tests/Browser --filter=Dock` (se houver `05`)
-- [ ] `vendor/bin/pest --parallel --tia` contra a baseline de `main`
-- [ ] `pest --mutate --path=app/Support/DockDeAtalhos.php` (no Windows via `pestw.cmd`)
-- [ ] Custo medido: queries do render com dock ligado × desligado e do slideover
-- [ ] `/code-review high main...HEAD` + passe de eixos (step 9)
-- [ ] Desvios propagados ao `01`/`02`/`04`/`05`
-- [ ] `rastreabilidade.sh` silencioso
-- [ ] `checkbox-sem-evidencia.sh` silencioso
-- [ ] `citacoes.sh` silencioso
-- [ ] `ids-ct.sh` silencioso
-- [ ] `conformidade-rules.sh` silencioso
-- [ ] Falsificabilidade dos CT do step 9
-- [ ] Docs pt/en, CHANGELOG e README reconciliados
+- [x] Passe de excesso de complexidade no diff — feito em linha pela sessão, sem invocar a skill `ponytail-review` sobre o diff final (a skill está instalada sem o namespace `ponytail:` e foi usada no step 6); sem cortes aplicados: os candidatos (`organizacaoDoRequest` × `organizacaoDoDestino`, `podeAbrir` público) reabririam código recém-falsificado; dívida declarada *(alterado em 2026-10-14: QA-04, ciclo 1 do quality gate)*, 2026-10-14
+- [x] `vendor/bin/pint --dirty --format agent` e `vendor/bin/filacheck --fix` — pint `passed`, filacheck "All 17 rules passed!", 2026-10-14
+- [x] Testes do dock — `pest tests/Kit/DockDeAtalhosTest.php` 124/124, `pest tests/Tenancy/DockDeAtalhosTenancyTest.php` 44/44, `ConfiguracoesDoKitTelaTest` 38/38, `PermissoesDeAcoes*` verdes, 2026-10-14
+- [x] `pest tests/Browser/DockDeAtalhosTest.php` — CT-B01 1/1 (1º run timeout de navegador frio, c; 2º verde sem alteração), 2026-10-14
+- [x] Suíte completa contra a baseline de `main` — `php artisan test --testsuite=Unit,Feature,Kit,Tenancy --parallel`: 4443 testes, falhas = `AgentesDaEsteiraTest` (baseline) + badge do README (corrigido, `SiteDeDocumentacaoTest` 68/68), 2026-10-14
+- [x] `pest --mutate --path=app/Support/DockDeAtalhos.php` (no Windows via `pestw.cmd`) — `XDEBUG_MODE=coverage cmd //c pestw.cmd tests/Kit/DockDeAtalhosTest.php --mutate --path=app/Support/DockDeAtalhos.php --covered-only --parallel`: 316 mutantes, 312 tested + 4 timeout, 0 sobreviventes, score 100,00 %, 671,57 s (duração plausível; falsificabilidade dos CT do step 9 provada à parte); `.env` md5 OK antes/depois, 2026-10-14
+- [x] Custo medido — CT-35, 36, 56, 65 (ligado × desligado × sem plugin) e CT-71, 72 (0 × 3 favoritos, P-04) verdes, 2026-10-14
+- [x] `/code-review high main...HEAD` + passe de eixos (step 9) — 14 achados, 12 confirmados e roteados, 2 rejeitados com motivo (`## Revisão do Diff`), 2026-10-14
+- [x] Desvios propagados — `01` (passos 4/6, Mapeamentos) e `02` (ADR-01, Superfície Livewire) com `*(alterado em 2026-10-14: …)*`, 2026-10-14
+- [x] `rastreabilidade.sh` silencioso — exit 0, 2026-10-14
+- [x] `checkbox-sem-evidencia.sh` silencioso — exit 0 (rodado antes desta edição; reconferido no fechamento), 2026-10-14
+- [x] `citacoes.sh` silencioso — exit 0, 2026-10-14
+- [x] `ids-ct.sh` silencioso — `ids-ct.sh {wiki} 'tests/**/DockDeAtalhos*.php' 'tests/Kit/ConfiguracoesDoKitTelaTest.php' 'tests/Kit/PermissoesDeAcoesTest.php' 'tests/Tenancy/PermissoesDeAcoesTenancyTest.php'` exit 0, 2026-10-14
+- [x] `conformidade-rules.sh` silencioso — exit 0 (15 rules com linha), 2026-10-14
+- [x] Falsificabilidade dos CT do step 9 — 6 de 9 falham sem a correção; CT-67/68 prova pendente (arranjo), CT-73 invariante (ver `## Revisão do Diff`), 2026-10-14
+- [x] Docs pt/en, CHANGELOG e README reconciliados — 24 testes de docs de `tests/Kit` verdes; frase `mod+.` sem RQ removida, 2026-10-14
 - [ ] `git commit`
 
 ## Revisão do Diff (step 9)
@@ -121,10 +122,26 @@ Falsificabilidade (2026-10-14, no próprio repositório, escopo estreito — sem
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
+| `app.md` — papel por `ContextoDePapeis`; painel corrente | `app/**` | aplicada | nenhum `assignRole` no diff; `DockDeAtalhos` lê `Filament::getCurrentPanel()` nulo de propósito (exceção da rule: o dock não pode cair no painel padrão) e `habilitadoNoPainel(null)` devolve `false` — `app/Support/DockDeAtalhos.php:habilitadoNoPainel:90`; troca de team_id só por `ContextoDePapeis::em()` |
+| `config.md` — sem `(int) env()`; interruptor falha fechado | `config/**` | aplicada | `config/kit.php` lê `KIT_DOCK_PAINEIS` por `explode((string) env(...))`, sem default: vazio = nenhum painel (CT-06, CT-07) |
+| `css-filament.md` — utilitárias/`@layer` de vendor | `app/Providers/**` | n.a. | o pacote traz CSS próprio pré-compilado (`public/css/hoceineel/…`), sem utilitária do Tailwind do kit e sem CSS do kit novo; CT-B01 verde no navegador |
+| `filament-resources.md` | `app/Filament/**/Resources/**` | n.a. | só citação deslocada em `UserInfolist.php` |
+| `filament.md` — Page/Action nascem com permissão; inventário | `app/Filament/**` | aplicada | as três actions do dock com `->authorize('Usar:Dock')` e linhas no `inventarioDeAutorizacao()` (`PermissoesDeAcoesTest` verde); `Usar:Dock` em `custom_permissions` + mapa do `PapeisSeeder` (CT-19 daquele arquivo, CT-37, CT-41, CT-42) |
+| `general.md` — dependência privada | `composer.json` | aplicada | `hoceineel/filament-quick-action-dock` é pacote público do Packagist (MIT) |
+| `models.md` — `ModeloCacheavel`; `papelDoPainel()` | `app/Models/**` | aplicada | `User` não ganhou Resource novo; `motivoDaNegativaDoPainel()` extraído sem mudar `canAccessPanel()` (8 suítes de User/Paineis 826/826, relato do #25; suíte completa verde) |
+| `pages.md` — segredo em formulário | `app/Filament/Admin/Pages/**` | n.a. | os três campos do dock não são segredo |
+| `providers-filament.md` — plugin que resolve o painel corrente nos três painéis | `app/Providers/Filament/**` | aplicada | `PluginDoDock::make()` registrado em Admin, App e Infra (o componente usa `QuickActionDockPlugin::get()` pelo painel corrente) |
+| `providers.md` — rota do kit | `app/Providers/**` | n.a. | nenhuma rota nova |
+| `settings.md` — chave lida por request; três lugares | `app/Settings/**` | aplicada | `dock_paineis/dock_layout/dock_estilo` na classe, no `mapaDeConfiguracao()` e em migration de settings nova; lidas por Closure no render (CT-07 grava pelo settings e governa; `KitInfoTest` 66) |
+| `specs.md` — comportamento de vendor com `file:line` | `wikis/specs/**` | aplicada | citações de vendor por símbolo conferidas pelo `citacoes.sh` (exit 0, 2026-10-14) |
+| `support.md` — escrita no `.env` | `app/Support/**` | n.a. | o dock não grava `.env` |
+| `testes-browser.md` | `tests/Browser/**` | aplicada | CT-B01: aquecimento por `get('/admin')`, `assertPathIs` antes das demais, em série, seletor por atributo do vendor (`x-ref="trigger"`), não por classe |
+| `testes.md` — helper em `tests/Pest.php`; papéis por suíte; `/app` boota por GET | `tests/**` | aplicada | helpers compartilhados (`ligarDock`, `concederDock`, `chaveDeAtalho`, `opcoesDoSlideover`…) em `tests/Pest.php`; `admin_app` só na suíte Tenancy (CT-42); `/app` boota por `get('/app')` antes do `Livewire::test()` |
 
 ## Quality Gate
 
-<!-- Step 11. -->
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-10-14 — 0 Blocker, 2 Major (QA-01, QA-02: o `01` afirmava cast de `dock_layout` e barreiras que o código não tem), 2 Minor (QA-03 termo do glossário; QA-04 passe Ponytail), 1 Cosmético (QA-05); não verificadas D (parcial), G, H, K2 (o `--mutate` ainda rodava). Correções só de texto: `01` passos 6/7 e `## Autorização`, "organização aberta" no `01`/`04`/docs, 3 termos no `wikis/glossario.md`, linha do Ponytail e checklists dos passos no `03`; K2 fechada depois (316 mutantes, 0 sobreviventes)
+- **Relatório**: `06-relatorio-qa.md`
 
 ## Candidatos a Rule
 
@@ -202,6 +219,8 @@ Baseline `main` (2026-10-13): `php artisan test --testsuite=Unit,Feature,Kit,Ten
 | 23 | 9 | derivador (`general-purpose`, retomado) — CT dos achados do step 9 via `feature-test-design` | opus | `01`, `03`, código | CT-66…CT-75 em R23…R28 (origem RQ-04/15, RQ-10/30, RQ-13, P-01, P-02, P-03); nenhum CT antigo mudou; 75 CT, 148 mutantes | 773.712 tokens · 595 s | `Cenários: 75` na linha 26; `rastreabilidade.sh` exit 0, 2026-10-14; P-02 derivada pela ➡️ da Q28 aberta, por instrução da sessão — divergência declarada no `04` |
 | 24 | 9 | Codex CLI (`--yolo`) — testes CT-66…CT-75 | modelo padrão do Codex (não exposto) | `01`, `02`, `03` | 10 CT (16 execuções): 12 verdes contra a correção em andamento (#25); 4 vermelhos (b): CT-71/72 (+2 consultas), CT-75 (sem aviso) | — | `git status` antes × depois: tests/ só nos 2 arquivos combinados; mudanças em `app/` são do #25, concorrente |
 | 25 | 9 | `general-purpose` como `construtor` — correções RD-01, CR-01…05, CR-08, CR-09, RD-03…05 | opus | `03`, raciocínio da sessão | 7 achados corrigidos (RD-01, CR-01, CR-03, CR-04, CR-05/RD-02, RD-03, RD-04, RD-05, CR-09), CR-08 mantido (tirar `->in()` quebrou o CT-09), CR-02 parcial: 1 consulta por favorito Resource vinda do `Gate::before` → `isMasterGlobal()` (global, sem memo) — premissa P-01 substituída por P-04 pela sessão; `Paineis::shieldNovo()` público; `User::motivoDaNegativaDoPainel()` sem log | 237.456 tokens · 1.482 s | pint, filacheck, PHPStan limpos (relato); Kit 122/123, Tenancy 41/42 (CT-71/72); 8 suítes de User/Paineis 826/826 (relato); citações de `tests/` deslocadas corrigidas pela sessão (`CitacoesDeCodigoTest` 3/3) |
+| 26 | 9 | Codex CLI (`--yolo`) — reescrita de CT-71/72 para a P-04 | modelo padrão do Codex (não exposto) | `01`, `02`, `03` | CT-71 2/2, CT-72 3/3; arquivos inteiros Kit 124/124, Tenancy 44/44 | — | `git status` sem arquivo novo; LF |
+| 27 | 11 | `fw-qa-gate` — quality gate (`.claude/agents/fw-qa-gate.md` de versão anterior à de `.ai/skills`: falha pré-existente do `AgentesDaEsteiraTest`, não alterada neste PR) | opus (agente) | conversa | `06` ciclo 1: REPROVADO → especificação (2 Major de texto, 2 Minor, 1 Cosmético); 8/12 dimensões | 262.774 tokens · 1.402 s | `06` gravado verbatim entre `<<<06`/`>>>06` (o transcript não expôs o texto final ao script; gravado a partir do retorno, só com o escape HTML desfeito); `git status` antes = depois; md5 de `app/` igual; o `03` mudou por edição da sessão (registro da mutação) |
 
 ## Blockers
 
@@ -209,14 +228,14 @@ Baseline `main` (2026-10-13): `php artisan test --testsuite=Unit,Feature,Kit,Ten
 
 ## Desvios do Plano
 
-- Passo 4/6: migrations com o timestamp do artisan (`2026_10_14_*`), não `2026_10_13_100000` — a corrigir no `01` no step 10
-- Passo 6: `dock_atalhos`/`dock_layout` também em `User::$hidden` (`PageHeaderTest` trava as colunas expostas) — a registrar no `01` no step 10
-- Passo 8: hook Livewire `call` no `PluginDoDock` recusa nome de action forjado (array) antes do `TypeError` (CT-05) — a registrar no `01`/`02` (Superfície Livewire) no step 10
+- Passo 4/6: migrations com o timestamp do artisan (`2026_10_14_*`), não `2026_10_13_100000` — corrigido no `01` passo 4/6 (step 10)
+- Passo 6: `dock_atalhos`/`dock_layout` também em `User::$hidden` (`PageHeaderTest` trava as colunas expostas) — registrado no `01` passo 6 (step 10)
+- Passo 8: hook Livewire `call` no `PluginDoDock` recusa nome de action forjado (array) antes do `TypeError` (CT-05) — registrado na Superfície Livewire do `02` (step 10)
 - Ambiente: arquivos tocados por ferramentas de edição no Windows ficaram com CRLF na cópia de trabalho (o repositório é `eol=lf`); `ConfiguracoesDoKitTelaTest` CT-50 lê o fonte por regex com `
 
 ` e quebrou. 14 arquivos convertidos para LF em 2026-10-14; edições seguintes gravam com `newline='
 '`
-- Passo 7: avaliação de destino do painel corrente sem `noContexto` (o middleware já fixou painel, tenant e `team_id`) — evita recarregar papéis por avaliação; a registrar no `01`/ADR-01 no step 10
+- Passo 7: avaliação de destino do painel corrente sem `noContexto` (o middleware já fixou painel, tenant e `team_id`) — evita recarregar papéis por avaliação; registrado na ADR-01 do `02` (step 10)
 - Passo 4: `dock_paineis` ganhou `->rule('array')` (ticket 04, CT-09)
 - Passo 7: `DockDeAtalhos` lê `dock_atalhos` do banco só quando o modelo autenticado não tem a coluna carregada
 
@@ -236,4 +255,5 @@ Baseline `main` (2026-10-13): `php artisan test --testsuite=Unit,Feature,Kit,Ten
 
 ## Retrospectiva
 
-<!-- Step 10. -->
+- **Funcionou bem**: o `00` com adendos verbatim segurou o oráculo em cinco rodadas de perguntas; a revisão adversarial às cegas (2 rodadas) e o step 9 pegaram defeitos reais que a suíte verde escondia (fail-open do Shield entre painéis, dock com atalhos velhos no mesmo request); a divisão Claude (código) × Codex (testes) em paralelo com auditoria por `git status`
+- **Faltou no plano**: o `01` não previu o memo `once()` do Shield nem o `cachedActions` do componente do vendor — os dois só apareceram no diff; o ambiente Windows gravou CRLF na cópia de trabalho e quebrou um teste que lê fonte por regex; `isMasterGlobal()` sem memo (global do kit) limitou a P-01 — candidato a feature própria
