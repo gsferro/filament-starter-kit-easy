@@ -200,16 +200,16 @@
         },
         {
             "name": "awcodes/filament-badgeable-column",
-            "version": "v4.2.0",
+            "version": "v4.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/awcodes/filament-badgeable-column.git",
-                "reference": "9ca01bea4153b012e21649d5b77b66699ab1b3b2"
+                "reference": "962d285f6c6292412421eb557dc876d91aea1235"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/awcodes/filament-badgeable-column/zipball/9ca01bea4153b012e21649d5b77b66699ab1b3b2",
-                "reference": "9ca01bea4153b012e21649d5b77b66699ab1b3b2",
+                "url": "https://api.github.com/repos/awcodes/filament-badgeable-column/zipball/962d285f6c6292412421eb557dc876d91aea1235",
+                "reference": "962d285f6c6292412421eb557dc876d91aea1235",
                 "shasum": ""
             },
             "require": {
@@ -218,9 +218,13 @@
                 "spatie/laravel-package-tools": "^1.15"
             },
             "require-dev": {
+                "awcodes/focus": "^1.0",
+                "larastan/larastan": "^3.0",
                 "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^8.0",
                 "orchestra/testbench": "^9.0|^10.0|^11.0",
-                "pestphp/pest": "^4.3",
+                "pestphp/pest": "^4.0",
+                "pestphp/pest-plugin-arch": "^4.0",
                 "pestphp/pest-plugin-laravel": "^4.0",
                 "pestphp/pest-plugin-livewire": "^4.0",
                 "rector/rector": "^2.0",
@@ -250,7 +254,7 @@
                     "role": "Developer"
                 }
             ],
-            "description": "Filament Tables column to append and prepend badges.",
+            "description": "Display additional context as badges alongside a Filament table column or infolist entry.",
             "homepage": "https://github.com/awcodes/filament-badgeable-column",
             "keywords": [
                 "awcodes",
@@ -261,7 +265,7 @@
             ],
             "support": {
                 "issues": "https://github.com/awcodes/filament-badgeable-column/issues",
-                "source": "https://github.com/awcodes/filament-badgeable-column/tree/v4.2.0"
+                "source": "https://github.com/awcodes/filament-badgeable-column/tree/v4.2.2"
             },
             "funding": [
                 {
@@ -269,7 +273,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-21T19:51:25+00:00"
+            "time": "2026-10-06T19:50:27+00:00"
         },
         {
             "name": "aws/aws-crt-php",
