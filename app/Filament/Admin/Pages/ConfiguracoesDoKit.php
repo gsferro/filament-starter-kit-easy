@@ -25,6 +25,7 @@ use Filament\Pages\SettingsPage;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Log;
@@ -974,12 +975,19 @@ class ConfiguracoesDoKit extends SettingsPage
                  * As opções de layout e estilo saem de `DockDeAtalhos`, como `string => rótulo`,
                  * pelo mesmo motivo de `DensidadeDoLayout::opcoes()`: instância de enum no estado
                  * estouraria `TypeError` na propriedade `string` do settings.
+                 *
+                 * Sem o pacote do dock (projeto atualizado pelo `kit:update` antes do
+                 * `composer require`), os campos somem e a seção diz o que falta. Campo oculto não
+                 * entra no `$data` do save, então o settings gravado fica como estava.
                  */
                 Section::make('Dock de atalhos')
                     ->description('Botão flutuante com os atalhos favoritos de cada usuário. Só aparece para quem tem a permissão "Usar:Dock" (tela de papéis).')
                     ->icon('heroicon-o-bolt')
                     ->columnSpanFull()
                     ->schema([
+                        Text::make('O pacote do dock não está instalado neste projeto. Rode "composer require '.DockDeAtalhos::PACOTE.'" e depois "php artisan filament:assets".')
+                            ->visible(! DockDeAtalhos::pacoteInstalado()),
+
                         Select::make('dock_paineis')
                             ->label('Painéis onde o dock aparece')
                             ->helperText('Em branco = nenhum painel. Escolha os painéis em que o dock deve aparecer.')
@@ -987,7 +995,8 @@ class ConfiguracoesDoKit extends SettingsPage
                             // O Select múltiplo valida cada item contra as opções, mas não o tipo do
                             // conjunto: texto solto ("app") passava e virava a lista gravada.
                             ->rule('array')
-                            ->options(Paineis::opcoes()),
+                            ->options(Paineis::opcoes())
+                            ->visible(DockDeAtalhos::pacoteInstalado()),
 
                         Select::make('dock_layout')
                             ->label('Layout padrão')
@@ -998,7 +1007,8 @@ class ConfiguracoesDoKit extends SettingsPage
                             // `TypeError` ao gravar o settings (medido: CT-09, "layout como lista").
                             ->in(array_keys(DockDeAtalhos::opcoesDeLayout()))
                             ->selectablePlaceholder(false)
-                            ->required(),
+                            ->required()
+                            ->visible(DockDeAtalhos::pacoteInstalado()),
 
                         Select::make('dock_estilo')
                             ->label('Estilo')
@@ -1006,7 +1016,8 @@ class ConfiguracoesDoKit extends SettingsPage
                             // Mesmo motivo do `in` do layout acima.
                             ->in(array_keys(DockDeAtalhos::opcoesDeEstilo()))
                             ->selectablePlaceholder(false)
-                            ->required(),
+                            ->required()
+                            ->visible(DockDeAtalhos::pacoteInstalado()),
                     ]),
 
                 TextInput::make('rotulo_da_organizacao')

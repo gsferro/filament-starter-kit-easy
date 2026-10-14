@@ -7,9 +7,11 @@ namespace App\Filament\Dock;
 use App\Models\User;
 use App\Support\DockDeAtalhos;
 use Filament\Actions\Action;
+use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
+use Filament\Panel;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use HoceineEl\QuickActionDock\Enums\DockLayout;
@@ -43,11 +45,19 @@ use ReflectionUnionType;
  * decidir se e como o dock aparece (RQ-22).
  *
  * Posição no centro inferior: os cantos inferiores direitos já têm o "voltar ao topo" e o chat (D5).
+ *
+ * Sem o pacote instalado — quem atualizou pelo `kit:update` e ainda não rodou o `composer require`
+ * —, `make()` devolve um plugin que não faz nada: os painéis sobem sem o dock, em vez de todo
+ * comando morrer no boot (`DockDeAtalhos::pacoteInstalado()`).
  */
 final class PluginDoDock
 {
-    public static function make(): QuickActionDockPlugin
+    public static function make(?bool $pacoteInstalado = null): Plugin
     {
+        if (! ($pacoteInstalado ?? DockDeAtalhos::pacoteInstalado())) {
+            return self::semPacote();
+        }
+
         self::recusarNomeDeActionForjado();
 
         return QuickActionDockPlugin::make()
@@ -90,6 +100,27 @@ final class PluginDoDock
         }
 
         return $actions;
+    }
+
+    /**
+     * O lugar do dock no painel quando o pacote falta: registrado e inerte.
+     *
+     * Um plugin, e não "nenhum", porque os três providers o passam dentro de `->plugins([...])`,
+     * que só aceita `Plugin`. Nada dele referencia classe do pacote.
+     */
+    private static function semPacote(): Plugin
+    {
+        return new class implements Plugin
+        {
+            public function getId(): string
+            {
+                return 'dock-de-atalhos-sem-pacote';
+            }
+
+            public function register(Panel $panel): void {}
+
+            public function boot(Panel $panel): void {}
+        };
     }
 
     /**
