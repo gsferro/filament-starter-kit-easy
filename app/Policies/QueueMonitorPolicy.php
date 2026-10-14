@@ -32,7 +32,11 @@ class QueueMonitorPolicy
         return $authUser->can('Update:QueueMonitor');
     }
 
-    public function delete(AuthUser $authUser, QueueMonitor $queueMonitor): bool
+    /**
+     * O `croustibat/filament-jobs-monitor` 5.x confere `delete` também sem registro, ao decidir se
+     * mostra as ações de exclusão (`Authorization::allows()` chama `Gate::allows('delete', QueueMonitor::class)`).
+     */
+    public function delete(AuthUser $authUser, ?QueueMonitor $queueMonitor = null): bool
     {
         return $authUser->can('Delete:QueueMonitor');
     }

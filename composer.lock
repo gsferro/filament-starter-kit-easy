@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "40048b4aeef279057b4ef96d924a71cf",
+    "content-hash": "b4ce9df780640db72f30a3acc930a748",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -1901,35 +1901,33 @@
         },
         {
             "name": "croustibat/filament-jobs-monitor",
-            "version": "v4.6.0",
+            "version": "v5.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ultraviolettes/filament-jobs-monitor.git",
-                "reference": "c976ee4989c3d5f4999c491df61e722088cebae9"
+                "reference": "b78afe1e71942f5a20c189ce5633291ac7702c33"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ultraviolettes/filament-jobs-monitor/zipball/c976ee4989c3d5f4999c491df61e722088cebae9",
-                "reference": "c976ee4989c3d5f4999c491df61e722088cebae9",
+                "url": "https://api.github.com/repos/ultraviolettes/filament-jobs-monitor/zipball/b78afe1e71942f5a20c189ce5633291ac7702c33",
+                "reference": "b78afe1e71942f5a20c189ce5633291ac7702c33",
                 "shasum": ""
             },
             "require": {
-                "filament/filament": "^4.0|^5.0",
-                "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
-                "php": "^8.2|^8.3|^8.4|^8.5",
+                "filament/filament": "^5.0",
+                "illuminate/contracts": "^12.0|^13.0",
+                "php": "^8.3",
                 "spatie/laravel-package-tools": "^1.13.5"
             },
             "require-dev": {
+                "larastan/larastan": "^3.0",
                 "laravel/pint": "^1.0",
-                "orchestra/testbench": "^10.10",
-                "pestphp/pest": "*"
+                "orchestra/testbench": "^10.10|^11.0",
+                "pestphp/pest": "^4.0|^5.0"
             },
             "type": "library",
             "extra": {
                 "laravel": {
-                    "aliases": {
-                        "QueueMonitor": "Croustibat\\FilamentJobsMonitor\\QueueMonitorProvider\\Facade"
-                    },
                     "providers": [
                         "Croustibat\\FilamentJobsMonitor\\FilamentJobsMonitorServiceProvider",
                         "Croustibat\\FilamentJobsMonitor\\QueueMonitorProvider"
@@ -1965,7 +1963,7 @@
             ],
             "support": {
                 "issues": "https://github.com/ultraviolettes/filament-jobs-monitor/issues",
-                "source": "https://github.com/ultraviolettes/filament-jobs-monitor/tree/v4.6.0"
+                "source": "https://github.com/ultraviolettes/filament-jobs-monitor/tree/v5.1.0"
             },
             "funding": [
                 {
@@ -1973,7 +1971,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-24T09:10:54+00:00"
+            "time": "2026-10-04T08:23:08+00:00"
         },
         {
             "name": "danharrin/date-format-converter",
