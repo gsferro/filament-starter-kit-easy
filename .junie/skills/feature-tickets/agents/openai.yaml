@@ -1,0 +1,6 @@
+interface:
+  display_name: "Feature Tickets"
+  short_description: "Tickets verticais com requisito e teste rastreáveis"
+  default_prompt: "Use $feature-tickets para fatiar ou executar a wiki indicada em tickets verticais."
+policy:
+  allow_implicit_invocation: false
