@@ -9,13 +9,13 @@
 
 ## Progresso
 
-`[████████████████████] 100 %` — 8 de 8 tickets concluídos
+`[████████████████████] 100 %` — 9 de 9 tickets concluídos
 
 | pronto | em execução | em revisão | concluído |
 |---|---|---|---|
-| 0 | 0 | 0 | 8 |
+| 0 | 0 | 0 | 9 |
 
-**Fronteira** (pode ser pego agora): todos concluídos · **CT verdes** (inferidos do `Status`): 76 de 76
+**Fronteira** (pode ser pego agora): todos concluídos · **CT verdes** (inferidos do `Status`): 77 de 77
 
 ## Tickets
 
@@ -29,6 +29,7 @@
 | [06](06-favoritos-entre-paineis-e-ocultos.md) | Favoritos de outro painel e favoritos ocultos | concluído | 12/12 | 03, 05 |
 | [07](07-favoritos-presos-a-organizacao.md) | Favoritos do painel de organização presos à organização | concluído | 15/15 | 05, 06 |
 | [08](08-achados-da-revisao-do-diff.md) | Achados da revisão do diff — custo, organização excluída e aviso | concluído | 5/5 | 05, 06, 07 |
+| [09](09-dock-no-tema-escuro.md) | O dock acompanha o tema escuro do painel | concluído | 1/1 | 01 |
 
 ## Dependências
 
@@ -46,6 +47,7 @@ flowchart LR
   t06["06 · Favoritos de outro painel e favoritos o…<br/>concluído"]
   t07["07 · Favoritos do painel de organização pres…<br/>concluído"]
   t08["08 · Achados da revisão do diff — custo, org…<br/>concluído"]
+  t09["09 · O dock acompanha o tema escuro do painel<br/>concluído"]
   t01 --> t02
   t01 --> t03
   t01 --> t04
@@ -58,6 +60,7 @@ flowchart LR
   t05 --> t08
   t06 --> t08
   t07 --> t08
+  t01 --> t09
   classDef concluido fill:#1a7f37,stroke:#116329,color:#ffffff
-  class t01,t02,t03,t04,t05,t06,t07,t08 concluido
+  class t01,t02,t03,t04,t05,t06,t07,t08,t09 concluido
 ```

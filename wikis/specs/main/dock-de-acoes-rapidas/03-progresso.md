@@ -76,6 +76,7 @@ Fatiamento confirmado: 2026-10-13 — gsferro — 1 rodada, 3 perguntas (Q25–Q
 - [x] [06](07-tickets/06-favoritos-entre-paineis-e-ocultos.md) favoritos de outro painel e favoritos ocultos — concluído — 2026-10-14, aprovado por gsferro (autorização de execução contínua); CT-23, 24, 25, 45, 46, 47, 53, 54, 60 verdes (`pest tests/Kit/DockDeAtalhosTest.php` 111/111) — comportamento entregue pelo código dos tickets 03 e 05; suíte completa sem regressão
 - [x] [07](07-tickets/07-favoritos-presos-a-organizacao.md) favoritos do painel de organização presos à organização — concluído — 2026-10-14, aprovado por gsferro (autorização de execução contínua); CT-26…29, 40, 43, 44, 51, 52, 55, 58, 61…64 verdes (`pest tests/Tenancy/DockDeAtalhosTenancyTest.php` 38/38, Kit 111/111); passo 10 (docs pt/en, CHANGELOG, READMEs) com os 24 testes de docs de `tests/Kit` verdes; suíte completa 4424 testes, só a falha pré-existente da baseline
 - [x] [08](07-tickets/08-achados-da-revisao-do-diff.md) achados da revisão do diff — concluído — 2026-10-14, aprovado por gsferro (autorização de execução contínua); CT-71…75 verdes
+- [x] [09](07-tickets/09-dock-no-tema-escuro.md) o dock acompanha o tema escuro do painel — concluído — 2026-10-14, aprovado por gsferro; CT-B02 3/3 verde
 
 ## Verificação Final
 
@@ -148,7 +149,7 @@ Falsificabilidade (2026-10-14, no próprio repositório, escopo estreito — sem
   - QA-06 (Minor) — 31 mutantes não cobertos em `DockDeAtalhos` (recusa do servidor em `gravar()` atrás do `Select`; chaves adulteradas no JSON; `habilitadoNoPainel(null)`; logs) — **aberto**, destino `feature-test-design`
   - QA-07 (Minor) — score sem os não cobertos: **corrigido depois do ciclo 2** na `## Verificação Final`, 2026-10-14
   - QA-08 (Cosmético) — docblocks com P-01: **corrigido depois do ciclo 2** (só comentário em `DockDeAtalhos.php`), 2026-10-14
-  - Dimensões não verificadas: D (log real), G (tema escuro), H (acessibilidade) — sem Playwright MCP
+  - Dimensões não verificadas: D (log real), H (acessibilidade) — sem Playwright MCP. **G (tema escuro) fechada depois do ciclo 2**: premissa P-05, CT-B02 (luminância computada: escuro 0,009, claro 1,0, painel escuro com navegador claro 0,009) e capturas escuras em `art/`, 2026-10-14
   - Dívida do passe de complexidade (`## Verificação Final`) e Q28 aberta ao solicitante (P-02 implementada pela recomendação)
 
 ## Candidatos a Rule
@@ -230,6 +231,11 @@ Baseline `main` (2026-10-13): `php artisan test --testsuite=Unit,Feature,Kit,Ten
 | 26 | 9 | Codex CLI (`--yolo`) — reescrita de CT-71/72 para a P-04 | modelo padrão do Codex (não exposto) | `01`, `02`, `03` | CT-71 2/2, CT-72 3/3; arquivos inteiros Kit 124/124, Tenancy 44/44 | — | `git status` sem arquivo novo; LF |
 | 27 | 11 | `fw-qa-gate` — quality gate (`.claude/agents/fw-qa-gate.md` de versão anterior à de `.ai/skills`: falha pré-existente do `AgentesDaEsteiraTest`, não alterada neste PR) | opus (agente) | conversa | `06` ciclo 1: REPROVADO → especificação (2 Major de texto, 2 Minor, 1 Cosmético); 8/12 dimensões | 262.774 tokens · 1.402 s | `06` gravado verbatim entre `<<<06`/`>>>06` (o transcript não expôs o texto final ao script; gravado a partir do retorno, só com o escape HTML desfeito); `git status` antes = depois; md5 de `app/` igual; o `03` mudou por edição da sessão (registro da mutação) |
 | 28 | 11 | `fw-qa-gate` — ciclo 2 | opus (agente) | conversa | `06` ciclo 2: APROVADO COM DÉBITO (3 Minor, 1 Cosmético); 9/12 dimensões; K2 refeita sem `--covered-only` | 210.525 tokens · 2.863 s | `06` gravado verbatim a partir do retorno; `git status` antes = depois; md5 de `app/` e wiki iguais (exceto o `06`, regravado pela sessão) |
+| 29 | pós-11 | `general-purpose` — documentação completa do dock (página própria pt/en, índices, README, site) | sonnet | `03`, raciocínio da sessão | `docs/{pt,en}/recursos/dock-de-atalhos.md`, hub e configurações apontando para ela, sidebar/redirects do site | 117.329 tokens · 786 s | testes de docs verdes (1102 no lote ampliado, 1 falha esperada até o GIF existir); siglas RQ/P removidas do texto de usuário pela sessão |
+| 30 | pós-11 | `general-purpose` — capturas e GIF do dock (tema claro) pelo pipeline `CapturaDeArteTest` + `kit:arte` | opus | `wikis/`, docs | 4 PNG + thumbs + `dock-de-atalhos.gif` (5 quadros) | 212.976 tokens · 1.786 s | imagens conferidas visualmente pela sessão; `git status art/` só arquivos novos; `KitArteTest` + `CitacoesDeCodigoTest` 41/41 |
+| 31 | pós-11 | derivador retomado — CT-B02 (P-05, tema escuro) | opus | `01`, `03`, código | CT-B02 no `05` (3 linhas, luminância computada) e 2 linhas do `04` | 804.919 tokens · 130 s | o rascunho do `04` no scratchpad era anterior às correções do gate e as desfazia — `04` restaurado do commit e só as 2 linhas novas + R29 aplicadas pela sessão |
+| 32 | pós-11 | `general-purpose` — capturas e GIF em tema escuro | opus | `wikis/`, docs | 3 PNG escuros + thumbs + `dock-de-atalhos-escuro.gif`; cenários claros passam a declarar `inLightMode()` | 124.828 tokens · 447 s | imagens conferidas pela sessão; vazamento do tema para o `HubDeCardsTest` (captura `infra-hub`) fechado pela sessão com `inLightMode()` (2/2) |
+| 33 | pós-11 | Codex CLI (`--yolo`) — CT-B02 | modelo padrão do Codex (não exposto) | `01`, `02`, `03` | CT-B02 3/3 verde; CT-B01 timeout de navegador frio na 1ª execução (c) | — | `git status` antes × depois: só `tests/Browser/DockDeAtalhosTest.php` além das docs editadas pela sessão |
 
 ## Blockers
 
