@@ -576,12 +576,14 @@ class KitUpdate extends Command
     /** @param  list<string>  $tags */
     private function escolherDestino(array $tags): string
     {
-        if ($alvo = $this->option('tag')) {
-            $alvo = str_starts_with((string) $alvo, 'kit-') ? $alvo : 'kit-'.ltrim((string) $alvo, 'v');
-            $alvo = in_array($alvo, $tags, true) ? $alvo : 'kit-v'.ltrim((string) $this->option('tag'), 'v');
+        $pedida = $this->option('tag');
+
+        if (is_string($pedida) && $pedida !== '') {
+            $alvo = str_starts_with($pedida, 'kit-') ? $pedida : 'kit-'.ltrim($pedida, 'v');
+            $alvo = in_array($alvo, $tags, true) ? $alvo : 'kit-v'.ltrim($pedida, 'v');
 
             if (! in_array($alvo, $tags, true)) {
-                $this->components->warn("Tag {$this->option('tag')} não existe no kit. Usando a mais recente.");
+                $this->components->warn("Tag {$pedida} não existe no kit. Usando a mais recente.");
 
                 return $tags[0];
             }
@@ -851,7 +853,8 @@ class KitUpdate extends Command
             return true;
         }
 
-        $branch = $this->option('branch') ?: 'kit-update/'.str_replace('kit-', '', $destino);
+        $pedido = $this->option('branch');
+        $branch = is_string($pedido) && $pedido !== '' ? $pedido : 'kit-update/'.str_replace('kit-', '', $destino);
         $atual  = trim($this->git(['rev-parse', '--abbrev-ref', 'HEAD']));
 
         if ($atual === $branch) {
