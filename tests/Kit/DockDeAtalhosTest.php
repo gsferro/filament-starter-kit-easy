@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\UserResource as UserResourceDoAdmin;
 use App\Filament\App\Pages\HubDoNegocio;
 use App\Filament\App\Resources\Users\UserResource;
+use App\Filament\Dock\PluginDoDock;
 use App\Filament\Infra\Pages\Dashboard as DashboardDoInfra;
 use App\Filament\Pages\DashboardClassico;
 use App\Models\User;
@@ -17,12 +18,14 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
+use Filament\Panel;
 use Filament\Resources\Resource;
 use Filament\Support\Facades\FilamentView;
 use Filament\Support\View\ViewManager;
 use Filament\View\PanelsRenderHook;
 use HoceineEl\QuickActionDock\Enums\DockLayout;
 use HoceineEl\QuickActionDock\Livewire\QuickActionDock;
+use HoceineEl\QuickActionDock\QuickActionDockPlugin;
 use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Http\Request;
@@ -1663,3 +1666,29 @@ it('[CT-75] adicionar uma página que deixou de poder ser adicionada avisa sem g
     'já favorita em outra aba'      => ['duas abas'],
     'destino deixou de ser abrível' => ['permissão revogada'],
 ]);
+
+/*
+| Projeto atualizado pelo `kit:update` antes do `composer require` do pacote (validação da v0.48.0,
+| cenários 3 e 4): o código do dock chega e o pacote não, porque o `composer.json` nunca é aplicado.
+*/
+
+it('reconhece se o pacote do dock está instalado pela classe do plugin', function (): void {
+    expect(DockDeAtalhos::pacoteInstalado())->toBeTrue()
+        ->and(DockDeAtalhos::pacoteInstalado('HoceineEl\QuickActionDock\PluginQueNaoExiste'))->toBeFalse();
+});
+
+it('monta o plugin do pacote quando ele está instalado', function (): void {
+    expect(PluginDoDock::make())->toBeInstanceOf(QuickActionDockPlugin::class);
+});
+
+it('sem o pacote, entrega um plugin inerte que o painel registra e inicializa', function (): void {
+    $plugin = PluginDoDock::make(pacoteInstalado: false);
+    $painel = Panel::make()->id('painel-sem-dock');
+
+    $plugin->register($painel);
+    $plugin->boot($painel);
+
+    expect($plugin)->not->toBeInstanceOf(QuickActionDockPlugin::class)
+        ->and($plugin->getId())->not->toBe(QuickActionDockPlugin::make()->getId())
+        ->and($painel->getPlugins())->toBe([]);
+});

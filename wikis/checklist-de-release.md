@@ -73,8 +73,20 @@ torna a mudança reversível. O `--force` é necessário fora de terminal intera
 cd velho-sem-tenant
 git init && git add -A && git commit -m "vX.Y.(Z-1) recem instalada"
 php artisan kit:update --all --no-interaction
+# release com dependência nova: um "composer require" por pacote que o relatório do kit:update listou
+composer require vendor/pacote:^X.Y --no-interaction
+php artisan filament:assets
 php artisan migrate --force
 ```
+
+> **Release com dependência nova pede o passo de quem atualiza.** O `kit:update` nunca aplica o
+> `composer.json`: ele relata o diff (`WARN O composer.json do kit mudou`) e o usuário acrescenta o
+> pacote à mão, como manda `docs/pt/comecar/atualizando-o-projeto.md`, seção "Dependência nova do
+> kit". O cenário de update segue esse mesmo caminho: sem ele, mede um projeto que nenhum usuário
+> teria. Achado da validação da `v0.48.0`: sem o `composer require` do
+> `hoceineel/filament-quick-action-dock`, os cenários 3 e 4 morriam no boot, em todo comando, com
+> `Class "HoceineEl\QuickActionDock\QuickActionDockPlugin" not found`, e a suíte nem começava.
+> Release sem dependência nova pula as duas linhas do meio.
 
 > **No cenário 4 há um commit A MAIS, e ele não é zelo.** O `kit:tenancy` deixa a árvore suja
 > (medido: 6 arquivos — `.env`, `config/permission.php`, `config/filament-shield.php`, o banco e
@@ -88,6 +100,8 @@ php artisan migrate --force
 > php artisan kit:tenancy --force --no-interaction
 > git add -A && git commit -m "depois da tenancy, antes do update"   # <- ESTE
 > php artisan kit:update --all --no-interaction
+> composer require vendor/pacote:^X.Y --no-interaction   # só em release com dependência nova
+> php artisan filament:assets
 > php artisan migrate --force
 > ```
 >
