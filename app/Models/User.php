@@ -97,6 +97,9 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
     protected $hidden = [
         'password',
         'remember_token',
+        // Preferências pessoais do dock: não saem na serialização do registro (ex.: `getPageHeaderRecord`).
+        'dock_atalhos',
+        'dock_layout',
     ];
 
     /**
@@ -136,6 +139,12 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
             'aprovacao_pendente' => 'boolean',
             // Mesmo regime: fora do `$fillable`, só `forceFill` em `desativar()`/`reativar()`.
             'ativo'              => 'boolean',
+            /*
+             * Favoritos e layout do dock de atalhos: fora do `$fillable`, escritos só por
+             * `forceFill` — a chave do favorito vira nome de classe na leitura, então nunca entra
+             * por atribuição em massa (ADR-02 da wiki `dock-de-acoes-rapidas`).
+             */
+            'dock_atalhos'       => 'array',
             'email_verified_at'  => 'datetime',
             'password'           => 'hashed',
         ];

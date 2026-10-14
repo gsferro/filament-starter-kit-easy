@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Dock\PluginDoDock;
 use App\Filament\Infra\Pages\Dashboard;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
@@ -453,6 +454,14 @@ class InfraPanelProvider extends PanelProvider
 
                 EnvironmentIndicatorPlugin::make()
                     ->visible(fn (): bool => ! app()->isProduction()),
+
+                /*
+                 * Dock de atalhos — registrado nos TRÊS painéis, sempre (`.ai/rules/providers-filament.md`):
+                 * o componente resolve o plugin pelo painel corrente (`QuickActionDockPlugin::get()`), e
+                 * painel sem ele estoura no update Livewire. Quem decide se o dock aparece é o próprio
+                 * plugin, por request (settings + `Usar:Dock`). Wiki `dock-de-acoes-rapidas`, D3.
+                 */
+                PluginDoDock::make(),
 
                 FilamentOdometerEasyPlugin::make()
                     ->delay(1000)

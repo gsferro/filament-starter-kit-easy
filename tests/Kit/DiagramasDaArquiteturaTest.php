@@ -795,7 +795,7 @@ function fatosPorDg(): array
         // DG-03: a pergunta de pendência (checa_pendente) vem ANTES da de master_global
         // (checa_master, canAccessPanel) E, na extensão de canAccessTenant, a organização inativa
         // (checa_tenant) nega ANTES do master_global/vínculo sempre entrar (checa_vinculo) —
-        // `app/Models/User.php:canAccessTenant:819` faz a checagem de `!$tenant->ativo` primeiro
+        // `app/Models/User.php:canAccessTenant:828` faz a checagem de `!$tenant->ativo` primeiro
         // "de propósito", e só depois `isMasterGlobal()` (RD-12).
         //
         // RD3-06: os IDs (checa_pendente, checa_master, checa_tenant, checa_vinculo) são os MESMOS

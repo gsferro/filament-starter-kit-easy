@@ -110,6 +110,12 @@ class PapeisSeeder extends Seeder
                      * eixo de roles do pacote); quem monta é quem opera a organização.
                      */
                     ->reject(fn (string $permissao): bool => $permissao === 'Manage:Dashboard')
+                    /*
+                     * `Usar:Dock` nasce só nos papéis de administração (RQ-24, wiki
+                     * `dock-de-acoes-rapidas`): o administrador concede ao usuário comum pela
+                     * tela de papéis, se quiser.
+                     */
+                    ->reject(fn (string $permissao): bool => $permissao === 'Usar:Dock')
             );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -249,6 +255,11 @@ class PapeisSeeder extends Seeder
              * na subtração explícita do `run()`: usuário comum VÊ o dashboard, não monta.
              */
             'Manage:Dashboard' => ['app', 'admin', 'infra'],
+            /*
+             * `Usar:Dock` vale para os três painéis — o dock pode ser ligado em qualquer um
+             * (`kit.dock.paineis`). O `panel_user` a perde na subtração explícita do `run()`.
+             */
+            'Usar:Dock' => ['app', 'admin', 'infra'],
         ];
     }
 

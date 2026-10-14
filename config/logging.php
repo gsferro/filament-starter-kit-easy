@@ -162,6 +162,23 @@ return [
             'replace_placeholders' => true,
         ],
 
+        /*
+         * Dock de atalhos (hoceineel/filament-quick-action-dock) — wiki `dock-de-acoes-rapidas`.
+         *
+         * Mesma forma dos canais acima (driver por env + `handler`), pelo mesmo motivo. O que cai
+         * aqui: favorito negado por falha ao avaliar o destino (warning), chave fora do catálogo
+         * descartada na gravação (warning) e favoritos gravados (info). Nunca a chave crua do
+         * favorito — ela é dado vindo do navegador.
+         */
+        'dock-de-acoes-rapidas' => [
+            'driver'               => env('LOG_KIT_DRIVER', 'daily'),
+            'handler'              => NullHandler::class,
+            'path'                 => storage_path('logs/dock-de-acoes-rapidas.log'),
+            'level'                => env('LOG_LEVEL', 'debug'),
+            'days'                 => 14,
+            'replace_placeholders' => true,
+        ],
+
         'monthly' => [
             'driver'               => 'monthly',
             'path'                 => storage_path('logs/laravel.log'),

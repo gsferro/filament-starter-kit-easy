@@ -468,3 +468,24 @@ it('mostra o item de convites recebidos no menu só para quem tem View:ConvitesR
     'com a permissão' => [true],
     'sem a permissão' => [false],
 ]);
+
+/*
+|--------------------------------------------------------------------------
+| Dock de atalhos — a semeadura de Usar:Dock com organização (wiki `dock-de-acoes-rapidas`)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * CT-42 — com multi-organização, o admin da organização recebe o dock e o panel_user não.
+ *
+ * `admin_app` só existe nesta suíte (`.ai/rules/testes.md` §"Nem todo papel do kit existe em toda
+ * suíte"); `admin` e `infra` entram para provar que o ramo de tenancy não os esquece.
+ */
+it('[CT-42] com multi-organização, o admin da organização recebe o dock e o panel_user não', function (string $papel, bool $tem): void {
+    expect(papelDoKit($papel)->hasPermissionTo('Usar:Dock'))->toBe($tem);
+})->with([
+    'admin_app (/app, organização)' => ['admin_app', true],
+    'admin (/admin)'                => ['admin', true],
+    'infra (/infra)'                => ['infra', true],
+    'panel_user (usuário comum)'    => ['panel_user', false],
+]);

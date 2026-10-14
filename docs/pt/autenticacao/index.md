@@ -80,6 +80,6 @@ accDescr: Depois do login, a sessão alterna entre autenticada, aguardando 2FA, 
 O desafio de 2FA só existe para quem o confirmou antes — é o `MustTwoFactor` do próprio diagrama de
 cima. O bloqueio por ociosidade usa `config('lockscreen.idle_timeout')` = 1800
 (`config/lockscreen.php:idle_timeout:16`); os três painéis compartilham o mesmo limite de
-tentativas com força de logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:267`,
-`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:382`,
-`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:290`).
+tentativas com força de logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:268`,
+`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:383`,
+`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:291`).

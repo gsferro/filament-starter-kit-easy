@@ -415,6 +415,14 @@ return [
          * só a escrita. Subtraída do `panel_user` no `PapeisSeeder`.
          */
         'manage:dashboard' => 'Montar o dashboard dinâmico',
+        /*
+         * Quem vê e usa o dock de atalhos (hoceineel/filament-quick-action-dock). Sem ela o
+         * dock não renderiza e as actions dele não executam — o `authorize('Usar:Dock')` do
+         * plugin e das actions em `App\Filament\Dock\PluginDoDock`. Vale nos três painéis e
+         * é subtraída do `panel_user` no `PapeisSeeder` (RQ-24): o administrador concede ao
+         * usuário comum pela tela de papéis.
+         */
+        'usar:dock' => 'Usar o dock de atalhos',
     ],
 
     /*

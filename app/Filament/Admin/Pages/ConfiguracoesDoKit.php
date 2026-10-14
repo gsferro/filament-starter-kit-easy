@@ -9,6 +9,7 @@ use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\DensidadeDoLayout;
 use App\Support\DetalheDoUsuario;
+use App\Support\DockDeAtalhos;
 use App\Support\Paineis;
 use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
@@ -959,6 +960,49 @@ class ConfiguracoesDoKit extends SettingsPage
                             ->multiple()
                             ->options(Paineis::opcoes())
                             ->visible(fn (Get $get): bool => (bool) $get('dashboard_dinamico_habilitado')),
+                    ]),
+
+                /*
+                 * O dock de atalhos. Lido por REQUEST nas Closures do plugin
+                 * (`App\Filament\Dock\PluginDoDock`), que só consultam `config('kit.dock.*')` já
+                 * sobreposta pelo banco no boot: salvar aqui vale no próximo F5, sem consulta
+                 * extra ao banco por request (RQ-22).
+                 *
+                 * Lista de painéis VAZIA = nenhum, ao contrário do dashboard dinâmico logo acima —
+                 * o helper diz isso na tela porque a vizinha diz o oposto.
+                 *
+                 * As opções de layout e estilo saem de `DockDeAtalhos`, como `string => rótulo`,
+                 * pelo mesmo motivo de `DensidadeDoLayout::opcoes()`: instância de enum no estado
+                 * estouraria `TypeError` na propriedade `string` do settings.
+                 */
+                Section::make('Dock de atalhos')
+                    ->description('Botão flutuante com os atalhos favoritos de cada usuário. Só aparece para quem tem a permissão "Usar:Dock" (tela de papéis).')
+                    ->icon('heroicon-o-bolt')
+                    ->columnSpanFull()
+                    ->schema([
+                        Select::make('dock_paineis')
+                            ->label('Painéis onde o dock aparece')
+                            ->helperText('Em branco = nenhum painel. Escolha os painéis em que o dock deve aparecer.')
+                            ->multiple()
+                            // O Select múltiplo valida cada item contra as opções, mas não o tipo do
+                            // conjunto: texto solto ("app") passava e virava a lista gravada.
+                            ->rule('array')
+                            ->options(Paineis::opcoes()),
+
+                        Select::make('dock_layout')
+                            ->label('Layout padrão')
+                            ->helperText('Cada usuário pode trocar o layout dele no próprio dock; o estilo vale para todos.')
+                            ->options(DockDeAtalhos::opcoesDeLayout())
+                            ->in(array_keys(DockDeAtalhos::opcoesDeLayout()))
+                            ->selectablePlaceholder(false)
+                            ->required(),
+
+                        Select::make('dock_estilo')
+                            ->label('Estilo')
+                            ->options(DockDeAtalhos::opcoesDeEstilo())
+                            ->in(array_keys(DockDeAtalhos::opcoesDeEstilo()))
+                            ->selectablePlaceholder(false)
+                            ->required(),
                     ]),
 
                 TextInput::make('rotulo_da_organizacao')

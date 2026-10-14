@@ -7,7 +7,10 @@ use App\Support\CustomizadorDaInstalacao;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Select;
 use Filament\Support\Colors\Color;
+use HoceineEl\QuickActionDock\Enums\DockLayout;
+use HoceineEl\QuickActionDock\Enums\DockStyle;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -509,3 +512,70 @@ it('[CT-50] todo campo de texto livre das configuracoes recusa o autopreenchimen
     expect($senhaComOff)->toBe([], 'estes campos são `->password()` e não usam `autocomplete="new-password"`: '
         .'gerenciador de senha ignora `off`, então a guarda não guarda');
 })->group('kit');
+
+it('[CT-08] o administrador grava painéis, layout e estilo padrão do dock', function (array $paineis): void {
+    gravarConfiguracao('dock_paineis', ['admin']);
+    gravarConfiguracao('dock_layout', 'speed-dial');
+    gravarConfiguracao('dock_estilo', 'native');
+    app()->forgetInstance(SettingsDoKit::class);
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['dock_paineis' => $paineis, 'dock_layout' => 'bar', 'dock_estilo' => 'outline'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(configuracaoGravada('dock_paineis'))->toBe($paineis)
+        ->and(configuracaoGravada('dock_layout'))->toBe('bar')
+        ->and(configuracaoGravada('dock_estilo'))->toBe('outline');
+})->with([
+    'dois painéis'  => [['app', 'infra']],
+    'nenhum painel' => [[]],
+])->group('kit');
+
+it('[CT-09] valor fora do domínio é recusado no campo e nada é gravado', function (string $campo, mixed $valor): void {
+    gravarConfiguracao('dock_paineis', ['app']);
+    gravarConfiguracao('dock_layout', 'bar');
+    gravarConfiguracao('dock_estilo', 'outline');
+    app()->forgetInstance(SettingsDoKit::class);
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->set('data.'.$campo, $valor)
+        ->call('save')
+        ->assertHasFormErrors([$campo === 'dock_paineis' && is_array($valor) ? 'dock_paineis.0' : $campo]);
+
+    expect(configuracaoGravada('dock_paineis'))->toBe(['app'])
+        ->and(configuracaoGravada('dock_layout'))->toBe('bar')
+        ->and(configuracaoGravada('dock_estilo'))->toBe('outline');
+})->with([
+    'painel inexistente'  => ['dock_paineis', ['financeiro']],
+    'painéis como texto'  => ['dock_paineis', 'app'],
+    'layout fora do enum' => ['dock_layout', 'xpto'],
+    'layout como lista'   => ['dock_layout', ['speed-dial']],
+    'estilo fora do enum' => ['dock_estilo', 'xpto'],
+])->group('kit');
+
+it('[CT-57] todo layout e todo estilo do pacote gravam na tela de configurações', function (string $campo, string $valor, string $anterior): void {
+    gravarConfiguracao($campo, $anterior);
+    app()->forgetInstance(SettingsDoKit::class);
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->assertFormFieldExists($campo, function (Select $field) use ($valor): bool {
+            return array_key_exists($valor, $field->getOptions());
+        })
+        ->fillForm([$campo => $valor])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(configuracaoGravada($campo))->toBe($valor);
+})->with([
+    // vendor/hoceineel/filament-quick-action-dock/src/Enums/DockLayout.php:SpeedDial:9-10; vendor/hoceineel/filament-quick-action-dock/src/Enums/DockStyle.php:Native:9-12.
+    ...collect(DockLayout::cases())->mapWithKeys(fn (DockLayout $layout): array => [
+        'layout '.$layout->value => ['dock_layout', $layout->value, $layout === DockLayout::Bar ? 'speed-dial' : 'bar'],
+    ])->all(),
+    ...collect(DockStyle::cases())->mapWithKeys(fn (DockStyle $style): array => [
+        'estilo '.$style->value => ['dock_estilo', $style->value, $style === DockStyle::Native ? 'outline' : 'native'],
+    ])->all(),
+])->group('kit');

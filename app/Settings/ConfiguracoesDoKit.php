@@ -208,6 +208,21 @@ final class ConfiguracoesDoKit extends Settings
     /** @var array<int, string> Painéis em que a feature vale. Vazio = todos. */
     public array $dashboard_dinamico_paineis;
 
+    /**
+     * Painéis em que o dock de atalhos aparece. **Vazio = nenhum** — o oposto do
+     * dashboard dinâmico, de propósito: instalação nova nasce sem dock (RQ-14).
+     * Lido por request em `App\Support\DockDeAtalhos::habilitadoNoPainel()`.
+     *
+     * @var array<int, string>
+     */
+    public array $dock_paineis;
+
+    /** Layout padrão do dock — um `value` de `HoceineEl\QuickActionDock\Enums\DockLayout`. */
+    public string $dock_layout;
+
+    /** Estilo do dock — um `value` de `HoceineEl\QuickActionDock\Enums\DockStyle`. */
+    public string $dock_estilo;
+
     public string $rotulo_da_organizacao;
 
     public string $rotulo_das_organizacoes;
@@ -457,6 +472,14 @@ final class ConfiguracoesDoKit extends Settings
              */
             'dashboard_dinamico_habilitado' => 'kit.dashboard_dinamico.habilitado',
             'dashboard_dinamico_paineis'    => 'kit.dashboard_dinamico.paineis',
+            /*
+             * O dock entra pelo MAPA e só lê `config()`: `App\Support\DockDeAtalhos` consulta
+             * `kit.dock.*` dentro das Closures do plugin, por request, já sobrepostas pelo
+             * banco no boot — zero consulta ao banco para decidir se e como o dock aparece (RQ-22).
+             */
+            'dock_paineis'                  => 'kit.dock.paineis',
+            'dock_layout'                   => 'kit.dock.layout',
+            'dock_estilo'                   => 'kit.dock.estilo',
             'rotulo_da_organizacao'         => 'kit.tenancy.label',
             'rotulo_das_organizacoes'       => 'kit.tenancy.label_plural',
             'ocultar_seletor_unico'         => 'kit.tenancy.ocultar_seletor_unico',

@@ -556,6 +556,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Dock de atalhos (hoceineel/filament-quick-action-dock)
+    |--------------------------------------------------------------------------
+    | Botão flutuante com os favoritos de cada usuário. Editável em
+    | /admin/configuracoes-da-aplicacao (aba Kit); o banco vence o .env em
+    | execução. Quem pode USAR é a permission `Usar:Dock` (custom_permissions).
+    |
+    |   'paineis' — ids separados por vírgula, mesmo parse de
+    |   `kit.dashboard_dinamico.paineis`, com a semântica OPOSTA: VAZIO
+    |   significa NENHUM painel. Instalação nova nasce sem dock em lugar nenhum
+    |   (falha fechado) — ver `App\Support\DockDeAtalhos::habilitadoNoPainel()`.
+    |
+    |   'layout' / 'estilo' — o padrão da instalação, valores de
+    |   `HoceineEl\QuickActionDock\Enums\DockLayout` e `DockStyle`. Sem env:
+    |   quem muda é a tela de configurações. O usuário sobrescreve só o layout.
+    |
+    | Wiki `wikis/specs/main/dock-de-acoes-rapidas/`.
+    */
+
+    'dock' => [
+        'paineis' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('KIT_DOCK_PAINEIS')),
+        ))),
+        'layout' => 'speed-dial',
+        'estilo' => 'native',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Observabilidade — retenção
     |--------------------------------------------------------------------------
     | Quanto tempo as trilhas que o kit GRAVA sobrevivem. Não é preferência de
