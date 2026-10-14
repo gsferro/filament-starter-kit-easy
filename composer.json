@@ -28,7 +28,7 @@
         "brimham/filament-backup-monitor": "^0.1",
         "caresome/filament-auth-designer": "^3.1",
         "cms-multi/filament-clear-cache": "^3.0",
-        "croustibat/filament-jobs-monitor": "^4.5",
+        "croustibat/filament-jobs-monitor": "^5.1",
         "ddr/filament-captcha": "^1.1",
         "dotswan/filament-laravel-pulse": "^2.2",
         "filament/filament": "^5.8.1",
