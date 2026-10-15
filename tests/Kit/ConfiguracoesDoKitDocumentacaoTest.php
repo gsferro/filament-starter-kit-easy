@@ -135,3 +135,77 @@ it('documenta nos dois readmes que a arte do login usa o nome da aplicacao', fun
     'README.md'    => ['README.md', 'mostra o nome da aplicação'],
     'README.en.md' => ['README.en.md', 'shows the application name'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');
+
+it('[CT-02] remove o nome antigo da aba de todos os docs e readmes', function (): void {
+    $arquivos = [base_path('README.md'), base_path('README.en.md')];
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('docs'), FilesystemIterator::SKIP_DOTS)) as $arquivo) {
+        if ($arquivo->isFile() && $arquivo->getExtension() === 'md') {
+            $arquivos[] = $arquivo->getPathname();
+        }
+    }
+
+    foreach ($arquivos as $arquivo) {
+        $texto = (string) file_get_contents($arquivo);
+
+        foreach (['aba Kit', 'aba **Kit**', 'Kit tab', '**Kit** tab', '| **Kit** |'] as $nomeAntigo) {
+            $this->assertStringNotContainsString($nomeAntigo, $texto, $arquivo);
+        }
+    }
+})->skip(fn (): bool => ! naArvoreDoKit(), 'A documentação só está disponível na árvore do kit.')->group('kit');
+
+it('[CT-02] preserva por arquivo as mencoes a aba agora chamada Aplicacao', function (string $arquivo, int $minimoDeMencoes): void {
+    $texto = (string) file_get_contents(base_path($arquivo));
+
+    $mencoes = preg_match_all('/^.*(?:aba Aplicação|aba \*\*Aplicação\*\*|Aplicação tab|\*\*Aplicação\*\* tab).*$/mu', $texto);
+
+    expect($mencoes)->toBeGreaterThanOrEqual($minimoDeMencoes, $arquivo);
+})->with([
+    'configurações pt' => ['docs/pt/recursos/configuracoes-do-kit.md', 8],
+    'configurações en' => ['docs/en/recursos/configuracoes-do-kit.md', 8],
+    'dock pt'          => ['docs/pt/recursos/dock-de-atalhos.md', 2],
+    'dock en'          => ['docs/en/recursos/dock-de-atalhos.md', 3],
+    'multi-tenancy pt' => ['docs/pt/recursos/multi-tenancy.md', 1],
+    'multi-tenancy en' => ['docs/en/recursos/multi-tenancy.md', 1],
+    'atualização pt'   => ['docs/pt/comecar/atualizando-o-projeto.md', 1],
+    'atualização en'   => ['docs/en/comecar/atualizando-o-projeto.md', 1],
+])->skip(fn (): bool => ! naArvoreDoKit(), 'A documentação só está disponível na árvore do kit.')->group('kit');
+
+it('[CT-02] preserva as oito mencoes historicas a aba Kit no changelog', function (): void {
+    $texto  = (string) file_get_contents(base_path('CHANGELOG.md'));
+    $partes = preg_split('/^## \[0\.49\.0\][^\r\n]*\R/m', $texto, 2);
+
+    expect($partes)->toHaveCount(2);
+
+    $historico = $partes[1];
+
+    expect(preg_match_all('/aba Kit|aba \*\*Kit\*\*|Kit tab|\*\*Kit\*\* tab/u', $historico))->toBe(8);
+    expect(substr_count($historico, 'aba Kit'))->toBe(6);
+    expect(substr_count($historico, 'aba **Kit**'))->toBe(2);
+})->skip(fn (): bool => ! naArvoreDoKit(), 'O CHANGELOG só está disponível na árvore do kit.')->group('kit');
+
+it('[CT-19] documenta a convencao de todas as secoes com icone e colapso na rule indexada', function (): void {
+    $indice = (string) file_get_contents(base_path('.ai/rules/index.md'));
+    $rule   = (string) file_get_contents(base_path('.ai/rules/pages.md'));
+
+    expect($indice)->toMatch('~^\|\s*app/Filament/Admin/Pages/\*\*\s*\|\s*\.ai/rules/pages\.md\s*\|\s*$~m');
+
+    preg_match_all('/^## ([^\r\n]+)\R(.*?)(?=^## |\z)/msu', $rule, $secoes, PREG_SET_ORDER);
+    $corpoDaConvencao = null;
+
+    foreach ($secoes as $secao) {
+        if (preg_match('/seç(?:ão|ões)|sections?/iu', $secao[1]) === 1
+            && preg_match('/ícone/iu', $secao[1]) === 1
+            && preg_match('/colaps/iu', $secao[1]) === 1) {
+            $corpoDaConvencao = $secao[2];
+
+            break;
+        }
+    }
+
+    expect($corpoDaConvencao)->not->toBeNull('.ai/rules/pages.md sem seção de seções com ícone e colapso (step 12 pendente).');
+    expect($corpoDaConvencao)->toMatch('/\btod[ao]\b/iu')
+        ->toMatch('/colaps/iu')
+        ->toMatch('/ícone/iu')
+        ->toContain('ConfiguracoesSecoesColapsaveisTest');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'As rules só estão disponíveis na árvore do kit.')->group('kit');
