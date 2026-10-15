@@ -1,0 +1,136 @@
+# Progresso — Tela de configurações: aba Aplicação, seções colapsáveis com ícone e carregamento adiado das abas
+
+**Estado**: em planejamento
+
+> Branch: `feat/configuracoes-secoes-colapsaveis` · Base do PR (`{base}`): `main` · Wiki: `wikis/specs/feat/configuracoes-secoes-colapsaveis/configuracoes-secoes-colapsaveis/`
+
+## 1. Rótulo da aba: "Kit" → "Aplicação"
+- [ ] `abaKit()` → `abaAplicacao()`, `Tab::make('Aplicação')`, mesmo ícone e posição
+- [ ] `CapturaDeArteTest`: dois `click('Kit')` → `click('Aplicação')`
+
+## 2. Seções em toda aba; ícone, colapso, persistência e id em toda seção
+- [ ] Helper `secao()` e as 11 seções novas (*Seções por aba* do `01`)
+- [ ] Seções existentes pelo helper (ícone onde faltava; `collapsible()` + `persistCollapsed()` + `id()`), provedores com `collapsed()` preservado
+- [ ] Seção *Servidor SMTP* `->visible()` só com SMTP (D3)
+
+## 3. Carregamento adiado das seis abas
+- [ ] `Tabs::key()`, `Tab::key()` e `Schema::make()->components([...])->deferLoading()` por aba (helper `aba()`)
+
+## 4. Docs pt/en e CHANGELOG
+- [ ] "aba Kit" → "aba Aplicação" nas 27 linhas; parágrafo das seções e do adiamento; CHANGELOG `[Unreleased]`
+
+## 5. Capturas refeitas
+- [ ] `composer art`: `admin-configuracoes-seletor` e `admin-configuracoes-dock` com a aba "Aplicação"
+
+## 6. Rule do projeto
+- [ ] `.ai/rules/pages.md` — step 12 (`requirement-to-rule`), com a aprovação do solicitante
+
+## Testes
+<!-- Preenchida no step 7. -->
+
+## Tickets
+<!-- Step 8. -->
+
+## Verificação Final
+- [ ] `/ponytail:ponytail-review` no diff (validar contra over-engineering)
+- [ ] `vendor/bin/pint --dirty`
+- [ ] `vendor/bin/filacheck --fix`
+- [ ] `vendor/bin/pest tests/Kit/ConfiguracoesSecoesColapsaveisTest.php --compact`
+- [ ] `vendor/bin/pest tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` (CT-B)
+- [ ] `php artisan test --compact --parallel --testsuite=Kit` e `--testsuite=Tenancy`: nada além da baseline (Kit 4 172/4 175 + CT-82, Tenancy 631/631)
+- [ ] `pest --mutate --path=app/Filament/Admin/Pages/ConfiguracoesDoKit.php`: no Windows, só por amostragem manual (lição da rodada 3)
+- [ ] **Custo medido**: requests e HTML da tela antes × depois, contra o `## Modelo de Execução`
+- [ ] **Step 9**: revisão do diff por quem não implementou (passe genérico cego + `fw-revisor-diff`), antes da reconciliação
+- [ ] Roteiro "Desenhado × Implementado" do `05` preenchido
+- [ ] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*`
+- [ ] `rastreabilidade.sh {wiki}` silencioso
+- [ ] `checkbox-sem-evidencia.sh {wiki}` silencioso
+- [ ] `citacoes.sh {wiki}` silencioso
+- [ ] `ids-ct.sh {wiki} tests/…` silencioso
+- [ ] `conformidade-rules.sh {wiki} main` silencioso
+- [ ] Falsificabilidade dos CTs de achado provada
+- [ ] Docs pt/en, CHANGELOG e README reconciliados
+- [ ] `git commit`
+
+## Revisão do Diff (step 9)
+
+| ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
+|---|---|---|---|---|---|
+
+## Conformidade com Rules
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+
+## Quality Gate
+
+<!-- Preenchido no step 11. -->
+
+## Candidatos a Rule
+
+<!-- Step 12. -->
+
+## Auditoria Pré-Implementação
+
+Entendimento confirmado: pendente — rodada 1 da entrevista em 2026-10-15: 0 perguntas de fato ao usuário (raia fato resolvida pelo levantamento do despacho #1 e pelo vendor), 6 decisões de desenho tomadas pela sessão sob autorização existente (D1–D6 do `01`), 3 perguntas de requisito ao solicitante (Q1–Q3 do `00`, implementadas pela recomendação; resposta contrária entra como Adendo). O solicitante autorizou a implementação ("inicia a /feature-wiki da tela de configurações" e "implemente tudo", 2026-10-15), então a sessão segue sem nova aprovação do plano.
+
+### Confronto código × afirmação (step 5)
+| Pergunta | O `01` dizia | O código faz | Resposta (quem, data) | Onde a wiki mudou |
+|---|---|---|---|---|
+| — | nenhuma divergência de comportamento: a feature não muda o que o código faz, só onde cada campo mora e quando a aba renderiza | — | — | — |
+
+### Revisão profunda (step 5) — premissas do plano contra o código real
+| Premissa do plano | O código real diz | Correção aplicada na wiki |
+|---|---|---|
+| `Tab::schema()` aceita um `Schema` (para `deferLoading()`) | `vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php:schema():72` — `array \| Schema \| Closure` | nenhuma |
+| `Schema::deferLoading()` existe no 5.10.2 instalado | `vendor/filament/schemas/src/Schema.php:deferLoading():152`; `composer show filament/filament` = v5.10.2, última no Packagist | nenhuma (o `01` não precisa de bump) |
+| Aba com erro carrega sozinha | `vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:isDeferredSchemaLoaded():220`, `:238-258` percorre o error bag pelos state paths | nenhuma |
+| Seção colapsada abre no erro | `vendor/filament/schemas/resources/js/index.js:handleFormValidationError:153`, `:159` dispara `expand` nos ancestrais; `vendor/filament/schemas/src/Components/Section.php:toEmbeddedHtml():263`, `:368` escuta | nenhuma |
+| `persistCollapsed()` grava por `id()` | `vendor/filament/schemas/src/Components/Section.php:$persist:364` — chave `filament:section:collapsed:{id}` em `localStorage` (Alpine `$persist`) | nenhuma |
+| `Section::visible()` aceita closure com `Get` | `vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php:visible():114` (`bool \| Closure`), e a Page já usa `fn (Get $get)` em `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaEmail():444`, `:446` | nenhuma |
+| `secaoAntiRobo()` em `:765` | o método começa em `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:secaoAntiRobo():761`; o `Section::make` está em `:765` | `01` corrigido (citação) |
+| A chave da aba na URL deriva do rótulo | `vendor/filament/schemas/src/Components/Tabs.php:persistTabInQueryString():140`, `:93` (`Str::slug(label) . '::tabs'`) — "Kit" → `kit::tabs`, "Aplicação" → `aplicacao::tabs` | nenhuma (Q3 confirmada como pergunta real) |
+| Nenhum teste afirma o rótulo "Kit" por componente | levantamento do despacho #1: só os dois `click('Kit')` de `tests/BrowserTenancy/CapturaDeArteTest.php:it:937`, `:942` e `:it:1085`, `:1096`; `tests/Kit/SegredosDoSettingsTest.php:it:579` afirma a hierarquia das seções de provedor (preservada) | nenhuma |
+
+**Varredura da classe irmã**: não há classe nova nesta feature (a Page, os helpers privados e os testes são edições/arquivos de teste) — n.a., registrado em 2026-10-15.
+
+### Auditoria Ponytail (step 6)
+`/ponytail-review` (skill do projeto, em linha) sobre `01` e `02`, 2026-10-15 — `net: -3 itens`.
+| # | Sugestão de corte | Aplicada? | Onde |
+|---|---|---|---|
+| 1 | yagni: passo 3 (uma linha de `->visible()` da seção SMTP) como passo próprio | sim — fundido no passo 2; passos renumerados | `01` passos 2–6, `## Cobertura`; `03` seções |
+| 2 | delete: CT de chaves únicas por reflexão (o render já estoura `LogicException`) | sim | `01` Riscos |
+| 3 | delete: D6 "o `columns(2)` fica" — estado atual, não decisão | sim — D7 virou D6 | `01` Decisões de Desenho |
+| — | `02`: lean already (sem ADR; só a Superfície Livewire) | — | — |
+
+## Despachos
+
+| # | Step | Agente / tarefa | Modelo | Não recebeu | Resultado | Custo | Auditoria do retorno |
+|---|---|---|---|---|---|---|---|
+| 1 | 3 | **Codex CLI 0.162.1** (`codex exec --yolo < /dev/null`), contrato só-leitura escrito pela sessão — inventário da Page (campos por aba, seções, ícone/colapso), fatos do vendor (Tabs/Tab, `Schema::deferLoading`, Section/colapso/persistência), testes e docs que citam a aba Kit ou seções, rules | modelo padrão do Codex (não exposto) | conversa, wiki; proibido escrever fora de `scratchpad/codex2/levantamento.md` | 420 linhas: 50 campos (31 soltos), 10 seções existentes, API do adiamento com citações, 28 arquivos de teste com `fillForm` na Page, 27 linhas de docs "aba Kit", 2 capturas, rules sem seção sobre Section/Tab | — (host não reporta); ~10 min | presença ok (A–E no formato pedido); integridade: `git status --porcelain` só com a wiki nova; amostragem pela sessão: `vendor/filament/schemas/src/Components/Section.php:$persist:364`, `vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:isDeferredSchemaLoaded():220`, `:238-258`, `tests/Kit/SegredosDoSettingsTest.php:assertSchemaComponentExists:591`, `:598-615` e `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaKit():939`, `:944-999` lidos e conferem |
+| — | 0, 2, 4 | Sem despacho — captura verbatim do requisito, `RQ`, nome da feature, `00`/`01`/`02`/`03` escritos pela sessão (edição com forte interdependência; os fatos vieram do despacho #1 e do vendor lido pela sessão) | — | — | — | — | — |
+
+## Blockers
+
+## Desvios do Plano
+
+## Notas de Implementação
+
+## Referências Abertas
+- `hosts-e-subagentes.md` — step 3 (antes do primeiro despacho) — 2026-10-15
+- `roteamento-e-despacho.md` — step 3 — 2026-10-15
+- `pesquisa-step-3.md` — step 3 — 2026-10-15
+- `template-00-requisito.md` — step 4 — 2026-10-15
+- `entrevista-tres-raias.md` — step 4 — 2026-10-15
+- `template-01-plano.md` — step 4 — 2026-10-15
+- `template-02-adr.md` — step 4 — 2026-10-15
+- `template-03-progresso.md` — step 4 — 2026-10-15
+- `padrao-de-log.md` — step 4 — 2026-10-15
+- `estrutura-criada.md` — step 4 — 2026-10-15
+- `glossario.md` — step 4 — 2026-10-15
+- `citacoes-de-codigo.md` — step 4 — 2026-10-15
+- `ponytail-caveman.md` — início — 2026-10-15
+
+## Retrospectiva
+- **Funcionou bem**: —
+- **Faltou no plano**: —
