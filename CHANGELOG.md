@@ -5,6 +5,37 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- Visões salvas de tabela (`sehsah/filament-remember-table`): o botão *Visões* nas dez listagens do kit
+  grava filtros, busca, ordenação, agrupamento e colunas com nome, por usuário e por organização,
+  com visão padrão, compartilhamento opcional e `?view=` na URL. Nasce desligado; liga-se na aba
+  Tabelas de `/admin/configuracoes-da-aplicacao` (`KIT_TABELA_VISOES_SALVAS`,
+  `KIT_TABELA_VISOES_COMPARTILHADAS`). Exige a permissão `Usar:VisoesDeTabela` para salvar e
+  gerenciar (nas instalações novas, só os papéis de administração). Traduções pt-BR do pacote em
+  `lang/vendor/filament-remember-table/`.
+- Carregamento contínuo de tabela (`asignua/filament-infinite-scroll`): rolagem infinita ou botão
+  "Carregar mais" em toda tabela dos três painéis, um bloco do tamanho de "Linhas por página" por
+  vez, teto de 500 linhas. Nasce em paginação; muda-se na mesma aba (`KIT_TABELA_CARREGAMENTO`).
+- `happenv-com/filament-phpstan-macros` (dev): o PHPStan entende os macros de componente do
+  Filament registrados em provider — o `infiniteScroll()` é chamado direto, sem exceção.
+- Página nova no site, `recursos/visoes-de-tabela-e-carregamento` (pt/en), com capturas e GIF nos
+  dois temas; dossiê dos cinco pacotes avaliados (dois ficaram fora: `spiggle/list-view` e
+  `happenv-com/filament-saved-views`) em `wikis/specs/feat/estudo-de-pacotes-rodada-3/`.
+
+### Corrigido
+
+- Dropdown das ações do cabeçalho da página abria por baixo do campo de busca da tabela (o
+  `asmit/resized-column` eleva o cabeçalho da tabela a `z-index: 21`, acima dos `20` do painel
+  de dropdown do Filament): `resources/css/filament/kit.css` sobe o painel para `22`, ainda abaixo
+  do chrome do Filament. Visível com o botão *Visões*, mas valia para qualquer `ActionGroup` do
+  cabeçalho.
+
+### Alterado
+
+- Filament atualizado de 5.8.2 para 5.10.2 (dentro de `^5.8.1`): o `infinite-scroll` depende do
+  render hook `TablesRenderHook::CONTENT_AFTER`, que só existe a partir do 5.10.
+
 ## [0.48.0] - 2026-10-14
 
 ### Adicionado

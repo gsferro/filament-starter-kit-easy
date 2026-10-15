@@ -113,14 +113,27 @@ class ProdutoResource extends Resource
     use BadgeContagemNavegacao;
 }
 
-// Na List page — lembra a largura das colunas escolhida pelo usuário:
+// Na List page — lembra a largura das colunas escolhida pelo usuário e dá o botão
+// "Visões" (visões salvas, quando ligadas nas configurações):
+use App\Filament\Concerns\VisoesDeTabela;
 use Asmit\ResizedColumn\HasResizableColumn;
 
 class ListProdutos extends ListRecords
 {
     use HasResizableColumn;
+    use VisoesDeTabela;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            ...$this->getTableViewActions(),
+            CreateAction::make(),
+        ];
+    }
 }
 ```
+
+Sem o `VisoesDeTabela`, a listagem nova fica sem o botão *Visões* mesmo com a opção ligada — o trait é opt-in por página, como o de largura. Ver [Visões salvas e carregamento contínuo](../../recursos/visoes-de-tabela-e-carregamento/).
 
 ## Badges de contagem
 

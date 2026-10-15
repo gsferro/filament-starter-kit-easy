@@ -212,9 +212,9 @@ dois já vêm completos.
 
 | Fundação | |
 |---|---:|
-| Pacotes de produção | **59** |
-| Pacotes de desenvolvimento | **20** |
-| Migrations | **63** |
+| Pacotes de produção | **61** |
+| Pacotes de desenvolvimento | **21** |
+| Migrations | **64** |
 | Policies | **16** |
 | Comandos `kit:*` | **9** |
 
@@ -230,7 +230,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **12** |
-| Features especificadas (`wikis/specs/`) | **81** |
+| Features especificadas (`wikis/specs/`) | **82** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **23** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -308,7 +308,7 @@ navegação: **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https:/
 | [Autenticação](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/) | convites, registro aberto, login social, proteção anti-robô, estados do usuário |
 | [Recursos](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/) | multi-tenancy, anexos e mídia, import/export CSV, trilhas do `/infra`, configurações do kit, hub de cartões, dock de atalhos, DTO com Laravel Data |
 | [Operação](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/) | agentes de IA, roteiro completo de features, convenções, o que fazer depois de criar um Resource |
-| [Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/) | qualidade de código, busca e idioma, os 77 pacotes instalados |
+| [Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/) | qualidade de código, busca e idioma, os 82 pacotes instalados |
 
 A versão em inglês fica em **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://gsferro.github.io/filament-starter-kit-easy/en/)**.
 

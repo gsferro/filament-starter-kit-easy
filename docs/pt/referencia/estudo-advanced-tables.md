@@ -8,3 +8,5 @@ O kit mantém um estudo de viabilidade para capacidades avançadas de tabelas no
 
 > O estudo completo, com a análise de custo e as alternativas, está em `wikis/specs/feat/estudo-advanced-tables/estudo-advanced-tables/`.
 
+**Atualização (outubro de 2026):** o nível (b) do estudo — visões salvas por usuário — foi fechado sem código próprio pelo `sehsah/filament-remember-table`, adotado na terceira rodada de pacotes. Ver [Visões salvas e carregamento contínuo](../../recursos/visoes-de-tabela-e-carregamento/).
+

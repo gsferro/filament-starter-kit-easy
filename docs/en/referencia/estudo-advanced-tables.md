@@ -8,3 +8,5 @@ The kit keeps a feasibility study for advanced table capabilities in Filament (r
 
 > The full study, including cost analysis and alternatives, is in `wikis/specs/feat/estudo-advanced-tables/estudo-advanced-tables/`.
 
+**Update (October 2026):** level (b) of the study — saved views per user — was closed with no custom code by `sehsah/filament-remember-table`, adopted in the third package round. See [Saved views and continuous loading](../../recursos/visoes-de-tabela-e-carregamento/).
+

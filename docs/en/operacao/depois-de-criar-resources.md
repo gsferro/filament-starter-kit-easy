@@ -116,13 +116,25 @@ class ProdutoResource extends Resource
 }
 
 // On the List page — remembers the column width chosen by the user:
+use App\Filament\Concerns\VisoesDeTabela;
 use Asmit\ResizedColumn\HasResizableColumn;
 
 class ListProdutos extends ListRecords
 {
     use HasResizableColumn;
+    use VisoesDeTabela;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            ...$this->getTableViewActions(),
+            CreateAction::make(),
+        ];
+    }
 }
 ```
+
+Without `VisoesDeTabela` the new list has no *Views* button even with the option on — the trait is opt-in per page, like the width one. See [Saved views and continuous loading](../../recursos/visoes-de-tabela-e-carregamento/).
 
 ## Count badges
 

@@ -17,6 +17,7 @@ Um único arquivo define como **toda** tabela, toggle, modal e coluna do projeto
 | **colunas redimensionáveis** (`asmit/resized-column`) | largura ajustável pelo usuário, preservada na sessão |
 | `filtersLayout(Modal)` + `filtersFormColumns(2)` + `deferFilters()` | com 3+ filtros o dropdown vira rolagem; o modal não |
 | `defaultPaginationPageOption(10)` + `extremePaginationLinks()` | paginação previsível, com atalhos de primeira/última |
+| **carregamento contínuo** (`asignua/filament-infinite-scroll`), desligado por padrão | rolagem infinita ou botão "Carregar mais", um bloco por vez — [detalhes](../visoes-de-tabela-e-carregamento/) |
 | `deselectAllRecordsWhenFiltered(false)` | filtrar não descarta a seleção |
 
 Também são globais: modal que **não** fecha no Esc (um toque acidental descartaria o formulário), toggles com cor e ícone de estado, coluna de ícone booleana com check/x colorido, `CreateAction` com ícone padrão e o alternador de painéis.
@@ -32,7 +33,7 @@ Também são globais: modal que **não** fecha no Esc (um toque acidental descar
 > }
 > ```
 
-> **Quatro desses defaults são editáveis em [Configurações do kit](../configuracoes-do-kit/)**, na aba *Tabelas*: linhas por página, linhas listradas, persistência do recorte e colunas arrastáveis. No `.env` as mesmas quatro existem como semente e plano B — `KIT_TABELA_PAGINACAO`, `KIT_TABELA_LISTRADA`, `KIT_TABELA_PERSISTIR_FILTROS` e `KIT_TABELA_COLUNAS_REDIMENSIONAVEIS` — e o valor gravado no banco vence. O resto continua sendo decisão de código, de propósito — são escolhas com motivo escrito, não preferência de gosto.
+> **Sete desses defaults são editáveis em [Configurações do kit](../configuracoes-do-kit/)**, na aba *Tabelas*: linhas por página, linhas listradas, persistência do recorte, colunas arrastáveis, carregamento da tabela, visões salvas e o compartilhamento delas. No `.env` as mesmas sete existem como semente e plano B — `KIT_TABELA_PAGINACAO`, `KIT_TABELA_LISTRADA`, `KIT_TABELA_PERSISTIR_FILTROS`, `KIT_TABELA_COLUNAS_REDIMENSIONAVEIS`, `KIT_TABELA_CARREGAMENTO`, `KIT_TABELA_VISOES_SALVAS` e `KIT_TABELA_VISOES_COMPARTILHADAS` — e o valor gravado no banco vence. O resto continua sendo decisão de código, de propósito — são escolhas com motivo escrito, não preferência de gosto.
 >
 > ⚠️ **Densidade de tabela não existe no Filament 5** e por isso não está na tela. O TODO antigo daqui prometia os quatro itens, e um deles não tem API: varredura em `vendor/filament/tables/src` não devolve nenhuma ocorrência de `density`, e `vendor/filament/tables/src/Enums/` traz sete enums, nenhum de densidade. O que o framework oferece de controle visual de aperto é o `striped()`, e é ele que ficou configurável.
 

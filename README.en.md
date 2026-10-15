@@ -212,9 +212,9 @@ The other two already come complete.
 
 | Foundation | |
 |---|---:|
-| Production packages | **59** |
-| Development packages | **20** |
-| Migrations | **63** |
+| Production packages | **61** |
+| Development packages | **21** |
+| Migrations | **64** |
 | Policies | **16** |
 | `kit:*` commands | **9** |
 
@@ -230,7 +230,7 @@ The other two already come complete.
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **12** |
-| Specified features (`wikis/specs/`) | **81** |
+| Specified features (`wikis/specs/`) | **82** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **23** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
@@ -308,7 +308,7 @@ navigation: **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://
 | [Authentication](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/) | invitations, open registration, social login, anti-robot protection, user states |
 | [Features](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/) | multi-tenancy, attachments and media, CSV import/export, `/infra` trails, kit settings, card hub, shortcut dock, DTOs with Laravel Data |
 | [Operations](https://gsferro.github.io/filament-starter-kit-easy/en/operacao/) | AI agents, the complete feature roadmap, conventions, what to do after creating a Resource |
-| [Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/) | code quality, search and language, the 77 installed packages |
+| [Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/) | code quality, search and language, the 82 installed packages |
 
 The Portuguese version lives at **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https://gsferro.github.io/filament-starter-kit-easy/pt/)**.
 

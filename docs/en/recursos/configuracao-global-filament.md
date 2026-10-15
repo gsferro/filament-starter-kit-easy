@@ -17,6 +17,7 @@ A single file defines how **every** table, toggle, modal and column in the proje
 | **resizable columns** (`asmit/resized-column`) | width adjustable by the user, preserved in the session |
 | `filtersLayout(Modal)` + `filtersFormColumns(2)` + `deferFilters()` | with 3+ filters the dropdown turns into scrolling; the modal doesn't |
 | `defaultPaginationPageOption(10)` + `extremePaginationLinks()` | predictable pagination, with first/last shortcuts |
+| **continuous loading** (`asignua/filament-infinite-scroll`), off by default | infinite scroll or a "Load more" button, one chunk at a time — [details](../visoes-de-tabela-e-carregamento/) |
 | `deselectAllRecordsWhenFiltered(false)` | filtering doesn't throw the selection away |
 
 Also global: modals that do **not** close on Esc (an accidental tap would discard the form), toggles with state color and icon, boolean icon column with a colored check/x, `CreateAction` with a default icon and the panel switcher.
@@ -32,7 +33,7 @@ Also global: modals that do **not** close on Esc (an accidental tap would discar
 > }
 > ```
 
-> **Four of these defaults are editable in [Kit settings](../configuracoes-do-kit/)**, on the *Tables* tab: rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns. The same four exist in `.env` as seed and fallback — `KIT_TABELA_PAGINACAO`, `KIT_TABELA_LISTRADA`, `KIT_TABELA_PERSISTIR_FILTROS` and `KIT_TABELA_COLUNAS_REDIMENSIONAVEIS` — and the value stored in the database wins. The rest stays a code decision on purpose — those are choices with a written reason, not matters of taste.
+> **Seven of these defaults are editable in [Kit settings](../configuracoes-do-kit/)**, on the *Tables* tab: rows per page, striped rows, recall of the user's filter/search/sort, draggable columns, table loading, saved views and their sharing. The same seven exist in `.env` as seed and fallback — `KIT_TABELA_PAGINACAO`, `KIT_TABELA_LISTRADA`, `KIT_TABELA_PERSISTIR_FILTROS`, `KIT_TABELA_COLUNAS_REDIMENSIONAVEIS`, `KIT_TABELA_CARREGAMENTO`, `KIT_TABELA_VISOES_SALVAS` and `KIT_TABELA_VISOES_COMPARTILHADAS` — and the value stored in the database wins. The rest stays a code decision on purpose — those are choices with a written reason, not matters of taste.
 >
 > ⚠️ **Table density does not exist in Filament 5**, so it is not on the screen. The old TODO here promised four items and one of them has no API: a sweep over `vendor/filament/tables/src` returns no occurrence of `density`, and `vendor/filament/tables/src/Enums/` holds seven enums, none for density. What the framework does offer as a visual tightness control is `striped()`, and that is the one that became configurable.
 
