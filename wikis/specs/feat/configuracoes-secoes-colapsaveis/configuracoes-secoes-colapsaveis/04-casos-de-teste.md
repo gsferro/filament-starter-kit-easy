@@ -2,7 +2,7 @@
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md` (só paths, rotas e `## Superfície de UI`) · ADR: `02-decisoes-arquiteturais.md` (só `## Superfície Livewire`)
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação.
-> Revisão adversarial: **rodada 1 feita** (`fw-adversario-ct`, 2026-10-15, 25 achados: 23 fechados, 2 rejeitados com motivo — ver `## Revisão adversarial — rodada 1`). O fechamento criou cenário novo (CT-16…CT-20, CT-B05): **rodada 2 devida**, uma única vez.
+> Revisão adversarial: **duas rodadas feitas — teto atingido** (`fw-adversario-ct`, 2026-10-15). Rodada 1: 25 achados (23 fechados, 2 rejeitados). Rodada 2: 5 fechamentos parciais da rodada 1 completados e 8 achados novos (7 fechados, 1 rejeitado) — ver `## Revisão adversarial — rodada 1` e `— rodada 2`. **Débito declarado**: CT-B06, criado no fechamento da rodada 2, não passou por revisão independente.
 
 ## Perfil de Derivação
 
@@ -16,9 +16,9 @@
 - Impacto 3 da gravação: salvar a tela com abas nunca carregadas pode regravar como vazio o segredo guardado (senha SMTP, `client_secret`, chave do anti-robô) ou desligar a proteção anti-robô em silêncio — perda de credencial que só volta redigitada e afrouxamento do login.
 - Técnicas aplicadas: EP (varredura exaustiva de componentes como partição completa), estado exibido (as seis abas, sem amostragem), não-efeito com destinatário real (valores gravados diferentes do default, segredos incluídos), domínio condicionado (seção SMTP × remetente), 2-switch (edição pendente → carregar outra aba → salvar; carregar → carregar de novo).
 - Técnica escalada acima do perfil: R3 e R4 (área mínima) usam varredura exaustiva em vez de um exemplo — um campo amostrado não distingue "todos em seção" de "quase todos", e a rule (RQ-04) é sobre *todos*.
-- Estouro de teto: R10 tem 2 CT no `04` + 2 CT-B no `05` (teto padrão: 3 por regra, 1 CT-B) — o gate vence o teto: CT-17 e CT-B05 são os únicos matadores de M48/M49 e MB12/MB13 (achados ADV-04 e ADV-25).
+- Estouro de teto: R10 tem 2 CT no `04` + 2 CT-B no `05`, e R9 ganhou CT-B06 (teto padrão: 3 por regra, 1 CT-B por feature; o `05` tem 6) — o gate vence o teto: CT-17 e CT-B05 são os únicos matadores de M48/M49 e MB12/MB13 (ADV-04, ADV-25), e CT-B06 é o único matador de MB14 (ADV-07).
 - Cenários: 20 · Regras: 13 · Mutantes previstos: 54 · Sem matador: 0
-<!-- grep -c conforme references/template-04.md §Contagem do cabeçalho; os 5 CT-B estão no 05 -->
+<!-- grep -c conforme references/template-04.md §Contagem do cabeçalho; os 6 CT-B estão no 05 -->
 
 ## Varredura SFDIPOT
 
@@ -27,8 +27,8 @@
 | S | a Page `ConfiguracoesDoKit` (schema: abas, seções, campos); docs pt/en; capturas `art/`; `.ai/rules/pages.md` + `.ai/rules/index.md` (step 12). Sem model, migration, policy ou config novos | CT-01, CT-02, CT-03, CT-04, CT-06, CT-19 |
 | F | renomear o rótulo; agrupar todo campo em seção; seção colapsável com ícone; persistir o colapso (Q1, recomendação autorizada); adiar o conteúdo das abas; gravar e validar igual a antes | CT-01…CT-18, CT-20 |
 | D | todas as propriedades do grupo `kit` já gravadas, com valor diferente do default — inclusive os três segredos e o anti-robô ligado; caminho de upload; campos de aba nunca carregada (ausentes no HTML, presentes no estado); edição pendente não salva; estado colapsado no `localStorage` | CT-10, CT-11, CT-12, CT-15, CT-16, CT-17 |
-| I | UI `GET /admin/configuracoes-da-aplicacao`; `$wire.loadDeferredSchema()`; `$wire.set('loadedDeferredSchemas')`; `?tab=` na URL; `localStorage`; docs e rules | CT-13, CT-14, CT-20, CT-B01, CT-B04 |
-| P | navegador: `IntersectionObserver`, Alpine, `localStorage` (CT-B); ruído `ResizeObserver` do ColorPicker em Tabs no CI (rule); `--mutate` no Windows (rule) | CT-B01…CT-B05 |
+| I | UI `GET /admin/configuracoes-da-aplicacao`; `$wire.loadDeferredSchema()`; `$wire.set('loadedDeferredSchemas')`; `?tab=` na URL; `localStorage`; docs e rules | CT-13, CT-14, CT-20, CT-B01, CT-B04, CT-B06 |
+| P | navegador: `IntersectionObserver`, Alpine, `localStorage`, campo `live()` (CT-B); ruído `ResizeObserver` do ColorPicker em Tabs no CI (rule); `--mutate` no Windows (rule) | CT-B01…CT-B06 |
 | O | administrador com a permissão (único perfil que abre a tela — ancestral); links e favoritos antigos com a aba Kit (Q3); a tela "só cresce": aba ou campo novo sem seção/adiamento; quem edita e troca de aba antes de salvar | CT-03, CT-06, CT-16, CT-B04 |
 | T | salvar antes de a aba carregar; erro que chega antes da aba; carregar outra aba com edição pendente; carregamento repetido da mesma aba; trocar o remetente sem salvar; recarregar depois de colapsar | CT-09, CT-10, CT-16, CT-17, CT-18, CT-20, CT-B02 |
 
@@ -44,16 +44,16 @@
 | R6 — o conteúdo de toda aba é adiado, com chave única, e carrega só a aba pedida | render adiado (padrão) | RQ-05, P-03 | estado exibido (seis abas) | CT-06, CT-07, CT-08, CT-B01, CT-B04 |
 | R7 — aba não carregada com campo em erro carrega sozinha e mostra o erro | render adiado (padrão) | P-03 | EP + não-efeito | CT-09 |
 | R8 — salvar sem nunca abrir as abas grava o alterado e preserva o resto; carregar uma aba não apaga a edição pendente | gravação (padrão) | P-04, RQ-05 | não-efeito com destinatário real + 2-switch | CT-10, CT-16 |
-| R9 — reagrupar em seções não muda o que a tela grava nem quando a seção condicional aparece | gravação (padrão) | RQ-02 (+ Fora de Escopo) | domínio condicionado | CT-11, CT-18 |
-| R10 — seção colapsada envia e valida os campos, e o erro nela fica visível | gravação (padrão) | P-05, P-03 | EP | CT-12, CT-17, CT-B03, CT-B05 |
+| R9 — reagrupar em seções não muda o que a tela grava nem quando a seção condicional aparece | gravação (padrão) | RQ-02 (+ Fora de Escopo) | domínio condicionado | CT-11, CT-18, CT-B06 |
+| R10 — seção colapsada envia e valida os campos, e o erro nela fica visível | gravação (padrão) | P-05, P-03 (+ recorte Q1 em CT-12, CT-17, CT-B05) | EP | CT-12, CT-17, CT-B03, CT-B05 |
 | R11 — os pontos de entrada do adiamento não carregam o que não existe, não repetem a carga e não gravam | render adiado (padrão) | RQ-05 (`## Superfície Livewire` do `02`) | EP: domínio × fora do domínio × tipo errado; 2-switch | CT-13, CT-14, CT-20 |
 | R12 — carregar uma aba não entrega segredo guardado | render adiado (padrão) | RQ-05 (+ Fora de Escopo) | EP por segredo | CT-15 |
-| R13 — a convenção "seção com ícone e colapsável" está escrita numa rule indexada para a Page | estrutura (mínimo) | RQ-04 | EP (existe/indexada) | CT-19 |
+| R13 — a convenção "seção com ícone e colapsável" está escrita numa rule indexada para a Page, com conteúdo que obriga e aponta o enforcement | estrutura (mínimo) | RQ-04 | EP (existe, conteúdo, indexada) | CT-19 |
 
 - RQ-01 — cobertura parcial: CT-01 (rótulo, posição, ícone); recorte "chave da aba na URL e links antigos com `kit`" aberto (Q3); o invariante das duas leituras (o link antigo ainda mostra conteúdo) e a partição válida da URL são CT-B04
-- RQ-02 — cobertura parcial: CT-03 (todo **campo** em seção), CT-11, CT-18; recorte "itens que não são campo (textos, avisos)" aberto (Q4); recorte "qual campo em qual seção" aberto (Q2) — nenhum CT afirma o agrupamento
-- RQ-03 — cobertura parcial: CT-04 (colapsável e com ícone); recorte de Q1 implementado pela recomendação autorizada pelo solicitante ("implemente tudo", 2026-10-15), cenários `@pendente-Q1`: CT-05, CT-12, CT-B02. Resposta contrária a Q1 vira Adendo e re-derivação
-- RQ-04 — CT-19 (a rule existe e o índice a liga à Page); o enforcement mecânico dela é CT-03 e CT-04 (a prova `arch()` que o step 12 cita). CT-19 fica vermelho até o step 12 — classificação esperada: implementação ainda não feita
+- RQ-02 — cobertura parcial: CT-03 (todo **campo** em seção), CT-11, CT-18, CT-B06; recorte "itens que não são campo (textos, avisos)" aberto (Q4); recorte "qual campo em qual seção" aberto (Q2) — nenhum CT afirma o agrupamento
+- RQ-03 — cobertura parcial: CT-04 (colapsável e com ícone); recorte de Q1 implementado pela recomendação autorizada pelo solicitante ("implemente tudo", 2026-10-15), cenários `@pendente-Q1`: CT-05, CT-12, CT-17, CT-B02, CT-B05. Resposta contrária a Q1 vira Adendo e re-derivação
+- RQ-04 — CT-19 (a rule existe, obriga "toda" seção colapsável com ícone, cita o teste que a faz cumprir, e o índice a liga à Page); o enforcement mecânico dela é CT-03 e CT-04 (a prova `arch()` que o step 12 cita). CT-19 fica vermelho até o step 12 — classificação esperada: implementação ainda não feita
 - RQ-05 — cobertura parcial: CT-06…CT-10, CT-13…CT-17, CT-20, CT-B01, CT-B04, CT-B05; recorte "autorização no carregamento de aba para quem perdeu a permissão com a tela aberta" aberto (Q6)
 - RQ-06, RQ-07, RQ-08, RQ-09 — atendidas no processo, sem cenário
 
@@ -65,7 +65,7 @@
 | Render adiado | R6 (CT-07, CT-08), R7, R11, R12 | componente Livewire/Filament | existente — mesma costura, mesmo arquivo novo | o adiamento é decidido no servidor: o HTML do componente traz o marcador (`fi-sc-loading`) ou o campo; o pedido de carga é um método Livewire | sim — convenção existente (molde `ConfiguracoesDoKitTelaTest`/`ConfiguracoesDoKitTest`), sessão, 2026-10-15 |
 | Gravação sob adiamento | R8, R9, R10 (CT-12, CT-17) | componente Livewire/Filament | existente — mesma costura; leitura por `configuracaoGravada()` e pela classe de settings (segredos decifrados), arranjo por `gravarConfiguracao()` | gravação por componente é o par que a regra do par exige; num teste de componente nenhuma aba carrega sozinha — é o estado "nunca carregada" de graça | sim — convenção existente (molde `ConfiguracoesDoKitTelaTest`/`ConfiguracoesDoKitTest`), sessão, 2026-10-15 |
 | Documentação | R2, R13 | unit de regra | existente — `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` (leitura de `docs/` com `naArvoreDoKit()`) | é leitura de arquivo, sem banco nem tela; vive em `tests/Kit` por convenção do projeto | sim — convenção existente (molde `ConfiguracoesDoKitTelaTest`/`ConfiguracoesDoKitTest`), sessão, 2026-10-15 |
-| Navegador | R5 (CT-B02), R6 (CT-B01, CT-B04), R10 (CT-B03, CT-B05) | browser | existente — a costura de `tests/Browser/ConfiguracoesDoKitTest.php` (`actingAs` + aquecimento pelo kernel no `beforeEach`), em arquivo novo `tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` | `IntersectionObserver` + `$wire.loadDeferredSchema`, colapso Alpine e `localStorage` só existem no navegador (`## Superfície de UI`) | sim — convenção existente (molde `ConfiguracoesDoKitTelaTest`/`ConfiguracoesDoKitTest`), sessão, 2026-10-15 |
+| Navegador | R5 (CT-B02), R6 (CT-B01, CT-B04), R9 (CT-B06), R10 (CT-B03, CT-B05) | browser | existente — a costura de `tests/Browser/ConfiguracoesDoKitTest.php` (`actingAs` + aquecimento pelo kernel no `beforeEach`), em arquivo novo `tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` | `IntersectionObserver` + `$wire.loadDeferredSchema`, colapso Alpine e `localStorage` só existem no navegador (`## Superfície de UI`) | sim — convenção existente (molde `ConfiguracoesDoKitTelaTest`/`ConfiguracoesDoKitTest`), sessão, 2026-10-15 |
 
 ## Fronteira com o Plano
 
@@ -74,12 +74,13 @@
 | ícone de cada seção (`heroicon-o-identification`, `-swatch`…) | escolha de implementação; o requisito pede *ter* ícone | o `Então` afirma ícone preenchido, nunca qual |
 | agrupamento campo → seção (`01` › *Seções por aba*) | Q2 aberta | nenhum CT afirma o agrupamento; os CT-B usam "a seção que contém o campo X" como seletor |
 | ids `configuracoes-{aba}-{secao}` | escolha de implementação; só existem para a persistência (Q1) | CT-05 afirma id explícito preenchido e único, nunca o valor; CT-B02 localiza a seção pelo campo |
-| `Tab::key()` de cada aba e a chave `aplicacao::tabs` na URL (D1) | chave interna = implementação; chave na URL da aba renomeada é visível ao usuário e o requisito não a determina (Q3) | CT-06 afirma só chave preenchida e distinta; CT-B04 usa só a chave da aba Tabelas (inalterada, fato do framework: slug do rótulo + `::tabs`) como partição válida |
-| seção SMTP "visível só com SMTP" (D3) | desenho; a visibilidade dos campos SMTP é comportamento herdado que esta wiki não muda | CT-11 e CT-18 afirmam só o invariante herdado: com SMTP os campos do servidor aparecem e gravam; com outro remetente, não aparecem |
-| "a seção abre" no erro (Superfície de UI) | P-05 aceita "a seção abre **ou** o erro aparece no topo" | CT-B03 e CT-B05 afirmam a mensagem de erro visível; a abertura é `@premissa` de mecanismo |
-| estado inicial expandido e provedores colapsados; `persistCollapsed` | Q1 aberta no `00`, recomendação **autorizada** pelo solicitante e implementada (decisão da sessão sobre ADV-21/ADV-23) | CT-05, CT-12 e CT-B02 vigentes, marcados `@pendente-Q1`; o estado inicial "tudo expandido" segue sem CT próprio (cortado) |
+| `Tab::key()` de cada aba e a chave `aplicacao::tabs` na URL (D1) | chave interna = implementação; chave na URL da aba renomeada é visível ao usuário e o requisito não a determina (Q3) | CT-06 afirma só chave preenchida e distinta; CT-B04 usa como partição válida a URL que a própria tela escreve ao selecionar a aba Tabelas, sem literal de chave (ADV-29) |
+| seção SMTP "visível só com SMTP" (D3) | desenho; a visibilidade dos campos SMTP é comportamento herdado que esta wiki não muda | CT-11, CT-18 e CT-B06 afirmam só o invariante herdado: com SMTP os campos do servidor aparecem (na mesma visita, sem salvar) e gravam; com outro remetente, não aparecem |
+| "a seção abre" no erro (Superfície de UI) | P-05 aceita "a seção abre **ou** o erro aparece no topo" | CT-B03 afirma a mensagem de erro visível (a abertura é `@premissa`); CT-B05 afirma também a seção do provedor expandida, porque ali o colapso inicial é recorte de Q1 marcado `@pendente-Q1` |
+| estado inicial expandido e provedores colapsados; `persistCollapsed` | Q1 aberta no `00`, recomendação **autorizada** pelo solicitante e implementada (decisão da sessão sobre ADV-21/ADV-23) | CT-05, CT-12, CT-17, CT-B02 e CT-B05 vigentes, marcados `@pendente-Q1`; o estado inicial "tudo expandido" segue sem CT próprio (cortado) |
 | `heroicon-o-squares-2x2` (ícone da aba Kit na v0.49.0) | **aceito** como oráculo: P-02 diz "mantém o ícone de hoje", e o "hoje" é a tag v0.49.0 | CT-01, literal |
 | 8 menções à aba Kit no CHANGELOG da v0.49.0 (6 "aba Kit", 2 "aba **Kit**") | **aceito** como oráculo: P-01 diz "o CHANGELOG histórico não é reescrito"; o histórico é a v0.49.0 (contagem da sessão) | CT-02, literal |
+| menções à aba Kit por arquivo de docs na v0.49.0 (pt/en: configurações 9/9, dock 2/3, multi-tenancy 1/1, atualizando 1/1 — conferido pela sessão por `git show v0.49.0:{arquivo} | grep -cE`) | **aceito** como oráculo: P-01 diz "toda menção é atualizada"; o mínimo por arquivo é a contagem da tag (sessão; o executor confere com `grep -c` na tag e corrige registrando) | CT-02, literal por arquivo |
 | composição da tela | o extrato do `01` entregue à derivação veio com a seção vazia; a tabela *Seções por aba* foi lida do próprio `01` › `## Mapeamentos` | desvio declarado; só nomes de campo e de seção usados como seletor/controle |
 
 **Perguntas geradas pela derivação** (renumeradas pela sessão):
@@ -164,21 +165,26 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
       Dado a árvore do kit com docs/pt, docs/en, README.md, README.en.md e CHANGELOG.md
       Quando a documentação é varrida
       Então nenhum arquivo de docs/ nem README contém a aba pelo nome antigo ("aba Kit", "aba **Kit**", "Kit tab", "**Kit** tab", a linha de tabela "| **Kit** |")
-      E cada um dos oito arquivos que citavam a aba Kit na v0.49.0 contém "Aplicação": docs/pt e docs/en de recursos/configuracoes-do-kit.md, recursos/dock-de-atalhos.md, recursos/multi-tenancy.md e comecar/atualizando-o-projeto.md
+      E cada um dos oito arquivos que citavam a aba Kit na v0.49.0 cita a aba Aplicação ("aba Aplicação", "aba **Aplicação**", "Aplicação tab", "**Aplicação** tab") ao menos tantas vezes quantas citava a aba Kit:
+        | arquivo                          | pt | en |
+        | recursos/configuracoes-do-kit.md | 9  | 9  |
+        | recursos/dock-de-atalhos.md      | 2  | 3  |
+        | recursos/multi-tenancy.md        | 1  | 1  |
+        | comecar/atualizando-o-projeto.md | 1  | 1  |
       E a parte do CHANGELOG.md abaixo do cabeçalho "## [0.49.0]" tem exatamente 8 menções à aba pelo nome antigo: 6 "aba Kit" e 2 "aba **Kit**"
 ```
 
-> A parte acima de `## [0.49.0]` (Unreleased e releases seguintes) fica livre para citar o nome antigo — é onde a própria entrega registra a troca. Contagem de referência feita pela sessão na tag v0.49.0.
+> A parte acima de `## [0.49.0]` (Unreleased e releases seguintes) fica livre para citar o nome antigo — é onde a própria entrega registra a troca. Contagens de referência feitas pela sessão na tag v0.49.0; o executor as confere com `grep -c` na tag e, se divergirem, corrige o número e registra. A agulha é a da **aba** (ADV-26): "Aplicação" solta casaria com "Configurações da aplicação" ou com outro texto e deixaria passar a frase apagada.
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M6 | atualiza as docs pt e esquece as en | CT-02 | `docs/en/…` ainda contém "**Kit** tab"; ausência falha |
-| M7 | atualiza só `configuracoes-do-kit.md`; `dock-de-atalhos`, `multi-tenancy` e `atualizando-o-projeto` ficam | CT-02 | varredura de `docs/**` acha "aba **Kit**" nesses arquivos; e esses arquivos não contêm "Aplicação" |
+| M7 | atualiza só `configuracoes-do-kit.md`; `dock-de-atalhos`, `multi-tenancy` e `atualizando-o-projeto` ficam | CT-02 | varredura de `docs/**` acha "aba **Kit**" nesses arquivos; e a contagem da aba Aplicação neles é 0, abaixo do mínimo |
 | M8 | troca global por `sed`, que reescreve também o CHANGELOG histórico (inteiro ou em parte, compensado por menções novas) | CT-02 | contagem abaixo de `## [0.49.0]` ≠ 8 (6 + 2); o mutante dá menos |
-| M9 | troca "Kit" por outro nome ("Aplicativo", "Geral") | CT-02 | controle positivo "Aplicação" em cada um dos oito arquivos; o mutante não tem |
-| M41 | apaga a frase que citava a aba Kit num arquivo em vez de reescrevê-la (o arquivo fica sem citar aba nenhuma) | CT-02 | o arquivo da frase apagada não contém "Aplicação"; o controle positivo falha |
+| M9 | troca "Kit" por outro nome ("Aplicativo", "Geral") | CT-02 | contagem da agulha da aba Aplicação por arquivo abaixo do mínimo da tabela; o mutante dá 0 |
+| M41 | apaga uma das frases que citavam a aba Kit num arquivo em vez de reescrevê-la (o arquivo continua citando a aba em outras frases) | CT-02 | a contagem da aba Aplicação naquele arquivo fica abaixo do mínimo (ex.: pt/configurações 8 < 9) |
 
 ---
 
@@ -362,12 +368,13 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
     Cenário: [CT-16] editar uma aba, carregar outra e salvar grava a edição feita antes da carga
       Dado o nome da aplicação gravado "Antes"
       E o administrador alterou o nome da aplicação para "Editado" sem salvar
-      Quando a tela carrega a aba Tabelas e o administrador salva
+      E a aba Tabelas foi carregada em seguida
+      Quando o administrador salva
       Então o banco tem o nome da aplicação "Editado", sem erro de formulário
       E a tela re-renderizada mostra o campo "paginacao_padrao" (a aba Tabelas carregou)
 ```
 
-> CT-10 é o gate de tela de escrita: gravação por componente com a aba do campo **adiada e nunca carregada** (P-04). O último `E` impede que o cenário passe por ter carregado a aba sem querer. O Google habilitado e o anti-robô ligado têm as credenciais gravadas para o formulário salvar sem erro. O executor roda CT-10 também na tag v0.49.0 (sem adiamento) e ele precisa ficar verde lá: se não ficar, alguma normalização legítima do salvamento entrou na comparação e a propriedade sai dela com o motivo escrito. CT-16: o `Quando` são duas ações porque o defeito mora na sequência (carregar com edição pendente); separadas, nenhuma das duas produz o estado afirmado.
+> CT-10 é o gate de tela de escrita: gravação por componente com a aba do campo **adiada e nunca carregada** (P-04). O último `E` impede que o cenário passe por ter carregado a aba sem querer. O Google habilitado e o anti-robô ligado têm as credenciais gravadas para o formulário salvar sem erro. O executor roda CT-10 também na tag v0.49.0 (sem adiamento) e ele precisa ficar verde lá: se não ficar, alguma normalização legítima do salvamento entrou na comparação e a propriedade sai dela com o motivo escrito. CT-16: a carga da aba com a edição pendente é situação de partida (`Dado`); a ação é o salvamento (ADV-32).
 
 #### Mutantes previstos
 
@@ -408,7 +415,7 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
         | smtp    | log       | oculta  |
 ```
 
-> CT-18: visibilidade pela árvore (`assertSchemaComponentExists` com closure sobre a seção que contém `mail_host`, `isVisible()`). Recorte que o componente não mata: a remoção do `live()` do remetente (o teste de componente reavalia a visibilidade a cada request com ou sem `live()`) — lacuna declarada na taxonomia; o `live()` é pré-existente.
+> CT-18: visibilidade pela árvore (`assertSchemaComponentExists` com closure sobre a seção que contém `mail_host`, `isVisible()`). Recorte que o componente não mata: a remoção do `live()` do remetente (o teste de componente reavalia a visibilidade a cada request com ou sem `live()`) — morto no navegador por CT-B06 (MB14).
 
 #### Mutantes previstos
 
@@ -435,8 +442,10 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
       Quando o administrador altera o client_id do Google para "id-novo" e salva
       Então o banco tem o client_id do Google "id-novo", sem erro de formulário
 
+    @pendente-Q1
     Cenário: [CT-17] campo inválido numa seção que nasce colapsada, em aba nunca carregada, é validado e traz a aba
       Dado o nome da aplicação gravado "Antes"
+      E a seção do provedor Google configurada para nascer colapsada
       E o login com Google habilitado e o client_id do Google gravado vazio
       E nenhuma aba carregada
       Quando o administrador salva com o nome "Depois"
@@ -445,7 +454,7 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
       E o banco continua com o nome "Antes"
 ```
 
-> CT-12 fica `@pendente-Q1` (decisão da sessão, ADV-21): "a seção do provedor nasce colapsada" é parte da recomendação de Q1. O `Dado` é conferido no arranjo (`isCollapsed()` verdadeiro na seção do Google); se Q1 tirar o colapso inicial dos provedores, o caso troca de seção, não de oráculo. CT-17 vale nas duas leituras de Q1: a seção do provedor existe colapsável e o erro precisa chegar ao usuário.
+> CT-12 fica `@pendente-Q1` (decisão da sessão, ADV-21): "a seção do provedor nasce colapsada" é parte da recomendação de Q1. O `Dado` é conferido no arranjo (`isCollapsed()` verdadeiro na seção do Google); se Q1 tirar o colapso inicial dos provedores, o caso troca de seção, não de oráculo. CT-17 também fica `@pendente-Q1` (ADV-33): o arranjo confere `isCollapsed()` da seção do Google, como o CT-12; a validação e a carga da aba pelo erro valem nas duas leituras, o colapso inicial é que é recorte de Q1.
 
 #### Mutantes previstos
 
@@ -557,17 +566,18 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
       Dado a árvore do kit com .ai/rules/index.md e .ai/rules/pages.md
       Quando as rules do projeto são lidas
       Então .ai/rules/pages.md tem uma seção "## " cujo título cita seção (ou Section) com ícone e colapso
+      E o corpo dessa seção contém "toda" (ou "todo"), "colaps", "ícone" e cita "ConfiguracoesSecoesColapsaveisTest"
       E .ai/rules/index.md tem a linha que liga "app/Filament/Admin/Pages/**" a ".ai/rules/pages.md"
 ```
 
-> Fica vermelho até o step 12 (`requirement-to-rule`) gravar a rule — vermelho esperado, classificação "implementação ainda não feita". Leva `naArvoreDoKit()`.
+> Fica vermelho até o step 12 (`requirement-to-rule`) gravar a rule — vermelho esperado, classificação "implementação ainda não feita". Leva `naArvoreDoKit()`. A linha do índice já existe na baseline (fato do projeto): o último `E` é regressão; o matador é o conteúdo da seção (ADV-27).
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M52 | a rule não é escrita (step 12 pulado) | CT-19 | `.ai/rules/pages.md` sem a seção do tema |
-| M53 | a rule é escrita, mas o índice não ganha a linha do glob — ninguém a lê ao editar a Page | CT-19 | `.ai/rules/index.md` sem `app/Filament/Admin/Pages/**` → `.ai/rules/pages.md` |
+| M53 | a rule é escrita vaga ("use seção com ícone quando fizer sentido"), sem obrigar todas as seções e sem citar o teste que a faz cumprir | CT-19 | o corpo da seção não contém "toda"/"todo" nem `ConfiguracoesSecoesColapsaveisTest` |
 | M54 | a convenção vai para outro arquivo de rule (ex.: `filament.md`) e `pages.md` não a tem | CT-19 | `pages.md` sem a seção do tema |
 
 ---
@@ -582,7 +592,7 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | Idempotência | CT-20 (pedir a mesma aba duas vezes não altera as carregadas nem o estado); a gravação repetida sem mudança é CT-23 da ancestral | Render adiado |
 | Concorrência | não se aplica: sem contador, saldo ou limite; dois salvamentos simultâneos seguem o último-grava-vence pré-existente, fora de escopo | — |
 | **Fronteira no ponto de entrada** (gravação) | CT-09 (valor abaixo do mínimo num campo de aba nunca carregada), CT-17 (obrigatório vazio em seção colapsada de aba nunca carregada); as demais bordas são da ancestral (CT-09 de `settings-do-kit`) | Render adiado |
-| **Domínio condicionado** | CT-11, CT-18 (seção SMTP × remetente); lacuna declarada: remover o `live()` do remetente não é observável em teste de componente (a visibilidade é reavaliada a cada request) e o cenário de navegador foi cortado — o `live()` é pré-existente e fora do que esta feature muda | Gravação sob adiamento |
+| **Domínio condicionado** | CT-11, CT-18 (seção SMTP × remetente, no servidor), CT-B06 (a seção aparece na mesma visita: o `live()` do remetente) | Gravação sob adiamento; Navegador |
 | **Estado × operação de escrita** | não se aplica: sem entidade com ciclo de vida | — |
 | Ausente ≠ null ≠ vazio | CT-10 (campo ausente do HTML por aba não carregada não é gravado como nulo/vazio; segredo "em branco" de aba não carregada não apaga o guardado) | Gravação sob adiamento |
 | Paginação / ordenação | não se aplica: sem listagem | — |
@@ -601,7 +611,7 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | **Estado do framework usado sem validar** | CT-13 (a chave pedida vira busca de schema), CT-B04 (`?tab=` vira aba ativa) | Render adiado |
 | **IDOR por entidade** | não se aplica: a feature não persiste entidade nova | — |
 | **Escopo com discriminante nulo** | não se aplica: sem filtro de escopo | — |
-| **Saída do estado de erro** | CT-09 e CT-17 (o erro leva o usuário à aba do campo), CT-B03 (corrigido o erro, o salvamento seguinte grava), CT-B05 (o erro em seção que nasce colapsada fica visível) | Render adiado |
+| **Saída do estado de erro** | CT-09 e CT-17 (o erro leva o usuário à aba do campo), CT-B03 (o erro em seção colapsada pelo usuário fica visível), CT-B05 (o erro em seção que nasce colapsada fica visível, com a seção expandida) | Render adiado |
 | Cardinalidade do destinatário | não se aplica: sem efeito colateral com destinatário | — |
 | Texto livre (acento, emoji, teto) | não se aplica: nenhum campo novo; os existentes são da ancestral | — |
 | Capturas `art/` | lacuna declarada: sem oráculo barato (hash contra a tag exige `git` no teste; PNG regenerado muda de bytes sem mudança visual) — conferência visual da dimensão G do quality gate (ADV-24, rejeitado) | — |
@@ -616,7 +626,7 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | quem perdeu a permissão não carrega aba | recorte de Q6 (aberta); o invariante (sem segredo) é CT-15 |
 | as capturas `art/` mostram a aba Aplicação | sem oráculo barato; dimensão G do quality gate (ADV-24 rejeitado) |
 | ícone específico de cada seção | escolha de implementação (Fronteira com o Plano) |
-| trocar o remetente no navegador mostra a seção SMTP sem salvar (o `live()`) | `live()` pré-existente, fora do que a feature muda; CT-18 cobre a reação da seção no servidor |
+| corrigido o erro do CT-B03, salvar de novo grava o campo de outra seção colapsada | nenhum código do kit produz o mutante (MB10 retirado, ADV-28); o envio do campo de seção colapsada é CT-12 no componente |
 | salvar duas vezes sem mudança | CT-23 da ancestral; o adiamento não cria escrita |
 | docs en com rótulo traduzido ("Application tab") | o rótulo é string literal sem `__()`/`trans()` e vale em qualquer locale; as docs en citam o rótulo de tela em pt (ADV-10 rejeitado) |
 | tema escuro das seções | nenhuma RQ |
@@ -640,12 +650,12 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | CT-13 | pedido de carregamento fora do domínio não carrega aba | R11 | EP | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M36, M37 |
 | CT-14 | lista de abas carregadas forjada não grava | R11 | EP | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M38 |
 | CT-15 | aba carregada não entrega segredo guardado | R12 | EP por segredo | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M39, M40 |
-| CT-16 | editar uma aba, carregar outra e salvar grava a edição | R8 | 2-switch | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M45 |
-| CT-17 | campo inválido em seção colapsada de aba nunca carregada é validado e traz a aba | R10 | EP | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M34, M48, M49 |
+| CT-16 | edição pendente e outra aba carregada em seguida: salvar grava a edição | R8 | 2-switch | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M45 |
+| CT-17 | campo inválido em seção colapsada de aba nunca carregada é validado e traz a aba `@pendente-Q1` | R10 | EP | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M34, M48, M49 |
 | CT-18 | a seção SMTP acompanha o remetente escolhido, sem salvar | R9 | domínio condicionado | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M32, M33, M46, M47 |
-| CT-19 | a rule de seções existe e o índice a liga à Page | R13 | EP | Documentação | unit de regra | `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` | M52–M54 |
+| CT-19 | a rule de seções existe, obriga todas, cita o teste e está indexada | R13 | EP | Documentação | unit de regra | `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` | M52–M54 |
 | CT-20 | pedir de novo uma aba carregada não muda carregadas nem estado | R11 | 2-switch | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M50, M51 |
-| CT-B01…CT-B05 | ver `05-casos-de-teste-browser.md` | R5, R6, R10 | — | Navegador | browser | `tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` | MB1–MB13 |
+| CT-B01…CT-B06 | ver `05-casos-de-teste-browser.md` | R5, R6, R9, R10 | — | Navegador | browser | `tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` | MB1–MB9, MB11–MB14 |
 
 ## Revisão adversarial — rodada 1
 
@@ -678,6 +688,27 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | ADV-23 | fechado por decisão da sessão — Q1 aberta, recomendação autorizada e implementada; RQ-03 "cobertura parcial: recorte de Q1 implementado pela recomendação autorizada, cenários `@pendente-Q1`" |
 | ADV-24 | rejeitado — capturas sem oráculo barato; lacuna declarada, dimensão G do quality gate |
 | ADV-25 | fechado — CT-17 (validação da seção colapsada no servidor) e CT-B05 (o erro visível no navegador) |
+
+## Revisão adversarial — rodada 2
+
+`fw-adversario-ct`, 2026-10-15 · última (teto de 2 rodadas atingido) · 5 fechamentos parciais da rodada 1 completados · 8 achados novos: 7 fechados, 1 rejeitado com motivo · cenário novo do fechamento: CT-B06 — **débito declarado: CT-B06 sem revisão independente** (não há rodada 3).
+
+| ADV | Desfecho |
+|---|---|
+| ADV-07 (parcial da rodada 1) | fechado — CT-B06 no navegador: escolher `smtp` mostra a seção do servidor sem salvar; MB14 (`live()` perdido); a lacuna da taxonomia saiu |
+| ADV-09 (parcial da rodada 1) | fechado com ADV-26 — controle positivo por arquivo com a agulha da aba e o mínimo por arquivo |
+| ADV-16 (parcial da rodada 1, MB10) | fechado com ADV-28 — MB10 retirado (nenhum código do kit o produz); o envio do campo de seção colapsada é CT-12 |
+| ADV-20 (parcial da rodada 1) | fechado com ADV-30 rejeitado — o CT-B01 mantém os dois pares; justificativa escrita no `05` |
+| ADV-22 (parcial da rodada 1) | fechado com ADV-27 — CT-19 afirma o conteúdo da rule |
+| ADV-26 | fechado — CT-02 com a agulha da aba ("aba Aplicação", "**Aplicação** tab"…) e o mínimo por arquivo igual às menções à aba Kit na v0.49.0; M7, M9, M41 reescritos |
+| ADV-27 | fechado — CT-19 exige "toda"/"todo", "colaps", "ícone" e `ConfiguracoesSecoesColapsaveisTest` na seção da rule; M53 trocado por "rule vaga sem citar o teste" (a linha do índice já existe na baseline) |
+| ADV-28 | fechado — o segundo par do CT-B03 saiu, e o MB10 junto |
+| ADV-29 | fechado — CT-B04 linha válida sem literal: a URL é a que a tela escreve ao selecionar a aba Tabelas, reaberta → `paginacao_padrao` visível sem clique; MB11 reescrito (escrita e leitura da aba na URL) |
+| ADV-30 | rejeitado — o CT-B01 afirma a sequência abrir → selecionar; dividir faria o segundo cenário repetir a abertura inteira como `Dado` para provar metade da mesma coisa (mesma justificativa aceita na ancestral `settings-do-kit`) |
+| ADV-31 | fechado com ADV-28 — CT-B03 com um só `Quando` |
+| ADV-32 | fechado — CT-16: a carga da aba Tabelas passou ao `Dado`; um só `Quando` (salvar) |
+| ADV-33 | fechado — CT-17 e CT-B05 marcados `@pendente-Q1`; CT-17 confere `isCollapsed()` no arranjo; CT-B05 afirma a seção do Google expandida (sem `fi-collapsed`) com a mensagem visível |
+| observação (isolamento do `localStorage`) | fechada — linha nos Pré-requisitos do `05` para todo CT-B que colapsa seção (CT-B02, CT-B03, CT-B05) |
 
 ## Precedência e pós-implementação
 
