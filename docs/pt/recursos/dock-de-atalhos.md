@@ -31,7 +31,7 @@ aparece em lugar nenhum até alguém ligá-lo. Veja as opções em [Configuraç�
 
 ## Usar o dock
 
-1. Clique no botão flutuante: os atalhos abrem, na ordem que você escolheu.
+1. Clique no botão flutuante: os atalhos abrem **agrupados por painel**, cada grupo com o nome do painel como separador, e na ordem que você escolheu dentro de cada grupo.
 2. Clique num favorito para ir à tela dele.
 
 | Layout | Como se apresenta |
@@ -48,7 +48,7 @@ aparece em lugar nenhum até alguém ligá-lo. Veja as opções em [Configuraç�
 A opção **Gerenciar atalhos** do dock abre um **slideover**. Nele o usuário:
 
 - escolhe destinos do **catálogo** — as telas que ele pode abrir, geradas sozinhas, sem lista mantida à mão;
-- **reordena** os escolhidos: a ordem do dock é a dele;
+- **reordena** os escolhidos: a ordem dele vale dentro do grupo de cada painel no dock;
 - remove os que não quer mais;
 - troca o **layout** do dock, só dele.
 
@@ -72,7 +72,7 @@ A outra opção do dock favorita a tela em que o usuário está.
 
 - **Onde aparece:** na lista de um Resource ou numa Page avulsa. Em tela de criar, editar ou ver registro **não** aparece.
 - **Onde não aparece:** quando a página já é favorita.
-- **Onde entra:** no **fim** da lista, sem mudar a ordem dos demais.
+- **Onde entra:** no **fim** da lista (e, no dock, no fim do grupo do painel dela), sem mudar a ordem dos demais.
 - **Quando não dá:** se a página já não pode ser adicionada — por exemplo, com 10 gravados —, clicar mostra um **aviso** em vez de não fazer nada.
 
 ## Favoritos entre painéis e organizações

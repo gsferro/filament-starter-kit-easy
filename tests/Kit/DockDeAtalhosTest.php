@@ -1243,7 +1243,7 @@ it('[CT-48] o dock segue a ordem escolhida e a reordenação do slideover', func
     expect(atalhosGravados($bruno))->toBe($envio);
     afirmarOrdemDosLinksDoDock(
         dockEmRequestNovo('admin')->html(),
-        array_map(static fn (string $nome): string => $urls[$nome], $ordem),
+        array_map(static fn (string $nome): string => $urls[$nome], ordemExibidaNoDock($ordem, ['C' => 'infra', 'A' => 'admin', 'B' => 'admin'])),
     );
 })->with([
     'regrava C, A, B'  => [['C', 'A', 'B']],
@@ -1265,13 +1265,35 @@ it('[CT-49] adicionar a página atual entra no fim sem reordenar C, A, B', funct
     dockNaUrlAtual($urlDeD)->callAction('adicionarPaginaAtual');
 
     expect(atalhosGravados($bruno))->toBe([...$antes, $d]);
+    // Exibição agrupada por painel (Adendo 6, RQ-36): o /admin antes do /infra, e D no fim do grupo dele.
     afirmarOrdemDosLinksDoDock(dockEmRequestNovo('admin')->html(), [
-        DashboardClassico::getUrl(panel: 'infra'),
         UserResourceDoAdmin::getUrl('index', panel: 'admin'),
         DashboardClassico::getUrl(panel: 'admin'),
         $urlDeD,
+        DashboardClassico::getUrl(panel: 'infra'),
     ]);
 });
+
+/**
+ * A ordem em que o dock EXIBE os favoritos (Adendo 6, RQ-36): agrupados por painel, na ordem
+ * app → admin → infra, e na ordem gravada dentro de cada painel.
+ *
+ * A ordem dos painéis está escrita aqui, e não lida de `Paineis::rotulos()`: o oráculo não sai da
+ * implementação.
+ *
+ * @param  list<string>  $ordem  os nomes, na ordem gravada
+ * @param  array<string, string>  $painelDe  nome => id do painel
+ * @return list<string>
+ */
+function ordemExibidaNoDock(array $ordem, array $painelDe): array
+{
+    $paineis = ['app', 'admin', 'infra'];
+
+    return array_merge(...array_map(
+        static fn (string $painel): array => array_values(array_filter($ordem, static fn (string $nome): bool => $painelDe[$nome] === $painel)),
+        $paineis,
+    ));
+}
 
 /** Bruno no /app, com U e P gravados e acesso ao dock. */
 function brunoComFavoritosEntrePaineis(): User
@@ -1666,6 +1688,57 @@ it('[CT-75] adicionar uma página que deixou de poder ser adicionada avisa sem g
     'já favorita em outra aba'      => ['duas abas'],
     'destino deixou de ser abrível' => ['permissão revogada'],
 ]);
+
+/*
+| Favoritos agrupados por painel, com o rótulo do painel como separador no dock.
+*/
+
+it('agrupa os favoritos por painel, com o rótulo do painel e a ordem gravada dentro do grupo', function (): void {
+    $bruno = usuarioDoKit('admin', 'bruno@example.com');
+    $bruno->assignRole('infra');
+
+    concederDock('admin', 'infra');
+    ligarDock(['admin', 'infra']);
+    noPainelBootado('admin');
+    $this->actingAs($bruno);
+
+    $porPainel = collect(destinosAbriveisDoDock($bruno))
+        ->groupBy(static fn (array $destino): string => DockDeAtalhos::painelDaChave($destino['chave']));
+
+    // Arranjo: dois destinos do /admin e um do /infra, gravados intercalados.
+    expect(count($porPainel->get('admin', [])))->toBeGreaterThanOrEqual(2)
+        ->and(count($porPainel->get('infra', [])))->toBeGreaterThanOrEqual(1);
+
+    gravarAtalhos($bruno, [
+        $porPainel['admin'][0]['chave'],
+        $porPainel['infra'][0]['chave'],
+        $porPainel['admin'][1]['chave'],
+    ]);
+
+    $grupos = array_map(
+        static fn (array $grupo): array => [$grupo['label'], array_keys($grupo['actions'])],
+        dockNaPagina('admin')->instance()->getDockGroups(),
+    );
+
+    expect(array_slice($grupos, 0, 2))->toBe([
+        ['Administração', ['atalho_0', 'atalho_2']],
+        ['Infraestrutura', ['atalho_1']],
+    ])
+        ->and(array_column($grupos, 0))->toBe(['Administração', 'Infraestrutura', 'Atalhos']);
+});
+
+it('não mostra separador de painel sem favorito visível', function (): void {
+    $master = usuarioDoKit('master_global', 'master@example.com');
+
+    ligarDock(['admin']);
+    gravarAtalhos($master, [chaveDeAtalho('admin', UserResourceDoAdmin::class)]);
+
+    noPainelBootado('admin');
+    $this->actingAs($master);
+
+    expect(array_column(dockNaPagina('admin')->instance()->getDockGroups(), 'label'))
+        ->toBe(['Administração', 'Atalhos']);
+});
 
 /*
 | Projeto atualizado pelo `kit:update` antes do `composer require` do pacote (validação da v0.48.0,

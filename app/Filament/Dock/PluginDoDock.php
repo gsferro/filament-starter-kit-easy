@@ -6,6 +6,8 @@ namespace App\Filament\Dock;
 
 use App\Models\User;
 use App\Support\DockDeAtalhos;
+use App\Support\Paineis;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Contracts\Plugin;
 use Filament\Facades\Filament;
@@ -60,13 +62,24 @@ final class PluginDoDock
 
         self::recusarNomeDeActionForjado();
 
-        return QuickActionDockPlugin::make()
+        $plugin = QuickActionDockPlugin::make()
             ->authorize(DockDeAtalhos::PERMISSAO)
             ->visible(fn (): bool => DockDeAtalhos::habilitadoNoPainel(Filament::getCurrentPanel()))
             ->layout(fn (): DockLayout => DockDeAtalhos::layoutPara(self::usuario()))
             ->style(fn (): DockStyle => DockDeAtalhos::estilo())
-            ->position(DockPosition::BottomCenter)
-            ->actions(fn (): array => self::atalhos())
+            ->position(DockPosition::BottomCenter);
+
+        foreach (array_keys(Paineis::rotulos()) as $painel) {
+            $plugin->group(
+                fn (): string => self::rotuloDoPainel($painel),
+                fn (): array => self::atalhos(static fn (string $painelDoAtalho): bool => $painelDoAtalho === $painel),
+            );
+        }
+
+        return $plugin
+            ->group('Outros painéis', fn (): array => self::atalhos(
+                static fn (string $painelDoAtalho): bool => ! array_key_exists($painelDoAtalho, Paineis::rotulos()),
+            ))
             ->group('Atalhos', fn (): array => [
                 self::adicionarPaginaAtual(),
                 self::gerenciarAtalhos(),
@@ -74,14 +87,30 @@ final class PluginDoDock
     }
 
     /**
+     * O rótulo do grupo de favoritos de um painel: o mesmo do Panel Switch (`Paineis::rotulo()`).
+     *
+     * Avaliado por request, porque o rótulo do painel `app` é o `config('app.name')`, que as
+     * configurações da aplicação sobrepõem no boot.
+     */
+    private static function rotuloDoPainel(string $painel): string
+    {
+        $registrado = Filament::getPanels()[$painel] ?? null;
+
+        return $registrado === null ? Paineis::rotulos()[$painel] : Paineis::rotulo($registrado);
+    }
+
+    /**
      * Um link por favorito que o usuário pode abrir, na ordem gravada.
      *
-     * O nome é o índice na lista visível (`atalho_0`, `atalho_1`…): a action só navega, e a URL
-     * sai do servidor, de destino já autorizado no contexto dele (`DockDeAtalhos::atalhosVisiveis()`).
+     * O nome é o índice na lista visível INTEIRA (`atalho_0`, `atalho_1`…), e não no grupo: o dock
+     * agrupa os favoritos por painel (um grupo por painel, com o rótulo dele), e o nome da action
+     * continua único no componente. A action só navega, e a URL sai do servidor, de destino já
+     * autorizado no contexto dele (`DockDeAtalhos::atalhosVisiveis()`).
      *
+     * @param  (Closure(string): bool)|null  $doPainel  recebe o id do painel do favorito; nulo = todos
      * @return list<Action>
      */
-    private static function atalhos(): array
+    private static function atalhos(?Closure $doPainel = null): array
     {
         $usuario = self::usuario();
 
@@ -92,6 +121,10 @@ final class PluginDoDock
         $actions = [];
 
         foreach (DockDeAtalhos::atalhosVisiveis($usuario) as $indice => $atalho) {
+            if ($doPainel !== null && ! $doPainel(DockDeAtalhos::painelDaChave($atalho['chave']))) {
+                continue;
+            }
+
             $actions[] = Action::make('atalho_'.$indice)
                 ->label($atalho['rotulo'])
                 ->icon($atalho['icone'] ?? Heroicon::OutlinedLink)

@@ -5,6 +5,13 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alterado
+
+- Dock de atalhos: os favoritos aparecem agrupados por painel, cada grupo com o nome do painel
+  como separador (o mesmo rótulo do Panel Switch); dentro de cada grupo, na ordem escolhida pelo
+  usuário. A ordem gravada não muda. No layout barra, o separador é a linha vertical entre os
+  grupos. Wiki `dock-de-acoes-rapidas`, Adendo 6.
+
 ### Corrigido
 
 - Projeto atualizado pelo `kit:update` sem o pacote do dock (`hoceineel/filament-quick-action-dock`)

@@ -1217,7 +1217,7 @@ Nota CT-60: U é de painel diferente do painel em que o slideover abre e foi gra
       E C é uma Page do /infra, A é a lista de usuários do /admin e B é uma Page do /admin — nem alfabética, nem do catálogo, nem agrupada por painel
       Quando ele salva o slideover com <envio>
       Então os favoritos gravados são <envio>, nesta ordem
-      E os links do dock renderizado em seguida aparecem na ordem <envio>
+      E os links do dock renderizado em seguida aparecem agrupados por painel (/admin antes de /infra), na ordem de <envio> dentro de cada painel
 
       Exemplos:
         | envio     | # operação                      |
@@ -1229,14 +1229,21 @@ Nota CT-60: U é de painel diferente do painel em que o slideover abre e foi gra
       E a página atual é um destino do catálogo ainda não favorito, D
       Quando ele escolhe a opção de adicionar a página atual
       Então os favoritos gravados são exatamente [C, A, B, D], nesta ordem
-      E os links do dock renderizado em seguida aparecem na ordem C, A, B, D
+      E os links do dock renderizado em seguida aparecem na ordem A, B, D, C (o /admin agrupado antes do /infra)
 ```
+
+> *(alterado em 2026-10-15: Adendo 6, RQ-36)* A exibição no dock passou a agrupar os favoritos por
+> painel, com o rótulo do painel como separador. A ordem **gravada** segue a do usuário e continua
+> asserida em CT-48 e CT-49; a ordem **exibida** é a gravada, agrupada por painel (app → admin → infra).
+> O M95 deixa de contar "agrupa por painel" como implementação errada. Casos novos em
+> `tests/Kit/DockDeAtalhosTest.php`: "agrupa os favoritos por painel, com o rótulo do painel e a ordem
+> gravada dentro do grupo" e "não mostra separador de painel sem favorito visível".
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M95 | dock ordena por rótulo, pela ordem do catálogo ou agrupa por painel | CT-48 | linha [C, A, B]: links em C, A, B; o mutante exibe A, B, C ou agrupa /admin antes de /infra |
+| M95 | dock ordena por rótulo ou pela ordem do catálogo, ou não respeita a ordem gravada dentro do grupo do painel *(alterado em 2026-10-15: Adendo 6 — agrupar por painel passou a ser o comportamento pedido)* | CT-48 | linha [B, C, A]: no grupo /admin, B antes de A; o mutante exibe A antes de B |
 | M96 | gravação compara só o conjunto e ignora mudança de ordem ("nada mudou") | CT-48 | linha [B, C, A]: gravados B, C, A; o mutante mantém C, A, B |
 | M97 | gravação ordena as chaves (ordem de seleção perdida) | CT-48 | linha [B, C, A]: ordem B, C, A; o mutante grava ordenado |
 | M98 | adicionar a página reconstrói a lista na ordem do catálogo | CT-49 | [C, A, B, D]; o mutante reordena |
