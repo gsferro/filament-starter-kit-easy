@@ -2,7 +2,7 @@
 
 **Estado**: concluída
 
-> Branch: `feat/configuracoes-secoes-colapsaveis` · Base do PR (`{base}`): `main` · Wiki: `wikis/specs/feat/configuracoes-secoes-colapsaveis/configuracoes-secoes-colapsaveis/`
+> Branch: `feat/configuracoes-secoes-colapsaveis` · Base do PR (`{base}`): `main` · Wiki: `wikis/specs/feat/configuracoes-secoes-colapsaveis/configuracoes-secoes-colapsaveis/` · PR: [#166](https://github.com/gsferro/filament-starter-kit-easy/pull/166) (aberto em 2026-10-15, sem merge)
 
 ## 1. Rótulo da aba: "Kit" → "Aplicação"
 - [ ] `abaKit()` → `abaAplicacao()`, `Tab::make('Aplicação')`, mesmo ícone e posição
