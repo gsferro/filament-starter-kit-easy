@@ -41,7 +41,7 @@
 | RQ-26 | tooltip com o caminho de destino | 7 | Adendo 7 |
 | RQ-27 | grupos de organização na ordem gravada | 7 | Adendo 8 |
 | P-01 | sem JS ou sem dock, posições de hoje | 1, 2, 3 | substituída por P-03 |
-| P-03 | alturas de hoje; "Voltar ao topo" sempre no eixo comum (30 px) | 2 | — |
+| P-03 | alturas de hoje; "Voltar ao topo" sempre no eixo comum (30 px) | 1, 2, 3 | — *(alterado em 2026-10-15: QA-07)* |
 | P-02 | vale em todo painel | 1 | — |
 
 ## Objetivo
@@ -124,7 +124,7 @@ Nenhum.
 
 | Pergunta | Resposta |
 |---|---|
-| Quantos requests a tela custa? | os mesmos de hoje; a folha nova do chat vem pelo `@filamentStyles`, como as demais do kit, e o script vai dentro da blade |
+| Quantos requests a tela custa? | +1 folha CSS (`kit-assistente-chat.css`), cacheável, em todos os painéis, como as irmãs `kit-voltar-ao-topo` e `spotlight`, pelo `@filamentStyles`; o script vai dentro da blade *(alterado em 2026-10-15: QA-08)* |
 | O que é adiado, e por qual gatilho? | nada no servidor; no navegador, o recálculo roda num `requestAnimationFrame` a cada mudança observada |
 | O que é memoizado por request? | nada |
 | O que é cacheado entre requests? | nada |
@@ -132,7 +132,7 @@ Nenhum.
 
 ## Impacto em Features Existentes
 
-- **Voltar ao topo**: a posição passa a vir de variável CSS; o fallback mantém o `bottom-24`/`bottom-6` de hoje (P-01). A guarda `VoltarAoTopoCssTest` continua valendo
+- **Voltar ao topo**: a posição passa a vir de variável CSS; o fallback mantém o `bottom-24`/`bottom-6` de hoje (P-03) *(alterado em 2026-10-15: QA-07)*. A guarda `VoltarAoTopoCssTest` continua valendo
 - **Chat da IA**: passa a aparecer. Nada muda no componente Livewire, só na apresentação
 - **Dock**: observado pelo script e, desde os Adendos 4 a 8, alterado em `app/Filament/Dock/PluginDoDock.php` (`visible()` exclui telas de autenticação; grupos por painel × organização; tooltip com o caminho) e em `app/Support/DockDeAtalhos.php` (o atalho carrega o nome da organização) *(alterado em 2026-10-15: QA-01 — Adendos 4 a 8 e step 9)*
 - **Testes ancestrais alterados**: em `tests/Kit/AssistenteChatWidgetTest.php` o CT-14 inverteu (`assertDontSeeLivewire` na tela de login, RQ-23); os helpers de `DockDeAtalhosTest` e `DockDeAtalhosTenancyTest` foram movidos para `tests/Pest.php` *(alterado em 2026-10-15: QA-01 — Adendos 4 a 8 e step 9)*
@@ -147,7 +147,7 @@ Nenhuma nova.
 
 ## Riscos
 
-- **O pacote do dock mudar a raiz ou os atributos** (`.qad-root`, `data-open`, `data-mode`): a pilha deixa de reagir e volta ao fallback (P-01). Mitigação: CT-B com o dock real
+- **O pacote do dock mudar a raiz ou os atributos** (`.qad-root`, `data-open`, `data-mode`): a pilha deixa de reagir e volta ao fallback (P-03) *(alterado em 2026-10-15: QA-07)*. Mitigação: CT-B com o dock real
 - **Classe nova na blade do chat sem regra**: a guarda lê o HTML renderizado e acusa, como no `voltar-ao-topo`
 
 ## Channel de Log da Feature
@@ -164,8 +164,8 @@ Não se aplica: a lógica nova no servidor (tela de autenticação, rótulo do g
 - Calcula a base da pilha: 24 px do rodapé; se o retângulo do dock cruza a coluna de 56 px da direita na faixa da pilha padrão (D4), a base passa a ser a distância do rodapé ao topo do dock + 16 px
 - Publica no `<html>` só `--kit-pilha-base` = base. O CSS soma: o chat fica na base; o "Voltar ao topo" na base + 72 px no painel com chat (`bottom-24`) e na base nos outros (`bottom-6`)
 - Com o dock em leque aberto na coluna (D5), põe `data-kit-pilha-oculta` no `<html>`; tira ao fechar
-- Sem dock na página, ou sem JS, não publica nada (P-01)
-- **Atende**: RQ-01, RQ-04, RQ-06, RQ-08, RQ-09, RQ-12, RQ-13, RQ-14, RQ-15, RQ-16, P-01, P-02
+- Sem dock na página, ou sem JS, não publica nada (P-03) *(alterado em 2026-10-15: QA-07)*
+- **Atende**: RQ-01, RQ-04, RQ-06, RQ-08, RQ-09, RQ-12, RQ-13, RQ-14, RQ-15, RQ-16, P-03, P-02 *(alterado em 2026-10-15: QA-07)*
 - **Logs**: não se aplica (navegador)
 
 ### 2. "Voltar ao topo" na pilha
@@ -175,7 +175,7 @@ Não se aplica: a lógica nova no servidor (tela de autenticação, rótulo do g
 - O `bottom` vira `calc(var(--kit-pilha-base, 1.5rem) + 4.5rem)` no `bottom-24` e `var(--kit-pilha-base, 1.5rem)` no `bottom-6`: sem a variável, as posições de hoje
 - Fica no eixo comum (D3): 30 px da direita
 - Oculto com `html[data-kit-pilha-oculta]`
-- **Atende**: RQ-01, RQ-04, RQ-06, RQ-07, RQ-09, RQ-16, P-01
+- **Atende**: RQ-01, RQ-04, RQ-06, RQ-07, RQ-09, RQ-16, P-03 *(alterado em 2026-10-15: QA-07)*
 - **Logs**: não se aplica
 
 ### 3. Chat da IA estilizado e na pilha
@@ -184,7 +184,7 @@ Não se aplica: a lógica nova no servidor (tela de autenticação, rótulo do g
 - **Path**: `resources/views/livewire/assistente-chat-widget.blade.php` (atributo `data-assistente-chat` na raiz), `resources/css/filament/assistente-chat.css` (novo), registro em `configureCorrecoesDeCss()`
 - Uma regra por utilitária da blade, escopada em `[data-assistente-chat]`, com as cores das variáveis do Filament (`--primary-*`, `--gray-*`, `--danger-*`, `--warning-*`) e o tema escuro do painel; `[x-cloak]` escondido
 - O `bottom` do botão lê `var(--kit-pilha-base, 1.5rem)`; oculto com `html[data-kit-pilha-oculta]`
-- **Atende**: RQ-03, RQ-04, RQ-06, RQ-07, RQ-09, RQ-10, RQ-11, RQ-17, P-01
+- **Atende**: RQ-03, RQ-04, RQ-06, RQ-07, RQ-09, RQ-10, RQ-11, RQ-17, P-03 *(alterado em 2026-10-15: QA-07)*
 - **Logs**: não se aplica
 
 ### 4. Documentação
@@ -206,7 +206,7 @@ Não se aplica: a lógica nova no servidor (tela de autenticação, rótulo do g
 ### 7. Organização e tooltip nos favoritos *(adendo 7)*
 > Skills: `filament-development`
 
-- **Path**: `app/Support/DockDeAtalhos.php:montarAtalho` passa a devolver, com o atalho, o id e o nome da organização do destino (já em mãos ali: zero consulta, RQ-25); `app/Filament/Dock/PluginDoDock.php:make` registra, por painel, até `DockDeAtalhos::MAXIMO_DE_ATALHOS` grupos: o grupo `n` reúne os favoritos da `n`-ésima organização distinta, na ordem gravada, com o separador "{rótulo do painel} · {nome da organização}" (sem organização, só o rótulo do painel). O pacote esconde grupo vazio
+- **Path**: `app/Support/DockDeAtalhos.php:montarAtalho` passa a devolver, com o atalho, o nome da organização do destino (já em mãos ali: zero consulta, RQ-25); o id sai da chave, por `DockDeAtalhos::organizacaoDaChave()` *(alterado em 2026-10-15: QA-09)*; `app/Filament/Dock/PluginDoDock.php:make` registra, por painel, até `DockDeAtalhos::MAXIMO_DE_ATALHOS` grupos: o grupo `n` reúne os favoritos da `n`-ésima organização distinta, na ordem gravada, com o separador "{rótulo do painel} · {nome da organização}" (sem organização, só o rótulo do painel). O pacote esconde grupo vazio
 - Cada favorito ganha `->tooltip()` com o caminho da URL de destino
 - **Atende**: RQ-24, RQ-25, RQ-26, RQ-27
 - **Logs**: não se aplica

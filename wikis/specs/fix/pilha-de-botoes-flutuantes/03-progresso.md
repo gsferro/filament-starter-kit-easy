@@ -1,6 +1,6 @@
 # Progresso — Pilha harmônica dos botões flutuantes
 
-**Estado**: implementada — steps 9 e 10 feitos; quality gate ciclo 1 reprovado por especificação (QA-01) e corrigido; ciclo 2 pendente
+**Estado**: implementada — quality gate ciclo 2 APROVADO COM DÉBITO (`06-relatorio-qa.md`); falta o release v0.48.1 (passo 5), depois do merge
 
 ## 1. Script da pilha
 - [x] script da pilha na blade do "Voltar ao topo" — `8f41638`
@@ -25,7 +25,7 @@
 
 ## Testes
 - [x] `tests/Kit/AssistenteChatCssTest.php` (CT-01, CT-02, CT-03) — 6/6
-- [x] `tests/Kit/TelasSemDockNemChatTest.php` (CT-04, CT-09, CT-11) — 15/15
+- [x] `tests/Kit/TelasSemDockNemChatTest.php` (CT-04, CT-09, CT-11, CT-12) — 19/19
 - [x] `tests/Kit/DockSemOrganizacaoTest.php` (CT-08) — 1/1
 - [x] `tests/Tenancy/DockPorOrganizacaoTest.php` (CT-05, CT-06, CT-07) — 13/13
 - [x] `tests/Tenancy/TelasSemDockNemChatTenancyTest.php` (CT-10) — 2/2
@@ -44,12 +44,12 @@ Não fatiado — reavaliado em 2026-10-15 (QA-05): 27 RQ, 22 cenários (11 CT + 
 - [x] testes da feature e CT-B — ver `## Testes`
 - [x] `/code-review high main...HEAD` + passe de eixos (step 9) — 4 achados baixos: 2 corrigidos, 2 rejeitados com motivo
 - [x] `rastreabilidade.sh {wiki}` silencioso — exit 0
-- [ ] `checkbox-sem-evidencia.sh {wiki}` silencioso
+- [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — exit 0
 - [x] `citacoes.sh {wiki}` silencioso — exit 0, após corrigir 10 citações de linha desatualizadas
 - [x] `ids-ct.sh` silencioso — exit 0 com os 7 arquivos de teste da feature
 - [x] `conformidade-rules.sh {wiki} main` silencioso — exit 0 após a tabela de conformidade
 - [x] Docs pt/en, CHANGELOG e README reconciliados — README sem menção ao dock; `bb3f1f8`
-- [ ] `git commit`
+- [x] `git commit` — `8f41638`, `bb3f1f8`, `fdc12d1`, `77ff219`, `4bc9508` e o das correções do ciclo 2
 
 ## Revisão do Diff (step 9)
 
@@ -78,8 +78,11 @@ Não fatiado — reavaliado em 2026-10-15 (QA-05): 27 RQ, 22 cenários (11 CT + 
 ## Quality Gate
 
 - Ciclo 1 (2026-10-15, `fw-qa-gate`): **REPROVADO → especificação**. 1 Major (QA-01: `01`/`02` defasados depois dos Adendos 4–8) e 5 Minor (QA-02 contraste do "Cancelar" no tema escuro; QA-03 docs/CHANGELOG "nada muda" contra a P-03; QA-04 Fora de Escopo do `00`; QA-05 estado e fatiamento do `03`; QA-06 glossário e grafia "organization"). Todos corrigidos na sessão. Não verificadas: G nível 3, H (axe), J `--tia`, K2.
+- Ciclo 2 (2026-10-15, `fw-qa-gate`, contexto novo, sem alegação no despacho): **APROVADO COM DÉBITO**. QA-01…QA-06 resolvidos; novos QA-07…QA-13 (5 Minor, 2 Cosmético). Resolvidos na sessão: QA-07, 08, 09 (texto do `01`), QA-10 (CT-12 + M96, morto por mutação manual), QA-12 (comentário por símbolo), QA-13 (checkboxes). Débito aceito: QA-11 (flake do CT-B02 ancestral, wiki `dock-de-acoes-rapidas`) e a cobertura não verificada (G3, H, J `--tia`, K2).
 
 ## Candidatos a Rule
+
+Nenhum promovido (2026-10-15). Avaliado: "componente com dado do usuário não renderiza em tela de autenticação; usar `App\Support\TelaDeAutenticacao`" — durável e não inferível do código, mas sem recorrência (primeiro caso). Fica na wiki e no docblock da classe; vira rule se um terceiro componente flutuante repetir o defeito. O arnês do `--mutate` com 100 % falso no Windows é ferramenta, proposta para a `references/pest-5.md` da `feature-wiki`, não para `.ai/rules`.
 
 ## Auditoria Pré-Implementação
 

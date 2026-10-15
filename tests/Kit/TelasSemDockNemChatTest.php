@@ -3,6 +3,7 @@
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\DashboardClassico;
 use App\Models\Convite;
+use App\Support\TelaDeAutenticacao;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -130,3 +131,12 @@ it('[CT-11] round-trip do dock mantém grupo e favorito numa página comum', fun
     expect($depois)->toBe($antes);
     $dock->assertSee(DashboardClassico::getUrl(panel: 'app'), false);
 });
+
+it('[CT-12] rota sem nome não é tela de autenticação', function (?string $rota, bool $esperado): void {
+    expect(TelaDeAutenticacao::rota($rota))->toBe($esperado);
+})->with([
+    'nula'                    => [null, false],
+    'vazia'                   => ['', false],
+    'página comum'            => ['filament.app.pages.dashboard', false],
+    'bloqueio (controle)'     => ['lockscreen.app.page', true],
+]);

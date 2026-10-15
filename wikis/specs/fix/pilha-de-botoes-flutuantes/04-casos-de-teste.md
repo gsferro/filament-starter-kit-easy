@@ -68,7 +68,7 @@
 - **I = 3 nas telas sem dock nem chat**: numa sessão bloqueada, o chat exporia os títulos das conversas do usuário a quem está diante da tela.
 - **I = 2 no dock por organização**: rótulo errado leva a agir na organização errada. O vazamento de organização sem acesso é a regra R22.
 - **Técnicas**: EP; tabela de decisão; 2-switch; rastreio de não-efeito; BVA de 2 valores com linhas nos dois lados da fronteira real e no eixo x; valor literal (16 px, 30 px, 4,5:1, separador " · "); controle positivo nas asserções de ausência, com marcador de render hook por tela.
-- **Contagem**: Cenários: 11 (+11 CT-B no `05`) · Regras: 22 · Mutantes previstos: 95 · Sem matador: 0
+- **Contagem**: Cenários: 12 (+11 CT-B no `05`) · Regras: 22 · Mutantes previstos: 96 · Sem matador: 0
 <!-- contagem pelos 4 grep -c do template-04 §Contagem; o 1º grep só casa [CT-nn]; os CT-B estão no 05 -->
 - **Recontagem pelas válvulas (ADV-35)**: se uma linha do CT-04 cair em "sem marcador" ou uma linha do CT-B06 em "nenhum item cruza", o executor reporta. Os mutantes que só aquela linha matava passam a "sem matador", e a contagem acima é refeita pelos `grep -c`.
 
@@ -105,7 +105,7 @@
 | R14. Slide-over no tema, com título a ≥ 4,5:1 | estilo | RQ-17 | EP + valor literal | CT-B10 |
 | R11. Toda classe do chat tem regra escopada; nenhuma regra escapa | guarda | RQ-10, RQ-11, Fora de Escopo | EP | CT-01, CT-02 |
 | R12. Sem JavaScript, o HTML servido e as folhas já posicionam os botões | guarda | P-03 ("sem JavaScript") | EP | CT-03 |
-| R16. O dock não é entregue no bloqueio, nas telas de login e nas do Auth Designer alcançáveis com sessão; volta depois de destravar; continua montado no round-trip Livewire das páginas comuns | telas sem dock nem chat | RQ-19, RQ-20, RQ-21, RQ-22 | EP (tela × painel × suíte) + 2-switch (bloquear/destravar) + controle positivo | CT-04, CT-09, CT-10, CT-11 |
+| R16. O dock não é entregue no bloqueio, nas telas de login e nas do Auth Designer alcançáveis com sessão; volta depois de destravar; continua montado no round-trip Livewire das páginas comuns | telas sem dock nem chat | RQ-19, RQ-20, RQ-21, RQ-22 | EP (tela × painel × suíte) + 2-switch (bloquear/destravar) + controle positivo | CT-04, CT-09, CT-10, CT-11, CT-12 |
 | R17. O chat da IA não é entregue nas mesmas telas (nem o botão nem a lista de conversas) e volta depois de destravar | telas sem dock nem chat | RQ-23 | EP + 2-switch + controle positivo | CT-04, CT-09, CT-10 |
 | R18. Com multi-tenant, os favoritos do `/app` ficam em um grupo por organização, com o separador "{rótulo do painel} · {nome da organização}", inclusive com uma organização só, na ordem da primeira gravação de cada organização | dock por organização | RQ-24, RQ-27 | EP (nº de organizações × página × intercalação) | CT-05 |
 | R22. O agrupamento não traz de volta favorito, nome, chave, URL nem tooltip de organização sem acesso | dock por organização | RQ-24 × comportamento acordado do dock (wiki `dock-de-acoes-rapidas` CT-58, CT-73; "não mostra separador de painel sem favorito visível") | EP (vínculo) | CT-05 |
@@ -542,6 +542,21 @@ Funcionalidade: Estilo do chat da IA nos painéis
 
 > CT-11 pela `dockNaPagina('app')` (Kit, sem tenancy), depois de bootar o `/app` por GET.
 
+*(acrescentado em 2026-10-15: QA-10 do quality gate, ciclo 2 — a regra "rota sem nome não é tela de autenticação" saía UNCOVERED na mutação)*
+
+```gherkin
+    Esquema do Cenário: [CT-12] a rota <rota> <é ou não é> tela de autenticação
+      Quando TelaDeAutenticacao::rota(<rota>) é consultada
+      Então a resposta é <resposta>
+
+      Exemplos:
+        | rota                        | resposta | # partição                         |
+        | nula                        | não      | sem rota nomeada                   |
+        | vazia ('')                  | não      | nome em branco                     |
+        | filament.app.pages.dashboard | não      | página comum (controle negativo)   |
+        | lockscreen.app.page         | sim      | controle positivo                  |
+```
+
 #### Mutantes previstos (R16)
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -555,6 +570,7 @@ Funcionalidade: Estilo do chat da IA nos painéis
 | M75 | o dock some enquanto a chave `lockscreen` existe na sessão, e o pacote a deixa `false` ao destravar *(ADV-02)* | CT-09 | o HTML do `/app` traz o dock depois de destravar |
 | M77 | a regra de ocultar mora num ramo que só roda sem multi-tenant *(ADV-03)* | CT-10 linha de bloqueio | o HTML não traz o dock |
 | M85 | a regra lê a rota do request corrente; no round-trip Livewire, a rota não é a da página e o dock some *(ADV-13)* | CT-11 | `getDockGroups()` conserva o grupo do favorito; o HTML traz o favorito |
+| M96 | rota sem nome tratada como tela de autenticação: o dock e o chat somem de toda rota anônima *(QA-10)* | CT-12 linhas nula e vazia | a resposta é "não" |
 | M95 | a tela condicional redireciona para outra tela do fluxo de autenticação que entrega o dock *(ADV-35)* | CT-04 linhas condicionais, quando redirecionam para tela das RQ-19 a RQ-22 | o HTML do destino não traz o dock |
 
 #### Mutantes previstos (R17)
@@ -763,6 +779,7 @@ Funcionalidade: Estilo do chat da IA nos painéis
 | CT-09 | destravar devolve dock e chat ao `/app` | R16, R17 | 2-switch | Telas sem dock nem chat | Pest feature HTTP | `tests/Kit/TelasSemDockNemChatTest.php` | M75, M76 |
 | CT-10 | bloqueio sem dock nem chat com multi-tenant | R16, R17 | EP + controle positivo | Telas sem dock nem chat (multi-organização) | Pest feature HTTP | `tests/Tenancy/TelasSemDockNemChatTenancyTest.php` | M68, M73, M77 |
 | CT-11 | round-trip do dock numa página comum não o tira da tela | R16 | EP | Telas sem dock nem chat (round-trip) | componente Livewire/Filament | `tests/Kit/TelasSemDockNemChatTest.php` | M85 |
+| CT-12 | rota sem nome não é tela de autenticação | R16 | EP + controle positivo | Telas sem dock nem chat | unidade | `tests/Kit/TelasSemDockNemChatTest.php` | M96 |
 | CT-B01 | pilha no canto inferior direito, rolada, 16 px | R1, R2, R3, R15 | EP + valor literal | Pilha e reação ao dock | browser | `tests/Browser/PilhaDeBotoesFlutuantesTest.php` | M01–M11, M41, M42 |
 | CT-B02 | pilha no carregamento com posição lembrada | R4 | EP | Pilha e reação ao dock | browser | idem | M12, M13 |
 | CT-B03 | pilha sobrevive ao morph do chat | R4 | 2-switch | Pilha e reação ao dock | browser | idem | M14 |

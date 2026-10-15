@@ -29,9 +29,9 @@
 
       z-30  topbar          (vendor/filament/filament/resources/css/components/topbar.css)
       z-30  sidebar mobile e o overlay dela   (.../sidebar.css)
-      z-40  botão do chat   (resources/views/livewire/assistente-chat-widget.blade.php:20)
+      z-40  botão do chat   (resources/views/livewire/assistente-chat-widget.blade.php:'Abrir assistente':25)
       z-40  overlay e janela de modal         (vendor/filament/support/.../modal.css)
-      z-50  slide-over do chat                (assistente-chat-widget.blade.php:34)
+      z-50  slide-over do chat                (assistente-chat-widget.blade.php:'Assistente':39)
       z-50  notificações    (pointer-events-none, não bloqueia clique)
 
     Como este Blade entra em `BODY_END` — depois de todos eles no DOM — empatar em z-30 faria
