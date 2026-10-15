@@ -5,6 +5,13 @@
 includes:
     - vendor/larastan/larastan/extension.neon
     - vendor/pestphp/pest-plugin-phpstan/extension.neon
+    # Macros registrados em `Filament\Support\Concerns\Macroable` viram método tipado: o Larastan
+    # boota a aplicação, então macro registrado em service provider (`Table::infiniteScroll()` do
+    # asignua/filament-infinite-scroll, em `ConfiguraFilamentGlobal::aplicaCarregamento()`) é
+    # analisado sem `hasMacro()` nem exceção abaixo. NÃO alcança macro registrado no `boot(Panel)`
+    # de um plugin de painel (`simpleLightbox()`): esse boot só roda num request, e a exceção dele
+    # continua. Include manual porque o kit não usa `phpstan/extension-installer` (comentário acima).
+    - vendor/happenv-com/filament-phpstan-macros/extension.neon
 
 parameters:
     level: 8

@@ -19,6 +19,7 @@
     "require": {
         "php": "^8.4",
         "anselmokossa/filament-sentinel": "^1.0",
+        "asignua/filament-infinite-scroll": "^1.0.1",
         "asmit/resized-column": "^4.0",
         "awcodes/filament-badgeable-column": "^4.2",
         "bezhansalleh/filament-exceptions": "^4.2",
@@ -64,6 +65,7 @@
         "prodstarter/filament-notification-center": "^1.0",
         "promethys/revive": "^3.1",
         "pxlrbt/filament-environment-indicator": "^3.5",
+        "sehsah/filament-remember-table": "^1.0",
         "shuvroroy/filament-spatie-laravel-health": "^3.3",
         "solution-forest/filament-simplelightbox": "^1.0",
         "spatie/laravel-backup": "^10.3",
@@ -79,9 +81,11 @@
         "wezlo/filament-search-spotlight": "^1.0"
     },
     "require-dev": {
+        "brianium/paratest": "^7.24",
         "driftingly/rector-laravel": "^2.5",
         "fakerphp/faker": "^1.23",
         "filament/upgrade": "^5.7",
+        "happenv-com/filament-phpstan-macros": "^1.0",
         "larastan/larastan": "^3.9",
         "laravel-lang/common": "^6.8",
         "laravel/boost": "^2.5",
@@ -91,7 +95,6 @@
         "laraveldaily/filacheck": "^1.2",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.9.3",
-        "brianium/paratest": "^7.24",
         "pestphp/pest": "^5.1",
         "pestphp/pest-plugin-browser": "^5.0",
         "pestphp/pest-plugin-laravel": "^5.0",
