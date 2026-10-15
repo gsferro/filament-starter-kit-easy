@@ -6,7 +6,6 @@ use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\App\Resources\Users\UserResource as UserResourceDoApp;
 use App\Filament\Pages\DashboardClassico;
 use App\Models\Role;
-use App\Models\Tenant;
 use App\Models\User;
 use App\Support\Paineis;
 use Database\Seeders\PapeisSeeder;
@@ -14,11 +13,8 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
 use Filament\Resources\Resource;
-use HoceineEl\QuickActionDock\Livewire\QuickActionDock;
-use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Livewire\Features\SupportTesting\Testable;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -202,49 +198,6 @@ it('[CT-50] destinos homônimos se distinguem pelo painel e pela organização n
         (string) UserResourceDoApp::getNavigationLabel(),
     ]);
 });
-
-/** @return array{acme: Tenant, globex: Tenant, usuario: User, chaves: array<string, string>} */
-function arranjarFavoritosDoDockTenancy(): array
-{
-    config(['kit.demo' => true]);
-    $fixture = duasOrganizacoes();
-    concederDock('panel_user', 'admin', 'admin_app');
-    papelDoKit('panel_user')->givePermissionTo('ViewAny:Projeto');
-    app(PermissionRegistrar::class)->forgetCachedPermissions();
-    ligarDock(['app', 'admin']);
-    test()->actingAs($fixture['usuario']);
-    $fixture['chaves'] = [
-        'A'   => chaveDeAtalho('admin', UserResourceDoAdmin::class),
-        'PA'  => chaveDeAtalho('app', ProjetoResource::class, $fixture['acme']->getKey()),
-        'PG'  => chaveDeAtalho('app', ProjetoResource::class, $fixture['globex']->getKey()),
-        'PA2' => chaveDeAtalho('app', DashboardClassico::class, $fixture['acme']->getKey()),
-        'PG2' => chaveDeAtalho('app', DashboardClassico::class, $fixture['globex']->getKey()),
-    ];
-
-    return $fixture;
-}
-
-/** Boote real e contexto de página, inclusive a rota index de um Resource. */
-function abrirDockTenancy(string $painel, ?Tenant $tenant = null, string $destino = DashboardClassico::class): Testable
-{
-    fronteiraDeRequest();
-    auth()->user()->unsetRelation('roles')->unsetRelation('permissions');
-    test()->get($painel === 'app' ? '/app/'.$tenant->slug : '/'.$painel)->assertOk();
-    if ($tenant !== null) {
-        noPainelDa($tenant);
-    } else {
-        noPainelDoShield($painel);
-        Filament::setTenant(null, isQuiet: true);
-    }
-    app()->instance('request', Request::create('/'));
-    $url = is_subclass_of($destino, \Filament\Resources\Resource::class)
-        ? $destino::getUrl('index', panel: $painel, tenant: $tenant)
-        : $destino::getUrl(panel: $painel, tenant: $tenant);
-    $rota = app('router')->getRoutes()->match(Request::create($url));
-    DockContext::current()->set($rota->getName(), $rota->parameters(), (string) parse_url($url, PHP_URL_PATH));
-
-    return Livewire\Livewire::test(QuickActionDock::class);
-}
 
 it('[CT-26] o favorito gravado pelo slideover na Globex abre nela de qualquer painel', function (string $onde): void {
     ['acme' => $acme, 'globex' => $globex, 'usuario' => $usuario, 'chaves' => $chaves] = arranjarFavoritosDoDockTenancy();
@@ -546,7 +499,6 @@ it('[CT-64] mesma tela em outra organização grava novo favorito no fim', funct
 });
 
 use App\Settings\ConfiguracoesDoKit;
-use Illuminate\Support\Facades\DB;
 
 it('[CT-72] três favoritos da organização corrente não recarregam papéis nem buscam a organização e custam no máximo uma consulta cada', function (string $afirmacao): void {
     config(['kit.hub' => true]);
@@ -562,26 +514,8 @@ it('[CT-72] três favoritos da organização corrente não recarregam papéis ne
         app()->forgetInstance(ConfiguracoesDoKit::class);
         noPainelDa($acme);
         $this->actingAs(User::query()->findOrFail($usuario->getKey()));
-        $consultas = [];
-        $ativo     = true;
-        DB::listen(function ($consulta) use (&$consultas, &$ativo): void {
-            if (! $ativo) {
-                return;
-            }
 
-            $consultas[] = [
-                'sql'      => $consulta->sql,
-                'arquivos' => array_column(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 'file'),
-            ];
-        });
-
-        try {
-            $this->get('/app/'.$acme->slug)->assertOk();
-        } finally {
-            $ativo = false;
-        }
-
-        return $consultas;
+        return consultasDoGet('/app/'.$acme->slug);
     };
     $medir([]);
     $medir($tres);
@@ -600,27 +534,9 @@ it('[CT-72] três favoritos da organização corrente não recarregam papéis ne
         return;
     }
 
-    $pilhaDoDock = static function (array $arquivos): bool {
-        $pacote = str_replace('\\', '/', base_path('vendor/hoceineel'));
-        $app    = str_replace('\\', '/', app_path());
-
-        foreach ($arquivos as $arquivo) {
-            $arquivo = str_replace('\\', '/', $arquivo);
-
-            if (str_starts_with($arquivo, $pacote)) {
-                return true;
-            }
-
-            if (str_starts_with($arquivo, $app) && preg_match('~/Dock(/|DeAtalhos)~', $arquivo) === 1) {
-                return true;
-            }
-        }
-
-        return false;
-    };
     $proibidas = array_values(array_filter(
         [...$tresDepois, ...$tresAntes],
-        static fn (array $consulta): bool => $pilhaDoDock($consulta['arquivos']) && ($afirmacao === 'papeis'
+        static fn (array $consulta): bool => pilhaComCodigoDoDock($consulta['arquivos']) && ($afirmacao === 'papeis'
             ? preg_match('/^\s*select\s+(?!exists\b).*\bfrom\s+[`"\[]?roles[`"\]]?(\s|$)/is', $consulta['sql']) === 1 && str_contains($consulta['sql'], 'model_has_roles')
             : preg_match('/\b(from|into|update|join)\s+[`"\[]?tenants[`"\]]?(\s|$)/i', $consulta['sql']) === 1),
     ));

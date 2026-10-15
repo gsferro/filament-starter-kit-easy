@@ -9,7 +9,6 @@ use Database\Seeders\GuardaPromptSeeder;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Laravel\Ai\Models\Conversation;
 use Laravel\Ai\Models\ConversationMessage;
 use Livewire\Livewire;
@@ -17,7 +16,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Regra R7 da wiki `phpstan-nivel-8`: o widget do assistente (`AssistenteChatWidget`, montado no
- * `BODY_END` de TODA página do `/app` — inclusive a tela de login) só mostra e só age sobre
+ * `BODY_END` das páginas comuns do `/app`) só mostra e só age sobre
  * conversas do usuário autenticado. Sem usuário, ele renderiza vazio e recusa toda ação.
  *
  * Não existia nenhum teste deste componente antes desta wiki (`grep` por
@@ -42,26 +41,8 @@ beforeEach(function (): void {
 });
 
 /**
- * Uma conversa, com dono opcional. `participant_type`/`participant_id` nulos = "Rascunho órfão"
- * (as duas colunas são nullable — migration `2026_08_12_165028_create_agent_conversations_table.php`).
- *
- * `Conversation` tem `$keyType = 'string'` e `#[WithoutIncrementing]`: a chave não se gera
- * sozinha, e `$guarded = []` deixa todo atributo passar pelo `create()`.
- */
-function conversaPara(?User $dono, string $titulo): Conversation
-{
-    return Conversation::create([
-        'id'               => (string) Str::uuid(),
-        'participant_type' => $dono?->getMorphClass(),
-        'participant_id'   => $dono?->getKey(),
-        'title'            => $titulo,
-    ]);
-}
-
-/**
- * CT-14 — o visitante abre a tela de login do painel de negócio sem erro, o widget está montado
- * (M33a: se ele sumir do render hook, este caso é quem acusa) e o corpo da página não contém a
- * conversa de ninguém.
+ * CT-14 — RQ-23 da pilha de botões flutuantes: o login responde 200 sem montar o widget
+ * e sem entregar a conversa de ninguém. Substitui a exigência anterior de montar no login.
  */
 it('[CT-14] o visitante abre a tela de login do painel de negócio sem erro e sem conversa de ninguém', function (): void {
     $ana = usuarioDoKit('panel_user', 'ana@example.com');
@@ -69,7 +50,9 @@ it('[CT-14] o visitante abre a tela de login do painel de negócio sem erro e se
 
     $resposta = $this->get('/app/login');
 
-    $resposta->assertOk()->assertSeeLivewire(AssistenteChatWidget::class);
+    $resposta->assertOk()->assertDontSeeLivewire(AssistenteChatWidget::class);
+    $html = preg_replace('~<script\b[^>]*>.*?</script>~is', '', $resposta->getContent());
+    $this->assertStringNotContainsString('data-assistente-chat', $html);
 
     $this->assertStringNotContainsString('Plano de férias', $resposta->getContent());
 });

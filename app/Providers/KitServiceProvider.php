@@ -746,6 +746,13 @@ class KitServiceProvider extends ServiceProvider
                  * Ver o cabeçalho de `resources/css/filament/voltar-ao-topo.css`.
                  */
                 Css::make('kit-voltar-ao-topo', resource_path('css/filament/voltar-ao-topo.css')),
+                /*
+                 * O chat do Assistente (`livewire/assistente-chat-widget.blade.php`). Mesmo caso:
+                 * sem esta folha o botão saía `position: static`, no fim do `<body>` e fora da tela,
+                 * e o slide-over sem fundo nem posição. Escopado no `data-assistente-chat` da raiz
+                 * do componente. Ver o cabeçalho de `resources/css/filament/assistente-chat.css`.
+                 */
+                Css::make('kit-assistente-chat', resource_path('css/filament/assistente-chat.css')),
             ],
             package: 'kit',
         );

@@ -406,33 +406,6 @@ function consultaAoSettings(string $sql): bool
 }
 
 /**
- * A pilha tem código do dock: o pacote `hoceineel` ou uma classe do kit dedicada ao dock
- * (`app/Filament/Dock/**`, `app/Support/DockDeAtalhos.php`). Os frames de `tests/` ficam de fora de
- * propósito: este arquivo se chama `DockDeAtalhosTest.php`.
- *
- * @param  list<string>  $arquivos
- */
-function pilhaComCodigoDoDock(array $arquivos): bool
-{
-    $pacote = str_replace('\\', '/', base_path('vendor/hoceineel'));
-    $app    = str_replace('\\', '/', app_path());
-
-    foreach ($arquivos as $arquivo) {
-        $arquivo = str_replace('\\', '/', $arquivo);
-
-        if (str_starts_with($arquivo, $pacote)) {
-            return true;
-        }
-
-        if (str_starts_with($arquivo, $app) && preg_match('~/Dock(/|DeAtalhos)~', $arquivo) === 1) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/**
  * Um request novo para o estado do container: o objeto de settings não fica resolvido de uma
  * medida para a outra, senão a segunda leria de memória o que a primeira leu do banco.
  */

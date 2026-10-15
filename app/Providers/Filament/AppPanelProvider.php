@@ -25,6 +25,7 @@ use App\Support\CorPrimaria;
 use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
 use App\Support\SeletorDeOrganizacao;
+use App\Support\TelaDeAutenticacao;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
@@ -163,7 +164,9 @@ class AppPanelProvider extends PanelProvider
             // no infra, replique-as no PanelProvider correspondente.
             ->renderHook(
                 PanelsRenderHook::BODY_END,
-                fn (): string => Blade::render('@livewire(\'assistente-chat-widget\')'),
+                // Nas telas de autenticação (bloqueio, 2FA, registro por convite) o chat não é
+                // montado: numa sessão bloqueada, o slide-over mostraria os títulos das conversas.
+                fn (): string => TelaDeAutenticacao::corrente() ? '' : Blade::render('@livewire(\'assistente-chat-widget\')'),
             )
             ->bootUsing(function (Panel $panel): void {
                 // Registra as sugestões "Criar X" no request, com auth já resolvido.

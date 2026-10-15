@@ -38,16 +38,43 @@
     o botão pintar por cima do overlay da sidebar no celular. Ficar embaixo é o certo: com
     modal, chat ou menu aberto, "voltar ao topo" não faz sentido.
 
-    ── Offset por painel ──
+    ── Offset por painel e a pilha do canto inferior direito ──
 
     No `/app` o botão do chat ocupa de 24px a 80px do rodapé (`bottom-6` + `h-14`). Este sobe
     para `bottom-24` = 96px, deixando 16px de folga. Nos outros dois painéis não há chat, e
     ele fica no `bottom-6` padrão.
 
-    SE A POSIÇÃO DO CHAT MUDAR, ESTE OFFSET MUDA JUNTO — os dois arquivos se citam.
+    Os dois valores são o FALLBACK: a folha (`voltar-ao-topo.css`) soma a partir da
+    `--kit-pilha-base`, que o script abaixo publica no `<html>` quando o dock de atalhos ocupa
+    o lugar dos botões flutuantes. Aí a pilha inteira — chat e este botão — sobe para começar
+    16px acima do topo do dock. Sem o script ou sem o dock, a variável não existe e valem os
+    96px/24px de sempre. Wiki `pilha-de-botoes-flutuantes`.
+
+    SE A POSIÇÃO DO CHAT MUDAR, ESTE OFFSET MUDA JUNTO — os três arquivos se citam
+    (esta blade, `voltar-ao-topo.css` e `assistente-chat.css`).
 
     Os dois literais de classe ficam escritos no texto do arquivo de propósito: é assim que o
     Tailwind v4 os encontra e gera.
+
+    ── Eixo comum ──
+
+    O chat e o gatilho do dock têm 56px a 24px da borda direita; o centro deles fica a 52px.
+    Este botão tem 44px: para cair no mesmo eixo vertical ele fica 6px mais para dentro
+    (`margin-right` na folha).
+
+    ── O script da pilha ──
+
+    Mora aqui, e não num `Js` do `FilamentAsset`, porque esta blade já é renderizada em toda
+    tela dos painéis pelo render hook global — e `resources/views/filament` já viaja pelas
+    duas rotas de entrega (`create-project` e `kit:update`); `resources/js` e `public/js/kit`
+    não estão em `KitUpdate::CAMINHOS_DO_KIT`.
+
+    Ele só LÊ o dock (`.qad-root`, do `hoceineel/filament-quick-action-dock`): a posição que o
+    pacote aplica por `transform`, `data-open` e `data-mode`. Não chama o servidor. Reage
+    quando o retângulo do dock cruza o lugar de algum botão da pilha nas posições de hoje, ou o
+    espaço entre eles; o dock em qualquer outro ponto não muda nada. Com o leque (`speed-dial`)
+    aberto ali, põe `data-kit-pilha-oculta` no `<html>` e as duas folhas escondem os botões;
+    a barra (`bar`) fica sempre expandida, então com ela a pilha só sobe.
 
     ── prefers-reduced-motion ──
 
@@ -92,3 +119,101 @@
     {{-- ponytail: `aria-hidden` vem de fábrica nos SVG dos sets embarcados do Filament. --}}
     <x-filament::icon icon="heroicon-o-arrow-up" class="h-5 w-5" />
 </button>
+
+<script>
+    (() => {
+        if (window.kitPilhaDeFlutuantes) {
+            return;
+        }
+
+        window.kitPilhaDeFlutuantes = true;
+
+        // Medidas de hoje: margem de 24px, botão de 56px (chat e gatilho do dock), "Voltar ao
+        // topo" de 44px e 16px entre vizinhos.
+        const MARGEM = 24;
+        const LARGURA = 56;
+        const VOLTAR = 44;
+        const ESPACO = 16;
+
+        const html = document.documentElement;
+        const observadorDoDock = new MutationObserver(() => agendar());
+        let dockObservado = null;
+        let quadro = null;
+
+        function limpar() {
+            html.style.removeProperty('--kit-pilha-base');
+            html.removeAttribute('data-kit-pilha-oculta');
+        }
+
+        function calcular() {
+            quadro = null;
+
+            const dock = document.querySelector('.qad-root[data-placed]');
+
+            if (! dock) {
+                limpar();
+
+                return;
+            }
+
+            const largura = html.clientWidth;
+            const altura = html.clientHeight;
+            const temChat = document.querySelector('[data-assistente-chat] .bottom-6') !== null;
+            const alturaDaPilha = (temChat ? LARGURA + ESPACO : 0) + VOLTAR;
+            const r = dock.getBoundingClientRect();
+
+            // O lugar da pilha nas posições de hoje: a coluna da direita, do rodapé até o topo do
+            // "Voltar ao topo", com o espaço entre os botões incluído.
+            const cruza = r.left < largura - MARGEM
+                && r.right > largura - MARGEM - LARGURA
+                && r.top < altura - MARGEM
+                && r.bottom > altura - MARGEM - alturaDaPilha;
+
+            if (! cruza) {
+                limpar();
+
+                return;
+            }
+
+            html.style.setProperty('--kit-pilha-base', `${Math.round(altura - r.top + ESPACO)}px`);
+            html.toggleAttribute('data-kit-pilha-oculta', dock.dataset.mode === 'speed-dial' && dock.dataset.open === 'true');
+        }
+
+        function agendar() {
+            if (quadro === null) {
+                quadro = requestAnimationFrame(calcular);
+            }
+        }
+
+        function ligar() {
+            const dock = document.querySelector('.qad-root');
+
+            if (dock !== dockObservado) {
+                observadorDoDock.disconnect();
+                dockObservado?.removeEventListener('transitionend', agendar);
+                dockObservado = dock;
+
+                if (dock) {
+                    observadorDoDock.observe(dock, {
+                        attributes: true,
+                        attributeFilter: ['style', 'data-open', 'data-mode', 'data-placed'],
+                    });
+
+                    // O pacote anima o `transform` ao mudar de canto (`data-settling`): medido
+                    // no meio da animação, o retângulo ainda é o do canto anterior. O fim da
+                    // transição traz a posição final.
+                    dock.addEventListener('transitionend', agendar);
+                }
+            }
+
+            agendar();
+        }
+
+        // O dock e o chat podem entrar no DOM depois deste script (render hooks e morph do
+        // Livewire): a árvore é observada até o dock aparecer ou ser trocado.
+        new MutationObserver(ligar).observe(document.body, { childList: true, subtree: true });
+        window.addEventListener('resize', agendar);
+        document.addEventListener('livewire:navigated', ligar);
+        ligar();
+    })();
+</script>
