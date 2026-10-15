@@ -26,7 +26,9 @@
 - [ ] `.ai/rules/pages.md` — step 12 (`requirement-to-rule`), com a aprovação do solicitante
 
 ## Testes
-<!-- Preenchida no step 7. -->
+- [ ] `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` (CT-01, CT-03…CT-15)
+- [ ] `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` (CT-02)
+- [ ] `tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` (CT-B01…CT-B04)
 
 ## Tickets
 <!-- Step 8. -->
@@ -72,7 +74,7 @@
 
 ## Auditoria Pré-Implementação
 
-Entendimento confirmado: pendente — rodada 1 da entrevista em 2026-10-15: 0 perguntas de fato ao usuário (raia fato resolvida pelo levantamento do despacho #1 e pelo vendor), 6 decisões de desenho tomadas pela sessão sob autorização existente (D1–D6 do `01`), 3 perguntas de requisito ao solicitante (Q1–Q3 do `00`, implementadas pela recomendação; resposta contrária entra como Adendo). O solicitante autorizou a implementação ("inicia a /feature-wiki da tela de configurações" e "implemente tudo", 2026-10-15), então a sessão segue sem nova aprovação do plano.
+Entendimento confirmado: pendente — rodada 1 da entrevista em 2026-10-15: 0 perguntas de fato ao usuário (raia fato resolvida pelo levantamento do despacho #1 e pelo vendor), 6 decisões de desenho tomadas pela sessão sob autorização existente (D1–D6 do `01`), 5 perguntas de requisito ao solicitante (Q1–Q3 do `00` e Q4/Q6 da derivação, implementadas pela recomendação; resposta contrária entra como Adendo) e 1 de desenho da derivação (Q5 → D7). O solicitante autorizou a implementação ("inicia a /feature-wiki da tela de configurações" e "implemente tudo", 2026-10-15), então a sessão segue sem nova aprovação do plano.
 
 ### Confronto código × afirmação (step 5)
 | Pergunta | O `01` dizia | O código faz | Resposta (quem, data) | Onde a wiki mudou |
@@ -108,6 +110,7 @@ Entendimento confirmado: pendente — rodada 1 da entrevista em 2026-10-15: 0 pe
 | # | Step | Agente / tarefa | Modelo | Não recebeu | Resultado | Custo | Auditoria do retorno |
 |---|---|---|---|---|---|---|---|
 | 1 | 3 | **Codex CLI 0.162.1** (`codex exec --yolo < /dev/null`), contrato só-leitura escrito pela sessão — inventário da Page (campos por aba, seções, ícone/colapso), fatos do vendor (Tabs/Tab, `Schema::deferLoading`, Section/colapso/persistência), testes e docs que citam a aba Kit ou seções, rules | modelo padrão do Codex (não exposto) | conversa, wiki; proibido escrever fora de `scratchpad/codex2/levantamento.md` | 420 linhas: 50 campos (31 soltos), 10 seções existentes, API do adiamento com citações, 28 arquivos de teste com `fillForm` na Page, 27 linhas de docs "aba Kit", 2 capturas, rules sem seção sobre Section/Tab | — (host não reporta); ~10 min | presença ok (A–E no formato pedido); integridade: `git status --porcelain` só com a wiki nova; amostragem pela sessão: `vendor/filament/schemas/src/Components/Section.php:$persist:364`, `vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:isDeferredSchemaLoaded():220`, `:238-258`, `tests/Kit/SegredosDoSettingsTest.php:assertSchemaComponentExists:591`, `:598-615` e `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaKit():939`, `:944-999` lidos e conferem |
+| 2 | 7 | `general-purpose` como analista — derivação do `04`/`05` pela `feature-test-design` (sem `analista` em `.claude/agents/`) | opus | conversa, `01` inteiro (só o extrato: paths, rotas, Superfície de UI, composição), `03`, código da feature | `04` com 15 CT, 12 regras, 40 mutantes, 0 sem matador; `05` com CT-B01…CT-B04 (MB1–MB9); 3 perguntas (Q?1–Q?3 → Q4, Q5, Q6); costuras propostas (5 grupos); conflito declarado: CT-05/CT-B02 escritos sobre a recomendação de Q1, marcados `@pendente-Q1` | 254.453 tokens · 1.109 s · 31 tool uses | presença ok (delimitadores `<<<04`/`>>>04`, `<<<05`/`>>>05`, `## Para o orquestrador`); integridade: rascunhos só em `scratchpad/derivacao3/`, `git status` sem arquivo novo fora da wiki; amostragem pela sessão: `grep -cE` = 15 cenários no `04` e 4 no `05`, CT-10 grava com a aba adiada (P-04), CT-03 percorre `getFlatComponents(withHidden: true)`; **ressalva**: o agente relatou a seção *Composição da tela* vazia no extrato e leu a tabela direto do `01` › `## Mapeamentos` (mesmo conteúdo, só para seletores) — degradação de cegueira registrada |
 | — | 0, 2, 4 | Sem despacho — captura verbatim do requisito, `RQ`, nome da feature, `00`/`01`/`02`/`03` escritos pela sessão (edição com forte interdependência; os fatos vieram do despacho #1 e do vendor lido pela sessão) | — | — | — | — | — |
 
 ## Blockers

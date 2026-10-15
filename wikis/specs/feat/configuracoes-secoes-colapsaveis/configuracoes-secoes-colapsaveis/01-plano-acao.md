@@ -76,6 +76,7 @@ O Filament 5.10.2 instalado tem o mecanismo de adiamento: `Schema::deferLoading(
 | D4 | O enforcement da rule é um CT estrutural de componente que percorre todos os campos do formulário e exige: pai imediato `Section`, com ícone, `isCollapsible()` e `id()` preenchido — o teste é o guarda; a rule aponta para ele | autorização existente (escada de enforcement da `requirement-to-rule`) | surpreendente | sessão, 2026-10-15 |
 | D5 | Adiamento em todas as seis abas (não só nas pesadas): o custo é um request por aba aberta, e a regra única é mais fácil de manter que uma lista | autorização existente | trade-off | sessão, 2026-10-15 |
 | D6 | As duas capturas que mostram a aba são refeitas pelo `composer art` (não editadas); os nomes publicados não mudam | autorização existente | nenhum | sessão, 2026-10-15 |
+| D7 | Os CTs de componente chamam `loadDeferredSchema()` e leem `$loadedDeferredSchemas` (ambos `@internal` no Filament) para carregar e conferir uma aba, com o HTML (`fi-sc-loading` / campo-âncora) como oráculo e a propriedade só como apoio — é o que o JS do Filament chama; um patch que mude isso deixa o CT vermelho e aponta | Q5 (derivação do `04`) | surpreendente | sessão, 2026-10-15 |
 
 ## Autorização
 
