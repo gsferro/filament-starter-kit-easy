@@ -1,6 +1,8 @@
 <?php
 
 use App\Console\Commands\KitUpdate;
+use App\Filament\Admin\Resources\Users\UserResource;
+use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\Pages\DashboardClassico;
 use App\Models\Convite;
 use App\Models\Role;
@@ -15,11 +17,13 @@ use Filament\Forms\Components\Select;
 use Filament\Notifications\NotificationMailbox;
 use Filament\Panel;
 use Filament\PanelRegistry;
+use Filament\Resources\Resource;
 use Filament\Support\Assets\AssetManager;
 use Filament\Support\Colors\ColorManager;
 use HoceineEl\QuickActionDock\Livewire\QuickActionDock;
 use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +31,7 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Laravel\Ai\Models\Conversation;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -2668,4 +2673,115 @@ function opcoesDoSlideover(Testable $dock): array
     );
 
     return $opcoes;
+}
+
+/**
+ * Uma conversa, com dono opcional. `participant_type`/`participant_id` nulos = "Rascunho órfão"
+ * (as duas colunas são nullable — migration `2026_08_12_165028_create_agent_conversations_table.php`).
+ *
+ * `Conversation` tem `$keyType = 'string'` e `#[WithoutIncrementing]`: a chave não se gera
+ * sozinha, e `$guarded = []` deixa todo atributo passar pelo `create()`.
+ */
+function conversaPara(?User $dono, string $titulo): Conversation
+{
+    return Conversation::create([
+        'id'               => (string) Str::uuid(),
+        'participant_type' => $dono?->getMorphClass(),
+        'participant_id'   => $dono?->getKey(),
+        'title'            => $titulo,
+    ]);
+}
+
+/** @return array{acme: Tenant, globex: Tenant, usuario: User, chaves: array<string, string>} */
+function arranjarFavoritosDoDockTenancy(): array
+{
+    config(['kit.demo' => true]);
+    $fixture = duasOrganizacoes();
+    concederDock('panel_user', 'admin', 'admin_app');
+    papelDoKit('panel_user')->givePermissionTo('ViewAny:Projeto');
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    ligarDock(['app', 'admin']);
+    test()->actingAs($fixture['usuario']);
+    $fixture['chaves'] = [
+        'A'   => chaveDeAtalho('admin', UserResource::class),
+        'PA'  => chaveDeAtalho('app', ProjetoResource::class, $fixture['acme']->getKey()),
+        'PG'  => chaveDeAtalho('app', ProjetoResource::class, $fixture['globex']->getKey()),
+        'PA2' => chaveDeAtalho('app', DashboardClassico::class, $fixture['acme']->getKey()),
+        'PG2' => chaveDeAtalho('app', DashboardClassico::class, $fixture['globex']->getKey()),
+    ];
+
+    return $fixture;
+}
+
+/** Boote real e contexto de página, inclusive a rota index de um Resource. */
+function abrirDockTenancy(string $painel, ?Tenant $tenant = null, string $destino = DashboardClassico::class): Testable
+{
+    fronteiraDeRequest();
+    auth()->user()->unsetRelation('roles')->unsetRelation('permissions');
+    test()->get($painel === 'app' ? '/app/'.$tenant->slug : '/'.$painel)->assertOk();
+    if ($tenant !== null) {
+        noPainelDa($tenant);
+    } else {
+        noPainelDoShield($painel);
+        Filament::setTenant(null, isQuiet: true);
+    }
+    app()->instance('request', Request::create('/'));
+    $url = is_subclass_of($destino, \Filament\Resources\Resource::class)
+        ? $destino::getUrl('index', panel: $painel, tenant: $tenant)
+        : $destino::getUrl(panel: $painel, tenant: $tenant);
+    $rota = app('router')->getRoutes()->match(Request::create($url));
+    DockContext::current()->set($rota->getName(), $rota->parameters(), (string) parse_url($url, PHP_URL_PATH));
+
+    return Livewire::test(QuickActionDock::class);
+}
+
+/**
+ * A pilha tem código do dock: o pacote `hoceineel` ou uma classe do kit dedicada ao dock
+ * (`app/Filament/Dock/**`, `app/Support/DockDeAtalhos.php`). Os frames de `tests/` ficam de fora de
+ * propósito: este arquivo se chama `DockDeAtalhosTest.php`.
+ *
+ * @param  list<string>  $arquivos
+ */
+function pilhaComCodigoDoDock(array $arquivos): bool
+{
+    $pacote = str_replace('\\', '/', base_path('vendor/hoceineel'));
+    $app    = str_replace('\\', '/', app_path());
+
+    foreach ($arquivos as $arquivo) {
+        $arquivo = str_replace('\\', '/', $arquivo);
+
+        if (str_starts_with($arquivo, $pacote)) {
+            return true;
+        }
+
+        if (str_starts_with($arquivo, $app) && preg_match('~/Dock(/|DeAtalhos)~', $arquivo) === 1) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/** @return list<array{sql: string, arquivos: list<string>}> */
+function consultasDoGet(string $url): array
+{
+    $consultas = [];
+    $ativo     = true;
+    DB::listen(function ($consulta) use (&$consultas, &$ativo): void {
+        if ($ativo) {
+            $consultas[] = [
+                'sql'      => $consulta->sql,
+                'bindings' => $consulta->bindings,
+                'arquivos' => array_column(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS), 'file'),
+            ];
+        }
+    });
+
+    try {
+        test()->get($url)->assertOk();
+    } finally {
+        $ativo = false;
+    }
+
+    return $consultas;
 }

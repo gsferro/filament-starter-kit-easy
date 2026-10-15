@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\Users\Pages\EditUser;
 use App\Filament\Admin\Resources\Users\UserResource as UserResourceDoAdmin;
 use App\Filament\App\Pages\HubDoNegocio;
 use App\Filament\App\Resources\Users\UserResource;
+use App\Filament\Dock\PluginDoDock;
 use App\Filament\Infra\Pages\Dashboard as DashboardDoInfra;
 use App\Filament\Pages\DashboardClassico;
 use App\Models\User;
@@ -17,12 +18,14 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
+use Filament\Panel;
 use Filament\Resources\Resource;
 use Filament\Support\Facades\FilamentView;
 use Filament\Support\View\ViewManager;
 use Filament\View\PanelsRenderHook;
 use HoceineEl\QuickActionDock\Enums\DockLayout;
 use HoceineEl\QuickActionDock\Livewire\QuickActionDock;
+use HoceineEl\QuickActionDock\QuickActionDockPlugin;
 use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Http\Request;
@@ -400,33 +403,6 @@ function consultasDuranteACaptura(Closure $acao): array
 function consultaAoSettings(string $sql): bool
 {
     return preg_match('/\b(from|into|update|join)\s+[`"\[]?settings[`"\]]?(\s|$)/i', $sql) === 1;
-}
-
-/**
- * A pilha tem código do dock: o pacote `hoceineel` ou uma classe do kit dedicada ao dock
- * (`app/Filament/Dock/**`, `app/Support/DockDeAtalhos.php`). Os frames de `tests/` ficam de fora de
- * propósito: este arquivo se chama `DockDeAtalhosTest.php`.
- *
- * @param  list<string>  $arquivos
- */
-function pilhaComCodigoDoDock(array $arquivos): bool
-{
-    $pacote = str_replace('\\', '/', base_path('vendor/hoceineel'));
-    $app    = str_replace('\\', '/', app_path());
-
-    foreach ($arquivos as $arquivo) {
-        $arquivo = str_replace('\\', '/', $arquivo);
-
-        if (str_starts_with($arquivo, $pacote)) {
-            return true;
-        }
-
-        if (str_starts_with($arquivo, $app) && preg_match('~/Dock(/|DeAtalhos)~', $arquivo) === 1) {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 /**
@@ -1239,7 +1215,7 @@ it('[CT-48] o dock segue a ordem escolhida e a reordenação do slideover', func
     expect(atalhosGravados($bruno))->toBe($envio);
     afirmarOrdemDosLinksDoDock(
         dockEmRequestNovo('admin')->html(),
-        array_map(static fn (string $nome): string => $urls[$nome], $ordem),
+        array_map(static fn (string $nome): string => $urls[$nome], ordemExibidaNoDock($ordem, ['C' => 'infra', 'A' => 'admin', 'B' => 'admin'])),
     );
 })->with([
     'regrava C, A, B'  => [['C', 'A', 'B']],
@@ -1261,13 +1237,35 @@ it('[CT-49] adicionar a página atual entra no fim sem reordenar C, A, B', funct
     dockNaUrlAtual($urlDeD)->callAction('adicionarPaginaAtual');
 
     expect(atalhosGravados($bruno))->toBe([...$antes, $d]);
+    // Exibição agrupada por painel (Adendo 6, RQ-36): o /admin antes do /infra, e D no fim do grupo dele.
     afirmarOrdemDosLinksDoDock(dockEmRequestNovo('admin')->html(), [
-        DashboardClassico::getUrl(panel: 'infra'),
         UserResourceDoAdmin::getUrl('index', panel: 'admin'),
         DashboardClassico::getUrl(panel: 'admin'),
         $urlDeD,
+        DashboardClassico::getUrl(panel: 'infra'),
     ]);
 });
+
+/**
+ * A ordem em que o dock EXIBE os favoritos (Adendo 6, RQ-36): agrupados por painel, na ordem
+ * app → admin → infra, e na ordem gravada dentro de cada painel.
+ *
+ * A ordem dos painéis está escrita aqui, e não lida de `Paineis::rotulos()`: o oráculo não sai da
+ * implementação.
+ *
+ * @param  list<string>  $ordem  os nomes, na ordem gravada
+ * @param  array<string, string>  $painelDe  nome => id do painel
+ * @return list<string>
+ */
+function ordemExibidaNoDock(array $ordem, array $painelDe): array
+{
+    $paineis = ['app', 'admin', 'infra'];
+
+    return array_merge(...array_map(
+        static fn (string $painel): array => array_values(array_filter($ordem, static fn (string $nome): bool => $painelDe[$nome] === $painel)),
+        $paineis,
+    ));
+}
 
 /** Bruno no /app, com U e P gravados e acesso ao dock. */
 function brunoComFavoritosEntrePaineis(): User
@@ -1662,3 +1660,80 @@ it('[CT-75] adicionar uma página que deixou de poder ser adicionada avisa sem g
     'já favorita em outra aba'      => ['duas abas'],
     'destino deixou de ser abrível' => ['permissão revogada'],
 ]);
+
+/*
+| Favoritos agrupados por painel, com o rótulo do painel como separador no dock.
+*/
+
+it('agrupa os favoritos por painel, com o rótulo do painel e a ordem gravada dentro do grupo', function (): void {
+    $bruno = usuarioDoKit('admin', 'bruno@example.com');
+    $bruno->assignRole('infra');
+
+    concederDock('admin', 'infra');
+    ligarDock(['admin', 'infra']);
+    noPainelBootado('admin');
+    $this->actingAs($bruno);
+
+    $porPainel = collect(destinosAbriveisDoDock($bruno))
+        ->groupBy(static fn (array $destino): string => DockDeAtalhos::painelDaChave($destino['chave']));
+
+    // Arranjo: dois destinos do /admin e um do /infra, gravados intercalados.
+    expect(count($porPainel->get('admin', [])))->toBeGreaterThanOrEqual(2)
+        ->and(count($porPainel->get('infra', [])))->toBeGreaterThanOrEqual(1);
+
+    gravarAtalhos($bruno, [
+        $porPainel['admin'][0]['chave'],
+        $porPainel['infra'][0]['chave'],
+        $porPainel['admin'][1]['chave'],
+    ]);
+
+    $grupos = array_map(
+        static fn (array $grupo): array => [$grupo['label'], array_keys($grupo['actions'])],
+        dockNaPagina('admin')->instance()->getDockGroups(),
+    );
+
+    expect(array_slice($grupos, 0, 2))->toBe([
+        ['Administração', ['atalho_0', 'atalho_2']],
+        ['Infraestrutura', ['atalho_1']],
+    ])
+        ->and(array_column($grupos, 0))->toBe(['Administração', 'Infraestrutura', 'Atalhos']);
+});
+
+it('não mostra separador de painel sem favorito visível', function (): void {
+    $master = usuarioDoKit('master_global', 'master@example.com');
+
+    ligarDock(['admin']);
+    gravarAtalhos($master, [chaveDeAtalho('admin', UserResourceDoAdmin::class)]);
+
+    noPainelBootado('admin');
+    $this->actingAs($master);
+
+    expect(array_column(dockNaPagina('admin')->instance()->getDockGroups(), 'label'))
+        ->toBe(['Administração', 'Atalhos']);
+});
+
+/*
+| Projeto atualizado pelo `kit:update` antes do `composer require` do pacote (validação da v0.48.0,
+| cenários 3 e 4): o código do dock chega e o pacote não, porque o `composer.json` nunca é aplicado.
+*/
+
+it('reconhece se o pacote do dock está instalado pela classe do plugin', function (): void {
+    expect(DockDeAtalhos::pacoteInstalado())->toBeTrue()
+        ->and(DockDeAtalhos::pacoteInstalado('HoceineEl\QuickActionDock\PluginQueNaoExiste'))->toBeFalse();
+});
+
+it('monta o plugin do pacote quando ele está instalado', function (): void {
+    expect(PluginDoDock::make())->toBeInstanceOf(QuickActionDockPlugin::class);
+});
+
+it('sem o pacote, entrega um plugin inerte que o painel registra e inicializa', function (): void {
+    $plugin = PluginDoDock::make(pacoteInstalado: false);
+    $painel = Panel::make()->id('painel-sem-dock');
+
+    $plugin->register($painel);
+    $plugin->boot($painel);
+
+    expect($plugin)->not->toBeInstanceOf(QuickActionDockPlugin::class)
+        ->and($plugin->getId())->not->toBe(QuickActionDockPlugin::make()->getId())
+        ->and($painel->getPlugins())->toBe([]);
+});

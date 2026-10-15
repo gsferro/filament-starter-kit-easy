@@ -2,15 +2,21 @@
     Widget de chat do Assistente. Botão flutuante + slide-over presentes em toda tela do
     painel (render hook BODY_END). A saída do LLM é conteúdo NÃO confiável: markdown com HTML
     escapado (`html_input: escape`), nunca `{!! !!}` sobre texto cru do modelo.
+
+    O estilo vem de `resources/css/filament/assistente-chat.css`, escopado no
+    `data-assistente-chat` desta raiz: o painel não carrega o Vite da aplicação, e sem a folha
+    as utilitárias abaixo não existem na tela.
 --}}
-<div>
+<div data-assistente-chat>
     @if ($disponivel)
         <div
             x-data="{ aberto: @entangle('aberto') }"
             @keydown.escape.window="aberto = false"
         >
-            {{-- Botão flutuante. Ocupa o canto inferior direito; se o seu painel já tiver algo
-                 ali (botão "voltar ao topo", chat de suporte), ajuste o `bottom-*` aqui. --}}
+            {{-- Botão flutuante, na base da pilha do canto inferior direito. O `bottom-6` lê a
+                 `--kit-pilha-base` que o script da pilha publica (assistente-chat.css), então o
+                 botão sobe quando o dock de atalhos ocupa o canto. Mudar a altura dele muda a
+                 pilha: o "Voltar ao topo" do /app conta com 56px + 16px (voltar-ao-topo.css). --}}
             <button
                 type="button"
                 x-show="!aberto"
@@ -117,7 +123,7 @@
                                                 type="button"
                                                 @click="titulo = @js($conversa->title); editando = false"
                                                 aria-label="Cancelar renomeação"
-                                                class="shrink-0 rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-600 dark:hover:bg-white/5"
+                                                class="shrink-0 rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-600 dark:text-gray-400 dark:hover:bg-white/5"
                                             >
                                                 Cancelar
                                             </button>
@@ -148,8 +154,9 @@
                                 @if ($mensagem->role === 'assistant')
                                     {{-- `soft_break`: sem ele o CommonMark colapsa quebra simples em espaço e o
                                          texto que chegou quebrado durante o streaming vira um bloco corrido ao
-                                         persistir. `resposta-md` é a classe de estilo local (definida no
-                                         @assets abaixo) — não depende do plugin @tailwindcss/typography. --}}
+                                         persistir. `resposta-md` é a classe de estilo local (definida em
+                                         resources/css/filament/assistente-chat.css) — não depende do plugin
+                                         de tipografia do Tailwind. --}}
                                     <div class="resposta-md">
                                         {!! \Illuminate\Support\Str::markdown($mensagem->content, [
                                             'html_input'         => 'escape',
@@ -271,91 +278,6 @@
 </div>
 
 @assets
-    {{-- CSS local do widget: fica aqui (e não no theme do painel) para o chat funcionar em
-         qualquer painel sem passo de build. --}}
-    <style>
-        .resposta-md > :first-child { margin-top: 0; }
-        .resposta-md > :last-child { margin-bottom: 0; }
-        .resposta-md p { margin-block: 0.5rem; }
-        .resposta-md strong { font-weight: 600; }
-        .resposta-md em { font-style: italic; }
-        .resposta-md ul,
-        .resposta-md ol { margin-block: 0.5rem; padding-left: 1.25rem; }
-        .resposta-md ul { list-style: disc; }
-        .resposta-md ol { list-style: decimal; }
-        .resposta-md li { margin-block: 0.125rem; }
-        .resposta-md li > ul,
-        .resposta-md li > ol { margin-block: 0.125rem; }
-        .resposta-md h1,
-        .resposta-md h2,
-        .resposta-md h3,
-        .resposta-md h4 { margin-block: 0.75rem 0.25rem; font-weight: 600; font-size: 1em; }
-        .resposta-md a { text-decoration: underline; text-underline-offset: 2px; }
-        .resposta-md code {
-            padding: 0.1em 0.3em;
-            border-radius: 0.25rem;
-            background-color: color-mix(in oklab, currentColor 10%, transparent);
-            font-size: 0.9em;
-        }
-        .resposta-md pre {
-            margin-block: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            overflow-x: auto;
-            border-radius: 0.375rem;
-            background-color: color-mix(in oklab, currentColor 8%, transparent);
-        }
-        .resposta-md pre code { padding: 0; background: none; }
-        .resposta-md blockquote {
-            margin-block: 0.5rem;
-            padding-left: 0.75rem;
-            border-left: 2px solid color-mix(in oklab, currentColor 25%, transparent);
-        }
-
-        /* Hora como hint FORA da bolha, logo abaixo dela. Assistente à esquerda (default),
-           usuário à direita (`.chat-hora-fim`). */
-        .chat-hora {
-            display: block;
-            margin-top: 0.1875rem;
-            padding-inline: 0.25rem;
-            font-size: 0.625rem;
-            line-height: 1;
-            text-align: left;
-            opacity: 0.55;
-        }
-
-        .chat-hora-fim { text-align: right; }
-
-        /* Bolha do streaming: enquanto não chega token, não existe bolha. */
-        .chat-stream:empty { display: none; }
-
-        .chat-spinner {
-            width: 0.875rem;
-            height: 0.875rem;
-            flex-shrink: 0;
-            border: 2px solid color-mix(in oklab, currentColor 25%, transparent);
-            border-top-color: var(--primary-500, currentColor);
-            border-radius: 50%;
-            animation: chat-spin 0.7s linear infinite;
-        }
-
-        @keyframes chat-spin { to { transform: rotate(360deg); } }
-
-        .chat-caret {
-            display: inline-block;
-            width: 0.5rem;
-            margin-left: 1px;
-            animation: chat-blink 1s step-end infinite;
-        }
-
-        @keyframes chat-blink { 50% { opacity: 0; } }
-
-        /* A11Y: quem pediu menos movimento recebe spinner lento e nenhum piscar. */
-        @media (prefers-reduced-motion: reduce) {
-            .chat-spinner { animation-duration: 2s; }
-            .chat-caret { animation: none; }
-        }
-    </style>
-
     <script>
         // Mensagens rotativas enquanto o modelo processa. Descrevem a INTENÇÃO do turno — nunca
         // um progresso falso em porcentagem, porque o widget não sabe em que passo o agente

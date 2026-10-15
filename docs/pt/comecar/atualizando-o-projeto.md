@@ -98,6 +98,21 @@ php artisan filament:assets   # obrigatório quando o pacote novo publica CSS/JS
 telas de registro e publica CSS e JS próprios. Sem o `composer require` + `filament:assets`, as
 telas de View/Edit de usuário e organização respondem normalmente, só que sem o cabeçalho.
 
+**Na v0.48.0 isso vale para `hoceineel/filament-quick-action-dock`**, o pacote do
+[dock de atalhos](../../recursos/dock-de-atalhos/):
+
+```bash
+composer require hoceineel/filament-quick-action-dock:^0.2
+php artisan filament:assets
+php artisan migrate --force
+```
+
+Quem atualiza **para a v0.48.0** precisa rodar o `composer require` antes de qualquer outro comando:
+nessa versão o código do dock exige o pacote, e sem ele todo `php artisan` falha com
+`Class "HoceineEl\QuickActionDock\QuickActionDockPlugin" not found`. A partir da versão seguinte o
+projeto sobe sem o pacote, só sem o dock, e a seção "Dock de atalhos" da aba Kit, em
+`/admin/configuracoes-da-aplicacao`, diz o que falta instalar.
+
 ### Tela nova: ressemeie os dois seeders
 
 Os "próximos passos" que o comando imprime citam `filament:assets` e os testes, **não os seeders** —

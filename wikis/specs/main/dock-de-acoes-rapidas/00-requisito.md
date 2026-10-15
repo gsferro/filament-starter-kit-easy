@@ -196,3 +196,23 @@
 | ID | Cláusula | Trecho literal | Tipo | Substitui |
 |----|----------|----------------|------|-----------|
 | RQ-35 | Em qualquer slideover, de qualquer painel, todo favorito gravado que o usuário ainda pode abrir aparece entre os escolhidos, com o rótulo de painel (e organização), e pode ser removido ou reordenado; só as novas opções do catálogo variam conforme onde o slideover é aberto | "Q24 aprovada" (Q24) | funcional | RQ-34 |
+
+## Adendo 6 — 2026-10-14
+
+- **Fonte**: pedido do solicitante no chat, depois de ver o dock agrupado funcionando no servidor local
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: — (pedido novo; altera a exibição de RQ-30)
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> adicione um separador de label para cada painel para melhor agrupamento e visualização no dock. pois ficou muito bom
+>
+> funcionou, adicione isso no kit
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-36 | No dock, os favoritos aparecem agrupados por painel, cada grupo com o rótulo do painel como separador; dentro de cada grupo, na ordem escolhida pelo usuário. A ordem GRAVADA continua a do usuário (RQ-30, RQ-33): só a exibição agrupa | "um separador de label para cada painel para melhor agrupamento e visualização no dock" | funcional | RQ-30 (só a exibição no dock) |

@@ -29,10 +29,17 @@ Nos painéis marcados em *Painéis onde o dock aparece*, na aba **Kit** de
 `/admin/configuracoes-da-aplicacao`. Numa instalação nova **nenhum** painel está marcado: o dock não
 aparece em lugar nenhum até alguém ligá-lo. Veja as opções em [Configuração](#configuração).
 
+O dock e o chat do assistente **não aparecem** na tela de bloqueio (`/screen/lock`), nas telas de
+login (de cada painel e unificado, inclusive a escolha de painel) nem nas telas que usam o layout do
+Auth Designer (recuperar senha, cadastro, registro por convite, dois fatores): numa sessão
+bloqueada, eles entregariam os favoritos e os títulos das conversas a quem estivesse diante da tela.
+Ao destravar, os dois voltam.
+
 ## Usar o dock
 
-1. Clique no botão flutuante: os atalhos abrem, na ordem que você escolheu.
-2. Clique num favorito para ir à tela dele.
+1. Clique no botão flutuante: os atalhos abrem **agrupados por painel**, cada grupo com o nome do painel como separador, e na ordem que você escolheu dentro de cada grupo. Com o multi-tenant ligado, os favoritos do painel da aplicação ficam **um grupo por organização**, com o separador "{painel} · {organização}" — mesmo quando há uma organização só —, na ordem em que cada organização apareceu entre os seus favoritos.
+2. Passe o mouse sobre um favorito para ver, no tooltip, o caminho para onde ele leva.
+3. Clique num favorito para ir à tela dele.
 
 | Layout | Como se apresenta |
 |---|---|
@@ -48,7 +55,7 @@ aparece em lugar nenhum até alguém ligá-lo. Veja as opções em [Configuraç�
 A opção **Gerenciar atalhos** do dock abre um **slideover**. Nele o usuário:
 
 - escolhe destinos do **catálogo** — as telas que ele pode abrir, geradas sozinhas, sem lista mantida à mão;
-- **reordena** os escolhidos: a ordem do dock é a dele;
+- **reordena** os escolhidos: a ordem dele vale dentro do grupo de cada painel no dock;
 - remove os que não quer mais;
 - troca o **layout** do dock, só dele.
 
@@ -72,7 +79,7 @@ A outra opção do dock favorita a tela em que o usuário está.
 
 - **Onde aparece:** na lista de um Resource ou numa Page avulsa. Em tela de criar, editar ou ver registro **não** aparece.
 - **Onde não aparece:** quando a página já é favorita.
-- **Onde entra:** no **fim** da lista, sem mudar a ordem dos demais.
+- **Onde entra:** no **fim** da lista (e, no dock, no fim do grupo do painel dela), sem mudar a ordem dos demais.
 - **Quando não dá:** se a página já não pode ser adicionada — por exemplo, com 10 gravados —, clicar mostra um **aviso** em vez de não fazer nada.
 
 ## Favoritos entre painéis e organizações
@@ -110,6 +117,20 @@ O **layout** e o **estilo** padrão são definidos nas configurações do kit. O
 | `outline` | Contorno |
 | `contrast` | Contraste |
 | `tinted` | Tingido |
+
+## Junto dos outros botões flutuantes
+
+O canto inferior direito também tem o **"Voltar ao topo"** (em toda tela rolada dos painéis) e, no
+painel da aplicação, o **chat do assistente**. Quando o dock fica nesse canto, ou é solto por cima
+do lugar desses botões, os três formam uma pilha:
+
+- o dock fica onde o usuário o pôs;
+- o chat sobe para logo acima do dock, e o "Voltar ao topo" para acima do chat;
+- os três ficam centralizados no mesmo eixo vertical, com **16 px** entre um e outro;
+- com o leque do dock **aberto**, o chat e o "Voltar ao topo" somem até o dock fechar;
+- no layout **barra**, eles continuam visíveis, empilhados acima da barra.
+
+Com o dock em outro canto, ou longe desses botões, cada um fica na altura de sempre; o "Voltar ao topo" fica a 30 px da borda direita, no mesmo eixo do chat, para não saltar de lado quando o dock chega.
 
 ## Tema escuro
 

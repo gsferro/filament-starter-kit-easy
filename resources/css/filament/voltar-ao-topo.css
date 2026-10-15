@@ -28,9 +28,23 @@
 */
 
 [data-voltar-ao-topo].fixed { position: fixed; }
-[data-voltar-ao-topo].bottom-24 { bottom: 6rem; }
-[data-voltar-ao-topo].bottom-6 { bottom: 1.5rem; }
-[data-voltar-ao-topo].right-6 { right: 1.5rem; }
+/*
+ * O recuo soma a partir da `--kit-pilha-base`, que o script da pilha (na blade) publica no
+ * `<html>` quando o dock de atalhos ocupa o lugar dos botões flutuantes. Sem a variável —
+ * sem JS, sem dock — valem os 6rem (/app, acima do chat) e 1.5rem de sempre. O 4.5rem do
+ * `/app` é o chat (3.5rem) mais o espaço entre vizinhos (1rem).
+ */
+[data-voltar-ao-topo].bottom-24 { bottom: calc(var(--kit-pilha-base, 1.5rem) + 4.5rem); }
+[data-voltar-ao-topo].bottom-6 { bottom: var(--kit-pilha-base, 1.5rem); }
+/* Eixo comum com o chat e o dock (56px a 1.5rem da borda): este botão tem 44px, então 6px para dentro. */
+[data-voltar-ao-topo].right-6 { right: 1.5rem; margin-right: 0.375rem; }
+
+/* Com o leque do dock aberto sobre a pilha, o botão sai de cena até o dock fechar. */
+[data-voltar-ao-topo]:is([data-kit-pilha-oculta] *) {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
 [data-voltar-ao-topo].z-20 { z-index: 20; }
 
 [data-voltar-ao-topo].flex { display: flex; }

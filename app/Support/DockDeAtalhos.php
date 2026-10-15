@@ -16,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Contracts\HasLabel;
 use HoceineEl\QuickActionDock\Enums\DockLayout;
 use HoceineEl\QuickActionDock\Enums\DockStyle;
+use HoceineEl\QuickActionDock\QuickActionDockPlugin;
 use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\Request;
@@ -80,8 +81,27 @@ final class DockDeAtalhos
     /** O teto de favoritos gravados por usuário, contando os ocultos (RQ-18, RQ-32). */
     public const MAXIMO_DE_ATALHOS = 10;
 
+    /** O pacote que monta o dock, como o `kit:update` o relata a quem atualiza. */
+    public const PACOTE = 'hoceineel/filament-quick-action-dock';
+
     /** @var WeakMap<Request, array<string, mixed>>|null */
     private static ?WeakMap $memo = null;
+
+    /**
+     * O pacote do dock está instalado?
+     *
+     * Quem atualiza pelo `kit:update` recebe o código do dock sem o pacote: o `composer.json` nunca
+     * é aplicado (docs `comecar/atualizando-o-projeto`, "Dependência nova do kit"). Sem esta
+     * pergunta, o primeiro comando depois do update morria no boot dos painéis, com
+     * `Class "QuickActionDockPlugin" not found`, antes de o usuário conseguir rodar o `composer require`
+     * que o próprio update mandou rodar (validação da v0.48.0, cenários 3 e 4).
+     *
+     * @param  class-string  $classeDoPlugin  só os testes trocam: o kit sempre pergunta pelo plugin do pacote
+     */
+    public static function pacoteInstalado(string $classeDoPlugin = QuickActionDockPlugin::class): bool
+    {
+        return class_exists($classeDoPlugin);
+    }
 
     /**
      * O dock está ligado neste painel? Lista vazia = NENHUM painel (RQ-14) — a semântica oposta à
@@ -115,12 +135,17 @@ final class DockDeAtalhos
      *
      * Strings, e não o enum, no estado do formulário: instância de enum chegaria à propriedade
      * `string` do settings e estouraria `TypeError` no salvamento (o mesmo motivo de
-     * `DensidadeDoLayout::opcoes()`).
+     * `DensidadeDoLayout::opcoes()`). Sem o pacote, nenhuma opção: a tela de configurações monta o
+     * formulário mesmo assim, e os enums são do pacote.
      *
      * @return array<string, string>
      */
     public static function opcoesDeLayout(): array
     {
+        if (! self::pacoteInstalado()) {
+            return [];
+        }
+
         return array_column(array_map(static fn (DockLayout $layout): array => [
             'valor'  => $layout->value,
             'rotulo' => match ($layout) {
@@ -137,6 +162,10 @@ final class DockDeAtalhos
      */
     public static function opcoesDeEstilo(): array
     {
+        if (! self::pacoteInstalado()) {
+            return [];
+        }
+
         return array_column(array_map(static fn (DockStyle $estilo): array => [
             'valor'  => $estilo->value,
             'rotulo' => match ($estilo) {
@@ -153,11 +182,11 @@ final class DockDeAtalhos
      *
      * Favorito que ele deixou de poder abrir some daqui e continua gravado (RQ-19).
      *
-     * @return list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}>
+     * @return list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}>
      */
     public static function atalhosVisiveis(User $usuario): array
     {
-        /** @var list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}> */
+        /** @var list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}> */
         return self::memorizado('atalhos|'.$usuario->getKey(), static fn (): array => self::resolverAtalhosVisiveis($usuario));
     }
 
@@ -475,7 +504,7 @@ final class DockDeAtalhos
     }
 
     /**
-     * @return list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}>
+     * @return list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}>
      */
     private static function resolverAtalhosVisiveis(User $usuario): array
     {
@@ -529,7 +558,7 @@ final class DockDeAtalhos
      * busca da organização; a única consulta admitida é a da autorização da própria tela
      * (`Gate::before` → `User::isMasterGlobal()`), a mesma de cada item da barra lateral.
      *
-     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}|null
+     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}|null
      */
     private static function avaliar(User $usuario, string $chave): ?array
     {
@@ -573,7 +602,7 @@ final class DockDeAtalhos
      * O atalho do destino no contexto CORRENTE — o do request, ou o fixado por `noContexto()`.
      *
      * @param  class-string<resource>|class-string<Page>  $destino
-     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}|null
+     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}|null
      */
     private static function montarAtalho(Panel $painel, ?Tenant $organizacao, string $destino): ?array
     {
@@ -590,6 +619,9 @@ final class DockDeAtalhos
             'rotulo'         => self::textoDoRotulo($destino::getNavigationLabel()),
             'rotuloCompleto' => self::rotuloNoCatalogo($painel, $organizacao, $destino),
             'icone'          => $destino::getNavigationIcon(),
+            // O nome já está em mãos aqui: indicar a organização no dock não custa consulta
+            // (wiki `pilha-de-botoes-flutuantes`, Adendo 7, RQ-25).
+            'organizacao'    => $organizacao === null ? null : Filament::getTenantName($organizacao),
         ];
     }
 
@@ -796,6 +828,18 @@ final class DockDeAtalhos
     private static function chave(Panel $painel, string $destino, ?Tenant $organizacao): string
     {
         return $painel->getId().'|'.$destino.'|'.$organizacao?->getKey();
+    }
+
+    /** O id do painel de uma chave de favorito — o primeiro segmento de `{painel}|{FQCN}|{organização}`. */
+    public static function painelDaChave(string $chave): string
+    {
+        return explode('|', $chave, 2)[0];
+    }
+
+    /** O id da organização de uma chave de favorito — o terceiro segmento; vazio fora do painel com tenancy. */
+    public static function organizacaoDaChave(string $chave): string
+    {
+        return explode('|', $chave, 3)[2] ?? '';
     }
 
     /**
