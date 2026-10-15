@@ -52,7 +52,7 @@
 
 - RQ-01 — cobertura parcial: CT-01 (rótulo, posição, ícone); recorte "chave da aba na URL e links antigos com `kit`" aberto (Q3); o invariante das duas leituras (o link antigo ainda mostra conteúdo) e a partição válida da URL são CT-B04
 - RQ-02 — cobertura parcial: CT-03 (todo **campo** em seção), CT-11, CT-18, CT-B06; recorte "itens que não são campo (textos, avisos)" aberto (Q4); recorte "qual campo em qual seção" aberto (Q2) — nenhum CT afirma o agrupamento
-- RQ-03 — cobertura parcial: CT-04 (colapsável e com ícone); recorte de Q1 implementado pela recomendação autorizada pelo solicitante ("implemente tudo", 2026-10-15), cenários `@pendente-Q1`: CT-05, CT-12, CT-17, CT-B02, CT-B05. Resposta contrária a Q1 vira Adendo e re-derivação
+- RQ-03 — cobertura parcial: CT-04 (colapsável e com ícone); recorte de Q1 implementado pela recomendação autorizada pelo solicitante ("implemente tudo", 2026-10-15), cenários `@pendente-Q1`: CT-05, CT-12, CT-B02 (CT-17 e CT-B05 deixaram de depender de Q1 no lote L1). Resposta contrária a Q1 vira Adendo e re-derivação
 - RQ-04 — CT-19 (a rule existe, obriga "toda" seção colapsável com ícone, cita o teste que a faz cumprir, e o índice a liga à Page); o enforcement mecânico dela é CT-03 e CT-04 (a prova `arch()` que o step 12 cita). CT-19 fica vermelho até o step 12 — classificação esperada: implementação ainda não feita
 - RQ-05 — cobertura parcial: CT-06…CT-10, CT-13…CT-17, CT-20, CT-B01, CT-B04, CT-B05; recorte "autorização no carregamento de aba para quem perdeu a permissão com a tela aberta" aberto (Q6)
 - RQ-06, RQ-07, RQ-08, RQ-09 — atendidas no processo, sem cenário
@@ -323,12 +323,12 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 
 ---
 
-## Regra R7 — aba não carregada com campo em erro carrega sozinha e mostra o erro
+## Regra R7 — aba não carregada com campo em erro carrega e mostra o erro
 
 > `P-03` · perfil **padrão** · técnica: **EP** (campo inválido numa aba nunca carregada) + **não-efeito**
 
 ```gherkin
-  Regra: o erro de validação num campo de aba não carregada traz aquela aba, e só ela
+  Regra: o erro de validação num campo de aba não carregada traz a aba com o campo (e, no Filament 5.10.2, as demais)
 
     Cenário: [CT-09] salvar com erro numa aba nunca carregada carrega essa aba com o erro e não grava nada
       Dado o nome da aplicação gravado "Antes" e a paginação padrão gravada 25
@@ -336,8 +336,9 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
       Quando o administrador salva com o nome "Depois" e a paginação padrão 0
       Então o campo "paginacao_padrao" tem o erro de mínimo
       E a tela re-renderizada mostra o campo "paginacao_padrao" com a mensagem de erro, sem pedido de carregamento da aba Tabelas
-      E a tela continua sem o campo "login_rodape" (a aba Login não carregou)
+      E a tela re-renderizada traz também as demais abas carregadas (o Filament carrega toda aba adiada na resposta com erro de validação — P-03)
       E o banco continua com o nome "Antes" e a paginação 25
+      <!-- *(alterado em 2026-10-15, lote L1, causa a: a linha "continua sem login_rodape" afirmava o oposto do vendor — `InteractsWithSchemas.php:isDeferredSchemaLoaded():220` marca carregada toda schema cujo componente tenha caminho de estado prefixo da chave do erro, e os contêineres têm o caminho raiz `data`)* -->
 ```
 
 #### Mutantes previstos
@@ -345,7 +346,7 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M25 | adiamento por mecanismo que não consulta os erros (componente Livewire `lazy` por aba, ou visibilidade própria) | CT-09 | o HTML depois do salvamento não traz `paginacao_padrao` nem a mensagem |
-| M26 | o erro força o carregamento de todas as abas | CT-09 | `login_rodape` aparece no HTML; a ausência falha |
+| M26 | o salvamento com erro reinicia a lista de abas carregadas e a tela volta só aos marcadores (nenhuma aba carregada, erro invisível) *(reescrito em 2026-10-15, L1: "carregar todas" é o comportamento real)* | CT-09 | o HTML pós-erro traz `paginacao_padrao` e a mensagem; o mutante traz só `fi-sc-loading` |
 | M27 | grava a parte válida antes de validar a aba não carregada | CT-09 | o banco tem nome "Depois"; o esperado é "Antes" |
 
 ---
@@ -442,28 +443,27 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
       Quando o administrador altera o client_id do Google para "id-novo" e salva
       Então o banco tem o client_id do Google "id-novo", sem erro de formulário
 
-    @pendente-Q1
-    Cenário: [CT-17] campo inválido numa seção que nasce colapsada, em aba nunca carregada, é validado e traz a aba
+    Cenário: [CT-17] campo inválido numa seção colapsável aninhada, em aba nunca carregada, é validado e traz a aba
       Dado o nome da aplicação gravado "Antes"
-      E a seção do provedor Google configurada para nascer colapsada
-      E o login com Google habilitado e o client_id do Google gravado vazio
+      E o anti-robô ligado com o provedor reCAPTCHA v3 e a pontuação mínima gravada 5 (fora de 0 a 1), na seção colapsável "Proteção anti-robô"
       E nenhuma aba carregada
       Quando o administrador salva com o nome "Depois"
-      Então o campo "login_google_client_id" tem erro de formulário
-      E a tela re-renderizada mostra o campo "login_google_client_id" com a mensagem de erro (a aba Login carregou)
-      E o banco continua com o nome "Antes"
+      Então o campo "login_anti_robo_pontuacao_minima" tem erro de formulário
+      E a tela re-renderizada mostra o campo "login_anti_robo_pontuacao_minima" com a mensagem de erro (a aba Login carregou)
+      E o banco continua com o nome "Antes" e a pontuação mínima 5
+      <!-- *(alterado em 2026-10-15, lote L1, causa a: os campos das seções de provedor não têm regra de validação (`client_id` sem `required()`), então o cenário anterior não tinha erro para disparar; o campo com regra numa seção colapsável aninhada da aba Login é a pontuação mínima do anti-robô (`numeric`, 0–1, `required`); a marca `@pendente-Q1` caiu — a seção do anti-robô não depende do colapso inicial dos provedores)* -->
 ```
 
-> CT-12 fica `@pendente-Q1` (decisão da sessão, ADV-21): "a seção do provedor nasce colapsada" é parte da recomendação de Q1. O `Dado` é conferido no arranjo (`isCollapsed()` verdadeiro na seção do Google); se Q1 tirar o colapso inicial dos provedores, o caso troca de seção, não de oráculo. CT-17 também fica `@pendente-Q1` (ADV-33): o arranjo confere `isCollapsed()` da seção do Google, como o CT-12; a validação e a carga da aba pelo erro valem nas duas leituras, o colapso inicial é que é recorte de Q1.
+> CT-12 fica `@pendente-Q1` (decisão da sessão, ADV-21): "a seção do provedor nasce colapsada" é parte da recomendação de Q1. O `Dado` é conferido no arranjo (`isCollapsed()` verdadeiro na seção do Google); se Q1 tirar o colapso inicial dos provedores, o caso troca de seção, não de oráculo. CT-17 deixou de depender de Q1 (L1): usa a seção *Proteção anti-robô*, colapsável, com o único campo validado de seção aninhada da aba Login.
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M34 | "nasce colapsada" implementado como oculta até abrir (`->hidden()`/`->visible()`) | CT-12, CT-17 | campo oculto não é desidratado: banco continua "id-antigo"; e sem erro no `client_id`, o salvamento passa e grava "Depois" |
+| M34 | "nasce colapsada" implementado como oculta até abrir (`->hidden()`/`->visible()`) | CT-12 | campo oculto não é desidratado: banco continua "id-antigo" |
 | M35 | campos de seção colapsada com `->dehydrated(false)` ("não enviar o que não se vê") | CT-12 | banco continua "id-antigo" |
-| M48 | campos de seção colapsada fora da validação (`->required()` condicionado a a seção estar aberta) | CT-17 | sem erro em `login_google_client_id`; o banco passa a ter "Depois" |
-| M49 | o adiamento só consulta o erro de campos de primeiro nível da aba; o campo dentro da seção aninhada do provedor não traz a aba | CT-17 | o HTML depois do salvamento não traz `login_google_client_id` nem a mensagem |
+| M48 | campos de seção colapsável fora da validação (regras condicionadas à seção estar aberta) | CT-17 | sem erro em `login_anti_robo_pontuacao_minima`; o banco passa a ter "Depois" |
+| M49 | o adiamento só consulta o erro de campos de primeiro nível da aba; o campo dentro da seção aninhada não traz a aba | CT-17 | o HTML depois do salvamento não traz `login_anti_robo_pontuacao_minima` nem a mensagem |
 
 ---
 
@@ -495,18 +495,20 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
       E o estado do formulário continua com a paginação padrão 30
       E o banco continua com o nome "Antes"
 
-    Esquema do Cenário: [CT-14] escrever na lista de abas carregadas só antecipa a aba e nunca grava
+    Esquema do Cenário: [CT-14] escrever na lista de abas carregadas é recusado e nada grava
       Dado o nome da aplicação gravado "Antes" e nenhuma aba carregada
       E o nome alterado para "Editado" no formulário, sem salvar
-      Quando o cliente escreve na lista de abas carregadas <valor>
-      Então <resultado>
+      Quando o cliente tenta escrever na lista de abas carregadas <valor>
+      Então a escrita é recusada pelo Livewire (propriedade travada, CannotUpdateLockedPropertyException)
+      E nenhuma aba é marcada carregada
       E o banco continua com o nome "Antes", e nenhum aviso de configuração salva foi emitido
 
       Exemplos:
-        | valor                             | resultado                                                                       | # partição        |
-        | a chave da aba Login              | a tela re-renderizada mostra "login_rodape", como se a aba tivesse sido aberta  | dentro do domínio |
-        | uma chave que não existe          | a tela re-renderiza sem erro e sem nenhum campo de aba                          | fora do domínio   |
-        | um texto no lugar da lista        | a escrita é recusada com erro de tipo                                           | tipo errado       |
+        | valor                             | # partição        |
+        | a chave da aba Login              | dentro do domínio |
+        | uma chave que não existe          | fora do domínio   |
+        | um texto no lugar da lista        | tipo errado       |
+      <!-- *(alterado em 2026-10-15, lote L1, causa a: `$loadedDeferredSchemas` é `#[Locked]` no vendor (`InteractsWithSchemas.php:$loadedDeferredSchemas:55`, `:53`) — a escrita é recusada nas três partições; P-06)* -->
 ```
 
 #### Mutantes previstos
@@ -515,11 +517,11 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 |---|---|---|---|
 | M36 | a página sobrescreve o carregamento para "carregar tudo" quando a chave é o prefixo do grupo | CT-13 | linha "só a chave do grupo": abas marcadas ≠ vazio |
 | M37 | a página aceita qualquer chave e a marca como carregada (sem o `skipPartialRender`) | CT-13 | linha "chave que não existe": a lista de carregadas ganha a chave |
-| M38 | gancho do kit ao marcar aba carregada (ex.: `updatedLoadedDeferredSchemas`) que chama `save()` | CT-14 | linha "aba Login": o banco passa a ter "Editado" e o aviso de salvo é emitido; esperado "Antes" e nenhum aviso |
+| M38 | o kit redeclara `$loadedDeferredSchemas` sem `#[Locked]` (ou um gancho `updatedLoadedDeferredSchemas` que chama `save()`) e o cliente passa a marcar abas | CT-14 | a exceção de propriedade travada não vem (a escrita passa); na variante com `save()`, o banco tem "Editado" e o aviso é emitido |
 | M50 | o pedido repetido alterna a marca (abre/fecha), deixando a aba desmarcada | CT-20 | a aba Tabelas deixa de estar marcada; esperado continua |
 | M51 | o pedido repetido re-renderiza a aba a partir do banco, descartando a edição pendente | CT-20 | o estado volta à paginação gravada; esperado 30 |
 
-> CT-14 parte com uma edição pendente ("Editado") para que uma gravação disparada pela escrita na lista divirja do banco: o mutante grava "Editado" e emite o aviso de salvo.
+> CT-14 parte com uma edição pendente ("Editado") para que, se a trava cair e um gancho gravar, a gravação divirja do banco. Lacuna declarada: as linhas "fora do domínio" e "tipo errado" só provam a trava do Livewire (comportamento do framework), não lógica do kit.
 
 ---
 
@@ -591,7 +593,7 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | Gate de camada da regra (autorização/validação por fora da UI) | não se aplica: a feature não cria regra de autorização nem de validação de domínio (`## Fora de Escopo` do `00`); a por-fora da ancestral é CT-33 de `settings-do-kit` | — |
 | Idempotência | CT-20 (pedir a mesma aba duas vezes não altera as carregadas nem o estado); a gravação repetida sem mudança é CT-23 da ancestral | Render adiado |
 | Concorrência | não se aplica: sem contador, saldo ou limite; dois salvamentos simultâneos seguem o último-grava-vence pré-existente, fora de escopo | — |
-| **Fronteira no ponto de entrada** (gravação) | CT-09 (valor abaixo do mínimo num campo de aba nunca carregada), CT-17 (obrigatório vazio em seção colapsada de aba nunca carregada); as demais bordas são da ancestral (CT-09 de `settings-do-kit`) | Render adiado |
+| **Fronteira no ponto de entrada** (gravação) | CT-09 (valor abaixo do mínimo num campo de aba nunca carregada), CT-17 (pontuação fora de 0–1 em seção colapsável aninhada de aba nunca carregada); as demais bordas são da ancestral (CT-09 de `settings-do-kit`) | Render adiado |
 | **Domínio condicionado** | CT-11, CT-18 (seção SMTP × remetente, no servidor), CT-B06 (a seção aparece na mesma visita: o `live()` do remetente) | Gravação sob adiamento; Navegador |
 | **Estado × operação de escrita** | não se aplica: sem entidade com ciclo de vida | — |
 | Ausente ≠ null ≠ vazio | CT-10 (campo ausente do HTML por aba não carregada não é gravado como nulo/vazio; segredo "em branco" de aba não carregada não apaga o guardado) | Gravação sob adiamento |
@@ -600,11 +602,11 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | Unicode / limite de varchar | CT-01 ("Aplicação" com acento, comparação estrita), CT-02; sem campo de texto novo | Estrutura da tela |
 | Unicidade + soft delete | não se aplica: sem entidade removível | — |
 | CRUD combinado | não se aplica: só edição de settings | — |
-| Mass assignment | CT-14 (o cliente forja a lista de abas carregadas e nada grava); `$data` forjado é da ancestral (02: "já inventariada") | Render adiado |
+| Mass assignment | CT-14 (o cliente tenta forjar a lista de abas carregadas e é recusado); `$data` forjado é da ancestral (02: "já inventariada") | Render adiado |
 | Upload | CT-10 (o caminho da logo de aba não carregada é preservado); envio de arquivo é da ancestral (CT-10 de `settings-do-kit`) | Gravação sob adiamento |
 | Precisão monetária | não se aplica: sem dinheiro | — |
 | **Superfície Livewire** — `loadDeferredSchema()` | CT-13 (fora do domínio e tipo errado), CT-20 (repetição) | Render adiado |
-| **Superfície Livewire** — `$loadedDeferredSchemas` | CT-14 (fora do domínio e tipo errado) | Render adiado |
+| **Superfície Livewire** — `$loadedDeferredSchemas` | CT-14 (a escrita é recusada — `#[Locked]`, P-06) | Render adiado |
 | **Superfície Livewire** — `$data` | não se aplica nesta wiki: inventariada e coberta na ancestral (CT-09, CT-33 de `settings-do-kit`); o `02` registra que esta feature não muda o que entra nem sai | — |
 | **Superfície Livewire** — estado colapsado no `localStorage` | não se aplica: não chega ao servidor e só o próprio usuário o escreve no próprio navegador (`vendor/filament/schemas/src/Components/Section.php:$persist:364`, `:x-bind:class:375` — colapsar só troca classe, o campo continua no DOM e no salvamento) | — |
 | **Superfície Livewire** — `?tab=` | CT-B04 (chave válida, chave antiga e chave inexistente) | Navegador |
@@ -648,10 +650,10 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | CT-11 | com SMTP, o servidor SMTP grava | R9 | domínio condicionado | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M32, M33 |
 | CT-12 | campo de seção que nasce colapsada grava `@pendente-Q1` | R10 | EP | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M34, M35 |
 | CT-13 | pedido de carregamento fora do domínio não carrega aba | R11 | EP | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M36, M37 |
-| CT-14 | lista de abas carregadas forjada não grava | R11 | EP | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M38 |
+| CT-14 | escrever na lista de abas carregadas é recusado e nada grava | R11 | EP | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M38 |
 | CT-15 | aba carregada não entrega segredo guardado | R12 | EP por segredo | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M39, M40 |
 | CT-16 | edição pendente e outra aba carregada em seguida: salvar grava a edição | R8 | 2-switch | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M45 |
-| CT-17 | campo inválido em seção colapsada de aba nunca carregada é validado e traz a aba `@pendente-Q1` | R10 | EP | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M34, M48, M49 |
+| CT-17 | campo inválido em seção colapsável aninhada de aba nunca carregada é validado e traz a aba | R10 | EP | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M48, M49 |
 | CT-18 | a seção SMTP acompanha o remetente escolhido, sem salvar | R9 | domínio condicionado | Gravação sob adiamento | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M32, M33, M46, M47 |
 | CT-19 | a rule de seções existe, obriga todas, cita o teste e está indexada | R13 | EP | Documentação | unit de regra | `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` | M52–M54 |
 | CT-20 | pedir de novo uma aba carregada não muda carregadas nem estado | R11 | 2-switch | Render adiado | componente Livewire/Filament | `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` | M50, M51 |

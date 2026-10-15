@@ -3,7 +3,7 @@
 > Runtime: `pest-plugin-browser` (Playwright). O plugin sobe o próprio servidor.
 > Costura: `browser` — linha "Navegador" de `## Costuras de Teste` do `04`
 > Comando: `composer test:browser` (embute `npm run build` e `view:cache`), ou `vendor/bin/pest --testsuite=Browser --filter=ConfiguracoesSecoesColapsaveis` — a suíte `Browser` está declarada no `phpunit.xml`. Em série; nunca `--parallel` (`.ai/rules/testes-browser.md`).
-> Teto do perfil padrão: 1 CT-B. **Estouro justificado (gate vence teto)**: cada um dos seis é o único matador de mutantes próprios (tabelas abaixo). Três são os que a `## Superfície de UI` nomeia como só-navegador (CT-B01, CT-B02, CT-B03); CT-B04 é o invariante de Q3 com a partição válida da URL; CT-B05 fecha ADV-04/ADV-25 (erro em seção que nasce colapsada, numa aba nunca carregada); CT-B06 fecha ADV-07 (o `live()` do remetente).
+> Teto do perfil padrão: 1 CT-B. **Estouro justificado (gate vence teto)**: cada um dos seis é o único matador de mutantes próprios (tabelas abaixo). Três são os que a `## Superfície de UI` nomeia como só-navegador (CT-B01, CT-B02, CT-B03); CT-B04 é o invariante de Q3 com a partição válida da URL; CT-B05 fecha ADV-04/ADV-25 (erro em seção colapsável aninhada, numa aba nunca carregada); CT-B06 fecha ADV-07 (o `live()` do remetente).
 > **Débito declarado**: CT-B06 nasceu no fechamento da rodada 2 (a última) e não passou por revisão adversarial independente.
 
 ## Pré-requisitos
@@ -13,7 +13,7 @@
 - [ ] Sem `assertNoJavaScriptErrors()`: `ColorPicker` dentro de `Tabs` emite `ResizeObserver` no headless do CI (`.ai/rules/testes-browser.md`) — a rule vence o template
 - [ ] Nunca `wait(n)`: o plugin reexecuta cada asserção até o teto
 - [ ] Arranjo de settings por `gravarConfiguracao()` **antes** do `visit()`
-- [ ] Isolamento do `localStorage` entre cenários conferido pelo executor para todo CT-B que colapsa seção (CT-B02, CT-B03, CT-B05): o estado colapsado de um cenário não pode chegar ao seguinte (contexto novo por cenário, ou `localStorage.clear()` antes do `visit()`)
+- [ ] Isolamento do `localStorage` entre cenários conferido pelo executor para todo CT-B que colapsa seção (CT-B02, CT-B03): o estado colapsado de um cenário não pode chegar ao seguinte (contexto novo por cenário, ou `localStorage.clear()` antes do `visit()`)
 
 ## Seletores
 
@@ -23,7 +23,7 @@
 | campo hex da cor primária (aba Identidade) | `#form\.cor_primaria_hex` | sim (molde) |
 | campo de paginação padrão (aba Tabelas) | `#form\.paginacao_padrao` | sim (molde) |
 | campo do hub de navegação (aba Aplicação) | `#form\.hub_de_navegacao` | a confirmar pelo executor |
-| campo do client_id do Google (aba Login, seção do provedor) | `#form\.login_google_client_id` | a confirmar pelo executor |
+| campo da pontuação mínima do anti-robô (aba Login, seção Proteção anti-robô) | `#form\.login_anti_robo_pontuacao_minima` | a confirmar pelo executor |
 | campo do remetente (aba E-mail) | `#form\.mail_mailer` (Select) | a confirmar pelo executor |
 | campo do servidor SMTP (aba E-mail) | `#form\.mail_host` | a confirmar pelo executor |
 | aba E-mail | texto `E-mail` | a confirmar pelo executor |
@@ -184,38 +184,37 @@ Dois pares `Quando`/`Então`, com estouro justificado: o comportamento é a sequ
 
 ---
 
-## CT-B05: o erro num campo de seção que nasce colapsada, em aba nunca carregada, fica visível `@pendente-Q1`
+## CT-B05: o erro num campo de seção colapsável aninhada, em aba nunca carregada, fica visível
 
-**Por que browser e não Livewire**: CT-17 prova no servidor que o campo é validado e que a aba carrega; que a seção colapsada do provedor, numa aba que o usuário nunca abriu, se abre e mostra o erro sem que ele precise achar o campo, só o navegador prova (P-05, P-03). `@pendente-Q1` (ADV-33): o colapso inicial da seção do provedor é recorte de Q1 (recomendação autorizada); a existência da seção colapsável é o invariante.
+**Por que browser e não Livewire**: CT-17 prova no servidor que o campo é validado e que a aba carrega; que a mensagem de erro de um campo dentro de uma seção aninhada, numa aba que o usuário nunca abriu, fica visível para ele sem procurar o campo, só o navegador prova (P-05, P-03). *(alterado em 2026-10-15, lote L1: os campos das seções de provedor não têm validação — o cenário usa a seção colapsável "Proteção anti-robô" com a pontuação mínima do reCAPTCHA v3 fora de 0–1 gravada; a marca `@pendente-Q1` caiu)*
 
 ```gherkin
-  @pendente-Q1
-  Cenário: [CT-B05] salvar com erro numa seção que nasce colapsada, em aba nunca aberta, leva o usuário à mensagem de erro
-    Dado o login com Google habilitado e o client_id do Google gravado vazio
+  Cenário: [CT-B05] salvar com erro numa seção colapsável aninhada, em aba nunca aberta, leva o usuário à mensagem de erro
+    Dado o anti-robô ligado com o provedor reCAPTCHA v3 e a pontuação mínima gravada 5 (fora de 0 a 1)
     E o administrador com a tela de configurações aberta na aba Identidade, sem nunca ter aberto a aba Login
     Quando ele aciona Salvar
-    Então a mensagem de erro do client_id do Google fica visível
-    E a seção do provedor Google está expandida, sem a classe "fi-collapsed"
+    Então a mensagem de erro da pontuação mínima fica visível
+    E a seção "Proteção anti-robô" está expandida, sem a classe "fi-collapsed"
 ```
 
-`@premissa` de mecanismo: o Filament ativa a aba do campo com erro (CT-B02 da ancestral), a aba adiada carrega pelo erro e a seção do provedor abre. A alternativa de P-05 ("erro no topo") muda só o seletor da mensagem; o segundo `Então` então cai, e a mudança volta à derivação. O não-efeito no banco é provado em CT-17.
+`@premissa` de mecanismo: o Filament ativa a aba do campo com erro (CT-B02 da ancestral), a aba adiada carrega pelo erro e a seção aninhada (expandida por padrão) mostra o campo. A alternativa de P-05 ("erro no topo") muda só o seletor da mensagem. O não-efeito no banco é provado em CT-17.
 
 **Roteiro executável**
 
 | # | Ação | Código Pest | Resultado visível |
 |---|---|---|---|
-| 1 | arranjo | `gravarConfiguracao('login_google_habilitado', true)`; `gravarConfiguracao('login_google_client_id', '')` | — |
+| 1 | arranjo | `gravarConfiguracao('login_anti_robo_habilitado', true)`; `gravarConfiguracao('login_anti_robo_provedor', 'recaptcha_v3')` (valor do enum `ProvedorAntiRobo`, a confirmar); `gravarConfiguracao('login_anti_robo_pontuacao_minima', 5)` | — |
 | 2 | abrir | `visit('/admin/configuracoes-da-aplicacao')->assertVisible('#form\.nome_da_aplicacao')` | aba Identidade ativa |
-| 3 | a aba Login não carregou | `->assertScript("document.querySelector('#form\\\\.login_google_client_id') === null")` | — |
+| 3 | a aba Login não carregou | `->assertScript("document.querySelector('#form\.login_anti_robo_pontuacao_minima') === null")` | — |
 | 4 | salvar | `->press('Salvar')` | — |
-| 5 | o erro aparece | `->assertVisible({mensagem de erro do client_id do Google})` | mensagem visível |
-| 6 | a seção abriu | `->assertScript({a .fi-section ancestral de #form\.login_google_client_id não tem a classe fi-collapsed})` | seção expandida |
+| 5 | o erro aparece | `->assertVisible({mensagem de erro da pontuação mínima})` | mensagem visível |
+| 6 | a seção está expandida | `->assertScript({a .fi-section ancestral de #form\.login_anti_robo_pontuacao_minima não tem a classe fi-collapsed})` | seção expandida |
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| MB12 | a seção que nasce colapsada não abre no erro (o erro fica dentro dela, escondido) | CT-B05 | passo 5: a mensagem existe no DOM mas não está visível; passo 6: a seção tem `fi-collapsed` |
+| MB12 | a seção aninhada fica colapsada no render pós-erro (o erro existe no DOM, escondido) | CT-B05 | passo 5: a mensagem existe no DOM mas não está visível; passo 6: a seção tem `fi-collapsed` |
 | MB13 | a aba adiada não carrega no erro do salvamento quando o campo está numa seção aninhada | CT-B05 | passo 5: a mensagem nem existe no DOM |
 
 ---
