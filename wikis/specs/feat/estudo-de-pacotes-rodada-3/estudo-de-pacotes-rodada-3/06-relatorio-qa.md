@@ -141,3 +141,49 @@
 - H, teclado e foco — motivo: não exercitados; só o axe rodou.
 - Sondas dinâmicas de B com gravação (nome de 101 caracteres, HTML, emoji) — motivo: o hook nega arquivo de sonda e gravar visão no banco local está fora do estado permitido. Coberto por leitura e pelos CTs.
 - Suíte de navegador fora dos ancestrais (22 arquivos) depois do bump do Filament — motivo: exige `npm run build`. Os assets do Filament mudaram nesta branch.
+
+## Veredito — Ciclo 2
+
+**APROVADO COM DÉBITO**
+
+- Blocker: 0 · Major: 0 · Minor: 0 abertos (QA-08 aceito como débito) · Cosmético: 0
+- Não verificadas: K (K2, score de mutação, não certificável no Windows) e H em parte (teclado e foco). Causas em *Não Verificado — Ciclo 2*.
+- `RQ` abertas: nenhuma. Pergunta aberta: Q11 (P-07), registrada como débito de requisito.
+- Ambiente: app em `http://localhost:8000`, encontrado e deixado com os três interruptores desligados (`paginacao`/`false`/`false`) · Pest 5.0.5 · MCP: laravel-boost e Playwright indisponíveis.
+- Escopo do que mudou depois do ciclo 1 (`aee4a5ac..HEAD`, 3 commits): no código de aplicação, só uma linha em `app/Console/Commands/KitArte.php`. O resto são testes (CT-B02, CT-28, CT-51, `KitArteTest`), captura escura da aba, docs, README, CHANGELOG, glossário e `01`/`02`/`03`/`04`/`05`/`06`. Como nenhum código de app de runtime mudou, as dimensões dinâmicas do ciclo 1 (B–I) continuam válidas e não foram refeitas.
+
+### Revalidação item a item
+
+| Achado | Ciclo 1 | Estado no ciclo 2 | Evidência |
+|---|---|---|---|
+| QA-01 score de mutação não certificável | Major · 1+4 | **fechado (alegação retirada)**; K2 segue como débito | O `03` (Verificação Final, item `pest --mutate`) e o `CHANGELOG.md:49-54` declaram o 406/406 inválido e a remedição por chunks também não certificável. `scratchpad/mutate4.txt` confere com o que o `03` diz: rodada 4 com "No tests executed!" e exit 1; rodadas 7 e 8 com 61 e 17 mutantes em 2,73 s e 0,80 s; soma de 570 testados. A evidência substituta (amostragem manual de 5 mutantes do trait) não foi reproduzida por este gate (exige editar o código). O arnês foi registrado nas *Notas de Implementação* (destino 4) |
+| QA-02 `01` × código | Major · 1 | **fechado** | O `01` passo 8 traz `usar:visoes_de_tabela`. O passo 9 traz `as protected`, `PERMISSAO_DAS_VISOES`, `visoesHabilitadas()` e `->hidden()`. Os `## Mapeamentos` trazem `visoesHabilitadas()`. Tudo com `*(alterado em 2026-10-15, QA-02)*` e conferido contra `app/Filament/Concerns/VisoesDeTabela.php` |
+| QA-03 evidências vencidas em *Conformidade* | Minor · 1 | **fechado** | `filament.md` cita `hidden()` (RD-01). Nenhum "pendente" restante nas linhas `specs.md`/`testes.md`. `conformidade-rules.sh` exit 0 |
+| QA-04 ADR-01 com custo velho | Minor · 1 | **fechado** | `02:61-65` traz o custo medido (4 na montagem, 3 por render, zero desligada), com marca de alteração |
+| QA-05 aba *Tabelas* sem par escuro | Minor · 1 | **fechado** | `art/admin-configuracoes-tabelas-escuro.png` e o thumb publicados; conferi a imagem e ela está legível. Docs pt/en com a tabela claro/escuro. O CT-51 passou a cobrir a aba. `PacotesRodada3Test` + `KitArteTest` 69/69 |
+| QA-06 rodapé escuro sem CT-B | Minor · 3 | **fechado** | CT-B02 em `tests/Browser/CarregamentoContinuoTest.php`, com oráculo de luminância (texto > 120, fundo < 80) que cai no tema claro. Arquivo 2/2, 18 asserções. `ids-ct.sh` exit 0 |
+| QA-07 CT-28 sem afirmar "não cria" | Minor · 3 | **fechado** | O teste compara `TableView::count()` antes e depois e verifica que não existe "Roubada" nem "Fantasma". `--filter=CT-28` 7/7. A linha do K1 em `:374` (`assertModelExists`) continua, mas agora acompanhada do oráculo de contagem: rejeitada |
+| QA-08 N+1 por linha em `ListUsers` | Minor · 2 | **débito aceito** | Já existia na `main`, fora do diff, e está documentado nas docs como consequência do `LIMIT` crescente. A correção fica no roadmap |
+| QA-09 *Impacto* sem o bump do Filament | Minor · 1 | **fechado** | Bullet novo no `01` com os impactos medidos (P-12) |
+| QA-10 termos fora do glossário | Minor · 1 | **fechado** | `wikis/glossario.md` +5 linhas (visão salva, visão padrão, visão compartilhada, carregamento contínuo, bloco), cada uma com "Não confundir com" coerente com P-07…P-16 |
+| QA-11 condição da visão padrão nas docs | Cosmético · 1 | **fechado** | Docs pt e en completas: "agrupamento ou aba" / "grouping or tab" |
+
+### Achados novos ou reabertos
+
+Nenhum. A busca de regressão no que mudou depois do ciclo 1:
+
+- **Scripts**: `rastreabilidade.sh`, `checkbox-sem-evidencia.sh`, `citacoes.sh`, `conformidade-rules.sh {wiki} main` e `ids-ct.sh` (10 arquivos da feature, incluindo `Browser/CarregamentoContinuoTest.php`) saem todos com exit 0. `dark-mode.sh` sobre `app`/`resources` alterados sai com exit 0.
+- **K1** (`k1-oraculo-fraco.sh` sobre os testes alterados): exit 1. As candidatas são as capturas de arte, incluindo os dois cenários novos da aba; foram rejeitadas porque o oráculo dessas capturas é o CT-51. A linha restante é CT-28 `:374`, também rejeitada (ver QA-07).
+- **Testes rodados**: `SiteDeDocumentacaoTest` + `CitacoesDeCodigoTest` + `DiagramasDaArquiteturaTest` 599/599, o que cobre o badge 2.179 e as citações deslocadas, como `app/Console/Commands/KitArte.php:$label:384`. Também `Browser/CarregamentoContinuoTest` 2/2, `PacotesRodada3Test` + `KitArteTest` 69/69 e CT-28 7/7.
+
+### Débitos Aceitos — Ciclo 2
+
+- QA-08 (Minor): N+1 de papéis por linha em `ListUsers`, ampliado pelo carregamento contínuo. Já existia na `main`; vai para o roadmap.
+- K2: score de mutação completo das 5 classes a medir em Linux/CI. No Windows, o filtro de mais de 8 KB é truncado e o plugin conta "No tests executed!" como morto.
+- Q11 (P-07): visão compartilhada de autor inativo ou sem vínculo continua visível (comportamento do pacote). A pergunta está aberta ao solicitante.
+
+### Não Verificado — Ciclo 2
+
+- K2 — motivo: prova indispensável pendente. Nenhuma rodada de `--mutate` neste host é certificável. A amostragem manual alegada no `03` não foi reproduzida por este gate, que não pode aplicar mutante na árvore.
+- H, teclado e foco — motivo: não exercitados. Só rodou o axe, no ciclo 1.
+- Suíte de navegador fora de `CarregamentoContinuoTest` e dos três ancestrais do ciclo 1 — motivo: exige `npm run build` (continua como no ciclo 1).
