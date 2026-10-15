@@ -1052,3 +1052,22 @@ it('[CT-80] aliases do pacote não são públicos nem alcançáveis pelo cliente
     'ligadas | getTableViewActionsDoPacote'         => [['visoes' => true, 'metodo' => 'getTableViewActionsDoPacote']],
     'desligadas | getTableViews | controle público' => [['visoes' => false, 'metodo' => 'getTableViews']],
 ])->group('kit');
+
+/**
+ * CT-82 — P-32 (Q11, respondida pelo solicitante em 2026-10-15: manter visível): a visão
+ * compartilhada de um autor com a conta inativa ou excluída continua visível e aplicável aos colegas.
+ * O kit não consulta o estado do autor por cima do pacote — é o comportamento do `visibleTo()`.
+ */
+it('[CT-82] visão compartilhada de autor inativo ou excluído continua visível e aplicável', function (string $estado): void {
+    ligarVisoesDeTabela(true, true);
+    concederVisoesDeTabela('admin');
+    $ana   = usuarioDoKit('admin');
+    $bia   = usuarioCom('admin');
+    $visao = visaoL5($bia, 'Da Bia', ['search' => 'zz'], ['is_public' => true]);
+    $estado === 'inativa' ? $bia->forceFill(['ativo' => false])->save() : $bia->delete();
+
+    $tabela = tabelaL5($ana);
+
+    expect(oferecidasL5($tabela))->toContain(aplicarL5($visao));
+    $tabela->call('applyTableView', (string) $visao->id)->assertSet('tableSearch', 'zz');
+})->with(['inativa' => ['inativa'], 'excluída' => ['excluída']])->group('kit');

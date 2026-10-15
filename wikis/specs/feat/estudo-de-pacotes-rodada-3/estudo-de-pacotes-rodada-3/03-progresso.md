@@ -164,7 +164,7 @@ Não fatiado — 2026-10-14: 8 RQ vigentes, 78 CT (o sinal de tamanho, ≥ 60 CT
 | QA-09 *Impacto em Features Existentes* sem o bump do Filament | Minor | 1 | bullet novo no `01` com os seis impactos medidos |
 | QA-10 termos fora do glossário | Minor | 1 | `wikis/glossario.md` +5 linhas (visão salva, visão padrão, visão compartilhada, carregamento contínuo, bloco), cada uma com "Não confundir com" |
 | QA-11 docs omitem agrupamento e aba na condição da visão padrão | Cosmético | 1 | linha *Padrão*/*Default* das docs pt/en completada |
-| Q11 (P-07, autor inativo ou sem vínculo) | teto | — | continua **aberta ao solicitante** (`00`, Perguntas ao Solicitante); o pacote mantém a visão compartilhada visível — registrado como débito de requisito |
+| Q11 (P-07, autor inativo ou sem vínculo) | teto | — | **respondida pelo solicitante em 2026-10-15 (depois do ciclo 2): manter visível** → P-32 no `00`; CT-82 (2 linhas: conta inativa, conta excluída) em `VisoesDeTabelaTest`, M165 em R10; o `04` vai a 82 CT / 165 mutantes; débito de requisito encerrado |
 
 - **Ciclo 2** · 2026-10-15 · `fw-qa-gate` retomado por `SendMessage` (despacho #24) · **APROVADO COM DÉBITO** (0 Blocker · 0 Major · 0 Minor abertos · 0 Cosmético): QA-01 e QA-02 fechados, QA-03…QA-07 e QA-09…QA-11 fechados com evidência, QA-08 aceito como débito; nenhum achado novo. Débitos: K2 (score de mutação completo em Linux/CI), H parcial (teclado e foco), Q11 aberta ao solicitante. Bloco do ciclo 2 acrescentado verbatim ao `06`. **Veredito final da feature: APROVADO COM DÉBITO.**
 
@@ -214,7 +214,7 @@ Gate 4 não verificado: sem MCP, search-docs não rodou para nenhum candidato. G
 Gravar? (números, "todos", "nenhum")
 ```
 
-apresentados 3 · gravados 0 · recusados 0 · descartados no gate 2 · poda 0 — *(aguardando a resposta do solicitante; sessão autônoma, nada gravado em `.ai/rules/`)*
+apresentados 3 · gravados 3 · recusados 0 · descartados no gate 2 · poda 0 — aprovados pelo solicitante em 2026-10-15 ("grave as 3 rules"); gravados pelo **fallback manual** (MCP do Boost indisponível: `record-rule` não rodou), com o aviso de que o caminho recomendado é o `record-rule`: `.ai/rules/filament.md` ganhou as seções *Action de vendor embrulhada esconde com `hidden()`, nunca com `visible()`* e *Alias de método de trait de vendor em componente Livewire é `as protected`* (e a linha "bloqueiam igual" aponta para a primeira); `.ai/rules/testes.md` ganhou *Teste que monta Widget autentica quem passa no `canView()`* e a seção existente *UNTESTED do pest-plugin-mutate…* recebeu o parágrafo do filtro truncado/cache (atualização de rule existente, não contada como gravada). `index.md` inalterado: os globs `app/Filament/**` e `tests/**` já apontavam para os dois arquivos
 
 ## Auditoria Pré-Implementação
 

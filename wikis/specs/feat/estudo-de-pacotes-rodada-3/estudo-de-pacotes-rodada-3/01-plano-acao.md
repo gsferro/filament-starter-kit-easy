@@ -94,7 +94,7 @@ temporária, fora do projeto), e o relatório do Codex (`## Despachos` do `03`).
 - Bloco `// Tabelas` com quatro propriedades (`app/Settings/ConfiguracoesDoKit.php:$paginacao_padrao:151`); `mapaDeConfiguracao()` (`:mapaDeConfiguracao():422`) é a única ligação propriedade → config. Três propriedades novas entram no bloco e três linhas no mapa; duas apontam para `kit.tabelas.*` e uma para `remember-table.allow_public_views` (chave de config do pacote, como as de e-mail apontam para `mail.*`).
 
 ### `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`
-- `abaTabelas()` (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaTabelas():556`) é a aba a estender; `mutateFormDataBeforeSave()` coage a densidade (`:201`) e coagirá o carregamento pelo mesmo caminho.
+- `abaTabelas()` (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaTabelas():557`) é a aba a estender; `mutateFormDataBeforeSave()` coage a densidade (`:201`) e coagirá o carregamento pelo mesmo caminho.
 
 ### `config/kit.php`
 - Bloco `'tabelas'` (`config/kit.php:'tabelas':289`) com `BooleanoDoEnv::comPadrao()`; ganha `carregamento` e `visoes_salvas`.

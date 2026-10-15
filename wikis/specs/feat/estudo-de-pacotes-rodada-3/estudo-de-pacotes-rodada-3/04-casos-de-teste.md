@@ -16,7 +16,7 @@
 | Entrega da rodada (pacotes adotados/recusados, documentação, capturas, traduções) | 1 | 1 | 1 | mínimo |
 
 - Técnicas aplicadas: EP, BVA 3-valores (teto de 500, escalado na área padrão), tabela de decisão (visibilidade), matriz papel × ação, matriz estado de configuração × operação (uma só, 24 células), 2-switch (desligar → religar), rastreio de efeito (consulta ao banco), normalização (vocabulário do carregamento)
-- Cenários: 81 · Regras: 26 · Mutantes previstos: 164 · Sem matador: 0 *(atualizado em 2026-10-14, step 9: RD-01/RD-02/P-31 — CT-79, CT-80, CT-81; M155…M164)*
+- Cenários: 82 · Regras: 26 · Mutantes previstos: 165 · Sem matador: 0 *(atualizado em 2026-10-15, pós-gate: Q11 → P-32 — CT-82; M165. Antes, 2026-10-14, step 9: RD-01/RD-02/P-31 — CT-79, CT-80, CT-81; M155…M164)*
 - Rodada 2 da derivação (decisões da sessão sobre Q6–Q12 → P-13…P-17, Q11 aberta, D6): CT alterados CT-15, CT-24, CT-39; CT novos CT-53…CT-60; regras novas R22…R25; nenhum CT obsoleto. Rodada 3 (Q13 → P-18; P-12 incorporada): CT-61 e CT-62 novos, regra nova R26. Rodada 4 — fechamento da revisão adversarial 1 (P-19…P-25): CT-63…CT-74 novos; CT-02, CT-03, CT-08, CT-12, CT-16, CT-20, CT-22…CT-25, CT-28, CT-31…CT-36, CT-38, CT-39, CT-41, CT-42, CT-44, CT-45, CT-47, CT-50, CT-51, CT-53, CT-54, CT-57, CT-62 alterados; M111…M147 novos (origem ADV, fora do teto de mutantes por regra); nenhum CT obsoleto. Rodada 5 — fechamento da revisão adversarial 2 (P-26 substitui P-19; P-27): CT-75…CT-78 novos; CT-12, CT-24, CT-25, CT-35, CT-47, CT-51, CT-57, CT-64, CT-70, CT-73 alterados; M148…M154 novos; nenhum CT obsoleto.
 <!-- derivado do arquivo por grep -c (comandos em references/template-04.md, "Contagem do cabeçalho"); CT-B01 vive no 05 e não entra na contagem de cenários -->
 - Técnica escalada: R15 (teto de 500 linhas) usa BVA 3-valores numa área padrão — o número é literal de P-10, e BVA 2-valores não separa "para em 500" de "passa uma vez de 500".
@@ -50,7 +50,7 @@
 | R7 — Salvar, atualizar, gerenciar e limpar exigem a permissão; aplicar não | Visões (completo) | P-08, P-01, P-29 | matriz papel × ação (+ papel × organização) | CT-20…CT-23, CT-66, CT-79 *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* |
 | R8 — Uma visão gravada pertence a quem gravou, à página e à organização aberta; o cliente não escolhe | Visões (completo) | P-07, P-02 | EP + mass assignment | CT-24…CT-26, CT-78 |
 | R9 — Só o dono atualiza, renomeia, reordena ou apaga a própria visão | Visões (completo) | P-08, P-07, P-20 | matriz papel × ação (dono × colega × master × inexistente) + mass assignment | CT-27…CT-29, CT-64, CT-72 |
-| R10 — Visibilidade: dono, página e organização; compartilhada só na mesma organização/painel e só com o compartilhamento ligado | Visões (completo) | P-07, P-02, P-22, P-27, P-28 | tabela de decisão + IDOR | CT-30…CT-34, CT-65, CT-73, CT-74, CT-77 |
+| R10 — Visibilidade: dono, página e organização; compartilhada só na mesma organização/painel e só com o compartilhamento ligado | Visões (completo) | P-07, P-02, P-22, P-27, P-28, P-32 | tabela de decisão + IDOR | CT-30…CT-34, CT-65, CT-73, CT-74, CT-77, CT-82 *(P-32, 2026-10-15)* |
 | R11 — "Compartilhar com todos" existe só com o interruptor ligado; o nome compartilhado chega ao colega como texto | Visões (completo) | P-02, P-26 | EP + 2-switch sobre `is_public` + taxonomia (texto livre exibido a terceiro) | CT-35, CT-36 |
 | R12 — Desligar esconde sem apagar; religar devolve | Visões (completo) | P-03 | 2-switch | CT-37, CT-38 |
 | R13 — Aplicar restaura só o que ainda existe; a visão guarda recorte, não dados nem tamanho de página | Visões (completo) | P-09, P-16 | EP (parte do estado: válida e inexistente) | CT-39, CT-40, CT-63, CT-75 (e CT-24, `state` sem tamanho de página) |
@@ -74,7 +74,7 @@
 - P-08 — coberta: CT-20…CT-23, CT-27…CT-29 (o recorte de nome e quantidade virou P-13 → R22, R23).
 - P-09 — coberta: CT-39, CT-40; o tamanho de página foi decidido em P-16 (não é guardado) → CT-24, CT-39.
 - P-02 — coberta: CT-01, CT-25, CT-30, CT-33, CT-35; o recorte do compartilhamento ao desligar/religar e a visibilidade do campo foi decidido em P-15 → R25.
-- P-07 / R10 — cobertura parcial: CT-24…CT-34; recorte *visão compartilhada de autor que perdeu o vínculo com a organização ou teve a conta Inativa/Excluída* **bloqueado — Q11** (aberta, fora desta entrega; hoje vale o comportamento do pacote). O resto de R10 continua coberto.
+- P-07 / R10 — coberta: CT-24…CT-34 e, desde 2026-10-15, CT-82 (P-32: autor Inativo/Excluído, visão compartilhada continua visível — Q11 respondida pelo solicitante) *(alterado em 2026-10-15)*
 - P-12 — o Filament sobe de 5.8.2 para 5.10.x (dentro da série 5) por causa de `TablesRenderHook::CONTENT_AFTER`: R26.
 - P-18 (Q13) — o teto de 50 é contado por organização: R23 (CT-61).
 - P-26 (Q21) substitui P-19 — com o compartilhamento desligado, toda visão **enviada** pelo formulário de gerenciar (o repeater reenvia todas) é regravada privada: R11 (CT-35). P-27 (Q22) — o `master_global` não é exceção na visibilidade: R10 (CT-77).
@@ -1035,6 +1035,20 @@ Funcionalidade: Visibilidade das visões
         | abre /admin/users                            |
         | abre /admin/users?view={id de "Da Bia"}      |
         | chama applyTableView com o id de "Da Bia"    |
+    Esquema do Cenário: [CT-82] visão compartilhada de autor inativo ou excluído continua visível e aplicável
+      Dado as visões e o compartilhamento ligados
+      E a Bia com a visão "Da Bia" (busca "zz") marcada compartilhada em /admin/users
+      E a conta da Bia <estado>
+      Quando a Ana abre /admin/users
+      Então "Da Bia" está na lista de visões oferecidas à Ana
+      E aplicá-la deixa a busca da Ana em "zz"
+
+      Exemplos:
+        | estado   | # por quê                                                   |
+        | inativa  | P-32: o pacote não consulta o estado do autor; o kit idem    |
+        | excluída | idem, com a conta em exclusão lógica                         |
+
+      <!-- *(adicionado em 2026-10-15, pós-gate: Q11 respondida pelo solicitante — manter visível — virou P-32 e desbloqueou o recorte de R10)* -->
 ```
 
 #### Mutantes previstos
@@ -1053,6 +1067,7 @@ Funcionalidade: Visibilidade das visões
 | M146 | ADV-41 — `?view[]=1` (array em propriedade string) estoura 500 pela rota | CT-74 | linha `view[]=1`: 200; o mutante responde 500 |
 | M151 | ADV-42 — a visibilidade decidida por policy (`can('view')`), que o `Gate::before` do master atravessa | CT-77 | busca "" e "Da Bia" fora da lista do master; o mutante mostra e aplica |
 | M153 | ADV-46 — a visão ativa revalidada só no rótulo; o `state` atual da visão alheia é reaplicado por id ao reabrir | CT-73 | a busca da Ana não é "yy"; o mutante aplica "yy" |
+| M165 | P-32 — o kit esconde (ou apaga) a visão compartilhada quando o autor fica inativo ou excluído, ou a consulta do pacote passa a fazer join com `users` sem `withTrashed()` *(adicionado em 2026-10-15, pós-gate: Q11 → P-32)* | CT-82 | as duas linhas: "Da Bia" oferecida e busca "zz"; o mutante some com a visão ou falha ao aplicar |
 
 ---
 
@@ -1882,7 +1897,7 @@ Funcionalidade: Compartilhamento depende das visões
 | Timezone / DST | não se aplica: nenhuma regra temporal (visão não expira; nenhuma data no requisito) | — |
 | Unicode / limite de varchar (nome) | 100 caracteres multibyte aceitos e 101 recusados: CT-53, CT-54 · HTML no nome exibido ao colega: CT-36 | G5 |
 | Unicidade + soft delete | não se aplica: `TableView` sem `SoftDeletes` (`vendor/sehsah/filament-remember-table/src/Models/TableView.php:class TableView:22`, só `extends Model`) | — |
-| Entidade removível (removido ainda funciona?) | visão apagada pedida por id: CT-32 · visões desligadas ainda executam?: CT-08 · autor que perdeu o vínculo, Inativo ou Excluído: lacuna declarada: recorte bloqueado — Q11 (aberta, fora desta entrega) | G5 |
+| Entidade removível (removido ainda funciona?) | visão apagada pedida por id: CT-32 · visões desligadas ainda executam?: CT-08 · autor Inativo ou Excluído: CT-82 (P-32); autor que perdeu o vínculo com a organização: lacuna declarada: recorte bloqueado — Q11 (aberta, fora desta entrega) | G5 |
 | CRUD combinado | id inexistente na gestão: CT-28 · aplicar id inexistente/apagado: CT-32 · editar sem alterar nada: lacuna declarada — nenhum mutante plausível distingue regravar os mesmos valores | G5 |
 | Mass assignment | `remember_table_views`: CT-25, CT-26, CT-28 (linha `is_public`), CT-35 (linhas `desligado`), CT-64 (gerenciar) · `settings`: CT-14 | G5, G6, G3 |
 | Upload | não se aplica: nenhum campo de arquivo na Superfície de UI (aba *Tabelas*: 1 Select + 2 Toggles; modais: nome, padrão, compartilhar) | — |
@@ -1978,6 +1993,7 @@ Funcionalidade: Compartilhamento depende das visões
 | CT-79 | Atualizar e Gerenciar mantêm a visibilidade do pacote sob o interruptor e a permissão *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | R7 | tabela de decisão | G5 | componente Livewire/Filament | `tests/Kit/VisoesDeTabelaTest.php` | M155, M156, M157 |
 | CT-80 | métodos `*DoPacote` não alcançáveis por `$wire`, sem consulta, com o nome público guardado *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | R3 | EP + rastreio de efeito | G5 | componente Livewire/Filament | `tests/Kit/VisoesDeTabelaTest.php` | M158, M159, M160 |
 | CT-81 | dropdown do cabeçalho acima da barra da tabela, na fonte e na cópia publicada *(adicionado em 2026-10-14, step 9: P-31)* | R26 | EP | G10 | Pest feature HTTP | `tests/Kit/PacotesRodada3Test.php` | M161, M162, M163, M164 |
+| CT-82 | visão compartilhada de autor inativo ou excluído continua visível e aplicável *(adicionado em 2026-10-15, pós-gate: Q11 → P-32)* | R10 | EP (estado do autor) | G5 | Pest feature Livewire | `tests/Kit/VisoesDeTabelaTest.php` | M165 |
 | CT-B01 | rolar ao fim carrega o próximo bloco (`05`) | R14 | EP | G11 | browser | `tests/Browser/CarregamentoContinuoTest.php` | M67 |
 
 > CT-41 atravessa duas suítes (as linhas `/app` e `/admin/organizacoes` exigem `tests/Tenancy`): o executor implementa as linhas Kit em `CarregamentoContinuoTest.php` e as Tenancy em `VisoesDeTabelaTenancyTest.php`, com o mesmo ID e o dataset partido — o teste de sincronia de IDs compara a união dos arquivos.
@@ -2000,7 +2016,7 @@ Funcionalidade: Compartilhamento depende das visões
 | P-04 | R14 | CT-41…CT-43, CT-B01 | coberta |
 | P-05 | R17 | CT-48 | coberta (o interruptor é escopo apagado) |
 | P-06 | R18, R19 | CT-49, CT-50 | coberta |
-| P-07 | R8, R9, R10, R24 | CT-24…CT-34, CT-57 | cobertura parcial: recorte do autor sem vínculo/Inativo/Excluído **bloqueado — Q11** |
+| P-07 | R8, R9, R10, R24 | CT-24…CT-34, CT-57, CT-82 | coberta — o recorte do autor Inativo/Excluído entrou pelo CT-82 (P-32) *(alterado em 2026-10-15)*; o autor sem vínculo com a organização segue sem cenário de browser/tenancy próprio (mesmo mecanismo do pacote, P-32) |
 | P-08 | R7, R9 | CT-20…CT-23, CT-27…CT-29 | coberta |
 | P-09 | R13 | CT-39, CT-40 | coberta |
 | P-10 | R2, R14, R15, R16 | CT-03, CT-41…CT-47, CT-B01 | coberta |
@@ -2024,7 +2040,7 @@ Funcionalidade: Compartilhamento depende das visões
 | P-15 (Q8) | R25 | CT-15, CT-58, CT-59 | coberta |
 | P-16 (Q9) | R13, R8 | CT-24, CT-39 | coberta |
 | P-17 (Q10) | R21 | CT-52, CT-60 | coberta |
-| Q11 | — | — | aberta, fora desta entrega: sem cenário |
+| Q11 → P-32 | R10 | CT-82 | decidida pelo solicitante em 2026-10-15 (manter visível) |
 | Q13 → P-18 | R23 | CT-61 | decidida |
 | Q12 → D6 | R7 | CT-20 (ação acionada pelo nome, como se a barreira só na Action fosse insuficiente) | decisão de desenho |
 
