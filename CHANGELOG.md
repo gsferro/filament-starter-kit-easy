@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-10-15
+
 ### Adicionado
 
 - Visões salvas de tabela (`sehsah/filament-remember-table`): o botão *Visões* nas dez listagens do kit
@@ -58,6 +60,17 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - Quality gate da feature: ver `wikis/specs/feat/estudo-de-pacotes-rodada-3/estudo-de-pacotes-rodada-3/06-relatorio-qa.md`.
 - Os quatro cenários de `wikis/checklist-de-release.md` (create-project e `kit:update`, com e
   sem tenancy) não foram executados neste fechamento.
+
+### Atualizando
+
+- Quem atualiza pelo `kit:update` precisa instalar os dois pacotes à mão, **antes de qualquer outro
+  comando**: `composer require sehsah/filament-remember-table:^1.0 asignua/filament-infinite-scroll:^1.0`
+  (e `composer require --dev happenv-com/filament-phpstan-macros` para o PHPStan), depois
+  `php artisan filament:assets`, `php artisan migrate --force` (tabela `remember_table_views`) e os
+  dois seeders (`ShieldPermissionsSeeder`, `PapeisSeeder`) pela permissão `Usar:VisoesDeTabela`.
+  Sem o `remember-table`, todo `php artisan` falha no boot: as dez listagens usam o trait do pacote
+  (`App\Filament\Concerns\VisoesDeTabela`). Tornar o pacote opcional, como o dock ficou na
+  v0.48.1, é débito da próxima evolução.
 
 ## [0.48.1] - 2026-10-15
 

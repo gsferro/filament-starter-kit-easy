@@ -68,6 +68,7 @@
 ## 15. Branch, commits e PR
 - [x] Commits por passo na `feat/estudo-de-pacotes-rodada-3` — 10 commits próprios (`git log --oneline main..HEAD`: deps, feat, docs+art, wiki, revisão do diff + validação, gate ciclo 1, mutação/step 12, gate ciclo 2, suíte final) + merge da `main` v0.48.1 (`3bb21c8a`, 6 conflitos textuais resolvidos: CHANGELOG, READMEs, glossário, 2 citações), 2026-10-15
 - [x] PR aberto depois do veredito, sem merge — https://github.com/gsferro/filament-starter-kit-easy/pull/165 (`main` ← `feat/estudo-de-pacotes-rodada-3`, descrição com a wiki, o veredito APROVADO COM DÉBITO, Q11 e os 3 candidatos a rule aguardando o solicitante; CI disparado: instalacao, qualidade, seguranca, site, telas), 2026-10-15
+- [x] Release — o solicitante pediu, em 2026-10-15, que o PR vire a **v0.49.0** depois do CI verde e do merge: cabeçalho `## [0.49.0] - 2026-10-15` no CHANGELOG (com a seção *Atualizando* para o `kit:update`: `composer require` dos dois pacotes antes de qualquer comando, `filament:assets`, `migrate`, seeders), `config/kit.php` em `0.49.0`, docs pt/en (`kit 0.49.0` e o bloco da v0.49.0 em *Atualizando o projeto*); tag e release do GitHub registradas abaixo quando publicadas, 2026-10-15
 
 ## Testes
 <!-- Step 7: um arquivo por linha, com os IDs (do ## Índice de Cenários do 04). Escritos pelo Codex sob o contrato do executor-ct/ctb (RQ-03). -->

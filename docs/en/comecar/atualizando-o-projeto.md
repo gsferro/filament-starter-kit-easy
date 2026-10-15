@@ -114,6 +114,24 @@ the dock code requires the package, and without it every `php artisan` fails wit
 project boots without the package, just without the dock, and the "Dock de atalhos" section of the
 Kit tab, at `/admin/configuracoes-da-aplicacao`, says what is missing.
 
+**In v0.49.0 this applies to `sehsah/filament-remember-table` and `asignua/filament-infinite-scroll`**,
+the packages behind [saved views and continuous loading](../../recursos/visoes-de-tabela-e-carregamento/),
+and to `happenv-com/filament-phpstan-macros` (development only):
+
+```bash
+composer require sehsah/filament-remember-table:^1.0 asignua/filament-infinite-scroll:^1.0
+composer require --dev happenv-com/filament-phpstan-macros
+php artisan filament:assets
+php artisan migrate --force
+php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
+php artisan db:seed --class=Database\Seeders\PapeisSeeder
+```
+
+If you update **to v0.49.0**, run the `composer require` before any other command: the ten kit
+lists use the `remember-table` trait, and without it every `php artisan` fails with
+`Trait "Sehsah\FilamentRememberTable\Concerns\HasRememberTable" not found`. Both features start
+off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
+
 ### A new screen: reseed both seeders
 
 The "next steps" the command prints mention `filament:assets` and the tests, **not the seeders** —
