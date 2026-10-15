@@ -7,7 +7,7 @@
 - **Tipo**: evolução
 - **Wiki ancestral**: `wikis/specs/feat/settings-do-kit/settings-do-kit/` (a tela nasceu lá); tocaram a mesma Page depois: `cabecalho-do-painel`, `layout-compact`, `login-social-por-painel`, `mais-provedores-sociais`, `recaptcha-nas-telas-publicas`, `logo-dark-mode`, `rodape-coerente`, `estudo-de-pacotes-rodada-2`, `estudo-de-pacotes-rodada-3`, `main/dock-de-acoes-rapidas`
 - **Motivo**: a tela cresceu a seis abas e 50 campos, a maioria solta fora de seção; o solicitante pede seções colapsáveis com ícone em tudo, a aba "Kit" renomeada para "Aplicação" e o carregamento adiado das abas, porque a área de configuração só cresce
-- **Toca infra compartilhada?**: sim → `.ai/rules/pages.md` (rule nova, RQ-04), `tests/BrowserTenancy/CapturaDeArteTest.php` (duas capturas clicam na aba "Kit") e `art/` (duas imagens recapturadas); nenhuma mudança em settings, seeders, middleware ou `tests/Pest.php`
+- **Toca infra compartilhada?**: sim → `.ai/rules/pages.md` (rule nova, RQ-04), `tests/BrowserTenancy/CapturaDeArteTest.php` (duas capturas clicam na aba "Kit") e `art/` (duas imagens recapturadas); nenhuma mudança em settings, seeders ou middleware; `tests/Pest.php` ganhou os helpers `chaveDoCampo()` e `carregarAba()` *(alterado em 2026-10-15, lote T0 — D8; apontado pelo QA-02)*
 
 > A tela é consumida por testes de 28 arquivos (`tests/Kit`, `tests/Tenancy`, `tests/Browser`, `tests/BrowserTenancy`) que preenchem e gravam campos por componente; a regressão contra eles é obrigatória (tipo `evolução` + infra compartilhada).
 
@@ -24,11 +24,14 @@
 | RQ-07 | branch nova | — | atendida: `feat/configuracoes-secoes-colapsaveis` |
 | RQ-08 | Codex CLI como auxiliar | — | atendida no processo: levantamento do step 3 (despacho #1 do `03`) e lotes de implementação/teste |
 | RQ-09 | processo pela `feature-wiki` | — | atendida: esta wiki |
+| RQ-10 | prosseguir até o PR implementando a recomendação das perguntas abertas (Adendo 1) | — | atendida: Q1–Q4 e Q6 implementadas pela recomendação; confirmação pedida no PR *(acrescentado em 2026-10-15, step 11 — QA-01)* |
 | P-01 | docs, README e capturas falam "aba Aplicação" | 4, 5 | — |
 | P-02 | só o rótulo da aba muda | 1 | — |
-| P-03 | adiamento em todas as abas; aba com erro carrega sozinha | 3 | — |
+| P-03 | adiamento em todas as abas; com erro de validação o Filament carrega todas as abas adiadas e a aba do campo em erro fica ativa *(alterado em 2026-10-15, lote L1)* | 3 | — |
 | P-04 | salvar sem abrir uma aba adiada grava o que já estava nela | 3 | — |
 | P-05 | seção colapsada envia e valida; erro expande a seção | 2 | — |
+| P-06 | `loadedDeferredSchemas` é `#[Locked]`: o navegador não escreve a lista de abas carregadas | 3 | CT-14 *(acrescentado em 2026-10-15, step 11 — QA-03)* |
+| P-07 | a persistência do colapso guarda os dois estados (seção que nasce fechada e foi aberta continua aberta) | 2 | CT-B02 *(acrescentado em 2026-10-15, step 11 — QA-03)* |
 
 ## Objetivo
 
@@ -38,7 +41,7 @@ Reorganizar a tela `/admin/configuracoes-da-aplicacao` sem mudar nenhuma configu
 
 A tela é uma `SettingsPage` do `spatie-laravel-settings-plugin` com seis abas (`Identidade`, `E-mail`, `Tabelas`, `Registro`, `Login`, `Kit`). Levantamento do step 3 (despacho #1): dos 50 campos, 31 estão **soltos** fora de seção (Identidade 9, E-mail 8, Tabelas 7, Registro 3, Kit 4 + 3); as 10 seções existentes têm `description()`, mas só 3 têm ícone (`Dashboard dinâmico`, `Dock de atalhos`, as quatro de provedor social) e só 2 são colapsáveis (`Proteção anti-robô` por `collapsible()`, as de provedor por `collapsed()`). Nenhuma seção persiste o colapso. Todas as seis abas renderizam o HTML inteiro na primeira carga.
 
-O Filament 5.10.2 instalado tem o mecanismo de adiamento: `Schema::deferLoading()` faz a aba renderizar um placeholder (`fi-sc-loading`, `aria-busy`) e um `IntersectionObserver` chama `$wire.loadDeferredSchema(chave)` quando o painel da aba entra na viewport; a aba cujo campo tem erro de validação é marcada como carregada antes do render, para o erro aparecer. Seção colapsada continua no DOM (classe `fi-collapsed` + CSS `hidden`), então envia e valida como antes, e o handler de erro do Filament dispara `expand` nos ancestrais do primeiro campo com erro — a seção abre sozinha.
+O Filament 5.10.2 instalado tem o mecanismo de adiamento: `Schema::deferLoading()` faz a aba renderizar um placeholder (`fi-sc-loading`, `aria-busy`) e um `IntersectionObserver` chama `$wire.loadDeferredSchema(chave)` quando o painel da aba entra na viewport; com erro de validação, todas as abas adiadas são marcadas como carregadas antes do render (`isDeferredSchemaLoaded()`), e a aba do campo em erro fica ativa *(alterado em 2026-10-15, lote L1 — P-03)*. Seção colapsada continua no DOM (classe `fi-collapsed` + CSS `hidden`), então envia e valida como antes, e o handler de erro do Filament dispara `expand` nos ancestrais do primeiro campo com erro — a seção abre sozinha.
 
 ## Análise dos Arquivos Existentes
 
@@ -85,7 +88,7 @@ O Filament 5.10.2 instalado tem o mecanismo de adiamento: `Schema::deferLoading(
 
 ## Rotas
 
-Nenhuma rota nova. `GET /admin/configuracoes-da-aplicacao` continua; a aba ativa continua em `?tab=` (a chave da aba renomeada passa de `kit::tabs` para `aplicacao::tabs` — Q3).
+Nenhuma rota nova. `GET /admin/configuracoes-da-aplicacao` continua; a aba ativa continua em `?tab=` (com `Tab::key()` a chave na URL de toda aba vira a própria chave: a renomeada passa de `kit::data::tab` para `aplicacao`, e Tabelas de `tabelas::data::tab` para `tabelas` — Q3) *(alterado em 2026-10-15, step 11 — QA-02: `Tabs::getActiveTab()` compara `getKey(isAbsolute: false)`)*.
 
 ## Superfície de UI
 
@@ -124,7 +127,7 @@ Nenhum.
 - **Todas as features com campo na tela** (identidade, e-mail, tabelas, registro, login unificado, social, anti-robô, rodapé, dashboard dinâmico, dock, densidade, versão, organizações): os campos mudam de contêiner, não de nome — os `fillForm()` por componente continuam valendo. Regressão: os 28 arquivos de teste listados no despacho #1. *(alterado em 2026-10-15, lote C2)*: `fillForm()`, `set()`, `assertHasFormErrors` e `save()` continuam valendo (state path); **busca por nome solto e leitura de HTML de aba não carregada NÃO** — ver D8: 5 arquivos (`ConfiguracoesDoKitTelaTest`, `SegredosDoSettingsTest`, `CabecalhoDoPainelTelaTest`, `ProtecaoAntiRoboTest`, `RodapeCoerenteTest`) migrados para `chaveDoCampo()`/`carregarAba()`. *(alterado em 2026-10-15, step 9 — RD-01)*: o lote T0 migrou só os testes de componente; os três arquivos de navegador que o passo 3 listava (`tests/Browser/ConfiguracoesDoKitTest.php`, `AlertaDeAlteracoesNaoSalvasTest.php`, `LoginSocialTest.php`) usavam `#form\.{campo}` e ficaram vermelhos até a sessão migrá-los para `#form\.configuracoes\.{aba}\.{campo}`. *(RD-02/CR-01)*: `tests/Kit/ProtecaoAntiRoboTest.php:'esconde o toggle de ambiente local':939` afirmava ausência sobre o GET — vazio com a aba adiada — e passou a carregar a aba Login com controle positivo (`assertSee('Proteção anti-robô')`).
 - **`tests/Kit/SegredosDoSettingsTest.php:'monta uma secao por provedor':579`**: confere que a seção de cada provedor é filha direta de *Login social* e nasce `collapsed()` — a hierarquia é preservada (D2).
 - **`CapturaDeArteTest`**: dois cenários clicam `'Kit'` → `'Aplicação'`; as duas imagens são recapturadas (D6). O cenário do anti-robô registra que a seção nasce aberta — continua.
-- **Browser `ConfiguracoesDoKitTest`**: a troca de aba passa a depender de um request Livewire; as asserções do plugin reexecutam até 45 s, então o oráculo continua, mas o tempo cresce. O CT-B02 ancestral (erro revelado na aba) ganha o mecanismo novo: a aba com erro é marcada carregada antes do render.
+- **Browser `ConfiguracoesDoKitTest`**: a troca de aba passa a depender de um request Livewire; as asserções do plugin reexecutam até 45 s, então o oráculo continua, mas o tempo cresce. O CT-B02 ancestral (erro revelado na aba) ganha o mecanismo novo: com erro, todas as abas adiadas são marcadas carregadas antes do render e a do campo fica ativa (P-03) *(alterado em 2026-10-15, step 11 — QA-03)*.
 - **Docs pt/en**: 27 menções à aba Kit viram "Aplicação" (P-01); a tabela de abas de `configuracoes-do-kit.md` muda o nome e as seções novas entram na descrição.
 - **Rules**: `.ai/rules/pages.md` ganha a seção da convenção (RQ-04); o glob `app/Filament/Admin/Pages/**` já aponta para ele.
 
@@ -250,12 +253,14 @@ Nome, rótulo e linha de cada campo vêm do inventário do despacho #1 sobre `ap
 
 | Aba | `Tab::key()` | Chave na URL (`?tab=`) |
 |---|---|---|
-| Identidade | `identidade` | `identidade::tabs` |
-| E-mail | `email` | `e-mail::tabs` (slug do rótulo, inalterado) |
-| Tabelas | `tabelas` | `tabelas::tabs` |
-| Registro | `registro` | `registro::tabs` |
-| Login | `login` | `login::tabs` |
-| Aplicação | `aplicacao` | `aplicacao::tabs` (antes `kit::tabs` — Q3) |
+| Identidade | `identidade` | `identidade` (antes `identidade::data::tab`) |
+| E-mail | `email` | `email` (antes `e-mail::data::tab`) |
+| Tabelas | `tabelas` | `tabelas` (antes `tabelas::data::tab`) |
+| Registro | `registro` | `registro` (antes `registro::data::tab`) |
+| Login | `login` | `login` (antes `login::data::tab`) |
+| Aplicação | `aplicacao` | `aplicacao` (antes `kit::data::tab` — Q3) |
+
+*(alterado em 2026-10-15, step 11 — QA-02)*: a coluna da URL dizia `{chave}::tabs`; o valor real é `getKey(isAbsolute: false)`, a própria chave (`vendor/filament/schemas/src/Components/Tabs.php:getActiveTab():147`). O formato antigo era `slug::data::tab` (`Tab::setUp()` do vendor), e todo link antigo cai na primeira aba (CT-B04).
 
 ## Testes
 

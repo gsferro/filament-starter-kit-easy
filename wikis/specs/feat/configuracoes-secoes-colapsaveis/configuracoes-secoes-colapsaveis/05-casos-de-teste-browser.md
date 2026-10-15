@@ -3,7 +3,7 @@
 > Runtime: `pest-plugin-browser` (Playwright). O plugin sobe o próprio servidor.
 > Costura: `browser` — linha "Navegador" de `## Costuras de Teste` do `04`
 > Comando: `composer test:browser` (embute `npm run build` e `view:cache`), ou `vendor/bin/pest --testsuite=Browser --filter=ConfiguracoesSecoesColapsaveis` — a suíte `Browser` está declarada no `phpunit.xml`. Em série; nunca `--parallel` (`.ai/rules/testes-browser.md`).
-> Teto do perfil padrão: 1 CT-B. **Estouro justificado (gate vence teto)**: cada um dos seis é o único matador de mutantes próprios (tabelas abaixo). Três são os que a `## Superfície de UI` nomeia como só-navegador (CT-B01, CT-B02, CT-B03); CT-B04 é o invariante de Q3 com a partição válida da URL; CT-B05 fecha ADV-04/ADV-25 (erro em seção colapsável aninhada, numa aba nunca carregada); CT-B06 fecha ADV-07 (o `live()` do remetente).
+> Teto do perfil padrão: 1 CT-B. **Estouro justificado (gate vence teto)**: cada um dos seis é o único matador de mutantes próprios (tabelas abaixo). Três são os que a `## Superfície de UI` nomeia como só-navegador (CT-B01, CT-B02, CT-B03); CT-B04 é o invariante de Q3 com a partição válida da URL; CT-B05 fecha ADV-04/ADV-25 (erro em seção colapsável, numa aba nunca carregada); CT-B06 fecha ADV-07 (o `live()` do remetente).
 > **Débito declarado**: CT-B06 nasceu no fechamento da rodada 2 (a última) e não passou por revisão adversarial independente.
 
 ## Pré-requisitos
@@ -29,10 +29,10 @@
 | aba E-mail | texto `E-mail` | sim (B1) |
 | aba Tabelas | texto `Tabelas` | sim (molde) |
 | botão salvar | `press('Salvar')` | sim (molde) |
-| seção que contém um campo | a `.fi-section` ancestral do campo (via `script()`), cabeçalho `.fi-section-header` dela; o `id()` do `01` não vira atributo HTML (B1) — é a chave do `localStorage`, não seletor | sim (B1) |
+| seção que contém um campo | o `<section>` ancestral do campo (`closest('section')`, via `script()`), com o botão de colapso `[aria-expanded]` *(alterado em 2026-10-15, step 11 — QA-04)*; o `id()` do `01` não vira atributo HTML (B1) — é a chave do `localStorage`, não seletor | sim (B1) |
 | estado colapsado | `aria-expanded` do botão de colapso da seção (`[aria-expanded]` dentro do `<section>` ancestral do campo): `'false'` = colapsada; o clique no mesmo botão alterna *(alterado em 2026-10-15, step 9 — CR-05/RD-05: a classe `fi-collapsed` viola `.ai/rules/testes-browser.md` › Seletores; o `<section>` ancestral continua por `closest('section')`, elemento semântico, porque a seção não tem `aria-label` nem id HTML)* | framework |
 | ausência no documento (não só oculto) | `assertScript("document.querySelector('#form\\\\.configuracoes\\\\.tabelas\\\\.paginacao_padrao') === null")` | sim (B1) |
-| mensagem de erro de um campo | campo validado só no servidor (`client_id` do Google, `requiredIf`): o texto de erro dentro do wrapper do campo (CT-B05). Campo `required()` (nome da aplicação): a validação nativa do navegador barra o envio antes do Livewire — o oráculo é `validity.valueMissing`, `validationMessage` não vazia e o campo focado (CT-B03) | sim (B1) |
+| mensagem de erro de um campo | campo validado só no servidor (pontuação mínima do anti-robô fora de 0–1, aba Login nunca aberta): o texto de erro dentro do wrapper do campo (`.fi-fo-field-wrp-error-message` — único seletor sem atributo semântico no vendor; CT-B05). Campo `required()` (nome da aplicação): a validação nativa do navegador barra o envio antes do Livewire — o oráculo é `validity.valueMissing`, `validationMessage` não vazia e o campo focado (CT-B03) | sim (B1) |
 
 ---
 
@@ -59,10 +59,10 @@ Dois pares `Quando`/`Então`, com estouro justificado: o comportamento é a sequ
 | # | Ação | Código Pest | Resultado visível |
 |---|---|---|---|
 | 1 | abrir a tela | `visit('/admin/configuracoes-da-aplicacao')` | tela com as abas |
-| 2 | a aba ativa carrega sozinha | `->assertVisible('#form\.nome_da_aplicacao')` | campo do nome visível |
-| 3 | a inativa não está no documento | `->assertScript("document.querySelector('#form\\\\.paginacao_padrao') === null")` | — |
+| 2 | a aba ativa carrega sozinha | `->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo do nome visível |
+| 3 | a inativa não está no documento | `->assertScript("document.querySelector('#form\\\\.configuracoes\\\\.tabelas\\\\.paginacao_padrao') === null")` | — |
 | 4 | selecionar Tabelas | `->click('Tabelas')` | — |
-| 5 | o conteúdo chega | `->assertVisible('#form\.paginacao_padrao')->assertMissing('#form\.nome_da_aplicacao')` | campo de paginação visível |
+| 5 | o conteúdo chega | `->assertVisible('#form\.configuracoes\.tabelas\.paginacao_padrao')->assertMissing('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo de paginação visível |
 
 **Assertions**: sem `assertPathIs` (não navega); a ordem 2 → 3 importa: o passo 3 só é avaliado depois de a página estar de pé.
 
@@ -97,10 +97,10 @@ Dois pares `Quando`/`Então`, com estouro justificado: o comportamento é a sequ
 
 | # | Ação | Código Pest | Resultado visível |
 |---|---|---|---|
-| 1 | abrir | `visit('/admin/configuracoes-da-aplicacao')->assertVisible('#form\.nome_da_aplicacao')` | campo visível |
-| 2 | colapsar a seção do nome | clique no cabeçalho da seção ancestral de `#form\.nome_da_aplicacao` | campo deixa de estar visível |
+| 1 | abrir | `visit('/admin/configuracoes-da-aplicacao')->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo visível |
+| 2 | colapsar a seção do nome | clique no botão `[aria-expanded]` do `<section>` ancestral de `#form\.configuracoes\.identidade\.nome_da_aplicacao` | campo deixa de estar visível |
 | 3 | recarregar | `->refresh()` | — |
-| 4 | a aba carregou (controle) | `->assertVisible('#form\.cor_primaria_hex')` | campo da outra seção visível |
+| 4 | a aba carregou (controle) | `->assertVisible('#form\.configuracoes\.identidade\.cor_primaria_hex')` | campo da outra seção visível |
 | 5 | a seção continua colapsada | `assertScript`: `[aria-expanded]` da `<section>` do nome com `'false'`; `->assertMissing('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo não visível |
 | 6 | a seção que nasce colapsada, aberta, fica aberta | clicar `Login`; `<section>` cujo título é "Entrar com Google" com `aria-expanded` `'false'`; clicar o botão; `->assertVisible('#form\.configuracoes\.login\.login_google_habilitado')->refresh()->click('Login')->assertVisible(…habilitado)` e `aria-expanded` `'true'` | interruptor do Google visível depois do refresh |
 
@@ -137,9 +137,9 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
 |---|---|---|---|
 | 1 | abrir | `visit('/admin/configuracoes-da-aplicacao')->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo visível |
 | 2 | apagar o nome | `->fill('#form\.configuracoes\.identidade\.nome_da_aplicacao', '')` | — |
-| 3 | colapsar a seção | clique no `.fi-section-header` da `.fi-section` ancestral do campo; `fi-collapsed` presente; `->assertMissing('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo não visível |
+| 3 | colapsar a seção | clique no botão `[aria-expanded]` do `<section>` ancestral do campo; `aria-expanded` `'false'`; `->assertMissing('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo não visível |
 | 4 | salvar | `->press('Salvar')` | — |
-| 5 | o erro aparece | `->assertVisible({campo do nome})` e `assertScript`: seção sem `fi-collapsed`, `campo.validity.valueMissing`, `campo.validationMessage.length > 0`, `document.activeElement === campo` | seção reaberta, campo focado com a mensagem nativa |
+| 5 | o erro aparece | `->assertVisible({campo do nome})` e `assertScript`: `aria-expanded` `'true'`, `campo.validity.valueMissing`, `campo.validationMessage.length > 0`, `document.activeElement === campo` | seção reaberta, campo focado com a mensagem nativa |
 | 6 | nada gravou | `expect(configuracaoGravada('nome_da_aplicacao'))->toBe('Antes')` | — |
 
 #### Mutantes previstos
@@ -173,9 +173,9 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
 
 | # | Ação | Código Pest | Resultado visível |
 |---|---|---|---|
-| 0 | só linha válida: obter a URL | `visit('/admin/configuracoes-da-aplicacao')->click('Tabelas')->assertVisible('#form\.paginacao_padrao')`; ler `location.href` por `script()` e conferir que mudou (`?tab=` presente) | URL com a aba |
+| 0 | só linha válida: obter a URL | `visit('/admin/configuracoes-da-aplicacao')->click('Tabelas')->assertVisible('#form\.configuracoes\.tabelas\.paginacao_padrao')`; ler `location.href` por `script()` e conferir que mudou (`?tab=` presente) | URL com a aba |
 | 1 | abrir o link | `visit({url da linha})` — linha válida: a URL lida no passo 0; inválidas: `/admin/configuracoes-da-aplicacao` + o valor da linha | tela com as abas |
-| 2a | linha válida | `->assertVisible('#form\.paginacao_padrao')` | campo de paginação visível |
+| 2a | linha válida | `->assertVisible('#form\.configuracoes\.tabelas\.paginacao_padrao')` | campo de paginação visível |
 | 2b | linhas inválidas | `->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao')->assertScript("document.querySelector('#form\\\\.configuracoes\\\\.tabelas\\\\.paginacao_padrao') === null")` | primeira aba com conteúdo, Tabelas não carregada |
 
 **Assertions**: *(alterado em 2026-10-15, step 9 — CR-04/RD-04)*: o "ou" saiu. O Filament cai na primeira aba para qualquer chave desconhecida (`Tabs::getActiveTab()`, fato do vendor), então o oráculo é exato: nome da aplicação visível e `paginacao_padrao` ausente do documento. O valor antigo real é `slug::data::tab` (`Tab::setUp()` do vendor, `::tab` no singular), e com `Tab::key()` todo link antigo muda — por isso a linha nova com a chave antiga de Tabelas.
@@ -190,38 +190,38 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
 
 ---
 
-## CT-B05: o erro num campo de seção colapsável aninhada, em aba nunca carregada, fica visível
+## CT-B05: o erro num campo de seção colapsável, em aba nunca carregada, fica visível
 
-**Por que browser e não Livewire**: CT-17 prova no servidor que o campo é validado e que a aba carrega; que a mensagem de erro de um campo dentro de uma seção aninhada, numa aba que o usuário nunca abriu, fica visível para ele sem procurar o campo, só o navegador prova (P-05, P-03). *(alterado em 2026-10-15, lote L1: os campos das seções de provedor não têm validação — o cenário usa a seção colapsável "Proteção anti-robô" com a pontuação mínima do reCAPTCHA v3 fora de 0–1 gravada; a marca `@pendente-Q1` caiu)*
+**Por que browser e não Livewire**: CT-17 prova no servidor que o campo é validado e que a aba carrega; que a mensagem de erro de um campo dentro de uma seção colapsável (filha direta da aba Login), numa aba que o usuário nunca abriu, fica visível para ele sem procurar o campo, só o navegador prova (P-05, P-03). *(alterado em 2026-10-15, lote L1: os campos das seções de provedor não têm validação — o cenário usa a seção colapsável "Proteção anti-robô" com a pontuação mínima do reCAPTCHA v3 fora de 0–1 gravada; a marca `@pendente-Q1` caiu)*
 
 ```gherkin
-  Cenário: [CT-B05] salvar com erro numa seção colapsável aninhada, em aba nunca aberta, leva o usuário à mensagem de erro
+  Cenário: [CT-B05] salvar com erro numa seção colapsável, em aba nunca aberta, leva o usuário à mensagem de erro
     Dado o anti-robô ligado com o provedor reCAPTCHA v3 e a pontuação mínima gravada 5 (fora de 0 a 1)
     E o administrador com a tela de configurações aberta na aba Identidade, sem nunca ter aberto a aba Login
     Quando ele aciona Salvar
     Então a mensagem de erro da pontuação mínima fica visível
-    E a seção "Proteção anti-robô" está expandida, sem a classe "fi-collapsed"
+    E a seção "Proteção anti-robô" está expandida (botão de colapso com aria-expanded="true")
 ```
 
-`@premissa` de mecanismo: o Filament ativa a aba do campo com erro (CT-B02 da ancestral), a aba adiada carrega pelo erro e a seção aninhada (expandida por padrão) mostra o campo. A alternativa de P-05 ("erro no topo") muda só o seletor da mensagem. O não-efeito no banco é provado em CT-17.
+`@premissa` de mecanismo: o Filament ativa a aba do campo com erro (CT-B02 da ancestral), a aba adiada carrega pelo erro e a seção (filha direta da aba, expandida por padrão) mostra o campo *(alterado em 2026-10-15, step 11 — QA-04: "aninhada" era do CT-17/Google; o teste usa a seção anti-robô)*. A alternativa de P-05 ("erro no topo") muda só o seletor da mensagem. O não-efeito no banco é provado em CT-17.
 
 **Roteiro executável**
 
 | # | Ação | Código Pest | Resultado visível |
 |---|---|---|---|
 | 1 | arranjo | `gravarConfiguracao('login_anti_robo_habilitado', true)`; `gravarConfiguracao('login_anti_robo_provedor', 'recaptcha_v3')` (valor do enum `ProvedorAntiRobo`, a confirmar); `gravarConfiguracao('login_anti_robo_pontuacao_minima', 5)` | — |
-| 2 | abrir | `visit('/admin/configuracoes-da-aplicacao')->assertVisible('#form\.nome_da_aplicacao')` | aba Identidade ativa |
-| 3 | a aba Login não carregou | `->assertScript("document.querySelector('#form\.login_anti_robo_pontuacao_minima') === null")` | — |
+| 2 | abrir | `visit('/admin/configuracoes-da-aplicacao')->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | aba Identidade ativa |
+| 3 | a aba Login não carregou | `->assertScript("document.querySelector('#form\.configuracoes\.login\.login_anti_robo_pontuacao_minima') === null")` | — |
 | 4 | salvar | `->press('Salvar')` | — |
 | 5 | o erro aparece | `->assertVisible({mensagem de erro da pontuação mínima})` | mensagem visível |
-| 6 | a seção está expandida | `->assertScript({a .fi-section ancestral de #form\.login_anti_robo_pontuacao_minima não tem a classe fi-collapsed})` | seção expandida |
+| 6 | a seção está expandida | `->assertScript({o [aria-expanded] do <section> ancestral do campo vale 'true'})` | seção expandida |
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| MB12 | a seção aninhada fica colapsada no render pós-erro (o erro existe no DOM, escondido) | CT-B05 | passo 5: a mensagem existe no DOM mas não está visível; passo 6: a seção tem `fi-collapsed` |
-| MB13 | a aba adiada não carrega no erro do salvamento quando o campo está numa seção aninhada | CT-B05 | passo 5: a mensagem nem existe no DOM |
+| MB12 | a seção aninhada fica colapsada no render pós-erro (o erro existe no DOM, escondido) | CT-B05 | passo 5: a mensagem existe no DOM mas não está visível; passo 6: `aria-expanded` `'false'` |
+| MB13 | a aba adiada não carrega no erro do salvamento quando o campo está numa seção colapsável | CT-B05 | passo 5: a mensagem nem existe no DOM |
 
 ---
 
@@ -243,18 +243,18 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
 | # | Ação | Código Pest | Resultado visível |
 |---|---|---|---|
 | 1 | arranjo | `gravarConfiguracao('mail_mailer', 'log')` | — |
-| 2 | abrir na aba E-mail | `visit('/admin/configuracoes-da-aplicacao')->click('E-mail')->assertVisible('#form\.mail_mailer')->assertMissing('#form\.mail_host')` | remetente visível, servidor não |
-| 3 | escolher smtp | `->select('#form\.mail_mailer', 'smtp')` | — |
-| 4 | a seção aparece | `->assertVisible('#form\.mail_host')` | campo do servidor visível |
+| 2 | abrir na aba E-mail | `visit('/admin/configuracoes-da-aplicacao')->click('E-mail')->assertVisible('#form\.configuracoes\.email\.mail_mailer')->assertMissing('#form\.configuracoes\.email\.mail_host')` | remetente visível, servidor não |
+| 3 | escolher smtp | `->select('#form\.configuracoes\.email\.mail_mailer', 'smtp')` | — |
+| 4 | a seção aparece | `->assertVisible('#form\.configuracoes\.email\.mail_host')` | campo do servidor visível |
 | 5 | nada gravou | `expect(configuracaoGravada('mail_mailer'))->toBe('log')` | — |
 
-**Assertions**: o passo 2 confere `#form\.mail_mailer` visível antes do `assertMissing`, para a ausência não passar vazia com a aba ainda carregando.
+**Assertions**: o passo 2 confere `#form\.configuracoes\.email\.mail_mailer` visível antes do `assertMissing`, para a ausência não passar vazia com a aba ainda carregando.
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| MB14 | o `live()` do remetente perdido na refatoração (a seção só aparece depois de salvar ou recarregar) | CT-B06 | passo 4: `#form\.mail_host` não fica visível |
+| MB14 | o `live()` do remetente perdido na refatoração (a seção só aparece depois de salvar ou recarregar) | CT-B06 | passo 4: `#form\.configuracoes\.email\.mail_host` não fica visível |
 
 ---
 
@@ -274,8 +274,8 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
 | 1 | troca de aba: o conteúdo aparece depois de um request | o HTML inicial tem o nome da aplicação e não tem `paginacao_padrao`; o clique em Tabelas traz o campo (`loadDeferredSchema`) | ✅ | CT-B01 verde; CT-B04 (3 partições) verde — lote B1, 2026-10-15 |
-| 2 | clique no cabeçalho colapsa/expande a seção | clique em `.fi-section-header` da `.fi-section` ancestral do campo; classe `fi-collapsed` e o campo some do visível | ✅ | CT-B02, CT-B03 verdes (lote B1) |
+| 2 | clique no cabeçalho colapsa/expande a seção | clique no botão `[aria-expanded]` do `<section>` ancestral do campo; `aria-expanded` `'false'` e o campo some do visível | ✅ | CT-B02, CT-B03 verdes (lote B1) |
 | 3 | recarregar mantém a seção fechada | `persistCollapsed()` em `localStorage` por id; depois do `refresh()` só a seção colapsada continua fechada, a vizinha aberta | ✅ | CT-B02 verde (lote B1) |
 | 4 | preencher e gravar com seção colapsada | fora do lote de navegador: o envio do campo colapsado é CT-12 do `04` (verde, lote L1b); no navegador só o erro visível (linha 5) | ✅ (componente) | CT-12 do `04`; CT-B03 |
-| 5 | erro em seção colapsada fica visível | campo `required()`: validação nativa do navegador, a seção reabre pelo evento `invalid` do Filament e o campo focado mostra a mensagem (CT-B03); campo validado no servidor (`client_id` do Google, aba Login nunca aberta): a aba carrega e a mensagem inline aparece na seção do provedor (CT-B05) | ✅ (mecanismo do CT-B03 diferente do desenhado: nativo, não inline) | CT-B03 e CT-B05 verdes (lote B1 + correção da sessão) |
+| 5 | erro em seção colapsada fica visível | campo `required()`: validação nativa do navegador, a seção reabre pelo evento `invalid` do Filament e o campo focado mostra a mensagem (CT-B03); campo validado no servidor (pontuação mínima do anti-robô, aba Login nunca aberta): a aba carrega e a mensagem inline aparece na seção do provedor (CT-B05) | ✅ (mecanismo do CT-B03 diferente do desenhado: nativo, não inline) | CT-B03 e CT-B05 verdes (lote B1 + correção da sessão) |
 | 6 | trocar o remetente mostra o servidor SMTP na mesma visita | `select` de `smtp` no remetente sem salvar: a seção com `mail_host` fica visível (`live()` + `visible($smtp)` na seção) | ✅ | CT-B06 verde (lote B1) |

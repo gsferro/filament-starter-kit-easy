@@ -311,8 +311,9 @@ class ConfiguracoesDoKit extends SettingsPage
     }
 
     /**
-     * Adia o HTML porque a tela só cresce; a aba com erro de validação carrega sozinha
-     * (InteractsWithSchemas::isDeferredSchemaLoaded()).
+     * Adia o HTML porque a tela só cresce. Com erro de validação o Filament marca todas as
+     * abas adiadas como carregadas antes do render (InteractsWithSchemas::isDeferredSchemaLoaded())
+     * e a aba do campo em erro fica ativa.
      *
      * @param  array<Component>  $componentes
      */

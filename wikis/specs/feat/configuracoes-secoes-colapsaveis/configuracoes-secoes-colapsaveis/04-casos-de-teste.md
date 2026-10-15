@@ -17,7 +17,7 @@
 - Técnicas aplicadas: EP (varredura exaustiva de componentes como partição completa), estado exibido (as seis abas, sem amostragem), não-efeito com destinatário real (valores gravados diferentes do default, segredos incluídos), domínio condicionado (seção SMTP × remetente), 2-switch (edição pendente → carregar outra aba → salvar; carregar → carregar de novo).
 - Técnica escalada acima do perfil: R3 e R4 (área mínima) usam varredura exaustiva em vez de um exemplo — um campo amostrado não distingue "todos em seção" de "quase todos", e a rule (RQ-04) é sobre *todos*.
 - Estouro de teto: R10 tem 2 CT no `04` + 2 CT-B no `05`, e R9 ganhou CT-B06 (teto padrão: 3 por regra, 1 CT-B por feature; o `05` tem 6) — o gate vence o teto: CT-17 e CT-B05 são os únicos matadores de M48/M49 e MB12/MB13 (ADV-04, ADV-25), e CT-B06 é o único matador de MB14 (ADV-07).
-- Cenários: 20 · Regras: 13 · Mutantes previstos: 54 · Sem matador: 0
+- Cenários: 20 · Regras: 13 · Mutantes previstos: 55 · Sem matador: 0
 <!-- grep -c conforme references/template-04.md §Contagem do cabeçalho; os 6 CT-B estão no 05 -->
 
 ## Varredura SFDIPOT
@@ -42,7 +42,7 @@
 | R4 — toda seção é colapsável e tem ícone, inclusive as que já existiam | estrutura (mínimo) | RQ-03, RQ-04 | varredura exaustiva (escalada) | CT-04 |
 | R5 — toda seção guarda o estado colapsado por navegador `@pendente-Q1` | estrutura (mínimo) | RQ-03 (recorte Q1, recomendação autorizada), P-07 (os dois estados persistem — step 9) | varredura exaustiva | CT-05, CT-B02 |
 | R6 — o conteúdo de toda aba é adiado, com chave única, e carrega só a aba pedida | render adiado (padrão) | RQ-05, P-03 | estado exibido (seis abas) | CT-06, CT-07, CT-08, CT-B01, CT-B04 |
-| R7 — aba não carregada com campo em erro carrega sozinha e mostra o erro | render adiado (padrão) | P-03 | EP + não-efeito | CT-09 |
+| R7 — aba não carregada com campo em erro carrega (com erro todas as abas adiadas carregam — P-03, lote L1) e mostra o erro | render adiado (padrão) | P-03 | EP + não-efeito | CT-09 |
 | R8 — salvar sem nunca abrir as abas grava o alterado e preserva o resto; carregar uma aba não apaga a edição pendente | gravação (padrão) | P-04, RQ-05 | não-efeito com destinatário real + 2-switch | CT-10, CT-16 |
 | R9 — reagrupar em seções não muda o que a tela grava nem quando a seção condicional aparece | gravação (padrão) | RQ-02 (+ Fora de Escopo) | domínio condicionado | CT-11, CT-18, CT-B06 |
 | R10 — seção colapsada envia e valida os campos, e o erro nela fica visível | gravação (padrão) | P-05, P-03 (+ recorte Q1 em CT-12, CT-17, CT-B05) | EP | CT-12, CT-17, CT-B03, CT-B05 |
@@ -55,7 +55,7 @@
 - RQ-03 — cobertura parcial: CT-04 (colapsável e com ícone); recorte de Q1 implementado pela recomendação autorizada pelo solicitante ("implemente tudo", 2026-10-15), cenários `@pendente-Q1`: CT-05, CT-12, CT-B02 (CT-17 e CT-B05 deixaram de depender de Q1 no lote L1). Resposta contrária a Q1 vira Adendo e re-derivação
 - RQ-04 — CT-19 (a rule existe, obriga "toda" seção colapsável com ícone, cita o teste que a faz cumprir, e o índice a liga à Page); o enforcement mecânico dela é CT-03 e CT-04 (a prova `arch()` que o step 12 cita). CT-19 fica vermelho até o step 12 — classificação esperada: implementação ainda não feita
 - RQ-05 — cobertura parcial: CT-06…CT-10, CT-13…CT-17, CT-20, CT-B01, CT-B04, CT-B05; recorte "autorização no carregamento de aba para quem perdeu a permissão com a tela aberta" aberto (Q6)
-- RQ-06, RQ-07, RQ-08, RQ-09 — atendidas no processo, sem cenário
+- RQ-06, RQ-07, RQ-08, RQ-09, RQ-10 — atendidas no processo, sem cenário (RQ-10: Adendo 1, autorização de prosseguir até o PR)
 
 ## Costuras de Teste
 
@@ -74,7 +74,7 @@
 | ícone de cada seção (`heroicon-o-identification`, `-swatch`…) | escolha de implementação; o requisito pede *ter* ícone | o `Então` afirma ícone preenchido, nunca qual |
 | agrupamento campo → seção (`01` › *Seções por aba*) | Q2 aberta | nenhum CT afirma o agrupamento; os CT-B usam "a seção que contém o campo X" como seletor |
 | ids `configuracoes-{aba}-{secao}` | escolha de implementação; só existem para a persistência (Q1) | CT-05 afirma id explícito preenchido e único, nunca o valor; CT-B02 localiza a seção pelo campo |
-| `Tab::key()` de cada aba e a chave `aplicacao::tabs` na URL (D1) | chave interna = implementação; chave na URL da aba renomeada é visível ao usuário e o requisito não a determina (Q3) | CT-06 afirma só chave preenchida e distinta; CT-B04 usa como partição válida a URL que a própria tela escreve ao selecionar a aba Tabelas, sem literal de chave (ADV-29) |
+| `Tab::key()` de cada aba e a chave `aplicacao` na URL (D1) *(alterado em 2026-10-15, step 11 — QA-02: a URL leva a própria chave)* | chave interna = implementação; chave na URL da aba renomeada é visível ao usuário e o requisito não a determina (Q3) | CT-06 afirma só chave preenchida e distinta; CT-B04 usa como partição válida a URL que a própria tela escreve ao selecionar a aba Tabelas, sem literal de chave (ADV-29) |
 | seção SMTP "visível só com SMTP" (D3) | desenho; a visibilidade dos campos SMTP é comportamento herdado que esta wiki não muda | CT-11, CT-18 e CT-B06 afirmam só o invariante herdado: com SMTP os campos do servidor aparecem (na mesma visita, sem salvar) e gravam; com outro remetente, não aparecem |
 | "a seção abre" no erro (Superfície de UI) | P-05 aceita "a seção abre **ou** o erro aparece no topo" | CT-B03 afirma a mensagem de erro visível (a abertura é `@premissa`); CT-B05 afirma também a seção do provedor expandida, porque ali o colapso inicial é recorte de Q1 marcado `@pendente-Q1` |
 | estado inicial expandido e provedores colapsados; `persistCollapsed` | Q1 aberta no `00`, recomendação **autorizada** pelo solicitante e implementada (decisão da sessão sobre ADV-21/ADV-23) | CT-05, CT-12, CT-17, CT-B02 e CT-B05 vigentes, marcados `@pendente-Q1`; o estado inicial "tudo expandido" segue sem CT próprio (cortado) |
@@ -624,7 +624,7 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | Cenário cogitado | Por que foi cortado |
 |---|---|
 | toda seção nasce expandida, salvo as quatro de provedor | recorte de Q1; a recomendação autorizada cobre persistência (CT-05, CT-B02) e o colapso inicial dos provedores (CT-12); "tudo o mais expandido" não tem mutante próprio que CT-B02/CT-B03 já não exercitem |
-| a aba Aplicação responde em `?tab=aplicacao::tabs`; `?tab=kit::tabs` cai na primeira aba | recorte de Q3 (aberta); o invariante das duas leituras e a partição válida (`tabelas::tabs`) são CT-B04 |
+| a aba Aplicação responde em `?tab=aplicacao`; `?tab=kit::data::tab` cai na primeira aba | recorte de Q3 (aberta); o invariante e a partição válida (a URL que a própria tela escreve) são CT-B04 *(alterado em 2026-10-15, step 11 — QA-02)* |
 | item que não é campo (aviso, texto) dentro de seção | recorte de Q4 (aberta); o invariante (todo campo) é CT-03 |
 | quem perdeu a permissão não carrega aba | recorte de Q6 (aberta); o invariante (sem segredo) é CT-15 |
 | as capturas `art/` mostram a aba Aplicação | sem oráculo barato; dimensão G do quality gate (ADV-24 rejeitado) |
