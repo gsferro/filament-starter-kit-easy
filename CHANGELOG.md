@@ -43,12 +43,15 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ### Validação
 
 - Suíte local `Kit --parallel`: 4.144 testes (4.139 verdes, 3 pulados), só os dois contadores do
-  README reprovados e corrigidos (badge 2.177, 188/219 arquivos de teste); `Tenancy --parallel`:
+  README reprovados e corrigidos (badge 2.179 (2.177 antes de CT-B02 e da captura escura da aba), 188/219 arquivos de teste); `Tenancy --parallel`:
   616 verdes. Navegador: CT-B01 (carregamento contínuo) verde; `composer art` 36/38 (2 pulos
   anteriores).
-- Mutação das cinco classes de regra (`CarregamentoDaTabela`, `VisoesDeTabela`, settings, página
-  de configurações e `ConfiguraFilamentGlobal`), só linhas cobertas: 406 mutantes, 0 sobreviventes
-  (100 %), 9 h 26 min em série com Xdebug.
+- Mutação: o `pest --mutate` deu 406/406 (100 %) nas cinco classes de regra, mas o quality gate
+  provou que o número não vale no Windows (o `--filter` do mutante é truncado acima de ~8 KB e o
+  plugin conta "No tests executed!" como morto); a remedição por chunks também falhou a
+  certificação. Vale a amostragem manual do trait `VisoesDeTabela` (4 mutantes mortos pelos CTs
+  previstos, 1 equivalente) e a falsificabilidade dos CT-79/80/81 do step 9. Score completo é
+  débito para Linux/CI (`wikis/specs/feat/estudo-de-pacotes-rodada-3/`, `03`, Verificação Final).
 - Revisão do diff (step 9): 4 achados do passe de eixos e 3 da revisão cega, 2 confirmados com
   CT que falhava antes do fix (`hidden()` em vez de `visible()` nas Actions do pacote; aliases do
   trait protegidos, porque alias público vira método `$wire`).
