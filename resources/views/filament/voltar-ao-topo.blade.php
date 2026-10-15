@@ -128,12 +128,14 @@
 
         window.kitPilhaDeFlutuantes = true;
 
-        // Medidas de hoje: margem de 24px, botão de 56px (chat e gatilho do dock), "Voltar ao
-        // topo" de 44px e 16px entre vizinhos.
-        const MARGEM = 24;
-        const LARGURA = 56;
-        const VOLTAR = 44;
-        const ESPACO = 16;
+        // Medidas de hoje, em rem como nas folhas: margem de 1.5rem (24px), botão de 3.5rem (chat
+        // e gatilho do dock), "Voltar ao topo" de 2.75rem e 1rem entre vizinhos. Convertidas
+        // pela fonte da raiz a cada cálculo: com outra fonte padrão no navegador, a faixa
+        // acompanha os botões.
+        const MARGEM = 1.5;
+        const LARGURA = 3.5;
+        const VOLTAR = 2.75;
+        const ESPACO = 1;
 
         const html = document.documentElement;
         const observadorDoDock = new MutationObserver(() => agendar());
@@ -156,18 +158,19 @@
                 return;
             }
 
+            const rem = parseFloat(getComputedStyle(html).fontSize) || 16;
             const largura = html.clientWidth;
             const altura = html.clientHeight;
             const temChat = document.querySelector('[data-assistente-chat] .bottom-6') !== null;
-            const alturaDaPilha = (temChat ? LARGURA + ESPACO : 0) + VOLTAR;
+            const alturaDaPilha = ((temChat ? LARGURA + ESPACO : 0) + VOLTAR) * rem;
             const r = dock.getBoundingClientRect();
 
             // O lugar da pilha nas posições de hoje: a coluna da direita, do rodapé até o topo do
             // "Voltar ao topo", com o espaço entre os botões incluído.
-            const cruza = r.left < largura - MARGEM
-                && r.right > largura - MARGEM - LARGURA
-                && r.top < altura - MARGEM
-                && r.bottom > altura - MARGEM - alturaDaPilha;
+            const cruza = r.left < largura - MARGEM * rem
+                && r.right > largura - (MARGEM + LARGURA) * rem
+                && r.top < altura - MARGEM * rem
+                && r.bottom > altura - MARGEM * rem - alturaDaPilha;
 
             if (! cruza) {
                 limpar();
@@ -175,7 +178,7 @@
                 return;
             }
 
-            html.style.setProperty('--kit-pilha-base', `${Math.round(altura - r.top + ESPACO)}px`);
+            html.style.setProperty('--kit-pilha-base', `${Math.round(altura - r.top + ESPACO * rem)}px`);
             html.toggleAttribute('data-kit-pilha-oculta', dock.dataset.mode === 'speed-dial' && dock.dataset.open === 'true');
         }
 
@@ -210,10 +213,16 @@
         }
 
         // O dock e o chat podem entrar no DOM depois deste script (render hooks e morph do
-        // Livewire): a árvore é observada até o dock aparecer ou ser trocado.
-        new MutationObserver(ligar).observe(document.body, { childList: true, subtree: true });
+        // Livewire): a árvore é observada até o dock aparecer ou ser trocado. Na navegação SPA
+        // o Livewire troca o `<body>` inteiro, então o observador passa para o novo.
+        const observadorDoBody = new MutationObserver(ligar);
+        const observarBody = () => {
+            observadorDoBody.disconnect();
+            observadorDoBody.observe(document.body, { childList: true, subtree: true });
+            ligar();
+        };
         window.addEventListener('resize', agendar);
-        document.addEventListener('livewire:navigated', ligar);
-        ligar();
+        document.addEventListener('livewire:navigated', observarBody);
+        observarBody();
     })();
 </script>
