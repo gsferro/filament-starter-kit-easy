@@ -271,7 +271,7 @@ final class PluginDoDock
      * (`vendor/hoceineel/filament-quick-action-dock/src/Livewire/QuickActionDock.php:cachedActions:89`):
      * sem isto, o dock re-renderizado na mesma requisição mostraria os favoritos antigos (CR-01).
      * `cacheDockActions()` é `protected`; `cacheAction()` é público
-     * (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:cacheAction:489`) e sobrescreve
+     * (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:cacheAction:572`) e sobrescreve
      * pelo nome. Um `atalho_{n}` que sobrar de uma lista maior fica no cache sem ser desenhado — o
      * render só percorre os nomes da lista nova —, e o próximo request nem o cacheia.
      */

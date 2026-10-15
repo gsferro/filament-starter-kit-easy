@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\BooleanoDoEnv;
+use App\Support\CarregamentoDaTabela;
 use App\Support\DensidadeDoLayout;
 use App\Support\DetalheDoUsuario;
 use App\Support\NumeroDoEnv;
@@ -272,6 +273,17 @@ return [
     |
     | O `KIT_HUB` mais abaixo continua com `(bool) env()` porque o default dele é
     | `false` — ali o defeito é inócuo, e trocar por trocar esconderia a regra.
+    |
+    | ## Rodada 3 de pacotes: carregamento e visões salvas (nascem DESLIGADOS)
+    |
+    | `carregamento` — `paginacao` (o de hoje), `rolagem` (infinita) ou `botao`
+    | ("Carregar mais"); fora do vocabulário cai em `paginacao` (App\Support\CarregamentoDaTabela).
+    | `visoes_salvas` liga o botão "Visões" nas listagens do kit
+    | (App\Filament\Concerns\VisoesDeTabela). O terceiro interruptor da família, o
+    | compartilhamento das visões, NÃO mora aqui: é `allow_public_views` em
+    | `config/remember-table.php`, a chave do próprio pacote, semeada de
+    | `KIT_TABELA_VISOES_COMPARTILHADAS` — a tela aponta direto para ela.
+    | Wiki `wikis/specs/feat/estudo-de-pacotes-rodada-3/`.
     */
 
     'tabelas' => [
@@ -279,6 +291,8 @@ return [
         'listrada'                 => BooleanoDoEnv::comPadrao(env('KIT_TABELA_LISTRADA'), true),
         'persistir_filtros'        => BooleanoDoEnv::comPadrao(env('KIT_TABELA_PERSISTIR_FILTROS'), true),
         'colunas_redimensionaveis' => BooleanoDoEnv::comPadrao(env('KIT_TABELA_COLUNAS_REDIMENSIONAVEIS'), true),
+        'carregamento'             => CarregamentoDaTabela::coagir(env('KIT_TABELA_CARREGAMENTO'))->value,
+        'visoes_salvas'            => BooleanoDoEnv::comPadrao(env('KIT_TABELA_VISOES_SALVAS'), false),
     ],
 
     /*

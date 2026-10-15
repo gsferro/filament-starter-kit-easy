@@ -2,6 +2,7 @@
 
 namespace App\Providers\Concerns;
 
+use App\Support\CarregamentoDaTabela;
 use App\Support\Paineis;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use BezhanSalleh\PanelSwitch\PanelSwitch;
@@ -33,12 +34,14 @@ use Illuminate\Contracts\View\View;
  * É este arquivo que define como TODA tabela, toggle e modal do projeto se comporta.
  * Mudou aqui, mudou em todo lugar — inclusive nas telas dos plugins de terceiros.
  *
- * ## Quatro destes defaults são editáveis em /admin/configuracoes-da-aplicacao
+ * ## Sete destes defaults são editáveis em /admin/configuracoes-da-aplicacao
  *
- * Paginação, linhas listradas, persistência do recorte do usuário e colunas
- * arrastáveis saem de `config('kit.tabelas.*')`, que o `KitServiceProvider`
- * alinha com o banco no boot — ANTES de chamar este método, e a ordem é
- * requisito. Ver `App\Settings\ConfiguracoesDoKit`.
+ * Paginação, linhas listradas, persistência do recorte do usuário, colunas
+ * arrastáveis, o carregamento da tabela (paginação, rolagem infinita ou botão
+ * "Carregar mais" — `aplicaCarregamento()`), as visões salvas e o compartilhamento
+ * delas saem de `config('kit.tabelas.*')` (e de `remember-table.allow_public_views`),
+ * que o `KitServiceProvider` alinha com o banco no boot — ANTES de chamar este
+ * método, e a ordem é requisito. Ver `App\Settings\ConfiguracoesDoKit`.
  *
  * Isto fecha o TODO que vivia aqui, com uma ressalva que não pode ser omitida:
  * ele prometia quatro itens e um deles **não existe no Filament 5**. Não há API
@@ -288,7 +291,38 @@ trait ConfiguraFilamentGlobal
             ->defaultPaginationPageOption((int) config('kit.tabelas.paginacao', 10))
             ->extremePaginationLinks();
 
-        return $this->aplicaMacrosDeColuna($table);
+        return $this->aplicaMacrosDeColuna($this->aplicaCarregamento($table));
+    }
+
+    /**
+     * Carregamento contínuo (asignua/filament-infinite-scroll), em toda tabela, quando ligado.
+     *
+     * `kit.tabelas.carregamento` é lido AQUI, por request, dentro do `configureUsing()` — a tela
+     * governa sem deploy. Em `paginacao` (o valor de fábrica) o macro não é chamado e a tabela é
+     * exatamente a de hoje; é o `[CT-03]` da wiki `estudo-de-pacotes-rodada-3`.
+     *
+     * Nos dois modos contínuos o macro FIXA na tabela `paginated([$bloco])`,
+     * `defaultPaginationPageOption($bloco)`, `PaginationMode::Default` e
+     * `persistRecordsPerPageInSession(false)`
+     * (`vendor/asignua/filament-infinite-scroll/src/InfiniteScroll.php:configure():48-52`): o
+     * seletor "registros por página" some, porque é o modo que decide o tamanho, e o tamanho
+     * emitido pelo servidor vai no memo do snapshot — o navegador não o aumenta. O bloco é
+     * "Linhas por página" (D2): um número só para as duas formas de carregar. O teto fica no
+     * default do pacote (500 linhas na tela). Tabela cuja paginação não é `LengthAwarePaginator`
+     * (simples/cursor) fica como era: o render hook do rodapé devolve string vazia.
+     *
+     * Chamada DIRETA do macro, sem o `hasMacro()` de `aplicaMacrosDeColuna()`: o pacote é
+     * dependência declarada (não opcional como o `resized-column` virou), e o
+     * happenv-com/filament-phpstan-macros tipa o macro para o PHPStan — é a prova de que a
+     * extensão agrega valor: nenhuma linha nova em `ignoreErrors` (D8).
+     */
+    private function aplicaCarregamento(Table $table): Table
+    {
+        $modo = CarregamentoDaTabela::deConfig()->modoDoPacote();
+
+        return $modo === null
+            ? $table
+            : $table->infiniteScroll(perPage: (int) config('kit.tabelas.paginacao', 10), mode: $modo);
     }
 
     /**

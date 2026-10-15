@@ -156,6 +156,28 @@ final class ConfiguracoesDoKit extends Settings
 
     public bool $colunas_redimensionaveis;
 
+    /*
+     * Rodada 3 de pacotes (wiki `estudo-de-pacotes-rodada-3`). Os três nascem desligados
+     * (RQ-05) e são lidos POR REQUEST — critério de `.ai/rules/settings.md`: o carregamento em
+     * `ConfiguraFilamentGlobal::aplicaCarregamento()` (dentro do `Table::configureUsing()`), as
+     * visões em `App\Filament\Concerns\VisoesDeTabela::visoesHabilitadas()`, e o
+     * compartilhamento pelo próprio pacote, que lê `config('remember-table.allow_public_views')`.
+     */
+
+    /** `paginacao` | `rolagem` | `botao` — coagido por `CarregamentoDaTabela::coagir()` no consumidor. */
+    public string $tabela_carregamento;
+
+    /** Botão "Visões" nas listagens do kit. Desligar esconde; as visões gravadas ficam (P-03). */
+    public bool $visoes_de_tabela;
+
+    /**
+     * "Compartilhar com todos" ao salvar/gerenciar uma visão. Mapeada para a chave do PACOTE
+     * (`remember-table.allow_public_views`), como as de e-mail apontam para `mail.*`; sem o
+     * interruptor ligado o campo nem aparece no formulário do pacote. Só vale com as visões
+     * ligadas, e salvar a aba com elas desligadas grava este desligado (P-15).
+     */
+    public bool $visoes_de_tabela_compartilhadas;
+
     // Kit --------------------------------------------------------------------
 
     public bool $hub_de_navegacao;
@@ -447,7 +469,16 @@ final class ConfiguracoesDoKit extends Settings
             'tabela_listrada'              => 'kit.tabelas.listrada',
             'persistir_filtros'            => 'kit.tabelas.persistir_filtros',
             'colunas_redimensionaveis'     => 'kit.tabelas.colunas_redimensionaveis',
-            'hub_de_navegacao'             => 'kit.hub',
+            /*
+             * Rodada 3: duas chaves do kit e UMA do pacote. `remember-table.allow_public_views`
+             * é lida pelo próprio `HasRememberTable` por request (visibilidade do toggle
+             * "Compartilhar com todos" e gravação de `is_public`), então apontar o settings
+             * para ela é tudo o que a ligação precisa — o mesmo caminho de `mail.*`.
+             */
+            'tabela_carregamento'             => 'kit.tabelas.carregamento',
+            'visoes_de_tabela'                => 'kit.tabelas.visoes_salvas',
+            'visoes_de_tabela_compartilhadas' => 'remember-table.allow_public_views',
+            'hub_de_navegacao'                => 'kit.hub',
             /*
              * O alerta de alterações não salvas entra pelo MAPA e nada mais muda: os três
              * providers já leem `config('kit.alerta_alteracoes_nao_salvas')` por Closure, e

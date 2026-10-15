@@ -489,3 +489,14 @@ it('[CT-42] com multi-organização, o admin da organização recebe o dock e o 
     'infra (/infra)'                => ['infra', true],
     'panel_user (usuário comum)'    => ['panel_user', false],
 ]);
+
+it('[CT-19] a semeadura multi-organização entrega visões ao admin_app, admin e infra, sem conceder ao panel_user', function (string $papel, bool $tem): void {
+    expect(config('permission.teams'))->toBeTrue();
+
+    expect(papelDoKit($papel)->hasPermissionTo('Usar:VisoesDeTabela'))->toBe($tem);
+})->with([
+    'admin_app | tem'      => ['admin_app', true],
+    'admin | tem'          => ['admin', true],
+    'infra | tem'          => ['infra', true],
+    'panel_user | não tem' => ['panel_user', false],
+])->group('kit');

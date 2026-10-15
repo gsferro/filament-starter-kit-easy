@@ -1,14 +1,17 @@
 <?php
 
 use App\Filament\Admin\Pages\ConfiguracoesDoKit;
+use App\Filament\Admin\Resources\Users\Pages\ListUsers;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CorPrimaria;
 use App\Support\CustomizadorDaInstalacao;
+use Asignua\FilamentInfiniteScroll\InfiniteScrollRegistry;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Support\Colors\Color;
+use Filament\Tables\Table;
 use HoceineEl\QuickActionDock\Enums\DockLayout;
 use HoceineEl\QuickActionDock\Enums\DockStyle;
 use Illuminate\Http\UploadedFile;
@@ -579,3 +582,161 @@ it('[CT-57] todo layout e todo estilo do pacote gravam na tela de configuraçõe
         'estilo '.$style->value => ['dock_estilo', $style->value, $style === DockStyle::Native ? 'outline' : 'native'],
     ])->all(),
 ])->group('kit');
+
+it('[CT-12] mostra paginacao ao abrir com carregamento ilegível gravado', function (): void {
+    gravarConfiguracao('tabela_carregamento', 'xpto');
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->assertSchemaStateSet(['tabela_carregamento' => 'paginacao']);
+})->group('kit');
+
+it('[CT-13] grava os três interruptores e os alinha aos consumidores', function (): void {
+    gravarConfiguracao('tabela_carregamento', 'paginacao');
+    gravarConfiguracao('visoes_de_tabela', false);
+    gravarConfiguracao('visoes_de_tabela_compartilhadas', false);
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['tabela_carregamento' => 'botao', 'visoes_de_tabela' => true])
+        ->fillForm(['visoes_de_tabela_compartilhadas' => true])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(configuracaoGravada('tabela_carregamento'))->toBe('botao');
+    expect(configuracaoGravada('visoes_de_tabela'))->toBeTrue();
+    expect(configuracaoGravada('visoes_de_tabela_compartilhadas'))->toBeTrue();
+
+    alinharConfiguracoesDoKit();
+
+    expect(config('kit.tabelas.carregamento'))->toBe('botao');
+    expect(config('kit.tabelas.visoes_salvas'))->toBeTrue();
+    expect(config('remember-table.allow_public_views'))->toBeTrue();
+})->group('kit');
+
+it('[CT-14] recusa carregamento fora do vocabulário sem gravar os interruptores', function (mixed $valor): void {
+    gravarConfiguracao('tabela_carregamento', 'rolagem');
+    gravarConfiguracao('visoes_de_tabela', false);
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->set('data.tabela_carregamento', $valor)
+        ->set('data.visoes_de_tabela', true)
+        ->call('save')
+        ->assertHasFormErrors(['tabela_carregamento']);
+
+    expect(configuracaoGravada('tabela_carregamento'))->toBe('rolagem');
+    expect(configuracaoGravada('visoes_de_tabela'))->toBeFalse();
+})->with([
+    '"xpto" | fora do vocabulário' => ['xpto'],
+    '"scroll" | valor do pacote'   => ['scroll'],
+    '["rolagem"] | tipo errado'    => [['rolagem']],
+])->group('kit');
+
+it('[CT-15] desligar as visões grava também o compartilhamento desligado', function (): void {
+    gravarConfiguracao('tabela_carregamento', 'rolagem');
+    gravarConfiguracao('visoes_de_tabela', true);
+    gravarConfiguracao('visoes_de_tabela_compartilhadas', true);
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['visoes_de_tabela' => false])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(configuracaoGravada('visoes_de_tabela'))->toBeFalse();
+    expect(configuracaoGravada('visoes_de_tabela_compartilhadas'))->toBeFalse();
+    expect(configuracaoGravada('tabela_carregamento'))->toBe('rolagem');
+})->group('kit');
+
+it('[CT-16] cada interruptor gravado muda o consumidor no mesmo processo', function (string $propriedade, mixed $antes, mixed $depois, mixed $efeitoAntes, mixed $efeitoDepois): void {
+    $this->actingAs(usuarioDoKit('admin', 'ana@example.com'));
+    concederVisoesDeTabela('admin');
+    gravarConfiguracao('visoes_de_tabela', true);
+    gravarConfiguracao($propriedade, $antes);
+    alinharConfiguracoesDoKit();
+    noPainelBootado('admin');
+
+    $observarConsumidor = function (mixed $esperado) use ($propriedade): void {
+        if ($propriedade === 'tabela_carregamento') {
+            $tabela   = Table::make(new ListUsers);
+            $continuo = app(InfiniteScrollRegistry::class)->get($tabela);
+
+            expect($continuo?->mode->value)->toBe($esperado);
+
+            return;
+        }
+
+        $listagem = Livewire::test(ListUsers::class);
+
+        if ($propriedade === 'visoes_de_tabela') {
+            $esperado ? $listagem->assertSee('Visões') : $listagem->assertDontSee('Visões');
+            expect($listagem->instance()->getTableViewActions() !== [])->toBe($esperado);
+
+            return;
+        }
+
+        $listagem->mountAction('saveTableView');
+        $esperado
+            ? $listagem->assertSchemaComponentVisible('is_public', 'mountedActionSchema0', 'form')
+            : $listagem->assertSchemaComponentHidden('is_public', 'mountedActionSchema0', 'form');
+    };
+
+    $observarConsumidor($efeitoAntes);
+
+    gravarConfiguracao($propriedade, $depois);
+    alinharConfiguracoesDoKit();
+
+    $observarConsumidor($efeitoDepois);
+})->with([
+    'tabela_carregamento | paginacao | rolagem | a tabela de /admin/users | sem carregamento contínuo | carregamento contínuo em Scroll'                                    => ['tabela_carregamento', 'paginacao', 'rolagem', null, 'scroll'],
+    'tabela_carregamento | rolagem | paginacao | a tabela de /admin/users | carregamento contínuo em Scroll | sem carregamento contínuo'                                    => ['tabela_carregamento', 'rolagem', 'paginacao', 'scroll', null],
+    'tabela_carregamento | botao | rolagem | a tabela de /admin/users | carregamento contínuo em Button | carregamento contínuo em Scroll'                                  => ['tabela_carregamento', 'botao', 'rolagem', 'button', 'scroll'],
+    'visoes_de_tabela | false | true | a listagem /admin/users da Ana (com permissão) | sem o botão Visões | o botão Visões'                                                => ['visoes_de_tabela', false, true, false, true],
+    'visoes_de_tabela_compartilhadas | false | true | o formulário de saveTableView (visões ligadas) | sem o campo Compartilhar com todos | o campo Compartilhar com todos' => ['visoes_de_tabela_compartilhadas', false, true, false, true],
+])->group('kit');
+
+it('[CT-58] o compartilhamento acompanha as visões no formulário sem salvar', function (bool $antes, bool $depois): void {
+    $this->actingAs(usuarioDoKit('admin'));
+
+    $tela = Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['visoes_de_tabela' => $antes])
+        ->fillForm(['visoes_de_tabela' => $depois]);
+
+    $depois
+        ? $tela->assertSchemaComponentVisible('visoes_de_tabela_compartilhadas', 'form')
+        : $tela->assertSchemaComponentHidden('visoes_de_tabela_compartilhadas', 'form');
+})->with([
+    'desligadas | liga | visível' => [false, true],
+    'ligadas | desliga | oculto'  => [true, false],
+])->group('kit');
+
+it('[CT-60] a aba Tabelas oferece os rótulos combinados e explica que desligar não apaga', function (string $valor, string $rotulo): void {
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->assertSee('Tabelas')
+        ->assertSee('Desligar esconde as visões sem apagá-las')
+        ->assertFormFieldExists('tabela_carregamento', function (Select $campo) use ($valor, $rotulo): bool {
+            expect($campo->getOptions()[$valor] ?? null)->toBe($rotulo);
+
+            return true;
+        });
+})->with([
+    'paginacao | Paginação — as páginas numeradas de hoje'                  => ['paginacao', 'Paginação — as páginas numeradas de hoje'],
+    'rolagem | Rolagem infinita — o próximo bloco carrega ao chegar ao fim' => ['rolagem', 'Rolagem infinita — o próximo bloco carrega ao chegar ao fim'],
+    'botao | Botão "Carregar mais" — o próximo bloco carrega no clique'     => ['botao', 'Botão "Carregar mais" — o próximo bloco carrega no clique'],
+])->group('kit');
+
+it('[CT-76] salvar outro campo regrava paginacao quando o carregamento gravado é ilegível', function (): void {
+    gravarConfiguracao('tabela_carregamento', 'xpto');
+    $this->actingAs(usuarioDoKit('admin'));
+
+    Livewire::test(ConfiguracoesDoKit::class)
+        ->fillForm(['nome_da_aplicacao' => 'Projeto Novo'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(configuracaoGravada('nome_da_aplicacao'))->toBe('Projeto Novo');
+    expect(configuracaoGravada('tabela_carregamento'))->toBe('paginacao');
+})->group('kit');

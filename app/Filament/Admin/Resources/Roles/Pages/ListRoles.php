@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Resources\Roles\Pages;
 
 use App\Filament\Admin\Resources\Roles\RoleResource;
+use App\Filament\Concerns\VisoesDeTabela;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListRoles extends ListRecords
 {
+    use VisoesDeTabela;
+
     protected static string $resource = RoleResource::class;
 
     protected function getActions(): array
     {
         return [
+            ...$this->getTableViewActions(),
             CreateAction::make(),
         ];
     }

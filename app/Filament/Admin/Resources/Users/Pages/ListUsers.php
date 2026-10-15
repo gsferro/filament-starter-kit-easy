@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Users\Pages;
 
 use App\Filament\Admin\Resources\Users\UserResource;
+use App\Filament\Concerns\VisoesDeTabela;
 use Asmit\ResizedColumn\HasResizableColumn;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
@@ -12,12 +13,14 @@ use Filament\Support\Icons\Heroicon;
 class ListUsers extends ListRecords
 {
     use HasResizableColumn;
+    use VisoesDeTabela;
 
     protected static string $resource = UserResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->getTableViewActions(),
             CreateAction::make(),
 
             /*

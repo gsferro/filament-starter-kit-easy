@@ -587,7 +587,7 @@ final class DockDeAtalhos
 
         return [
             'url'            => $url,
-            'rotulo'         => (string) $destino::getNavigationLabel(),
+            'rotulo'         => self::textoDoRotulo($destino::getNavigationLabel()),
             'rotuloCompleto' => self::rotuloNoCatalogo($painel, $organizacao, $destino),
             'icone'          => $destino::getNavigationIcon(),
         ];
@@ -599,7 +599,7 @@ final class DockDeAtalhos
      *
      * Nesse caso não há o que conferir nem o que trocar. O Filament registra `Authenticate`,
      * `IdentifyTenant` e `SetUpPanel` como middleware PERSISTENTE do Livewire
-     * (`vendor/filament/filament/src/FilamentServiceProvider.php:addPersistentMiddleware:106`),
+     * (`vendor/filament/filament/src/FilamentServiceProvider.php:addPersistentMiddleware:128`),
      * então eles rodam na página e em todo update do componente do dock: `Authenticate` já
      * respondeu 403 a quem não abre o painel (`vendor/filament/filament/src/Http/Middleware/Authenticate.php:canAccessPanel:37`),
      * `IdentifyTenant` já respondeu 404 a quem não acessa a organização da rota e a fixou
@@ -811,17 +811,23 @@ final class DockDeAtalhos
 
         $segmentos = [
             Paineis::rotulo($painel),
-            $organizacao === null ? '' : Filament::getTenantName($organizacao),
+            $organizacao === null ? '' : self::textoDoRotulo(Filament::getTenantName($organizacao)),
             match (true) {
                 is_string($grupo)                                           => $grupo,
-                $grupo instanceof HasLabel && is_string($grupo->getLabel()) => $grupo->getLabel(),
+                $grupo instanceof HasLabel                                  => self::textoDoRotulo($grupo->getLabel()),
                 $grupo instanceof UnitEnum                                  => (string) ($grupo->value ?? $grupo->name),
                 default                                                     => '',
             },
-            (string) $destino::getNavigationLabel(),
+            self::textoDoRotulo($destino::getNavigationLabel()),
         ];
 
         return implode(' — ', array_filter($segmentos, static fn (string $segmento): bool => $segmento !== ''));
+    }
+
+    /** Rótulo do Filament 5.10 (`string|Htmlable`) como texto — `Htmlable` vira o HTML dele, como o Blade faria. */
+    private static function textoDoRotulo(string|Htmlable|null $rotulo): string
+    {
+        return $rotulo instanceof Htmlable ? $rotulo->toHtml() : (string) $rotulo;
     }
 
     /**

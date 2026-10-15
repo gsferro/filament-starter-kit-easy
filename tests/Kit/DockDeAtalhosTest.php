@@ -1019,10 +1019,9 @@ function dockNaUrlAtual(string $url): Testable
 function avisosDoLimiteDoDock(): array
 {
     return array_values(array_filter(
-        // O dehydrate do Livewire move as notificações para `claimed_notifications`
-        // (vendor/filament/notifications/src/NotificationsServiceProvider.php), e o `assertNotified()`
-        // as consome: leia antes dele, nas duas chaves.
-        [...session()->get('filament.notifications', []), ...session()->get('filament.claimed_notifications', [])],
+        // Lidas sem consumir (Filament 5.10 guarda em `NotificationMailbox`, não na sessão):
+        // o `assertNotified()` esvazia a caixa, então leia antes dele.
+        avisosDoFilament(),
         static fn (array $aviso): bool => str_contains((string) ($aviso['title'] ?? '').' '.(string) ($aviso['body'] ?? ''), '10'),
     ));
 }
@@ -1101,7 +1100,7 @@ it('[CT-33] adicionar a página atual respeita o teto de 10 sem mudar a ordem', 
     $antes = array_slice(array_reverse($outros), 0, $quantos);
     gravarAtalhos($bruno, $antes);
     app()->instance('request', Request::create('/'));
-    session()->forget('filament.notifications');
+    limparAvisosDoFilament();
 
     $dock = dockNaUrlAtual(UserResourceDoAdmin::getUrl('index', panel: 'admin'))
         ->callAction('adicionarPaginaAtual');
@@ -1130,7 +1129,7 @@ it('[CT-34] o slideover aceita até 10 e recusa 11 com aviso sem substituir A', 
     expect($envio)->toHaveCount($quantos)->not->toContain($a);
     gravarAtalhos($bruno, [$a]);
     app()->instance('request', Request::create('/'));
-    session()->forget('filament.notifications');
+    limparAvisosDoFilament();
 
     $dock = dockNaPagina('admin')->callAction('gerenciarAtalhos', ['atalhos' => $envio]);
 
@@ -1436,7 +1435,7 @@ it('[CT-47] oculto e inválida gravada ocupam vaga no teto e a inválida sai ao 
     $entrada      = $extra === 'oculta' ? $oculto : 'https://exemplo.invalido/x';
     $antes        = [...$selecionados, $entrada];
     gravarAtalhos($bruno, $antes);
-    session()->forget('filament.notifications');
+    limparAvisosDoFilament();
 
     if ($operacao === 'adicionar') {
         app()->instance('request', Request::create('/'));
@@ -1651,11 +1650,11 @@ it('[CT-75] adicionar uma página que deixou de poder ser adicionada avisa sem g
     } else {
         semAPermissao('admin', 'ViewAny:User');
     }
-    session()->forget(['filament.notifications', 'filament.claimed_notifications']);
+    limparAvisosDoFilament();
 
     chamarActionDoDockDireto($dock, 'adicionarPaginaAtual');
 
-    $avisos = [...session()->get('filament.notifications', []), ...session()->get('filament.claimed_notifications', [])];
+    $avisos = avisosDoFilament();
     expect(atalhosGravados($bruno))->toBe($esperados);
     expect(array_filter($avisos, static fn (array $aviso): bool => ($aviso['status'] ?? null) === 'warning'))->not->toBeEmpty();
     $dock->assertNotified();

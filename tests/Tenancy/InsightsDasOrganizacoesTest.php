@@ -33,6 +33,12 @@ use Livewire\Livewire;
  */
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    // Desde o Filament 5.10 todo widget aborta 403 no `mount()` quando `canView()` é falso
+    // (`vendor/filament/widgets/src/Concerns/CanAuthorizeAccess.php:mount():16`), e `Livewire::test()`
+    // devolve a página de erro em vez do componente. Os casos que medem DADO montam o widget
+    // como alguém que pode vê-lo; os que afirmam sobre acesso trocam de usuário.
+    $this->actingAs(usuarioComPapel('admin', null, 'leitor-dos-widgets@example.com'));
 });
 
 /** Nome da tabela de log, que o pacote permite renomear. */

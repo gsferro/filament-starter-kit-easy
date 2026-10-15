@@ -7,6 +7,7 @@ use App\Filament\Admin\Resources\Tenants\Widgets\AcessosPorPainel;
 use App\Filament\Admin\Resources\Tenants\Widgets\AtualizacoesDasOrganizacoes;
 use App\Filament\Admin\Resources\Tenants\Widgets\OrganizacoesStats;
 use App\Filament\Admin\Resources\Tenants\Widgets\UsuariosUnicosPorOrganizacao;
+use App\Filament\Concerns\VisoesDeTabela;
 use App\Filament\Exports\TenantExporter;
 use Asmit\ResizedColumn\HasResizableColumn;
 use Filament\Actions\CreateAction;
@@ -16,6 +17,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListTenants extends ListRecords
 {
     use HasResizableColumn;
+    use VisoesDeTabela;
 
     protected static string $resource = TenantResource::class;
 
@@ -29,6 +31,7 @@ class ListTenants extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->getTableViewActions(),
             CreateAction::make()->label('Novo registro'),
 
             ExportAction::make()

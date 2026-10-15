@@ -4,6 +4,7 @@ namespace App\Filament\Admin\Resources\Convites\Pages;
 
 use App\Filament\Admin\Resources\Convites\ConviteResource;
 use App\Filament\Concerns\ConvidaEmMassa;
+use App\Filament\Concerns\VisoesDeTabela;
 use App\Models\Convite;
 use App\Support\AdministradorDaInstalacao;
 use App\Support\Papeis;
@@ -18,12 +19,14 @@ use Illuminate\Database\Eloquent\Model;
 class ListConvites extends ListRecords
 {
     use ConvidaEmMassa;
+    use VisoesDeTabela;
 
     protected static string $resource = ConviteResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->getTableViewActions(),
             CreateAction::make(),
 
             /*

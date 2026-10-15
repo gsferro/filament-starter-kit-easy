@@ -674,3 +674,22 @@ it('[CT-08] nenhum @phpstan-ignore novo nasce em todo o escopo analisado, e os p
     expect($totalPhpstanAssert)->toBe(0);
     expect($totalChamadaAssert)->toBe(0);
 })->group('kit');
+
+it('[CT-48] inclui a extensão de macros só em dev sem acrescentar exceções no PHPStan', function (): void {
+    $neon     = str_replace("\r\n", "\n", (string) file_get_contents(base_path('phpstan.neon')));
+    $json     = configuracaoEfetivaDoPhpstan();
+    $composer = composerDoKit();
+
+    preg_match('/^includes:\n(.*?)(?=^\S|\z)/ms', $neon, $includes);
+    preg_match_all('/^[ \t]+-[ \t]+([^\n#]+)/m', $includes[1] ?? '', $entradas);
+
+    expect(array_map(trim(...), $entradas[1]))->toContain('vendor/happenv-com/filament-phpstan-macros/extension.neon');
+    expect($json['ignoreErrors'])->toHaveCount(3);
+
+    foreach ($json['ignoreErrors'] as $entrada) {
+        expect(json_encode($entrada, JSON_THROW_ON_ERROR))->not->toContain('infiniteScroll');
+    }
+
+    expect($composer['require-dev'])->toHaveKey('happenv-com/filament-phpstan-macros');
+    expect($composer['require'])->not->toHaveKey('happenv-com/filament-phpstan-macros');
+})->group('kit');

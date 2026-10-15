@@ -116,6 +116,11 @@ class PapeisSeeder extends Seeder
                      * tela de papéis, se quiser.
                      */
                     ->reject(fn (string $permissao): bool => $permissao === 'Usar:Dock')
+                    /*
+                     * `Usar:VisoesDeTabela` segue o dock (P-01, wiki `estudo-de-pacotes-rodada-3`):
+                     * nasce nos papéis de administração; o usuário comum recebe pela tela de papéis.
+                     */
+                    ->reject(fn (string $permissao): bool => $permissao === 'Usar:VisoesDeTabela')
             );
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -260,6 +265,11 @@ class PapeisSeeder extends Seeder
              * (`kit.dock.paineis`). O `panel_user` a perde na subtração explícita do `run()`.
              */
             'Usar:Dock' => ['app', 'admin', 'infra'],
+            /*
+             * `Usar:VisoesDeTabela` vale para os três painéis — as dez listagens do kit estão
+             * nos três. O `panel_user` a perde na subtração explícita do `run()`.
+             */
+            'Usar:VisoesDeTabela' => ['app', 'admin', 'infra'],
         ];
     }
 

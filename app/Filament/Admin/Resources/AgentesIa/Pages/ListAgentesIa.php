@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\AgentesIa\Pages;
 
 use App\Filament\Admin\Resources\AgentesIa\AgenteIaResource;
+use App\Filament\Concerns\VisoesDeTabela;
 use App\Filament\Exports\AgenteIaExporter;
 use App\Filament\Imports\AgenteIaImporter;
 use Asmit\ResizedColumn\HasResizableColumn;
@@ -14,6 +15,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListAgentesIa extends ListRecords
 {
     use HasResizableColumn;
+    use VisoesDeTabela;
 
     protected static string $resource = AgenteIaResource::class;
 
@@ -28,6 +30,7 @@ class ListAgentesIa extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->getTableViewActions(),
             CreateAction::make()->label('Novo agente'),
 
             ImportAction::make()

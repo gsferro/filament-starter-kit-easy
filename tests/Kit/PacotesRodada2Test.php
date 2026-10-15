@@ -17,12 +17,6 @@ use Composer\Semver\Semver;
  * `wikis/specs/feat/estudo-de-pacotes-rodada-2/estudo-de-pacotes-rodada-2/04-casos-de-teste.md`.
  */
 
-/** @return array<string, mixed> */
-function composerDoKit(): array
-{
-    return json_decode((string) file_get_contents(base_path('composer.json')), true, flags: JSON_THROW_ON_ERROR);
-}
-
 /**
  * Os dez pacotes avaliados na rodada, com o veredito VIGENTE de cada um.
  *

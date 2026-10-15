@@ -3,6 +3,7 @@
 namespace App\Filament\App\Resources\Projetos\Pages;
 
 use App\Filament\App\Resources\Projetos\ProjetoResource;
+use App\Filament\Concerns\VisoesDeTabela;
 use App\Filament\Exports\ProjetoExporter;
 use App\Filament\Imports\ProjetoImporter;
 use Asmit\ResizedColumn\HasResizableColumn;
@@ -15,6 +16,7 @@ use Filament\Resources\Pages\ListRecords;
 class ListProjetos extends ListRecords
 {
     use HasResizableColumn;
+    use VisoesDeTabela;
 
     protected static string $resource = ProjetoResource::class;
 
@@ -44,6 +46,7 @@ class ListProjetos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->getTableViewActions(),
             CreateAction::make(),
 
             ImportAction::make()

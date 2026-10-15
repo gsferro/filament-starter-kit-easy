@@ -396,14 +396,14 @@ it('[CT-44] favorito de outra organização sobrevive ao salvar e ocupa vaga no 
         $antes = [$chaves['PA'], $chaves['PG']];
     }
     gravarAtalhos($usuario, $antes);
-    session()->forget(['filament.notifications', 'filament.claimed_notifications']);
+    limparAvisosDoFilament();
     $dock = abrirDockTenancy('app', $acme, ProjetoResource::class);
 
     if ($operacao === 'teto') {
         $dock->callAction('adicionarPaginaAtual');
 
-        // Antes do `assertNotified()`, que consome a sessão; o dehydrate move para `claimed_notifications`.
-        $avisos = [...session()->get('filament.notifications', []), ...session()->get('filament.claimed_notifications', [])];
+        // Antes do `assertNotified()`, que esvazia a caixa de notificações (Filament 5.10).
+        $avisos = avisosDoFilament();
         expect(array_filter($avisos, static fn (array $aviso): bool => str_contains(($aviso['title'] ?? '').' '.($aviso['body'] ?? ''), '10')))->not->toBeEmpty();
         $dock->assertNotified();
     } else {
@@ -666,11 +666,11 @@ it('[CT-74] salvar descarta organização excluída e libera sua vaga sem aviso 
     gravarAtalhos($usuario, $antes);
     $globex->delete();
     $dock = abrirDockTenancy('app', $acme);
-    session()->forget(['filament.notifications', 'filament.claimed_notifications']);
+    limparAvisosDoFilament();
 
     $dock->callAction('gerenciarAtalhos', ['atalhos' => $envio])->assertHasNoErrors();
 
-    $avisos = [...session()->get('filament.notifications', []), ...session()->get('filament.claimed_notifications', [])];
+    $avisos = avisosDoFilament();
     expect(array_filter($avisos, static fn (array $aviso): bool => str_contains(($aviso['title'] ?? '').' '.($aviso['body'] ?? ''), '10')))->toBe([]);
     expect(atalhosGravados($usuario))->toBe($envio);
 })->with([

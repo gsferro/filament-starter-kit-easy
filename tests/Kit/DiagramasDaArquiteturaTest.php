@@ -1165,13 +1165,16 @@ it('[CT-56] o extrator acha as três formas de default desligado, só no código
         'KIT_CABECALHO_NOME_DO_PROJETO', 'KIT_CABECALHO_NOME_DO_PAINEL', 'KIT_CABECALHO_LOGO_DA_MARCA', 'KIT_CABECALHO_USUARIO',
         // main/ocultar-seletor-de-organizacao-unica
         'KIT_TENANCY_OCULTAR_SELETOR_UNICO',
+        // feat/estudo-de-pacotes-rodada-3: visões salvas de tabela (o carregamento não é booleano;
+        // o compartilhamento mora em config/remember-table.php)
+        'KIT_TABELA_VISOES_SALVAS',
     ];
 
     foreach ($esperadas as $chave) {
         test()->assertContains($chave, $doKitPhp, "config/kit.php deveria conter {$chave} extraída como desligada por padrão");
     }
 
-    expect($doKitPhp)->toHaveCount(21, 'piso das 21 chaves — extraído: '.implode(', ', $doKitPhp));
+    expect($doKitPhp)->toHaveCount(22, 'piso das 22 chaves — extraído: '.implode(', ', $doKitPhp));
 
     // Mapa da guarda = extraído (R57 usa exatamente este conjunto).
     expect(array_keys(mapaOptInDaGuarda()))->toEqualCanonicalizing($doKitPhp);
@@ -1206,6 +1209,8 @@ function mapaOptInDaGuarda(): array
         // ocultar-seletor-de-organizacao-unica — idem às do cabeçalho: a assinatura existe para
         // o dia em que um diagrama desenhar o seletor/organizações.
         'KIT_TENANCY_OCULTAR_SELETOR_UNICO' => ['SeletorDeOrganizacao', 'ocultar o seletor', 'seletor de organização'],
+        // estudo-de-pacotes-rodada-3 — idem: nenhum diagrama desenha as visões salvas hoje.
+        'KIT_TABELA_VISOES_SALVAS'          => ['VisoesDeTabela', 'visões salvas', 'saved views', 'remember-table'],
     ];
 }
 
