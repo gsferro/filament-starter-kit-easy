@@ -11,6 +11,10 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   como separador (o mesmo rótulo do Panel Switch); dentro de cada grupo, na ordem escolhida pelo
   usuário. A ordem gravada não muda. No layout barra, o separador é a linha vertical entre os
   grupos. Wiki `dock-de-acoes-rapidas`, Adendo 6.
+- Dock de atalhos com multi-tenant: os favoritos do painel da aplicação ficam um grupo por
+  organização, com o separador "{painel} · {organização}", na ordem em que cada organização
+  aparece entre os favoritos, sem consulta nova. Cada favorito mostra no tooltip o caminho para
+  onde leva. Wiki `pilha-de-botoes-flutuantes`, Adendos 7 e 8.
 
 ### Corrigido
 
@@ -20,8 +24,26 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   usuário conseguir rodar o `composer require` que o próprio update pede. Agora os painéis sobem sem
   o dock, e a seção "Dock de atalhos" da aba Kit de `/admin/configuracoes-da-aplicacao` diz o que
   falta instalar.
+- Botões flutuantes do canto inferior direito em pilha: com o dock de atalhos nesse canto (ou solto
+  sobre o lugar dos botões), o chat do assistente sobe para logo acima do dock e o "Voltar ao topo"
+  para acima do chat, centralizados no mesmo eixo e a 16 px um do outro. Antes, o dock cobria o
+  "Voltar ao topo" (e o chat, no `/app`). Com o leque do dock aberto ali, os dois somem até ele
+  fechar; no layout barra, ficam visíveis acima da barra. Sem o dock, nada muda. Wiki
+  `pilha-de-botoes-flutuantes`.
+- O chat do assistente volta a aparecer no `/app`: desde o esqueleto do kit ele não tinha estilo
+  nos painéis, e o botão saía como um `<button>` cru no fim da página, fora da tela. Botão e
+  slide-over ganham a folha `assistente-chat.css`, escopada no componente e no tema do painel,
+  com o título a pelo menos 4,5:1 de contraste nos dois temas.
+- Dock de atalhos e chat do assistente deixam de ser entregues na tela de bloqueio
+  (`/screen/lock`), nas telas de login (dos painéis e unificado, inclusive a escolha de painel) e
+  nas telas do Auth Designer (recuperar senha, cadastro, convite, dois fatores). Numa sessão
+  bloqueada, o dock mostrava os favoritos e o chat os títulos das conversas a quem estivesse diante
+  da tela. Destravar devolve os dois.
 
 ### Documentação
+
+- `recursos/dock-de-atalhos` (pt/en): a pilha dos botões flutuantes no canto inferior direito, as
+  telas sem dock nem chat, o grupo por organização e o tooltip com o caminho.
 
 - `comecar/atualizando-o-projeto` (pt/en) registra o `composer require` do pacote do dock para quem
   atualiza para a v0.48.0.

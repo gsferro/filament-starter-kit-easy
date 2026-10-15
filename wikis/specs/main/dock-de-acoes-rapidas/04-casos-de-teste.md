@@ -1232,7 +1232,7 @@ Nota CT-60: U é de painel diferente do painel em que o slideover abre e foi gra
       E os links do dock renderizado em seguida aparecem na ordem A, B, D, C (o /admin agrupado antes do /infra)
 ```
 
-> *(alterado em 2026-10-15: Adendo 6, RQ-36)* A exibição no dock passou a agrupar os favoritos por
+> *(alterado em 2026-10-14: Adendo 6, RQ-36)* A exibição no dock passou a agrupar os favoritos por
 > painel, com o rótulo do painel como separador. A ordem **gravada** segue a do usuário e continua
 > asserida em CT-48 e CT-49; a ordem **exibida** é a gravada, agrupada por painel (app → admin → infra).
 > O M95 deixa de contar "agrupa por painel" como implementação errada. Casos novos em
@@ -1243,7 +1243,7 @@ Nota CT-60: U é de painel diferente do painel em que o slideover abre e foi gra
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M95 | dock ordena por rótulo ou pela ordem do catálogo, ou não respeita a ordem gravada dentro do grupo do painel *(alterado em 2026-10-15: Adendo 6 — agrupar por painel passou a ser o comportamento pedido)* | CT-48 | linha [B, C, A]: no grupo /admin, B antes de A; o mutante exibe A antes de B |
+| M95 | dock ordena por rótulo ou pela ordem do catálogo, ou não respeita a ordem gravada dentro do grupo do painel *(alterado em 2026-10-14: Adendo 6 — agrupar por painel passou a ser o comportamento pedido)* | CT-48 | linha [B, C, A]: no grupo /admin, B antes de A; o mutante exibe A antes de B |
 | M96 | gravação compara só o conjunto e ignora mudança de ordem ("nada mudou") | CT-48 | linha [B, C, A]: gravados B, C, A; o mutante mantém C, A, B |
 | M97 | gravação ordena as chaves (ordem de seleção perdida) | CT-48 | linha [B, C, A]: ordem B, C, A; o mutante grava ordenado |
 | M98 | adicionar a página reconstrói a lista na ordem do catálogo | CT-49 | [C, A, B, D]; o mutante reordena |

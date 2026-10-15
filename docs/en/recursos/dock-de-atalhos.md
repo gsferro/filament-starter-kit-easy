@@ -29,10 +29,17 @@ On the panels ticked in *Panels where the dock appears*, in the **Kit** tab of
 `/admin/configuracoes-da-aplicacao`. On a new installation **no** panel is ticked: the dock shows up
 nowhere until someone turns it on. See the options in [Configuration](#configuration).
 
+The dock and the assistant chat **do not show up** on the lock screen (`/screen/lock`), on the login
+screens (each panel's and the unified one, including the panel choice) or on the screens that use
+the Auth Designer layout (password recovery, sign-up, invitation registration, two-factor): in a
+locked session they would hand the favourites and the conversation titles to whoever is in front of
+the screen. Once unlocked, both come back.
+
 ## Using the dock
 
-1. Click the floating button: the shortcuts open **grouped by panel**, each group with the panel name as a separator, and in the order you chose within each group.
-2. Click a favourite to go to its screen.
+1. Click the floating button: the shortcuts open **grouped by panel**, each group with the panel name as a separator, and in the order you chose within each group. With multi-tenancy on, the application panel's favourites form **one group per organisation**, with the separator "{panel} · {organisation}" — even when there is only one organisation —, in the order each organisation first appears among your favourites.
+2. Hover over a favourite to see, in its tooltip, the path it leads to.
+3. Click a favourite to go to its screen.
 
 | Layout | How it looks |
 |---|---|
@@ -110,6 +117,20 @@ The default **layout** and **style** are set in the kit settings. The user chang
 | `outline` | Contorno |
 | `contrast` | Contraste |
 | `tinted` | Tingido |
+
+## Alongside the other floating buttons
+
+The bottom-right corner also holds the **"Back to top"** button (on every scrolled panel screen)
+and, in the application panel, the **assistant chat**. When the dock sits in that corner, or is
+dropped over where those buttons are, the three form a stack:
+
+- the dock stays where the user put it;
+- the chat moves up to just above the dock, and "Back to top" to above the chat;
+- all three are centred on the same vertical axis, **16 px** apart;
+- with the dock fan **open**, the chat and "Back to top" disappear until the dock closes;
+- in the **bar** layout, they stay visible, stacked above the bar.
+
+With the dock in another corner, or away from those buttons, nothing changes: each one stays where it always is.
 
 ## Dark theme
 
