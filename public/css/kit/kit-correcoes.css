@@ -107,6 +107,26 @@
 .environment-indicator.fi-badge { --text: var(--color-700); }
 
 /*
+| O dropdown das ações do cabeçalho da página acima da barra de ferramentas da tabela.
+|
+| O `asmit/resized-column` eleva o contêiner do cabeçalho da tabela para que o
+| cabeçalho fixo das colunas passe por cima do conteúdo ao rolar:
+| `.fi-ta-ctn .fi-ta-header-ctn { position: relative; z-index: 21 }`
+| (public/css/asmit/resized-column/resized-column.css). O painel de todo dropdown do
+| Filament fica em `z-index: 20` (`.fi-dropdown-panel`, app.css do Filament 5.10) — um
+| abaixo —, então um `ActionGroup` do cabeçalho da PÁGINA (o botão "Visões" das visões
+| salvas, por exemplo) abre por baixo do campo de busca da tabela: o item fica visível
+| e inclicável. Medido com Playwright em 2026-10-14 (`CapturaDeArteTest`, quadro
+| `visoes-aberta`): o clique em "Salvar como nova visão" estourava o timeout.
+|
+| 22: um acima do contêiner da tabela e ainda abaixo do chrome do Filament (topbar e
+| sidebar, 30), que é o teto que o próprio comentário do plugin respeita. Vale para
+| qualquer dropdown fora da tabela; os de dentro dela (gerenciador de colunas, filtros)
+| vivem no contexto de empilhamento do contêiner e não mudam.
+*/
+.fi-dropdown-panel { z-index: 22; }
+
+/*
 | Contraste do item ATIVO da navegação no topo (`->topNavigation()`).
 |
 | Só tem efeito em painel configurado com navegação no topo. Com o menu lateral,

@@ -151,6 +151,7 @@ class KitUpdate extends Command
         'app/Support',
         'app/Traits',
         'config/kit.php',
+        'config/remember-table.php',
         /*
          * Configs de pacote que o kit AJUSTOU — não são o publish cru do vendor.
          *

@@ -423,6 +423,14 @@ return [
          * usuário comum pela tela de papéis.
          */
         'usar:dock' => 'Usar o dock de atalhos',
+        /*
+         * Quem SALVA, atualiza, gerencia e limpa visões de tabela (sehsah/filament-remember-table):
+         * o `->authorize()` das quatro Actions em `App\Filament\Concerns\VisoesDeTabela`. Aplicar
+         * uma visão que o usuário já vê não exige (D6). Vale nos três painéis e é subtraída do
+         * `panel_user` no `PapeisSeeder` (P-01): o administrador concede pela tela de papéis.
+         * Wiki `estudo-de-pacotes-rodada-3`.
+         */
+        'usar:visoes_de_tabela' => 'Salvar e gerenciar visões de tabela',
     ],
 
     /*

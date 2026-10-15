@@ -6,6 +6,7 @@ namespace App\Filament\Admin\Pages;
 
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
+use App\Support\CarregamentoDaTabela;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\DensidadeDoLayout;
 use App\Support\DetalheDoUsuario;
@@ -148,6 +149,28 @@ class ConfiguracoesDoKit extends SettingsPage
     }
 
     /**
+     * Dois ajustes de rodada 3 (wiki `estudo-de-pacotes-rodada-3`) antes de o spatie gravar.
+     *
+     * 1. O carregamento da tabela é coagido também na SAÍDA: um valor que escapou do Select
+     *    (payload forjado que passou pela validação de string) grava `paginacao`, nunca lixo
+     *    (P-11, P-24).
+     * 2. Compartilhar visões só existe com as visões ligadas: salvar a aba com elas desligadas
+     *    grava o compartilhamento desligado — reabrir a exposição a todos é ato explícito (P-15).
+     *    O toggle oculto não é desidratado pelo formulário, então a chave é escrita aqui.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data['tabela_carregamento']             = CarregamentoDaTabela::coagir($data['tabela_carregamento'] ?? null)->value;
+        $data['visoes_de_tabela_compartilhadas'] = (bool) ($data['visoes_de_tabela'] ?? false)
+            && (bool) ($data['visoes_de_tabela_compartilhadas'] ?? false);
+
+        return $data;
+    }
+
+    /**
      * O segredo não entra no formulário — e por isso não entra no HTML.
      *
      * Este é o primeiro dos dois pontos que impedem o vazamento descrito no campo
@@ -200,6 +223,10 @@ class ConfiguracoesDoKit extends SettingsPage
          * render.
          */
         $data['densidade_do_layout'] = DensidadeDoLayout::coagir($data['densidade_do_layout'] ?? null)->value;
+
+        // O carregamento da tabela é vocabulário fechado como a densidade: o ilegível gravado
+        // (`scroll`, `xpto`) entra coagido para `paginacao` e o Select nunca segura lixo (P-24).
+        $data['tabela_carregamento'] = CarregamentoDaTabela::coagir($data['tabela_carregamento'] ?? null)->value;
 
         // Mesmo raciocínio para o detalhe do usuário no cabeçalho: vocabulário fechado
         // (`perfil` | `email`), e `telefone` gravado à mão travaria a tela inteira.
@@ -560,6 +587,31 @@ class ConfiguracoesDoKit extends SettingsPage
                 Toggle::make('colunas_redimensionaveis')
                     ->label('Colunas arrastáveis')
                     ->helperText('Arrastar a largura das colunas. Sem efeito se o pacote resized-column for removido.'),
+
+                /*
+                 * Rodada 3 de pacotes (wiki `estudo-de-pacotes-rodada-3`). Array cru em `options()`
+                 * pelo motivo medido em `DensidadeDoLayout::opcoes()`; a coerção do valor fica em
+                 * `mutateFormDataBeforeSave()`, ao lado da densidade.
+                 */
+                Select::make('tabela_carregamento')
+                    ->label('Carregamento da tabela')
+                    ->helperText('Rolagem infinita e botão "Carregar mais" carregam um bloco por vez, do tamanho de "Linhas por página", até 500 linhas na tela; o seletor de registros por página some. Vale para toda tabela dos três painéis.')
+                    ->options(CarregamentoDaTabela::opcoes())
+                    ->selectablePlaceholder(false)
+                    // `string` explícito: payload com array passaria pelo `in()` das opções e chegaria
+                    // ao settings como `null` (`TypeError` na propriedade tipada) — ver o CT-14 da wiki.
+                    ->rule('string')
+                    ->required(),
+
+                Toggle::make('visoes_de_tabela')
+                    ->label('Visões salvas')
+                    ->helperText('Botão "Visões" nas listagens do kit: filtros, busca, ordenação, agrupamento e colunas gravados com nome, por usuário e por organização. Salvar exige a permissão Usar:VisoesDeTabela. Desligar esconde as visões sem apagá-las.')
+                    ->live(),
+
+                Toggle::make('visoes_de_tabela_compartilhadas')
+                    ->label('Compartilhar visões com todos')
+                    ->helperText('Permite marcar "Compartilhar com todos" ao salvar: a visão passa a aparecer para todo usuário do painel (na organização, para os membros dela). Só o dono a altera.')
+                    ->visible(fn (Get $get): bool => (bool) $get('visoes_de_tabela')),
             ]);
     }
 

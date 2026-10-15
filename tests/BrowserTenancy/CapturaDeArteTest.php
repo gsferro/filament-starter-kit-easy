@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Admin\Resources\Tenants\TenantResource;
+use App\Filament\Admin\Resources\Users\Pages\ListUsers as ListUsersDoAdmin;
 use App\Filament\Admin\Resources\Users\UserResource;
 use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\Infra\Pages\BackupRunsPage;
@@ -14,6 +15,7 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Support\Facades\Route;
 use Pest\Browser\Api\PendingAwaitablePage;
+use Sehsah\FilamentRememberTable\Models\TableView;
 use Tests\TenancyTestCase;
 
 /**
@@ -1122,4 +1124,227 @@ it('captura os quadros do dock de atalhos em tema escuro', function (): void {
 
 it('captura o dock de atalhos no layout barra em tema escuro', function (): void {
     capturarDockEmBarra($this, visit('/admin/organizacoes'), true, 'dock-barra-escuro');
+})->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
+| Visões salvas e carregamento contínuo (wiki estudo-de-pacotes-rodada-3)
+|--------------------------------------------------------------------------
+| Tema DECLARADO em toda visita (os cenários escuros do dock ficam logo acima e a emulação vaza).
+| Os quadros claros do clipe `visoes-de-tabela` vêm primeiro; os escuros, no fim do arquivo.
+*/
+
+/**
+ * O arranjo das visões: interruptores ligados, uma listagem com gente para filtrar e três visões
+ * gravadas — duas do próprio usuário (uma padrão) e uma compartilhada por uma colega, para a
+ * foto mostrar os badges "Padrão" e "Compartilhada".
+ *
+ * As visões entram direto pelo model do pacote, não pela tela: a tela é o que a captura mostra, e
+ * o `[CT-24]` da wiki é quem prova a gravação. `table_key` é a classe da página de listagem
+ * (`HasRememberTable::getTableViewsKey()`), e `tenant_id` fica nulo no /admin.
+ */
+function arranjarVisoesParaArte(TenancyTestCase $teste, User $usuario): void
+{
+    gravarConfiguracao('visoes_de_tabela', true);
+    gravarConfiguracao('visoes_de_tabela_compartilhadas', true);
+    alinharConfiguracoesDoKit();
+
+    $usuario->forceFill(['name' => 'Bruno Carvalho'])->save();
+
+    foreach ([['Ana Lima', 'ana@example.com'], ['Carla Souza', 'carla@example.com'], ['Diego Prado', 'diego@example.com']] as [$nome, $email]) {
+        usuarioComPapel('admin', null, $email)->forceFill(['name' => $nome])->save();
+    }
+
+    $colega = usuarioComPapel('admin', null, 'marina@example.com');
+    $colega->forceFill(['name' => 'Marina Dias'])->save();
+
+    $visao = static fn (User $dono, string $nome, array $extra = []): array => [
+        'user_type'  => $dono->getMorphClass(),
+        'user_id'    => $dono->getKey(),
+        'tenant_id'  => null,
+        'table_key'  => ListUsersDoAdmin::class,
+        'name'       => $nome,
+        'state'      => ['v' => 1, 'filters' => [], 'search' => '', 'columnSearches' => [], 'sort' => 'name:asc', 'grouping' => null, 'columns' => [], 'columnOrder' => []],
+        'is_default' => false,
+        'is_public'  => false,
+        'sort_order' => 0,
+        ...$extra,
+    ];
+
+    TableView::query()->create($visao($usuario, 'Por nome', ['is_default' => true]));
+    TableView::query()->create($visao($usuario, 'Cadastros recentes', ['sort_order' => 1, 'state' => ['v' => 1, 'sort' => 'created_at:desc']]));
+    TableView::query()->create($visao($colega, 'Administradores', ['is_public' => true]));
+
+    // Aquece o /admin, e só ele.
+    $teste->get('/admin/users');
+}
+
+/**
+ * Os quatro quadros do clipe das visões — a listagem com a visão padrão aplicada, o dropdown
+ * aberto, o modal "Salvar visão" e o modal "Gerenciar visões" —, no tema pedido. Os nomes chegam
+ * literais de quem chama: o `[CT-50]` de `tests/Kit/KitArteTest.php` procura cada quadro como
+ * string de código neste arquivo.
+ *
+ * Com a visão padrão aplicada, o botão do cabeçalho mostra o NOME dela ("Por nome"), não
+ * "Visões" — é o comportamento do pacote, e é o que a foto deve mostrar.
+ */
+function capturarQuadrosDasVisoes(TenancyTestCase $teste, PendingAwaitablePage $visita, bool $escuro, string $fechada, string $aberta, string $salvar, string $gerenciar): void
+{
+    arranjarVisoesParaArte($teste, $teste->usuario);
+
+    // O gatilho do grupo (`fi-ac-btn-group`), não o item do menu: os dois têm o texto "Por nome".
+    $botao = 'button.fi-ac-btn-group:has-text("Por nome")';
+
+    $pagina = visitarDockNoTema($visita, $escuro)
+        ->assertSee('Bruno Carvalho')
+        ->assertVisible($botao)
+        ->screenshot(fullPage: false, filename: $fechada)
+        ->click($botao)
+        ->assertSee('Salvar como nova visão')
+        ->assertSee('Compartilhada')
+        ->screenshot(fullPage: false, filename: $aberta)
+        ->click('text=Salvar como nova visão')
+        ->assertSee('Guarda os filtros, a busca, a ordenação, o agrupamento e as colunas atuais.')
+        ->screenshot(fullPage: false, filename: $salvar)
+        ->press('Cancelar')
+        ->assertDontSee('Guarda os filtros, a busca, a ordenação, o agrupamento e as colunas atuais.')
+        ->click($botao)
+        ->click('text=Gerenciar visões')
+        ->assertSee('Salvar alterações')
+        ->assertSee('Cadastros recentes');
+
+    $pagina->screenshot(fullPage: false, filename: $gerenciar);
+}
+
+it('captura os quadros das visões salvas de tabela', function (): void {
+    capturarQuadrosDasVisoes($this, visit('/admin/users'), false, 'visoes-fechada', 'visoes-aberta', 'visoes-salvar', 'visoes-gerenciar');
+})->group('browser', 'art');
+
+/**
+ * O carregamento contínuo numa listagem com mais gente do que cabe num bloco.
+ *
+ * `rolagem` carrega sozinho quando o rodapé entra na tela: o quadro mostra o rodapé já depois
+ * de um bloco a mais ("Mostrando 20 de 31") ou, se a interseção disparou de novo, o estado
+ * seguinte — a foto é ilustrativa, o `[CT-43]` e o `[CT-B01]` são quem provam o bloco. `botao`
+ * é estável: "Mostrando 10 de 31" e o botão "Carregar mais".
+ */
+function arranjarCarregamentoParaArte(TenancyTestCase $teste, string $modo): void
+{
+    gravarConfiguracao('tabela_carregamento', $modo);
+    alinharConfiguracoesDoKit();
+
+    $teste->usuario->forceFill(['name' => 'Bruno Carvalho'])->save();
+    User::factory()->count(30)->create();
+
+    $teste->get('/admin/users');
+}
+
+function capturarCarregamentoContinuo(TenancyTestCase $teste, PendingAwaitablePage $visita, bool $escuro, string $modo, string $arquivo): void
+{
+    arranjarCarregamentoParaArte($teste, $modo);
+
+    $pagina = visitarDockNoTema($visita, $escuro)
+        ->assertSee('Bruno Carvalho')
+        ->assertVisible('.fi-ta-infinite-scroll');
+
+    // Rola até o rodapé do carregamento: no modo rolagem isto dispara o próximo bloco.
+    $pagina->script("document.querySelector('.fi-ta-infinite-scroll').scrollIntoView({ block: 'end' })");
+
+    $pagina
+        ->assertSee('de 31')
+        ->wait(1)
+        ->screenshot(fullPage: false, filename: $arquivo);
+}
+
+/**
+ * Os três quadros do clipe do carregamento contínuo, no modo botão (o único cujo estado é estável
+ * entre um quadro e outro): 10 de 31 com o botão, 20 de 31 depois do primeiro clique, 30 de 31
+ * depois do segundo. Os nomes chegam literais de quem chama (`[CT-50]` de `KitArteTest`).
+ */
+function capturarQuadrosDoCarregarMais(TenancyTestCase $teste, PendingAwaitablePage $visita, bool $escuro, string $primeiro, string $segundo, string $terceiro): void
+{
+    arranjarCarregamentoParaArte($teste, 'botao');
+
+    $pagina = visitarDockNoTema($visita, $escuro)
+        ->assertSee('Bruno Carvalho')
+        ->assertVisible('.fi-ta-infinite-scroll');
+
+    $pagina->script("document.querySelector('.fi-ta-infinite-scroll').scrollIntoView({ block: 'end' })");
+
+    $pagina
+        ->assertSee('Mostrando 10 de 31')
+        ->screenshot(fullPage: false, filename: $primeiro)
+        ->press('Carregar mais')
+        ->assertSee('Mostrando 20 de 31');
+
+    $pagina->script("document.querySelector('.fi-ta-infinite-scroll').scrollIntoView({ block: 'end' })");
+
+    $pagina
+        ->screenshot(fullPage: false, filename: $segundo)
+        ->press('Carregar mais')
+        ->assertSee('Mostrando 30 de 31');
+
+    $pagina->script("document.querySelector('.fi-ta-infinite-scroll').scrollIntoView({ block: 'end' })");
+
+    $pagina->screenshot(fullPage: false, filename: $terceiro);
+}
+
+it('captura a tabela em rolagem infinita', function (): void {
+    capturarCarregamentoContinuo($this, visit('/admin/users'), false, 'rolagem', 'tabela-rolagem');
+})->group('browser', 'art');
+
+it('captura os quadros do botão Carregar mais', function (): void {
+    capturarQuadrosDoCarregarMais($this, visit('/admin/users'), false, 'tabela-carregar-mais', 'tabela-carregar-mais-2', 'tabela-carregar-mais-3');
+})->group('browser', 'art');
+
+/**
+ * A aba Tabelas das configurações com os três campos novos preenchidos, no tema pedido. O par
+ * escuro fica no FIM do arquivo (a emulação de tema vaza para o cenário seguinte).
+ */
+function capturarAbaTabelas(TenancyTestCase $teste, PendingAwaitablePage $visita, bool $escuro, string $arquivo): void
+{
+    gravarConfiguracao('tabela_carregamento', 'botao');
+    gravarConfiguracao('visoes_de_tabela', true);
+    gravarConfiguracao('visoes_de_tabela_compartilhadas', true);
+    alinharConfiguracoesDoKit();
+
+    $teste->get('/admin/configuracoes-da-aplicacao');
+
+    $pagina = visitarDockNoTema($visita, $escuro)
+        ->click('Tabelas')
+        ->assertSee('Carregamento da tabela');
+
+    $pagina->script(<<<'JS'
+        document.querySelector('[id$="tabela_carregamento"]')?.closest('.fi-fo-field')?.scrollIntoView({ block: 'center' })
+    JS);
+
+    $pagina
+        ->assertSee('Compartilhar visões com todos')
+        ->screenshot(fullPage: false, filename: $arquivo);
+}
+
+it('captura a aba Tabelas das configurações', function (): void {
+    capturarAbaTabelas($this, visit('/admin/configuracoes-da-aplicacao'), false, 'admin-configuracoes-tabelas');
+})->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
+| Visões salvas e carregamento contínuo em tema escuro — no FIM do arquivo
+|--------------------------------------------------------------------------
+*/
+
+it('captura os quadros das visões salvas de tabela em tema escuro', function (): void {
+    capturarQuadrosDasVisoes($this, visit('/admin/users'), true, 'visoes-fechada-escuro', 'visoes-aberta-escuro', 'visoes-salvar-escuro', 'visoes-gerenciar-escuro');
+})->group('browser', 'art');
+
+it('captura a tabela em rolagem infinita em tema escuro', function (): void {
+    capturarCarregamentoContinuo($this, visit('/admin/users'), true, 'rolagem', 'tabela-rolagem-escuro');
+})->group('browser', 'art');
+
+it('captura os quadros do botão Carregar mais em tema escuro', function (): void {
+    capturarQuadrosDoCarregarMais($this, visit('/admin/users'), true, 'tabela-carregar-mais-escuro', 'tabela-carregar-mais-2-escuro', 'tabela-carregar-mais-3-escuro');
+})->group('browser', 'art');
+
+it('captura a aba Tabelas das configurações em tema escuro', function (): void {
+    capturarAbaTabelas($this, visit('/admin/configuracoes-da-aplicacao'), true, 'admin-configuracoes-tabelas-escuro');
 })->group('browser', 'art');

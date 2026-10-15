@@ -52,6 +52,8 @@ invariant guard in the kit's middleware. All fixed at the source — none silenc
 > standard: if an exception is needed, it comes with the justification and with the test that
 > replaces it.
 >
+> **A Filament component macro never becomes an exception**: `happenv-com/filament-phpstan-macros` (included in `phpstan.neon`) reads the macros registered in service providers and types them as methods — that is why `$table->infiniteScroll()` is analysed with no `hasMacro()` and no `ignoreErrors`. `simpleLightbox()` stays an exception because it is registered in the plugin's `boot(Panel)`, which does not run during analysis.
+>
 > If you want to loosen it in your project, it's one line in `phpstan.neon`. But know what you're
 > trading away: the 77 errors above were all real.
 

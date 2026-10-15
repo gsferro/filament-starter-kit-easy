@@ -30,6 +30,9 @@
 | Stat card com ícone de canto e skeleton | `gsferro/filament-stat-plus-easy` |
 | Badge dentro de coluna de tabela | `awcodes/filament-badgeable-column` |
 | Coluna redimensionável | `asmit/resized-column` |
+| **Visões salvas de tabela** (recorte com nome, por usuário e organização) | `sehsah/filament-remember-table` — embrulhado em `App\Filament\Concerns\VisoesDeTabela`, opt-in em `kit.tabelas.visoes_salvas`. Nunca model/trait de visão à mão (fecha o nível (b) de `estudo-advanced-tables`) |
+| **Rolagem infinita / "Carregar mais"** em tabela | `asignua/filament-infinite-scroll` — macro aplicado em `ConfiguraFilamentGlobal`, opt-in em `kit.tabelas.carregamento` |
+| Macro de componente Filament tipado no PHPStan | `happenv-com/filament-phpstan-macros` (dev) — nunca `ignoreErrors` para macro registrado em provider |
 | Widget de funil, meta, breakdown, timeline | `laboiteacode/filament-dashboard-widgets` |
 | **Gráfico** (linha, área, barra, rosca, radial, radar) | `leandrocfe/filament-apex-charts` — nunca `<canvas>` nem Chart.js à mão |
 | **Ampliar imagem ou documento de tabela** | `solution-forest/filament-simplelightbox` — nunca modal de preview escrito à mão |

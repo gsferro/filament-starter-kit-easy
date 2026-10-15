@@ -5,6 +5,73 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-10-15
+
+### Adicionado
+
+- Visões salvas de tabela (`sehsah/filament-remember-table`): o botão *Visões* nas dez listagens do kit
+  grava filtros, busca, ordenação, agrupamento e colunas com nome, por usuário e por organização,
+  com visão padrão, compartilhamento opcional e `?view=` na URL. Nasce desligado; liga-se na aba
+  Tabelas de `/admin/configuracoes-da-aplicacao` (`KIT_TABELA_VISOES_SALVAS`,
+  `KIT_TABELA_VISOES_COMPARTILHADAS`). Exige a permissão `Usar:VisoesDeTabela` para salvar e
+  gerenciar (nas instalações novas, só os papéis de administração). Traduções pt-BR do pacote em
+  `lang/vendor/filament-remember-table/`.
+- Carregamento contínuo de tabela (`asignua/filament-infinite-scroll`): rolagem infinita ou botão
+  "Carregar mais" em toda tabela dos três painéis, um bloco do tamanho de "Linhas por página" por
+  vez, teto de 500 linhas. Nasce em paginação; muda-se na mesma aba (`KIT_TABELA_CARREGAMENTO`).
+- `happenv-com/filament-phpstan-macros` (dev): o PHPStan entende os macros de componente do
+  Filament registrados em provider — o `infiniteScroll()` é chamado direto, sem exceção.
+- Página nova no site, `recursos/visoes-de-tabela-e-carregamento` (pt/en), com capturas e GIF nos
+  dois temas; dossiê dos cinco pacotes avaliados (dois ficaram fora: `spiggle/list-view` e
+  `happenv-com/filament-saved-views`) em `wikis/specs/feat/estudo-de-pacotes-rodada-3/`.
+
+### Corrigido
+
+- Dropdown das ações do cabeçalho da página abria por baixo do campo de busca da tabela (o
+  `asmit/resized-column` eleva o cabeçalho da tabela a `z-index: 21`, acima dos `20` do painel
+  de dropdown do Filament): `resources/css/filament/kit.css` sobe o painel para `22`, ainda abaixo
+  do chrome do Filament. Visível com o botão *Visões*, mas valia para qualquer `ActionGroup` do
+  cabeçalho.
+- `tests/Kit/GraficosDoDashboardTest.php` caía com `Undefined array key "labels"` só na suíte
+  inteira: a chave de permissão do widget é estática no Shield e ficava resolvida por um teste
+  anterior, e o Filament 5.10 passou a autorizar o widget antes do `mount()`. O usuário do teste
+  agora é o super-admin do Shield e o helper confere `assertOk()` antes de ler as opções.
+
+### Alterado
+
+- Filament atualizado de 5.8.2 para 5.10.2 (dentro de `^5.8.1`): o `infinite-scroll` depende do
+  render hook `TablesRenderHook::CONTENT_AFTER`, que só existe a partir do 5.10.
+
+### Validação
+
+- Suíte local `Kit --parallel`: 4.144 testes (4.139 verdes, 3 pulados), só os dois contadores do
+  README reprovados e corrigidos (badge 2.179 (2.177 antes de CT-B02 e da captura escura da aba), 188/219 arquivos de teste); `Tenancy --parallel`:
+  616 verdes. Navegador: CT-B01 (carregamento contínuo) verde; `composer art` 36/38 (2 pulos
+  anteriores).
+- Mutação: o `pest --mutate` deu 406/406 (100 %) nas cinco classes de regra, mas o quality gate
+  provou que o número não vale no Windows (o `--filter` do mutante é truncado acima de ~8 KB e o
+  plugin conta "No tests executed!" como morto); a remedição por chunks também falhou a
+  certificação. Vale a amostragem manual do trait `VisoesDeTabela` (4 mutantes mortos pelos CTs
+  previstos, 1 equivalente) e a falsificabilidade dos CT-79/80/81 do step 9. Score completo é
+  débito para Linux/CI (`wikis/specs/feat/estudo-de-pacotes-rodada-3/`, `03`, Verificação Final).
+- Revisão do diff (step 9): 4 achados do passe de eixos e 3 da revisão cega, 2 confirmados com
+  CT que falhava antes do fix (`hidden()` em vez de `visible()` nas Actions do pacote; aliases do
+  trait protegidos, porque alias público vira método `$wire`).
+- Quality gate da feature: ver `wikis/specs/feat/estudo-de-pacotes-rodada-3/estudo-de-pacotes-rodada-3/06-relatorio-qa.md`.
+- Os quatro cenários de `wikis/checklist-de-release.md` (create-project e `kit:update`, com e
+  sem tenancy) não foram executados neste fechamento.
+
+### Atualizando
+
+- Quem atualiza pelo `kit:update` precisa instalar os dois pacotes à mão, **antes de qualquer outro
+  comando**: `composer require sehsah/filament-remember-table:^1.0 asignua/filament-infinite-scroll:^1.0`
+  (e `composer require --dev happenv-com/filament-phpstan-macros` para o PHPStan), depois
+  `php artisan filament:assets`, `php artisan migrate --force` (tabela `remember_table_views`) e os
+  dois seeders (`ShieldPermissionsSeeder`, `PapeisSeeder`) pela permissão `Usar:VisoesDeTabela`.
+  Sem o `remember-table`, todo `php artisan` falha no boot: as dez listagens usam o trait do pacote
+  (`App\Filament\Concerns\VisoesDeTabela`). Tornar o pacote opcional, como o dock ficou na
+  v0.48.1, é débito da próxima evolução.
+
 ## [0.48.1] - 2026-10-15
 
 ### Alterado

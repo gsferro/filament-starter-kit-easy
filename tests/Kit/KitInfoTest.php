@@ -185,8 +185,10 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * 62 → 63 na feature `ocultar-seletor-unico`: `ocultar_seletor_unico` (bump que a
      * v0.46.0 não fez — pego na verificação da `unificar-logo-da-organizacao`).
      * 63 → 66 na feature `dock-de-acoes-rapidas`: `dock_paineis`, `dock_layout` e `dock_estilo`.
+     * 66 → 69 na feature `estudo-de-pacotes-rodada-3`: `tabela_carregamento`, `visoes_de_tabela` e
+     * `visoes_de_tabela_compartilhadas`.
      */
-    expect($propriedades)->toHaveCount(66);
+    expect($propriedades)->toHaveCount(69);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));

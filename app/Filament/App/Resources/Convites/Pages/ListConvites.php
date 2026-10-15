@@ -4,6 +4,7 @@ namespace App\Filament\App\Resources\Convites\Pages;
 
 use App\Filament\App\Resources\Convites\ConviteResource;
 use App\Filament\Concerns\ConvidaEmMassa;
+use App\Filament\Concerns\VisoesDeTabela;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Support\Papeis;
@@ -20,12 +21,14 @@ class ListConvites extends ListRecords
 {
     use ConvidaEmMassa;
     use HasResizableColumn;
+    use VisoesDeTabela;
 
     protected static string $resource = ConviteResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->getTableViewActions(),
             CreateAction::make(),
 
             /*

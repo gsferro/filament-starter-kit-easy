@@ -11,7 +11,7 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 |---|---|
 | **Identidade** | nome da aplicação, **versão do sistema**, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon, a arte das telas de autenticação e o **cabeçalho dos painéis** (a marca composta e o bloco do usuário) |
 | **E-mail** | transporte (`log`, `array`, `smtp`), servidor, porta, criptografia, usuário, senha e remetente |
-| **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário e colunas arrastáveis — os defaults de **toda** tabela dos três painéis |
+| **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário, colunas arrastáveis, **carregamento da tabela** (paginação, rolagem infinita ou botão "Carregar mais"), **visões salvas** e o compartilhamento delas — os defaults de **toda** tabela dos três painéis ([detalhes](../visoes-de-tabela-e-carregamento/)) |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) |
 | **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) |
 | **Kit** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível |
@@ -66,7 +66,7 @@ aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a t
 As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.
 
 Se o interruptor estiver ligado e o campo vazio, o rodapé mostra a assinatura e, ao lado, **a versão do kit rotulada**
-(`kit 0.48.1`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
+(`kit 0.49.0`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
 impede essa leitura, e é requisito do kit, não detalhe de tela.
 
 **`APP_VERSION` semeia UMA vez, na instalação. Depois dela, quem manda é a tela.**
@@ -236,12 +236,12 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:574`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:605`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:421`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:400`) não está nesse mapa, então o banco nunca a sobrescreve.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:443`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:414`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:
 

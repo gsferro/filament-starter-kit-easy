@@ -2,6 +2,7 @@
 
 namespace App\Filament\Infra\Resources\AiRuns\Pages;
 
+use App\Filament\Concerns\VisoesDeTabela;
 use App\Filament\Exports\AiRunExporter;
 use App\Filament\Infra\Resources\AiRuns\AiRunResource;
 use Asmit\ResizedColumn\HasResizableColumn;
@@ -15,12 +16,14 @@ use Filament\Resources\Pages\ListRecords;
 class ListAiRuns extends ListRecords
 {
     use HasResizableColumn;
+    use VisoesDeTabela;
 
     protected static string $resource = AiRunResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            ...$this->getTableViewActions(),
             /*
              * Dashboard do fomvasss/laravel-ai-tasks (rota do pacote, fora do Filament).
              *

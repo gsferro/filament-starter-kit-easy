@@ -658,3 +658,34 @@ it('[CT-41] a semeadura single-tenant entrega o dock ao admin e ao infra, não a
     'infra (/infra)'                => ['infra', true],
     'panel_user (usuário comum)'    => ['panel_user', false],
 ]);
+
+it('[CT-17] a permissão de visões existe depois dos seeders e é oferecida na tela de papéis', function (): void {
+    noPainelDoShield('admin');
+    noPainelBootado('admin');
+
+    $this->actingAs(usuarioCom('master_global'));
+
+    Livewire::test(EditRole::class, ['record' => papelDoKit('panel_user')->getRouteKey()])
+        ->assertSuccessful();
+
+    expect(Permission::query()->where('name', 'Usar:VisoesDeTabela')->where('guard_name', 'web')->exists())
+        ->toBeTrue();
+
+    expect(array_keys((array) FilamentShield::getCustomPermissions()))
+        ->toContain('Usar:VisoesDeTabela');
+})->group('kit');
+
+it('[CT-18] a semeadura single-tenant repetida entrega visões só aos papéis de administração sem duplicar a pivot', function (string $papel, bool $tem): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+
+    $papelSemeado = papelDoKit($papel);
+
+    expect($papelSemeado->hasPermissionTo('Usar:VisoesDeTabela'))->toBe($tem);
+
+    expect($papelSemeado->permissions()->where('name', 'Usar:VisoesDeTabela')->count())
+        ->toBeLessThanOrEqual(1);
+})->with([
+    'admin | tem'          => ['admin', true],
+    'infra | tem'          => ['infra', true],
+    'panel_user | não tem' => ['panel_user', false],
+])->group('kit');

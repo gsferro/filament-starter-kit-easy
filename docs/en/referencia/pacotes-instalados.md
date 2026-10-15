@@ -70,6 +70,8 @@ Everything below comes installed, published and registered on the panels — the
 | [gsferro/filament-stat-plus-easy](https://packagist.org/packages/gsferro/filament-stat-plus-easy) | stat cards with a corner icon, colored border and skeleton |
 | [awcodes/filament-badgeable-column](https://packagist.org/packages/awcodes/filament-badgeable-column) | badges inside table columns |
 | [asmit/resized-column](https://packagist.org/packages/asmit/resized-column) | columns resizable by the user |
+| [sehsah/filament-remember-table](https://packagist.org/packages/sehsah/filament-remember-table) | saved table views (named filters, search, sort, grouping and columns, per user and per organization), opt-in in the settings ([details](../../recursos/visoes-de-tabela-e-carregamento/)) |
+| [asignua/filament-infinite-scroll](https://packagist.org/packages/asignua/filament-infinite-scroll) | infinite scroll or a "Load more" button on every table, opt-in in the settings ([details](../../recursos/visoes-de-tabela-e-carregamento/)) |
 | [laboiteacode/filament-dashboard-widgets](https://packagist.org/packages/laboiteacode/filament-dashboard-widgets) | ready-made metric, goal, breakdown and trend widgets |
 | [mddev31/filament-dynamic-dashboard](https://packagist.org/packages/mddev31/filament-dynamic-dashboard) | user-configurable dashboard: drag and resize widgets |
 | [lara-zeus/progress](https://packagist.org/packages/lara-zeus/progress) | progress bars in columns and entries |
@@ -130,6 +132,18 @@ php artisan modelCache:clear      # clears the model cache
 | [rector/rector](https://packagist.org/packages/rector/rector) + [driftingly/rector-laravel](https://packagist.org/packages/driftingly/rector-laravel) | automated rewrites (`composer refactor:preview` / `refactor:apply`) |
 | [filament/upgrade](https://packagist.org/packages/filament/upgrade) | Filament's upgrade tool (`composer upgrade:filament`) |
 | [laravel/boost](https://packagist.org/packages/laravel/boost) | MCP server and guidelines for the AI agents (`.ai/rules`) |
+| [happenv-com/filament-phpstan-macros](https://packagist.org/packages/happenv-com/filament-phpstan-macros) | PHPStan understands macros registered on Filament components (`infiniteScroll()`), with no exception in `phpstan.neon` ([details](../qualidade-de-codigo/)) |
+
+## Evaluated and not adopted
+
+The third package study round (October 2026) evaluated five plugins and adopted the three above. The two left out, with the reason and what would bring them back:
+
+| Package | Why it stayed out | What reopens it |
+|---|---|---|
+| `spiggle/list-view` | list mode rebuilds the columns (badge, lightbox and the kit's custom columns do not survive), the preference lives in the session with no organization, and the kit already stacks rows into cards on mobile | a project asking for an alphabetical list with initials on desktop |
+| `happenv-com/filament-saved-views` | the same requirement as `remember-table`, with no organization scope and with its own Blade in Tailwind utilities that requires a custom Filament theme — which the kit does not have | `remember-table` being abandoned; or a custom theme in the kit **and** organization scope in the package |
+
+Each dossier is in `wikis/specs/feat/estudo-de-pacotes-rodada-3/`.
 
 ## Front-end (`package.json`)
 

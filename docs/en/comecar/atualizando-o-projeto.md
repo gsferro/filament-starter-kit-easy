@@ -38,7 +38,7 @@ What it does, in order:
 The flow is **non-interactive** when there is no terminal (CI, `--no-interaction`) — never "no
 TTY": it turns into a report and exits without applying anything, unless `--all` or `--only-new`
 already gave the approval on the command line
-(`app/Console/Commands/KitUpdate.php:isInteractive:450`).
+(`app/Console/Commands/KitUpdate.php:isInteractive:451`).
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 ```
 
 The order comes straight from `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:398`): pre-flight (`:preVoo:486`), temporary remote
+(`app/Console/Commands/KitUpdate.php:handle:399`): pre-flight (`:preVoo:486`), temporary remote
 (`:vincularKit:545`), restricted diff (`:arquivosAlterados:651`), summary (`:mostrarResumo:827`),
 the terminal check (`:isInteractive:449`), the temporary branch (`:prepararBranch:847`), the
 file-by-file review (`:revisarEAplicar:896`), the `composer.json` report
@@ -113,6 +113,24 @@ the dock code requires the package, and without it every `php artisan` fails wit
 `Class "HoceineEl\QuickActionDock\QuickActionDockPlugin" not found`. From the next version on, the
 project boots without the package, just without the dock, and the "Dock de atalhos" section of the
 Kit tab, at `/admin/configuracoes-da-aplicacao`, says what is missing.
+
+**In v0.49.0 this applies to `sehsah/filament-remember-table` and `asignua/filament-infinite-scroll`**,
+the packages behind [saved views and continuous loading](../../recursos/visoes-de-tabela-e-carregamento/),
+and to `happenv-com/filament-phpstan-macros` (development only):
+
+```bash
+composer require sehsah/filament-remember-table:^1.0 asignua/filament-infinite-scroll:^1.0
+composer require --dev happenv-com/filament-phpstan-macros
+php artisan filament:assets
+php artisan migrate --force
+php artisan db:seed --class=Database\Seeders\ShieldPermissionsSeeder
+php artisan db:seed --class=Database\Seeders\PapeisSeeder
+```
+
+If you update **to v0.49.0**, run the `composer require` before any other command: the ten kit
+lists use the `remember-table` trait, and without it every `php artisan` fails with
+`Trait "Sehsah\FilamentRememberTable\Concerns\HasRememberTable" not found`. Both features start
+off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 
 ### A new screen: reseed both seeders
 
@@ -182,7 +200,7 @@ section above, "A new kit dependency").
 
 A path that **entered** `CAMINHOS_DO_KIT` after your version — such as the authored folders under
 `resources/views/vendor` — is compared against **your tree**, not only tag against tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:695`): the file you do not have shows up as
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:696`): the file you do not have shows up as
 "novo no kit" even if the kit has not changed it since your version, and a file your project does not
 have shows up as "novo no kit" even if the kit changed it between the tags — that is the label `--only-new`
 applies. This behaviour holds from the version that introduced it (the class that runs is the installed

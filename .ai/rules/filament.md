@@ -160,7 +160,7 @@ Então: Page usa `ExigePermissaoDaTela` (o trait do kit, não `HasPageShield` di
 
 Dois detalhes que já custaram caro:
 - `canView()` que só faz `rescue(fn () => Schema::hasTable(...))` NÃO é autorização — é proteção contra migration ausente. As duas coisas convivem.
-- `->visible()` e `->authorize()` **bloqueiam igual** (`mountAction()` checa os dois). A diferença é semântica e tooltip, não enforço — não troque um pelo outro achando que ganhou barreira.
+- `->visible()` e `->authorize()` **bloqueiam igual** (`mountAction()` checa os dois). A diferença é semântica e tooltip, não enforço — não troque um pelo outro achando que ganhou barreira. Em Action construída no **vendor**, porém, `->visible()` apaga a condição que o pacote já pôs: ver *Action de vendor embrulhada esconde com `hidden()`, nunca com `visible()`*.
 
 Permissão que não entra na matriz do `database/seeders/PapeisSeeder.php` nasce órfã: ninguém a tem, inclusive o `admin` pode ficar trancado fora da tela que você acabou de criar.
 
@@ -185,3 +185,11 @@ A varredura ignora comentários — explicar o erro não é cometê-lo.
 
 ## Cartão de painel (BoasVindas, EscolhaDePainel) sai de Paineis::cartoes() filtrado por canAccessPanel()
 Exceção à regra "CardItem só via DescobreCardsDoPainel": cartão cujo destino é um PAINEL (não uma tela) não tem `canAccess()` para o trait consultar. Esses cartões saem de `app/Support/Paineis.php::cartoes()` (fonte única dos três textos) e quem os exibe filtra por `$user->canAccessPanel($painel)` antes de montar — `EscolhaDePainel::getCards()` é o modelo; `BoasVindas` é pública e mostra os três de propósito. `CardItem::make()` direto num `->cards()` continua sendo o defeito. Origem: v0.31.0, login unificado (ADR-01/ADR-08 em `wikis/specs/feat/login-unificado/`).
+
+## Action de vendor embrulhada esconde com `hidden()`, nunca com `visible()`
+
+Ao sobrescrever uma Action que o pacote constrói (`$this->xAction()` do trait do vendor, devolvida com ajustes do kit), a condição do kit entra por `->hidden(fn (): bool => ! $ligado)`, nunca por `->visible(...)`. `Filament\Actions\Concerns\CanBeHidden::visible()` é atribuição, não composição: substitui a condição que o pacote já pôs e a apaga em silêncio — foi assim que *Atualizar visão* e *Gerenciar visões* do `remember-table` voltaram a aparecer sem visão própria ativa (CT-79 da rodada 3 falhava 3/7). `resolveIsHiddenInGroup()` avalia `hidden` antes de `visible`, então `hidden()` preserva a regra do vendor e acrescenta a do kit. Action criada pelo próprio kit pode usar `visible()` à vontade. Sem enforcement automático (`arch()` não distingue os dois); regressão em `tests/Kit/VisoesDeTabelaTest.php` (CT-79). Origem: RD-01/P-29 de `wikis/specs/feat/estudo-de-pacotes-rodada-3/`.
+
+## Alias de método de trait de vendor em componente Livewire é `as protected`
+
+Em Page, Widget ou Resource que embrulha um trait de vendor com `use TraitDoVendor { metodo as metodoDoPacote; }`, o alias se declara `as protected metodoDoPacote`. Alias herda a visibilidade pública do método original, e o Livewire expõe todo método público não estático a `$wire` (`vendor/livewire/livewire/src/Drawer/BaseUtils.php:getPublicMethodsDefinedBySubClass()`): `$wire.getTableViewsDoPacote()` furava o interruptor das visões desligadas e consultava o banco (CT-80 da rodada 3 falhava 9/10). Vale para qualquer trait de vendor renomeado num componente; alias de método estático não entra no `$wire`, mas segue o mesmo padrão por uniformidade (`ExigePermissaoDoWidget`). Sem enforcement automático; regressão em `tests/Kit/VisoesDeTabelaTest.php` (CT-80). Origem: RD-02/P-30 de `wikis/specs/feat/estudo-de-pacotes-rodada-3/`.

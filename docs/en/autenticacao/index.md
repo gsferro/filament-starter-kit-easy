@@ -52,7 +52,7 @@ accDescr: The canAccessPanel() check comes before any 2FA challenge, which only 
 The kit's login screen intercepts the Filament failure only to explain an unavailable account
 (`app/Filament/Pages/Auth/TelaLogin.php:authenticate:196`); the 5-attempt rate limit is Filament's
 own (`vendor/filament/filament/src/Auth/Pages/Login.php:rateLimit(5):70`), which also decides with
-`canAccessPanel()` (`vendor/filament/filament/src/Auth/Pages/Login.php:canAccessPanel:172`). The
+`canAccessPanel()` (`vendor/filament/filament/src/Auth/Pages/Login.php:canAccessPanel:188`). The
 login destination is always `app(LoginResponse::class)`, bound to `RespostaDeLogin`
 (`app/Providers/KitServiceProvider.php:LoginResponse:844`). The next request's stack (real order,
 checked with `php artisan route:list --json`) is `Authenticate` -> `AuthenticateSession` ->

@@ -1,0 +1,36 @@
+/*
+ * Hand-written, no build step. Only what Filament's own stylesheet cannot do:
+ * hide the stock pager of an infinite-scroll table and lay out the footer.
+ */
+.fi-ta-main:has(> .fi-ta-infinite-scroll, > .fi-ta-infinite-scroll-marker) > .fi-pagination {
+    display: none;
+}
+
+.fi-ta-infinite-scroll {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+}
+
+.fi-ta-infinite-scroll-status {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--gray-500, #6b7280);
+}
+
+.dark .fi-ta-infinite-scroll-status {
+    color: var(--gray-400, #9ca3af);
+}
+
+.fi-ta-infinite-scroll .fi-loading-indicator {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--gray-400, #9ca3af);
+}
+
+.fi-ta-infinite-scroll-marker {
+    display: none;
+}

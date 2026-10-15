@@ -110,6 +110,32 @@ class KitArte extends Command
             'dock-adicionar-escuro',
             'dock-barra-escuro',
         ],
+        // Visões salvas de tabela (wiki estudo-de-pacotes-rodada-3): `visoes-aberta` e
+        // `visoes-gerenciar` também são IMAGENS; o mesmo clipe em tema escuro logo abaixo.
+        'visoes-de-tabela' => [
+            'visoes-fechada',
+            'visoes-aberta',
+            'visoes-salvar',
+            'visoes-gerenciar',
+        ],
+        'visoes-de-tabela-escuro' => [
+            'visoes-fechada-escuro',
+            'visoes-aberta-escuro',
+            'visoes-salvar-escuro',
+            'visoes-gerenciar-escuro',
+        ],
+        // Carregamento contínuo no modo botão: 10, 20 e 30 de 31. `tabela-carregar-mais` (e o par
+        // escuro) também é IMAGEM.
+        'carregamento-continuo' => [
+            'tabela-carregar-mais',
+            'tabela-carregar-mais-2',
+            'tabela-carregar-mais-3',
+        ],
+        'carregamento-continuo-escuro' => [
+            'tabela-carregar-mais-escuro',
+            'tabela-carregar-mais-2-escuro',
+            'tabela-carregar-mais-3-escuro',
+        ],
     ];
 
     /**
@@ -172,6 +198,20 @@ class KitArte extends Command
         'dock-aberto-escuro',
         'dock-gerenciar-escuro',
         'dock-barra-escuro',
+
+        // Visões salvas e carregamento contínuo, nos dois temas, e a aba Tabelas das
+        // configurações (wiki estudo-de-pacotes-rodada-3). As duas primeiras são quadros do
+        // clipe `visoes-de-tabela`; as `-escuro`, do clipe `visoes-de-tabela-escuro`.
+        'visoes-aberta',
+        'visoes-gerenciar',
+        'visoes-aberta-escuro',
+        'visoes-gerenciar-escuro',
+        'tabela-rolagem',
+        'tabela-rolagem-escuro',
+        'tabela-carregar-mais',
+        'tabela-carregar-mais-escuro',
+        'admin-configuracoes-tabelas',
+        'admin-configuracoes-tabelas-escuro',
 
         // As duas telas de login com o desafio no ar, cada uma com chave real do
         // provedor. Só são geradas por quem tem as chaves no ambiente — os cenários

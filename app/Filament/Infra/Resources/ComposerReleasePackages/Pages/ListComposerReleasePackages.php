@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Infra\Resources\ComposerReleasePackages\Pages;
 
+use App\Filament\Concerns\VisoesDeTabela;
 use App\Filament\Infra\Resources\ComposerReleasePackages\ComposerReleasePackageResource;
 use MominAlZaraa\FilamentComposerReleaseNotifier\Filament\Resources\Pages\ListComposerReleasePackages as PaginaDoPacote;
 
@@ -17,5 +18,13 @@ use MominAlZaraa\FilamentComposerReleaseNotifier\Filament\Resources\Pages\ListCo
  */
 class ListComposerReleasePackages extends PaginaDoPacote
 {
+    use VisoesDeTabela;
+
     protected static string $resource = ComposerReleasePackageResource::class;
+
+    /** As visões salvas antes da ação de recarga do pacote — a única das dez listagens que herda a Page do vendor. */
+    protected function getHeaderActions(): array
+    {
+        return [...$this->getTableViewActions(), ...parent::getHeaderActions()];
+    }
 }

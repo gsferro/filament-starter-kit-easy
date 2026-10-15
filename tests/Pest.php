@@ -14,6 +14,7 @@ use App\Support\ProvedorSocial;
 use Filament\Facades\Filament;
 use Filament\FilamentManager;
 use Filament\Forms\Components\Select;
+use Filament\Notifications\NotificationMailbox;
 use Filament\Panel;
 use Filament\PanelRegistry;
 use Filament\Resources\Resource;
@@ -24,6 +25,7 @@ use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
@@ -34,6 +36,7 @@ use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Psr\Log\LoggerInterface;
+use Sehsah\FilamentRememberTable\Models\TableView;
 use Spatie\LaravelSettings\Models\SettingsProperty;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
@@ -386,6 +389,37 @@ function alinharConfiguracoesDoKit(): void
     (fn () => $this->configureSettingsDoKit())->call($provider);
 }
 
+/**
+ * As notificações do Filament ainda não entregues ao navegador, sem consumi-las.
+ *
+ * Desde o Filament 5.10 elas não moram mais na sessão (`filament.notifications` /
+ * `filament.claimed_notifications`): `Notification::send()` empilha em
+ * `Filament\Notifications\NotificationMailbox` (pendentes no objeto, publicadas no cache sob
+ * `filament:notifications:{escopo da sessão}`), e o `assertNotified()` faz `flush()` + `pull()`,
+ * que ESVAZIA a caixa. Este helper lê as duas pontas por fora, para o caso poder afirmar sobre o
+ * texto do aviso e ainda chamar `assertNotified()` depois. Usado pelos testes do dock (Kit e Tenancy).
+ *
+ * @return list<array<string, mixed>>
+ */
+function avisosDoFilament(): array
+{
+    $caixa = app(NotificationMailbox::class);
+
+    $pendentes  = (fn (): array => $this->pendingNotifications)->call($caixa);
+    $publicadas = Cache::store(config('filament.cache_store'))
+        ->get('filament:notifications:'.session()->get('filament.notifications.mailbox', ''), []);
+
+    return array_values(array_filter([...(array) $publicadas, ...$pendentes], 'is_array'));
+}
+
+/** Descarta toda notificação pendente ou publicada — o `session()->forget()` de antes do 5.10. */
+function limparAvisosDoFilament(): void
+{
+    $caixa = app(NotificationMailbox::class);
+    $caixa->flush();
+    $caixa->pull();
+}
+
 /** Espia só o channel `configuracoes`; os outros continuam reais. */
 function espiarConfiguracoes(): LoggerInterface
 {
@@ -566,6 +600,69 @@ function concederDock(string ...$papeis): void
     }
 
     app(PermissionRegistrar::class)->forgetCachedPermissions();
+}
+
+/** Grava a visão de partida sem depender das actions nem da permissão da tela. */
+function visaoGravada(User $dono, string $pagina, array $estado, array $atributos = []): TableView
+{
+    return TableView::query()->create([
+        'tenant_id'  => null,
+        'name'       => 'Visão de teste',
+        'is_default' => false,
+        'is_public'  => false,
+        'sort_order' => 0,
+        ...$atributos,
+        'user_type' => $dono->getMorphClass(),
+        'user_id'   => $dono->getKey(),
+        'table_key' => $pagina,
+        'state'     => $estado + ['v' => 1],
+    ]);
+}
+
+/** Mantém a chave esperada independente do cálculo da implementação. */
+function chaveDaTabela(string $pagina): string
+{
+    return $pagina;
+}
+
+/** Configura as visões do caso sem depender dos defaults da instalação. */
+function ligarVisoesDeTabela(bool $visoes = true, bool $compartilhadas = false): void
+{
+    config([
+        'kit.tabelas.visoes_salvas'         => $visoes,
+        'remember-table.allow_public_views' => $compartilhadas,
+    ]);
+}
+
+/** Fixa modo e tamanho do bloco para distinguir o carregamento dos defaults. */
+function ligarCarregamento(string $modo, int $linhas = 7): void
+{
+    config([
+        'kit.tabelas.carregamento' => $modo,
+        'kit.tabelas.paginacao'    => $linhas,
+    ]);
+}
+
+/** Concede acesso às visões sem depender da semeadura da permissão. */
+function concederVisoesDeTabela(string ...$papeis): void
+{
+    Permission::findOrCreate('Usar:VisoesDeTabela', 'web');
+
+    foreach ($papeis as $papel) {
+        papelDoKit($papel)->givePermissionTo('Usar:VisoesDeTabela');
+    }
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+}
+
+/**
+ * Centraliza a leitura das dependências para os casos de mais de uma rodada.
+ *
+ * @return array<string, mixed>
+ */
+function composerDoKit(): array
+{
+    return json_decode((string) file_get_contents(base_path('composer.json')), true, flags: JSON_THROW_ON_ERROR);
 }
 
 /** A chave de favorito do dock: `{painel}|{FQCN do destino}|{id da organização ou vazio}`. */

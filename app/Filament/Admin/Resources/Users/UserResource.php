@@ -225,7 +225,7 @@ class UserResource extends Resource
                 Impersonate::make(),
                 /*
                  * Navega para a ficha em vez de abrir modal, porque `hasPage('view')` agora e
-                 * verdadeiro (`vendor/filament/filament/src/Resources/Pages/Page.php:getDefaultActionUrl:361`).
+                 * verdadeiro (`vendor/filament/filament/src/Resources/Pages/Page.php:getDefaultActionUrl:466`).
                  * Autoriza por `View:User`, via policy — sem `->authorize()` a mais.
                  *
                  * OCULTA NA LIXEIRA, e isso nao e preferencia: o route binding passa por

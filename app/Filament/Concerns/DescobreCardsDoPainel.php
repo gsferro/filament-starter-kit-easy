@@ -11,6 +11,7 @@ use Filament\Panel;
 use Filament\Resources\Resource;
 use Harvirsidhu\FilamentCards\CardGroup;
 use Harvirsidhu\FilamentCards\CardItem;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use LogicException;
 use UnitEnum;
@@ -115,6 +116,12 @@ trait DescobreCardsDoPainel
             ?? throw new LogicException('Hub de cards exige um painel corrente, e nenhum está definido.');
     }
 
+    /** Rótulo do Filament 5.10 (`string|Htmlable|null`) como texto — `Htmlable` vira o HTML dele, como o Blade faria. */
+    protected static function textoDoRotulo(string|Htmlable|null $rotulo): string
+    {
+        return $rotulo instanceof Htmlable ? $rotulo->toHtml() : (string) $rotulo;
+    }
+
     /**
      * Agrupa pelo grupo de navegação, na ordem declarada em `->navigationGroups([...])`.
      *
@@ -127,7 +134,8 @@ trait DescobreCardsDoPainel
     protected static function agrupar(Collection $itens): array
     {
         $ordem = collect(static::painelCorrente()->getNavigationGroups())
-            ->map(fn (mixed $grupo): string => is_string($grupo) ? $grupo : (string) $grupo->getLabel())
+            // Desde o Filament 5.10 o rótulo do grupo pode ser `Htmlable` (ou nulo): texto é o que a ordem compara.
+            ->map(fn (mixed $grupo): string => is_string($grupo) ? $grupo : self::textoDoRotulo($grupo->getLabel()))
             ->values()
             ->all();
 

@@ -51,6 +51,8 @@ middleware do kit. Todos corrigidos na origem — nenhum silenciado.
 > a subida para o level 8 não acrescentou nenhuma. Esse é o padrão:
 > se precisar de exceção, ela vem com a justificativa e com o teste que a substitui.
 >
+> **Macro de componente do Filament não vira exceção**: o `happenv-com/filament-phpstan-macros` (incluído no `phpstan.neon`) lê os macros registrados em service provider e os tipa como método — é por isso que `$table->infiniteScroll()` é analisado sem `hasMacro()` nem `ignoreErrors`. O `simpleLightbox()` continua como exceção porque é registrado no `boot(Panel)` do plugin, que não roda na análise.
+>
 > Se quiser afrouxar no seu projeto, é uma linha em `phpstan.neon`. Mas saiba o que está trocando:
 > os 77 erros acima eram todos reais.
 

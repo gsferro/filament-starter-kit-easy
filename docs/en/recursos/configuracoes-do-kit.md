@@ -11,7 +11,7 @@ What the installer asked — plus a handful of things you previously could only 
 |---|---|
 | **Identidade** (identity) | application name, **system version**, primary colour (the Filament palette **or** a free hex value), brand logo, favicon, the artwork on the authentication screens and the **panel header** (the composed brand and the user block) |
 | **E-mail** | transport (`log`, `array`, `smtp`), host, port, encryption, username, password and sender |
-| **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, and draggable columns — the defaults for **every** table in all three panels |
+| **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, draggable columns, **table loading** (pagination, infinite scroll or a "Load more" button), **saved views** and their sharing — the defaults for **every** table in all three panels ([details](../visoes-de-tabela-e-carregamento/)) |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) |
 | **Login** | the single login page at `/login` ([details](../../autenticacao/login-unificado/)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../../autenticacao/login-social/)) |
 | **Kit** | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable |
@@ -68,7 +68,7 @@ public.
 The **registration** and **password reset** screens get the signature only, not the notice.
 
 If the switch is on and the field is empty, the footer shows the signature and, beside it, **the kit version, labelled**
-(`kit 0.48.1`). It is never presented as if it were your product's: the label is precisely what
+(`kit 0.49.0`). It is never presented as if it were your product's: the label is precisely what
 prevents that reading, and it is a kit requirement, not a screen detail.
 
 **`APP_VERSION` seeds ONCE, at install time. After that, the screen wins.**
@@ -243,12 +243,12 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:574`), called at boot by
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:605`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:421`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:400`) is not in that map, so the database never overrides it.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:443`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:414`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:
 

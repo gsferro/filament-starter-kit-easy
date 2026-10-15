@@ -164,7 +164,7 @@ enum DensidadeDoLayout: string implements HasLabel
      * exatamente a "meia tela compacta" que o requisito proíbe.
      *
      * O valor vem de `--sidebar-width`, que o Filament emite **inline** a partir de
-     * `filament()->getSidebarWidth()` (`vendor/filament/filament/resources/views/components/layout/base.blade.php:getSidebarWidth:85`).
+     * `filament()->getSidebarWidth()` (`vendor/filament/filament/resources/views/components/layout/base.blade.php:getSidebarWidth:88`).
      * Nenhuma declaração de `--spacing`, em layer nenhuma, o alcança.
      *
      * ## Por que ele PODE ser governado em runtime, ao contrário do tema
