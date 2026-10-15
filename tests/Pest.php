@@ -390,6 +390,26 @@ function alinharConfiguracoesDoKit(): void
 }
 
 /**
+ * A chave aninhada de um campo da tela de configurações, para os helpers do Filament
+ * que buscam por chave (as abas adiadas ganharam chave própria).
+ */
+function chaveDoCampo(Testable $componente, string $campo): string
+{
+    $achado = $componente->instance()->form->getComponent(fn ($c) => method_exists($c, 'getName') && $c->getName() === $campo, withHidden: true);
+    expect($achado)->not->toBeNull("o campo {$campo} não existe no formulário");
+
+    return Str::after($achado->getKey(), 'form.');
+}
+
+/**
+ * Carrega o conteúdo adiado de uma aba da tela de configurações (o que o navegador faz ao selecioná-la).
+ */
+function carregarAba(Testable $componente, string $aba): Testable
+{
+    return $componente->call('loadDeferredSchema', "form.configuracoes.{$aba}");
+}
+
+/**
  * As notificações do Filament ainda não entregues ao navegador, sem consumi-las.
  *
  * Desde o Filament 5.10 elas não moram mais na sessão (`filament.notifications` /

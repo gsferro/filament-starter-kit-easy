@@ -212,6 +212,7 @@ it('[CT-10] com a multi-organização ligada, o interruptor aparece', function (
     Filament::setCurrentPanel('admin');
     $this->actingAs(usuarioComPapel('admin'));
 
-    Livewire::test(ConfiguracoesDoKit::class)
-        ->assertSchemaComponentVisible('ocultar_seletor_unico', 'form');
+    $tela = Livewire::test(ConfiguracoesDoKit::class);
+
+    $tela->assertSchemaComponentVisible(chaveDoCampo($tela, 'ocultar_seletor_unico'), 'form');
 });

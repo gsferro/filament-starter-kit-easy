@@ -137,10 +137,12 @@ it('[CT-08] mostra e esconde o campo logo dark nas configuracoes pelo toggle', f
 
     $this->actingAs(usuarioDoKit('admin'));
 
-    Livewire::test(PaginaDeConfiguracoes::class)
-        ->assertSchemaComponentHidden('logo_dark')
+    $tela = Livewire::test(PaginaDeConfiguracoes::class);
+
+    $tela
+        ->assertSchemaComponentHidden(chaveDoCampo($tela, 'logo_dark'))
         ->fillForm(['unifica_logo_marca' => false])
-        ->assertSchemaComponentVisible('logo_dark');
+        ->assertSchemaComponentVisible(chaveDoCampo($tela, 'logo_dark'));
 })->group('kit');
 
 /**

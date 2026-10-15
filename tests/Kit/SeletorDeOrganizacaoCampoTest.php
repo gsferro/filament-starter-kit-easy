@@ -28,6 +28,8 @@ beforeEach(function (): void {
 it('[CT-09] sem a multi-organização ligada o interruptor não aparece', function (): void {
     $this->actingAs(usuarioDoKit('admin'));
 
-    Livewire::test(ConfiguracoesDoKit::class)
-        ->assertSchemaComponentHidden('ocultar_seletor_unico', 'form');
+    $tela = Livewire::test(ConfiguracoesDoKit::class);
+
+    $tela
+        ->assertSchemaComponentHidden(chaveDoCampo($tela, 'ocultar_seletor_unico'), 'form');
 });
