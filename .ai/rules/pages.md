@@ -32,3 +32,16 @@ O caso (2) passava por construção: o valor sobrevivia porque nunca era escrito
 E há um quarto ponto, fora do formulário: **a chave precisa estar em `encrypted()`**. Duas vezes ela ficou de fora e produziu defeito diferente — segredo em texto claro na trilha de `audits` (o listener mascara comparando com essa lista), e `addEncrypted` na migration sem o par na classe, o que cifra na ida e devolve ciphertext na volta. Ao acrescentar campo de segredo, confira os quatro: fill, dehydrate, `encrypted()`, e o trio de casos.
 
 Vale para `mail_password` e `login_google_client_secret` hoje, e para o próximo. Os dois estão em `ConfiguracoesDoKit::encrypted()`.
+
+## Toda seção da tela de configurações é colapsável, com ícone e id estável
+A tela `/admin/configuracoes-da-aplicacao` (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php`) só cresce. Campo solto na aba, seção sem ícone ou seção que não fecha viram uma parede de formulário que ninguém mais lê — foi o estado da tela até a v0.49.0 (31 campos soltos em 6 abas).
+
+A convenção, em três pontos:
+
+1. **todo campo mora numa `Section`** — nunca direto na aba, mesmo o campo oculto por `visible()`;
+2. **toda seção nasce pelo helper `secao($aba, $chave, $titulo, $icone)`** da Page: `icon()`, `collapsible()`, `persistCollapsed()` e `id("configuracoes-{aba}-{chave}")`. O `id()` é a chave do `localStorage` (`filament:section:collapsed:{id}`) — por isso é explícito, único e **não muda** depois de publicado (mudar apaga a preferência de todo mundo); ele não vira atributo HTML;
+3. **toda aba nasce pelo helper `aba($chave, $rotulo, $icone, [...])`**: `Tab::key()` fixo (é o valor de `?tab=`) e `Schema::make()->components([...])->deferLoading()` — o conteúdo só renderiza quando a aba é aberta. A chave de todo campo fica aninhada (`configuracoes.{aba}.{campo}`); nos testes, use `chaveDoCampo()`/`carregarAba()` de `tests/Pest.php`, nunca o nome solto.
+
+Seção que precisa nascer fechada (provedores sociais) acrescenta `->collapsed()` ao helper; o `persistCollapsed()` guarda os dois estados, então a seção que o usuário abriu continua aberta no mesmo navegador. Seção condicional (SMTP) recebe o `->visible()` na própria seção, não só nos campos.
+
+Enforcement: `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` — CT-03 (nenhum campo fora de seção), CT-04 (toda seção `isCollapsible()` com ícone), CT-05 (id explícito, único, `shouldPersistCollapsed()`), CT-06 (toda aba adiada com chave fixa). Campo novo fora do padrão reprova na hora. Origem: `wikis/specs/feat/configuracoes-secoes-colapsaveis/`.

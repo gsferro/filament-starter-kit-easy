@@ -347,7 +347,9 @@ it('descobre so os widgets que implementam DynamicWidget', function (): void {
 it('oferece os paineis registrados no seletor da tela', function (): void {
     $this->actingAs(usuarioDoKit('master_global', 'master@example.com'));
 
-    Livewire::test(TelaDeConfiguracoes::class)
-        ->assertFormFieldExists('dashboard_dinamico_habilitado')
-        ->assertFormFieldExists('dashboard_dinamico_paineis');
+    $tela = Livewire::test(TelaDeConfiguracoes::class);
+
+    $tela
+        ->assertFormFieldExists(chaveDoCampo($tela, 'dashboard_dinamico_habilitado'))
+        ->assertFormFieldExists(chaveDoCampo($tela, 'dashboard_dinamico_paineis'));
 });

@@ -23,6 +23,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Pages\SettingsPage;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -119,6 +120,7 @@ class ConfiguracoesDoKit extends SettingsPage
         return $schema
             ->components([
                 Tabs::make('configuracoes')
+                    ->key('configuracoes')
                     ->persistTabInQueryString()
                     // Sem isto o componente de abas ocupa UMA das duas colunas do
                     // `defaultForm()` e o resto do formulário sai ao lado dele.
@@ -129,7 +131,7 @@ class ConfiguracoesDoKit extends SettingsPage
                         $this->abaTabelas(),
                         $this->abaRegistro(),
                         $this->abaLogin(),
-                        $this->abaKit(),
+                        $this->abaAplicacao(),
                     ]),
             ]);
     }
@@ -299,98 +301,129 @@ class ConfiguracoesDoKit extends SettingsPage
         return app(static::getSettings())->login_anti_robo_chave_secreta;
     }
 
+    private function secao(string $aba, string $chave, string $titulo, string $icone): Section
+    {
+        return Section::make($titulo)
+            ->icon($icone)
+            ->collapsible()
+            ->persistCollapsed()
+            ->id("configuracoes-{$aba}-{$chave}");
+    }
+
+    /**
+     * Adia o HTML porque a tela só cresce. Com erro de validação o Filament marca todas as
+     * abas adiadas como carregadas antes do render (InteractsWithSchemas::isDeferredSchemaLoaded())
+     * e a aba do campo em erro fica ativa.
+     *
+     * @param  array<Component>  $componentes
+     */
+    private function aba(string $chave, string $rotulo, string $icone, array $componentes): Tab
+    {
+        return Tab::make($rotulo)
+            ->key($chave)
+            ->icon($icone)
+            ->schema(Schema::make()->components($componentes)->deferLoading());
+    }
+
     private function abaIdentidade(): Tab
     {
-        return Tab::make('Identidade')
-            ->icon('heroicon-o-paint-brush')
-            ->schema([
-                TextInput::make('nome_da_aplicacao')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('Nome da aplicação')
-                    ->helperText('Aparece no topo dos três painéis, no título da aba, como remetente padrão e no rodapé — inclusive nas telas públicas de login e recuperação de senha.')
-                    ->required()
-                    ->maxLength(255),
+        return $this->aba('identidade', 'Identidade', 'heroicon-o-paint-brush', [
+            $this->secao('identidade', 'nome-e-versao', 'Nome e versão', 'heroicon-o-identification')
+                ->schema([
+                    TextInput::make('nome_da_aplicacao')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('Nome da aplicação')
+                        ->helperText('Aparece no topo dos três painéis, no título da aba, como remetente padrão e no rodapé — inclusive nas telas públicas de login e recuperação de senha.')
+                        ->required()
+                        ->maxLength(255),
 
-                /*
-                 * A versão do SISTEMA, não a do kit. Texto livre: esquema de versionamento é
-                 * decisão do projeto (SemVer, data, número de build), e validar formato aqui
-                 * seria o kit escolhendo pelo projeto. Vazio some com a versão do rodapé.
-                 */
-                TextInput::make('versao_do_sistema')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
                     /*
-                     * Afixo do Filament: e EXIBICAO, nao muta o estado. O valor gravado continua
-                     * sem o `v`, e quem o acrescenta no rodape e `AssinaturaDoRodape` — UM SO
-                     * LUGAR poe o `v`, e e isso que impede o MECANISMO de dobra-lo.
-                     *
-                     * Isso NAO impede o `vv1.2.3` quando o dado ja vem sujo: quem gravou
-                     * `v1.2.3` — a convencao de tag do git — ve `vv1.2.3` no campo e no rodape,
-                     * e `[CT-15]` congela esse comportamento de proposito. O afixo TORNA O ERRO
-                     * VISIVEL; nao o corrige.
-                     *
-                     * Sem normalizacao ao salvar, e a decisao esta na ADR-06: remover um `v`
-                     * inicial quebraria uma versao legitima chamada `v2`, e migrar dado de
-                     * settings por um caso que a tela agora evidencia custa mais do que o
-                     * incomodo. Achado RD-04 do step 6.5: a primeira versao deste comentario
-                     * dizia so "evita o vv1.2.3", que o proprio CT-15 desmente.
-                     */
-                    ->prefix('v')
-                    ->label('Versão do sistema')
-                    ->helperText('A versão do SEU produto, exibida no rodapé. O `v` à esquerda já é do campo: digite só o número (`1.2.3`), senão o rodapé mostra `vv1.2.3`. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
-                    ->placeholder('1.0.0')
-                    ->maxLength(50),
+                         * A versão do SISTEMA, não a do kit. Texto livre: esquema de versionamento é
+                         * decisão do projeto (SemVer, data, número de build), e validar formato aqui
+                         * seria o kit escolhendo pelo projeto. Vazio some com a versão do rodapé.
+                         */
+                    TextInput::make('versao_do_sistema')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        /*
+                             * Afixo do Filament: e EXIBICAO, nao muta o estado. O valor gravado continua
+                             * sem o `v`, e quem o acrescenta no rodape e `AssinaturaDoRodape` — UM SO
+                             * LUGAR poe o `v`, e e isso que impede o MECANISMO de dobra-lo.
+                             *
+                             * Isso NAO impede o `vv1.2.3` quando o dado ja vem sujo: quem gravou
+                             * `v1.2.3` — a convencao de tag do git — ve `vv1.2.3` no campo e no rodape,
+                             * e `[CT-15]` congela esse comportamento de proposito. O afixo TORNA O ERRO
+                             * VISIVEL; nao o corrige.
+                             *
+                             * Sem normalizacao ao salvar, e a decisao esta na ADR-06: remover um `v`
+                             * inicial quebraria uma versao legitima chamada `v2`, e migrar dado de
+                             * settings por um caso que a tela agora evidencia custa mais do que o
+                             * incomodo. Achado RD-04 do step 6.5: a primeira versao deste comentario
+                             * dizia so "evita o vv1.2.3", que o proprio CT-15 desmente.
+                             */
+                        ->prefix('v')
+                        ->label('Versão do sistema')
+                        ->helperText('A versão do SEU produto, exibida no rodapé. O `v` à esquerda já é do campo: digite só o número (`1.2.3`), senão o rodapé mostra `vv1.2.3`. Em branco, o rodapé não mostra versão. APP_VERSION no .env semeia este campo na instalação; depois disso é aqui que se troca — o valor gravado vence o arquivo, inclusive quando está vazio.')
+                        ->placeholder('1.0.0')
+                        ->maxLength(50),
+                ]),
 
-                Select::make('cor_primaria')
-                    ->label('Cor primária')
-                    ->helperText('A paleta do Filament. Deixe em branco para o padrão (âmbar).')
-                    // A lista fechada do kit, e não reflection sobre `Color`: aquela
-                    // classe também expõe constantes que não são cor (`WCAG_AA_TEXT`)
-                    // e neutros que ninguém escolhe como primária.
-                    ->options(fn (): array => $this->comValorConfigurado(
-                        array_combine(CustomizadorDaInstalacao::CORES, CustomizadorDaInstalacao::CORES),
-                        app(static::getSettings())->cor_primaria,
-                        'fora da lista do kit',
-                    ))
-                    ->placeholder('Padrão do Filament (âmbar)'),
+            $this->secao('identidade', 'cor-primaria', 'Cor primária', 'heroicon-o-swatch')
+                ->schema([
+                    Select::make('cor_primaria')
+                        ->label('Cor primária')
+                        ->helperText('A paleta do Filament. Deixe em branco para o padrão (âmbar).')
+                        // A lista fechada do kit, e não reflection sobre `Color`: aquela
+                        // classe também expõe constantes que não são cor (`WCAG_AA_TEXT`)
+                        // e neutros que ninguém escolhe como primária.
+                        ->options(fn (): array => $this->comValorConfigurado(
+                            array_combine(CustomizadorDaInstalacao::CORES, CustomizadorDaInstalacao::CORES),
+                            app(static::getSettings())->cor_primaria,
+                            'fora da lista do kit',
+                        ))
+                        ->placeholder('Padrão do Filament (âmbar)'),
 
-                ColorPicker::make('cor_primaria_hex')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('Cor primária livre')
-                    ->helperText('Cor de marca em hexadecimal. VENCE a seleção acima quando preenchida. Valor inválido é ignorado.')
-                    ->regex('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'),
+                    ColorPicker::make('cor_primaria_hex')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('Cor primária livre')
+                        ->helperText('Cor de marca em hexadecimal. VENCE a seleção acima quando preenchida. Valor inválido é ignorado.')
+                        ->regex('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'),
+                ]),
 
-                /*
-                 * O par de logos da marca, com o toggle que o liga.
-                 *
-                 * `required` por closure e não `required_with`: FileUpload guarda o path
-                 * já gravado no estado, e `filled($get)` lê esse estado — incluindo o
-                 * arquivo que veio do banco, que `required_with:campo` do Laravel não
-                 * enxerga no estado do FileUpload. "Um exige o outro" vale só no modo
-                 * separado: com a marca unificada, `logo_dark` está oculta e nada exige.
-                 *
-                 * O helper do `logo` NÃO é closure: `arquivo()` monta o texto por
-                 * argumento porque encadeado sobrescreveria o sufixo de teto/SVG (ver o
-                 * docblock do método). O texto cobre os dois modos — com a marca
-                 * separada, esta é a do tema claro.
-                 */
-                Toggle::make('unifica_logo_marca')
-                    ->label('Uma logo só, nos dois temas')
-                    ->helperText('Ligado (padrão), a mesma logo vale no tema claro e no escuro. Desligado, a marca separa em duas imagens: a da esquerda aparece no claro e a de baixo, no escuro — quem não enviar a escura fica com a clara nos dois temas.')
-                    ->live()
-                    ->inline(false),
+            $this->secao('identidade', 'marca', 'Logo, favicon e arte', 'heroicon-o-photo')
+                ->schema([
+                    /*
+                         * O par de logos da marca, com o toggle que o liga.
+                         *
+                         * `required` por closure e não `required_with`: FileUpload guarda o path
+                         * já gravado no estado, e `filled($get)` lê esse estado — incluindo o
+                         * arquivo que veio do banco, que `required_with:campo` do Laravel não
+                         * enxerga no estado do FileUpload. "Um exige o outro" vale só no modo
+                         * separado: com a marca unificada, `logo_dark` está oculta e nada exige.
+                         *
+                         * O helper do `logo` NÃO é closure: `arquivo()` monta o texto por
+                         * argumento porque encadeado sobrescreveria o sufixo de teto/SVG (ver o
+                         * docblock do método). O texto cobre os dois modos — com a marca
+                         * separada, esta é a do tema claro.
+                         */
+                    Toggle::make('unifica_logo_marca')
+                        ->label('Uma logo só, nos dois temas')
+                        ->helperText('Ligado (padrão), a mesma logo vale no tema claro e no escuro. Desligado, a marca separa em duas imagens: a da esquerda aparece no claro e a de baixo, no escuro — quem não enviar a escura fica com a clara nos dois temas.')
+                        ->live()
+                        ->inline(false),
 
-                $this->arquivo('logo', 'Logo da marca', 'Substitui o nome no topo dos painéis. Em branco, o nome é usado. Com a marca separada, esta é a do tema claro — fundo claro recomendado.')
-                    ->required(fn (Get $get): bool => ! $get('unifica_logo_marca') && filled($get('logo_dark'))),
+                    $this->arquivo('logo', 'Logo da marca', 'Substitui o nome no topo dos painéis. Em branco, o nome é usado. Com a marca separada, esta é a do tema claro — fundo claro recomendado.')
+                        ->required(fn (Get $get): bool => ! $get('unifica_logo_marca') && filled($get('logo_dark'))),
 
-                $this->arquivo('logo_dark', 'Logo para o tema escuro', 'Variante escura — fundo transparente recomendado, para a clara não virar bloco sólido no dark. Em branco, a clara é usada.')
-                    ->visible(fn (Get $get): bool => ! $get('unifica_logo_marca'))
-                    ->required(fn (Get $get): bool => ! $get('unifica_logo_marca') && filled($get('logo'))),
+                    $this->arquivo('logo_dark', 'Logo para o tema escuro', 'Variante escura — fundo transparente recomendado, para a clara não virar bloco sólido no dark. Em branco, a clara é usada.')
+                        ->visible(fn (Get $get): bool => ! $get('unifica_logo_marca'))
+                        ->required(fn (Get $get): bool => ! $get('unifica_logo_marca') && filled($get('logo'))),
 
-                $this->arquivo('favicon', 'Favicon', 'O ícone da aba do navegador. Em branco, o do Filament.'),
+                    $this->arquivo('favicon', 'Favicon', 'O ícone da aba do navegador. Em branco, o do Filament.'),
 
-                $this->arquivo('arte_do_login', 'Arte das telas de autenticação', 'A imagem ao lado do formulário de login, recuperação de senha e confirmação de e-mail. Em branco, a arte que vem no kit.'),
+                    $this->arquivo('arte_do_login', 'Arte das telas de autenticação', 'A imagem ao lado do formulário de login, recuperação de senha e confirmação de e-mail. Em branco, a arte que vem no kit.'),
+                ]),
 
-                /*
+            /*
                  * Cabeçalho dos painéis (feat/cabecalho-do-painel). Quatro interruptores e um
                  * select, todos nascidos no default que preserva a tela de hoje. Sem
                  * `->default()` no select: a SettingsPage preenche do banco, semeado com
@@ -399,220 +432,231 @@ class ConfiguracoesDoKit extends SettingsPage
                  * inteira na validação, como a densidade) e em `CabecalhoDoPainel::usuario()`
                  * (o consumidor, para o `.env`/banco sem passar pela tela). D3/D8 da wiki.
                  */
-                Section::make('Cabeçalho dos painéis')
-                    ->description('A marca do topo e o bloco do usuário. Tudo nasce desligado: com nada ligado, os painéis ficam como hoje.')
-                    ->schema([
-                        Toggle::make('cabecalho_nome_do_projeto')
-                            ->label('Nome do projeto na marca do topo')
-                            ->helperText('O nome da aplicação em texto, antes do nome do painel e da logo.')
-                            ->inline(false),
+            $this->secao('identidade', 'cabecalho', 'Cabeçalho dos painéis', 'heroicon-o-window')
+                ->description('A marca do topo e o bloco do usuário. Tudo nasce desligado: com nada ligado, os painéis ficam como hoje.')
+                ->schema([
+                    Toggle::make('cabecalho_nome_do_projeto')
+                        ->label('Nome do projeto na marca do topo')
+                        ->helperText('O nome da aplicação em texto, antes do nome do painel e da logo.')
+                        ->inline(false),
 
-                        Toggle::make('cabecalho_nome_do_painel')
-                            ->label('Nome do painel na marca do topo')
-                            ->helperText('Administração, Infraestrutura ou, no painel do negócio, o nome da organização aberta. Sem organização, o painel do negócio omite o segmento quando ele repetiria o nome do projeto.')
-                            ->inline(false),
+                    Toggle::make('cabecalho_nome_do_painel')
+                        ->label('Nome do painel na marca do topo')
+                        ->helperText('Administração, Infraestrutura ou, no painel do negócio, o nome da organização aberta. Sem organização, o painel do negócio omite o segmento quando ele repetiria o nome do projeto.')
+                        ->inline(false),
 
-                        Toggle::make('cabecalho_logo_da_marca')
-                            ->label('Logo da marca ao fim da composição')
-                            ->helperText('A logo da aba Identidade (clara e escura, se a marca estiver separada). Sem logo enviada, nada aparece neste lugar.')
-                            ->inline(false),
+                    Toggle::make('cabecalho_logo_da_marca')
+                        ->label('Logo da marca ao fim da composição')
+                        ->helperText('A logo da aba Identidade (clara e escura, se a marca estiver separada). Sem logo enviada, nada aparece neste lugar.')
+                        ->inline(false),
 
-                        Toggle::make('cabecalho_usuario')
-                            ->label('Nome do usuário ao lado do avatar')
-                            ->helperText('Quem está autenticado, à esquerda do avatar. Some em tela estreita; o menu do avatar continua mostrando tudo.')
-                            ->live()
-                            ->inline(false),
+                    Toggle::make('cabecalho_usuario')
+                        ->label('Nome do usuário ao lado do avatar')
+                        ->helperText('Quem está autenticado, à esquerda do avatar. Some em tela estreita; o menu do avatar continua mostrando tudo.')
+                        ->live()
+                        ->inline(false),
 
-                        Select::make('cabecalho_detalhe_do_usuario')
-                            ->label('Abaixo do nome do usuário')
-                            ->helperText('O papel no painel corrente (Perfil) ou o e-mail.')
-                            ->options(DetalheDoUsuario::opcoes())
-                            ->selectablePlaceholder(false)
-                            ->required()
-                            // `string` além do `in` que o Select já põe. Medido pelo CT-22 (R17 M3):
-                            // sem esta regra, `$wire.set('data.…', ["email"])` atravessa a validação
-                            // do Select, o estado desidrata como null e a settings tipada estoura
-                            // `TypeError: Cannot assign null to property … of type string` no save.
-                            // Com ela, a lista é recusada no campo e nada é gravado.
-                            ->rule('string')
-                            ->visible(fn (Get $get): bool => (bool) $get('cabecalho_usuario')),
-                    ])
-                    ->columns(2),
-            ]);
+                    Select::make('cabecalho_detalhe_do_usuario')
+                        ->label('Abaixo do nome do usuário')
+                        ->helperText('O papel no painel corrente (Perfil) ou o e-mail.')
+                        ->options(DetalheDoUsuario::opcoes())
+                        ->selectablePlaceholder(false)
+                        ->required()
+                        // `string` além do `in` que o Select já põe. Medido pelo CT-22 (R17 M3):
+                        // sem esta regra, `$wire.set('data.…', ["email"])` atravessa a validação
+                        // do Select, o estado desidrata como null e a settings tipada estoura
+                        // `TypeError: Cannot assign null to property … of type string` no save.
+                        // Com ela, a lista é recusada no campo e nada é gravado.
+                        ->rule('string')
+                        ->visible(fn (Get $get): bool => (bool) $get('cabecalho_usuario')),
+                ])
+                ->columns(2),
+        ]);
     }
 
     private function abaEmail(): Tab
     {
         $smtp = fn (Get $get): bool => $get('mail_mailer') === 'smtp';
 
-        return Tab::make('E-mail')
-            ->icon('heroicon-o-envelope')
-            ->schema([
-                Select::make('mail_mailer')
-                    ->label('Transporte')
-                    ->helperText('`log` só escreve em storage/logs — convite e lembrete não chegam a ninguém. Salvar aqui vale para o próximo request; um worker de fila em execução (`queue:work`) mantém a configuração antiga em memória — rode `php artisan queue:restart` para os e-mails enfileirados saírem pelo transporte novo.')
-                    ->options(fn (): array => $this->comValorConfigurado(
-                        [
-                            'log'   => 'Log (não envia — escreve em storage/logs)',
-                            'array' => 'Array (descarta — só para teste)',
-                            'smtp'  => 'SMTP',
-                        ],
-                        app(static::getSettings())->mail_mailer,
-                        'configurado no .env',
-                    ))
-                    ->required()
-                    ->live(),
+        return $this->aba('email', 'E-mail', 'heroicon-o-envelope', [
+            $this->secao('email', 'remetente', 'Remetente', 'heroicon-o-paper-airplane')
+                ->schema([
+                    Select::make('mail_mailer')
+                        ->label('Transporte')
+                        ->helperText('`log` só escreve em storage/logs — convite e lembrete não chegam a ninguém. Salvar aqui vale para o próximo request; um worker de fila em execução (`queue:work`) mantém a configuração antiga em memória — rode `php artisan queue:restart` para os e-mails enfileirados saírem pelo transporte novo.')
+                        ->options(fn (): array => $this->comValorConfigurado(
+                            [
+                                'log'   => 'Log (não envia — escreve em storage/logs)',
+                                'array' => 'Array (descarta — só para teste)',
+                                'smtp'  => 'SMTP',
+                            ],
+                            app(static::getSettings())->mail_mailer,
+                            'configurado no .env',
+                        ))
+                        ->required()
+                        ->live(),
 
-                TextInput::make('mail_from_address')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('Remetente')
-                    ->email()
-                    ->maxLength(255),
+                    TextInput::make('mail_from_address')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('Remetente')
+                        ->email()
+                        ->maxLength(255),
 
-                TextInput::make('mail_from_name')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('Nome do remetente')
-                    ->maxLength(255),
+                    TextInput::make('mail_from_name')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('Nome do remetente')
+                        ->maxLength(255),
+                ]),
 
-                TextInput::make('mail_host')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('Servidor')
-                    ->maxLength(255)
-                    ->visible($smtp),
+            $this->secao('email', 'smtp', 'Servidor SMTP', 'heroicon-o-server')
+                ->visible($smtp)
+                ->schema([
+                    TextInput::make('mail_host')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('Servidor')
+                        ->maxLength(255)
+                        ->visible($smtp),
 
-                TextInput::make('mail_port')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('Porta')
-                    ->numeric()
-                    ->integer()
-                    ->minValue(1)
-                    ->maxValue(65535)
-                    ->visible($smtp),
+                    TextInput::make('mail_port')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('Porta')
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        ->maxValue(65535)
+                        ->visible($smtp),
 
-                Select::make('mail_scheme')
-                    ->label('Criptografia')
-                    ->options(fn (): array => $this->comValorConfigurado(
-                        ['tls' => 'TLS', 'ssl' => 'SSL'],
-                        app(static::getSettings())->mail_scheme,
-                        'configurado no .env',
-                    ))
-                    ->placeholder('Nenhuma')
-                    ->visible($smtp),
+                    Select::make('mail_scheme')
+                        ->label('Criptografia')
+                        ->options(fn (): array => $this->comValorConfigurado(
+                            ['tls' => 'TLS', 'ssl' => 'SSL'],
+                            app(static::getSettings())->mail_scheme,
+                            'configurado no .env',
+                        ))
+                        ->placeholder('Nenhuma')
+                        ->visible($smtp),
 
-                TextInput::make('mail_username')
-                    ->extraInputAttributes(['autocomplete' => 'new-password'])
-                    ->label('Usuário')
-                    ->maxLength(255)
-                    ->visible($smtp),
+                    TextInput::make('mail_username')
+                        ->extraInputAttributes(['autocomplete' => 'new-password'])
+                        ->label('Usuário')
+                        ->maxLength(255)
+                        ->visible($smtp),
 
-                /*
-                 * A senha NUNCA e hidratada — e `->password()` nao resolve isso.
-                 *
-                 * `->password()` e `->revealable()` mexem no `type` do input, ou seja, na TELA.
-                 * O valor continua em `$this->data`, que e propriedade publica da Page
-                 * (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:33`),
-                 * e o Livewire serializa `$data` inteiro no `wire:snapshot` do HTML. Resultado
-                 * medido pelo quality gate: `GET /admin/configuracoes-da-aplicacao` devolvia a senha em
-                 * claro no corpo da resposta, com 200 e sem clique em "revelar".
-                 *
-                 * Por isso a barreira e em DOIS pontos, e nenhum deles e visual:
-                 *
-                 * 1. `mutateFormDataBeforeFill()` zera a chave antes de o formulario ser
-                 *    preenchido — o segredo nao entra em `$data`, logo nao entra no snapshot;
-                 * **O parametro da closure PRECISA se chamar `$state`.** O Filament resolve
-                 * dependencia de closure por NOME
-                 * (`vendor/filament/schemas/src/Components/Component.php:87-98`), e nome
-                 * desconhecido com tipo escalar nao resolve para nada
-                 * (`vendor/filament/support/src/Concerns/EvaluatesClosures.php:143-160`). Com
-                 * `$estado`, a closure recebia `null`, `filled(null)` era sempre `false` e a
-                 * chave NUNCA chegava ao save: a senha de SMTP era impossivel de gravar pela
-                 * tela, em silencio, desde a v0.19.0.
-                 *
-                 * O par de casos que a rule `.ai/rules/pages.md` pede — "nao aparece no HTML" e
-                 * "sobrevive a um save que nao o tocou" — passa com esse defeito, porque os dois
-                 * afirmam o que NAO acontece. Falta o terceiro: campo PREENCHIDO grava. Foi ele
-                 * que pegou.
-                 *
-                 * 2. `->dehydrated()` so deixa a chave chegar ao save quando o campo foi
-                 *    preenchido. Ausente do `$data` do save, o `$settings->fill()` do plugin nao
-                 *    mexe no valor guardado (ele aplica so as chaves presentes), e a senha atual
-                 *    sobrevive a um salvamento em que ninguem a tocou.
-                 *
-                 * `->revealable()` fica: agora o que ele revela e o que a PESSOA acabou de
-                 * digitar, que e conferencia de digitacao, nao exposicao do que estava gravado.
-                 */
-                TextInput::make('mail_password')
-                    ->extraInputAttributes(['autocomplete' => 'new-password'])
-                    ->label('Senha')
-                    ->helperText('Guardada cifrada. Deixe em branco para manter a senha atual — ela nao e exibida aqui, nem no codigo-fonte da pagina. A trilha de auditoria registra que ela mudou, nunca o valor.')
-                    ->placeholder(fn (): string => filled($this->senhaDeSmtpGuardada()) ? 'Ja configurada — em branco mantem' : 'Nenhuma senha configurada')
-                    ->password()
-                    ->revealable()
-                    ->dehydrated(fn (?string $state): bool => filled($state))
-                    ->maxLength(255)
-                    ->visible($smtp),
-            ]);
+                    /*
+                         * A senha NUNCA e hidratada — e `->password()` nao resolve isso.
+                         *
+                         * `->password()` e `->revealable()` mexem no `type` do input, ou seja, na TELA.
+                         * O valor continua em `$this->data`, que e propriedade publica da Page
+                         * (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:33`),
+                         * e o Livewire serializa `$data` inteiro no `wire:snapshot` do HTML. Resultado
+                         * medido pelo quality gate: `GET /admin/configuracoes-da-aplicacao` devolvia a senha em
+                         * claro no corpo da resposta, com 200 e sem clique em "revelar".
+                         *
+                         * Por isso a barreira e em DOIS pontos, e nenhum deles e visual:
+                         *
+                         * 1. `mutateFormDataBeforeFill()` zera a chave antes de o formulario ser
+                         *    preenchido — o segredo nao entra em `$data`, logo nao entra no snapshot;
+                         * **O parametro da closure PRECISA se chamar `$state`.** O Filament resolve
+                         * dependencia de closure por NOME
+                         * (`vendor/filament/schemas/src/Components/Component.php:87-98`), e nome
+                         * desconhecido com tipo escalar nao resolve para nada
+                         * (`vendor/filament/support/src/Concerns/EvaluatesClosures.php:143-160`). Com
+                         * `$estado`, a closure recebia `null`, `filled(null)` era sempre `false` e a
+                         * chave NUNCA chegava ao save: a senha de SMTP era impossivel de gravar pela
+                         * tela, em silencio, desde a v0.19.0.
+                         *
+                         * O par de casos que a rule `.ai/rules/pages.md` pede — "nao aparece no HTML" e
+                         * "sobrevive a um save que nao o tocou" — passa com esse defeito, porque os dois
+                         * afirmam o que NAO acontece. Falta o terceiro: campo PREENCHIDO grava. Foi ele
+                         * que pegou.
+                         *
+                         * 2. `->dehydrated()` so deixa a chave chegar ao save quando o campo foi
+                         *    preenchido. Ausente do `$data` do save, o `$settings->fill()` do plugin nao
+                         *    mexe no valor guardado (ele aplica so as chaves presentes), e a senha atual
+                         *    sobrevive a um salvamento em que ninguem a tocou.
+                         *
+                         * `->revealable()` fica: agora o que ele revela e o que a PESSOA acabou de
+                         * digitar, que e conferencia de digitacao, nao exposicao do que estava gravado.
+                         */
+                    TextInput::make('mail_password')
+                        ->extraInputAttributes(['autocomplete' => 'new-password'])
+                        ->label('Senha')
+                        ->helperText('Guardada cifrada. Deixe em branco para manter a senha atual — ela nao e exibida aqui, nem no codigo-fonte da pagina. A trilha de auditoria registra que ela mudou, nunca o valor.')
+                        ->placeholder(fn (): string => filled($this->senhaDeSmtpGuardada()) ? 'Ja configurada — em branco mantem' : 'Nenhuma senha configurada')
+                        ->password()
+                        ->revealable()
+                        ->dehydrated(fn (?string $state): bool => filled($state))
+                        ->maxLength(255)
+                        ->visible($smtp),
+                ]),
+
+        ]);
     }
 
     private function abaTabelas(): Tab
     {
-        return Tab::make('Tabelas')
-            ->icon('heroicon-o-table-cells')
-            ->schema([
-                TextInput::make('paginacao_padrao')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('Linhas por página')
-                    ->helperText('O default de TODA tabela dos três painéis, inclusive as dos pacotes de terceiros.')
-                    ->numeric()
-                    ->integer()
-                    ->minValue(1)
+        return $this->aba('tabelas', 'Tabelas', 'heroicon-o-table-cells', [
+            $this->secao('tabelas', 'aparencia', 'Paginação e aparência', 'heroicon-o-table-cells')
+                ->schema([
+                    TextInput::make('paginacao_padrao')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('Linhas por página')
+                        ->helperText('O default de TODA tabela dos três painéis, inclusive as dos pacotes de terceiros.')
+                        ->numeric()
+                        ->integer()
+                        ->minValue(1)
+                        /*
+                             * Teto de 100 para quem ESCOLHE, e o valor já configurado quando ele é maior.
+                             * `NumeroDoEnv::positivo()` não tem teto, então `KIT_PAGINACAO=500` é estado
+                             * alcançável — e um `maxValue(100)` fixo travaria a tela inteira por causa de
+                             * um número que a pessoa nem veio mexer. Mesmo raciocínio de
+                             * `comValorConfigurado()`.
+                             */
+                        ->maxValue(fn (): int => max(100, (int) app(static::getSettings())->paginacao_padrao))
+                        ->required(),
+
+                    Toggle::make('tabela_listrada')
+                        ->label('Linhas listradas')
+                        ->helperText('O único controle de densidade visual que o Filament 5 oferece — não existe API de densidade de tabela nesta versão.'),
+
+                    Toggle::make('persistir_filtros')
+                        ->label('Lembrar filtro, busca e ordenação')
+                        ->helperText('O recorte do usuário sobrevive à navegação, guardado na sessão.'),
+
+                    Toggle::make('colunas_redimensionaveis')
+                        ->label('Colunas arrastáveis')
+                        ->helperText('Arrastar a largura das colunas. Sem efeito se o pacote resized-column for removido.'),
+                ]),
+
+            $this->secao('tabelas', 'carregamento-e-visoes', 'Carregamento e visões', 'heroicon-o-bookmark-square')
+                ->schema([
                     /*
-                     * Teto de 100 para quem ESCOLHE, e o valor já configurado quando ele é maior.
-                     * `NumeroDoEnv::positivo()` não tem teto, então `KIT_PAGINACAO=500` é estado
-                     * alcançável — e um `maxValue(100)` fixo travaria a tela inteira por causa de
-                     * um número que a pessoa nem veio mexer. Mesmo raciocínio de
-                     * `comValorConfigurado()`.
-                     */
-                    ->maxValue(fn (): int => max(100, (int) app(static::getSettings())->paginacao_padrao))
-                    ->required(),
+                         * Rodada 3 de pacotes (wiki `estudo-de-pacotes-rodada-3`). Array cru em `options()`
+                         * pelo motivo medido em `DensidadeDoLayout::opcoes()`; a coerção do valor fica em
+                         * `mutateFormDataBeforeSave()`, ao lado da densidade.
+                         */
+                    Select::make('tabela_carregamento')
+                        ->label('Carregamento da tabela')
+                        ->helperText('Rolagem infinita e botão "Carregar mais" carregam um bloco por vez, do tamanho de "Linhas por página", até 500 linhas na tela; o seletor de registros por página some. Vale para toda tabela dos três painéis.')
+                        ->options(CarregamentoDaTabela::opcoes())
+                        ->selectablePlaceholder(false)
+                        // `string` explícito: payload com array passaria pelo `in()` das opções e chegaria
+                        // ao settings como `null` (`TypeError` na propriedade tipada) — ver o CT-14 da wiki.
+                        ->rule('string')
+                        ->required(),
 
-                Toggle::make('tabela_listrada')
-                    ->label('Linhas listradas')
-                    ->helperText('O único controle de densidade visual que o Filament 5 oferece — não existe API de densidade de tabela nesta versão.'),
+                    Toggle::make('visoes_de_tabela')
+                        ->label('Visões salvas')
+                        ->helperText('Botão "Visões" nas listagens do kit: filtros, busca, ordenação, agrupamento e colunas gravados com nome, por usuário e por organização. Salvar exige a permissão Usar:VisoesDeTabela. Desligar esconde as visões sem apagá-las.')
+                        ->live(),
 
-                Toggle::make('persistir_filtros')
-                    ->label('Lembrar filtro, busca e ordenação')
-                    ->helperText('O recorte do usuário sobrevive à navegação, guardado na sessão.'),
+                    Toggle::make('visoes_de_tabela_compartilhadas')
+                        ->label('Compartilhar visões com todos')
+                        ->helperText('Permite marcar "Compartilhar com todos" ao salvar: a visão passa a aparecer para todo usuário do painel (na organização, para os membros dela). Só o dono a altera.')
+                        ->visible(fn (Get $get): bool => (bool) $get('visoes_de_tabela')),
+                ]),
 
-                Toggle::make('colunas_redimensionaveis')
-                    ->label('Colunas arrastáveis')
-                    ->helperText('Arrastar a largura das colunas. Sem efeito se o pacote resized-column for removido.'),
-
-                /*
-                 * Rodada 3 de pacotes (wiki `estudo-de-pacotes-rodada-3`). Array cru em `options()`
-                 * pelo motivo medido em `DensidadeDoLayout::opcoes()`; a coerção do valor fica em
-                 * `mutateFormDataBeforeSave()`, ao lado da densidade.
-                 */
-                Select::make('tabela_carregamento')
-                    ->label('Carregamento da tabela')
-                    ->helperText('Rolagem infinita e botão "Carregar mais" carregam um bloco por vez, do tamanho de "Linhas por página", até 500 linhas na tela; o seletor de registros por página some. Vale para toda tabela dos três painéis.')
-                    ->options(CarregamentoDaTabela::opcoes())
-                    ->selectablePlaceholder(false)
-                    // `string` explícito: payload com array passaria pelo `in()` das opções e chegaria
-                    // ao settings como `null` (`TypeError` na propriedade tipada) — ver o CT-14 da wiki.
-                    ->rule('string')
-                    ->required(),
-
-                Toggle::make('visoes_de_tabela')
-                    ->label('Visões salvas')
-                    ->helperText('Botão "Visões" nas listagens do kit: filtros, busca, ordenação, agrupamento e colunas gravados com nome, por usuário e por organização. Salvar exige a permissão Usar:VisoesDeTabela. Desligar esconde as visões sem apagá-las.')
-                    ->live(),
-
-                Toggle::make('visoes_de_tabela_compartilhadas')
-                    ->label('Compartilhar visões com todos')
-                    ->helperText('Permite marcar "Compartilhar com todos" ao salvar: a visão passa a aparecer para todo usuário do painel (na organização, para os membros dela). Só o dono a altera.')
-                    ->visible(fn (Get $get): bool => (bool) $get('visoes_de_tabela')),
-            ]);
+        ]);
     }
 
     /**
@@ -637,34 +681,39 @@ class ConfiguracoesDoKit extends SettingsPage
     {
         $aberto = fn (Get $get): bool => (bool) $get('registro_habilitado');
 
-        return Tab::make('Registro')
-            ->icon('heroicon-o-user-plus')
-            ->schema([
-                Toggle::make('registro_habilitado')
-                    ->label('Permitir cadastro sem convite no /app')
-                    ->helperText('Desligado, o /app só aceita quem tem convite — que é o default do kit. Ligado, a tela de cadastro passa a aceitar visitante, e cada organização ainda decide se aceita o seu (em /admin/organizacoes).')
-                    ->live(),
+        return $this->aba('registro', 'Registro', 'heroicon-o-user-plus', [
+            $this->secao('registro', 'cadastro', 'Cadastro sem convite', 'heroicon-o-user-plus')
+                ->schema([
+                    Toggle::make('registro_habilitado')
+                        ->label('Permitir cadastro sem convite no /app')
+                        ->helperText('Desligado, o /app só aceita quem tem convite — que é o default do kit. Ligado, a tela de cadastro passa a aceitar visitante, e cada organização ainda decide se aceita o seu (em /admin/organizacoes).')
+                        ->live(),
 
-                Toggle::make('registro_aprovacao_manual')
-                    ->label('Cadastro nasce pendente de aprovação')
-                    ->helperText('Quem se cadastra não recebe papel nenhum até alguém aprovar em /admin/usuarios — e sem papel não abre painel nenhum.')
-                    ->visible($aberto),
+                    Toggle::make('registro_aprovacao_manual')
+                        ->label('Cadastro nasce pendente de aprovação')
+                        ->helperText('Quem se cadastra não recebe papel nenhum até alguém aprovar em /admin/usuarios — e sem papel não abre painel nenhum.')
+                        ->visible($aberto),
+                ]),
 
-                /*
-                 * A verificação de e-mail voltou a ser editável, e o que mudou não foi este
-                 * arquivo: até a v0.19.3 um toggle aqui gravava e não fazia efeito, porque o
-                 * `AppPanelProvider` lia a chave no BOOT e o middleware ficava fixado no array
-                 * da rota (`.../Pages/Concerns/HasRoutes.php:91`). Agora a rota guarda um
-                 * decisor — `App\Http\Middleware\ExigirEmailVerificado` —, que pergunta a cada
-                 * request. Ver a wiki `verificacao-de-email-editavel`.
-                 *
-                 * O `helperText` avisa o que o README avisa, porque aqui um clique basta: a
-                 * exigência alcança TODO usuário do /app, não só quem se cadastrar depois.
-                 */
-                Toggle::make('registro_verificar_email')
-                    ->label('Exigir e-mail validado no /app')
-                    ->helperText('Ligado, quem ainda não confirmou o e-mail é levado à tela de confirmação ao entrar no /app — e isso vale para TODO usuário do painel, não só para os novos. Numa base que já tem gente dentro, valide antes quem foi criado pela tela de usuários (o README traz o comando). Quem vem de convite nunca é afetado: o token já provou a posse do endereço.'),
-            ]);
+            $this->secao('registro', 'email-verificado', 'E-mail verificado', 'heroicon-o-envelope-open')
+                ->schema([
+                    /*
+                         * A verificação de e-mail voltou a ser editável, e o que mudou não foi este
+                         * arquivo: até a v0.19.3 um toggle aqui gravava e não fazia efeito, porque o
+                         * `AppPanelProvider` lia a chave no BOOT e o middleware ficava fixado no array
+                         * da rota (`.../Pages/Concerns/HasRoutes.php:91`). Agora a rota guarda um
+                         * decisor — `App\Http\Middleware\ExigirEmailVerificado` —, que pergunta a cada
+                         * request. Ver a wiki `verificacao-de-email-editavel`.
+                         *
+                         * O `helperText` avisa o que o README avisa, porque aqui um clique basta: a
+                         * exigência alcança TODO usuário do /app, não só quem se cadastrar depois.
+                         */
+                    Toggle::make('registro_verificar_email')
+                        ->label('Exigir e-mail validado no /app')
+                        ->helperText('Ligado, quem ainda não confirmou o e-mail é levado à tela de confirmação ao entrar no /app — e isso vale para TODO usuário do painel, não só para os novos. Numa base que já tem gente dentro, valide antes quem foi criado pela tela de usuários (o README traz o comando). Quem vem de convite nunca é afetado: o token já provou a posse do endereço.'),
+                ]),
+
+        ]);
     }
 
     /**
@@ -689,44 +738,42 @@ class ConfiguracoesDoKit extends SettingsPage
             ProvedorSocial::cases(),
         );
 
-        return Tab::make('Login')
-            ->icon('heroicon-o-arrow-right-on-rectangle')
-            ->schema([
-                // Duas seções, dois assuntos: os provedores (um bloco fechado por provedor,
-                // com o ícone de status no cabeçalho) e o rodapé. Pedido do solicitante na
-                // validação real dos provedores (2026-08-26).
-                Section::make('Página única de login')
-                    ->description('Uma tela em /login para os três painéis, em vez de /admin/login, /infra/login e /app/login.')
-                    ->columnSpanFull()
-                    ->schema([
-                        Toggle::make('login_unificado')
-                            ->label('Unificar o login em /login')
-                            ->helperText('Desligado: cada painel tem a própria tela de login (padrão do Filament). Ligado: as três telas levam a /login; quem tem acesso a mais de um painel escolhe qual abrir depois de entrar, quem tem um só entra direto. Vale na hora, sem deploy.')
-                            ->columnSpanFull(),
-                    ]),
-                Section::make('Login social')
-                    ->description('Um bloco por provedor, fechado. O ícone no cabeçalho diz se o botão está habilitado; abra para ver as credenciais.')
-                    ->columnSpanFull()
-                    ->schema([
-                        /*
+        return $this->aba('login', 'Login', 'heroicon-o-arrow-right-on-rectangle', [
+            // Duas seções, dois assuntos: os provedores (um bloco fechado por provedor,
+            // com o ícone de status no cabeçalho) e o rodapé. Pedido do solicitante na
+            // validação real dos provedores (2026-08-26).
+            $this->secao('login', 'pagina-unica', 'Página única de login', 'heroicon-o-arrow-right-on-rectangle')
+                ->description('Uma tela em /login para os três painéis, em vez de /admin/login, /infra/login e /app/login.')
+                ->columnSpanFull()
+                ->schema([
+                    Toggle::make('login_unificado')
+                        ->label('Unificar o login em /login')
+                        ->helperText('Desligado: cada painel tem a própria tela de login (padrão do Filament). Ligado: as três telas levam a /login; quem tem acesso a mais de um painel escolhe qual abrir depois de entrar, quem tem um só entra direto. Vale na hora, sem deploy.')
+                        ->columnSpanFull(),
+                ]),
+            $this->secao('login', 'social', 'Login social', 'heroicon-o-user-group')
+                ->description('Um bloco por provedor, fechado. O ícone no cabeçalho diz se o botão está habilitado; abra para ver as credenciais.')
+                ->columnSpanFull()
+                ->schema([
+                    /*
                          * Vale para os quatro provedores. Lida por request no callback, então pode
                          * viver aqui (`.ai/rules/settings.md`). ADR-03 de vinculo-de-provedor-social.
                          */
-                        Toggle::make('login_vinculo_confirmar')
-                            ->label('Exigir confirmação por e-mail na primeira entrada social em uma conta que já existe')
-                            ->helperText('Desligado: a pessoa entra e recebe um aviso por e-mail ("sua conta foi acessada pelo Google pela primeira vez"). Ligado: ela recebe um link de 30 minutos e só entra depois de confirmar. Nas entradas seguintes a conta é reconhecida pela identidade no provedor, em qualquer modo.')
-                            ->columnSpanFull(),
+                    Toggle::make('login_vinculo_confirmar')
+                        ->label('Exigir confirmação por e-mail na primeira entrada social em uma conta que já existe')
+                        ->helperText('Desligado: a pessoa entra e recebe um aviso por e-mail ("sua conta foi acessada pelo Google pela primeira vez"). Ligado: ela recebe um link de 30 minutos e só entra depois de confirmar. Nas entradas seguintes a conta é reconhecida pela identidade no provedor, em qualquer modo.')
+                        ->columnSpanFull(),
 
-                        ...$secoes,
-                    ]),
+                    ...$secoes,
+                ]),
 
-                $this->secaoAntiRobo(),
+            $this->secaoAntiRobo(),
 
-                Section::make('Rodapé da tela de login')
-                    ->description('Aparece dentro do cartão de login dos três painéis, abaixo dos botões.')
-                    ->columnSpanFull()
-                    ->schema([
-                        /*
+            $this->secao('login', 'rodape', 'Rodapé da tela de login', 'heroicon-o-document-text')
+                ->description('Aparece dentro do cartão de login dos três painéis, abaixo dos botões.')
+                ->columnSpanFull()
+                ->schema([
+                    /*
                          * Markdown, e não HTML: a tela de login é pública e não autenticada, e HTML
                          * cru ali seria XSS armazenado. O Markdown dá negrito, itálico e link — o que
                          * um rodapé precisa — e a view descarta qualquer HTML cru e qualquer link com
@@ -734,14 +781,14 @@ class ConfiguracoesDoKit extends SettingsPage
                          * `allow_unsafe_links: false`). A barra tem só esses botões de propósito:
                          * título, tabela e anexo não cabem num rodapé de duas linhas.
                          */
-                        MarkdownEditor::make('login_rodape')
-                            ->hiddenLabel()
-                            ->helperText('Aceita Markdown (negrito, itálico, link). HTML cru é descartado, porque a tela de login é pública.')
-                            ->toolbarButtons([['bold', 'italic', 'strike', 'link']])
-                            ->maxLength(500)
-                            ->columnSpanFull(),
-                    ]),
-            ]);
+                    MarkdownEditor::make('login_rodape')
+                        ->hiddenLabel()
+                        ->helperText('Aceita Markdown (negrito, itálico, link). HTML cru é descartado, porque a tela de login é pública.')
+                        ->toolbarButtons([['bold', 'italic', 'strike', 'link']])
+                        ->maxLength(500)
+                        ->columnSpanFull(),
+                ]),
+        ]);
     }
 
     /**
@@ -762,9 +809,8 @@ class ConfiguracoesDoKit extends SettingsPage
     {
         $ligado = fn (Get $get): bool => (bool) $get('login_anti_robo_habilitado');
 
-        return Section::make('Proteção anti-robô')
+        return $this->secao('login', 'anti-robo', 'Proteção anti-robô', 'heroicon-o-shield-check')
             ->description('Um desafio "não sou um robô" nas telas de login, "esqueceu a senha?" e registro dos três painéis. Desligado, as telas ficam como sempre: nenhum script externo é carregado.')
-            ->collapsible()
             ->columnSpanFull()
             ->schema([
                 Toggle::make('login_anti_robo_habilitado')
@@ -872,6 +918,8 @@ class ConfiguracoesDoKit extends SettingsPage
             // Fechada ao abrir a tela; o status vive no cabeçalho, então não precisa abrir para
             // saber. O interruptor é `live()`, e o ícone acompanha na hora.
             ->collapsed()
+            ->persistCollapsed()
+            ->id('configuracoes-login-provedor-'.$provedor->value)
             ->icon(fn (Get $get): string => $ligado($get) ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
             ->iconColor(fn (Get $get): string => $ligado($get) ? 'success' : 'gray')
             ->columnSpanFull()
@@ -936,59 +984,61 @@ class ConfiguracoesDoKit extends SettingsPage
         };
     }
 
-    private function abaKit(): Tab
+    /** Aba chamada "Kit" até a v0.49.0; chave `aplicacao`. */
+    private function abaAplicacao(): Tab
     {
-        return Tab::make('Kit')
-            ->icon('heroicon-o-squares-2x2')
-            ->schema([
-                Toggle::make('hub_de_navegacao')
-                    ->label('Hub de navegação em cartões')
-                    ->helperText('Uma grade de cartões com os destinos, nos painéis /admin e /app. O /infra tem hub independente desta chave.'),
+        return $this->aba('aplicacao', 'Aplicação', 'heroicon-o-squares-2x2', [
+            $this->secao('aplicacao', 'paineis', 'Comportamento dos painéis', 'heroicon-o-adjustments-horizontal')
+                ->schema([
+                    Toggle::make('hub_de_navegacao')
+                        ->label('Hub de navegação em cartões')
+                        ->helperText('Uma grade de cartões com os destinos, nos painéis /admin e /app. O /infra tem hub independente desta chave.'),
 
-                /*
-                 * Interruptor lido por REQUEST: os três providers passam uma Closure para
-                 * `->unsavedChangesAlerts()`, e o Filament a avalia no render. Salvar aqui vale
-                 * no próximo F5, sem cache nem restart.
-                 */
-                Toggle::make('alerta_alteracoes_nao_salvas')
-                    ->label('Avisar sobre alterações não salvas')
-                    ->helperText('Ao sair de um formulário com alteração pendente, o navegador pede confirmação antes de descartar. Vale para as telas de cadastro e edição dos três painéis, inclusive as dos plugins.'),
+                    /*
+                         * Interruptor lido por REQUEST: os três providers passam uma Closure para
+                         * `->unsavedChangesAlerts()`, e o Filament a avalia no render. Salvar aqui vale
+                         * no próximo F5, sem cache nem restart.
+                         */
+                    Toggle::make('alerta_alteracoes_nao_salvas')
+                        ->label('Avisar sobre alterações não salvas')
+                        ->helperText('Ao sair de um formulário com alteração pendente, o navegador pede confirmação antes de descartar. Vale para as telas de cadastro e edição dos três painéis, inclusive as dos plugins.'),
 
-                /*
-                 * Select de NÍVEIS e não Toggle, e a diferença não é estética: apertar por
-                 * `--spacing` distorce proporções (ícone e caixa de seleção encolhem junto), a
-                 * distorção escala com a intensidade e ela é questão de gosto e de tela. Um
-                 * booleano fixaria uma intensidade para todo mundo. Ver ADR-04.
-                 *
-                 * Lido por REQUEST no render hook `STYLES_BEFORE`, como o alerta acima: salvar
-                 * aqui vale no próximo F5, sem `npm run build`, sem cache e sem deploy.
-                 *
-                 * `DensidadeDoLayout::opcoes()` e NÃO `->options(DensidadeDoLayout::class)`: a
-                 * segunda forma faz o Filament devolver instância do enum no estado, e o
-                 * `fill()` do spatie a atribui direto à propriedade tipada `string` — `TypeError`
-                 * ao salvar a TELA INTEIRA, não só este campo. O docblock de `opcoes()` tem o
-                 * caminho completo; a suíte pegou com 60 casos de outras features.
-                 *
-                 * O enum continua sendo a única cópia do vocabulário: nível novo aparece aqui
-                 * sem tocar nesta tela.
-                 */
-                Select::make('densidade_do_layout')
-                    ->label('Densidade do layout')
-                    ->helperText('Aperta de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis. "Confortável" é o padrão do Filament e não muda nada.')
-                    ->options(DensidadeDoLayout::opcoes())
-                    ->selectablePlaceholder(false)
-                    ->required(),
+                    /*
+                         * Select de NÍVEIS e não Toggle, e a diferença não é estética: apertar por
+                         * `--spacing` distorce proporções (ícone e caixa de seleção encolhem junto), a
+                         * distorção escala com a intensidade e ela é questão de gosto e de tela. Um
+                         * booleano fixaria uma intensidade para todo mundo. Ver ADR-04.
+                         *
+                         * Lido por REQUEST no render hook `STYLES_BEFORE`, como o alerta acima: salvar
+                         * aqui vale no próximo F5, sem `npm run build`, sem cache e sem deploy.
+                         *
+                         * `DensidadeDoLayout::opcoes()` e NÃO `->options(DensidadeDoLayout::class)`: a
+                         * segunda forma faz o Filament devolver instância do enum no estado, e o
+                         * `fill()` do spatie a atribui direto à propriedade tipada `string` — `TypeError`
+                         * ao salvar a TELA INTEIRA, não só este campo. O docblock de `opcoes()` tem o
+                         * caminho completo; a suíte pegou com 60 casos de outras features.
+                         *
+                         * O enum continua sendo a única cópia do vocabulário: nível novo aparece aqui
+                         * sem tocar nesta tela.
+                         */
+                    Select::make('densidade_do_layout')
+                        ->label('Densidade do layout')
+                        ->helperText('Aperta de uma vez os cartões de estatística, as tabelas, o menu lateral e os botões dos três painéis. "Confortável" é o padrão do Filament e não muda nada.')
+                        ->options(DensidadeDoLayout::opcoes())
+                        ->selectablePlaceholder(false)
+                        ->required(),
 
-                /*
-                 * Desligado por padrão: a versão do kit é métrica interna do starter, e quem
-                 * entrega o produto a um cliente final não tem por que anunciar de qual kit ele
-                 * nasceu. A versão do SISTEMA fica na aba Identidade.
-                 */
-                Toggle::make('exibir_versao_do_kit')
-                    ->label('Mostrar também a versão do kit no rodapé')
-                    ->helperText('Acrescenta a versão do starter kit ao lado da versão do sistema. Desligado, o rodapé só mostra a sua. A versão do kit continua disponível em `php artisan kit:info`.'),
+                    /*
+                         * Desligado por padrão: a versão do kit é métrica interna do starter, e quem
+                         * entrega o produto a um cliente final não tem por que anunciar de qual kit ele
+                         * nasceu. A versão do SISTEMA fica na aba Identidade.
+                         */
+                    Toggle::make('exibir_versao_do_kit')
+                        ->label('Mostrar também a versão do kit no rodapé')
+                        ->helperText('Acrescenta a versão do starter kit ao lado da versão do sistema. Desligado, o rodapé só mostra a sua. A versão do kit continua disponível em `php artisan kit:info`.'),
+                ]),
 
-                /*
+            /*
                  * O interruptor do dashboard dinâmico. A troca é por REQUEST — as duas
                  * páginas (dinâmica e clássica) estão sempre registradas e
                  * `App\Support\DashboardDinamico` decide qual atende — então salvar aqui
@@ -997,25 +1047,24 @@ class ConfiguracoesDoKit extends SettingsPage
                  * Desligar NUNCA apaga dado: os dashboards montados ficam em
                  * `dashboards`/`dashboard_widgets` e voltam ao religar.
                  */
-                Section::make('Dashboard dinâmico')
-                    ->description('A tela de entrada dos painéis vira uma grade que o usuário monta, move e redimensiona (mddev31/filament-dynamic-dashboard). Desligado, responde o dashboard clássico de sempre.')
-                    ->icon('heroicon-o-squares-plus')
-                    ->columnSpanFull()
-                    ->schema([
-                        Toggle::make('dashboard_dinamico_habilitado')
-                            ->label('Dashboard dinâmico como tela de entrada')
-                            ->helperText('Ligado, a raiz de cada painel devolve para a grade editável em /dashboard-dinamico; desligado, a raiz responde o clássico de sempre. Quem pode montar é quem tem a permissão "Manage:Dashboard" — os demais só veem.')
-                            ->live(),
+            $this->secao('aplicacao', 'dashboard', 'Dashboard dinâmico', 'heroicon-o-squares-plus')
+                ->description('A tela de entrada dos painéis vira uma grade que o usuário monta, move e redimensiona (mddev31/filament-dynamic-dashboard). Desligado, responde o dashboard clássico de sempre.')
+                ->columnSpanFull()
+                ->schema([
+                    Toggle::make('dashboard_dinamico_habilitado')
+                        ->label('Dashboard dinâmico como tela de entrada')
+                        ->helperText('Ligado, a raiz de cada painel devolve para a grade editável em /dashboard-dinamico; desligado, a raiz responde o clássico de sempre. Quem pode montar é quem tem a permissão "Manage:Dashboard" — os demais só veem.')
+                        ->live(),
 
-                        Select::make('dashboard_dinamico_paineis')
-                            ->label('Painéis onde vale')
-                            ->helperText('Em branco = todos os painéis. Escolha para restringir — por exemplo, só o /app.')
-                            ->multiple()
-                            ->options(Paineis::opcoes())
-                            ->visible(fn (Get $get): bool => (bool) $get('dashboard_dinamico_habilitado')),
-                    ]),
+                    Select::make('dashboard_dinamico_paineis')
+                        ->label('Painéis onde vale')
+                        ->helperText('Em branco = todos os painéis. Escolha para restringir — por exemplo, só o /app.')
+                        ->multiple()
+                        ->options(Paineis::opcoes())
+                        ->visible(fn (Get $get): bool => (bool) $get('dashboard_dinamico_habilitado')),
+                ]),
 
-                /*
+            /*
                  * O dock de atalhos. Lido por REQUEST nas Closures do plugin
                  * (`App\Filament\Dock\PluginDoDock`), que só consultam `config('kit.dock.*')` já
                  * sobreposta pelo banco no boot: salvar aqui vale no próximo F5, sem consulta
@@ -1032,74 +1081,77 @@ class ConfiguracoesDoKit extends SettingsPage
                  * `composer require`), os campos somem e a seção diz o que falta. Campo oculto não
                  * entra no `$data` do save, então o settings gravado fica como estava.
                  */
-                Section::make('Dock de atalhos')
-                    ->description('Botão flutuante com os atalhos favoritos de cada usuário. Só aparece para quem tem a permissão "Usar:Dock" (tela de papéis).')
-                    ->icon('heroicon-o-bolt')
-                    ->columnSpanFull()
-                    ->schema([
-                        Text::make('O pacote do dock não está instalado neste projeto. Rode "composer require '.DockDeAtalhos::PACOTE.'" e depois "php artisan filament:assets".')
-                            ->visible(! DockDeAtalhos::pacoteInstalado()),
+            $this->secao('aplicacao', 'dock', 'Dock de atalhos', 'heroicon-o-bolt')
+                ->description('Botão flutuante com os atalhos favoritos de cada usuário. Só aparece para quem tem a permissão "Usar:Dock" (tela de papéis).')
+                ->columnSpanFull()
+                ->schema([
+                    Text::make('O pacote do dock não está instalado neste projeto. Rode "composer require '.DockDeAtalhos::PACOTE.'" e depois "php artisan filament:assets".')
+                        ->visible(! DockDeAtalhos::pacoteInstalado()),
 
-                        Select::make('dock_paineis')
-                            ->label('Painéis onde o dock aparece')
-                            ->helperText('Em branco = nenhum painel. Escolha os painéis em que o dock deve aparecer.')
-                            ->multiple()
-                            // O Select múltiplo valida cada item contra as opções, mas não o tipo do
-                            // conjunto: texto solto ("app") passava e virava a lista gravada.
-                            ->rule('array')
-                            ->options(Paineis::opcoes())
-                            ->visible(DockDeAtalhos::pacoteInstalado()),
+                    Select::make('dock_paineis')
+                        ->label('Painéis onde o dock aparece')
+                        ->helperText('Em branco = nenhum painel. Escolha os painéis em que o dock deve aparecer.')
+                        ->multiple()
+                        // O Select múltiplo valida cada item contra as opções, mas não o tipo do
+                        // conjunto: texto solto ("app") passava e virava a lista gravada.
+                        ->rule('array')
+                        ->options(Paineis::opcoes())
+                        ->visible(DockDeAtalhos::pacoteInstalado()),
 
-                        Select::make('dock_layout')
-                            ->label('Layout padrão')
-                            ->helperText('Cada usuário pode trocar o layout dele no próprio dock; o estilo vale para todos.')
-                            ->options(DockDeAtalhos::opcoesDeLayout())
-                            // O `in` automático do Select não basta aqui: sem este, o layout
-                            // enviado como lista (`['speed-dial']`) passa pela validação e estoura
-                            // `TypeError` ao gravar o settings (medido: CT-09, "layout como lista").
-                            ->in(array_keys(DockDeAtalhos::opcoesDeLayout()))
-                            ->selectablePlaceholder(false)
-                            ->required()
-                            ->visible(DockDeAtalhos::pacoteInstalado()),
+                    Select::make('dock_layout')
+                        ->label('Layout padrão')
+                        ->helperText('Cada usuário pode trocar o layout dele no próprio dock; o estilo vale para todos.')
+                        ->options(DockDeAtalhos::opcoesDeLayout())
+                        // O `in` automático do Select não basta aqui: sem este, o layout
+                        // enviado como lista (`['speed-dial']`) passa pela validação e estoura
+                        // `TypeError` ao gravar o settings (medido: CT-09, "layout como lista").
+                        ->in(array_keys(DockDeAtalhos::opcoesDeLayout()))
+                        ->selectablePlaceholder(false)
+                        ->required()
+                        ->visible(DockDeAtalhos::pacoteInstalado()),
 
-                        Select::make('dock_estilo')
-                            ->label('Estilo')
-                            ->options(DockDeAtalhos::opcoesDeEstilo())
-                            // Mesmo motivo do `in` do layout acima.
-                            ->in(array_keys(DockDeAtalhos::opcoesDeEstilo()))
-                            ->selectablePlaceholder(false)
-                            ->required()
-                            ->visible(DockDeAtalhos::pacoteInstalado()),
-                    ]),
+                    Select::make('dock_estilo')
+                        ->label('Estilo')
+                        ->options(DockDeAtalhos::opcoesDeEstilo())
+                        // Mesmo motivo do `in` do layout acima.
+                        ->in(array_keys(DockDeAtalhos::opcoesDeEstilo()))
+                        ->selectablePlaceholder(false)
+                        ->required()
+                        ->visible(DockDeAtalhos::pacoteInstalado()),
+                ]),
 
-                TextInput::make('rotulo_da_organizacao')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('Como chamar cada organização')
-                    ->helperText('Vocabulário da INSTALAÇÃO (Empresa, Cliente, Escola, Unidade). Não é a configuração de uma organização — essa fica em /admin/organizacoes.')
-                    ->required()
-                    ->maxLength(255),
+            $this->secao('aplicacao', 'organizacoes', 'Organizações', 'heroicon-o-building-office-2')
+                ->schema([
+                    TextInput::make('rotulo_da_organizacao')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('Como chamar cada organização')
+                        ->helperText('Vocabulário da INSTALAÇÃO (Empresa, Cliente, Escola, Unidade). Não é a configuração de uma organização — essa fica em /admin/organizacoes.')
+                        ->required()
+                        ->maxLength(255),
 
-                TextInput::make('rotulo_das_organizacoes')
-                    ->extraInputAttributes(['autocomplete' => 'off'])
-                    ->label('E no plural')
-                    ->required()
-                    ->maxLength(255),
+                    TextInput::make('rotulo_das_organizacoes')
+                        ->extraInputAttributes(['autocomplete' => 'off'])
+                        ->label('E no plural')
+                        ->required()
+                        ->maxLength(255),
 
-                /*
-                 * Interruptor lido por REQUEST, como os do topo desta aba: a Closure de
-                 * `tenantMenu()` no `AppPanelProvider` é avaliada no render da barra
-                 * lateral — salvar aqui vale no próximo F5.
-                 *
-                 * `->visible()` e não só "sem efeito": sem a multi-organização ligada o
-                 * seletor nem existe, e um interruptor que não muda nada é ruído na
-                 * tela. Mesmo critério do `login_anti_robo_local`.
-                 */
-                Toggle::make('ocultar_seletor_unico')
-                    ->label('Ocultar o seletor quando houver uma organização só')
-                    ->helperText('Ligado, quem tem acesso a uma única organização não vê o seletor no topo da barra lateral — sem nada para trocar, ele só repete o nome que o cabeçalho já mostra. Com duas ou mais, o seletor continua lá. Só aparência: o acesso por link direto não muda.')
-                    ->visible(fn (): bool => (bool) config('kit.tenancy.enabled'))
-                    ->columnSpanFull(),
-            ]);
+                    /*
+                         * Interruptor lido por REQUEST, como os do topo desta aba: a Closure de
+                         * `tenantMenu()` no `AppPanelProvider` é avaliada no render da barra
+                         * lateral — salvar aqui vale no próximo F5.
+                         *
+                         * `->visible()` e não só "sem efeito": sem a multi-organização ligada o
+                         * seletor nem existe, e um interruptor que não muda nada é ruído na
+                         * tela. Mesmo critério do `login_anti_robo_local`.
+                         */
+                    Toggle::make('ocultar_seletor_unico')
+                        ->label('Ocultar o seletor quando houver uma organização só')
+                        ->helperText('Ligado, quem tem acesso a uma única organização não vê o seletor no topo da barra lateral — sem nada para trocar, ele só repete o nome que o cabeçalho já mostra. Com duas ou mais, o seletor continua lá. Só aparência: o acesso por link direto não muda.')
+                        ->visible(fn (): bool => (bool) config('kit.tenancy.enabled'))
+                        ->columnSpanFull(),
+                ]),
+
+        ]);
     }
 
     /**

@@ -25,7 +25,7 @@ renderiza. Numa instalação nova, os papéis de administração dos três pain�
 
 ## Onde aparece
 
-Nos painéis marcados em *Painéis onde o dock aparece*, na aba **Kit** de
+Nos painéis marcados em *Painéis onde o dock aparece*, na aba **Aplicação** de
 `/admin/configuracoes-da-aplicacao`. Numa instalação nova **nenhum** painel está marcado: o dock não
 aparece em lugar nenhum até alguém ligá-lo. Veja as opções em [Configuração](#configuração).
 
@@ -138,7 +138,7 @@ O dock acompanha o tema do painel, sem nenhuma configuração: quando o painel e
 
 ## Configuração
 
-Na aba **Kit** de `/admin/configuracoes-da-aplicacao`, seção *Dock de atalhos*:
+Na aba **Aplicação** de `/admin/configuracoes-da-aplicacao`, seção *Dock de atalhos*:
 
 | Opção | O que define | Nasce |
 |---|---|---|
@@ -152,7 +152,7 @@ e estilo não têm variável. Como no restante da aba, **o banco vence o `.env`*
 continua sendo definido pela permissão `Usar:Dock`, não por esta seção. Mais detalhes em
 [Configurações do kit](../configuracoes-do-kit/).
 
-[![Aba Kit das configurações da aplicação, seção Dock de atalhos, com painéis, layout padrão e estilo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-dock.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-dock.png)
+[![Aba Aplicação das configurações da aplicação, seção Dock de atalhos, com painéis, layout padrão e estilo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-dock.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-dock.png)
 
 ## Custo por requisição
 

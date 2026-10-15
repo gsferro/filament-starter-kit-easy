@@ -112,7 +112,7 @@ If you update **to v0.48.0**, run the `composer require` before any other comman
 the dock code requires the package, and without it every `php artisan` fails with
 `Class "HoceineEl\QuickActionDock\QuickActionDockPlugin" not found`. From the next version on, the
 project boots without the package, just without the dock, and the "Dock de atalhos" section of the
-Kit tab, at `/admin/configuracoes-da-aplicacao`, says what is missing.
+Aplicação tab, at `/admin/configuracoes-da-aplicacao`, says what is missing.
 
 **In v0.49.0 this applies to `sehsah/filament-remember-table` and `asignua/filament-infinite-scroll`**,
 the packages behind [saved views and continuous loading](../../recursos/visoes-de-tabela-e-carregamento/),

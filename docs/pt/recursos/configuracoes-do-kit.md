@@ -7,14 +7,16 @@ sidebar:
 ---
 O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-da-aplicacao`** — no menu do painel a tela se chama **Configurações da aplicação**, porque depois de instalado o kit é a procedência, não o produto —, em seis abas. Nada de `.env`, nada de deploy.
 
-| Aba | O que você troca |
-|---|---|
-| **Identidade** | nome da aplicação, **versão do sistema**, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon, a arte das telas de autenticação e o **cabeçalho dos painéis** (a marca composta e o bloco do usuário) |
-| **E-mail** | transporte (`log`, `array`, `smtp`), servidor, porta, criptografia, usuário, senha e remetente |
-| **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário, colunas arrastáveis, **carregamento da tabela** (paginação, rolagem infinita ou botão "Carregar mais"), **visões salvas** e o compartilhamento delas — os defaults de **toda** tabela dos três painéis ([detalhes](../visoes-de-tabela-e-carregamento/)) |
-| **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) |
-| **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) |
-| **Kit** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível |
+Todo campo fica numa seção com ícone, colapsável pelo cabeçalho; o navegador lembra o estado de cada seção (fechada ou aberta, inclusive as que nascem fechadas) em `localStorage`, por navegador. Cada aba carrega seu conteúdo só quando é aberta, e uma aba com erro de validação abre sozinha.
+
+| Aba | O que você troca | Seções |
+|---|---|---|
+| **Identidade** | nome da aplicação, **versão do sistema**, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon, a arte das telas de autenticação e o **cabeçalho dos painéis** (a marca composta e o bloco do usuário) | Nome e versão; Cor primária; Logo, favicon e arte; Cabeçalho dos painéis |
+| **E-mail** | transporte (`log`, `array`, `smtp`), servidor, porta, criptografia, usuário, senha e remetente | Remetente (transporte e remetente); Servidor SMTP (conexão e credenciais) |
+| **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário, colunas arrastáveis, **carregamento da tabela** (paginação, rolagem infinita ou botão "Carregar mais"), **visões salvas** e o compartilhamento delas — os defaults de **toda** tabela dos três painéis ([detalhes](../visoes-de-tabela-e-carregamento/)) | Paginação e aparência; Carregamento e visões |
+| **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) | Cadastro sem convite (cadastro e aprovação); E-mail verificado (validação de e-mail) |
+| **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) | Página única de login; Login social (com uma seção por provedor); Proteção anti-robô; Rodapé da tela de login |
+| **Aplicação** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível | Comportamento dos painéis; Dashboard dinâmico; Dock de atalhos; Organizações |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
@@ -37,7 +39,7 @@ topo do painel e no título da aba.
 
 O **ano é o corrente**, calculado a cada render: não há campo para ele e ele muda sozinho na virada.
 
-A **versão do seu sistema** sai do campo *Versão do sistema*, na aba **Identidade**, semeado por
+A **versão do seu sistema** sai do campo *Versão do sistema*, na aba **Identidade**, seção *Nome e versão*, semeado por
 `APP_VERSION` no `.env`. O campo mostra um **`v` fixo à esquerda**: ele é só visual, marca a
 convenção e **não é gravado** — digite `1.2.3`, e o rodapé mostra `v1.2.3`. Se você digitar o `v`
 também, verá `vv1.2.3`, que é o jeito de a tela avisar que sobrou um.
@@ -51,7 +53,7 @@ São duas versões diferentes, e confundi-las é o erro que esta seção existe 
 
 A segunda é métrica interna do kit — o `kit:update` a usa para saber a partir de qual versão
 comparar. Ela **não** aparece no rodapé por padrão; quem quiser vê-la ao lado da sua liga
-*Mostrar também a versão do kit no rodapé*, na aba **Kit**. `php artisan kit:info` sempre mostra as
+*Mostrar também a versão do kit no rodapé*, na aba **Aplicação**, seção *Comportamento dos painéis*. `php artisan kit:info` sempre mostra as
 duas, independentemente do interruptor.
 
 **Campo vazio, rodapé sem a SUA versão.** Um projeto que não versiona não precisa fingir que
@@ -59,14 +61,14 @@ versiona — a assinatura `© {ano} {Nome}` continua lá, só sem o número.
 
 ### O recado da tela de login
 
-A aba **Login** tem um campo de texto livre que é renderizado **dentro do cartão do formulário de login, abaixo dos
+A seção *Rodapé da tela de login*, na aba **Login**, tem um campo de texto livre que é renderizado **dentro do cartão do formulário de login, abaixo dos
 botões** (inclusive os de login social), e só nas telas de login (`/admin/login`, `/app/login`, `/infra/login` e `/login`). Ele
 aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a tela de login é pública.
 
 As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.
 
 Se o interruptor estiver ligado e o campo vazio, o rodapé mostra a assinatura e, ao lado, **a versão do kit rotulada**
-(`kit 0.49.0`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
+(`kit 0.50.0`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
 impede essa leitura, e é requisito do kit, não detalhe de tela.
 
 **`APP_VERSION` semeia UMA vez, na instalação. Depois dela, quem manda é a tela.**
@@ -90,7 +92,7 @@ registro e recuperação de senha, e ali ele fica vazio de propósito: versão e
 
 ## Avisar antes de perder o que foi digitado
 
-Na aba **Kit**, *Avisar sobre alterações não salvas* liga o alerta nativo do Filament: ao sair de um
+Na aba **Aplicação**, seção *Comportamento dos painéis*, *Avisar sobre alterações não salvas* liga o alerta nativo do Filament: ao sair de um
 formulário com alteração pendente, o navegador pede confirmação antes de descartar.
 
 Vale para **toda** tela de cadastro e edição dos três painéis, inclusive as que vêm de plugin de
@@ -105,7 +107,7 @@ o padrão a preservar. Desligar é um clique, sem deploy.
 
 ## Layout compacto: uma escala, não um interruptor
 
-Ainda na aba **Kit**, *Densidade do layout* aperta de uma vez os **cartões de estatística**, as
+Ainda na aba **Aplicação**, seção *Comportamento dos painéis*, *Densidade do layout* aperta de uma vez os **cartões de estatística**, as
 **tabelas**, o **menu lateral** e os **botões** dos três painéis. São três degraus:
 
 | Nível | `--spacing` | Linha da tabela | Tabela de 10 linhas | Largura do menu |
@@ -164,7 +166,7 @@ suficiente.
 
 ## O dashboard dinâmico é um interruptor, não uma migração
 
-Ainda na aba **Kit**, a seção *Dashboard dinâmico* troca a tela de entrada dos painéis: em vez do
+Ainda na aba **Aplicação**, a seção *Dashboard dinâmico* troca a tela de entrada dos painéis: em vez do
 dashboard clássico, uma grade que o próprio usuário monta, move e redimensiona
 (`mddev31/filament-dynamic-dashboard`). Nasce **desligada** — `KIT_DASHBOARD_DINAMICO=false` no
 `.env.example` —, e *Painéis onde vale* restringe a quais painéis: em branco significa todos.
@@ -183,7 +185,7 @@ Shield — os demais veem a mesma tela sem poder editá-la.
 
 ## O dock de atalhos: três opções, nenhum painel de partida
 
-Ainda na aba **Kit**, a seção *Dock de atalhos* configura o botão flutuante com os favoritos de
+Ainda na aba **Aplicação**, a seção *Dock de atalhos* configura o botão flutuante com os favoritos de
 cada usuário ([como ele funciona](../dock-de-atalhos/)):
 
 | Opção | O que define | Nasce |
@@ -201,7 +203,7 @@ o `.env` e salvar vale no próximo F5. Quem vê o dock continua sendo definido p
 
 ## Um seletor para quem não tem o que trocar
 
-Com a multi-organização ligada, a aba **Kit** ganha *Ocultar o seletor quando houver uma
+Com a multi-organização ligada, a seção *Organizações* da aba **Aplicação** tem *Ocultar o seletor quando houver uma
 organização só*. Ligado, o bloco inteiro do topo da barra lateral do `/app` — avatar, rótulo e
 nome — some para quem tem acesso a **uma** organização ativa; sem troca possível, ele só repete o
 nome que o cabeçalho já mostra. Com duas ou mais, o seletor continua lá.
@@ -214,9 +216,9 @@ Quem conta é a mesma lista que alimenta o seletor: organizações **ativas** do
 
 ![O seletor visível e oculto, na mesma tela](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/seletor-organizacao.gif)
 
-| O interruptor na aba Kit |
+| O interruptor na aba Aplicação |
 |---|
-| [![O interruptor "ocultar o seletor" na aba Kit](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-seletor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-seletor.png) |
+| [![O interruptor "ocultar o seletor" na aba Aplicação](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-seletor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-seletor.png) |
 
 ## Quem manda: o banco ou o `.env`?
 
@@ -265,7 +267,7 @@ O que acontece em cada situação:
 
 ## Cor: lista fechada e cor livre
 
-São dois campos, e a precedência é declarada:
+Na seção *Cor primária* da aba **Identidade**, são dois campos, e a precedência é declarada:
 
 **hexadecimal válido → nome da paleta → padrão do Filament.**
 
@@ -275,7 +277,7 @@ Dentro de `/app/{organização}`, a cor da **organização** continua vencendo a
 
 ## Logo da marca: uma só, ou duas por tema
 
-A aba **Identidade** tem um interruptor, **Uma logo só, nos dois temas** — e ele nasce LIGADO, porque
+A seção *Logo, favicon e arte* da aba **Identidade** tem um interruptor, **Uma logo só, nos dois temas** — e ele nasce LIGADO, porque
 instalação existente não muda de cara com update do kit. Com ele ligado, a mesma logo vale no
 tema claro e no escuro, como sempre foi.
 

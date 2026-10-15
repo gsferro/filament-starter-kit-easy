@@ -74,7 +74,7 @@ there is no address to point at — and a link to an unsaved slug would be a gua
 At the top of the `/app` sidebar sits the organization selector — people who can reach two or more
 use it to switch context. For someone with access to **only one** it is useless: just the
 organization's name repeated (the header already shows it). The *Ocultar o seletor quando houver
-uma organização só* switch, on the **Kit** tab of the settings screen, hides the whole block in
+uma organização só* switch, on the **Aplicação** tab of the settings screen, hides the whole block in
 that case; with two or more reachable organizations the selector stays.
 
 The count is the selector's own list: the user's reachable **active** organizations — and, for

@@ -518,8 +518,8 @@ it('abre os campos de credencial conforme o interruptor do provedor', function (
         $campo = $provedor->propriedadeDeSettings($sufixo);
 
         $ligado
-            ? $componente->assertSchemaComponentVisible($campo)
-            : $componente->assertSchemaComponentHidden($campo);
+            ? $componente->assertSchemaComponentVisible(chaveDoCampo($componente, $campo))
+            : $componente->assertSchemaComponentHidden(chaveDoCampo($componente, $campo));
     }
 })->with([
     'google desligado'          => [ProvedorSocial::Google, false],
@@ -559,8 +559,8 @@ it('liga os campos de um provedor sem abrir os dos outros', function (): void {
             $campo = $provedor->propriedadeDeSettings($sufixo);
 
             $provedor === ProvedorSocial::Github
-                ? $componente->assertSchemaComponentVisible($campo)
-                : $componente->assertSchemaComponentHidden($campo);
+                ? $componente->assertSchemaComponentVisible(chaveDoCampo($componente, $campo))
+                : $componente->assertSchemaComponentHidden(chaveDoCampo($componente, $campo));
         }
     }
 });
@@ -584,12 +584,12 @@ it('monta uma secao por provedor dentro de "Login social", e o rodape em secao p
 
     foreach (ProvedorSocial::cases() as $provedor) {
         foreach (['client_id', 'client_secret'] as $sufixo) {
-            $componente->assertSchemaComponentExists($provedor->propriedadeDeSettings($sufixo));
+            $componente->assertSchemaComponentExists(chaveDoCampo($componente, $provedor->propriedadeDeSettings($sufixo)));
         }
 
         // O interruptor mora na seção do provedor, que nasce FECHADA e mora na seção "Login social".
         $componente->assertSchemaComponentExists(
-            $provedor->propriedadeDeSettings('habilitado'),
+            chaveDoCampo($componente, $provedor->propriedadeDeSettings('habilitado')),
             null,
             function (Component $interruptor) use ($provedor): bool {
                 $secaoDoProvedor = $interruptor->getContainer()->getParentComponent();
@@ -606,7 +606,7 @@ it('monta uma secao por provedor dentro de "Login social", e o rodape em secao p
 
     // O rodapé tem seção própria, separada da dos provedores — pedido do solicitante (2026-08-26).
     $componente->assertSchemaComponentExists(
-        'login_rodape',
+        chaveDoCampo($componente, 'login_rodape'),
         null,
         function (Component $rodape): bool {
             $secao = $rodape->getContainer()->getParentComponent();

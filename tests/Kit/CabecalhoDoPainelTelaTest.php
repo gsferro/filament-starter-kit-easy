@@ -28,9 +28,11 @@ it('[CT-17] o seletor do detalhe oferece exatamente duas opcoes: perfil e email'
 
     $opcoes = null;
 
-    Livewire::test(ConfiguracoesDoKit::class)
+    $tela = Livewire::test(ConfiguracoesDoKit::class);
+
+    $tela
         ->fillForm(['cabecalho_usuario' => true])
-        ->assertSchemaComponentExists('cabecalho_detalhe_do_usuario', checkComponentUsing: function ($componente) use (&$opcoes): bool {
+        ->assertSchemaComponentExists(chaveDoCampo($tela, 'cabecalho_detalhe_do_usuario'), checkComponentUsing: function ($componente) use (&$opcoes): bool {
             $opcoes = $componente->getOptions();
 
             return true;
@@ -195,16 +197,18 @@ it('[CT-32] o seletor do detalhe acompanha o interruptor do bloco do usuario', f
 
     gravarConfiguracao('cabecalho_usuario', false);
 
-    Livewire::test(ConfiguracoesDoKit::class)
-        ->assertSchemaComponentHidden('cabecalho_detalhe_do_usuario')
+    $tela = Livewire::test(ConfiguracoesDoKit::class);
+
+    $tela
+        ->assertSchemaComponentHidden(chaveDoCampo($tela, 'cabecalho_detalhe_do_usuario'))
         ->fillForm(['cabecalho_usuario' => true])
-        ->assertSchemaComponentVisible('cabecalho_detalhe_do_usuario');
+        ->assertSchemaComponentVisible(chaveDoCampo($tela, 'cabecalho_detalhe_do_usuario'));
 })->group('kit');
 
 it('[CT-33] a secao "Cabecalho dos paineis" traz as cinco opcoes', function (): void {
     $this->actingAs(usuarioDoKit('admin'));
 
-    $tela = Livewire::test(ConfiguracoesDoKit::class)
+    $tela = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'identidade')->refresh()
         ->assertSee('Cabeçalho dos painéis');
 
     foreach ([
@@ -214,7 +218,7 @@ it('[CT-33] a secao "Cabecalho dos paineis" traz as cinco opcoes', function (): 
         'cabecalho_usuario',
         'cabecalho_detalhe_do_usuario',
     ] as $campo) {
-        $tela->assertSchemaComponentExists($campo);
+        $tela->assertSchemaComponentExists(chaveDoCampo($tela, $campo));
     }
 })->group('kit');
 

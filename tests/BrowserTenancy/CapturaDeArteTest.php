@@ -928,7 +928,7 @@ it('captura o seletor de organização visível e oculto', function (): void {
 })->group('browser', 'art');
 
 /**
- * A aba Kit das configurações, com o interruptor "ocultar o seletor" — onde o
+ * A aba Aplicação das configurações, com o interruptor "ocultar o seletor" — onde o
  * administrador liga a opção (RQ-05).
  *
  * Aquece e visita só o /admin, como as outras capturas do mesmo painel deste
@@ -939,7 +939,7 @@ it('captura o interruptor de ocultar o seletor na tela de configurações', func
 
     visit('/admin/configuracoes-da-aplicacao')
         ->resize(1400, 875)
-        ->click('Kit')
+        ->click('Aplicação')
         ->assertSee('Ocultar o seletor quando houver uma organização só')
         ->screenshot(fullPage: false, filename: 'admin-configuracoes-seletor');
 })->group('browser', 'art');
@@ -1077,7 +1077,7 @@ it('captura o dock de atalhos no layout barra', function (): void {
 })->group('browser', 'art');
 
 /**
- * A seção "Dock de atalhos" da aba Kit das configurações, preenchida.
+ * A seção "Dock de atalhos" da aba Aplicação das configurações, preenchida.
  *
  * Grava no banco e realinha, como a densidade: a tela lê o settings, e o dock da própria tela
  * lê a config.
@@ -1093,10 +1093,10 @@ it('captura a seção Dock de atalhos das configurações', function (): void {
 
     $pagina = visit('/admin/configuracoes-da-aplicacao')
         ->resize(1400, 875)
-        ->click('Kit')
+        ->click('Aplicação')
         ->assertSee('Painéis onde o dock aparece');
 
-    // A seção fica abaixo da dobra da aba Kit: rola até ela, sem clicar no título (que a colapsa).
+    // A seção fica abaixo da dobra da aba Aplicação: rola até ela, sem clicar no título (que a colapsa).
     $pagina->script(<<<'JS'
         [...document.querySelectorAll('.fi-section-header-heading')]
             .find((titulo) => titulo.textContent.trim() === 'Dock de atalhos')

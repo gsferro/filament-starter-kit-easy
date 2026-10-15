@@ -876,10 +876,12 @@ it('recusa limiar do recaptcha v3 fora do intervalo de 0 a 1', function (string 
 it('oferece os quatro provedores do pacote na tela de configuracoes', function (): void {
     $this->actingAs(usuarioDoKit('admin'));
 
-    Livewire::test(ConfiguracoesDoKit::class)
+    $tela = Livewire::test(ConfiguracoesDoKit::class);
+
+    $tela
         ->fillForm(['login_anti_robo_habilitado' => true])
         ->assertSchemaComponentExists(
-            'login_anti_robo_provedor',
+            chaveDoCampo($tela, 'login_anti_robo_provedor'),
             checkComponentUsing: fn (Select $select): bool => array_keys($select->getOptions()) === ['recaptcha_v2', 'recaptcha_v3', 'turnstile', 'hcaptcha'],
         );
 
@@ -895,8 +897,8 @@ it('abre os campos anti-robo conforme o interruptor', function (bool $ligado): v
 
     foreach (['login_anti_robo_provedor', 'login_anti_robo_chave_do_site', 'login_anti_robo_chave_secreta'] as $campo) {
         $ligado
-            ? $componente->assertSchemaComponentVisible($campo)
-            : $componente->assertSchemaComponentHidden($campo);
+            ? $componente->assertSchemaComponentVisible(chaveDoCampo($componente, $campo))
+            : $componente->assertSchemaComponentHidden(chaveDoCampo($componente, $campo));
     }
 })->with(['desligado' => [false], 'ligado' => [true]])->group('kit');
 
@@ -909,8 +911,10 @@ it('abre os campos anti-robo conforme o interruptor', function (bool $ligado): v
  *
  * O oráculo é o HTML da tela, e não `assertSchemaComponentVisible` sobre um `fillForm()`: com o
  * ambiente trocado dentro do caso, o estado reativo do componente Livewire não reflete o
- * interruptor, e a asserção mediria o arranjo em vez da regra. Pelo GET, o que se afirma é o que
- * a pessoa vê.
+ * interruptor, e a asserção mediria o arranjo em vez da regra. Com a aba Login carregada
+ * (`carregarAba()` + `refresh()`, porque a aba é adiada e o GET só traz o esqueleto), o HTML
+ * afirmado é o que a pessoa vê — e o título da seção anti-robô é o controle positivo de que a
+ * aba carregou, sem o qual o `assertDontSee` passaria vazio.
  */
 it('mostra o toggle de ambiente local somente com APP_ENV=local', function (string $ambiente, bool $visivel): void {
     $settings                             = app(SettingsDoKit::class);
@@ -920,7 +924,11 @@ it('mostra o toggle de ambiente local somente com APP_ENV=local', function (stri
     config(['app.env' => $ambiente]);
     App::detectEnvironment(fn (): string => $ambiente);
 
-    $resposta = $this->actingAs(usuarioDoKit('admin'))->get('/admin/configuracoes-da-aplicacao')->assertOk();
+    $this->actingAs(usuarioDoKit('admin'))->get('/admin/configuracoes-da-aplicacao')->assertOk();
+
+    $resposta = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'login')
+        ->refresh()
+        ->assertSee('Proteção anti-robô');
 
     $visivel
         ? $resposta->assertSee('Aplicar também em ambiente local')
@@ -940,9 +948,11 @@ it('esconde o toggle de ambiente local quando a protecao esta desligada', functi
     config(['app.env' => 'local']);
     App::detectEnvironment(fn (): string => 'local');
 
-    $this->actingAs(usuarioDoKit('admin'))
-        ->get('/admin/configuracoes-da-aplicacao')
-        ->assertOk()
+    $this->actingAs(usuarioDoKit('admin'))->get('/admin/configuracoes-da-aplicacao')->assertOk();
+
+    carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'login')
+        ->refresh()
+        ->assertSee('Proteção anti-robô')
         ->assertDontSee('Aplicar também em ambiente local');
 })->group('kit');
 
@@ -954,8 +964,8 @@ it('mostra o limiar só quando o provedor e o recaptcha v3', function (ProvedorA
         ->fillForm(['login_anti_robo_habilitado' => true, 'login_anti_robo_provedor' => $provedor->value]);
 
     $provedor->usaPontuacao()
-        ? $componente->assertSchemaComponentVisible('login_anti_robo_pontuacao_minima')
-        : $componente->assertSchemaComponentHidden('login_anti_robo_pontuacao_minima');
+        ? $componente->assertSchemaComponentVisible(chaveDoCampo($componente, 'login_anti_robo_pontuacao_minima'))
+        : $componente->assertSchemaComponentHidden(chaveDoCampo($componente, 'login_anti_robo_pontuacao_minima'));
 })->with(ProvedorAntiRobo::cases())->group('kit');
 
 /*

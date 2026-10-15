@@ -307,8 +307,10 @@ it('nao entrega a senha de smtp no estado do formulario', function (): void {
 
     $this->actingAs(usuarioDoKit('admin'));
 
-    Livewire::test(ConfiguracoesDoKit::class)
-        ->assertFormFieldExists('mail_password')
+    $tela = Livewire::test(ConfiguracoesDoKit::class);
+
+    $tela
+        ->assertFormFieldExists(chaveDoCampo($tela, 'mail_password'))
         ->assertSchemaStateSet(['mail_password' => null]);
 });
 
@@ -416,7 +418,7 @@ it('oferece o valor configurado como opcao, marcado, quando ele esta fora da lis
 
     // A marca importa: sem ela o valor de fora fica indistinguível de uma opção
     // que o kit recomenda, e a lista curta perde a função de guiar a escolha.
-    Livewire::test(ConfiguracoesDoKit::class)
+    carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'email')->refresh()
         ->assertSee('ses — configurado no .env');
 });
 
@@ -564,8 +566,10 @@ it('[CT-57] todo layout e todo estilo do pacote gravam na tela de configuraçõe
     app()->forgetInstance(SettingsDoKit::class);
     $this->actingAs(usuarioDoKit('admin'));
 
-    Livewire::test(ConfiguracoesDoKit::class)
-        ->assertFormFieldExists($campo, function (Select $field) use ($valor): bool {
+    $tela = Livewire::test(ConfiguracoesDoKit::class);
+
+    $tela
+        ->assertFormFieldExists(chaveDoCampo($tela, $campo), function (Select $field) use ($valor): bool {
             return array_key_exists($valor, $field->getOptions());
         })
         ->fillForm([$campo => $valor])
@@ -704,8 +708,8 @@ it('[CT-58] o compartilhamento acompanha as visões no formulário sem salvar', 
         ->fillForm(['visoes_de_tabela' => $depois]);
 
     $depois
-        ? $tela->assertSchemaComponentVisible('visoes_de_tabela_compartilhadas', 'form')
-        : $tela->assertSchemaComponentHidden('visoes_de_tabela_compartilhadas', 'form');
+        ? $tela->assertSchemaComponentVisible(chaveDoCampo($tela, 'visoes_de_tabela_compartilhadas'), 'form')
+        : $tela->assertSchemaComponentHidden(chaveDoCampo($tela, 'visoes_de_tabela_compartilhadas'), 'form');
 })->with([
     'desligadas | liga | visível' => [false, true],
     'ligadas | desliga | oculto'  => [true, false],
@@ -714,10 +718,12 @@ it('[CT-58] o compartilhamento acompanha as visões no formulário sem salvar', 
 it('[CT-60] a aba Tabelas oferece os rótulos combinados e explica que desligar não apaga', function (string $valor, string $rotulo): void {
     $this->actingAs(usuarioDoKit('admin'));
 
-    Livewire::test(ConfiguracoesDoKit::class)
+    $tela = Livewire::test(ConfiguracoesDoKit::class);
+
+    carregarAba($tela, 'tabelas')->refresh()
         ->assertSee('Tabelas')
         ->assertSee('Desligar esconde as visões sem apagá-las')
-        ->assertFormFieldExists('tabela_carregamento', function (Select $campo) use ($valor, $rotulo): bool {
+        ->assertFormFieldExists(chaveDoCampo($tela, 'tabela_carregamento'), function (Select $campo) use ($valor, $rotulo): bool {
             expect($campo->getOptions()[$valor] ?? null)->toBe($rotulo);
 
             return true;

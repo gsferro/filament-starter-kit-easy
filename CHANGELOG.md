@@ -5,6 +5,34 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.50.0] - 2026-10-15
+
+### Alterado
+
+- Tela de configurações reorganizada: aba "Kit" renomeada "Aplicação"; campos em seções com ícone,
+  colapsáveis, com estado lembrado por navegador; abas carregadas ao abrir (`deferLoading` do Filament).
+  As abas ganharam chave fixa (`?tab=identidade`, `?tab=tabelas`…): link ou favorito antigo com
+  `?tab=…::data::tab` passa a abrir na primeira aba.
+
+### Validação
+
+- Suíte local `Kit --parallel`: 4.219 testes (4.214 verdes, 3 pulados; os dois vermelhos foram a citação
+  deslocada pelos helpers novos de `tests/Pest.php`, corrigida, e o CT-19 da rule de seções, verde depois
+  da rule); `Tenancy --parallel`: 631 verdes. Navegador: 9 execuções novas (CT-B01…CT-B06) e os três
+  cenários da tela migrados para os ids aninhados, todos verdes; capturas da tela regravadas.
+- Mutação por amostragem manual (o `pest --mutate` não mede no Windows): 4 mutantes da Page, 4 mortos
+  pelo matador previsto. HTML inicial da tela: 37 KB contra 391 KB com as seis abas carregadas.
+- Revisão do diff por dois revisores cegos: 1 Blocker (três testes de navegador não migrados), 2 Major,
+  3 Minor — todos corrigidos antes do quality gate.
+
+### Atualizando
+
+- Nada a instalar nem migrar: a mudança é só na Page `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`,
+  nos testes e nas rules. Quem customizou a Page revisa o diff que o `kit:update` mostra (campos agora
+  dentro de `secao()` e abas dentro de `aba()`); quem tem teste próprio sobre a tela usa os helpers
+  `chaveDoCampo()`/`carregarAba()` de `tests/Pest.php` (`.ai/rules/testes.md`). Links e favoritos com
+  `?tab=…::data::tab` passam a abrir na primeira aba.
+
 ## [0.49.0] - 2026-10-15
 
 ### Adicionado

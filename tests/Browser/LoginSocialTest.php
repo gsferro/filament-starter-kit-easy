@@ -157,7 +157,7 @@ it('abre os campos de credencial de um provedor ao ligar o interruptor dele, e s
     // DT-06 outra vez, agora para a tela do /admin. Ver a nota do CT-B01.
     $this->get('/admin/configuracoes-da-aplicacao');
 
-    $campo = static fn (ProvedorSocial $provedor, string $sufixo): string => '#form\\.'
+    $campo = static fn (ProvedorSocial $provedor, string $sufixo): string => '#form\\.configuracoes\\.login\\.'
         .$provedor->propriedadeDeSettings($sufixo);
 
     $pagina = visit('/admin/configuracoes-da-aplicacao')

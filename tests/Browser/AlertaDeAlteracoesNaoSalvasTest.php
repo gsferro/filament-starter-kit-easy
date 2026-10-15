@@ -71,7 +71,7 @@ it('[CT-B01] impede a saida silenciosa de um formulario com alteracao pendente',
         ->assertPathIs('/admin/configuracoes-da-aplicacao')
         // Linha de base — com o formulário limpo, a saída NÃO é barrada. Mata MB1.
         ->assertScript($disparaBeforeunload, false)
-        ->fill('#form\.nome_da_aplicacao', 'Nome alterado')
+        ->fill('#form\.configuracoes\.identidade\.nome_da_aplicacao', 'Nome alterado')
         // Oráculo — agora é. Mata M24 (a decisão que morre no servidor).
         ->assertScript($disparaBeforeunload, true);
 

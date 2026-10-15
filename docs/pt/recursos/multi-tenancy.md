@@ -74,7 +74,7 @@ não existe endereço para apontar — e um link para um slug ainda não salvo s
 No topo da barra lateral do `/app` fica o seletor de organização — quem tem acesso a duas ou mais
 troca de contexto por ele. Para quem tem acesso a **uma só** ele não tem utilidade: é só o nome da
 organização repetido (o cabeçalho já o mostra). O interruptor *Ocultar o seletor quando houver uma
-organização só*, na aba **Kit** das configurações, esconde o bloco inteiro nesse caso; com duas ou
+organização só*, na aba **Aplicação** das configurações, esconde o bloco inteiro nesse caso; com duas ou
 mais organizações acessíveis o seletor continua lá.
 
 A contagem é a mesma do próprio seletor: organizações **ativas** acessíveis — e, para o

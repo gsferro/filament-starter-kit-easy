@@ -76,15 +76,15 @@ beforeEach(function (): void {
 it('troca os campos visiveis ao acionar outra aba, com o seletor de cor montado', function (): void {
     visit('/admin/configuracoes-da-aplicacao')
         // Primeira aba ativa: o campo dela está visível, o da outra não.
-        ->assertVisible('#form\.nome_da_aplicacao')
-        ->assertMissing('#form\.paginacao_padrao')
+        ->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao')
+        ->assertMissing('#form\.configuracoes\.tabelas\.paginacao_padrao')
         // O seletor de cor é Alpine: um `assertSchemaComponentExists` provaria que
         // ele está no schema, não que inicializou.
-        ->assertVisible('#form\.cor_primaria_hex')
+        ->assertVisible('#form\.configuracoes\.identidade\.cor_primaria_hex')
         ->click('Tabelas')
         // E a visibilidade se inverte.
-        ->assertVisible('#form\.paginacao_padrao')
-        ->assertMissing('#form\.nome_da_aplicacao');
+        ->assertVisible('#form\.configuracoes\.tabelas\.paginacao_padrao')
+        ->assertMissing('#form\.configuracoes\.identidade\.nome_da_aplicacao');
 })->group('browser');
 
 /**
@@ -99,9 +99,9 @@ it('troca os campos visiveis ao acionar outra aba, com o seletor de cor montado'
  */
 it('revela o erro de validacao na aba do campo invalido', function (): void {
     visit('/admin/configuracoes-da-aplicacao')
-        ->fill('#form\.nome_da_aplicacao', '')
+        ->fill('#form\.configuracoes\.identidade\.nome_da_aplicacao', '')
         ->click('Tabelas')
         ->press('Salvar')
         // O campo do nome está noutra aba, e o Filament precisa trazê-la de volta.
-        ->assertVisible('#form\.nome_da_aplicacao');
+        ->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao');
 })->group('browser');

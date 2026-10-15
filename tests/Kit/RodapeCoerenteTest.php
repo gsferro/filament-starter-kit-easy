@@ -562,13 +562,13 @@ it('[CT-13] o campo Versão do sistema exibe o afixo nativo "v" sem contaminar o
 
     $tela = Livewire::test(ConfiguracoesDoKit::class);
 
-    $campo = $tela->instance()->getSchemaComponent('form.versao_do_sistema');
+    $campo = $tela->instance()->getSchemaComponent('form.'.chaveDoCampo($tela, 'versao_do_sistema'));
 
     expect($campo->getPrefixLabel())->toBe('v')
         ->and($campo->getSuffixLabel())->toBeNull()
         ->and($campo->getState())->toBe('2.4.0');
 
-    $html = $tela->html();
+    $html = carregarAba($tela, 'identidade')->refresh()->html();
 
     $this->assertStringContainsString('fi-input-wrp-label', $html);
 
@@ -632,7 +632,7 @@ it('[CT-15] a versão já gravada com "v" não é migrada nem normalizada', func
 
     $tela = Livewire::test(ConfiguracoesDoKit::class);
 
-    $campo = $tela->instance()->getSchemaComponent('form.versao_do_sistema');
+    $campo = $tela->instance()->getSchemaComponent('form.'.chaveDoCampo($tela, 'versao_do_sistema'));
 
     expect($campo->getState())->toBe('v1.2.3')
         ->and($campo->getPrefixLabel())->toBe('v');
