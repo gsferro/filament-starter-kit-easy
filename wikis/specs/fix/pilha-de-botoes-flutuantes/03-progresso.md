@@ -15,7 +15,7 @@
 - [x] docs pt/en e CHANGELOG — `bb3f1f8`
 
 ## 5. Release v0.48.1
-- [ ] versão, CHANGELOG, tag e release
+- [x] versão, CHANGELOG, tag e release — v0.48.1, 2026-10-15
 
 ## 6. Dock oculto na tela de bloqueio e nas telas de autenticação
 - [x] `App\Support\TelaDeAutenticacao` no `visible()` do dock e no render hook do chat — `8f41638`

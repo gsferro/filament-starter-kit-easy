@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.48.1] - 2026-10-15
+
 ### Alterado
 
 - Dock de atalhos: os favoritos aparecem agrupados por painel, cada grupo com o nome do painel
