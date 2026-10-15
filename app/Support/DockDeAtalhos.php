@@ -827,6 +827,12 @@ final class DockDeAtalhos
         return $painel->getId().'|'.$destino.'|'.$organizacao?->getKey();
     }
 
+    /** O id do painel de uma chave de favorito — o primeiro segmento de `{painel}|{FQCN}|{organização}`. */
+    public static function painelDaChave(string $chave): string
+    {
+        return explode('|', $chave, 2)[0];
+    }
+
     /**
      * O rótulo do destino no slideover: painel — organização (no painel com tenancy) — grupo —
      * tela (RQ-31). Destinos homônimos de painéis ou organizações diferentes se distinguem pelo
