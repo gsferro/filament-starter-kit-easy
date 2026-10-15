@@ -13,26 +13,26 @@
 - [ ] Sem `assertNoJavaScriptErrors()`: `ColorPicker` dentro de `Tabs` emite `ResizeObserver` no headless do CI (`.ai/rules/testes-browser.md`) — a rule vence o template
 - [ ] Nunca `wait(n)`: o plugin reexecuta cada asserção até o teto
 - [ ] Arranjo de settings por `gravarConfiguracao()` **antes** do `visit()`
-- [ ] Isolamento do `localStorage` entre cenários conferido pelo executor para todo CT-B que colapsa seção (CT-B02, CT-B03): o estado colapsado de um cenário não pode chegar ao seguinte (contexto novo por cenário, ou `localStorage.clear()` antes do `visit()`)
+- [ ] Isolamento do `localStorage` entre cenários conferido pelo executor para todo CT-B que colapsa seção (CT-B02, CT-B03, CT-B05): o estado colapsado de um cenário não pode chegar ao seguinte (contexto novo por cenário, ou `localStorage.clear()` antes do `visit()`)
 
 ## Seletores
 
 | Elemento | Seletor | Já existe? |
 |---|---|---|
-| campo do nome da aplicação (aba Identidade) | `#form\.nome_da_aplicacao` | sim (molde) |
-| campo hex da cor primária (aba Identidade) | `#form\.cor_primaria_hex` | sim (molde) |
-| campo de paginação padrão (aba Tabelas) | `#form\.paginacao_padrao` | sim (molde) |
-| campo do hub de navegação (aba Aplicação) | `#form\.hub_de_navegacao` | a confirmar pelo executor |
-| campo da pontuação mínima do anti-robô (aba Login, seção Proteção anti-robô) | `#form\.login_anti_robo_pontuacao_minima` | a confirmar pelo executor |
-| campo do remetente (aba E-mail) | `#form\.mail_mailer` (Select) | a confirmar pelo executor |
-| campo do servidor SMTP (aba E-mail) | `#form\.mail_host` | a confirmar pelo executor |
-| aba E-mail | texto `E-mail` | a confirmar pelo executor |
+| campo do nome da aplicação (aba Identidade) | `#form\.configuracoes\.identidade\.nome_da_aplicacao` | sim (B1 — o id ganhou o prefixo da aba) |
+| campo hex da cor primária (aba Identidade) | `#form\.configuracoes\.identidade\.cor_primaria_hex` | sim (B1) |
+| campo de paginação padrão (aba Tabelas) | `#form\.configuracoes\.tabelas\.paginacao_padrao` | sim (B1) |
+| campo do hub de navegação (aba Aplicação) | `#form\.configuracoes\.aplicacao\.hub_de_navegacao` | B1: só na disjunção do CT-B04, não confirmado isoladamente |
+| campo da pontuação mínima do anti-robô (aba Login, seção Proteção anti-robô) | `#form\.configuracoes\.login\.login_anti_robo_pontuacao_minima` | sim (B1) |
+| campo do remetente (aba E-mail) | `#form\.configuracoes\.email\.mail_mailer` (Select) | sim (B1) |
+| campo do servidor SMTP (aba E-mail) | `#form\.configuracoes\.email\.mail_host` | sim (B1) |
+| aba E-mail | texto `E-mail` | sim (B1) |
 | aba Tabelas | texto `Tabelas` | sim (molde) |
 | botão salvar | `press('Salvar')` | sim (molde) |
-| seção que contém um campo | a `.fi-section` ancestral do campo (via `script()`); cabeçalho clicável dela; o `id` da seção vem do `01` e é só seletor — se Q2 mudar o agrupamento, muda o seletor, não o oráculo | nova |
+| seção que contém um campo | a `.fi-section` ancestral do campo (via `script()`), cabeçalho `.fi-section-header` dela; o `id()` do `01` não vira atributo HTML (B1) — é a chave do `localStorage`, não seletor | sim (B1) |
 | estado colapsado | classe `fi-collapsed` na seção | framework |
-| ausência no documento (não só oculto) | `assertScript("document.querySelector('#form\\\\.paginacao_padrao') === null")` | nova |
-| mensagem de erro de um campo | o texto de erro dentro do wrapper do campo | a confirmar pelo executor |
+| ausência no documento (não só oculto) | `assertScript("document.querySelector('#form\\\\.configuracoes\\\\.tabelas\\\\.paginacao_padrao') === null")` | sim (B1) |
+| mensagem de erro de um campo | campo validado só no servidor (`client_id` do Google, `requiredIf`): o texto de erro dentro do wrapper do campo (CT-B05). Campo `required()` (nome da aplicação): a validação nativa do navegador barra o envio antes do Livewire — o oráculo é `validity.valueMissing`, `validationMessage` não vazia e o campo focado (CT-B03) | sim (B1) |
 
 ---
 
@@ -121,21 +121,21 @@ Dois pares `Quando`/`Então`, com estouro justificado: o comportamento é a sequ
     Dado o administrador com a tela de configurações aberta e o nome da aplicação gravado "Antes"
     E ele apagou o nome da aplicação e colapsou a seção que o contém
     Quando ele aciona Salvar
-    Então a mensagem de erro de obrigatório do nome da aplicação fica visível
+    Então a seção do nome reabre e a mensagem de obrigatório do nome da aplicação fica visível no campo focado
     E o banco continua com o nome "Antes"
 ```
 
-`@premissa` de mecanismo: o Filament abre a seção do campo com erro (então `#form\.nome_da_aplicacao` também fica visível). P-05 aceita "o erro aparece no topo" como alternativa; nesse caso o oráculo continua o mesmo — a mensagem visível —, só o seletor muda.
+Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o campo é `required()`, então a validação **nativa** do navegador barra o envio antes do Livewire. O Filament escuta o evento `invalid` do controle oculto, expande a seção que o esconde e repete `reportValidity()`, e o navegador foca o campo e mostra a mensagem nativa (`vendor/filament/schemas/resources/js/index.js`, bloco `invalid`). A mensagem inline do Filament não aparece porque o servidor não roda — o oráculo é a validade nativa do campo, não o wrapper de erro (correção (a) do executor: a premissa original esperava a mensagem inline).
 
 **Roteiro executável**
 
 | # | Ação | Código Pest | Resultado visível |
 |---|---|---|---|
-| 1 | abrir | `visit('/admin/configuracoes-da-aplicacao')->assertVisible('#form\.nome_da_aplicacao')` | campo visível |
-| 2 | apagar o nome | `->fill('#form\.nome_da_aplicacao', '')` | — |
-| 3 | colapsar a seção | clique no cabeçalho da seção ancestral do campo; `->assertMissing('#form\.nome_da_aplicacao')` | campo não visível |
+| 1 | abrir | `visit('/admin/configuracoes-da-aplicacao')->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo visível |
+| 2 | apagar o nome | `->fill('#form\.configuracoes\.identidade\.nome_da_aplicacao', '')` | — |
+| 3 | colapsar a seção | clique no `.fi-section-header` da `.fi-section` ancestral do campo; `fi-collapsed` presente; `->assertMissing('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo não visível |
 | 4 | salvar | `->press('Salvar')` | — |
-| 5 | o erro aparece | `->assertVisible({mensagem de erro do nome})` | mensagem visível |
+| 5 | o erro aparece | `->assertVisible({campo do nome})` e `assertScript`: seção sem `fi-collapsed`, `campo.validity.valueMissing`, `campo.validationMessage.length > 0`, `document.activeElement === campo` | seção reaberta, campo focado com a mensagem nativa |
 | 6 | nada gravou | `expect(configuracaoGravada('nome_da_aplicacao'))->toBe('Antes')` | — |
 
 #### Mutantes previstos

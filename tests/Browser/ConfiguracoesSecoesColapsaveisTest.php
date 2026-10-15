@@ -30,19 +30,19 @@ it('[CT-B02] mantém somente a seção colapsada pelo usuário fechada após rec
         ->assertVisible('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao')
         ->assertVisible('#form\\.configuracoes\\.identidade\\.cor_primaria_hex');
 
-    $secaoDoNome = $pagina->script(<<<'JS'
-        '#' + CSS.escape(document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').id)
-        JS);
-
     $pagina->script(<<<'JS'
         document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').querySelector('.fi-section-header').click()
         JS);
 
-    $pagina->assertAttributeContains($secaoDoNome, 'class', 'fi-collapsed')
+    $pagina->assertScript(<<<'JS'
+        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').classList.contains('fi-collapsed')
+        JS)
         ->assertMissing('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao')
         ->refresh()
         ->assertVisible('#form\\.configuracoes\\.identidade\\.cor_primaria_hex')
-        ->assertAttributeContains($secaoDoNome, 'class', 'fi-collapsed')
+        ->assertScript(<<<'JS'
+            document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').classList.contains('fi-collapsed')
+            JS)
         ->assertMissing('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao');
 });
 
@@ -53,20 +53,31 @@ it('[CT-B03] mostra o erro do nome na seção colapsada e preserva o valor grava
         ->assertVisible('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao')
         ->fill('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao', '');
 
-    $secaoDoNome = $pagina->script(<<<'JS'
-        '#' + CSS.escape(document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').id)
-        JS);
-
     $pagina->script(<<<'JS'
         document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').querySelector('.fi-section-header').click()
         JS);
 
-    $pagina->assertAttributeContains($secaoDoNome, 'class', 'fi-collapsed')
+    $pagina->assertScript(<<<'JS'
+        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').classList.contains('fi-collapsed')
+        JS)
         ->assertMissing('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao')
         ->press('Salvar')
-        ->assertVisible('[data-field-wrapper]:has(#form\\.configuracoes\\.identidade\\.nome_da_aplicacao) .fi-fo-field-wrp-error-message')
+        /*
+         * O campo é `required()`: a validação nativa do navegador barra o envio antes do
+         * Livewire. O Filament escuta o evento `invalid` do controle oculto, expande a seção
+         * que o esconde e deixa o navegador mostrar a mensagem nativa no campo focado
+         * (`vendor/filament/schemas/resources/js/index.js`, bloco `invalid`).
+         */
+        ->assertVisible('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao')
         ->assertScript(<<<'JS'
-            document.querySelector('[data-field-wrapper]:has(#form\\.configuracoes\\.identidade\\.nome_da_aplicacao) .fi-fo-field-wrp-error-message').textContent.includes('obrigatório')
+            (() => {
+                const campo = document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao');
+
+                return ! campo.closest('.fi-section').classList.contains('fi-collapsed')
+                    && campo.validity.valueMissing
+                    && campo.validationMessage.length > 0
+                    && document.activeElement === campo;
+            })()
             JS);
 
     expect(configuracaoGravada('nome_da_aplicacao'))->toBe('Antes');
@@ -96,8 +107,8 @@ it('[CT-B04] abre a aba da URL com conteúdo para chave válida, antiga ou desco
     }
 })->with([
     'URL escrita pela aba Tabelas' => [null],
-    'link antigo da aba Kit' => ['?tab=kit::tabs'],
-    'valor fora do domínio' => ['?tab=nada::tabs'],
+    'link antigo da aba Kit'       => ['?tab=kit::tabs'],
+    'valor fora do domínio'        => ['?tab=nada::tabs'],
 ]);
 
 it('[CT-B05] revela o erro na seção anti-robô da aba Login nunca aberta', function (): void {
