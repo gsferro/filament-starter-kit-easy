@@ -29,10 +29,17 @@ Nos painéis marcados em *Painéis onde o dock aparece*, na aba **Kit** de
 `/admin/configuracoes-da-aplicacao`. Numa instalação nova **nenhum** painel está marcado: o dock não
 aparece em lugar nenhum até alguém ligá-lo. Veja as opções em [Configuração](#configuração).
 
+O dock e o chat do assistente **não aparecem** na tela de bloqueio (`/screen/lock`), nas telas de
+login (de cada painel e unificado, inclusive a escolha de painel) nem nas telas que usam o layout do
+Auth Designer (recuperar senha, cadastro, registro por convite, dois fatores): numa sessão
+bloqueada, eles entregariam os favoritos e os títulos das conversas a quem estivesse diante da tela.
+Ao destravar, os dois voltam.
+
 ## Usar o dock
 
-1. Clique no botão flutuante: os atalhos abrem **agrupados por painel**, cada grupo com o nome do painel como separador, e na ordem que você escolheu dentro de cada grupo.
-2. Clique num favorito para ir à tela dele.
+1. Clique no botão flutuante: os atalhos abrem **agrupados por painel**, cada grupo com o nome do painel como separador, e na ordem que você escolheu dentro de cada grupo. Com o multi-tenant ligado, os favoritos do painel da aplicação ficam **um grupo por organização**, com o separador "{painel} · {organização}" — mesmo quando há uma organização só —, na ordem em que cada organização apareceu entre os seus favoritos.
+2. Passe o mouse sobre um favorito para ver, no tooltip, o caminho para onde ele leva.
+3. Clique num favorito para ir à tela dele.
 
 | Layout | Como se apresenta |
 |---|---|
@@ -110,6 +117,20 @@ O **layout** e o **estilo** padrão são definidos nas configurações do kit. O
 | `outline` | Contorno |
 | `contrast` | Contraste |
 | `tinted` | Tingido |
+
+## Junto dos outros botões flutuantes
+
+O canto inferior direito também tem o **"Voltar ao topo"** (em toda tela rolada dos painéis) e, no
+painel da aplicação, o **chat do assistente**. Quando o dock fica nesse canto, ou é solto por cima
+do lugar desses botões, os três formam uma pilha:
+
+- o dock fica onde o usuário o pôs;
+- o chat sobe para logo acima do dock, e o "Voltar ao topo" para acima do chat;
+- os três ficam centralizados no mesmo eixo vertical, com **16 px** entre um e outro;
+- com o leque do dock **aberto**, o chat e o "Voltar ao topo" somem até o dock fechar;
+- no layout **barra**, eles continuam visíveis, empilhados acima da barra.
+
+Com o dock em outro canto, ou longe desses botões, cada um fica na altura de sempre; o "Voltar ao topo" fica a 30 px da borda direita, no mesmo eixo do chat, para não saltar de lado quando o dock chega.
 
 ## Tema escuro
 

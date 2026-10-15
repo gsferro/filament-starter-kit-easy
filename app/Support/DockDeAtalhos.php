@@ -182,11 +182,11 @@ final class DockDeAtalhos
      *
      * Favorito que ele deixou de poder abrir some daqui e continua gravado (RQ-19).
      *
-     * @return list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}>
+     * @return list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}>
      */
     public static function atalhosVisiveis(User $usuario): array
     {
-        /** @var list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}> */
+        /** @var list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}> */
         return self::memorizado('atalhos|'.$usuario->getKey(), static fn (): array => self::resolverAtalhosVisiveis($usuario));
     }
 
@@ -504,7 +504,7 @@ final class DockDeAtalhos
     }
 
     /**
-     * @return list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}>
+     * @return list<array{chave: string, url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}>
      */
     private static function resolverAtalhosVisiveis(User $usuario): array
     {
@@ -558,7 +558,7 @@ final class DockDeAtalhos
      * busca da organização; a única consulta admitida é a da autorização da própria tela
      * (`Gate::before` → `User::isMasterGlobal()`), a mesma de cada item da barra lateral.
      *
-     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}|null
+     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}|null
      */
     private static function avaliar(User $usuario, string $chave): ?array
     {
@@ -602,7 +602,7 @@ final class DockDeAtalhos
      * O atalho do destino no contexto CORRENTE — o do request, ou o fixado por `noContexto()`.
      *
      * @param  class-string<resource>|class-string<Page>  $destino
-     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null}|null
+     * @return array{url: string, rotulo: string, rotuloCompleto: string, icone: string|BackedEnum|Htmlable|null, organizacao: string|null}|null
      */
     private static function montarAtalho(Panel $painel, ?Tenant $organizacao, string $destino): ?array
     {
@@ -619,6 +619,9 @@ final class DockDeAtalhos
             'rotulo'         => (string) $destino::getNavigationLabel(),
             'rotuloCompleto' => self::rotuloNoCatalogo($painel, $organizacao, $destino),
             'icone'          => $destino::getNavigationIcon(),
+            // O nome já está em mãos aqui: indicar a organização no dock não custa consulta
+            // (wiki `pilha-de-botoes-flutuantes`, Adendo 7, RQ-25).
+            'organizacao'    => $organizacao === null ? null : Filament::getTenantName($organizacao),
         ];
     }
 
@@ -831,6 +834,12 @@ final class DockDeAtalhos
     public static function painelDaChave(string $chave): string
     {
         return explode('|', $chave, 2)[0];
+    }
+
+    /** O id da organização de uma chave de favorito — o terceiro segmento; vazio fora do painel com tenancy. */
+    public static function organizacaoDaChave(string $chave): string
+    {
+        return explode('|', $chave, 3)[2] ?? '';
     }
 
     /**

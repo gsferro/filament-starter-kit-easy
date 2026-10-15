@@ -197,7 +197,7 @@
 |----|----------|----------------|------|-----------|
 | RQ-35 | Em qualquer slideover, de qualquer painel, todo favorito gravado que o usuário ainda pode abrir aparece entre os escolhidos, com o rótulo de painel (e organização), e pode ser removido ou reordenado; só as novas opções do catálogo variam conforme onde o slideover é aberto | "Q24 aprovada" (Q24) | funcional | RQ-34 |
 
-## Adendo 6 — 2026-10-15
+## Adendo 6 — 2026-10-14
 
 - **Fonte**: pedido do solicitante no chat, depois de ver o dock agrupado funcionando no servidor local
 - **Fidelidade**: alta (texto escrito)

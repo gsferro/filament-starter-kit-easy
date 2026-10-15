@@ -7,6 +7,7 @@ namespace App\Filament\Dock;
 use App\Models\User;
 use App\Support\DockDeAtalhos;
 use App\Support\Paineis;
+use App\Support\TelaDeAutenticacao;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Contracts\Plugin;
@@ -21,6 +22,7 @@ use HoceineEl\QuickActionDock\Enums\DockPosition;
 use HoceineEl\QuickActionDock\Enums\DockStyle;
 use HoceineEl\QuickActionDock\Livewire\QuickActionDock;
 use HoceineEl\QuickActionDock\QuickActionDockPlugin;
+use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use ReflectionMethod;
@@ -36,6 +38,8 @@ use ReflectionUnionType;
  * aparece é o próprio plugin, por request:
  *
  * - `visible()` — o painel corrente está em `kit.dock.paineis` (`DockDeAtalhos::habilitadoNoPainel()`)
+ *   e a página não é tela de autenticação (`TelaDeAutenticacao::rota()`: bloqueio, login, telas do
+ *   Auth Designer — o `hiddenOnAuthPages()` do pacote só reconhece as rotas `{painel}.auth.*`)
  * - `authorize()` — `Usar:Dock` pelo `Gate`, que passa pelo `Gate::before` do `master_global`
  *
  * As duas entram em `QuickActionDockPlugin::shouldRender()`, que decide tanto o render hook
@@ -64,26 +68,88 @@ final class PluginDoDock
 
         $plugin = QuickActionDockPlugin::make()
             ->authorize(DockDeAtalhos::PERMISSAO)
-            ->visible(fn (): bool => DockDeAtalhos::habilitadoNoPainel(Filament::getCurrentPanel()))
+            // A rota vem do `DockContext`, e não do request: nas requisições Livewire do próprio
+            // dock o request é o `livewire.update`, e o contexto guarda a rota da página.
+            ->visible(fn (): bool => DockDeAtalhos::habilitadoNoPainel(Filament::getCurrentPanel())
+                && ! TelaDeAutenticacao::rota(DockContext::current()->getRouteName()))
             ->layout(fn (): DockLayout => DockDeAtalhos::layoutPara(self::usuario()))
             ->style(fn (): DockStyle => DockDeAtalhos::estilo())
             ->position(DockPosition::BottomCenter);
 
+        /*
+         * Um grupo por painel e, no painel com tenancy, por organização (Adendo 7): o grupo `n` do
+         * painel reúne os favoritos da `n`-ésima organização distinta, na ordem gravada. O pacote
+         * registra os grupos uma vez, então cada painel reserva `MAXIMO_DE_ATALHOS` lugares (o teto
+         * de favoritos é também o teto de organizações distintas); o pacote esconde grupo vazio.
+         */
         foreach (array_keys(Paineis::rotulos()) as $painel) {
-            $plugin->group(
-                fn (): string => self::rotuloDoPainel($painel),
-                fn (): array => self::atalhos(static fn (string $painelDoAtalho): bool => $painelDoAtalho === $painel),
-            );
+            for ($posicao = 0; $posicao < DockDeAtalhos::MAXIMO_DE_ATALHOS; $posicao++) {
+                $plugin->group(
+                    fn (): string => self::rotuloDoGrupo($painel, $posicao),
+                    fn (): array => self::atalhos(static fn (string $chave): bool => DockDeAtalhos::painelDaChave($chave) === $painel
+                        && DockDeAtalhos::organizacaoDaChave($chave) === (self::organizacoesDoPainel($painel)[$posicao] ?? null)),
+                );
+            }
         }
 
         return $plugin
             ->group('Outros painéis', fn (): array => self::atalhos(
-                static fn (string $painelDoAtalho): bool => ! array_key_exists($painelDoAtalho, Paineis::rotulos()),
+                static fn (string $chave): bool => ! array_key_exists(DockDeAtalhos::painelDaChave($chave), Paineis::rotulos()),
             ))
             ->group('Atalhos', fn (): array => [
                 self::adicionarPaginaAtual(),
                 self::gerenciarAtalhos(),
             ]);
+    }
+
+    /**
+     * As organizações distintas dos favoritos visíveis do painel, na ordem gravada ('' = favorito
+     * sem organização, fora do painel com tenancy).
+     *
+     * @return list<string>
+     */
+    private static function organizacoesDoPainel(string $painel): array
+    {
+        $usuario = self::usuario();
+
+        if ($usuario === null) {
+            return [];
+        }
+
+        $organizacoes = [];
+
+        foreach (DockDeAtalhos::atalhosVisiveis($usuario) as $atalho) {
+            if (DockDeAtalhos::painelDaChave($atalho['chave']) === $painel) {
+                $organizacoes[] = DockDeAtalhos::organizacaoDaChave($atalho['chave']);
+            }
+        }
+
+        return array_values(array_unique($organizacoes));
+    }
+
+    /**
+     * O separador de um grupo: o rótulo do painel e, no painel com tenancy, "· {organização}"
+     * (Adendo 7). O nome vem do próprio favorito, já resolvido: nenhuma consulta.
+     */
+    private static function rotuloDoGrupo(string $painel, int $posicao): string
+    {
+        $rotulo      = self::rotuloDoPainel($painel);
+        $organizacao = self::organizacoesDoPainel($painel)[$posicao] ?? '';
+        $usuario     = self::usuario();
+
+        if ($organizacao === '' || $usuario === null) {
+            return $rotulo;
+        }
+
+        foreach (DockDeAtalhos::atalhosVisiveis($usuario) as $atalho) {
+            if (DockDeAtalhos::painelDaChave($atalho['chave']) === $painel
+                && DockDeAtalhos::organizacaoDaChave($atalho['chave']) === $organizacao
+                && filled($atalho['organizacao'])) {
+                return "{$rotulo} · {$atalho['organizacao']}";
+            }
+        }
+
+        return $rotulo;
     }
 
     /**
@@ -107,10 +173,12 @@ final class PluginDoDock
      * continua único no componente. A action só navega, e a URL sai do servidor, de destino já
      * autorizado no contexto dele (`DockDeAtalhos::atalhosVisiveis()`).
      *
-     * @param  (Closure(string): bool)|null  $doPainel  recebe o id do painel do favorito; nulo = todos
+     * Cada favorito mostra, no tooltip, o caminho para onde leva (Adendo 7, RQ-26).
+     *
+     * @param  (Closure(string): bool)|null  $doGrupo  recebe a chave do favorito; nulo = todos
      * @return list<Action>
      */
-    private static function atalhos(?Closure $doPainel = null): array
+    private static function atalhos(?Closure $doGrupo = null): array
     {
         $usuario = self::usuario();
 
@@ -121,7 +189,7 @@ final class PluginDoDock
         $actions = [];
 
         foreach (DockDeAtalhos::atalhosVisiveis($usuario) as $indice => $atalho) {
-            if ($doPainel !== null && ! $doPainel(DockDeAtalhos::painelDaChave($atalho['chave']))) {
+            if ($doGrupo !== null && ! $doGrupo($atalho['chave'])) {
                 continue;
             }
 
@@ -129,6 +197,7 @@ final class PluginDoDock
                 ->label($atalho['rotulo'])
                 ->icon($atalho['icone'] ?? Heroicon::OutlinedLink)
                 ->url($atalho['url'])
+                ->tooltip(parse_url($atalho['url'], PHP_URL_PATH) ?: $atalho['url'])
                 ->authorize(DockDeAtalhos::PERMISSAO);
         }
 

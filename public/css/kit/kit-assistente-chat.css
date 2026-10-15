@@ -1,0 +1,283 @@
+/*
+|--------------------------------------------------------------------------
+| Estilo do chat do Assistente nos painéis
+|--------------------------------------------------------------------------
+| Registrado por `KitServiceProvider::configureCorrecoesDeCss()` via
+| `FilamentAsset::register()` — o mesmo mecanismo e o mesmo motivo de
+| `voltar-ao-topo.css`, `cards.css` e `spotlight.css`: o painel Filament não carrega o
+| Vite da aplicação, então as utilitárias que
+| `resources/views/livewire/assistente-chat-widget.blade.php` emite nunca chegavam à
+| tela. Sem este arquivo o botão saía como um `<button>` cru, `position: static`, no fim
+| do `<body>` e abaixo do rodapé — o chat existia e ninguém o alcançava (wiki
+| `pilha-de-botoes-flutuantes`, teste controlado).
+|
+| ## Escopo
+|
+| Toda regra começa por `[data-assistente-chat]`, o atributo da raiz do componente:
+| um `.fixed` ou `.rounded-full` global mudaria toda blade de vendor que emite a classe
+| sem estilo. As cores saem das variáveis que o Filament emite em runtime (`--primary-*`,
+| `--gray-*`, `--danger-*`, `--warning-*`), nunca de valor literal — é o que faz o chat
+| acompanhar a cor da organização no /app. O tema escuro é a classe `dark` que o
+| Filament põe no `<html>`.
+|
+| ## A pilha do canto inferior direito
+|
+| O `bottom` do botão lê `--kit-pilha-base`, que o script da pilha publica no `<html>`
+| quando o dock de atalhos ocupa o lugar dos botões flutuantes (ver
+| `resources/views/filament/voltar-ao-topo.blade.php`). Sem a variável — sem JS, sem
+| dock —, o botão fica a 1.5rem do rodapé, como sempre esteve. Com o leque do dock aberto
+| sobre a pilha, o script põe `data-kit-pilha-oculta` no `<html>` e o botão some.
+|
+| Depois de mexer aqui: `php artisan filament:assets`.
+|
+| Guarda: `tests/Kit/AssistenteChatCssTest.php` lê o chat renderizado e exige que cada
+| classe esteja declarada aqui sob o escopo.
+*/
+
+/* Alpine: o que tem `x-cloak` não aparece antes de o Alpine assumir. */
+[data-assistente-chat] [x-cloak] { display: none !important; }
+
+/* ── Posição e camada ─────────────────────────────────────────────────── */
+[data-assistente-chat] .fixed { position: fixed; }
+[data-assistente-chat] .inset-y-0 { top: 0; bottom: 0; }
+[data-assistente-chat] .right-0 { right: 0; }
+[data-assistente-chat] .right-6 { right: 1.5rem; }
+[data-assistente-chat] .bottom-6 { bottom: var(--kit-pilha-base, 1.5rem); }
+[data-assistente-chat] .z-40 { z-index: 40; }
+[data-assistente-chat] .z-50 { z-index: 50; }
+
+[data-assistente-chat]:is([data-kit-pilha-oculta] *) .bottom-6 {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────── */
+[data-assistente-chat] .flex { display: flex; }
+[data-assistente-chat] .hidden { display: none; }
+[data-assistente-chat] .flex-col { flex-direction: column; }
+[data-assistente-chat] .flex-1 { flex: 1 1 0%; }
+[data-assistente-chat] .shrink-0 { flex-shrink: 0; }
+[data-assistente-chat] .items-center { align-items: center; }
+[data-assistente-chat] .items-end { align-items: flex-end; }
+[data-assistente-chat] .justify-center { justify-content: center; }
+[data-assistente-chat] .justify-between { justify-content: space-between; }
+[data-assistente-chat] .gap-1 { gap: 0.25rem; }
+[data-assistente-chat] .gap-2 { gap: 0.5rem; }
+[data-assistente-chat] .space-y-1 > :not(:last-child) { margin-block-end: 0.25rem; }
+[data-assistente-chat] .space-y-4 > :not(:last-child) { margin-block-end: 1rem; }
+[data-assistente-chat] .overflow-y-auto { overflow-y: auto; }
+
+/* ── Tamanho ──────────────────────────────────────────────────────────── */
+[data-assistente-chat] .w-full { width: 100%; }
+[data-assistente-chat] .max-w-md { max-width: 28rem; }
+[data-assistente-chat] .min-w-0 { min-width: 0; }
+[data-assistente-chat] .h-4 { height: 1rem; }
+[data-assistente-chat] .w-4 { width: 1rem; }
+[data-assistente-chat] .h-5 { height: 1.25rem; }
+[data-assistente-chat] .w-5 { width: 1.25rem; }
+[data-assistente-chat] .h-6 { height: 1.5rem; }
+[data-assistente-chat] .w-6 { width: 1.5rem; }
+[data-assistente-chat] .h-14 { height: 3.5rem; }
+[data-assistente-chat] .w-14 { width: 3.5rem; }
+
+/* ── Espaçamento ──────────────────────────────────────────────────────── */
+[data-assistente-chat] .p-1 { padding: 0.25rem; }
+[data-assistente-chat] .p-3 { padding: 0.75rem; }
+[data-assistente-chat] .px-1 { padding-inline: 0.25rem; }
+[data-assistente-chat] .px-2 { padding-inline: 0.5rem; }
+[data-assistente-chat] .px-3 { padding-inline: 0.75rem; }
+[data-assistente-chat] .px-4 { padding-inline: 1rem; }
+[data-assistente-chat] .py-1 { padding-block: 0.25rem; }
+[data-assistente-chat] .py-2 { padding-block: 0.5rem; }
+[data-assistente-chat] .py-3 { padding-block: 0.75rem; }
+[data-assistente-chat] .py-4 { padding-block: 1rem; }
+[data-assistente-chat] .py-8 { padding-block: 2rem; }
+[data-assistente-chat] .ml-8 { margin-left: 2rem; }
+[data-assistente-chat] .mr-8 { margin-right: 2rem; }
+[data-assistente-chat] .mt-1 { margin-top: 0.25rem; }
+[data-assistente-chat] .mt-2 { margin-top: 0.5rem; }
+
+/* ── Texto ────────────────────────────────────────────────────────────── */
+[data-assistente-chat] .text-xs { font-size: 0.75rem; line-height: 1rem; }
+[data-assistente-chat] .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+[data-assistente-chat] .text-base { font-size: 1rem; line-height: 1.5rem; }
+[data-assistente-chat] .font-medium { font-weight: 500; }
+[data-assistente-chat] .font-semibold { font-weight: 600; }
+[data-assistente-chat] .text-left { text-align: left; }
+[data-assistente-chat] .text-center { text-align: center; }
+[data-assistente-chat] .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-assistente-chat] .whitespace-pre-wrap { white-space: pre-wrap; }
+[data-assistente-chat] .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ── Borda e forma ────────────────────────────────────────────────────── */
+[data-assistente-chat] .border { border-width: 1px; border-style: solid; }
+[data-assistente-chat] .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
+[data-assistente-chat] .border-l { border-left-width: 1px; border-left-style: solid; }
+[data-assistente-chat] .border-t { border-top-width: 1px; border-top-style: solid; }
+[data-assistente-chat] .border-gray-200 { border-color: var(--gray-200); }
+[data-assistente-chat] .border-gray-300 { border-color: var(--gray-300); }
+[data-assistente-chat] .rounded-md { border-radius: 0.375rem; }
+[data-assistente-chat] .rounded-lg { border-radius: 0.5rem; }
+[data-assistente-chat] .rounded-full { border-radius: 9999px; }
+[data-assistente-chat] .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+[data-assistente-chat] .shadow-2xl { box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); }
+[data-assistente-chat] .resize-none { resize: none; }
+[data-assistente-chat] .cursor-pointer { cursor: pointer; }
+[data-assistente-chat] .transition {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Cor: tema claro ──────────────────────────────────────────────────── */
+[data-assistente-chat] .bg-white { background-color: var(--white, #fff); }
+[data-assistente-chat] .bg-gray-100 { background-color: var(--gray-100); }
+[data-assistente-chat] .bg-primary-50 { background-color: var(--primary-50); }
+[data-assistente-chat] .bg-primary-600 { background-color: var(--primary-600); }
+[data-assistente-chat] .bg-warning-50 { background-color: var(--warning-50); }
+[data-assistente-chat] .bg-danger-50 { background-color: var(--danger-50); }
+[data-assistente-chat] .text-white { color: var(--white, #fff); }
+[data-assistente-chat] .text-gray-500 { color: var(--gray-500); }
+[data-assistente-chat] .text-gray-700 { color: var(--gray-700); }
+[data-assistente-chat] .text-gray-800 { color: var(--gray-800); }
+[data-assistente-chat] .text-gray-900 { color: var(--gray-900); }
+[data-assistente-chat] .text-primary-600 { color: var(--primary-600); }
+[data-assistente-chat] .text-warning-700 { color: var(--warning-700); }
+[data-assistente-chat] .text-danger-600 { color: var(--danger-600); }
+[data-assistente-chat] .text-danger-700 { color: var(--danger-700); }
+
+[data-assistente-chat] .hover\:bg-gray-100:hover { background-color: var(--gray-100); }
+[data-assistente-chat] .hover\:bg-primary-50:hover { background-color: var(--primary-50); }
+[data-assistente-chat] .hover\:bg-primary-700:hover { background-color: var(--primary-700); }
+[data-assistente-chat] .hover\:text-primary-600:hover { color: var(--primary-600); }
+
+/* ── Cor: tema escuro ─────────────────────────────────────────────────── */
+[data-assistente-chat]:is(.dark *) .dark\:bg-gray-800 { background-color: var(--gray-800); }
+[data-assistente-chat]:is(.dark *) .dark\:bg-gray-900 { background-color: var(--gray-900); }
+[data-assistente-chat]:is(.dark *) .dark\:bg-white\/5 { background-color: color-mix(in oklab, #fff 5%, transparent); }
+[data-assistente-chat]:is(.dark *) .dark\:bg-primary-400\/10 { background-color: color-mix(in oklab, var(--primary-400) 10%, transparent); }
+[data-assistente-chat]:is(.dark *) .dark\:bg-warning-500\/10 { background-color: color-mix(in oklab, var(--warning-500) 10%, transparent); }
+[data-assistente-chat]:is(.dark *) .dark\:bg-danger-500\/10 { background-color: color-mix(in oklab, var(--danger-500) 10%, transparent); }
+[data-assistente-chat]:is(.dark *) .dark\:border-white\/10 { border-color: color-mix(in oklab, #fff 10%, transparent); }
+[data-assistente-chat]:is(.dark *) .dark\:text-white { color: var(--white, #fff); }
+[data-assistente-chat]:is(.dark *) .dark\:text-gray-100 { color: var(--gray-100); }
+[data-assistente-chat]:is(.dark *) .dark\:text-gray-200 { color: var(--gray-200); }
+[data-assistente-chat]:is(.dark *) .dark\:text-gray-300 { color: var(--gray-300); }
+[data-assistente-chat]:is(.dark *) .dark\:text-gray-400 { color: var(--gray-400); }
+[data-assistente-chat]:is(.dark *) .dark\:text-primary-400 { color: var(--primary-400); }
+[data-assistente-chat]:is(.dark *) .dark\:text-warning-400 { color: var(--warning-400); }
+[data-assistente-chat]:is(.dark *) .dark\:text-danger-400 { color: var(--danger-400); }
+
+[data-assistente-chat]:is(.dark *) .dark\:hover\:bg-white\/5:hover { background-color: color-mix(in oklab, #fff 5%, transparent); }
+[data-assistente-chat]:is(.dark *) .dark\:hover\:bg-primary-400\/10:hover { background-color: color-mix(in oklab, var(--primary-400) 10%, transparent); }
+[data-assistente-chat]:is(.dark *) .dark\:hover\:text-primary-400:hover { color: var(--primary-400); }
+
+/* ── Foco e estado ────────────────────────────────────────────────────── */
+/*
+ * O anel é box-shadow, como no "Voltar ao topo": `focus:ring-*` e `focus:ring-offset-2`
+ * vêm juntos na blade e compõem um anel primary de 2px (1px no campo de texto), com
+ * offset de 2px quando a classe de offset está presente.
+ */
+[data-assistente-chat] .focus\:outline-none:focus { outline: none; }
+[data-assistente-chat] .focus\:border-primary-600:focus { border-color: var(--primary-600); }
+[data-assistente-chat] .focus\:ring-1:focus,
+[data-assistente-chat] .focus\:ring-primary-600:focus { box-shadow: 0 0 0 1px var(--primary-600); }
+[data-assistente-chat] .focus\:ring-2:focus { box-shadow: 0 0 0 2px var(--primary-600); }
+[data-assistente-chat] .focus\:ring-offset-2:focus {
+    box-shadow: 0 0 0 2px var(--white, #fff), 0 0 0 4px var(--primary-600);
+}
+[data-assistente-chat] .disabled\:cursor-not-allowed:disabled { cursor: not-allowed; }
+[data-assistente-chat] .disabled\:opacity-50:disabled { opacity: 0.5; }
+
+/* ── Conteúdo próprio do chat (era o `<style>` do @assets da blade) ──── */
+[data-assistente-chat] .resposta-md > :first-child { margin-top: 0; }
+[data-assistente-chat] .resposta-md > :last-child { margin-bottom: 0; }
+[data-assistente-chat] .resposta-md p { margin-block: 0.5rem; }
+[data-assistente-chat] .resposta-md strong { font-weight: 600; }
+[data-assistente-chat] .resposta-md em { font-style: italic; }
+[data-assistente-chat] .resposta-md ul,
+[data-assistente-chat] .resposta-md ol { margin-block: 0.5rem; padding-left: 1.25rem; }
+[data-assistente-chat] .resposta-md ul { list-style: disc; }
+[data-assistente-chat] .resposta-md ol { list-style: decimal; }
+[data-assistente-chat] .resposta-md li { margin-block: 0.125rem; }
+[data-assistente-chat] .resposta-md li > ul,
+[data-assistente-chat] .resposta-md li > ol { margin-block: 0.125rem; }
+[data-assistente-chat] .resposta-md h1,
+[data-assistente-chat] .resposta-md h2,
+[data-assistente-chat] .resposta-md h3,
+[data-assistente-chat] .resposta-md h4 { margin-block: 0.75rem 0.25rem; font-weight: 600; font-size: 1em; }
+[data-assistente-chat] .resposta-md a { text-decoration: underline; text-underline-offset: 2px; }
+[data-assistente-chat] .resposta-md code {
+    padding: 0.1em 0.3em;
+    border-radius: 0.25rem;
+    background-color: color-mix(in oklab, currentColor 10%, transparent);
+    font-size: 0.9em;
+}
+[data-assistente-chat] .resposta-md pre {
+    margin-block: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    overflow-x: auto;
+    border-radius: 0.375rem;
+    background-color: color-mix(in oklab, currentColor 8%, transparent);
+}
+[data-assistente-chat] .resposta-md pre code { padding: 0; background: none; }
+[data-assistente-chat] .resposta-md blockquote {
+    margin-block: 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid color-mix(in oklab, currentColor 25%, transparent);
+}
+
+/* Hora como hint FORA da bolha, logo abaixo dela. Assistente à esquerda, usuário à direita. */
+[data-assistente-chat] .chat-hora {
+    display: block;
+    margin-top: 0.1875rem;
+    padding-inline: 0.25rem;
+    font-size: 0.625rem;
+    line-height: 1;
+    text-align: left;
+    opacity: 0.55;
+}
+[data-assistente-chat] .chat-hora-fim { text-align: right; }
+
+/* Bolha do streaming: enquanto não chega token, não existe bolha. */
+[data-assistente-chat] .chat-stream:empty { display: none; }
+
+[data-assistente-chat] .chat-spinner {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex-shrink: 0;
+    border: 2px solid color-mix(in oklab, currentColor 25%, transparent);
+    border-top-color: var(--primary-500, currentColor);
+    border-radius: 50%;
+    animation: chat-spin 0.7s linear infinite;
+}
+
+@keyframes chat-spin { to { transform: rotate(360deg); } }
+
+[data-assistente-chat] .chat-caret {
+    display: inline-block;
+    width: 0.5rem;
+    margin-left: 1px;
+    animation: chat-blink 1s step-end infinite;
+}
+
+@keyframes chat-blink { 50% { opacity: 0; } }
+
+/* A11Y: quem pediu menos movimento recebe spinner lento e nenhum piscar. */
+@media (prefers-reduced-motion: reduce) {
+    [data-assistente-chat] .chat-spinner { animation-duration: 2s; }
+    [data-assistente-chat] .chat-caret { animation: none; }
+}
