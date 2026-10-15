@@ -23,7 +23,7 @@ beforeEach(function (): void {
 
 /**
  * CT-09 — sem seletor para ocultar, um interruptor que não muda nada é ruído:
- * o campo simplesmente não aparece na aba Kit.
+ * o campo simplesmente não aparece na aba Aplicação.
  */
 it('[CT-09] sem a multi-organização ligada o interruptor não aparece', function (): void {
     $this->actingAs(usuarioDoKit('admin'));

@@ -7,7 +7,7 @@ sidebar:
 ---
 What the installer asked — plus a handful of things you previously could only change by editing a file — now lives at **`/admin/configuracoes-da-aplicacao`** — the panel menu labels the screen **Configurações da aplicação**, because once installed the kit is the provenance, not the product —, in six tabs. No `.env`, no deploy.
 
-Every field lives in a section with an icon, collapsible through its header; the browser remembers closed sections in `localStorage`, per browser. Each tab loads its content only when opened, and a tab with a validation error opens automatically.
+Every field lives in a section with an icon, collapsible through its header; the browser remembers the state of each section (closed or open, including the ones that start closed) in `localStorage`, per browser. Each tab loads its content only when opened, and a tab with a validation error opens automatically.
 
 | Tab | What you change | Sections |
 |---|---|---|

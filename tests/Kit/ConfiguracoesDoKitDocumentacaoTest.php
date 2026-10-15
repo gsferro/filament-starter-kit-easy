@@ -137,7 +137,7 @@ it('documenta nos dois readmes que a arte do login usa o nome da aplicacao', fun
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega o README (que passa a ser do projeto) nem o site (export-ignore).')->group('kit');
 
 it('[CT-02] remove o nome antigo da aba de todos os docs e readmes', function (): void {
-    $arquivos = [base_path('README.md'), base_path('README.en.md')];
+    $arquivos = [base_path('README.md'), base_path('README.en.md'), base_path('.env.example'), base_path('config/kit.php')];
 
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('docs'), FilesystemIterator::SKIP_DOTS)) as $arquivo) {
         if ($arquivo->isFile() && $arquivo->getExtension() === 'md') {
@@ -148,9 +148,9 @@ it('[CT-02] remove o nome antigo da aba de todos os docs e readmes', function ()
     foreach ($arquivos as $arquivo) {
         $texto = (string) file_get_contents($arquivo);
 
-        foreach (['aba Kit', 'aba **Kit**', 'Kit tab', '**Kit** tab', '| **Kit** |'] as $nomeAntigo) {
-            $this->assertStringNotContainsString($nomeAntigo, $texto, $arquivo);
-        }
+        // Sem distinção de caixa ("Aba Kit" no alt de uma imagem escapou da primeira varredura) e com
+        // fronteira de palavra, para "kit table" não casar com "Kit tab".
+        expect(preg_match('/\baba \*{0,2}kit\b|\bkit\*{0,2} tab\b|\| \*\*kit\*\* \|/iu', $texto))->toBe(0, $arquivo);
     }
 })->skip(fn (): bool => ! naArvoreDoKit(), 'A documentação só está disponível na árvore do kit.')->group('kit');
 

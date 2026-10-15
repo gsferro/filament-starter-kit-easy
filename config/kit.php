@@ -307,7 +307,7 @@ return [
     | Vale para TODA tela `create`/`edit` dos três painéis, inclusive as dos
     | plugins de terceiros, porque quem decide é o painel e não o resource.
     |
-    | Editável em /admin/configuracoes-da-aplicacao, aba Kit. Os providers leem
+    | Editável em /admin/configuracoes-da-aplicacao, aba Aplicação. Os providers leem
     | esta chave por Closure, avaliada no render — então a tela governa sem
     | precisar de deploy. Ver ADR-02 da wiki `estudo-de-pacotes-rodada-2`.
     |
@@ -331,7 +331,7 @@ return [
     | classe `fi-*` escrita à mão — escrever CSS por classe foi MEDIDO e piorou a
     | altura da tabela em 21,9%. Ver ADR-03 e ADR-04 da wiki `layout-compact`.
     |
-    | Editável em /admin/configuracoes-da-aplicacao, aba Kit. O render hook é
+    | Editável em /admin/configuracoes-da-aplicacao, aba Aplicação. O render hook é
     | avaliado POR REQUEST, então a tela governa sem deploy — é o critério que
     | `.ai/rules/settings.md` fixa. `viteTheme()` NÃO serve aqui: ele é resolvido
     | na construção do painel e não aceita `Closure` (ADR-06).
@@ -424,7 +424,7 @@ return [
 
         // Esconder o seletor de organização de quem tem acesso a uma só.
         // Semeia a primeira gravação: depois que a tabela `settings` existe, o
-        // que manda é o interruptor da aba Kit em /admin/configuracoes-da-aplicacao
+        // que manda é o interruptor da aba Aplicação em /admin/configuracoes-da-aplicacao
         // — lido por request pela Closure de `tenantMenu()`, que o Filament
         // avalia no render (HasTenancy.php:344-347), não no boot.
         'ocultar_seletor_unico' => (bool) env('KIT_TENANCY_OCULTAR_SELETOR_UNICO', false),
@@ -535,7 +535,7 @@ return [
     |--------------------------------------------------------------------------
     | Desligado por default — é o que torna o `kit:update` inerte: quem já tem o
     | kit instalado não acorda com a tela de entrada trocada. Liga em
-    | /admin/configuracoes-da-aplicacao (aba Kit) ou aqui pelo `.env`.
+    | /admin/configuracoes-da-aplicacao (aba Aplicação) ou aqui pelo `.env`.
     |
     | Ligado, a raiz de cada painel (`/`, ou `/app/{tenant}` com multi-
     | organização) passa a responder a grade do mddev31/filament-dynamic-
@@ -573,7 +573,7 @@ return [
     | Dock de atalhos (hoceineel/filament-quick-action-dock)
     |--------------------------------------------------------------------------
     | Botão flutuante com os favoritos de cada usuário. Editável em
-    | /admin/configuracoes-da-aplicacao (aba Kit); o banco vence o .env em
+    | /admin/configuracoes-da-aplicacao (aba Aplicação); o banco vence o .env em
     | execução. Quem pode USAR é a permission `Usar:Dock` (custom_permissions).
     |
     |   'paineis' — ids separados por vírgula, mesmo parse de

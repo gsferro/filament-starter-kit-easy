@@ -9,6 +9,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 - Tela de configurações reorganizada: aba "Kit" renomeada "Aplicação"; campos em seções com ícone,
   colapsáveis, com estado lembrado por navegador; abas carregadas ao abrir (`deferLoading` do Filament).
+  As abas ganharam chave fixa (`?tab=identidade`, `?tab=tabelas`…): link ou favorito antigo com
+  `?tab=…::data::tab` passa a abrir na primeira aba.
 
 ## [0.49.0] - 2026-10-15
 

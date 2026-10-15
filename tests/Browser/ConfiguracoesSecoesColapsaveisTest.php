@@ -31,19 +31,38 @@ it('[CT-B02] mantém somente a seção colapsada pelo usuário fechada após rec
         ->assertVisible('#form\\.configuracoes\\.identidade\\.cor_primaria_hex');
 
     $pagina->script(<<<'JS'
-        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').querySelector('.fi-section-header').click()
+        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('section').querySelector('[aria-expanded]').click()
         JS);
 
     $pagina->assertScript(<<<'JS'
-        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').classList.contains('fi-collapsed')
+        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('section').querySelector('[aria-expanded]').getAttribute('aria-expanded') === 'false'
         JS)
         ->assertMissing('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao')
         ->refresh()
         ->assertVisible('#form\\.configuracoes\\.identidade\\.cor_primaria_hex')
         ->assertScript(<<<'JS'
-            document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').classList.contains('fi-collapsed')
+            document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('section').querySelector('[aria-expanded]').getAttribute('aria-expanded') === 'false'
             JS)
         ->assertMissing('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao');
+
+    // O inverso também persiste: a seção do Google nasce fechada; aberta pelo usuário, continua aberta depois de recarregar.
+    $pagina->click('Login')
+        ->assertSee('Entrar com Google')
+        ->assertScript(<<<'JS'
+            [...document.querySelectorAll('section')].find(s => s.querySelector('h1,h2,h3,h4,h5,h6')?.textContent.trim() === 'Entrar com Google').querySelector('[aria-expanded]').getAttribute('aria-expanded') === 'false'
+            JS);
+
+    $pagina->script(<<<'JS'
+        [...document.querySelectorAll('section')].find(s => s.querySelector('h1,h2,h3,h4,h5,h6')?.textContent.trim() === 'Entrar com Google').querySelector('[aria-expanded]').click()
+        JS);
+
+    $pagina->assertVisible('#form\\.configuracoes\\.login\\.login_google_habilitado')
+        ->refresh()
+        ->click('Login')
+        ->assertVisible('#form\\.configuracoes\\.login\\.login_google_habilitado')
+        ->assertScript(<<<'JS'
+            [...document.querySelectorAll('section')].find(s => s.querySelector('h1,h2,h3,h4,h5,h6')?.textContent.trim() === 'Entrar com Google').querySelector('[aria-expanded]').getAttribute('aria-expanded') === 'true'
+            JS);
 });
 
 it('[CT-B03] mostra o erro do nome na seção colapsada e preserva o valor gravado', function (): void {
@@ -54,11 +73,11 @@ it('[CT-B03] mostra o erro do nome na seção colapsada e preserva o valor grava
         ->fill('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao', '');
 
     $pagina->script(<<<'JS'
-        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').querySelector('.fi-section-header').click()
+        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('section').querySelector('[aria-expanded]').click()
         JS);
 
     $pagina->assertScript(<<<'JS'
-        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('.fi-section').classList.contains('fi-collapsed')
+        document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao').closest('section').querySelector('[aria-expanded]').getAttribute('aria-expanded') === 'false'
         JS)
         ->assertMissing('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao')
         ->press('Salvar')
@@ -73,7 +92,7 @@ it('[CT-B03] mostra o erro do nome na seção colapsada e preserva o valor grava
             (() => {
                 const campo = document.querySelector('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao');
 
-                return ! campo.closest('.fi-section').classList.contains('fi-collapsed')
+                return campo.closest('section').querySelector('[aria-expanded]').getAttribute('aria-expanded') === 'true'
                     && campo.validity.valueMissing
                     && campo.validationMessage.length > 0
                     && document.activeElement === campo;
@@ -101,14 +120,17 @@ it('[CT-B04] abre a aba da URL com conteúdo para chave válida, antiga ou desco
     if ($consulta === null) {
         $pagina->assertVisible('#form\\.configuracoes\\.tabelas\\.paginacao_padrao');
     } else {
-        $pagina->assertScript(<<<'JS'
-            [...document.querySelectorAll('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao, #form\\.configuracoes\\.aplicacao\\.hub_de_navegacao')].some(e => e.offsetParent !== null)
-            JS);
+        // Chave desconhecida cai na primeira aba (Identidade), e só ela carrega.
+        $pagina->assertVisible('#form\\.configuracoes\\.identidade\\.nome_da_aplicacao')
+            ->assertScript(<<<'JS'
+                document.querySelector('#form\\.configuracoes\\.tabelas\\.paginacao_padrao') === null
+                JS);
     }
 })->with([
-    'URL escrita pela aba Tabelas' => [null],
-    'link antigo da aba Kit'       => ['?tab=kit::tabs'],
-    'valor fora do domínio'        => ['?tab=nada::tabs'],
+    'URL escrita pela aba Tabelas'                  => [null],
+    'link antigo da aba Kit (chave da v0.49.0)'     => ['?tab=kit::data::tab'],
+    'link antigo da aba Tabelas (chave da v0.49.0)' => ['?tab=tabelas::data::tab'],
+    'valor fora do domínio'                         => ['?tab=nada::tabs'],
 ]);
 
 it('[CT-B05] revela o erro na seção anti-robô da aba Login nunca aberta', function (): void {
@@ -124,7 +146,7 @@ it('[CT-B05] revela o erro na seção anti-robô da aba Login nunca aberta', fun
         ->press('Salvar')
         ->assertVisible('[data-field-wrapper]:has(#form\\.configuracoes\\.login\\.login_anti_robo_pontuacao_minima) .fi-fo-field-wrp-error-message')
         ->assertScript(<<<'JS'
-            ! document.querySelector('#form\\.configuracoes\\.login\\.login_anti_robo_pontuacao_minima').closest('.fi-section').classList.contains('fi-collapsed')
+            document.querySelector('#form\\.configuracoes\\.login\\.login_anti_robo_pontuacao_minima').closest('section').querySelector('[aria-expanded]').getAttribute('aria-expanded') === 'true'
             JS);
 });
 

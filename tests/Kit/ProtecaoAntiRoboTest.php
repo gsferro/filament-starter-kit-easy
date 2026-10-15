@@ -911,8 +911,10 @@ it('abre os campos anti-robo conforme o interruptor', function (bool $ligado): v
  *
  * O oráculo é o HTML da tela, e não `assertSchemaComponentVisible` sobre um `fillForm()`: com o
  * ambiente trocado dentro do caso, o estado reativo do componente Livewire não reflete o
- * interruptor, e a asserção mediria o arranjo em vez da regra. Pelo GET, o que se afirma é o que
- * a pessoa vê.
+ * interruptor, e a asserção mediria o arranjo em vez da regra. Com a aba Login carregada
+ * (`carregarAba()` + `refresh()`, porque a aba é adiada e o GET só traz o esqueleto), o HTML
+ * afirmado é o que a pessoa vê — e o título da seção anti-robô é o controle positivo de que a
+ * aba carregou, sem o qual o `assertDontSee` passaria vazio.
  */
 it('mostra o toggle de ambiente local somente com APP_ENV=local', function (string $ambiente, bool $visivel): void {
     $settings                             = app(SettingsDoKit::class);
@@ -924,7 +926,9 @@ it('mostra o toggle de ambiente local somente com APP_ENV=local', function (stri
 
     $this->actingAs(usuarioDoKit('admin'))->get('/admin/configuracoes-da-aplicacao')->assertOk();
 
-    $resposta = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'login')->refresh();
+    $resposta = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'login')
+        ->refresh()
+        ->assertSee('Proteção anti-robô');
 
     $visivel
         ? $resposta->assertSee('Aplicar também em ambiente local')
@@ -944,9 +948,11 @@ it('esconde o toggle de ambiente local quando a protecao esta desligada', functi
     config(['app.env' => 'local']);
     App::detectEnvironment(fn (): string => 'local');
 
-    $this->actingAs(usuarioDoKit('admin'))
-        ->get('/admin/configuracoes-da-aplicacao')
-        ->assertOk()
+    $this->actingAs(usuarioDoKit('admin'))->get('/admin/configuracoes-da-aplicacao')->assertOk();
+
+    carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'login')
+        ->refresh()
+        ->assertSee('Proteção anti-robô')
         ->assertDontSee('Aplicar também em ambiente local');
 })->group('kit');
 

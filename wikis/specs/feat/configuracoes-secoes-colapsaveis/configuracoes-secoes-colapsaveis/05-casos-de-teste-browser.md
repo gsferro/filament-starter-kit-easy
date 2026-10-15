@@ -30,7 +30,7 @@
 | aba Tabelas | texto `Tabelas` | sim (molde) |
 | botão salvar | `press('Salvar')` | sim (molde) |
 | seção que contém um campo | a `.fi-section` ancestral do campo (via `script()`), cabeçalho `.fi-section-header` dela; o `id()` do `01` não vira atributo HTML (B1) — é a chave do `localStorage`, não seletor | sim (B1) |
-| estado colapsado | classe `fi-collapsed` na seção | framework |
+| estado colapsado | `aria-expanded` do botão de colapso da seção (`[aria-expanded]` dentro do `<section>` ancestral do campo): `'false'` = colapsada; o clique no mesmo botão alterna *(alterado em 2026-10-15, step 9 — CR-05/RD-05: a classe `fi-collapsed` viola `.ai/rules/testes-browser.md` › Seletores; o `<section>` ancestral continua por `closest('section')`, elemento semântico, porque a seção não tem `aria-label` nem id HTML)* | framework |
 | ausência no documento (não só oculto) | `assertScript("document.querySelector('#form\\\\.configuracoes\\\\.tabelas\\\\.paginacao_padrao') === null")` | sim (B1) |
 | mensagem de erro de um campo | campo validado só no servidor (`client_id` do Google, `requiredIf`): o texto de erro dentro do wrapper do campo (CT-B05). Campo `required()` (nome da aplicação): a validação nativa do navegador barra o envio antes do Livewire — o oráculo é `validity.valueMissing`, `validationMessage` não vazia e o campo focado (CT-B03) | sim (B1) |
 
@@ -87,8 +87,11 @@ Dois pares `Quando`/`Então`, com estouro justificado: o comportamento é a sequ
     E ele colapsou a seção que contém o nome da aplicação
     Quando ele recarrega a página
     Então a seção que contém o hex da cor primária continua expandida, com o campo visível
-    E a seção que contém o nome da aplicação continua colapsada, com a classe "fi-collapsed" e o campo não visível
+    E a seção que contém o nome da aplicação continua colapsada (botão de colapso com aria-expanded="false") e o campo não visível
+    E, aberta pelo usuário a seção "Entrar com Google" da aba Login (que nasce colapsada), ela continua aberta depois de recarregar, com o interruptor do provedor visível
 ```
+
+*(alterado em 2026-10-15, step 9 — CR-06 / P-07)*: a persistência guarda o booleano nos dois sentidos; o segundo `Então` prova o inverso com a seção que nasce colapsada.
 
 **Roteiro executável**
 
@@ -98,7 +101,8 @@ Dois pares `Quando`/`Então`, com estouro justificado: o comportamento é a sequ
 | 2 | colapsar a seção do nome | clique no cabeçalho da seção ancestral de `#form\.nome_da_aplicacao` | campo deixa de estar visível |
 | 3 | recarregar | `->refresh()` | — |
 | 4 | a aba carregou (controle) | `->assertVisible('#form\.cor_primaria_hex')` | campo da outra seção visível |
-| 5 | a seção continua colapsada | `->assertAttributeContains({seção do nome}, 'class', 'fi-collapsed')->assertMissing('#form\.nome_da_aplicacao')` | campo não visível |
+| 5 | a seção continua colapsada | `assertScript`: `[aria-expanded]` da `<section>` do nome com `'false'`; `->assertMissing('#form\.configuracoes\.identidade\.nome_da_aplicacao')` | campo não visível |
+| 6 | a seção que nasce colapsada, aberta, fica aberta | clicar `Login`; `<section>` cujo título é "Entrar com Google" com `aria-expanded` `'false'`; clicar o botão; `->assertVisible('#form\.configuracoes\.login\.login_google_habilitado')->refresh()->click('Login')->assertVisible(…habilitado)` e `aria-expanded` `'true'` | interruptor do Google visível depois do refresh |
 
 **Assertions**: o passo 4 vem antes do 5 de propósito — com a aba adiada, `assertMissing` passaria vazio enquanto o conteúdo ainda não carregou. Exige que nome e hex estejam em seções diferentes (agrupamento de Q2); se Q2 os juntar, troca-se o par de campos. O executor confirma que o contexto do navegador não carrega `localStorage` de um cenário para o outro.
 
@@ -106,7 +110,7 @@ Dois pares `Quando`/`Então`, com estouro justificado: o comportamento é a sequ
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| MB4 | `persistCollapsed()` ausente | CT-B02 | passo 5: a seção volta sem `fi-collapsed` |
+| MB4 | `persistCollapsed()` ausente | CT-B02 | passo 5: a seção volta com `aria-expanded` `'true'`; passo 6: a do Google volta `'false'` |
 | MB5 | id repetido em duas seções da aba | CT-B02 | passo 4: a seção do hex volta colapsada junto |
 | MB6 | id gerado por request (ex.: com sufixo aleatório) | CT-B02 | passo 5: a chave do `localStorage` muda e a seção volta expandida |
 
@@ -160,8 +164,9 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
     Exemplos:
       | aba_na_url                                                           | campo_visivel                              | # partição             |
       | a URL que a própria tela escreveu ao ele selecionar a aba Tabelas    | o campo de paginação padrão                | válida                 |
-      | "?tab=kit::tabs"                                                     | o nome da aplicação ou o hub de navegação  | link antigo da aba Kit |
-      | "?tab=nada::tabs"                                                    | o nome da aplicação ou o hub de navegação  | valor fora do domínio  |
+      | "?tab=kit::data::tab" (a chave da v0.49.0, gerada sem key())        | o nome da aplicação (primeira aba), sem a paginação no documento | link antigo da aba Kit |
+      | "?tab=tabelas::data::tab" (a chave antiga de outra aba)             | o nome da aplicação (primeira aba), sem a paginação no documento | link antigo de outra aba |
+      | "?tab=nada::tabs"                                                    | o nome da aplicação (primeira aba), sem a paginação no documento | valor fora do domínio  |
 ```
 
 **Roteiro executável**
@@ -171,15 +176,16 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
 | 0 | só linha válida: obter a URL | `visit('/admin/configuracoes-da-aplicacao')->click('Tabelas')->assertVisible('#form\.paginacao_padrao')`; ler `location.href` por `script()` e conferir que mudou (`?tab=` presente) | URL com a aba |
 | 1 | abrir o link | `visit({url da linha})` — linha válida: a URL lida no passo 0; inválidas: `/admin/configuracoes-da-aplicacao` + o valor da linha | tela com as abas |
 | 2a | linha válida | `->assertVisible('#form\.paginacao_padrao')` | campo de paginação visível |
-| 2b | linhas inválidas | `->assertScript("[...document.querySelectorAll('#form\\\\.nome_da_aplicacao, #form\\\\.hub_de_navegacao')].some(e => e.offsetParent !== null)")` | um dos dois campos visível |
+| 2b | linhas inválidas | `->assertVisible('#form\.configuracoes\.identidade\.nome_da_aplicacao')->assertScript("document.querySelector('#form\\\\.configuracoes\\\\.tabelas\\\\.paginacao_padrao') === null")` | primeira aba com conteúdo, Tabelas não carregada |
 
-**Assertions**: o "ou" das linhas inválidas é de propósito: aceita as duas leituras de Q3; quando Q3 for respondida, a linha `kit::tabs` ganha o campo exato.
+**Assertions**: *(alterado em 2026-10-15, step 9 — CR-04/RD-04)*: o "ou" saiu. O Filament cai na primeira aba para qualquer chave desconhecida (`Tabs::getActiveTab()`, fato do vendor), então o oráculo é exato: nome da aplicação visível e `paginacao_padrao` ausente do documento. O valor antigo real é `slug::data::tab` (`Tab::setUp()` do vendor, `::tab` no singular), e com `Tab::key()` todo link antigo muda — por isso a linha nova com a chave antiga de Tabelas.
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| MB9 | com chave desconhecida nenhuma aba fica ativa, e com todas adiadas nada carrega | CT-B04 | passo 2b: nenhum dos dois campos visível |
+| MB9 | com chave desconhecida nenhuma aba fica ativa, e com todas adiadas nada carrega | CT-B04 | passo 2b: o nome da aplicação não fica visível |
+| MB15 | um apelido para a chave antiga manda o link antigo da aba Kit para a aba Aplicação (ou o de Tabelas para Tabelas) | CT-B04 | passo 2b: `paginacao_padrao` presente no documento (linha da aba Tabelas) ou nome da aplicação não visível |
 | MB11 | `persistTabInQueryString` removido junto da reorganização (a tela não escreve nem lê a aba na URL) | CT-B04 | passo 0: a URL não muda ao selecionar Tabelas; ou passo 2a: `paginacao_padrao` não fica visível sem clique |
 
 ---
@@ -267,9 +273,9 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | troca de aba: o conteúdo aparece depois de um request | | | CT-B01, CT-B04 |
-| 2 | clique no cabeçalho colapsa/expande a seção | | | CT-B02, CT-B03 (passos de colapso) |
-| 3 | recarregar mantém a seção fechada | | | CT-B02 |
-| 4 | preencher e gravar com seção colapsada | | | CT-12 do `04` (componente); CT-B03 (o erro visível) |
-| 5 | erro em seção colapsada fica visível | | | CT-B03, CT-B05 |
-| 6 | trocar o remetente mostra o servidor SMTP na mesma visita | | | CT-B06 |
+| 1 | troca de aba: o conteúdo aparece depois de um request | o HTML inicial tem o nome da aplicação e não tem `paginacao_padrao`; o clique em Tabelas traz o campo (`loadDeferredSchema`) | ✅ | CT-B01 verde; CT-B04 (3 partições) verde — lote B1, 2026-10-15 |
+| 2 | clique no cabeçalho colapsa/expande a seção | clique em `.fi-section-header` da `.fi-section` ancestral do campo; classe `fi-collapsed` e o campo some do visível | ✅ | CT-B02, CT-B03 verdes (lote B1) |
+| 3 | recarregar mantém a seção fechada | `persistCollapsed()` em `localStorage` por id; depois do `refresh()` só a seção colapsada continua fechada, a vizinha aberta | ✅ | CT-B02 verde (lote B1) |
+| 4 | preencher e gravar com seção colapsada | fora do lote de navegador: o envio do campo colapsado é CT-12 do `04` (verde, lote L1b); no navegador só o erro visível (linha 5) | ✅ (componente) | CT-12 do `04`; CT-B03 |
+| 5 | erro em seção colapsada fica visível | campo `required()`: validação nativa do navegador, a seção reabre pelo evento `invalid` do Filament e o campo focado mostra a mensagem (CT-B03); campo validado no servidor (`client_id` do Google, aba Login nunca aberta): a aba carrega e a mensagem inline aparece na seção do provedor (CT-B05) | ✅ (mecanismo do CT-B03 diferente do desenhado: nativo, não inline) | CT-B03 e CT-B05 verdes (lote B1 + correção da sessão) |
+| 6 | trocar o remetente mostra o servidor SMTP na mesma visita | `select` de `smtp` no remetente sem salvar: a seção com `mail_host` fica visível (`live()` + `visible($smtp)` na seção) | ✅ | CT-B06 verde (lote B1) |

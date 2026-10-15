@@ -7,7 +7,7 @@ sidebar:
 ---
 O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-da-aplicacao`** — no menu do painel a tela se chama **Configurações da aplicação**, porque depois de instalado o kit é a procedência, não o produto —, em seis abas. Nada de `.env`, nada de deploy.
 
-Todo campo fica numa seção com ícone, colapsável pelo cabeçalho; o navegador lembra as seções fechadas em `localStorage`, por navegador. Cada aba carrega seu conteúdo só quando é aberta, e uma aba com erro de validação abre sozinha.
+Todo campo fica numa seção com ícone, colapsável pelo cabeçalho; o navegador lembra o estado de cada seção (fechada ou aberta, inclusive as que nascem fechadas) em `localStorage`, por navegador. Cada aba carrega seu conteúdo só quando é aberta, e uma aba com erro de validação abre sozinha.
 
 | Aba | O que você troca | Seções |
 |---|---|---|

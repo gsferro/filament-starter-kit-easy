@@ -40,7 +40,7 @@
 | R2 — docs pt/en não citam mais a aba Kit; o CHANGELOG histórico fica | rótulo (mínimo) | P-01 | EP por arquivo + controle positivo por arquivo | CT-02 |
 | R3 — todo campo do formulário está dentro de uma seção | estrutura (mínimo) | RQ-02, RQ-04 | varredura exaustiva (escalada) | CT-03 |
 | R4 — toda seção é colapsável e tem ícone, inclusive as que já existiam | estrutura (mínimo) | RQ-03, RQ-04 | varredura exaustiva (escalada) | CT-04 |
-| R5 — toda seção guarda o estado colapsado por navegador `@pendente-Q1` | estrutura (mínimo) | RQ-03 (recorte Q1, recomendação autorizada) | varredura exaustiva | CT-05, CT-B02 |
+| R5 — toda seção guarda o estado colapsado por navegador `@pendente-Q1` | estrutura (mínimo) | RQ-03 (recorte Q1, recomendação autorizada), P-07 (os dois estados persistem — step 9) | varredura exaustiva | CT-05, CT-B02 |
 | R6 — o conteúdo de toda aba é adiado, com chave única, e carrega só a aba pedida | render adiado (padrão) | RQ-05, P-03 | estado exibido (seis abas) | CT-06, CT-07, CT-08, CT-B01, CT-B04 |
 | R7 — aba não carregada com campo em erro carrega sozinha e mostra o erro | render adiado (padrão) | P-03 | EP + não-efeito | CT-09 |
 | R8 — salvar sem nunca abrir as abas grava o alterado e preserva o resto; carregar uma aba não apaga a edição pendente | gravação (padrão) | P-04, RQ-05 | não-efeito com destinatário real + 2-switch | CT-10, CT-16 |
@@ -162,9 +162,9 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
   Regra: toda menção à aba Kit nas docs vira aba Aplicação, e o CHANGELOG histórico fica como estava
 
     Cenário: [CT-02] cada doc que citava a aba Kit passa a citar a aba Aplicação, e o histórico do CHANGELOG não muda
-      Dado a árvore do kit com docs/pt, docs/en, README.md, README.en.md e CHANGELOG.md
+      Dado a árvore do kit com docs/pt, docs/en, README.md, README.en.md, CHANGELOG.md e os dois arquivos que viajam para o projeto instalado (.env.example, config/kit.php)
       Quando a documentação é varrida
-      Então nenhum arquivo de docs/ nem README contém a aba pelo nome antigo ("aba Kit", "aba **Kit**", "Kit tab", "**Kit** tab", a linha de tabela "| **Kit** |")
+      Então nenhum arquivo de docs/, README, .env.example nem config/kit.php contém a aba pelo nome antigo ("aba Kit", "aba **Kit**", "Kit tab", "**Kit** tab", a linha de tabela "| **Kit** |"), sem distinção de caixa e com fronteira de palavra ("kit table" não conta) *(alterado em 2026-10-15, step 9 — CR-03: "Aba Kit" no alt de uma imagem e "aba Kit" nos comentários do .env.example e do config/kit.php escaparam da varredura sensível a caixa restrita a docs/)*
       E cada um dos oito arquivos que citavam a aba Kit na v0.49.0 cita a aba Aplicação ("aba Aplicação", "aba **Aplicação**", "Aplicação tab", "**Aplicação** tab") ao menos tantas vezes quantas citava a aba Kit:
         | arquivo                          | pt | en |
         | recursos/configuracoes-do-kit.md | 9  | 9  |
@@ -184,7 +184,8 @@ Funcionalidade: Tela de configurações com aba Aplicação, seções colapsáve
 | M7 | atualiza só `configuracoes-do-kit.md`; `dock-de-atalhos`, `multi-tenancy` e `atualizando-o-projeto` ficam | CT-02 | varredura de `docs/**` acha "aba **Kit**" nesses arquivos; e a contagem da aba Aplicação neles é 0, abaixo do mínimo |
 | M8 | troca global por `sed`, que reescreve também o CHANGELOG histórico (inteiro ou em parte, compensado por menções novas) | CT-02 | contagem abaixo de `## [0.49.0]` ≠ 8 (6 + 2); o mutante dá menos |
 | M9 | troca "Kit" por outro nome ("Aplicativo", "Geral") | CT-02 | contagem da agulha da aba Aplicação por arquivo abaixo do mínimo da tabela; o mutante dá 0 |
-| M41 | apaga uma das frases que citavam a aba Kit num arquivo em vez de reescrevê-la (o arquivo continua citando a aba em outras frases) | CT-02 | a contagem da aba Aplicação naquele arquivo fica abaixo do mínimo (ex.: pt/configurações 8 < 9) |
+| M41 | apaga uma das frases que citavam a aba Kit num arquivo em vez de reescrevê-la (o arquivo continua citando a aba em outras frases) | CT-02 | a contagem da aba Aplicação naquele arquivo fica abaixo do mínimo (ex.: pt/configurações 7 < 8) |
+| M55 | reescreve só a prosa: o alt de imagem ("Aba Kit…", maiúscula) ou o comentário do `.env.example`/`config/kit.php` continuam apontando a aba Kit | CT-02 | varredura sem distinção de caixa sobre docs/, READMEs, `.env.example` e `config/kit.php` acha a menção |
 
 ---
 

@@ -152,7 +152,7 @@ e estilo não têm variável. Como no restante da aba, **o banco vence o `.env`*
 continua sendo definido pela permissão `Usar:Dock`, não por esta seção. Mais detalhes em
 [Configurações do kit](../configuracoes-do-kit/).
 
-[![Aba Kit das configurações da aplicação, seção Dock de atalhos, com painéis, layout padrão e estilo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-dock.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-dock.png)
+[![Aba Aplicação das configurações da aplicação, seção Dock de atalhos, com painéis, layout padrão e estilo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-dock.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-dock.png)
 
 ## Custo por requisição
 
