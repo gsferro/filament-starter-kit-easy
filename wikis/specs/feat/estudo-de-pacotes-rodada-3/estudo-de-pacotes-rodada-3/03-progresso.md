@@ -66,8 +66,8 @@
 - [x] `composer art` com as imagens conferidas — `CapturaDeArteTest` 36/38 (2 skips anteriores à feature), 29 imagens + thumbs publicadas; os 4 clipes novos montados por `kit:arte` com ffmpeg 9.0.2 (instalado na máquina por `winget install Gyan.FFmpeg`, fora do PATH do Git Bash — exportado só para a rodada); `visoes-aberta`, `tabela-carregar-mais-escuro` e `admin-configuracoes-tabelas` abertas e conferidas pela sessão, 2026-10-14
 
 ## 15. Branch, commits e PR
-- [ ] Commits por passo na `feat/estudo-de-pacotes-rodada-3`
-- [ ] PR aberto depois do veredito, sem merge
+- [x] Commits por passo na `feat/estudo-de-pacotes-rodada-3` — 10 commits próprios (`git log --oneline main..HEAD`: deps, feat, docs+art, wiki, revisão do diff + validação, gate ciclo 1, mutação/step 12, gate ciclo 2, suíte final) + merge da `main` v0.48.1 (`3bb21c8a`, 6 conflitos textuais resolvidos: CHANGELOG, READMEs, glossário, 2 citações), 2026-10-15
+- [x] PR aberto depois do veredito, sem merge — https://github.com/gsferro/filament-starter-kit-easy/pull/165 (`main` ← `feat/estudo-de-pacotes-rodada-3`, descrição com a wiki, o veredito APROVADO COM DÉBITO, Q11 e os 3 candidatos a rule aguardando o solicitante; CI disparado: instalacao, qualidade, seguranca, site, telas), 2026-10-15
 
 ## Testes
 <!-- Step 7: um arquivo por linha, com os IDs (do ## Índice de Cenários do 04). Escritos pelo Codex sob o contrato do executor-ct/ctb (RQ-03). -->
