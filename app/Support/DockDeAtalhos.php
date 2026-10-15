@@ -621,7 +621,8 @@ final class DockDeAtalhos
             'icone'          => $destino::getNavigationIcon(),
             // O nome já está em mãos aqui: indicar a organização no dock não custa consulta
             // (wiki `pilha-de-botoes-flutuantes`, Adendo 7, RQ-25).
-            'organizacao'    => $organizacao === null ? null : Filament::getTenantName($organizacao),
+            // `getTenantName()` devolve `string|Htmlable` desde o Filament 5.10 — mesmo tratamento dos rótulos.
+            'organizacao'    => $organizacao === null ? null : self::textoDoRotulo(Filament::getTenantName($organizacao)),
         ];
     }
 
