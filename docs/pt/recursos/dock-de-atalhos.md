@@ -130,7 +130,7 @@ do lugar desses botões, os três formam uma pilha:
 - com o leque do dock **aberto**, o chat e o "Voltar ao topo" somem até o dock fechar;
 - no layout **barra**, eles continuam visíveis, empilhados acima da barra.
 
-Com o dock em outro canto, ou longe desses botões, nada muda: cada um fica na posição de sempre.
+Com o dock em outro canto, ou longe desses botões, cada um fica na altura de sempre; o "Voltar ao topo" fica a 30 px da borda direita, no mesmo eixo do chat, para não saltar de lado quando o dock chega.
 
 ## Tema escuro
 

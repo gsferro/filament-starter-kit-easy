@@ -28,7 +28,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   sobre o lugar dos botões), o chat do assistente sobe para logo acima do dock e o "Voltar ao topo"
   para acima do chat, centralizados no mesmo eixo e a 16 px um do outro. Antes, o dock cobria o
   "Voltar ao topo" (e o chat, no `/app`). Com o leque do dock aberto ali, os dois somem até ele
-  fechar; no layout barra, ficam visíveis acima da barra. Sem o dock, nada muda. Wiki
+  fechar; no layout barra, ficam visíveis acima da barra. Sem o dock, as alturas não mudam, e o "Voltar ao topo" fica a 30 px da borda, no eixo do chat. Wiki
   `pilha-de-botoes-flutuantes`.
 - O chat do assistente volta a aparecer no `/app`: desde o esqueleto do kit ele não tinha estilo
   nos painéis, e o botão saía como um `<button>` cru no fim da página, fora da tela. Botão e

@@ -92,7 +92,7 @@ A posição do dock é decidida no navegador: o pacote a grava no `localStorage`
 
 ## Autorização
 
-Sem mudança. Os botões aparecem pelas regras de hoje: o dock pela permissão `Usar:Dock` e pelos painéis ligados; o chat para usuário autenticado no `/app`.
+Os botões aparecem pelas regras de hoje — o dock pela permissão `Usar:Dock` e pelos painéis ligados; o chat para usuário autenticado no `/app` — e, desde os Adendos 4 a 6, também pela tela: nenhum dos dois é renderizado quando `App\Support\TelaDeAutenticacao::rota()` diz que a rota é de autenticação (bloqueio, login, escolha de painel, telas do Auth Designer). *(alterado em 2026-10-15: QA-01 — Adendos 4 a 8 e step 9)*
 
 ## Rotas
 
@@ -134,11 +134,12 @@ Nenhum.
 
 - **Voltar ao topo**: a posição passa a vir de variável CSS; o fallback mantém o `bottom-24`/`bottom-6` de hoje (P-01). A guarda `VoltarAoTopoCssTest` continua valendo
 - **Chat da IA**: passa a aparecer. Nada muda no componente Livewire, só na apresentação
-- **Dock**: não muda; só é observado
+- **Dock**: observado pelo script e, desde os Adendos 4 a 8, alterado em `app/Filament/Dock/PluginDoDock.php` (`visible()` exclui telas de autenticação; grupos por painel × organização; tooltip com o caminho) e em `app/Support/DockDeAtalhos.php` (o atalho carrega o nome da organização) *(alterado em 2026-10-15: QA-01 — Adendos 4 a 8 e step 9)*
+- **Testes ancestrais alterados**: em `tests/Kit/AssistenteChatWidgetTest.php` o CT-14 inverteu (`assertDontSeeLivewire` na tela de login, RQ-23); os helpers de `DockDeAtalhosTest` e `DockDeAtalhosTenancyTest` foram movidos para `tests/Pest.php` *(alterado em 2026-10-15: QA-01 — Adendos 4 a 8 e step 9)*
 
 ## Rollback
 
-Remover o `Css::make` novo de `configureCorrecoesDeCss()` e reverter as duas blades e as duas folhas. Sem migration, sem dado.
+Remover o `Css::make` novo de `configureCorrecoesDeCss()` e reverter as duas blades e as duas folhas; apagar `app/Support/TelaDeAutenticacao.php` e reverter `PluginDoDock.php`, `DockDeAtalhos.php` e o render hook do chat em `AppPanelProvider.php`. Sem migration, sem dado. *(alterado em 2026-10-15: QA-01 — Adendos 4 a 8 e step 9)*
 
 ## Dependências
 
@@ -151,7 +152,7 @@ Nenhuma nova.
 
 ## Channel de Log da Feature
 
-Não se aplica: a feature não executa lógica no servidor (só blade, CSS e um script no navegador).
+Não se aplica: a lógica nova no servidor (tela de autenticação, rótulo do grupo, tooltip) não tem caminho de falha que mereça log — é decisão de render sobre dado já resolvido, sem I/O novo. *(alterado em 2026-10-15: QA-01 — Adendos 4 a 8 e step 9)*
 
 ## Estrutura de Implementação
 
@@ -159,7 +160,7 @@ Não se aplica: a feature não executa lógica no servidor (só blade, CSS e um 
 > Skills: `ponytail`
 
 - **Path**: `resources/views/filament/voltar-ao-topo.blade.php` — um `<script>` idempotente ao lado do botão (render hook `BODY_END` global, então vale em todo painel) *(alterado em 2026-10-14: step 5 — sem asset `Js` novo, ver D1)*
-- Lê só o dock (`.qad-root`)
+- Lê o dock (`.qad-root[data-placed]`) e a presença do chat (`[data-assistente-chat] .bottom-6`), que decide a altura da faixa da pilha *(alterado em 2026-10-15: QA-01 — Adendos 4 a 8 e step 9)*
 - Calcula a base da pilha: 24 px do rodapé; se o retângulo do dock cruza a coluna de 56 px da direita na faixa da pilha padrão (D4), a base passa a ser a distância do rodapé ao topo do dock + 16 px
 - Publica no `<html>` só `--kit-pilha-base` = base. O CSS soma: o chat fica na base; o "Voltar ao topo" na base + 72 px no painel com chat (`bottom-24`) e na base nos outros (`bottom-6`)
 - Com o dock em leque aberto na coluna (D5), põe `data-kit-pilha-oculta` no `<html>`; tira ao fechar

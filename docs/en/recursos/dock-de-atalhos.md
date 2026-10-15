@@ -37,7 +37,7 @@ the screen. Once unlocked, both come back.
 
 ## Using the dock
 
-1. Click the floating button: the shortcuts open **grouped by panel**, each group with the panel name as a separator, and in the order you chose within each group. With multi-tenancy on, the application panel's favourites form **one group per organisation**, with the separator "{panel} · {organisation}" — even when there is only one organisation —, in the order each organisation first appears among your favourites.
+1. Click the floating button: the shortcuts open **grouped by panel**, each group with the panel name as a separator, and in the order you chose within each group. With multi-tenancy on, the application panel's favourites form **one group per organization**, with the separator "{panel} · {organization}" — even when there is only one organization —, in the order each organization first appears among your favourites.
 2. Hover over a favourite to see, in its tooltip, the path it leads to.
 3. Click a favourite to go to its screen.
 
@@ -130,7 +130,7 @@ dropped over where those buttons are, the three form a stack:
 - with the dock fan **open**, the chat and "Back to top" disappear until the dock closes;
 - in the **bar** layout, they stay visible, stacked above the bar.
 
-With the dock in another corner, or away from those buttons, nothing changes: each one stays where it always is.
+With the dock in another corner, or away from those buttons, each one keeps its usual height; "Back to top" sits 30 px from the right edge, on the same axis as the chat, so it does not jump sideways when the dock arrives.
 
 ## Dark theme
 

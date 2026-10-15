@@ -1,6 +1,6 @@
 # Progresso — Pilha harmônica dos botões flutuantes
 
-**Estado**: em implementação — código e testes em `8f41638`; revisão do diff (step 9) em curso
+**Estado**: implementada — steps 9 e 10 feitos; quality gate ciclo 1 reprovado por especificação (QA-01) e corrigido; ciclo 2 pendente
 
 ## 1. Script da pilha
 - [x] script da pilha na blade do "Voltar ao topo" — `8f41638`
@@ -37,7 +37,7 @@ Revisão adversarial: dois ciclos (`fw-adversario-ct`), teto atingido — ADV-01
 
 ## Tickets
 
-Não fatiado — 2026-10-14: 18 RQ vigentes (RQ-01 a RQ-18, cláusulas finas de layout: eixo, 16 px, contraste), 14 CT (3 + 11 CT-B), compactação: não, 10 perguntas de requisito — sinal de tamanho tocado pela granularidade, não pelo escopo; cabe numa sessão.
+Não fatiado — reavaliado em 2026-10-15 (QA-05): 27 RQ, 22 cenários (11 CT + 11 CT-B), 16 perguntas de requisito; a implementação já cabia numa sessão e terminou nela — fatiar agora só reordenaria trabalho feito. Decisão original, 2026-10-14: 18 RQ vigentes (RQ-01 a RQ-18, cláusulas finas de layout: eixo, 16 px, contraste), 14 CT (3 + 11 CT-B), compactação: não, 10 perguntas de requisito — sinal de tamanho tocado pela granularidade, não pelo escopo; cabe numa sessão.
 
 ## Verificação Final
 - [x] `vendor/bin/pint --dirty` — passed; PHPStan 0 erros; filacheck 17 regras ok
@@ -76,6 +76,8 @@ Não fatiado — 2026-10-14: 18 RQ vigentes (RQ-01 a RQ-18, cláusulas finas de 
 | `.ai/rules/views.md` | `resources/views/**` | aplicada | o comentário que citava a diretiva de assets no chat foi reescrito por extenso (ficara desatualizado com a folha nova); nenhuma diretiva nova em comentário |
 
 ## Quality Gate
+
+- Ciclo 1 (2026-10-15, `fw-qa-gate`): **REPROVADO → especificação**. 1 Major (QA-01: `01`/`02` defasados depois dos Adendos 4–8) e 5 Minor (QA-02 contraste do "Cancelar" no tema escuro; QA-03 docs/CHANGELOG "nada muda" contra a P-03; QA-04 Fora de Escopo do `00`; QA-05 estado e fatiamento do `03`; QA-06 glossário e grafia "organization"). Todos corrigidos na sessão. Não verificadas: G nível 3, H (axe), J `--tia`, K2.
 
 ## Candidatos a Rule
 
@@ -136,6 +138,9 @@ Irmã da folha nova do chat: `resources/css/filament/voltar-ao-topo.css` (`grep 
 ## Blockers
 
 ## Desvios do Plano
+
+- CT-14 do `tests/Kit/AssistenteChatWidgetTest.php` (2026-10-15): invertido de `assertSeeLivewire` para `assertDontSeeLivewire` na tela de login — o chat deixou de ser entregue nas telas de autenticação (RQ-23, Adendo 6). Registrado pelo QA-01.
+- Datas do Adendo 6 de `wikis/specs/main/dock-de-acoes-rapidas/` (`00` e `04`) corrigidas de 2026-10-15 para 2026-10-14, o dia real do pedido; fora do escopo da feature, feito nesta branch por estar no mesmo release.
 
 - CT-04 (2026-10-15): a linha do convite passou a condicional (ADV-35). Com sessão, `filament.app.auth.register` redireciona para `/app`. Destinos registrados: login do `/admin` → `/admin`; login unificado e recuperação → `/login/painel`; convite → `/app`; verificação de e-mail → 200.
 - CT-06 (2026-10-15): a linha origem proibia toda consulta a `tenants`/`tenant_user` pelo código do dock, mas a conferência de acesso ao favorito de outra organização (R22 do `dock-de-acoes-rapidas`) já fazia duas. O oráculo passou a: toda consulta dessas traz o id da Globex, e há ao menos uma. A linha limite usa só favoritos da organização corrente (+4).

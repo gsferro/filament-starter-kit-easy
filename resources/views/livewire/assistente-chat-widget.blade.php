@@ -123,7 +123,7 @@
                                                 type="button"
                                                 @click="titulo = @js($conversa->title); editando = false"
                                                 aria-label="Cancelar renomeação"
-                                                class="shrink-0 rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-600 dark:hover:bg-white/5"
+                                                class="shrink-0 rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-600 dark:text-gray-400 dark:hover:bg-white/5"
                                             >
                                                 Cancelar
                                             </button>

@@ -61,7 +61,7 @@
 
 - Mudar o comportamento, o conteúdo ou o servidor do chat da IA (mensagens, histórico, guardrails, LLM): só a apresentação nos painéis.
 - O canto inferior esquerdo e os cantos superiores: o dock nesses lugares não disputa espaço com os outros dois, e nada muda ali.
-- Telas fora dos painéis (site público, telas de autenticação).
+- Telas fora dos painéis (site público). ~~telas de autenticação~~ *(alterado em 2026-10-15: QA-04 — os Adendos 4 a 6 trouxeram bloqueio, login e telas do Auth Designer para o escopo, RQ-19 a RQ-23)*
 
 ## Adendo 1 — 2026-10-14
 
