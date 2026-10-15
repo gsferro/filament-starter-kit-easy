@@ -110,7 +110,7 @@ php artisan migrate --force
 Quem atualiza **para a v0.48.0** precisa rodar o `composer require` antes de qualquer outro comando:
 nessa versão o código do dock exige o pacote, e sem ele todo `php artisan` falha com
 `Class "HoceineEl\QuickActionDock\QuickActionDockPlugin" not found`. A partir da versão seguinte o
-projeto sobe sem o pacote, só sem o dock, e a seção "Dock de atalhos" da aba Kit, em
+projeto sobe sem o pacote, só sem o dock, e a seção "Dock de atalhos" da aba Aplicação, em
 `/admin/configuracoes-da-aplicacao`, diz o que falta instalar.
 
 **Na v0.49.0 isso vale para `sehsah/filament-remember-table` e `asignua/filament-infinite-scroll`**,

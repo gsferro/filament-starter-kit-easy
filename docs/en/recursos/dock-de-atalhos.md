@@ -25,7 +25,7 @@ it and `panel_user` does not — an administrator grants it from the roles scree
 
 ## Where it shows up
 
-On the panels ticked in *Panels where the dock appears*, in the **Kit** tab of
+On the panels ticked in *Panels where the dock appears*, in the **Aplicação** tab of
 `/admin/configuracoes-da-aplicacao`. On a new installation **no** panel is ticked: the dock shows up
 nowhere until someone turns it on. See the options in [Configuration](#configuration).
 
@@ -138,7 +138,7 @@ The dock follows the panel theme with no configuration: when the panel is in dar
 
 ## Configuration
 
-In the **Kit** tab of `/admin/configuracoes-da-aplicacao`, the *Dock de atalhos* section:
+In the **Aplicação** tab of `/admin/configuracoes-da-aplicacao`, the *Dock de atalhos* section:
 
 | Option | What it sets | Born |
 |---|---|---|
@@ -152,7 +152,7 @@ style have no variable. As in the rest of the tab, **the database wins over `.en
 dock is still decided by the `Usar:Dock` permission, not by this section. More in
 [Kit settings](../configuracoes-do-kit/).
 
-[![Kit tab of the application settings, Dock de atalhos section, with panels, default layout and style](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-dock.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-dock.png)
+[![Aplicação tab of the application settings, Dock de atalhos section, with panels, default layout and style](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-dock.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-dock.png)
 
 ## Cost per request
 

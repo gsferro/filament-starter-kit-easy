@@ -5,6 +5,11 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alterado
+
+- Tela de configurações reorganizada: aba "Kit" renomeada "Aplicação"; campos em seções com ícone,
+  colapsáveis, com estado lembrado por navegador; abas carregadas ao abrir (`deferLoading` do Filament).
+
 ## [0.49.0] - 2026-10-15
 
 ### Adicionado

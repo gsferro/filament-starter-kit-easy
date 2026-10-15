@@ -25,7 +25,7 @@ renderiza. Numa instalação nova, os papéis de administração dos três pain�
 
 ## Onde aparece
 
-Nos painéis marcados em *Painéis onde o dock aparece*, na aba **Kit** de
+Nos painéis marcados em *Painéis onde o dock aparece*, na aba **Aplicação** de
 `/admin/configuracoes-da-aplicacao`. Numa instalação nova **nenhum** painel está marcado: o dock não
 aparece em lugar nenhum até alguém ligá-lo. Veja as opções em [Configuração](#configuração).
 
@@ -138,7 +138,7 @@ O dock acompanha o tema do painel, sem nenhuma configuração: quando o painel e
 
 ## Configuração
 
-Na aba **Kit** de `/admin/configuracoes-da-aplicacao`, seção *Dock de atalhos*:
+Na aba **Aplicação** de `/admin/configuracoes-da-aplicacao`, seção *Dock de atalhos*:
 
 | Opção | O que define | Nasce |
 |---|---|---|

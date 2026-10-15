@@ -7,14 +7,16 @@ sidebar:
 ---
 What the installer asked — plus a handful of things you previously could only change by editing a file — now lives at **`/admin/configuracoes-da-aplicacao`** — the panel menu labels the screen **Configurações da aplicação**, because once installed the kit is the provenance, not the product —, in six tabs. No `.env`, no deploy.
 
-| Tab | What you change |
-|---|---|
-| **Identidade** (identity) | application name, **system version**, primary colour (the Filament palette **or** a free hex value), brand logo, favicon, the artwork on the authentication screens and the **panel header** (the composed brand and the user block) |
-| **E-mail** | transport (`log`, `array`, `smtp`), host, port, encryption, username, password and sender |
-| **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, draggable columns, **table loading** (pagination, infinite scroll or a "Load more" button), **saved views** and their sharing — the defaults for **every** table in all three panels ([details](../visoes-de-tabela-e-carregamento/)) |
-| **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) |
-| **Login** | the single login page at `/login` ([details](../../autenticacao/login-unificado/)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../../autenticacao/login-social/)) |
-| **Kit** | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable |
+Every field lives in a section with an icon, collapsible through its header; the browser remembers closed sections in `localStorage`, per browser. Each tab loads its content only when opened, and a tab with a validation error opens automatically.
+
+| Tab | What you change | Sections |
+|---|---|---|
+| **Identidade** (identity) | application name, **system version**, primary colour (the Filament palette **or** a free hex value), brand logo, favicon, the artwork on the authentication screens and the **panel header** (the composed brand and the user block) | Nome e versão (name and version); Cor primária (primary colour); Logo, favicon e arte (logo, favicon and artwork); Cabeçalho dos painéis (panel header) |
+| **E-mail** | transport (`log`, `array`, `smtp`), host, port, encryption, username, password and sender | Remetente (transport and sender); Servidor SMTP (connection and credentials) |
+| **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, draggable columns, **table loading** (pagination, infinite scroll or a "Load more" button), **saved views** and their sharing — the defaults for **every** table in all three panels ([details](../visoes-de-tabela-e-carregamento/)) | Paginação e aparência (pagination and appearance); Carregamento e visões (loading and views) |
+| **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) | Cadastro sem convite (registration and approval); E-mail verificado (e-mail verification) |
+| **Login** | the single login page at `/login` ([details](../../autenticacao/login-unificado/)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../../autenticacao/login-social/)) | Página única de login (single login page); Login social (with a section per provider); Proteção anti-robô (bot protection); Rodapé da tela de login (login footer) |
+| **Aplicação** (application) | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable | Comportamento dos painéis (panel behaviour); Dashboard dinâmico (dynamic dashboard); Dock de atalhos (shortcut dock); Organizações (organisations) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
 
@@ -38,7 +40,7 @@ browser tab title.
 The **year is the current one**, computed on every render: there is no field for it, and it rolls
 over on its own.
 
-**Your system's version** comes from the *Versão do sistema* field on the **Identidade** tab, seeded
+**Your system's version** comes from the *Versão do sistema* field in the *Nome e versão* section on the **Identidade** tab, seeded
 by `APP_VERSION` in `.env`. The field shows a fixed **`v` on its left**: it is display only, it
 marks the convention and it is **not stored** — type `1.2.3` and the footer shows `v1.2.3`. Type the
 `v` as well and you will see `vv1.2.3`, which is the screen telling you one is spare.
@@ -52,7 +54,7 @@ These are two different versions, and conflating them is the mistake this sectio
 
 The second is an internal kit metric — `kit:update` uses it to know which version to diff from. It
 does **not** appear in the footer by default; to show it next to yours, enable the *show kit
-version* switch on the **Kit** tab. `php artisan kit:info` always prints both, regardless
+version* switch in the *Comportamento dos painéis* section on the **Aplicação** tab. `php artisan kit:info` always prints both, regardless
 of the switch.
 
 **Empty field, no version of YOURS in the footer.** A project that does not version itself need not
@@ -60,7 +62,7 @@ pretend to — the `© {year} {Name}` signature stays, just without the number.
 
 ### The login screen notice
 
-The **Login** tab has a free-text field that is rendered **inside the login form card, below the buttons**
+The *Rodapé da tela de login* section on the **Login** tab has a free-text field that is rendered **inside the login form card, below the buttons**
 (social login ones included), and only on the login screens (`/admin/login`, `/app/login`, `/infra/login` and `/login`). It
 accepts Markdown — bold, italic and links — and discards raw HTML, because the login screen is
 public.
@@ -92,7 +94,7 @@ exact version is the map of vulnerabilities that apply to it.
 
 ## Warning before you lose what you typed
 
-On the **Kit** tab, the *unsaved-changes* switch enables Filament's native alert: leaving a form
+In the *Comportamento dos painéis* section on the **Aplicação** tab, the *unsaved-changes* switch enables Filament's native alert: leaving a form
 with pending changes makes the browser ask for confirmation before discarding them.
 
 It applies to **every** create and edit screen across all three panels, including those coming from
@@ -108,7 +110,7 @@ default worth preserving. Turning it off is one click, no deploy.
 
 ## Compact layout: a scale, not a switch
 
-Still on the **Kit** tab, *Densidade do layout* tightens the **stat cards**, the **tables**, the
+In the *Comportamento dos painéis* section on the **Aplicação** tab, *Densidade do layout* tightens the **stat cards**, the **tables**, the
 **sidebar** and the **buttons** of all three panels at once. There are three steps:
 
 | Level | `--spacing` | Table row | 10-row table | Sidebar width |
@@ -169,7 +171,7 @@ screen is enough.
 
 ## The dynamic dashboard is a switch, not a migration
 
-Still on the **Kit** tab, the *Dashboard dinâmico* section swaps the panels' landing screen: instead
+Still on the **Aplicação** tab, the *Dashboard dinâmico* section swaps the panels' landing screen: instead
 of the classic dashboard, a grid the user builds, moves and resizes for themselves
 (`mddev31/filament-dynamic-dashboard`). It ships **off** — `KIT_DASHBOARD_DINAMICO=false` in
 `.env.example` — and *Painéis onde vale* restricts which panels it applies to: empty means all of
@@ -189,7 +191,7 @@ Viewing is not building: dragging and saving the grid belongs to whoever has Shi
 
 ## The shortcut dock: three options, no starting panel
 
-Still in the **Kit** tab, the *Dock de atalhos* section configures the floating button with each
+Still in the **Aplicação** tab, the *Dock de atalhos* section configures the floating button with each
 user's favourites ([how it works](../dock-de-atalhos/)):
 
 | Option | What it sets | Born |
@@ -207,7 +209,7 @@ decided by the `Usar:Dock` permission, not by this section.
 
 ## A selector for people with nothing to switch to
 
-With multi-organization enabled, the **Kit** tab gains *Ocultar o seletor quando houver uma
+With multi-organization enabled, the *Organizações* section on the **Aplicação** tab has *Ocultar o seletor quando houver uma
 organização só*. On, the whole block at the top of the `/app` sidebar — avatar, label and name —
 disappears for anyone who can reach **one** active organization; with nothing to switch to, it
 just repeats the name the header already shows. With two or more, the selector stays.
@@ -221,9 +223,9 @@ panel boots.
 
 ![The selector visible and hidden, on the same screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/seletor-organizacao.gif)
 
-| The switch on the Kit tab |
+| The switch on the Aplicação tab |
 |---|
-| [![The "hide the selector" switch on the Kit tab](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-seletor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-seletor.png) |
+| [![The "hide the selector" switch on the Aplicação tab](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-seletor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-seletor.png) |
 
 ## Who wins: the database or `.env`?
 
@@ -272,7 +274,7 @@ What happens in each situation:
 
 ## Colour: closed list and free colour
 
-Two fields, with a declared precedence:
+The *Cor primária* section on the **Identidade** tab has two fields, with a declared precedence:
 
 **valid hex → palette name → Filament default.**
 
@@ -282,7 +284,7 @@ Inside `/app/{organisation}`, the **organisation's** colour still beats both.
 
 ## Brand logo: one, or two by theme
 
-The **Identity** tab has a switch, **One logo only, on both themes** — and it ships ON, because an
+The *Logo, favicon e arte* section on the **Identidade** tab has a switch, **One logo only, on both themes** — and it ships ON, because an
 existing installation must not change its look through a kit update. With it on, the same logo is
 used on the light and dark themes, as it always was.
 
