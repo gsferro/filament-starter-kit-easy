@@ -220,7 +220,7 @@ Mecanismo observado no lote B1 (P-05 confirmada pelo ramo "a seção abre"): o c
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| MB12 | a seção aninhada fica colapsada no render pós-erro (o erro existe no DOM, escondido) | CT-B05 | passo 5: a mensagem existe no DOM mas não está visível; passo 6: `aria-expanded` `'false'` |
+| MB12 | a seção do campo fica colapsada no render pós-erro (o erro existe no DOM, escondido) | CT-B05 | passo 5: a mensagem existe no DOM mas não está visível; passo 6: `aria-expanded` `'false'` |
 | MB13 | a aba adiada não carrega no erro do salvamento quando o campo está numa seção colapsável | CT-B05 | passo 5: a mensagem nem existe no DOM |
 
 ---
