@@ -59,11 +59,44 @@ Por que estes números discriminam: com 25 linhas a tabela passa da altura da ja
 
 ---
 
+## CT-B02: o rodapé do carregamento contínuo é legível no tema escuro
+
+**Por que browser e não Livewire**: o *Gate de CT-B* do `01` nomeia o tema escuro do rodapé como cenário que só o navegador prova — a cor resolvida pelo `dark` do `<html>` e pelo CSS do pacote só existe renderizada. O corte original (abaixo) dizia que `assertSee()` não prova legibilidade; o oráculo aqui é de **cor computada**, não de texto. *(adicionado em 2026-10-15, QA-06 do quality gate ciclo 1)*
+
+```gherkin
+# language: pt
+  Cenário: [CT-B02] o rodapé do carregamento contínuo tem texto claro sobre fundo escuro no tema escuro
+    Dado o carregamento "rolagem", Linhas por página igual a 10 e 30 usuários
+    E o master_global com /admin/users aberta no tema escuro
+    Então o <html> tem a classe dark e o rodapé do carregamento está visível
+    E a luminância do texto do rodapé é maior que 120
+    E a luminância do primeiro fundo opaco atrás do rodapé é menor que 80
+```
+
+Por que estes números discriminam: o Filament 5 escreve as cores em `oklch`; um canvas de 1 px converte qualquer cor computada para RGB. Texto `gray-400` (≈ 163 de luminância) sobre `gray-900` (≈ 24) passa; no tema claro o fundo é branco (255) e a asserção cai — o cenário é falsificável trocando `inDarkMode()` por `inLightMode()`.
+
+**Roteiro executável**
+| # | Ação | Código Pest | Resultado visível |
+|---|---|---|---|
+| 1 | arranjar | `ligarCarregamento('rolagem', 10)`; 30 usuários; `$this->actingAs($master)`; aquecer com `$this->get('/admin/users')` | — |
+| 2 | abrir no escuro | `$pagina = visit('/admin/users')->inDarkMode()` | `->assertPathIs('/admin/users')` primeiro; `assertScript("document.documentElement.classList.contains('dark')")` |
+| 3 | conferir a cor | `assertScript(...)` com `getComputedStyle(rodape).color` e o primeiro `backgroundColor` opaco subindo pelos ancestrais, convertidos em RGB por canvas | luminância texto > 120 e fundo < 80 |
+| 4 | apoio | `->assertNoJavaScriptErrors()` | — |
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| — | o CSS do pacote não tem variante `dark:` para o rodapé (texto escuro sobre fundo escuro) | CT-B02 | luminância do texto ≤ 120 |
+| — | o rodapé pinta fundo claro próprio por cima do painel escuro | CT-B02 | luminância do fundo ≥ 80 |
+
+---
+
 ## Cogitado e cortado
 
 | Cenário cogitado | Por que foi cortado |
 |---|---|
-| Tema escuro do rodapé (legibilidade) | o requisito não fixa cor; `inDarkMode()->assertSee()` não prova legibilidade e o primeiro `assertScreenshotMatches()` cria a baseline com o defeito. RQ-07 (capturas nos dois temas) é CT-51 do `04` |
+| Tema escuro do rodapé (legibilidade) | ~~o requisito não fixa cor; `inDarkMode()->assertSee()` não prova legibilidade e o primeiro `assertScreenshotMatches()` cria a baseline com o defeito. RQ-07 (capturas nos dois temas) é CT-51 do `04`~~ **reinstaurado como CT-B02** *(alterado em 2026-10-15, QA-06 do gate: o `01` declarava o cenário como só-navegador; o oráculo passou a ser luminância por `getComputedStyle` + canvas, que prova legibilidade sem baseline de screenshot)* |
 | Clique no botão "Carregar mais" (modo `botao`) | `wire:click` padrão do Livewire; CT-42 prova o botão ligado ao método e CT-43 o efeito |
 | Rodapé "pede busca ou filtro" no teto | texto renderizado no servidor; CT-44 prova pelo componente |
 | Reinício do bloco ao buscar | estado do servidor; CT-47 prova pelo componente |
@@ -76,3 +109,4 @@ Por que estes números discriminam: com 25 linhas a tabela passa da altura da ja
 | 2 | Modo botão: botão *Carregar mais* com `wire:click` | não exercitado por CT-B (cortado acima: CT-42 prova o `wire:click`, CT-43 o efeito); na captura, `/admin/users` no modo `botao` com 10 linhas por página e 31 usuários mostra "Mostrando 10 de 31" + botão, e dois cliques levam a 20 e 30 de 31 — os três quadros do clipe | ✅ | `CapturaDeArteTest::capturarQuadrosDoCarregarMais()` nos dois temas (36/38 na rodada do art; os 2 skips são anteriores à feature); `art/carregamento-continuo.gif` e `-escuro.gif` montados com ffmpeg 9.0.2; `art/tabela-carregar-mais(-escuro).png` conferidas pela sessão |
 | 3 | Aba *Tabelas* de `ConfiguracoesDoKit`: Linhas por página, os três interruptores existentes, *Carregamento da tabela*, *Visões salvas* e *Compartilhar visões com todos* (este só com visões ligadas) | a aba renderiza os seis controles nessa ordem, o Select com o rótulo do modo e as três ajudas (`art/admin-configuracoes-tabelas.png`, conferida pela sessão) | ✅ | captura `admin-configuracoes-tabelas` (`composer art`) + CT-12…CT-16 e CT-76 em `ConfiguracoesDoKitTelaTest` (55/55) |
 | 4 | Botão *Visões* (grupo de ações) no cabeçalho das 10 listagens, com as visões, o `Padrão`/`Compartilhada` e as quatro ações | `/admin/users` com três visões: o grupo abre por cima da barra de ferramentas da tabela (depois da correção de `z-index`), lista "Por nome" (Padrão, ativa), "Cadastros recentes" e "Administradores" (Compartilhada), e as ações *Salvar como nova visão*, *Atualizar visão atual*, *Gerenciar visões* e *Limpar tabela*; modais de salvar e gerenciar nos dois temas | ✅ | clipes `art/visoes-de-tabela.gif` e `-escuro.gif` (4 quadros cada) + `art/visoes-aberta(-escuro).png`, `art/visoes-gerenciar(-escuro).png`, conferidas pela sessão; backend por `VisoesDeTabelaTest` (130/130) e `VisoesDeTabelaTenancyTest` (34/34) |
+| 5 | Rodapé do carregamento contínuo legível no tema escuro (*Gate de CT-B* do `01`) *(adicionado em 2026-10-15, QA-06)* | `/admin/users` no modo `rolagem` com 10 por página e 30 usuários, `inDarkMode()`: `<html>` com `dark`, rodapé visível com `data-mode="scroll"`, luminância do texto > 120 e do primeiro fundo opaco < 80 (canvas sobre `getComputedStyle`), sem erro de JavaScript | ✅ | CT-B02 verde na primeira execução pela sessão (`{"tests":1,"passed":1,"assertions":7,"duration_ms":4108}`); nível 3 do gate (ciclo 1, dimensão G) já havia lido `oklch(0.705…)` sobre `oklch(0.21…)` |

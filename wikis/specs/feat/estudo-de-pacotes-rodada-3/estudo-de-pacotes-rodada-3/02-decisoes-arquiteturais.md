@@ -57,8 +57,11 @@ passar a ter tema customizado **e** o `saved-views` ganhar escopo por organizaç
   sem blade própria, nenhum CSS a cobrir; as Actions são do Filament, então `->authorize()` entra
   por alias de trait.
 - **Negativas**: dependência jovem (uma versão, três estrelas) e sem constraint explícita de
-  Laravel; o pacote não traz pt-BR (o kit escreve as traduções em `lang/vendor/`); o `booted` do
-  pacote faz uma consulta por carga de listagem quando a feature está ligada.
+  Laravel; o pacote não traz pt-BR (o kit escreve as traduções em `lang/vendor/`); com a feature
+  ligada, o pacote consulta `remember_table_views` quatro vezes na montagem da listagem (lista de
+  visões, visão padrão e a condição `visible()` de *Gerenciar* avaliada duas vezes) e três por render
+  seguinte — medido no step 10 (`01`, *Modelo de Execução*) *(alterado em 2026-10-15, QA-04 do gate:
+  dizia "uma consulta por carga")*; desligada, zero.
 - **Riscos**: abandono do pacote — mitigado pelo tamanho (um trait de ~800 linhas, um model, um
   helper de estado, lidos por inteiro no step 3) e pelo embrulho num ponto só do kit, que é onde
   um substituto entraria.

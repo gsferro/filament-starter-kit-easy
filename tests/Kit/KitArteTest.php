@@ -273,7 +273,7 @@ function todosOsQuadrosDoKitArte(): array
     return array_merge(...array_values(clipesDoKitArte()));
 }
 
-/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:383`): traços viram espaços. */
+/** O nome do clipe como a saída do `kit:arte` o escreve (`app/Console/Commands/KitArte.php:$label:384`): traços viram espaços. */
 function saidaNomeiaOClipe(string $saida, string $clipe): bool
 {
     $minuscula = mb_strtolower($saida);

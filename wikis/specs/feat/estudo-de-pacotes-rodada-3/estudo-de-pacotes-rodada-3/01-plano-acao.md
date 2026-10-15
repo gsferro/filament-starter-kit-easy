@@ -205,6 +205,7 @@ Nenhum.
 - **`resized-column`** (`HasResizableColumn`) e `remember-table` convivem na mesma Page: o `remember-table` guarda visibilidade e ordem; a largura continua do `resized-column`. Sem colisão de método (nomes distintos; conferido no step 5).
 - **PHPStan nível 8**: a extensão só acrescenta reflexão; nenhuma exceção nova; o `[CT-06]` de `QualidadeDeCodigoTest` continua em 3.
 - **Ordem das cascade layers**: a folha do `infinite-scroll` não declara `@layer`; `OrdemDasCascadeLayersTest` continua valendo.
+- **Bump do Filament 5.8.2 → 5.10.2 (P-12)** *(alterado em 2026-10-15, QA-09 do gate — o medido no passo 1, antes só nas Notas do `03`)*: (1) notificações saíram da sessão para `Filament\Notifications\NotificationMailbox` (cache) — helpers `avisosDoFilament()`/`limparAvisosDoFilament()` em `tests/Pest.php` e os testes do dock; (2) todo widget aborta 403 **antes** do `mount()` sem `canView()` (`vendor/filament/widgets/src/Concerns/CanAuthorizeAccess.php:bootCanAuthorizeAccess():9`) — `InsightsDasOrganizacoesTest` monta como `admin`, e `GraficosDoDashboardTest` passou a usar o super-admin do Shield (flake de ordem com `HasWidgetShield::$widgetPermissionKey` estática, despacho #22 do `03`); (3) `getNavigationLabel()`, `NavigationGroup::getLabel()` e `Filament::getTenantName()` devolvem `string|Htmlable` — `textoDoRotulo()` em `DescobreCardsDoPainel` e `DockDeAtalhos`; (4) 11 citações `arquivo:símbolo:linha` do vendor refeitas; (5) `.fi-dropdown-panel` em `z-index: 20` fica abaixo do cabeçalho da tabela do `resized-column` (21) — `kit.css` sobe para 22, para todo `ActionGroup` de cabeçalho (P-31, CT-81); (6) os assets de `public/` do Filament entram atualizados no PR. Suítes Kit e Tenancy inteiras verdes depois do bump (Verificação Final do `03`).
 
 ## Rollback
 
@@ -335,7 +336,7 @@ Nenhum.
 
 > Skills: `filament-development`
 
-- **Path**: `config/filament-shield.php` → `custom_permissions`: `'usar:visoesdetabela' => 'Salvar e gerenciar visões de tabela'` (comentário: quem consulta é o trait do kit; aplicar visão não exige).
+- **Path**: `config/filament-shield.php` → `custom_permissions`: `'usar:visoes_de_tabela' => 'Salvar e gerenciar visões de tabela'` (comentário: quem consulta é o trait do kit; aplicar visão não exige) *(alterado em 2026-10-15, QA-02 do gate: a grafia `usar:visoesdetabela` gerava `Usar:Visoesdetabela` — o Shield capitaliza por segmento `_`; ver `03`, seção 8)*.
 - `database/seeders/PapeisSeeder.php`: `paineisDasPermissoesCustomizadas()` ganha `'Usar:VisoesDeTabela' => ['app', 'admin', 'infra']`; o `run()` subtrai do `panel_user` ao lado de `Usar:Dock` (P-01); `admin_app` (ramo de tenancy) a recebe pela matriz do `app`.
 - `tests/Kit/PermissoesDeAcoesTest.php` **não** ganha linha: `inventarioDeAutorizacao()` só aceita Action que a varredura de `Action::make(` em `app/Filament/**` encontra, e as quatro moram no vendor — linha sem ocorrência vira órfã e deixa o caso vermelho *(alterado em 2026-10-14: Ponytail/revisão profunda)*. A prova de que as quatro consultam a permissão é CT próprio do `04` (Action negada sem `Usar:VisoesDeTabela`).
 - Ressemear: `ShieldPermissionsSeeder` e `PapeisSeeder`.
@@ -351,29 +352,35 @@ Nenhum.
   trait VisoesDeTabela
   {
       use HasRememberTable {
-          bootedHasRememberTable as bootedHasRememberTableDoPacote;
-          getTableViews as getTableViewsDoPacote;
-          getTableViewActions as getTableViewActionsDoPacote;
-          saveTableViewAction as saveTableViewActionDoPacote;
-          updateTableViewAction as updateTableViewActionDoPacote;
-          manageTableViewsAction as manageTableViewsActionDoPacote;
-          resetTableViewAction as resetTableViewActionDoPacote;
+          bootedHasRememberTable as protected bootedHasRememberTableDoPacote;
+          getTableViews as protected getTableViewsDoPacote;
+          getTableViewActions as protected getTableViewActionsDoPacote;
+          saveTableViewAction as protected saveTableViewActionDoPacote;
+          updateTableViewAction as protected updateTableViewActionDoPacote;
+          manageTableViewsAction as protected manageTableViewsActionDoPacote;
+          resetTableViewAction as protected resetTableViewActionDoPacote;
       }
 
-      public const string PERMISSAO = 'Usar:VisoesDeTabela';
+      public const string PERMISSAO_DAS_VISOES = 'Usar:VisoesDeTabela';
 
-      public static function habilitadas(): bool { return (bool) config('kit.tabelas.visoes_salvas', false); }
+      public static function visoesHabilitadas(): bool { return (bool) config('kit.tabelas.visoes_salvas', false); }
 
-      public function bootedHasRememberTable(): void { if (self::habilitadas()) { $this->bootedHasRememberTableDoPacote(); } }
+      public function bootedHasRememberTable(): void { if (self::visoesHabilitadas()) { $this->bootedHasRememberTableDoPacote(); } }
 
-      public function getTableViews(): Collection { return self::habilitadas() ? $this->getTableViewsDoPacote() : new Collection; }
+      public function getTableViews(): Collection { return self::visoesHabilitadas() ? $this->getTableViewsDoPacote() : new Collection; }
 
-      public function getTableViewActions(): array { return self::habilitadas() ? $this->getTableViewActionsDoPacote() : []; }
+      public function getTableViewActions(): array { return self::visoesHabilitadas() ? [...grupo com dropdownWidth(Width::Small)...] : []; }
 
-      public function saveTableViewAction(): Action { return $this->saveTableViewActionDoPacote()->authorize(self::PERMISSAO); }
+      public function saveTableViewAction(): Action
+      {
+          return $this->saveTableViewActionDoPacote()
+              ->hidden(static fn (): bool => ! self::visoesHabilitadas())
+              ->authorize(self::PERMISSAO_DAS_VISOES);
+      }
       // idem update, manage, reset
   }
   ```
+  *(alterado em 2026-10-15, QA-02 do gate — o trecho passa a ser o do código entregue: aliases `protected` (P-30/RD-02: alias público vira método `$wire`), `->hidden()` nas quatro Actions (P-29/RD-01: `visible()` substituiria a condição do pacote que esconde *Atualizar* e *Gerenciar*), os nomes `PERMISSAO_DAS_VISOES`/`visoesHabilitadas()` e o `dropdownWidth(Width::Small)` no grupo — `app/Filament/Concerns/VisoesDeTabela.php:saveTableViewAction():131`)*
   - O método do trait externo **vence** o do trait interno (provado no step 3 com um script: `kit→pacote`), e o Livewire resolve o hook `booted{Trait}` por `class_uses_recursive` + nome do método, então o `bootedHasRememberTable` do kit é o chamado.
   - Docblock: D3, D4, D6, P-03; a fronteira que o pacote já aplica (`visibleTo`, `ownedBy`, `forTenant`) com as citações do vendor; por que `applyTableView` continua sem permissão.
 - Nas 10 Pages `List*`: `use VisoesDeTabela;` e `...$this->getTableViewActions()` no **início** de `getHeaderActions()` (o botão *Visões* fica antes de *Criar*). `ListRoles` mantém o `getActions()` dele e recebe o spread ali: `getHeaderActions()` do Filament delega a `getActions()` por default (`vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php:getHeaderActions():55-58`) *(alterado em 2026-10-14: revisão profunda — a troca de nome era diff sem efeito)*.
@@ -455,7 +462,7 @@ Nenhum.
 | Propriedade do Settings | Chave de config | Lida por | Default |
 |---|---|---|---|
 | `tabela_carregamento` | `kit.tabelas.carregamento` | `ConfiguraFilamentGlobal::aplicaCarregamento()` (por request) | `paginacao` |
-| `visoes_de_tabela` | `kit.tabelas.visoes_salvas` | `VisoesDeTabela::habilitadas()` (por request) | `false` |
+| `visoes_de_tabela` | `kit.tabelas.visoes_salvas` | `VisoesDeTabela::visoesHabilitadas()` (por request) *(alterado em 2026-10-15, QA-02)* | `false` |
 | `visoes_de_tabela_compartilhadas` | `remember-table.allow_public_views` | `HasRememberTable` do pacote (por request) | `false` |
 
 | Valor de `tabela_carregamento` | Rótulo | `InfiniteScrollMode` |

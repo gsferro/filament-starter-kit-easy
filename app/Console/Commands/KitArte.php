@@ -211,6 +211,7 @@ class KitArte extends Command
         'tabela-carregar-mais',
         'tabela-carregar-mais-escuro',
         'admin-configuracoes-tabelas',
+        'admin-configuracoes-tabelas-escuro',
 
         // As duas telas de login com o desafio no ar, cada uma com chave real do
         // provedor. Só são geradas por quem tem as chaves no ambiente — os cenários

@@ -52,7 +52,7 @@ a view the user already sees requires no permission.
 |---|---|
 | Owner | a view belongs to whoever saved it and to the list it was saved on; only the owner updates, renames, reorders or deletes it |
 | Organization | in the organization panel, the view belongs to the open organization: it does not show up in another one, not even for the same user |
-| Default | the user marks a view as default and it opens with the list by itself (unless the URL already carries a filter, search or sort) |
+| Default | the user marks a view as default and it opens with the list by itself (unless the URL already carries a filter, search, sort, grouping or tab) |
 | Shared | with *Share views with everyone* enabled in the settings, the owner can mark the view as shared: every user of the panel (in an organization, every member of it) sees and applies it, labelled *Shared*; only the owner changes it |
 | Link | the applied view goes into the URL (`?view=12`): the link opens the list already in that slice for whoever can see it |
 | Modified | changed a filter after applying a view? The button shows `Name (modified)` and offers *Update current view* to the owner |
@@ -153,7 +153,9 @@ or `botao`; any other value falls back to `paginacao`), `KIT_TABELA_VISOES_SALVA
 `KIT_TABELA_VISOES_COMPARTILHADAS` — and, as in the rest of the tab, **the database wins over
 `.env`**. More in [Kit settings](../configuracoes-do-kit/).
 
-[![Tables tab of the application settings, with Table loading, Saved views and Share views with everyone](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-tabelas.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-tabelas.png)
+| Tables tab (light) | Tables tab (dark) |
+|---|---|
+| [![Tables tab of the application settings, with Table loading, Saved views and Share views with everyone](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-tabelas.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-tabelas.png) | [![The same tab in dark mode](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-tabelas-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-tabelas-escuro.png) |
 
 ## The five packages evaluated and the criterion
 

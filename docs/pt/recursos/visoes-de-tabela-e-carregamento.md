@@ -52,7 +52,7 @@ visão que o usuário já vê não exige permissão.
 |---|---|
 | Dono | uma visão pertence a quem a gravou e à listagem em que foi gravada; só o dono atualiza, renomeia, reordena ou apaga |
 | Organização | no painel de organização, a visão pertence à organização aberta: não aparece em outra, nem para o mesmo usuário |
-| Padrão | o usuário marca uma visão como padrão e ela abre sozinha com a listagem (a menos que a URL já traga filtro, busca ou ordenação) |
+| Padrão | o usuário marca uma visão como padrão e ela abre sozinha com a listagem (a menos que a URL já traga filtro, busca, ordenação, agrupamento ou aba) |
 | Compartilhada | com a opção *Compartilhar com todos* ligada nas configurações, o dono pode marcar a visão como compartilhada: todo usuário do painel (na organização, todo membro dela) a vê e aplica, com o rótulo *Compartilhada*; só o dono a altera |
 | Link | a visão aplicada vai na URL (`?view=12`): o link abre a listagem já naquele recorte para quem puder vê-la |
 | Modificada | mudou o filtro depois de aplicar uma visão? O botão passa a mostrar `Nome (modificada)` e oferece *Atualizar visão atual* ao dono |
@@ -153,7 +153,9 @@ As três existem no `.env` como semente e plano B — `KIT_TABELA_CARREGAMENTO`
 `KIT_TABELA_VISOES_COMPARTILHADAS` — e, como no restante da aba, **o banco vence o `.env`**. Mais
 detalhes em [Configurações do kit](../configuracoes-do-kit/).
 
-[![Aba Tabelas das configurações da aplicação, com Carregamento da tabela, Visões salvas e Compartilhar visões com todos](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-tabelas.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-tabelas.png)
+| Aba Tabelas (claro) | Aba Tabelas (escuro) |
+|---|---|
+| [![Aba Tabelas das configurações da aplicação, com Carregamento da tabela, Visões salvas e Compartilhar visões com todos](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-tabelas.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-tabelas.png) | [![A mesma aba em tema escuro](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/admin-configuracoes-tabelas-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/admin-configuracoes-tabelas-escuro.png) |
 
 ## Os cinco pacotes avaliados e o critério
 

@@ -366,10 +366,15 @@ it('[CT-28] gestão com ids alheios ou inexistentes preserva a própria e a alhe
         default                                  => [itemL5($minha)],
     };
 
+    $gravadasAntes = TableView::query()->count();
+
     tabelaL5($ana)->callAction('manageTableViews', ['views' => $items])->assertHasNoFormErrors();
 
     expect($alheia->fresh())->name->toBe('Da Bia')->is_public->toBeTrue();
     $this->assertModelExists($minha);
+    // QA-07 do gate: id alheio ou inexistente não cria visão nova nem com o nome forjado.
+    expect(TableView::query()->count())->toBe($gravadasAntes)
+        ->and(TableView::query()->whereIn('name', ['Roubada', 'Fantasma'])->exists())->toBeFalse();
     if (str_contains($c['payload'], 'is_public')) {
         expect($minha->fresh()->is_public)->toBeFalse();
     }

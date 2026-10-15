@@ -103,9 +103,10 @@ it('[CT-51] publica capturas e clipe do contínuo com seus pares no tema escuro'
     $clipes   = $reflexao->getConstant('CLIPES');
     $visoes   = array_values(array_filter($imagens, static fn (string $nome): bool => str_starts_with($nome, 'visoes-')));
     $continuo = array_values(array_filter($imagens, static fn (string $nome): bool => preg_match('/^(?:tabela-(?:rolagem|carregar-mais)|carregamento)/', $nome) === 1));
+    $aba      = array_values(array_filter($imagens, static fn (string $nome): bool => str_starts_with($nome, 'admin-configuracoes-tabelas')));
     $faltas   = [];
 
-    foreach (['visões' => $visoes, 'contínuo' => $continuo] as $recurso => $capturas) {
+    foreach (['visões' => $visoes, 'contínuo' => $continuo, 'aba Tabelas' => $aba] as $recurso => $capturas) {
         if ($capturas === []) {
             $faltas[] = "captura de {$recurso}";
         }

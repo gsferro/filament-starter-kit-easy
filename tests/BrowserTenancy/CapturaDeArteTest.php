@@ -1297,18 +1297,20 @@ it('captura os quadros do botão Carregar mais', function (): void {
     capturarQuadrosDoCarregarMais($this, visit('/admin/users'), false, 'tabela-carregar-mais', 'tabela-carregar-mais-2', 'tabela-carregar-mais-3');
 })->group('browser', 'art');
 
-/** A aba Tabelas das configurações com os três campos novos preenchidos. */
-it('captura a aba Tabelas das configurações', function (): void {
+/**
+ * A aba Tabelas das configurações com os três campos novos preenchidos, no tema pedido. O par
+ * escuro fica no FIM do arquivo (a emulação de tema vaza para o cenário seguinte).
+ */
+function capturarAbaTabelas(TenancyTestCase $teste, PendingAwaitablePage $visita, bool $escuro, string $arquivo): void
+{
     gravarConfiguracao('tabela_carregamento', 'botao');
     gravarConfiguracao('visoes_de_tabela', true);
     gravarConfiguracao('visoes_de_tabela_compartilhadas', true);
     alinharConfiguracoesDoKit();
 
-    $this->get('/admin/configuracoes-da-aplicacao');
+    $teste->get('/admin/configuracoes-da-aplicacao');
 
-    $pagina = visit('/admin/configuracoes-da-aplicacao')
-        ->inLightMode()
-        ->resize(1400, 875)
+    $pagina = visitarDockNoTema($visita, $escuro)
         ->click('Tabelas')
         ->assertSee('Carregamento da tabela');
 
@@ -1318,7 +1320,11 @@ it('captura a aba Tabelas das configurações', function (): void {
 
     $pagina
         ->assertSee('Compartilhar visões com todos')
-        ->screenshot(fullPage: false, filename: 'admin-configuracoes-tabelas');
+        ->screenshot(fullPage: false, filename: $arquivo);
+}
+
+it('captura a aba Tabelas das configurações', function (): void {
+    capturarAbaTabelas($this, visit('/admin/configuracoes-da-aplicacao'), false, 'admin-configuracoes-tabelas');
 })->group('browser', 'art');
 
 /*
@@ -1337,4 +1343,8 @@ it('captura a tabela em rolagem infinita em tema escuro', function (): void {
 
 it('captura os quadros do botão Carregar mais em tema escuro', function (): void {
     capturarQuadrosDoCarregarMais($this, visit('/admin/users'), true, 'tabela-carregar-mais-escuro', 'tabela-carregar-mais-2-escuro', 'tabela-carregar-mais-3-escuro');
+})->group('browser', 'art');
+
+it('captura a aba Tabelas das configurações em tema escuro', function (): void {
+    capturarAbaTabelas($this, visit('/admin/configuracoes-da-aplicacao'), true, 'admin-configuracoes-tabelas-escuro');
 })->group('browser', 'art');

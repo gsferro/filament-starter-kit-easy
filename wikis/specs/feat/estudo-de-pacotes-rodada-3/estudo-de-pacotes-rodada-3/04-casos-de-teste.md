@@ -815,6 +815,9 @@ Funcionalidade: Gestão das visões
       Então a gestão termina sem erro
       E "Da Bia" continua gravada com o nome "Da Bia" e is_public true
       E <proprio>
+      E a contagem de visões gravadas é a mesma de antes
+      E não existe visão chamada "Roubada" nem "Fantasma"
+      <!-- *(alterado em 2026-10-15, QA-07 do quality gate ciclo 1: as duas linhas acima fecham o oráculo — sem elas, uma implementação que criasse uma visão nova para o id alheio ou inexistente passava)* -->
 
       Exemplos:
         | compartilhamento | payload                                              | proprio                               | # por quê                                    |
