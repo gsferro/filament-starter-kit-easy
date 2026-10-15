@@ -33,7 +33,10 @@ use Sehsah\FilamentRememberTable\Models\TableView;
  * `getTableViews()` devolve coleção vazia (então `applyTableView()`, chamável por `$wire`, não acha
  * visão nenhuma e devolve `false`) e `bootedHasRememberTable()` não roda (a visão padrão não é
  * consultada nem aplicada). Zero consulta ao banco, e as visões gravadas ficam intactas para
- * quando a opção voltar.
+ * quando a opção voltar. Os sete nomes do pacote renomeados no `use … as protected …DoPacote`
+ * NÃO são superfície Livewire: alias de trait herdaria `public`, e o Livewire 4 expõe todo
+ * método público não estático a `$wire.` (`vendor/livewire/livewire/src/Drawer/BaseUtils.php:getPublicMethodsDefinedBySubClass():108-116`)
+ * — `$wire.getTableViewsDoPacote()` furaria o interruptor (achado RD-02 do step 9; CT-80).
  *
  * ## Por que sobrescrever funciona
  *
@@ -46,8 +49,13 @@ use Sehsah\FilamentRememberTable\Models\TableView;
  *
  * `getTableViewActions()` vazio esconde o botão, mas Action do Filament continua montável pelo
  * NOME (`$wire.mountAction('saveTableView')`), e o `booted` desligado não impede uma gravação
- * forjada. Por isso cada uma das quatro leva também `->visible(visoesHabilitadas())` — `visible()`
+ * forjada. Por isso cada uma das quatro leva também `->hidden(! visoesHabilitadas())` — `hidden()`
  * e `authorize()` bloqueiam igual no `mountAction()` (`.ai/rules/filament.md`). Achado do CT-08.
+ * É `hidden()`, não `visible()`: `CanBeHidden::visible()` SUBSTITUI a condição, e o pacote usa
+ * `visible()` para esconder *Atualizar* sem visão própria ativa e modificada e *Gerenciar* sem visão
+ * própria (`vendor/sehsah/filament-remember-table/src/Concerns/HasRememberTable.php:updateTableViewAction():209`, `:219-220`; `:manageTableViewsAction():238`, `:246`);
+ * `resolveIsHiddenInGroup()` avalia `hidden` ANTES de `visible`, então, desligado, a condição do
+ * pacote nem roda (achado RD-01 do step 9; CT-79).
  *
  * ## Permissão nas quatro Actions, não no model (D6, D11, P-08)
  *
@@ -72,13 +80,13 @@ use Sehsah\FilamentRememberTable\Models\TableView;
 trait VisoesDeTabela
 {
     use HasRememberTable {
-        bootedHasRememberTable as bootedHasRememberTableDoPacote;
-        getTableViews as getTableViewsDoPacote;
-        getTableViewActions as getTableViewActionsDoPacote;
-        saveTableViewAction as saveTableViewActionDoPacote;
-        updateTableViewAction as updateTableViewActionDoPacote;
-        manageTableViewsAction as manageTableViewsActionDoPacote;
-        resetTableViewAction as resetTableViewActionDoPacote;
+        bootedHasRememberTable as protected bootedHasRememberTableDoPacote;
+        getTableViews as protected getTableViewsDoPacote;
+        getTableViewActions as protected getTableViewActionsDoPacote;
+        saveTableViewAction as protected saveTableViewActionDoPacote;
+        updateTableViewAction as protected updateTableViewActionDoPacote;
+        manageTableViewsAction as protected manageTableViewsActionDoPacote;
+        resetTableViewAction as protected resetTableViewActionDoPacote;
     }
 
     /** A permissão exclusiva das visões (`config('filament-shield.custom_permissions')`). */
@@ -123,28 +131,28 @@ trait VisoesDeTabela
     public function saveTableViewAction(): Action
     {
         return $this->saveTableViewActionDoPacote()
-            ->visible(static fn (): bool => self::visoesHabilitadas())
+            ->hidden(static fn (): bool => ! self::visoesHabilitadas())
             ->authorize(self::PERMISSAO_DAS_VISOES);
     }
 
     public function updateTableViewAction(): Action
     {
         return $this->updateTableViewActionDoPacote()
-            ->visible(static fn (): bool => self::visoesHabilitadas())
+            ->hidden(static fn (): bool => ! self::visoesHabilitadas())
             ->authorize(self::PERMISSAO_DAS_VISOES);
     }
 
     public function manageTableViewsAction(): Action
     {
         return $this->manageTableViewsActionDoPacote()
-            ->visible(static fn (): bool => self::visoesHabilitadas())
+            ->hidden(static fn (): bool => ! self::visoesHabilitadas())
             ->authorize(self::PERMISSAO_DAS_VISOES);
     }
 
     public function resetTableViewAction(): Action
     {
         return $this->resetTableViewActionDoPacote()
-            ->visible(static fn (): bool => self::visoesHabilitadas())
+            ->hidden(static fn (): bool => ! self::visoesHabilitadas())
             ->authorize(self::PERMISSAO_DAS_VISOES);
     }
 }

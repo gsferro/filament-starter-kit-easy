@@ -133,8 +133,10 @@ In either continuous mode:
 |---|---|
 | [![Table footer in button mode, with Showing 10 of 31 and the Load more button](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/tabela-carregar-mais.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/tabela-carregar-mais.png) | [![The same footer with the Load more button in dark theme](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/tabela-carregar-mais-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/tabela-carregar-mais-escuro.png) |
 
-A plugin table that uses simple or cursor pagination stays as it was: continuous mode only applies
-to Filament's default pagination.
+Continuous mode only applies to Filament's default pagination. A table that switches to simple or
+cursor pagination (`paginationMode()` in the resource's `table()`) gets no footer and, with loading set
+to scroll or button, is stuck on the first page: the package hook resets the page on every request. No
+kit table uses those modes; if your project needs them, keep loading on `paginacao`.
 
 ## Configuration
 
@@ -175,5 +177,5 @@ package's own stylesheet. The images on this page show both themes.
 ## Cost per request
 
 - **Views off**: zero extra queries on any list.
-- **Views on**: one query per list load (the user's list of views) plus one on the first load without a filter in the URL (the default view).
-- **Continuous loading**: each chunk is a request that re-runs the table query with a larger `LIMIT`, plus the total count — that is how the package keeps selection and grouping in a single query. With `Pagination`, nothing changes.
+- **Views on**: four small queries when the list opens (the user's views, the default view and two "does this user own a view?" checks that decide whether *Manage* shows up) and three on each later table refresh. All filter by table and user, with an index.
+- **Continuous loading**: each chunk is a request that re-runs the table query with a larger `LIMIT`, plus the total count — that is how the package keeps selection and grouping in a single query. A chunk redraws every row loaded so far, not only the new ones: on a list that queries something per row (roles, avatar), that cost grows with the rows on screen, which is why the 500-row ceiling exists. With `Pagination`, nothing changes.

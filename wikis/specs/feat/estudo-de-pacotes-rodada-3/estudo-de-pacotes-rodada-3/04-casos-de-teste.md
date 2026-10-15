@@ -16,7 +16,7 @@
 | Entrega da rodada (pacotes adotados/recusados, documentação, capturas, traduções) | 1 | 1 | 1 | mínimo |
 
 - Técnicas aplicadas: EP, BVA 3-valores (teto de 500, escalado na área padrão), tabela de decisão (visibilidade), matriz papel × ação, matriz estado de configuração × operação (uma só, 24 células), 2-switch (desligar → religar), rastreio de efeito (consulta ao banco), normalização (vocabulário do carregamento)
-- Cenários: 78 · Regras: 26 · Mutantes previstos: 154 · Sem matador: 0
+- Cenários: 81 · Regras: 26 · Mutantes previstos: 164 · Sem matador: 0 *(atualizado em 2026-10-14, step 9: RD-01/RD-02/P-31 — CT-79, CT-80, CT-81; M155…M164)*
 - Rodada 2 da derivação (decisões da sessão sobre Q6–Q12 → P-13…P-17, Q11 aberta, D6): CT alterados CT-15, CT-24, CT-39; CT novos CT-53…CT-60; regras novas R22…R25; nenhum CT obsoleto. Rodada 3 (Q13 → P-18; P-12 incorporada): CT-61 e CT-62 novos, regra nova R26. Rodada 4 — fechamento da revisão adversarial 1 (P-19…P-25): CT-63…CT-74 novos; CT-02, CT-03, CT-08, CT-12, CT-16, CT-20, CT-22…CT-25, CT-28, CT-31…CT-36, CT-38, CT-39, CT-41, CT-42, CT-44, CT-45, CT-47, CT-50, CT-51, CT-53, CT-54, CT-57, CT-62 alterados; M111…M147 novos (origem ADV, fora do teto de mutantes por regra); nenhum CT obsoleto. Rodada 5 — fechamento da revisão adversarial 2 (P-26 substitui P-19; P-27): CT-75…CT-78 novos; CT-12, CT-24, CT-25, CT-35, CT-47, CT-51, CT-57, CT-64, CT-70, CT-73 alterados; M148…M154 novos; nenhum CT obsoleto.
 <!-- derivado do arquivo por grep -c (comandos em references/template-04.md, "Contagem do cabeçalho"); CT-B01 vive no 05 e não entra na contagem de cenários -->
 - Técnica escalada: R15 (teto de 500 linhas) usa BVA 3-valores numa área padrão — o número é literal de P-10, e BVA 2-valores não separa "para em 500" de "passa uma vez de 500".
@@ -43,11 +43,11 @@
 |---|---|---|---|---|
 | R1 — Tudo nasce desligado na fábrica: `paginacao`, visões desligadas, compartilhamento desligado | Interruptores (padrão) | RQ-05, P-02, P-10 | EP (fonte × chave) | CT-01, CT-02 |
 | R2 — Em `paginacao` a tabela é a de hoje | Carregamento (padrão) | RQ-05, P-10 | EP + controle | CT-03, CT-71 |
-| R3 — Com as visões desligadas nada é oferecido, consultado, aplicado nem executado | Visões (completo) | RQ-05, P-03 | matriz estado × operação (linha E1) + rastreio de efeito | CT-04…CT-08 |
+| R3 — Com as visões desligadas nada é oferecido, consultado, aplicado nem executado | Visões (completo) | RQ-05, P-03, P-30 | matriz estado × operação (linha E1) + rastreio de efeito | CT-04…CT-08, CT-80 *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* |
 | R4 — Vocabulário fechado do carregamento; fora dele, `paginacao` sem erro | Interruptores (padrão) | P-11, P-10, P-24 | EP + estado exibido exaustivo + normalização | CT-09…CT-12, CT-76 |
 | R5 — A aba *Tabelas* grava os três interruptores e o gravado governa por request | Interruptores (padrão) | RQ-04, RQ-05 | EP + criação ≠ edição ≠ uso | CT-13, CT-14, CT-16 |
 | R6 — `Usar:VisoesDeTabela` nasce em `admin`, `infra`, `admin_app`, não em `panel_user`, e é concedível | Visões (completo) | P-01, RQ-04 | matriz papel × permissão + rastreio de efeito (tela → ação) | CT-17…CT-19, CT-67 |
-| R7 — Salvar, atualizar, gerenciar e limpar exigem a permissão; aplicar não | Visões (completo) | P-08, P-01 | matriz papel × ação (+ papel × organização) | CT-20…CT-23, CT-66 |
+| R7 — Salvar, atualizar, gerenciar e limpar exigem a permissão; aplicar não | Visões (completo) | P-08, P-01, P-29 | matriz papel × ação (+ papel × organização) | CT-20…CT-23, CT-66, CT-79 *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* |
 | R8 — Uma visão gravada pertence a quem gravou, à página e à organização aberta; o cliente não escolhe | Visões (completo) | P-07, P-02 | EP + mass assignment | CT-24…CT-26, CT-78 |
 | R9 — Só o dono atualiza, renomeia, reordena ou apaga a própria visão | Visões (completo) | P-08, P-07, P-20 | matriz papel × ação (dono × colega × master × inexistente) + mass assignment | CT-27…CT-29, CT-64, CT-72 |
 | R10 — Visibilidade: dono, página e organização; compartilhada só na mesma organização/painel e só com o compartilhamento ligado | Visões (completo) | P-07, P-02, P-22, P-27, P-28 | tabela de decisão + IDOR | CT-30…CT-34, CT-65, CT-73, CT-74, CT-77 |
@@ -65,7 +65,7 @@
 | R22 — Nome obrigatório e até 100 caracteres, ao salvar e ao gerenciar; nome repetido é permitido | Visões (completo) | P-13, P-21 | BVA 3-valores (100 caracteres) + EP (vazio após trim) + criação ≠ edição | CT-53, CT-54, CT-56 |
 | R23 — No máximo 50 visões por usuário por listagem, contadas por organização | Visões (completo) | P-13, P-18 | BVA 3-valores (50) + EP (organização) | CT-55, CT-61 |
 | R24 — Só a visão padrão do próprio usuário é aplicada sozinha ao abrir; a de colega, nunca | Visões (completo) | P-14, P-22, P-07 | tabela de decisão (de quem × listagem × organização × recorte na URL) | CT-57, CT-68 |
-| R26 — O Filament resolvido tem o render hook de que o carregamento contínuo depende | Entrega (mínimo) | P-12, RQ-02 | EP | CT-62 |
+| R26 — O Filament resolvido tem o render hook de que o carregamento contínuo depende | Entrega (mínimo) | P-12, RQ-02, P-31 | EP | CT-62, CT-81 *(adicionado em 2026-10-14, step 9: P-31)* |
 | R25 — O compartilhamento só existe com as visões ligadas: o campo some, desligar as visões grava o compartilhamento desligado, e religá-las não o religa | Visões (completo) | P-15, P-02 | EP + 2-switch | CT-15, CT-58, CT-59 |
 
 - RQ-03 — sem cenário: restrição de **processo** (uso do Codex CLI). A evidência é o `03-progresso.md` e o histórico da sessão, conferidos pelo `feature-quality-gate`; não há comportamento do sistema a falsificar.
@@ -362,6 +362,34 @@ Funcionalidade: Visões salvas desligadas
         | manageTableViews  | "Ativos" renomeada para "X"                      | "Ativos" continua gravada com o nome "Ativos"    |
         | manageTableViews  | a lista vazia (pedido de apagar "Ativos")        | "Ativos" continua gravada                        |
         | resetTableView    | —                                                | a busca da tabela continua "ab"                  |
+
+    # *(adicionado em 2026-10-14, step 9: RD-01/RD-02)*
+    # P-30: os métodos do pacote renomeados pelo trait (*DoPacote) não são superfície Livewire.
+    # Estouro do teto do R3 (6 > 5): achado RD-02 da revisão do diff (step 9).
+    # O executor confirma a exceção exata do Livewire para método não público; o oráculo é "recusada" + 0 consultas + não pública.
+    Esquema do Cenário: [CT-80] os métodos do pacote renomeados pelo trait não são alcançáveis pelo cliente, e o nome público continua guardado
+      Dado as visões <visoes>
+      E a Ana, admin com a permissão Usar:VisoesDeTabela, com a visão "Ativos" gravada em /admin/users
+      E o contador de consultas a remember_table_views zerado depois de a página montar
+      Quando o cliente chama em /admin/users o método <metodo>
+      Então <resposta>
+      E o número de consultas a remember_table_views registradas é <consultas>
+      E <metodo> <publico> método público da página
+
+      Exemplos:
+        | visoes     | metodo                          | resposta                                              | consultas | publico | # papel   |
+        | desligadas | getTableViewsDoPacote           | a chamada é recusada pelo Livewire (método não público) | 0       | não é   | prova     |
+        | desligadas | getTableViewActionsDoPacote     | a chamada é recusada pelo Livewire (método não público) | 0       | não é   | prova     |
+        | desligadas | bootedHasRememberTableDoPacote  | a chamada é recusada pelo Livewire (método não público) | 0       | não é   | prova     |
+        | desligadas | saveTableViewActionDoPacote     | a chamada é recusada pelo Livewire (método não público) | 0       | não é   | prova     |
+        | desligadas | updateTableViewActionDoPacote   | a chamada é recusada pelo Livewire (método não público) | 0       | não é   | prova     |
+        | desligadas | manageTableViewsActionDoPacote  | a chamada é recusada pelo Livewire (método não público) | 0       | não é   | prova     |
+        | desligadas | resetTableViewActionDoPacote    | a chamada é recusada pelo Livewire (método não público) | 0       | não é   | prova     |
+        | ligadas    | getTableViewsDoPacote           | a chamada é recusada pelo Livewire (método não público) | ≤ as de um `$refresh` | não é | prova |
+        | ligadas    | getTableViewActionsDoPacote     | a chamada é recusada pelo Livewire (método não público) | ≤ as de um `$refresh` | não é | prova |
+
+      <!-- *(alterado em 2026-10-14, execução do lote L9: com as visões LIGADAS todo request consulta `remember_table_views` no `booted` (visão padrão) — "0" era oráculo errado (a). A referência passa a ser um `$refresh` do mesmo componente: a chamada recusada não consulta mais do que ele. As linhas `desligadas` continuam em 0.)* -->
+        | desligadas | getTableViews                   | a chamada responde sem erro com uma coleção vazia     | 0         | é       | controle  |
 ```
 
 #### Mutantes previstos
@@ -374,6 +402,9 @@ Funcionalidade: Visões salvas desligadas
 | M12 | o render esconde o botão mas `getTableViews()` ainda consulta | CT-06 | linha `desligadas`: 0 consultas; o mutante faz ≥ 1 |
 | M13 | o trait entra em parte das 10 listagens (esquece as do `/app` ou a de organizações) | CT-05, CT-04 | linhas `ligadas`: "é oferecido"; o mutante não oferece em `/app/acme/projetos` |
 | M14 | `findTableView()` sem a guarda: `?view={id}` aplica com as visões desligadas | CT-07 | linha `?view`: busca vazia; o mutante aplica "zz" |
+| M158 | RD-02 — alias de trait público (`use HasRememberTable { getTableViews as getTableViewsDoPacote; … }` herda `public`): `$wire.getTableViewsDoPacote()` consulta e devolve os models ao navegador — o defeito atual *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | CT-80 | linha `desligadas · getTableViewsDoPacote`: recusada, 0 consultas e não pública; o mutante responde com as visões e consulta |
+| M159 | RD-02 — seis dos sete aliases protegidos e um esquecido público *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | CT-80 | a linha do alias esquecido: recusada e não pública; o mutante aceita a chamada |
+| M160 | RD-02 — a sobrescrita pública `getTableViews()` removida (o nome público volta a ser o do pacote, sem a guarda do interruptor) *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | CT-80 | linha de controle `getTableViews` desligada: coleção vazia e 0 consultas; o mutante consulta e devolve "Ativos" |
 
 ---
 
@@ -656,6 +687,27 @@ Funcionalidade: Autorização das ações de visão
         | org    | oferecida | linhas | # papel na organização aberta |
         | acme   | não é     | 0      | panel_user                    |
         | globex | é         | 1      | admin_app                     |
+
+    # *(adicionado em 2026-10-14, step 9: RD-01/RD-02)*
+    # P-29: o interruptor e a permissão do kit se SOMAM à visibilidade própria do pacote (Atualizar: visão própria ativa e modificada;
+    # Gerenciar: ao menos uma visão própria). Oráculo: assertActionHidden / assertActionVisible com os nomes updateTableView e manageTableViews.
+    # Estouro do teto do R7 (6 > 5): achado RD-01 da revisão do diff (step 9).
+    Esquema do Cenário: [CT-79] Atualizar e Gerenciar mantêm a visibilidade do pacote por cima do interruptor e da permissão
+      Dado as visões <visoes> e o compartilhamento ligado
+      E a Ana, admin com a permissão Usar:VisoesDeTabela, em /admin/users
+      E <situacao>
+      Quando a Ana abre o grupo Visões de /admin/users
+      Então a ação <acao> está <estado>
+
+      Exemplos:
+        | visoes     | situacao                                                                     | acao             | estado  | # condição                              |
+        | ligadas    | a Ana dona da visão "Minha", sem visão ativa                                 | updateTableView  | oculta  | sem visão ativa                         |
+        | ligadas    | a visão compartilhada "Da Bia" ativa na tabela da Ana, com a busca alterada  | updateTableView  | oculta  | visão ativa alheia                      |
+        | ligadas    | a visão "Minha" da Ana ativa, com a busca alterada                           | updateTableView  | visível | controle: própria, ativa e modificada   |
+        | ligadas    | a Ana sem visão própria, com "Da Bia" compartilhada visível                  | manageTableViews | oculta  | sem visão própria                       |
+        | ligadas    | a Ana dona da visão "Minha"                                                  | manageTableViews | visível | controle: com visão própria             |
+        | desligadas | a visão "Minha" da Ana ativa, com a busca alterada                           | updateTableView  | oculta  | o interruptor desligado ainda vale      |
+        | desligadas | a Ana dona da visão "Minha"                                                  | manageTableViews | oculta  | o interruptor desligado ainda vale      |
 ```
 
 #### Mutantes previstos
@@ -669,6 +721,9 @@ Funcionalidade: Autorização das ações de visão
 | M34 | condição invertida (`! can`) | CT-20, CT-21 | CT-21: oferecida e executa; o mutante oculta. CT-20: não executa; o mutante executa |
 | M118 | ADV-07 — a permissão resolvida no time da organização da sessão (`tenant_corrente`), não da organização aberta | CT-66 | linha `acme`: não oferecida e 0 visões; o mutante oferece e grava (Globex na sessão) |
 | M119 | ADV-08 — o grupo *Visões* inteiro oculto para quem não tem a permissão (aplicar só pelo nome) | CT-22, CT-23 | "o botão Visões e a opção de aplicar são oferecidos"; o mutante os oculta |
+| M155 | RD-01 — o kit substitui o `visible()` do pacote por `->visible(fn () => self::visoesHabilitadas())` (`CanBeHidden::visible()` troca a condição) — o defeito atual *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | CT-79 | linhas "sem visão ativa", "visão ativa alheia" e "sem visão própria": oculta; o mutante mostra Atualizar e Gerenciar |
+| M156 | RD-01 — o kit usa `hidden()` com a condição invertida *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | CT-79 | linhas de controle `ligadas`: visível; o mutante oculta. Linhas `desligadas`: oculta; o mutante mostra |
+| M157 | RD-01 — o `visible()` do pacote removido na sobrescrita (a Action do kit montada sem as condições do vendor) *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | CT-79 | linhas "sem visão ativa", "visão ativa alheia" e "sem visão própria": oculta; o mutante mostra |
 
 ---
 
@@ -1732,6 +1787,16 @@ Funcionalidade: Versão do Filament da rodada 3
       E a constante Filament\Tables\View\TablesRenderHook::CONTENT_AFTER existe
       E o conteúdo de public/js/filament/filament/app.js é idêntico ao de vendor/filament/filament/dist/index.js
       E o conteúdo de public/css/filament/filament/app.css é idêntico ao de vendor/filament/filament/dist/theme.css
+
+    # *(adicionado em 2026-10-14, step 9: P-31)*
+    # P-31: o dropdown das ações do cabeçalho da página (grupo Visões) abre por cima da barra de ferramentas da tabela.
+    # Estrutural; o caso leva `->skip(fn (): bool => ! naArvoreDoKit(), ...)` (lê `resources/css` e `public/css`).
+    Cenário: [CT-81] o dropdown do cabeçalho fica acima da barra da tabela, na fonte e na cópia publicada
+      Dado a árvore do kit
+      Quando os CSS do kit e do plugin de colunas redimensionáveis são lidos
+      Então resources/css/filament/kit.css declara z-index 22 para .fi-dropdown-panel, com um comentário que cita o 21 do plugin
+      E public/css/kit/kit-correcoes.css contém a mesma regra, minificada ou não
+      E public/css/asmit/resized-column/resized-column.css ainda declara z-index 21 para .fi-ta-header-ctn
 ```
 
 #### Mutantes previstos
@@ -1741,6 +1806,10 @@ Funcionalidade: Versão do Filament da rodada 3
 | M109 | o lock fica no 5.8.x (pacote instalado sem subir o Filament; o rodapé nunca renderiza) | CT-62 | versão ≥ 5.10.0; o mutante resolve 5.8.2 e a constante não existe |
 | M110 | o update sai da série 5 (constraint afrouxada para aceitar 6.x) | CT-62 | versão < 6.0.0; o mutante resolve 6.x |
 | M133 | ADV-20 — o lock sobe para 5.10.x e os assets publicados do Filament ficam no 5.8 | CT-62 | md5 de `app.js`/`app.css` igual ao do `dist` do vendor; o mutante diverge |
+| M161 | P-31 — a regra do `z-index` do dropdown ausente da fonte (o item "Salvar como nova visão" fica visível e inclicável sob a busca) *(adicionado em 2026-10-14, step 9: P-31)* | CT-81 | `kit.css` declara `.fi-dropdown-panel` com 22; o mutante não declara |
+| M162 | P-31 — 22 → 20 (empata com o default do Filament e fica sob o 21 do plugin) *(adicionado em 2026-10-14, step 9: P-31)* | CT-81 | valor 22; o mutante tem 20 |
+| M163 | P-31 — 22 → 30 (empata com o chrome do Filament e cobre a barra superior) *(adicionado em 2026-10-14, step 9: P-31)* | CT-81 | valor 22; o mutante tem 30 |
+| M164 | P-31 — a cópia publicada defasada da fonte (`filament:assets` não rerodado: a regra está em `kit.css` e falta em `kit-correcoes.css`) — o defeito real da primeira publicação *(adicionado em 2026-10-14, step 9: P-31)* | CT-81 | `kit-correcoes.css` contém a regra; o mutante não |
 
 ---
 
@@ -1903,6 +1972,9 @@ Funcionalidade: Compartilhamento depende das visões
 | CT-76 | salvar com ilegível gravado regrava paginacao | R4 | EP | G3 | componente Livewire/Filament | `tests/Kit/ConfiguracoesDoKitTelaTest.php` | M17, M149 |
 | CT-77 | master_global não vê nem aplica visão privada alheia | R10 | matriz papel × ação | G5 | componente Livewire/Filament | `tests/Kit/VisoesDeTabelaTest.php` | M151 |
 | CT-78 | chaves de visões distintas por página; a gravada é a da página aberta | R8 | EP | G5 | componente Livewire/Filament | `tests/Kit/VisoesDeTabelaTest.php` | M38 |
+| CT-79 | Atualizar e Gerenciar mantêm a visibilidade do pacote sob o interruptor e a permissão *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | R7 | tabela de decisão | G5 | componente Livewire/Filament | `tests/Kit/VisoesDeTabelaTest.php` | M155, M156, M157 |
+| CT-80 | métodos `*DoPacote` não alcançáveis por `$wire`, sem consulta, com o nome público guardado *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | R3 | EP + rastreio de efeito | G5 | componente Livewire/Filament | `tests/Kit/VisoesDeTabelaTest.php` | M158, M159, M160 |
+| CT-81 | dropdown do cabeçalho acima da barra da tabela, na fonte e na cópia publicada *(adicionado em 2026-10-14, step 9: P-31)* | R26 | EP | G10 | Pest feature HTTP | `tests/Kit/PacotesRodada3Test.php` | M161, M162, M163, M164 |
 | CT-B01 | rolar ao fim carrega o próximo bloco (`05`) | R14 | EP | G11 | browser | `tests/Browser/CarregamentoContinuoTest.php` | M67 |
 
 > CT-41 atravessa duas suítes (as linhas `/app` e `/admin/organizacoes` exigem `tests/Tenancy`): o executor implementa as linhas Kit em `CarregamentoContinuoTest.php` e as Tenancy em `VisoesDeTabelaTenancyTest.php`, com o mesmo ID e o dataset partido — o teste de sincronia de IDs compara a união dos arquivos.
@@ -1942,6 +2014,9 @@ Funcionalidade: Compartilhamento depende das visões
 | P-25 (Q20) | R19 | CT-50 | coberta |
 | P-26 (Q21) | R11 | CT-35 (e CT-59 para as visões quando só a aba das configurações é salva) | coberta |
 | P-27 (Q22) | R10 | CT-77 | coberta |
+| P-29 (RD-01) | R7 | CT-79 — `tests/Kit/VisoesDeTabelaTest.php`; matadores M155, M156, M157 *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | coberta |
+| P-30 (RD-02) | R3 | CT-80 — `tests/Kit/VisoesDeTabelaTest.php`; matadores M158, M159, M160 *(adicionado em 2026-10-14, step 9: RD-01/RD-02)* | coberta |
+| P-31 | R26 | CT-81 — `tests/Kit/PacotesRodada3Test.php`; matadores M161, M162, M163, M164 *(adicionado em 2026-10-14, step 9: P-31)* | coberta |
 | P-14 (Q7) | R24 | CT-57 (e CT-07, desligadas) | coberta |
 | P-15 (Q8) | R25 | CT-15, CT-58, CT-59 | coberta |
 | P-16 (Q9) | R13, R8 | CT-24, CT-39 | coberta |

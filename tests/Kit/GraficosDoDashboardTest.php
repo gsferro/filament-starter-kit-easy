@@ -32,15 +32,24 @@ beforeEach(function (): void {
     // `ConviteFactory` resolve `role_id` a partir do primeiro papel existente. Papel criado à
     // mão em vez dos dois seeders do Shield: eles custam segundos por caso, e nenhum caso deste
     // arquivo é sobre autorização — o único que é (CT-10) semeia por conta própria.
-    Role::create(['name' => 'papel-de-teste', 'guard_name' => 'web', 'painel' => 'app']);
+    //
+    // O papel é o super-admin do Shield (`config('filament-shield.super_admin.name')`, passa
+    // pelo `Gate::before`), e não um nome qualquer: `HasWidgetShield::$widgetPermissionKey` é
+    // ESTÁTICA e sobrevive entre arquivos do mesmo processo — resolvida por um teste anterior
+    // que abriu o painel (`ConfiguracoesDoKitTelaTest`), o `canView()` do widget passa a exigir
+    // `View:{Widget}` de um usuário sem permissão nenhuma, e o Filament 5.10 aborta com 403
+    // ANTES do `mount()` (`vendor/filament/widgets/src/Concerns/CanAuthorizeAccess.php:bootCanAuthorizeAccess():9`):
+    // `options` vinha `null` e os seis casos caíam com `Undefined array key "labels"` só na
+    // suíte inteira. Diagnóstico da rodada 3 de pacotes, step 10.
+    Role::create(['name' => config('filament-shield.super_admin.name'), 'guard_name' => 'web', 'painel' => 'app']);
 
-    $this->actingAs(User::factory()->create());
+    $this->actingAs(User::factory()->create()->assignRole(config('filament-shield.super_admin.name')));
 });
 
 /** As opções que o widget entrega ao ApexCharts. */
 function opcoesDoGrafico(string $widget): array
 {
-    return Livewire::test($widget)->get('options') ?? [];
+    return Livewire::test($widget)->assertOk()->get('options') ?? [];
 }
 
 /*

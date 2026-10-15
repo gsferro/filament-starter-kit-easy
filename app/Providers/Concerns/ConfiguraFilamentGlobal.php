@@ -308,8 +308,13 @@ trait ConfiguraFilamentGlobal
      * seletor "registros por página" some, porque é o modo que decide o tamanho, e o tamanho
      * emitido pelo servidor vai no memo do snapshot — o navegador não o aumenta. O bloco é
      * "Linhas por página" (D2): um número só para as duas formas de carregar. O teto fica no
-     * default do pacote (500 linhas na tela). Tabela cuja paginação não é `LengthAwarePaginator`
-     * (simples/cursor) fica como era: o render hook do rodapé devolve string vazia.
+     * default do pacote (500 linhas na tela). Tabela que troque para paginação simples ou por
+     * cursor (`paginationMode()` no `table()` do recurso, DEPOIS deste `configureUsing`) NÃO
+     * combina com o modo contínuo: o rodapé não renderiza (o render hook exige
+     * `LengthAwarePaginator`) e o hook do pacote continua registrado e reinicia a página em todo
+     * request (`vendor/asignua/filament-infinite-scroll/src/Livewire/InfiniteScrollHook.php:sync():167-209`, `:204-208`)
+     * — a tabela fica presa na página 1. Nenhuma tabela do kit usa esses modos; quem precisar
+     * deles mantém o carregamento em `paginacao` (achado CR-03 da revisão do diff, rodada 3).
      *
      * Chamada DIRETA do macro, sem o `hasMacro()` de `aplicaMacrosDeColuna()`: o pacote é
      * dependência declarada (não opcional como o `resized-column` virou), e o

@@ -14,6 +14,7 @@ use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Actions\ActionGroup;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
+use Livewire\Exceptions\MethodNotFoundException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Sehsah\FilamentRememberTable\Models\TableView;
@@ -953,3 +954,96 @@ it('[CT-78] páginas têm chaves distintas e a visão salva leva a da página ab
     expect(array_unique($chaves))->toHaveCount(3);
     expect(TableView::where('name', 'Desta página')->sole()->table_key)->toBe($chaves[0]);
 })->group('kit');
+
+it('[CT-79] Atualizar e Gerenciar preservam a visibilidade do pacote sob o interruptor', function (array $c): void {
+    ligarVisoesDeTabela(true, true);
+    concederVisoesDeTabela('admin');
+    $ana    = usuarioDoKit('admin', 'ana@example.com');
+    $alheia = str_contains($c['situacao'], 'Bia');
+    $visao  = $alheia
+        ? visaoL5(usuarioCom('admin'), 'Da Bia', ['search' => 'zz'], ['is_public' => true])
+        : visaoL5($ana, 'Minha', ['search' => 'zz']);
+    $tabela = tabelaL5($ana);
+
+    if ($c['ativa']) {
+        $tabela->call('applyTableView', (string) $visao->id)
+            ->assertSet('activeTableView', (string) $visao->id)
+            ->set('tableSearch', 'x');
+    }
+    ligarVisoesDeTabela($c['visoes'], true);
+
+    if ($c['visivel']) {
+        $tabela->assertActionVisible($c['acao']);
+    } else {
+        $tabela->assertActionHidden($c['acao']);
+    }
+})->with([
+    'ligadas | sem visão ativa | updateTableView | oculta'               => [['visoes' => true, 'situacao' => 'Minha sem visão ativa', 'ativa' => false, 'acao' => 'updateTableView', 'visivel' => false]],
+    'ligadas | visão ativa alheia | updateTableView | oculta'            => [['visoes' => true, 'situacao' => 'Da Bia ativa e modificada', 'ativa' => true, 'acao' => 'updateTableView', 'visivel' => false]],
+    'ligadas | própria ativa e modificada | updateTableView | visível'   => [['visoes' => true, 'situacao' => 'Minha ativa e modificada', 'ativa' => true, 'acao' => 'updateTableView', 'visivel' => true]],
+    'ligadas | sem visão própria | manageTableViews | oculta'            => [['visoes' => true, 'situacao' => 'Da Bia compartilhada visível', 'ativa' => false, 'acao' => 'manageTableViews', 'visivel' => false]],
+    'ligadas | com visão própria | manageTableViews | visível'           => [['visoes' => true, 'situacao' => 'Minha', 'ativa' => false, 'acao' => 'manageTableViews', 'visivel' => true]],
+    'desligadas | própria ativa e modificada | updateTableView | oculta' => [['visoes' => false, 'situacao' => 'Minha ativa e modificada', 'ativa' => true, 'acao' => 'updateTableView', 'visivel' => false]],
+    'desligadas | com visão própria | manageTableViews | oculta'         => [['visoes' => false, 'situacao' => 'Minha', 'ativa' => false, 'acao' => 'manageTableViews', 'visivel' => false]],
+])->group('kit');
+
+/**
+ * @return array<int, array{query: string}>
+ */
+function consultasAsVisoesL5(): array
+{
+    return array_values(array_filter(DB::getQueryLog(), static fn (array $consulta): bool => str_contains(strtolower($consulta['query']), 'remember_table_views')));
+}
+
+it('[CT-80] aliases do pacote não são públicos nem alcançáveis pelo cliente e o nome público é guardado', function (array $c): void {
+    ligarVisoesDeTabela($c['visoes']);
+    concederVisoesDeTabela('admin');
+    $ana = usuarioDoKit('admin', 'ana@example.com');
+    visaoL5($ana, 'Ativos', ['search' => 'zz']);
+    $tabela   = tabelaL5($ana);
+    $controle = $c['metodo'] === 'getTableViews';
+
+    if ($controle) {
+        expect(fn () => $tabela->call('getHeaderActions'))
+            ->toThrow(MethodNotFoundException::class);
+    }
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    // Com as visões ligadas, todo request consulta a tabela no `booted` (a visão padrão): a linha
+    // de referência é um `$refresh`, e a chamada recusada não pode consultar mais do que ele.
+    $consultasDeReferencia = 0;
+
+    if ($c['visoes']) {
+        $tabela->call('$refresh');
+        $consultasDeReferencia = count(consultasAsVisoesL5());
+        DB::flushQueryLog();
+    }
+
+    try {
+        if ($controle) {
+            $tabela->call($c['metodo']);
+            expect($tabela->instance()->getTableViews())->toBeEmpty();
+        } else {
+            expect(fn () => $tabela->call($c['metodo']))
+                ->toThrow(MethodNotFoundException::class);
+        }
+
+        expect(count(consultasAsVisoesL5()))->toBeLessThanOrEqual($consultasDeReferencia);
+        expect((new ReflectionMethod(ListUsers::class, $c['metodo']))->isPublic())->toBe($controle);
+    } finally {
+        DB::disableQueryLog();
+        DB::flushQueryLog();
+    }
+})->with([
+    'desligadas | getTableViewsDoPacote'            => [['visoes' => false, 'metodo' => 'getTableViewsDoPacote']],
+    'desligadas | getTableViewActionsDoPacote'      => [['visoes' => false, 'metodo' => 'getTableViewActionsDoPacote']],
+    'desligadas | bootedHasRememberTableDoPacote'   => [['visoes' => false, 'metodo' => 'bootedHasRememberTableDoPacote']],
+    'desligadas | saveTableViewActionDoPacote'      => [['visoes' => false, 'metodo' => 'saveTableViewActionDoPacote']],
+    'desligadas | updateTableViewActionDoPacote'    => [['visoes' => false, 'metodo' => 'updateTableViewActionDoPacote']],
+    'desligadas | manageTableViewsActionDoPacote'   => [['visoes' => false, 'metodo' => 'manageTableViewsActionDoPacote']],
+    'desligadas | resetTableViewActionDoPacote'     => [['visoes' => false, 'metodo' => 'resetTableViewActionDoPacote']],
+    'ligadas | getTableViewsDoPacote'               => [['visoes' => true, 'metodo' => 'getTableViewsDoPacote']],
+    'ligadas | getTableViewActionsDoPacote'         => [['visoes' => true, 'metodo' => 'getTableViewActionsDoPacote']],
+    'desligadas | getTableViews | controle público' => [['visoes' => false, 'metodo' => 'getTableViews']],
+])->group('kit');

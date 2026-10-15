@@ -132,8 +132,11 @@ Em qualquer um dos dois modos contínuos:
 |---|---|
 | [![Rodapé da tabela no modo botão, com Mostrando 10 de 31 e o botão Carregar mais](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/tabela-carregar-mais.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/tabela-carregar-mais.png) | [![O mesmo rodapé com o botão Carregar mais em tema escuro](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/tabela-carregar-mais-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/tabela-carregar-mais-escuro.png) |
 
-Tabela de plugin que usa paginação simples ou por cursor fica como era: o modo contínuo só vale
-para a paginação padrão do Filament.
+O modo contínuo só vale para a paginação padrão do Filament. Uma tabela que troque para paginação
+simples ou por cursor (`paginationMode()` no `table()` do recurso) não ganha o rodapé e, com o
+carregamento em rolagem ou botão, fica presa na primeira página: o hook do pacote reinicia a página
+em todo request. Nenhuma tabela do kit usa esses modos; se o seu projeto precisar deles, mantenha o
+carregamento em `paginacao`.
 
 ## Configuração
 
@@ -174,5 +177,5 @@ próprio pacote. As imagens desta página mostram os dois temas.
 ## Custo por requisição
 
 - **Visões desligadas**: zero consulta a mais em qualquer listagem.
-- **Visões ligadas**: uma consulta por carga de listagem (a lista de visões do usuário) e mais uma na primeira carga sem filtro na URL (a visão padrão).
-- **Carregamento contínuo**: cada bloco é um request que reexecuta a consulta da tabela com um `LIMIT` maior, mais a contagem total — é assim que o pacote mantém seleção e agrupamento numa consulta só. Com `Paginação`, nada muda.
+- **Visões ligadas**: quatro consultas pequenas na abertura da listagem (a lista de visões do usuário, a visão padrão e duas verificações de "tem visão própria?" que decidem se *Gerenciar* aparece) e três a cada atualização seguinte da tabela. Todas filtram por tabela e usuário, com índice.
+- **Carregamento contínuo**: cada bloco é um request que reexecuta a consulta da tabela com um `LIMIT` maior, mais a contagem total — é assim que o pacote mantém seleção e agrupamento numa consulta só. O bloco redesenha todas as linhas já carregadas, não só as novas: numa listagem que consulta algo por linha (papéis, avatar), esse custo cresce com o total na tela, e é por isso que o teto de 500 linhas existe. Com `Paginação`, nada muda.

@@ -184,3 +184,14 @@ it('[CT-62] resolve Filament desde 5.10 na série 5 com hook e assets correspond
         expect(md5_file(base_path($publicado)))->toBe(md5_file(base_path($origem)));
     }
 })->group('kit');
+
+it('[CT-81] dropdown do cabeçalho fica acima da barra da tabela na fonte e na cópia publicada', function (): void {
+    $fonte     = file_get_contents(base_path('resources/css/filament/kit.css'));
+    $publicado = file_get_contents(base_path('public/css/kit/kit-correcoes.css'));
+    $colunas   = file_get_contents(base_path('public/css/asmit/resized-column/resized-column.css'));
+
+    expect($fonte)->toMatch('/\.fi-dropdown-panel\s*\{[^}]*z-index:\s*22\s*(?:;|\})/');
+    expect($fonte)->toMatch('~/\*(?:(?!\*/).)*asmit/resized-column(?:(?!\*/).)*z-index:\s*21(?:(?!\*/).)*\*/\s*\.fi-dropdown-panel~s');
+    expect($publicado)->toMatch('/\.fi-dropdown-panel\s*\{[^}]*z-index:\s*22\s*(?:;|\})/');
+    expect($colunas)->toMatch('/\.fi-ta-header-ctn\s*\{[^}]*z-index:\s*21\s*(?:;|\})/');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Os CSS de origem e publicados são verificados na árvore do kit.')->group('kit');

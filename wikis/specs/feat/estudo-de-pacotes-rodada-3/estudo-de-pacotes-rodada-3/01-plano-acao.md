@@ -44,6 +44,9 @@
 | P-26 | Gerenciar com compartilhamento desligado regrava todas as enviadas como privadas | 9 | comportamento do pacote, provado por CT (substitui P-19) |
 | P-27 | `master_global` sem exceção na visibilidade | 9 | comportamento do pacote, provado por CT |
 | P-28 | Tipo errado na propriedade do pacote é recusado pelo framework | 9 | comportamento do vendor/Livewire, provado por CT-32 |
+| P-29 | Visibilidade do vendor preservada por `hidden()` | 9 | RD-01 do step 9; CT derivado |
+| P-30 | Aliases `*DoPacote` protegidos, fora do `$wire` | 9 | RD-02 do step 9; CT derivado |
+| P-31 | Dropdown do cabeçalho da página acima da barra da tabela (z-index 22) e cópia publicada em dia | 9 (capturas) | achado da sessão; CT-81 estrutural |
 
 ## Objetivo
 
@@ -192,7 +195,7 @@ Nenhum.
 | O que é adiado, e por qual gatilho? | `deferLoading` da tabela (já existe); o próximo bloco, por interseção do sentinela (`rolagem`) ou clique (`botao`) |
 | O que é memoizado **por request**? | A lista de visões do usuário (`cachedTableViews` do trait, uma consulta por request com a feature ligada); a `InfiniteScrollConfig` da tabela (`WeakMap` por instância) |
 | O que é cacheado **entre** requests? | Nada novo. As configurações já vêm do cache do `spatie/laravel-settings` quando ligado |
-| Custo do caminho principal | Visões **desligadas**: zero consulta extra em qualquer listagem (D4). Ligadas: +1 consulta por carga de listagem (lista de visões) e +1 na primeira carga sem estado na URL (visão padrão). Carregamento contínuo: a mesma query da página, com `LIMIT` crescente e um `COUNT(*)` por bloco |
+| Custo do caminho principal | Visões **desligadas**: zero consulta extra em qualquer listagem (D4 — **medido**: 0 consultas a `remember_table_views` na montagem e na carga). Ligadas *(alterado em 2026-10-15, medição do step 10)*: **4 consultas na montagem** (lista de visões, `id` da visão padrão e dois `exists` da condição `visible()` de *Gerenciar*, o único `exists()` do trait, avaliado no grupo e na Action — `vendor/sehsah/filament-remember-table/src/Concerns/HasRememberTable.php:manageTableViewsAction():238`, `:246`) e **3 por render seguinte** (lista + dois `exists`); o modelo anterior ("+1 e +1") não contava os `exists`. Carregamento contínuo: a mesma query da página com `LIMIT` crescente e um `COUNT(*)` por bloco (**medido**: `limit 20 offset 0` + `count(*)` no segundo bloco de 10), e o bloco re-renderiza todas as linhas carregadas — o custo por linha que a listagem já tem cresce com o total na tela |
 
 ## Impacto em Features Existentes
 
@@ -219,7 +222,7 @@ Nenhum.
 - **Adoção baixa dos dois pacotes de runtime** (45 e 172 downloads): mitigação — os dois são pequenos (um trait + um model; um macro + um hook), lidos por inteiro no step 3, e o kit os embrulha num ponto só cada (trait do kit; `configuraTable()`), então trocar é local.
 - **O `infinite-scroll` declara `filament ^5.0` e exige 5.10** (`TablesRenderHook::CONTENT_AFTER`): mitigação — o bump do Filament (P-12), medido pela suíte antes de qualquer código do kit; o `[CT]` do `04` que prova o rodapé do carregamento é o que fica vermelho se o hook sumir.
 - **O `remember-table` não declara constraint de Laravel**: mitigação — resolvido com Laravel 13.36 e Filament 5.10 na cópia temporária; a suíte do kit é a prova.
-- **Carregamento contínuo em tabela de plugin que não é `LengthAwarePaginator`** (paginação simples/cursor): o render hook devolve string vazia (`vendor/asignua/filament-infinite-scroll/src/FilamentInfiniteScrollServiceProvider.php:packageBooted():40-86`, `:66-76`) e a tabela fica como era — degradação, não erro.
+- **Carregamento contínuo em tabela de plugin que não é `LengthAwarePaginator`** (paginação simples/cursor): o render hook devolve string vazia (`vendor/asignua/filament-infinite-scroll/src/FilamentInfiniteScrollServiceProvider.php:packageBooted():40-86`, `:66-76`) — mas o hook continua registrado e reinicia a página em todo request (`vendor/asignua/filament-infinite-scroll/src/Livewire/InfiniteScrollHook.php:sync():167-209`, `:204-208`): a tabela fica presa na página 1. Não é "como era": é incompatibilidade, documentada no docblock e na página de docs; nenhuma tabela do kit usa esses modos *(alterado em 2026-10-14, step 9: CR-03)*.
 - **Vazamento entre organizações nas visões**: mitigação — `scope_to_tenant` fica `true` (default do pacote) e o `04` tem cenário em `tests/Tenancy`.
 - **Captura de GIF depende de `ffmpeg`** (como os clipes existentes): mitigação — `kit:arte` já reporta ausência sem falhar.
 

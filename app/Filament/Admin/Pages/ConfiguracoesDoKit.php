@@ -148,22 +148,6 @@ class ConfiguracoesDoKit extends SettingsPage
     }
 
     /**
-     * O segredo não entra no formulário — e por isso não entra no HTML.
-     *
-     * Este é o primeiro dos dois pontos que impedem o vazamento descrito no campo
-     * `mail_password`. O `fillForm()` do plugin faz `$this->form->fill($data)` com o
-     * `toArray()` do settings, e o que vai para `$data` vai para o `wire:snapshot`. Zerar aqui é
-     * o que garante que o valor guardado nunca é serializado para o navegador — nem para o
-     * administrador que abriu a tela.
-     *
-     * Zerar aqui NÃO apaga a senha: o segundo ponto (`->dehydrated()`) mantém a chave fora do
-     * save quando o campo fica em branco, e o `$settings->fill()` do plugin só aplica as chaves
-     * presentes (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:83`).
-     *
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    /**
      * Dois ajustes de rodada 3 (wiki `estudo-de-pacotes-rodada-3`) antes de o spatie gravar.
      *
      * 1. O carregamento da tabela é coagido também na SAÍDA: um valor que escapou do Select
@@ -185,6 +169,22 @@ class ConfiguracoesDoKit extends SettingsPage
         return $data;
     }
 
+    /**
+     * O segredo não entra no formulário — e por isso não entra no HTML.
+     *
+     * Este é o primeiro dos dois pontos que impedem o vazamento descrito no campo
+     * `mail_password`. O `fillForm()` do plugin faz `$this->form->fill($data)` com o
+     * `toArray()` do settings, e o que vai para `$data` vai para o `wire:snapshot`. Zerar aqui é
+     * o que garante que o valor guardado nunca é serializado para o navegador — nem para o
+     * administrador que abriu a tela.
+     *
+     * Zerar aqui NÃO apaga a senha: o segundo ponto (`->dehydrated()`) mantém a chave fora do
+     * save quando o campo fica em branco, e o `$settings->fill()` do plugin só aplica as chaves
+     * presentes (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:83`).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data['mail_password'] = null;

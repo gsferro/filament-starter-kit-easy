@@ -30,11 +30,31 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   de dropdown do Filament): `resources/css/filament/kit.css` sobe o painel para `22`, ainda abaixo
   do chrome do Filament. Visível com o botão *Visões*, mas valia para qualquer `ActionGroup` do
   cabeçalho.
+- `tests/Kit/GraficosDoDashboardTest.php` caía com `Undefined array key "labels"` só na suíte
+  inteira: a chave de permissão do widget é estática no Shield e ficava resolvida por um teste
+  anterior, e o Filament 5.10 passou a autorizar o widget antes do `mount()`. O usuário do teste
+  agora é o super-admin do Shield e o helper confere `assertOk()` antes de ler as opções.
 
 ### Alterado
 
 - Filament atualizado de 5.8.2 para 5.10.2 (dentro de `^5.8.1`): o `infinite-scroll` depende do
   render hook `TablesRenderHook::CONTENT_AFTER`, que só existe a partir do 5.10.
+
+### Validação
+
+- Suíte local `Kit --parallel`: 4.144 testes (4.139 verdes, 3 pulados), só os dois contadores do
+  README reprovados e corrigidos (badge 2.177, 188/219 arquivos de teste); `Tenancy --parallel`:
+  616 verdes. Navegador: CT-B01 (carregamento contínuo) verde; `composer art` 36/38 (2 pulos
+  anteriores).
+- Mutação das cinco classes de regra (`CarregamentoDaTabela`, `VisoesDeTabela`, settings, página
+  de configurações e `ConfiguraFilamentGlobal`), só linhas cobertas: 406 mutantes, 0 sobreviventes
+  (100 %), 9 h 26 min em série com Xdebug.
+- Revisão do diff (step 9): 4 achados do passe de eixos e 3 da revisão cega, 2 confirmados com
+  CT que falhava antes do fix (`hidden()` em vez de `visible()` nas Actions do pacote; aliases do
+  trait protegidos, porque alias público vira método `$wire`).
+- Quality gate da feature: ver `wikis/specs/feat/estudo-de-pacotes-rodada-3/estudo-de-pacotes-rodada-3/06-relatorio-qa.md`.
+- Os quatro cenários de `wikis/checklist-de-release.md` (create-project e `kit:update`, com e
+  sem tenancy) não foram executados neste fechamento.
 
 ## [0.48.0] - 2026-10-14
 
