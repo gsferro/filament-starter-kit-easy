@@ -46,7 +46,7 @@
 | R8 — salvar sem nunca abrir as abas grava o alterado e preserva o resto; carregar uma aba não apaga a edição pendente | gravação (padrão) | P-04, RQ-05 | não-efeito com destinatário real + 2-switch | CT-10, CT-16 |
 | R9 — reagrupar em seções não muda o que a tela grava nem quando a seção condicional aparece | gravação (padrão) | RQ-02 (+ Fora de Escopo) | domínio condicionado | CT-11, CT-18, CT-B06 |
 | R10 — seção colapsada envia e valida os campos, e o erro nela fica visível | gravação (padrão) | P-05, P-03 (+ recorte Q1 em CT-12, CT-17, CT-B05) | EP | CT-12, CT-17, CT-B03, CT-B05 |
-| R11 — os pontos de entrada do adiamento não carregam o que não existe, não repetem a carga e não gravam | render adiado (padrão) | RQ-05 (`## Superfície Livewire` do `02`) | EP: domínio × fora do domínio × tipo errado; 2-switch | CT-13, CT-14, CT-20 |
+| R11 — os pontos de entrada do adiamento não carregam o que não existe, não repetem a carga e não gravam | render adiado (padrão) | RQ-05, P-06 (`## Superfície Livewire` do `02`) | EP: domínio × fora do domínio × tipo errado; 2-switch | CT-13, CT-14, CT-20 |
 | R12 — carregar uma aba não entrega segredo guardado | render adiado (padrão) | RQ-05 (+ Fora de Escopo) | EP por segredo | CT-15 |
 | R13 — a convenção "seção com ícone e colapsável" está escrita numa rule indexada para a Page, com conteúdo que obriga e aponta o enforcement | estrutura (mínimo) | RQ-04 | EP (existe, conteúdo, indexada) | CT-19 |
 
