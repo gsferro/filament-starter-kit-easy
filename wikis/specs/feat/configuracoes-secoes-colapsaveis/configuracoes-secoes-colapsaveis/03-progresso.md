@@ -35,23 +35,23 @@ Não fatiado — 2026-10-15: 9 RQ vigentes, 15 CT (+4 CT-B), compactação: não
 
 ## Verificação Final
 - [x] `/ponytail:ponytail-review` no diff — step 6 sobre o plano (`## Auditoria Ponytail`); sobre o diff, o revisor genérico (#15) percorreu a Page inteira sem achado de complexidade: dois helpers privados (`secao()`, `aba()`) e nenhuma classe nova
-- [x] `vendor/bin/pint --dirty --format agent` → `{"tool":"pint","result":"passed"}` (2026-10-15, depois do commit `4a130c05`)
-- [x] `vendor/bin/filacheck` → *All 17 rules passed!* (2026-10-15)
-- [x] `php vendor/bin/pest tests/Kit/ConfiguracoesSecoesColapsaveisTest.php --compact` → 18 `it`, 31 execuções verdes (lote L1b; reexecutado a cada mutante da amostragem: 31/31 sem mutante)
-- [x] `php vendor/bin/pest tests/Browser/ConfiguracoesSecoesColapsaveisTest.php --compact` → `{"result":"passed","tests":9,"passed":9,"assertions":41}` (depois do step 9: CT-B04 com 4 linhas)
+- [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"passed"}` (2026-10-15, depois do commit `4a130c05`)
+- [x] `vendor/bin/filacheck` — *All 17 rules passed!* (2026-10-15)
+- [x] `php vendor/bin/pest tests/Kit/ConfiguracoesSecoesColapsaveisTest.php --compact` — 18 `it`, 31 execuções verdes (lote L1b; reexecutado a cada mutante da amostragem: 31/31 sem mutante)
+- [x] `php vendor/bin/pest tests/Browser/ConfiguracoesSecoesColapsaveisTest.php --compact` — `{"result":"passed","tests":9,"passed":9,"assertions":41}` (depois do step 9: CT-B04 com 4 linhas)
 - [x] `php artisan test --compact --parallel --testsuite=Kit` → 4 219 testes: 4 214 verdes, 3 pulados, 2 vermelhos — CT-19 (esperado até o step 12) e `CitacoesDeCodigoTest` CT-26 (`kitConfigCom:771` deslocada pelos helpers novos em `tests/Pest.php` — corrigida para `:791` no commit `4a130c05`); `--testsuite=Tenancy` → 631/631 verdes (`scratchpad/suite-kit.txt`, `suite-tenancy.txt`, 2026-10-15). Reexecução dos arquivos tocados pelo step 9 (`ProtecaoAntiRobo`, `KitArte`, `ConfiguracoesDoKitDocumentacao`, `CitacoesDeCodigo`, `SeletorDeOrganizacaoCampo`): 181/182, só CT-19
 - [x] Mutação por amostragem manual (o `pest --mutate` no Windows mente — lição da rodada 3): M10 (campo solto na aba) morto por CT-03; M20 (adiamento só em cinco abas) morto por CT-06, CT-07, CT-08; M28 (estado da aba Tabelas zerado no fill) morto por CT-10, CT-11, CT-12, CT-16; M43 (`client_secret` zerado no save) morto por CT-10 — 4/4, cada um pelo matador previsto na tabela do `04`; árvore restaurada por `git checkout` (`git status` limpo)
 - [x] **Custo medido** (`Livewire::test`, 2026-10-15): HTML inicial **37 350 bytes** com os 6 marcadores `fi-sc-loading` e nenhum campo; depois de carregar as seis abas **390 954 bytes** (89 ids de campo) — o equivalente ao `GET` de antes, que renderizava as seis abas. Por aba: Identidade +97 KB, E-mail +15 KB, Tabelas +47 KB, Registro +21 KB, Login +98 KB, Aplicação +76 KB. Requests: 1 `GET` + 1 `loadDeferredSchema` por aba aberta (a ativa logo após o mount), sem consulta nova ao banco — confere com o `## Modelo de Execução` do `01` (1 + 1 por aba; menos HTML na abertura: ~10 % do total)
 - [x] **Step 9** antes da reconciliação: `fw-revisor-diff` (#14) + revisor genérico cego (#15, fallback do `/code-review`) — 1 Blocker (RD-01), 2 Major, 3 Minor + 1 doc; todos roteados em `## Revisão do Diff (step 9)`; correções no commit `4a130c05`
 - [x] Roteiro "Desenhado × Implementado" do `05` preenchido (6 linhas, todas ✅; o mecanismo do CT-B03 difere do desenhado — nativo, não inline)
 - [x] Desvios propagados: `00` (Q3 corrigida, P-07), `01` (Mapeamentos: RD-01/RD-02), `02` (Superfície: prefixo `form.`), `04` (CT-02: escopo e caixa; M55; R2 8/8; R5 cita P-07), `05` (Seletores reais, CT-B02, CT-B03, CT-B04, MB4, MB9, MB15) — marcados `*(alterado em 2026-10-15, …)*`
-- [x] `rastreabilidade.sh {wiki}` silencioso, exit 0 (2026-10-15, depois de P-07 entrar na Origem de R5)
-- [x] `checkbox-sem-evidencia.sh {wiki}` silencioso, exit 0 (2026-10-15)
-- [x] `citacoes.sh {wiki}` silencioso, exit 0 (2026-10-15; 8 citações deslocadas por C1/C2 e as formas `it:N` do `01` reescritas pelo ID/título do caso)
-- [x] `ids-ct.sh {wiki} tests/Kit/ConfiguracoesSecoesColapsaveisTest.php tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` → uma linha: `[CT-50] no teste, sem cenário definido no 04/05` em `ConfiguracoesDoKitDocumentacaoTest.php:36` — **limitação conhecida**: o CT-50 é da wiki `site-de-documentacao` e já morava nesse arquivo compartilhado antes desta feature; nenhum ID desta feature sem cenário
-- [x] `conformidade-rules.sh {wiki} main` silencioso, exit 0 (2026-10-15; 7 rules na tabela)
+- [x] `rastreabilidade.sh {wiki}` — silencioso, exit 0 (2026-10-15, depois de P-07 entrar na Origem de R5)
+- [x] `checkbox-sem-evidencia.sh {wiki}` — silencioso, exit 0 (2026-10-15)
+- [x] `citacoes.sh {wiki}` — silencioso, exit 0 (2026-10-15; 8 citações deslocadas por C1/C2 e as formas `it:N` do `01` reescritas pelo ID/título do caso)
+- [x] `ids-ct.sh {wiki} tests/Kit/ConfiguracoesSecoesColapsaveisTest.php tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` → uma linha: `[CT-50] no teste, sem cenário definido no 04/05` em `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php:'[CT-50]':36` — **limitação conhecida**: o CT-50 é da wiki `site-de-documentacao` e já morava nesse arquivo compartilhado antes desta feature; nenhum ID desta feature sem cenário
+- [x] `conformidade-rules.sh {wiki} main` — silencioso, exit 0 (2026-10-15; 7 rules na tabela)
 - [x] Falsificabilidade provada: RD-02 — sem `$ligado($get) &&` no `visible()` do toggle local, `ProtecaoAntiRoboTest:'esconde o toggle…'` fica vermelho (1/4); CR-03 — uma menção "aba Kit" devolvida ao `.env.example` deixa o CT-02 vermelho; RD-01 — os três arquivos de navegador vermelhos antes da migração (4/5) e verdes depois (11/11 com os quatro arquivos)
-- [x] Docs pt/en, CHANGELOG e README reconciliados: CT-02 (docs/READMEs/`.env.example`/`config/kit.php`), CT-25/CT-50 de `SiteDeDocumentacaoTest` (badge 2.236, 194/228 arquivos, 84 features) verdes; CHANGELOG com a frase dos links antigos e `### Validação`
+- [x] Docs pt/en, CHANGELOG e README reconciliados — CT-02 (docs/READMEs/`.env.example`/`config/kit.php`), CT-25/CT-50 de `SiteDeDocumentacaoTest` (badge 2.236, 194/228 arquivos, 84 features) verdes; CHANGELOG com a frase dos links antigos e `### Validação`
 - [x] `git commit` — `07adaa53` (B1), `b0ccefed` (capturas), `7702a73f` (L2 + READMEs), `4a130c05` (step 9), `972b23bd` e o commit desta reconciliação
 
 ## Revisão do Diff (step 9)
