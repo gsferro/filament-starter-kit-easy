@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.50.0] - 2026-10-15
+
 ### Alterado
 
 - Tela de configurações reorganizada: aba "Kit" renomeada "Aplicação"; campos em seções com ícone,
@@ -22,6 +24,14 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   pelo matador previsto. HTML inicial da tela: 37 KB contra 391 KB com as seis abas carregadas.
 - Revisão do diff por dois revisores cegos: 1 Blocker (três testes de navegador não migrados), 2 Major,
   3 Minor — todos corrigidos antes do quality gate.
+
+### Atualizando
+
+- Nada a instalar nem migrar: a mudança é só na Page `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`,
+  nos testes e nas rules. Quem customizou a Page revisa o diff que o `kit:update` mostra (campos agora
+  dentro de `secao()` e abas dentro de `aba()`); quem tem teste próprio sobre a tela usa os helpers
+  `chaveDoCampo()`/`carregarAba()` de `tests/Pest.php` (`.ai/rules/testes.md`). Links e favoritos com
+  `?tab=…::data::tab` passam a abrir na primeira aba.
 
 ## [0.49.0] - 2026-10-15
 
