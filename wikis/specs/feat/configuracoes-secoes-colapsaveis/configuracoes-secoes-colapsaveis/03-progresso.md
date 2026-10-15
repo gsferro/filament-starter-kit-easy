@@ -1,6 +1,6 @@
 # Progresso — Tela de configurações: aba Aplicação, seções colapsáveis com ícone e carregamento adiado das abas
 
-**Estado**: em planejamento
+**Estado**: em implementação
 
 > Branch: `feat/configuracoes-secoes-colapsaveis` · Base do PR (`{base}`): `main` · Wiki: `wikis/specs/feat/configuracoes-secoes-colapsaveis/configuracoes-secoes-colapsaveis/`
 
@@ -26,12 +26,12 @@
 - [ ] `.ai/rules/pages.md` — step 12 (`requirement-to-rule`), com a aprovação do solicitante
 
 ## Testes
-- [ ] `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` (CT-01, CT-03…CT-15)
-- [ ] `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` (CT-02)
-- [ ] `tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` (CT-B01…CT-B04)
+- [ ] `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` (CT-01, CT-03…CT-18, CT-20)
+- [ ] `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` (CT-02, CT-19)
+- [ ] `tests/Browser/ConfiguracoesSecoesColapsaveisTest.php` (CT-B01…CT-B05)
 
 ## Tickets
-<!-- Step 8. -->
+Não fatiado — 2026-10-15: 9 RQ vigentes, 15 CT (+4 CT-B), compactação: não (nesta feature), 5 perguntas de requisito — nenhum sinal
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff (validar contra over-engineering)
@@ -111,6 +111,9 @@ Entendimento confirmado: pendente — rodada 1 da entrevista em 2026-10-15: 0 pe
 |---|---|---|---|---|---|---|---|
 | 1 | 3 | **Codex CLI 0.162.1** (`codex exec --yolo < /dev/null`), contrato só-leitura escrito pela sessão — inventário da Page (campos por aba, seções, ícone/colapso), fatos do vendor (Tabs/Tab, `Schema::deferLoading`, Section/colapso/persistência), testes e docs que citam a aba Kit ou seções, rules | modelo padrão do Codex (não exposto) | conversa, wiki; proibido escrever fora de `scratchpad/codex2/levantamento.md` | 420 linhas: 50 campos (31 soltos), 10 seções existentes, API do adiamento com citações, 28 arquivos de teste com `fillForm` na Page, 27 linhas de docs "aba Kit", 2 capturas, rules sem seção sobre Section/Tab | — (host não reporta); ~10 min | presença ok (A–E no formato pedido); integridade: `git status --porcelain` só com a wiki nova; amostragem pela sessão: `vendor/filament/schemas/src/Components/Section.php:$persist:364`, `vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:isDeferredSchemaLoaded():220`, `:238-258`, `tests/Kit/SegredosDoSettingsTest.php:assertSchemaComponentExists:591`, `:598-615` e `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaKit():939`, `:944-999` lidos e conferem |
 | 2 | 7 | `general-purpose` como analista — derivação do `04`/`05` pela `feature-test-design` (sem `analista` em `.claude/agents/`) | opus | conversa, `01` inteiro (só o extrato: paths, rotas, Superfície de UI, composição), `03`, código da feature | `04` com 15 CT, 12 regras, 40 mutantes, 0 sem matador; `05` com CT-B01…CT-B04 (MB1–MB9); 3 perguntas (Q?1–Q?3 → Q4, Q5, Q6); costuras propostas (5 grupos); conflito declarado: CT-05/CT-B02 escritos sobre a recomendação de Q1, marcados `@pendente-Q1` | 254.453 tokens · 1.109 s · 31 tool uses | presença ok (delimitadores `<<<04`/`>>>04`, `<<<05`/`>>>05`, `## Para o orquestrador`); integridade: rascunhos só em `scratchpad/derivacao3/`, `git status` sem arquivo novo fora da wiki; amostragem pela sessão: `grep -cE` = 15 cenários no `04` e 4 no `05`, CT-10 grava com a aba adiada (P-04), CT-03 percorre `getFlatComponents(withHidden: true)`; **ressalva**: o agente relatou a seção *Composição da tela* vazia no extrato e leu a tabela direto do `01` › `## Mapeamentos` (mesmo conteúdo, só para seletores) — degradação de cegueira registrada |
+| 3 | 7 | `fw-adversario-ct` — revisão adversarial do `04`/`05` (rodada 1) | opus (agente) | `01`, `02`, `03`, código, conversa | 25 achados (10 implementações que passam, 8 oráculos fracos, 3 malformados, 4 RQ/P sem cenário discriminante), sondas 6–8 n.a., 7 tentativas rejeitadas com motivo, 1 pergunta (locale — rejeitada pela sessão: rótulo literal); leituras negadas: nenhuma | 64.574 tokens · 191 s · 5 tool uses | presença ok (formato fixo); amostragem pela sessão: ADV-17 confere (`HasId.php:getId():18` cai em `getKey()`), ADV-08 confere (CT-02 com `≥ 8`), ADV-01 confere (CT-10 sem segredo fora do default); decisões em `scratchpad/derivacao3/adv-rodada-1.md` (ADV-10 e ADV-24 rejeitados com prova/motivo; Q1 mantida aberta com a recomendação autorizada) e o derivador (#2) retomado por `SendMessage` para o fechamento |
+| 5 | 7 | derivador (#2) retomado por `SendMessage` — fechar ADV-01…ADV-25 com as decisões em `scratchpad/derivacao3/adv-rodada-1.md` | opus | idem #2 | `04` com **20 CT, 13 regras, 54 mutantes, 0 sem matador**; `05` com 5 CT-B (MB1–MB13); CT-16…CT-20, R13, M41–M54 novos; seção `## Revisão adversarial — rodada 1` (23 fechados, 2 rejeitados); rodada 2 devida | 350.409 tokens · 608 s · 11 tool uses | greps conferidos pela sessão (20/13/54; 5/13); amostragem: CT-10 grava segredos fora do default e compara decifrado (ADV-01), CT-05 usa `getCustomId()` (ADV-17), CT-02 conta exatamente 8 abaixo de `## [0.49.0]` (ADV-08); `citacoes.sh` e `rastreabilidade.sh` exit 0 |
+| 4 | impl. | **Codex CLI 0.162.1** como construtor — lote C1 (passos 1–3 do `01`: rótulo, seções, SMTP) | modelo padrão do Codex (não exposto) | `03`, `04`, `05`; proibido tocar settings/config/database/testes (salvo os dois `click`) | `ConfiguracoesDoKit.php` +383/−336 e os dois `click('Aplicação')`; 18 seções pelo helper + 4 de provedor com id/persistência; pint ok, FilaCheck 17/17, PHPStan 0; fumaça 414/414 + 181/181; sem desvio — commit `0db621d0` | — (host não reporta) | presença ok (formato fixo com tabela de seções); integridade: `git status` só com os 2 arquivos do lote (hashes da wiki e de `tests/Pest.php` intactos); amostragem: `grep -c '\$this->secao('` = 18, `Tab::make('Kit')` = 0, ids `configuracoes-login-provedor-*` nas 4 seções |
 | — | 0, 2, 4 | Sem despacho — captura verbatim do requisito, `RQ`, nome da feature, `00`/`01`/`02`/`03` escritos pela sessão (edição com forte interdependência; os fatos vieram do despacho #1 e do vendor lido pela sessão) | — | — | — | — | — |
 
 ## Blockers
