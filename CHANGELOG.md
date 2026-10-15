@@ -12,6 +12,17 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   As abas ganharam chave fixa (`?tab=identidade`, `?tab=tabelas`…): link ou favorito antigo com
   `?tab=…::data::tab` passa a abrir na primeira aba.
 
+### Validação
+
+- Suíte local `Kit --parallel`: 4.219 testes (4.214 verdes, 3 pulados; os dois vermelhos foram a citação
+  deslocada pelos helpers novos de `tests/Pest.php`, corrigida, e o CT-19 da rule de seções, verde depois
+  da rule); `Tenancy --parallel`: 631 verdes. Navegador: 9 execuções novas (CT-B01…CT-B06) e os três
+  cenários da tela migrados para os ids aninhados, todos verdes; capturas da tela regravadas.
+- Mutação por amostragem manual (o `pest --mutate` não mede no Windows): 4 mutantes da Page, 4 mortos
+  pelo matador previsto. HTML inicial da tela: 37 KB contra 391 KB com as seis abas carregadas.
+- Revisão do diff por dois revisores cegos: 1 Blocker (três testes de navegador não migrados), 2 Major,
+  3 Minor — todos corrigidos antes do quality gate.
+
 ## [0.49.0] - 2026-10-15
 
 ### Adicionado

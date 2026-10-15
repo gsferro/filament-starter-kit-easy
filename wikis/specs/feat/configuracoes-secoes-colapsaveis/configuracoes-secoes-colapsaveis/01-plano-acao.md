@@ -117,7 +117,7 @@ Nenhum.
 | O que é adiado, e por qual gatilho? | o HTML de cada aba, por `IntersectionObserver` sobre o painel da aba (ativa: na montagem; inativa: ao ser selecionada e ficar visível). O **estado** do formulário não é adiado: `$data` é preenchido inteiro no `mount()` |
 | O que é memoizado **por request**? | `loadedDeferredSchemas` (array público do componente) guarda, por request Livewire, quais abas já foram renderizadas; o Livewire o serializa no snapshot, então a aba carregada não é recarregada a cada interação |
 | O que é cacheado **entre** requests? | nada no servidor. No navegador: o estado colapsado de cada seção em `localStorage` (`filament:section:collapsed:{id}`) e a aba ativa na query string (já existia) |
-| Custo do caminho principal | abrir a tela: as mesmas consultas de hoje (settings vêm do cache do spatie) com **menos HTML** — só a aba ativa; trocar de aba: +1 request Livewire sem consulta nova ao banco (o estado já está no componente). Medido no step 10 |
+| Custo do caminho principal | abrir a tela: as mesmas consultas de hoje (settings vêm do cache do spatie) com **menos HTML** — só a aba ativa; trocar de aba: +1 request Livewire sem consulta nova ao banco (o estado já está no componente). **Medido no step 10 (2026-10-15)**: HTML inicial 37 350 bytes (6 marcadores, nenhum campo) contra 390 954 bytes com as seis abas carregadas (89 campos) — a abertura renderiza ~10 % do que renderizava; 1 `GET` + 1 `loadDeferredSchema` por aba aberta |
 
 ## Impacto em Features Existentes
 
