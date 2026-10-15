@@ -47,7 +47,7 @@ Não fatiado — 2026-10-14: 18 RQ vigentes (RQ-01 a RQ-18, cláusulas finas de 
 - [ ] `checkbox-sem-evidencia.sh {wiki}` silencioso
 - [x] `citacoes.sh {wiki}` silencioso — exit 0, após corrigir 10 citações de linha desatualizadas
 - [x] `ids-ct.sh` silencioso — exit 0 com os 7 arquivos de teste da feature
-- [ ] `conformidade-rules.sh {wiki} main` silencioso
+- [x] `conformidade-rules.sh {wiki} main` silencioso — exit 0 após a tabela de conformidade
 - [x] Docs pt/en, CHANGELOG e README reconciliados — README sem menção ao dock; `bb3f1f8`
 - [ ] `git commit`
 
@@ -64,6 +64,16 @@ Não fatiado — 2026-10-14: 18 RQ vigentes (RQ-01 a RQ-18, cláusulas finas de 
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
+| `.ai/rules/app.md` | `app/**` | n.a. | o diff não atribui papel, não cria DTO, não resolve painel corrente nem gera URL de arquivo |
+| `.ai/rules/css-filament.md` | `resources/css/filament/**`, `app/Providers/**` | aplicada | folha do chat escopada por atributo da raiz (`[data-assistente-chat]`), registrada em `configureCorrecoesDeCss()` e publicada por `filament:assets`; guarda pelo HTML renderizado com piso (`tests/Kit/AssistenteChatCssTest.php:'[CT-01]':42`, CT-02); nenhum `@layer` novo |
+| `.ai/rules/filament.md` | `app/Filament/**` | aplicada | as actions novas do dock (favoritos por grupo) mantêm `->authorize(DockDeAtalhos::PERMISSAO)`; nenhum Resource, Page ou papel novo; filacheck 17 regras ok |
+| `.ai/rules/providers-filament.md` | `app/Providers/Filament/**` | n.a. | nenhum plugin novo; só o render hook do chat passa a checar `TelaDeAutenticacao::corrente()` |
+| `.ai/rules/providers.md` | `app/Providers/**` | n.a. | nenhuma rota nova |
+| `.ai/rules/specs.md` | `wikis/specs/**` | aplicada | comportamento de vendor citado por arquivo:símbolo:linha (`vendor/hoceineel/filament-quick-action-dock/src/QuickActionDockPlugin.php:$isAuthenticatedOnly:78`, `vendor/hoceineel/filament-quick-action-dock/resources/views/dock.blade.php:'qad-root':61`); `citacoes.sh` exit 0 |
+| `.ai/rules/support.md` | `app/Support/**` | n.a. | nenhuma gravação no `.env` |
+| `.ai/rules/testes-browser.md` | `tests/Browser/**` | aplicada | geometria por `script()` com `getBoundingClientRect()`; browser rodado em série, sem `--parallel`; `npm run build` e `view:cache` antes |
+| `.ai/rules/testes.md` | `tests/**` | aplicada | helpers compartilhados movidos para `tests/Pest.php` (`conversaPara`, `pilhaComCodigoDoDock`, `consultasDoGet`); asserções de ausência no HTML filtram `<script>` |
+| `.ai/rules/views.md` | `resources/views/**` | aplicada | o comentário que citava a diretiva de assets no chat foi reescrito por extenso (ficara desatualizado com a folha nova); nenhuma diretiva nova em comentário |
 
 ## Quality Gate
 

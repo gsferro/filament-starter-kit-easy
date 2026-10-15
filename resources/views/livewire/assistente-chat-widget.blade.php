@@ -154,8 +154,9 @@
                                 @if ($mensagem->role === 'assistant')
                                     {{-- `soft_break`: sem ele o CommonMark colapsa quebra simples em espaço e o
                                          texto que chegou quebrado durante o streaming vira um bloco corrido ao
-                                         persistir. `resposta-md` é a classe de estilo local (definida no
-                                         @assets abaixo) — não depende do plugin @tailwindcss/typography. --}}
+                                         persistir. `resposta-md` é a classe de estilo local (definida em
+                                         resources/css/filament/assistente-chat.css) — não depende do plugin
+                                         de tipografia do Tailwind. --}}
                                     <div class="resposta-md">
                                         {!! \Illuminate\Support\Str::markdown($mensagem->content, [
                                             'html_input'         => 'escape',
