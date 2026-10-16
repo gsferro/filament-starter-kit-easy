@@ -5,6 +5,14 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alterado
+
+- Documentação: as visões salvas e o carregamento contínuo de tabela (v0.49.0) entram nos dois
+  READMEs ("O que já vem pronto" e tabela "Documentação completa") e na visão geral de Recursos
+  do site; a página de configurações do site documenta a chave fixa das abas (`?tab=identidade`…
+  `?tab=aplicacao`) e o link antigo `?tab=…::data::tab` abrindo na primeira aba, e
+  "Atualizando o projeto" ganha a nota da v0.50.0 (nada a instalar nem migrar).
+
 ## [0.50.0] - 2026-10-15
 
 ### Alterado
