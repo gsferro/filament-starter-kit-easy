@@ -7,4 +7,5 @@ sidebar:
 ---
 As features que o kit entrega prontas e o que cada uma exige de você: multi-tenancy opt-in, anexos e
 mídia, import e export em CSV, as trilhas do `/infra`, a configuração global do Filament, a tela de
-configurações em `/admin`, o hub de navegação em cartões, o dock de atalhos e o padrão de DTO com Laravel Data.
+configurações em `/admin`, o hub de navegação em cartões, o dock de atalhos, as visões salvas e o
+carregamento contínuo de tabela, e o padrão de DTO com Laravel Data.

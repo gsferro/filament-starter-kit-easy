@@ -131,6 +131,13 @@ listagens do kit usam o trait do `remember-table`, e sem ele todo `php artisan` 
 `Trait "Sehsah\FilamentRememberTable\Concerns\HasRememberTable" not found`. Os dois recursos nascem
 desligados; ligam-se na aba Tabelas de `/admin/configuracoes-da-aplicacao`.
 
+**Na v0.50.0 não há nada a instalar nem migrar**: a mudança é só na tela de configurações (seções
+colapsáveis, abas carregadas ao abrir, aba "Kit" renomeada "Aplicação" — ver
+[Configurações do kit](../../recursos/configuracoes-do-kit/)). Quem customizou a Page revisa o diff
+que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas para dentro de `aba()`.
+As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
+`?tab=…::data::tab` passa a abrir na primeira aba.
+
 ### Tela nova: ressemeie os dois seeders
 
 Os "próximos passos" que o comando imprime citam `filament:assets` e os testes, **não os seeders** —

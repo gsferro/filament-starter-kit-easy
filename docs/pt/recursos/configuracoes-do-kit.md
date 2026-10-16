@@ -9,6 +9,10 @@ O que a instalação perguntou — e mais um punhado de coisas que antes só se 
 
 Todo campo fica numa seção com ícone, colapsável pelo cabeçalho; o navegador lembra o estado de cada seção (fechada ou aberta, inclusive as que nascem fechadas) em `localStorage`, por navegador. Cada aba carrega seu conteúdo só quando é aberta, e uma aba com erro de validação abre sozinha.
 
+Cada aba tem chave fixa na URL — `?tab=identidade`, `?tab=email`, `?tab=tabelas`, `?tab=registro`,
+`?tab=login`, `?tab=aplicacao` —, estável para link e favorito. Até a v0.49 a chave era gerada pelo
+Filament (`?tab=…::data::tab`); um link antigo nesse formato não quebra, só abre na primeira aba.
+
 | Aba | O que você troca | Seções |
 |---|---|---|
 | **Identidade** | nome da aplicação, **versão do sistema**, cor primária (a paleta do Filament **ou** um hexadecimal livre), logo da marca, favicon, a arte das telas de autenticação e o **cabeçalho dos painéis** (a marca composta e o bloco do usuário) | Nome e versão; Cor primária; Logo, favicon e arte; Cabeçalho dos painéis |

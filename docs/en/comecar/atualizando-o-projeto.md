@@ -132,6 +132,13 @@ lists use the `remember-table` trait, and without it every `php artisan` fails w
 `Trait "Sehsah\FilamentRememberTable\Concerns\HasRememberTable" not found`. Both features start
 off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 
+**In v0.50.0 there is nothing to install or migrate**: the change is only on the settings screen
+(collapsible sections, tabs loaded when opened, the "Kit" tab renamed "Aplicação" — see
+[Kit settings](../../recursos/configuracoes-do-kit/)). If you customised the Page, review the diff
+`kit:update` shows: fields moved inside `secao()` and tabs inside `aba()`. Tabs got a fixed key in
+the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
+opens on the first tab.
+
 ### A new screen: reseed both seeders
 
 The "next steps" the command prints mention `filament:assets` and the tests, **not the seeders** —
