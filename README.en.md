@@ -230,7 +230,7 @@ The other two already come complete.
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **12** |
-| Specified features (`wikis/specs/`) | **84** |
+| Specified features (`wikis/specs/`) | **85** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **23** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
@@ -270,6 +270,7 @@ The other two already come complete.
 
 **AI (optional, local by default)**
 - `laravel/ai` with an agent catalog in the database: system prompt, provider, model, tools and guardrails are **data**, editable in `/admin` with no deploy
+- **Off by default**: a switch in `/admin/configuracoes-da-aplicacao` turns the catalog on (off, it leaves the menu and answers 404) and a list picks the panels where the Assistant chat appears ([details](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/configuracoes-do-kit.html))
 - Chained guardrails: budget, prompt injection, local classifier, PII redaction and sensitive-output filter
 - Execution ledger (`ai_runs`) with cost and tokens in the infra panel
 - Chat widget with streaming

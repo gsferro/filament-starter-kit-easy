@@ -5,7 +5,25 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- Agentes de IA ligados pelo settings, por painel (`wikis/specs/feat/agentes-ia-no-settings/`): a aba
+  Aplicação de `/admin/configuracoes-da-aplicacao` ganha a seção *Agentes de IA* com o interruptor
+  *Usar agentes de IA* e a lista *Painéis onde o chat do Assistente aparece* (vazia = nenhum, como o
+  dock), semeados por `KIT_AGENTES_IA` e `KIT_AGENTES_IA_PAINEIS` — os dois nascem desligados. Com o
+  uso desligado, o catálogo `/admin/agentes-ia` some do menu, do hub, da busca ⌘K e do catálogo do
+  dock e responde **404** mesmo com a permissão (inclusive numa tela já aberta), o grupo de widgets
+  *Agentes de IA* some do dashboard do `/admin` e o chat não é montado em painel nenhum; um chat já
+  aberto recusa a próxima ação com 404. Nada é apagado ao desligar. Decisor por request
+  `App\Support\AgentesDeIa`, sem consulta ao banco.
+
 ### Alterado
+
+- O chat do Assistente deixa de ser fixo no `/app`: o render hook passa a ser global
+  (`ConfiguraFilamentGlobal::configuraChatDoAssistente()`) e os painéis vêm da lista do settings; o
+  recuo do botão "voltar ao topo" segue a presença do chat em vez do id do painel.
+- `kit:info` passa a listar as duas propriedades novas; `phpunit.xml` fixa `KIT_AGENTES_IA=false` e
+  `KIT_AGENTES_IA_PAINEIS=` para a suíte medir o kit de fábrica.
 
 - Documentação: as visões salvas e o carregamento contínuo de tabela (v0.49.0) entram nos dois
   READMEs ("O que já vem pronto" e tabela "Documentação completa") e na visão geral de Recursos

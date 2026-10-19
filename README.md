@@ -230,7 +230,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **12** |
-| Features especificadas (`wikis/specs/`) | **84** |
+| Features especificadas (`wikis/specs/`) | **85** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **23** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -270,6 +270,7 @@ dois já vêm completos.
 
 **IA (opcional, local por padrão)**
 - `laravel/ai` com catálogo de agentes no banco: system prompt, provider, modelo, tools e guardrails são **dados**, editáveis no `/admin` sem deploy
+- **Desligada por padrão**: um interruptor em `/admin/configuracoes-da-aplicacao` liga o catálogo (desligado, ele some do menu e responde 404) e uma lista escolhe em quais painéis o chat do Assistente aparece ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/configuracoes-do-kit.html))
 - Guardrails encadeados: budget, prompt injection, classificador local, redação de PII e filtro de saída sensível
 - Ledger de execuções (`ai_runs`) com custo e tokens no painel infra
 - Widget de chat com streaming

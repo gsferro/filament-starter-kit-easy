@@ -20,7 +20,7 @@ Filament (`?tab=…::data::tab`); an old link in that format does not break, it 
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, draggable columns, **table loading** (pagination, infinite scroll or a "Load more" button), **saved views** and their sharing — the defaults for **every** table in all three panels ([details](../visoes-de-tabela-e-carregamento/)) | Paginação e aparência (pagination and appearance); Carregamento e visões (loading and views) |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) | Cadastro sem convite (registration and approval); E-mail verificado (e-mail verification) |
 | **Login** | the single login page at `/login` ([details](../../autenticacao/login-unificado/)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../../autenticacao/login-social/)) | Página única de login (single login page); Login social (with a section per provider); Proteção anti-robô (bot protection); Rodapé da tela de login (login footer) |
-| **Aplicação** (application) | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable | Comportamento dos painéis (panel behaviour); Dashboard dinâmico (dynamic dashboard); Dock de atalhos (shortcut dock); Organizações (organisations) |
+| **Aplicação** (application) | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), the **AI agents** (the usage switch and the panels of the Assistant chat), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable | Comportamento dos painéis (panel behaviour); Dashboard dinâmico (dynamic dashboard); Dock de atalhos (shortcut dock); Agentes de IA (AI agents); Organizações (organisations) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
 
@@ -210,6 +210,25 @@ opposite of the dynamic dashboard's *Panels where it applies*, just above, where
 Layout and style have no variable: this screen is what changes them. As in the rest of the tab,
 the database wins over `.env` and saving takes effect on the next F5. Who sees the dock is still
 decided by the `Usar:Dock` permission, not by this section.
+
+## The AI agents: one switch and the chat panels
+
+Still in the **Aplicação** tab, the *Agentes de IA* section turns the kit's AI layer on and decides
+where the Assistant chat appears:
+
+| Option | What it sets | Born |
+|---|---|---|
+| **Usar agentes de IA** (use AI agents) | on, the *Agentes de IA* catalog is back in the `/admin` menu and the chat may appear; off, the catalog leaves the menu, the hub, the ⌘K search and the dock, the `/admin/agentes-ia` URL answers **404** (even for someone with the permission), the *Agentes de IA* widget group leaves the `/admin` dashboard and the chat appears in no panel | **off** |
+| **Painéis onde o chat do Assistente aparece** (panels where the Assistant chat appears) | the panels (admin, app, infra) where the floating chat button is mounted; only applies with the switch on | **none** |
+
+Both are seeded by `KIT_AGENTES_IA` and `KIT_AGENTES_IA_PAINEIS` (comma-separated ids, in
+`config/kit.php` → `agentes_ia`), off and empty in `.env.example`. **Empty means no panel**, as in
+the dock. As in the rest of the tab, the database wins over `.env` and saving takes effect on the
+next F5: nothing hits the database to decide, and nothing is deleted when you turn it off — agents,
+conversations and favourites stay stored and come back when you turn it on again. Up to v0.50.0 the
+chat was fixed on `/app`; now it can live in any panel, and a chat already open when usage is turned
+off refuses the next message with 404. Who opens the catalog is still decided by the
+`ViewAny:AgenteIa` permission: the switch is one more condition, not a replacement for it.
 
 ## A selector for people with nothing to switch to
 

@@ -104,8 +104,9 @@ O primeiro boot baixa ~4,5 GB de modelo. Para SaaS, troque `AI_PROVIDER` e confi
 
 | Onde | O quê |
 |---|---|
-| `/admin` → Agentes de IA | CRUD do catálogo (`AgenteIaResource`) — é aqui que se edita prompt, provider, tools e guardrails |
-| `/app` (toda tela) | widget de chat com streaming (`App\Livewire\AssistenteChatWidget`, injetado por render hook `BODY_END`) |
+| `/admin` → Configurações da aplicação → Aplicação → Agentes de IA | o interruptor do uso (nasce **desligado**) e os painéis do chat (nasce **nenhum**, como o dock). Desligado: o catálogo some do menu e responde 404, o grupo de widgets *Agentes de IA* some do dashboard e o chat não é montado em painel nenhum; nada é apagado. Decisor por request: `App\Support\AgentesDeIa` (`kit.agentes_ia.*`) |
+| `/admin` → Agentes de IA | CRUD do catálogo (`AgenteIaResource`) — é aqui que se edita prompt, provider, tools e guardrails; só com o uso ligado |
+| painéis da lista (toda tela) | widget de chat com streaming (`App\Livewire\AssistenteChatWidget`, injetado por render hook `BODY_END` **global**, em `ConfiguraFilamentGlobal::configuraChatDoAssistente()`); chat já aberto quando o uso é desligado recusa a próxima ação com 404 |
 | `/infra` → Execuções de IA | ledger `ai_runs` com custo e tokens (`AiRunResource`) |
 | `/infra` → Dashboard de IA | rota do `laravel-ai-tasks`, fora do Filament, atrás do gate `ver-ai-tasks` |
 
