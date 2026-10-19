@@ -25,7 +25,7 @@ trait ExigeAgentesDeIaLigados
 {
     public static function authorizeResourceAccess(): void
     {
-        static::exigirUsoDeAgentesLigado();
+        self::exigirUsoDeAgentesLigado();
 
         parent::authorizeResourceAccess();
     }
@@ -42,7 +42,7 @@ trait ExigeAgentesDeIaLigados
      */
     protected function authorizeAccess(): void
     {
-        static::exigirUsoDeAgentesLigado();
+        self::exigirUsoDeAgentesLigado();
 
         parent::authorizeAccess();
     }
