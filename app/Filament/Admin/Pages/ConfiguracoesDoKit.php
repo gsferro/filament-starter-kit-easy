@@ -1127,9 +1127,12 @@ class ConfiguracoesDoKit extends SettingsPage
                  * via config sobreposta pelo banco no boot: salvar aqui vale no próximo F5, sem
                  * consulta extra ao banco.
                  *
-                 * Sem `mutateFormDataBeforeSave()`: o select oculto não é desidratado, e a lista
-                 * gravada fica — o interruptor desligado já a torna inerte, e religar devolve a
-                 * escolha anterior. Nada é apagado (D4).
+                 * Sem `mutateFormDataBeforeSave()`: o select oculto não é desidratado
+                 * (`vendor/filament/schemas/src/Components/Concerns/HasState.php:55`,
+                 * `$isDehydratedWhenHidden = false`) e o `fill()` do plugin aplica só as chaves
+                 * presentes (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:83`),
+                 * então a lista gravada fica — o interruptor desligado já a torna inerte, e religar
+                 * devolve a escolha anterior. Nada é apagado (D4).
                  */
             $this->secao('aplicacao', 'agentes-ia', 'Agentes de IA', 'heroicon-o-cpu-chip')
                 ->description('O catálogo "Agentes de IA" do /admin e o chat do Assistente. Tudo nasce desligado: ligue aqui e escolha os painéis do chat.')

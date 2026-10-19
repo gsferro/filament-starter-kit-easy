@@ -229,16 +229,7 @@ class AssistenteChatWidget extends Component
 
         abort_unless($user instanceof User, 403);
 
-        if (! AgentesDeIa::assistenteNoPainel(Filament::getCurrentPanel())) {
-            $painel = Filament::getCurrentPanel()?->getId() ?? 'nenhum';
-
-            Log::channel('ai')->warning(
-                '[AssistenteChatWidget@assertContexto] Chat recusado com o uso de agentes desligado no painel | painel: '.$painel,
-                ['user_id' => $user->id, 'painel' => $painel, 'motivo' => 'agentes_ia_desligado'],
-            );
-
-            abort(404);
-        }
+        $this->exigirUsoNoPainel($user);
 
         if ($conversaId === null) {
             return $user;
@@ -260,6 +251,46 @@ class AssistenteChatWidget extends Component
         }
 
         return $user;
+    }
+
+    /**
+     * O uso de agentes está ligado no painel corrente? Senão, 404 com trilha no canal `ai`.
+     *
+     * Chamado por `assertContexto()` (toda action) e por `hydrate()` (todo update Livewire do
+     * componente já montado, inclusive o `$refresh`): quando a instalação desliga o uso ou tira o
+     * painel da lista, o chat aberto para de servir histórico e mensagens — não só de executar
+     * actions (RD-01 da revisão do diff). O painel existe no update porque `SetUpPanel` é
+     * middleware persistente do Livewire.
+     */
+    private function exigirUsoNoPainel(User $user): void
+    {
+        $painel = Filament::getCurrentPanel();
+
+        if (AgentesDeIa::assistenteNoPainel($painel)) {
+            return;
+        }
+
+        $id = $painel?->getId() ?? 'nenhum';
+
+        Log::channel('ai')->warning(
+            '[AssistenteChatWidget@exigirUsoNoPainel] Chat recusado com o uso de agentes desligado no painel | painel: '.$id,
+            ['user_id' => $user->id, 'painel' => $id, 'motivo' => 'agentes_ia_desligado'],
+        );
+
+        abort(404);
+    }
+
+    /**
+     * Todo update Livewire do componente já montado passa pela mesma guarda das actions. Sem
+     * usuário não há o que guardar: o render já entrega vazio (`disponivel` falso).
+     */
+    public function hydrate(): void
+    {
+        $user = auth()->user();
+
+        if ($user instanceof User) {
+            $this->exigirUsoNoPainel($user);
+        }
     }
 
     /**

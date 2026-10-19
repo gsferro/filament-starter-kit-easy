@@ -135,7 +135,7 @@ Onde a rota tem `{org}`, é o modo multi-tenant — sem ele, o caminho é `/app`
 ### Sequência do assistente, do prompt ao ledger
 
 O widget entra em duas fases: `enviar()` valida a pergunta (até 2000 caracteres,
-`app/Livewire/AssistenteChatWidget.php:Validate:43`) e guarda como pendente; `responder()` streama
+`app/Livewire/AssistenteChatWidget.php:Validate:47`) e guarda como pendente; `responder()` streama
 pelo agente. O SDK envolve o pipeline com `RememberConversation` **antes** de `middleware()` rodar,
 porque `Assistente` usa `RemembersConversations`
 (`vendor/laravel/ai/src/Providers/Concerns/GeneratesText.php:RemembersConversations:148`); dentro
@@ -151,7 +151,7 @@ sequenceDiagram
 accTitle: Sequência do assistente de IA
 accDescr: RememberConversation envolve o pipeline; o orçamento e os quatro guardrails do catálogo rodam na ordem real antes do provider; o filtro de saída age na resposta, sem impedir o streaming; só o pedido que chega ao provider vira linha em ai_runs.
   participant usuario as Usuário
-  participant widget as AssistenteChatWidget
+  participant widget as AssistenteChatWidget (KIT_AGENTES_IA)
   participant remember as RememberConversation (vendor)
   participant budget as BudgetGuardMiddleware
   participant prompt_injection as PromptInjectionGuardMiddleware
@@ -194,8 +194,10 @@ O ledger nasce de um listener de evento, nunca de uma chamada direta:
 `Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class)`
 (`app/Providers/KitServiceProvider.php:AgentStreamed:483`), e `RegistrarAiRun::handle()` grava em
 `ai_runs` com `status: 'ok'` (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`) — pedido
-bloqueado por qualquer camada acima **não** chega a esta linha. O widget só existe no painel `/app`
-(`app/Providers/Filament/AppPanelProvider.php:BODY_END:166`).
+bloqueado por qualquer camada acima **não** chega a esta linha. O widget existe nos painéis que a tela de
+configurações escolher, montado por um render hook global
+(`app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraChatDoAssistente:184`) decidido por
+`App\Support\AgentesDeIa` a cada request — e só com o uso de agentes ligado (`KIT_AGENTES_IA`).
 
 ## O que o roteiro **não** cobre sozinho
 

@@ -25,14 +25,7 @@ trait ExigeAgentesDeIaLigados
 {
     public static function authorizeResourceAccess(): void
     {
-        if (! AgentesDeIa::habilitado()) {
-            Log::channel('ai')->warning(
-                '[ExigeAgentesDeIaLigados@authorizeResourceAccess] Catálogo recusado com o uso de agentes desligado | pagina: '.static::class,
-                ['user_id' => auth()->id(), 'pagina' => static::class, 'motivo' => 'agentes_ia_desligado'],
-            );
-
-            abort(404);
-        }
+        static::exigirUsoDeAgentesLigado();
 
         parent::authorizeResourceAccess();
     }
@@ -43,12 +36,28 @@ trait ExigeAgentesDeIaLigados
      * `mountCanAuthorizeResourceAccess()`: sem esta sobrescrita, quem não tinha a permissão recebia
      * 403 com o uso desligado, e o 404 só valia para quem tinha — a ordem errada para "não é
      * disponível" (CT-11 da wiki, linhas "sem permissão"). `ListRecords` declara o método vazio,
-     * então o `parent::` existe nas três Pages.
+     * então o `parent::` existe nas três Pages. Só o interruptor aqui: a policy do índice
+     * (`parent::authorizeResourceAccess()`) continua sendo conferida uma vez, pelo hook do vendor —
+     * chamá-la daqui a avaliaria duas vezes por mount e por update (CR-02 da revisão do diff).
      */
     protected function authorizeAccess(): void
     {
-        static::authorizeResourceAccess();
+        static::exigirUsoDeAgentesLigado();
 
         parent::authorizeAccess();
+    }
+
+    private static function exigirUsoDeAgentesLigado(): void
+    {
+        if (AgentesDeIa::habilitado()) {
+            return;
+        }
+
+        Log::channel('ai')->warning(
+            '[ExigeAgentesDeIaLigados@exigirUsoDeAgentesLigado] Catálogo recusado com o uso de agentes desligado | pagina: '.static::class,
+            ['user_id' => auth()->id(), 'pagina' => static::class, 'motivo' => 'agentes_ia_desligado'],
+        );
+
+        abort(404);
     }
 }

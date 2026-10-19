@@ -16,7 +16,8 @@
             {{-- Botão flutuante, na base da pilha do canto inferior direito. O `bottom-6` lê a
                  `--kit-pilha-base` que o script da pilha publica (assistente-chat.css), então o
                  botão sobe quando o dock de atalhos ocupa o canto. Mudar a altura dele muda a
-                 pilha: o "Voltar ao topo" do /app conta com 56px + 16px (voltar-ao-topo.css). --}}
+                 pilha: o "Voltar ao topo" conta com 56px + 16px onde o chat está ligado
+                 (voltar-ao-topo.css) — qualquer painel da lista do settings, não só o /app. --}}
             <button
                 type="button"
                 x-show="!aberto"

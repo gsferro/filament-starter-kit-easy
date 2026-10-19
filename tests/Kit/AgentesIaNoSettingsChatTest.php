@@ -414,3 +414,45 @@ it('[CT-26] o /app sai da lista e volta, e a Ana retoma a conversa com as mensag
 
     expect(ConversationMessage::query()->where('conversation_id', $plano->id)->count())->toBe(2);
 });
+
+it('[CT-27] o chat montado com o uso ligado recusa o update sem action depois que o uso é desligado', function (string $motivo, string $gatilho, int $status, bool $traz, int $warnings): void {
+    ligarAgentesDeIa(true, ['app']);
+
+    $ana = usuarioDoKit('panel_user', 'ana@example.com');
+    conversaPara($ana, 'Plano de férias');
+
+    $this->actingAs($ana)->get('/app')->assertOk();
+    Filament::setCurrentPanel('app');
+
+    $chat = Livewire::test(AssistenteChatWidget::class);
+
+    match ($motivo) {
+        'desligado' => ligarAgentesDeIa(false, ['app']),
+        'fora'      => ligarAgentesDeIa(true, ['admin']),
+        'nada'      => null,
+    };
+
+    $canal = espiaDoCanalAi();
+
+    $gatilho === 'refresh' ? $chat->call('$refresh') : $chat->set('mensagem', 'x');
+
+    if ($status === 404) {
+        $chat->assertNotFound();
+    } else {
+        $chat->assertOk();
+    }
+
+    $traz
+        ? expect($chat->html())->toContain('Plano de férias')
+        : expect($chat->html())->not->toContain('Plano de férias');
+
+    $warnings === 0
+        ? $canal->shouldNotHaveReceived('warning')
+        : $canal->shouldHaveReceived('warning')->times($warnings);
+})->with([
+    'desligado: $refresh'          => ['desligado', 'refresh', 404, false, 1],
+    'desligado: escrita'           => ['desligado', 'escrita', 404, false, 1],
+    '/app fora da lista: $refresh' => ['fora', 'refresh', 404, false, 1],
+    '/app fora da lista: escrita'  => ['fora', 'escrita', 404, false, 1],
+    'controle: $refresh'           => ['nada', 'refresh', 200, true, 0],
+]);
