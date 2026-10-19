@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\AgentesIa\Pages;
 
 use App\Filament\Admin\Resources\AgentesIa\AgenteIaResource;
+use App\Filament\Concerns\ExigeAgentesDeIaLigados;
 use App\Filament\Concerns\VisoesDeTabela;
 use App\Filament\Exports\AgenteIaExporter;
 use App\Filament\Imports\AgenteIaImporter;
@@ -14,6 +15,7 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListAgentesIa extends ListRecords
 {
+    use ExigeAgentesDeIaLigados;
     use HasResizableColumn;
     use VisoesDeTabela;
 

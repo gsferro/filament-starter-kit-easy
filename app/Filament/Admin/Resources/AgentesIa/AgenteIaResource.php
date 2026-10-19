@@ -9,6 +9,7 @@ use App\Filament\Admin\Resources\AgentesIa\Schemas\AgenteIaForm;
 use App\Filament\Admin\Resources\AgentesIa\Tables\AgentesIaTable;
 use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\AgenteIa;
+use App\Support\AgentesDeIa;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -24,6 +25,11 @@ use UnitEnum;
  * é restrito (`User::canAccessPanel`), o que é o portão desta superfície.
  *
  * As instruções (prompt) NÃO entram na busca global: são configuração sensível.
+ *
+ * Ligado pelo settings (wiki `agentes-ia-no-settings`): com o uso de agentes desligado — o
+ * default — o catálogo some do menu, do hub, do ⌘K e do catálogo do dock (`canAccess()` e
+ * `shouldRegisterNavigation()`, os dois, `.ai/rules/filament.md`), e as três Pages respondem 404
+ * pelo trait `ExigeAgentesDeIaLigados`, mesmo para quem tem a permissão.
  */
 class AgenteIaResource extends Resource
 {
@@ -49,6 +55,21 @@ class AgenteIaResource extends Resource
     public static function getGloballySearchableAttributes(): array
     {
         return ['nome', 'slug'];
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return AgentesDeIa::habilitado() && parent::shouldRegisterNavigation();
+    }
+
+    /**
+     * Com `&& parent::canAccess()`: sem ele a policy deixaria de ser consultada para o índice
+     * (`CanAuthorizeResourceAccess` chama `canAccess()`, não `canViewAny()`). A busca global já
+     * segue este método (`HasGlobalSearch::canGloballySearch()`).
+     */
+    public static function canAccess(): bool
+    {
+        return AgentesDeIa::habilitado() && parent::canAccess();
     }
 
     public static function form(Schema $schema): Schema

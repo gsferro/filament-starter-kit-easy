@@ -6,6 +6,7 @@ namespace App\Filament\Admin\Widgets;
 
 use App\Filament\Concerns\ExigePermissaoDoWidget;
 use App\Models\AgenteIa;
+use App\Support\AgentesDeIa;
 use Filament\Widgets\StatsOverviewWidget;
 use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
 
@@ -19,6 +20,16 @@ use Gsferro\FilamentStatPlusEasy\Widgets\StatPlus;
 class AgentesIaStats extends StatsOverviewWidget
 {
     use ExigePermissaoDoWidget;
+
+    /**
+     * Some com o uso de agentes desligado e volta ao religar, sem perder dado (P-02 da wiki
+     * `agentes-ia-no-settings`). O hook do trait, nunca `canView()`: a sobrescrita na classe
+     * venceria a permissão em silêncio.
+     */
+    protected static function fonteDeDadosDisponivel(): bool
+    {
+        return AgentesDeIa::habilitado();
+    }
 
     protected static ?int $sort = 40;
 

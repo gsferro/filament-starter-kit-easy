@@ -40,9 +40,12 @@
 
     ── Offset por painel e a pilha do canto inferior direito ──
 
-    No `/app` o botão do chat ocupa de 24px a 80px do rodapé (`bottom-6` + `h-14`). Este sobe
-    para `bottom-24` = 96px, deixando 16px de folga. Nos outros dois painéis não há chat, e
-    ele fica no `bottom-6` padrão.
+    Onde o chat do Assistente está na tela, o botão dele ocupa de 24px a 80px do rodapé
+    (`bottom-6` + `h-14`). Este sobe para `bottom-24` = 96px, deixando 16px de folga. Sem o
+    chat, fica no `bottom-6` padrão. Quem diz se o chat está na tela é a MESMA condição que o
+    monta (`App\Support\AgentesDeIa::chatNaTela()`: interruptor, lista de painéis da tela de
+    configurações e tela de autenticação) — até a wiki `agentes-ia-no-settings` o recuo era
+    decidido pelo id do painel (`app`), e o chat passou a poder existir em qualquer painel.
 
     Os dois valores são o FALLBACK: a folha (`voltar-ao-topo.css`) soma a partir da
     `--kit-pilha-base`, que o script abaixo publica no `<html>` quando o dock de atalhos ocupa
@@ -94,7 +97,7 @@
     APARECE ao rolar, e não há texto visível para ancorar — o rótulo é `aria-label`.
 --}}
 @php
-    $recuoDoBotao = filament()->getCurrentOrDefaultPanel()?->getId() === 'app'
+    $recuoDoBotao = \App\Support\AgentesDeIa::chatNaTela()
         ? 'bottom-24'
         : 'bottom-6';
 @endphp

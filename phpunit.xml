@@ -64,6 +64,8 @@
         <env name="KIT_COR_PRIMARIA" value="" force="true"/>
         <env name="KIT_DEMO" value="false" force="true"/>
         <env name="KIT_HUB" value="false" force="true"/>
+        <env name="KIT_AGENTES_IA" value="false" force="true"/>
+        <env name="KIT_AGENTES_IA_PAINEIS" value="" force="true"/>
         <env name="KIT_TENANCY_LABEL" value="Organização" force="true"/>
         <env name="KIT_TENANCY_LABEL_PLURAL" value="Organizações" force="true"/>
         <env name="KIT_TENANCY_SLUG" value="organizacoes" force="true"/>

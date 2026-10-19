@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\AgentesIa\Pages;
 
 use App\Filament\Admin\Resources\AgentesIa\AgenteIaResource;
+use App\Filament\Concerns\ExigeAgentesDeIaLigados;
 use App\Models\AgenteIa;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 
 class EditAgenteIa extends EditRecord
 {
+    use ExigeAgentesDeIaLigados;
+
     protected static string $resource = AgenteIaResource::class;
 
     /** Sem DeleteAction — a exclusão é lógica (flag `ativo`). */

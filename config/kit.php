@@ -599,6 +599,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Agentes de IA
+    |--------------------------------------------------------------------------
+    | O interruptor do uso dos agentes e os painéis em que o chat do Assistente
+    | aparece. Editável em /admin/configuracoes-da-aplicacao (aba Aplicação,
+    | seção "Agentes de IA"); o banco vence o .env em execução. Quem decide é
+    | `App\Support\AgentesDeIa`, por request, lendo esta config já sobreposta.
+    |
+    |   'habilitado' — `filter_var`, não `(bool) env()`: desligado, o catálogo
+    |   "Agentes de IA" some do menu do /admin e a URL dele responde 404 (mesmo
+    |   com a permissão), os widgets do catálogo somem do dashboard e o chat não
+    |   aparece em painel nenhum. Nasce DESLIGADO (falha fechado); nada é apagado.
+    |
+    |   'paineis' — ids separados por vírgula, mesmo parse de `kit.dock.paineis`
+    |   e com a MESMA semântica: VAZIO significa NENHUM painel. Só vale com o
+    |   interruptor ligado; o catálogo continua só no /admin.
+    |
+    | Wiki `wikis/specs/feat/agentes-ia-no-settings/`.
+    */
+
+    'agentes_ia' => [
+        'habilitado' => filter_var(env('KIT_AGENTES_IA', false), FILTER_VALIDATE_BOOLEAN),
+        'paineis'    => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('KIT_AGENTES_IA_PAINEIS')),
+        ))),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Observabilidade — retenção
     |--------------------------------------------------------------------------
     | Quanto tempo as trilhas que o kit GRAVA sobrevivem. Não é preferência de
