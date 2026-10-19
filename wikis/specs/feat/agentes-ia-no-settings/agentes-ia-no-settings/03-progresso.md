@@ -8,7 +8,7 @@
 
 - [x] Branch criada — `git checkout -b feat/agentes-ia-no-settings` a partir de `main` (`27e47714`), 2026-10-19
 - [x] `codex --yolo` usado como auxiliar — `codex exec --yolo -s read-only` na revisão profunda do plano (despacho 1: 47 premissas conferidas, 5 achados), 2026-10-19
-- [ ] PR aberto
+- [x] PR aberto — https://github.com/gsferro/filament-starter-kit-easy/pull/171 (`gh pr create`, base `main`, com o link da wiki e o veredito do `06`), 2026-10-19
 - [ ] Tag + release criadas depois de o PR passar
 
 ## 1. Config `kit.agentes_ia` e `.env.example`
