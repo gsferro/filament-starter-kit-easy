@@ -18,7 +18,7 @@
 - Técnicas aplicadas: EP, tabela de decisão completa (Chat), matriz papel × ação, tabela estado × operação (uma, 24 células), rastreio de efeito, 2-switch
 - Adendo 1: a P-02 foi promovida a RQ-09; a R11 tem origem RQ-09 e o CT-20 é o cenário dela
 - Técnica escalada: R5 (Catálogo, padrão) usa **2-switch** no favorito do dock, porque o defeito plausível é o favorito apagado ao desligar, que só aparece no religar
-- Cenários: 26 · Regras: 13 · Mutantes previstos: 67 · Sem matador: 0
+- Cenários: 28 · Regras: 15 · Mutantes previstos: 74 · Sem matador: 0
 <!-- derivado por grep -c (template-04 §Contagem do cabeçalho). O CT-B01 e seus mutantes estão no 05. -->
 
 ## Varredura SFDIPOT
@@ -43,7 +43,7 @@
 | R4 — A tela de configurações grava o interruptor e a lista, recusa valor fora do domínio e não perde o que está gravado ao salvar outro campo | Configuração (padrão) | RQ-01, RQ-02, RQ-03, RQ-08, Fora de Escopo ("nada é apagado") | EP, gate de tela de escrita | CT-07, CT-08, CT-25 |
 | R5 — Com o uso desligado, o catálogo some de toda superfície de navegação; o favorito do dock vira oculto e volta | Catálogo (padrão) | RQ-04, P-04 | EP por superfície, 2-switch | CT-09, CT-10 |
 | R6 — Com o uso desligado, as três URLs do catálogo respondem 404, com e sem permissão; o painel continua abrindo | Catálogo (padrão) | RQ-05 | matriz papel × ação | CT-11, CT-12 |
-| R6b — Com o uso desligado depois de uma tela do catálogo já aberta, a próxima ação nela responde 404 e nada é gravado | Catálogo (padrão) | P-06 | tabela estado × evento (mount ligado → desliga → ação), rastreio de efeito (não-efeito) | CT-22 |
+| R14 — Com o uso desligado depois de uma tela do catálogo já aberta, a próxima ação nela responde 404 e nada é gravado | Catálogo (padrão) | P-06 | tabela estado × evento (mount ligado → desliga → ação), rastreio de efeito (não-efeito) | CT-22 |
 | R7 — Com o uso ligado, o catálogo abre e grava como hoje, com o par tem/não-tem permissão, só no `/admin` | Catálogo (padrão) | RQ-06, P-01 | matriz papel × ação, gate de tela de escrita | CT-13, CT-14, CT-15 |
 | R8 — O chat aparece só nos painéis da lista, com o uso ligado, e nunca em tela de autenticação | Chat (completo) | RQ-02, RQ-08, P-01; glossário "Tela de autenticação" | tabela de decisão completa | CT-16, CT-17 |
 | R9 — Toda ação do chat responde 404 quando o uso é desligado no painel corrente depois do `mount`, sem consultar agente, sem gravar, com um `warning` no canal `ai` | Chat (completo) | P-03 | tabela de decisão (verbo × motivo), rastreio de efeito | CT-18 |
@@ -51,10 +51,12 @@
 | R11 — O grupo de widgets "Agentes de IA" do dashboard do `/admin` segue o interruptor sem perder dado; as trilhas de IA do `/infra` não mudam | Widgets (mínimo) | RQ-09 (Adendo 1; era P-02), Fora de Escopo (trilhas do `/infra`) | EP, 2-switch | CT-20, CT-21 |
 | R12 — No painel que nunca teve o chat, o botão dele entra na pilha de botões flutuantes sem sobrepor | Pilha (mínimo) | P-01 | EP (painel) | CT-B01 (no `05`) |
 | R13 — O histórico do chat é da pessoa: aparece em qualquer painel da lista, só o dela, e sobrevive à saída e volta do painel | Chat (completo) | P-07 (Q9), P-01, P-03, Fora de Escopo ("nada é apagado") | EP (painel × dono), 2-switch | CT-23, CT-24, CT-26 |
+| R15 — Todo update do chat (não só as actions) responde 404 quando o uso é desligado no painel corrente depois do `mount`, sem servir histórico | Chat (completo) | P-03 (achado RD-01 do step 9) | tabela de decisão (gatilho de update × motivo) + rastreio de efeito | CT-27 |
+| R16 — A execução do chat num painel sem organização na rota vai para o tenant `default` do ledger de IA; dentro de `/app/{organização}`, para a organização da rota | Chat (completo) | P-08 (Q10; CR-01 do step 9), P-01 | EP (painel com e sem organização na rota) | CT-28 |
 
 - Nenhuma `RQ` está com Estado aberto no `00`. Q1–Q3 viraram P-01–P-03; Q4 está `aberta` no `00` **sem premissa própria**, mas as duas metades dela são determinadas por cláusulas fechadas: o catálogo depende só do interruptor (RQ-06) e lista vazia é nenhum painel do chat (RQ-08, P-01). Os cenários dessas metades (CT-13 com lista vazia, CT-16 linhas "vazia") têm origem nessas cláusulas, não em Q4
 - RQ-09 (Adendo 1) — coberta: CT-20 (a P-02, que ela substitui, não origina mais cenário)
-- RQ-05 — coberta: CT-11, CT-12 (as três URLs, com e sem permissão); o recorte "ação Livewire numa tela do catálogo já aberta" foi decidido pela P-06 (Q6) e é o CT-22 (R6b)
+- RQ-05 — coberta: CT-11, CT-12 (as três URLs, com e sem permissão); o recorte "ação Livewire numa tela do catálogo já aberta" foi decidido pela P-06 (Q6) e é o CT-22 (R14)
 
 ### Matriz estado × operação (única)
 
@@ -72,7 +74,7 @@ Legenda: `❌` = recusa + não-efeito de **cada** efeito do caminho feliz daquel
 | O5 listar o catálogo na navegação (barra, hub, ⌘K, dock) | ❌ ausente · CT-09, CT-10 | ✅ presente · CT-09 | ✅ presente · CT-09 (barra lateral, lista `admin`) |
 | O6 widgets do catálogo no dashboard | ❌ ausentes, agentes intactos · CT-20 | ✅ CT-20 (lista vazia) | ✅ CT-20 (lista `admin`) |
 | O7 render do chat no painel | ❌ ausente · CT-16 | ❌ ausente · CT-16 | ✅ presente · CT-16 (dashboard e Page comum), CT-23 (com organizações) |
-| O8 ações do chat (5 verbos) | ❌ 404, agente e guardrail não consultados, nada gravado, `conversaId` intacto, 1 `warning` · CT-18 | ❌ idem · CT-18 (o painel sai da lista), CT-19 | ✅ CT-19 (controle, `responder`, no `/app` e no `/admin`), CT-24 (histórico), CT-26 (retomar depois de o `/app` voltar à lista); demais verbos: `tests/Kit/AssistenteChatWidgetTest.php` CT-15/22/24/25, que o lote T0 liga com `['app']` |
+| O8 ações do chat (5 verbos) | ❌ 404, agente e guardrail não consultados, nada gravado, `conversaId` intacto, 1 `warning` · CT-18; update sem action (`$refresh`, `set`) · CT-27 | ❌ idem · CT-18 (o painel sai da lista), CT-19, CT-27 (o painel sai da lista) | ✅ CT-19 (controle, `responder`, no `/app` e no `/admin`), CT-24 (histórico), CT-26 (retomar depois de o `/app` voltar à lista), CT-27 (controle do `$refresh`), CT-28 (execução no ledger, `/admin` e `/app/{acme}`); demais verbos: `tests/Kit/AssistenteChatWidgetTest.php` CT-15/22/24/25, que o lote T0 liga com `['app']` |
 
 Legenda conferida célula a célula: O1–O3 (GET) não têm efeito colateral no caminho feliz, então o `❌` afirma só o 404 e o corpo sem o catálogo; O6 afirma ausência **e** a contagem de agentes; O8 afirma os cinco não-efeitos que as ações produzem no caminho feliz (consulta ao `Assistente`, consulta ao `GuardaPrompt`, conversa/mensagem gravada, título renomeado, `conversaId` trocado) mais a trilha da recusa.
 
@@ -87,9 +89,9 @@ Legenda conferida célula a célula: O1–O3 (GET) não têm efeito colateral no
 | G3 Catálogo por URL | R6, R7 | Pest feature HTTP | existente — `tests/Kit/AgenteIaResourceTest.php` (par `semAPermissao('admin', 'ViewAny:AgenteIa')` + `noPainelDoShield('admin')` + `get`); gravação do CT-14 por componente (`Livewire::test(CreateAgenteIa::class)`), mesma costura do `AgenteIaResourceTest` | autorização por rota é o observável do requisito (404/403/200); é o cenário "por fora do componente" do gate de camada | sessão, 2026-10-19 — convenção existente (molde citado), sem decisão material pendente |
 | G4 Catálogo nas superfícies de navegação | R5 | componente Livewire/Filament | existente — `tests/Kit/HubDeCardsTest.php` (`Livewire::test(HubDeAdministracao::class)`), `tests/Kit/DockDeAtalhosTest.php` (`dockNaPagina`, `opcoesDoSlideover`, `gravarAtalhos`, `atalhosGravados`); ⌘K pelas categorias do kit chamadas direto | elemento de tela/navegação; nenhuma dessas superfícies precisa de JS para provar presença | sessão, 2026-10-19 — convenção existente (molde citado), sem decisão material pendente |
 | G5 Chat por painel (render) | R8 | Pest feature HTTP | existente — `tests/Kit/AssistenteChatWidgetTest.php` CT-14 (`get` + `assertDontSeeLivewire` + `data-assistente-chat` fora de `<script>`) | o requisito afirma onde o chat é renderizado: HTML da resposta do painel | sessão, 2026-10-19 — convenção existente (molde citado), sem decisão material pendente |
-| G6 Ações do chat | R9, R10, R13 (CT-24, CT-26) | componente Livewire/Filament | existente — `tests/Kit/AssistenteChatWidgetTest.php` CT-16/CT-22/CT-24/CT-26 (`Livewire::test(AssistenteChatWidget::class)`, `Assistente::fake`, espião do canal `ai`) | as ações só são alcançáveis por `$wire.`; `Livewire::test` executa o mesmo hydrate + call. Painel corrente: em produção o `SetUpPanel` é middleware persistente do Livewire (`vendor/filament/filament/src/FilamentServiceProvider.php:packageBooted():128`), no teste é `Filament::setCurrentPanel()` | sessão, 2026-10-19 — convenção existente (molde citado), sem decisão material pendente |
+| G6 Ações do chat | R9, R10, R13 (CT-24, CT-26), R15 (CT-27) | componente Livewire/Filament | existente — `tests/Kit/AssistenteChatWidgetTest.php` CT-16/CT-22/CT-24/CT-26 (`Livewire::test(AssistenteChatWidget::class)`, `Assistente::fake`, espião do canal `ai`) | as ações só são alcançáveis por `$wire.`; `Livewire::test` executa o mesmo hydrate + call. Painel corrente: em produção o `SetUpPanel` é middleware persistente do Livewire (`vendor/filament/filament/src/FilamentServiceProvider.php:addPersistentMiddleware():128`), no teste é `Filament::setCurrentPanel()` | sessão, 2026-10-19 — convenção existente (molde citado), sem decisão material pendente |
 | G7 Widgets | R11 | Pest feature HTTP | existente — GET do dashboard com `assertSeeLivewire`/`assertDontSeeLivewire`, persona `master_global` (`.ai/rules/testes.md`, "Teste que monta Widget") | o requisito afirma exibição no dashboard e dado intacto | sessão, 2026-10-19 — convenção existente (molde citado), sem decisão material pendente |
-| G9 Chat com multi-organização | R13 (CT-23) | Pest feature HTTP + componente Livewire/Filament | existente — `tests/Tenancy/TelasSemDockNemChatTenancyTest.php` (`Tests\TenancyTestCase`); arquivo `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` | com organizações ligadas, o render no `/admin` e o recorte do histórico por dono são o observável de P-01/P-07; só a suíte Tenancy liga `permission.teams` | sessão, 2026-10-19 — indicada na triagem do ADV-05 |
+| G9 Chat com multi-organização | R13 (CT-23), R16 (CT-28) | Pest feature HTTP + componente Livewire/Filament | existente — `tests/Tenancy/TelasSemDockNemChatTenancyTest.php` (`Tests\TenancyTestCase`); arquivo `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` | com organizações ligadas, o render no `/admin` e o recorte do histórico por dono são o observável de P-01/P-07; só a suíte Tenancy liga `permission.teams` | sessão, 2026-10-19 — indicada na triagem do ADV-05 |
 | G8 Pilha de botões flutuantes | R12 | browser | existente — `tests/Browser/PilhaDeBotoesFlutuantesTest.php` (`MEDIR_PILHA_FLUTUANTE`, `abrirPainelDaPilha`); arquivo `tests/Browser/AgentesIaNoSettingsTest.php` (Q7 (era Q?3): helpers vão para `tests/Pest.php`) | posição, dimensão e sobreposição no tema de outro painel: só o navegador prova | sessão, 2026-10-19 — convenção existente (molde citado), sem decisão material pendente |
 
 Divergência declarada (Project Rule vence a skill): a skill chama a costura HTTP de "teste em `tests/Feature`"; neste projeto os testes do kit vivem em `tests/Kit` com o mesmo `TestCase` + `RefreshDatabase` (`tests/Pest.php`, bloco "Testes do KIT"), e é lá que ficam.
@@ -487,7 +489,7 @@ Nas linhas de `agentes_ia_paineis` do CT-08 o uso vai `true` no mesmo salvamento
 
 ---
 
-## Regra R6b — Com o uso desligado depois de uma tela do catálogo já aberta, a próxima ação nela responde 404 e nada é gravado
+## Regra R14 — Com o uso desligado depois de uma tela do catálogo já aberta, a próxima ação nela responde 404 e nada é gravado
 
 > `P-06` (Q6) · perfil **padrão** · técnica: **tabela estado × evento** (a célula E1 × O4, alcançada pela transição ligado → desligado entre o `mount` e a ação) + **rastreio de efeito** (não-efeito na tabela `agentes_ia`). Regra própria, e não linha da R6, porque a R6 já tem 4 mutantes e o teto do perfil padrão é 5
 
@@ -830,6 +832,79 @@ CT-23 vive em `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` (`Tests\Tenancy
 
 ---
 
+## Regra R15 — Todo update do chat responde 404 quando o uso é desligado no painel corrente depois do `mount`, sem servir histórico
+
+> `P-03` (achado RD-01 do `fw-revisor-diff`, step 9: simetria de guarda) · perfil **completo** · técnica: **tabela de decisão** (gatilho do update sem action × motivo do desligamento) + **rastreio de efeito** (o `warning`; o histórico não servido). "Toda ação" de P-03 inclui o round-trip do Livewire que não chama método: `$refresh` e a escrita de propriedade pública re-renderizam o componente, e a renderização é o que serve o histórico
+
+O `Dado` põe no mundo o dado que o caminho feliz serviria: a Ana tem a conversa "Plano de férias" no histórico, que a renderização com o uso ligado lista (linha de controle).
+
+```gherkin
+  Regra: com o uso desligado no painel corrente, todo update do chat aberto responde 404 e o componente não serve o histórico
+
+    Esquema do Cenário: [CT-27] o chat montado com o uso ligado recusa o update sem action depois que o uso é desligado
+      Dado o uso ligado com a lista ["app"], a Ana no /app com o chat montado e a conversa "Plano de férias" dela no histórico
+      E depois do mount <motivo>
+      Quando a Ana dispara <gatilho>
+      Então a resposta é <resposta>
+      E o histórico <histórico> na resposta
+      E o canal ai recebeu <warnings> warning de recusa
+
+      Exemplos:
+        | motivo                            | gatilho                         | resposta | histórico                           | warnings |
+        | o uso é desligado                 | o $refresh do componente        | 404      | não traz "Plano de férias"          | 1        |
+        | o uso é desligado                 | a escrita de mensagem = "x"     | 404      | não traz "Plano de férias"          | 1        |
+        | o /app sai da lista (["admin"])   | o $refresh do componente        | 404      | não traz "Plano de férias"          | 1        |
+        | o /app sai da lista (["admin"])   | a escrita de mensagem = "x"     | 404      | não traz "Plano de férias"          | 1        |
+        | nada muda (controle positivo)     | o $refresh do componente        | 200      | traz "Plano de férias"              | 0        |
+```
+
+`$refresh` por `Livewire::test(AssistenteChatWidget::class)->call('$refresh')` (ou `->refresh()`); a escrita por `->set('mensagem', 'x')`. O histórico é conferido no HTML da resposta do update (o `Testable` renova o HTML a cada round-trip) e, no controle, a mesma asserção acha o título — é o controle positivo do oráculo de ausência. Arquivo: `tests/Kit/AgentesIaNoSettingsChatTest.php` (lote B).
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M68 | a guarda só nas actions (`assertContexto()` chamado por `enviar`/`responder`/…), o `render` e o hydrate livres: o `$refresh` re-renderiza o histórico | CT-27 (linhas `$refresh` e escrita) | 404 e "Plano de férias" ausente; o mutante responde 200 com o histórico |
+| M69 | 403 no lugar de 404 no update (reaproveita o ramo do visitante) | CT-27 (linhas de recusa) | status `404`; o mutante entrega `403` |
+| M70 | a recusa do update sem trilha (o `warning` só existe no caminho das actions) | CT-27 (linhas de recusa) | 1 `warning` de recusa no canal `ai`; o mutante entrega 0 |
+| M71 | a guarda do update recusa sempre (hydrate aborta mesmo com o painel na lista) | CT-27 (linha de controle) | 200 com "Plano de férias" e 0 `warning`; o mutante responde 404 |
+
+---
+
+## Regra R16 — A execução do chat num painel sem organização na rota vai para o tenant `default` do ledger de IA
+
+> `P-08` (Q10; CR-01 do `/code-review`, step 9), `P-01` · perfil **completo** · técnica: **EP** (painel sem organização na rota × painel com organização na rota). Suíte Tenancy: só ela liga organizações
+
+O `Dado` põe no mundo a ambiguidade que o defeito explora: o Bruno pertence a uma organização (a Acme), então um resolvedor que olhe o usuário em vez da rota teria uma organização a devolver.
+
+```gherkin
+  Regra: a execução do chat é registrada no tenant da rota, e fora de rota de organização no tenant default do ledger
+
+    Esquema do Cenário: [CT-28] a execução gravada pelo chat leva o tenant da rota, ou o default fora de organização
+      Dado a instalação com organizações ligadas, a Acme e a Globex, e o uso ligado com a lista ["admin", "app"]
+      E o Bruno (admin) membro da Acme
+      Quando o Bruno envia "Qual é o prazo?" pelo chat em <onde>
+      Então o Assistente foi consultado com "Qual é o prazo?"
+      E a execução gravada em ai_runs tem tenant_id <tenant>
+
+      Exemplos:
+        | onde               | tenant                                                          | # partição                     |
+        | /admin             | igual a config('ai-tasks.default_tenant'), "default"            | painel sem organização na rota |
+        | /app/{acme}        | igual ao id da Acme                                             | controle: organização da rota  |
+```
+
+`responder` com `Assistente::fake([...])` e `GuardaPrompt::fake([...])`, como o CT-25 do `AssistenteChatWidgetTest`; no `/admin`, `Filament::setCurrentPanel('admin')` sem organização corrente; no `/app`, request real a `/app/{acme}` antes do componente (o `/app` só boota por request) e a Acme como organização corrente. A afirmação é sobre a linha nova de `ai_runs` (`tenant_id`, coluna `string` — `database/migrations/2026_08_12_164948_create_ai_runs_table.php`), não sobre o retorno do resolvedor. Arquivo: `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` (lote C).
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M72 | sem organização na rota, o tenant é resolvido do usuário (a primeira organização dele) | CT-28 (linha `/admin`) | `tenant_id` = `"default"`; o mutante grava o id da Acme |
+| M73 | sem organização na rota, o `tenant_id` fica nulo (ou a gravação da execução falha e some) | CT-28 (linha `/admin`) | linha em `ai_runs` com `tenant_id` = `"default"`; o mutante grava nulo ou não grava |
+| M74 | o resolvedor ignora a rota e devolve sempre o `default` | CT-28 (linha `/app/{acme}`) | `tenant_id` = id da Acme; o mutante grava `"default"` |
+
+---
+
 ## Checklist de Taxonomia
 
 | Item | Cenário que mata | Grupo |
@@ -849,13 +924,13 @@ CT-23 vive em `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` (`Tests\Tenancy
 | Unicode / limite de varchar | normalização do id de painel: CT-08, CT-16 e CT-19 com `App` (caixa) e `apps`/`infra-x` (sufixo) | G2, G5, G6 |
 | Unicidade + soft delete | não se aplica: a feature não cria entidade | — |
 | CRUD combinado | CT-14 (criar e editar com o uso ligado), CT-11 (os três verbos de leitura com o uso desligado), CT-22 (ações com o uso desligado) | G3 |
-| Mass assignment | não se aplica: a SettingsPage grava só o que o schema devolve — `vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:save():72` (`$this->form->getState()`) e `:save():82` (`$settings->fill($data)`); a feature não acrescenta model nem `$fillable`, e nenhum campo novo é de autorização | — |
+| Mass assignment | não se aplica: a SettingsPage grava só o que o schema devolve — `vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:save():62` (`$this->form->getState()`) e `:save():82` (`$settings->fill($data)`); a feature não acrescenta model nem `$fillable`, e nenhum campo novo é de autorização | — |
 | Upload | não se aplica: sem upload | — |
 | Precisão monetária | não se aplica: sem valor monetário | — |
-| **Superfície Livewire** (método público, prop pública) | ações do chat (5 métodos) com o uso desligado: CT-18; `$mensagemPendente` por `set` com o uso desligado: CT-18 linha `responder`; `$data` da SettingsPage com valor fora do domínio e tipo errado: CT-08, e sem a aba carregada: CT-25; `mount`/hydrate das Pages do catálogo: CT-11 (mount), CT-22 (hydrate nas três Pages); `$aberto`, `$indisponivel`, `$recusa`: não se aplica — só exibição, nada decide por eles (`02`) | G6, G2, G3 |
+| **Superfície Livewire** (método público, prop pública) | ações do chat (5 métodos) com o uso desligado: CT-18; update sem action (`$refresh`, `set('mensagem')`) com o uso desligado: CT-27; `$mensagemPendente` por `set` com o uso desligado: CT-18 linha `responder`; `$data` da SettingsPage com valor fora do domínio e tipo errado: CT-08, e sem a aba carregada: CT-25; `mount`/hydrate das Pages do catálogo: CT-11 (mount), CT-22 (hydrate nas três Pages); `$aberto`, `$indisponivel`, `$recusa`: não se aplica — só exibição, nada decide por eles (`02`) | G6, G2, G3 |
 | **Estado do framework usado sem validar** | não se aplica: a feature não consome `$filters`, `$tableFilters`, `$tableSearch` nem `$tableSortColumn` (`02`, "O framework") | — |
 | **IDOR por entidade** (por tabela persistida) | `settings` (2 propriedades): não se aplica — configuração da instalação, sem dono; `agentes_ia`: CT-11 / CT-13 / CT-22; `agent_conversations`/`agent_conversation_messages`: CT-18 (nada gravado), CT-23/CT-24 (histórico só do dono) e `AssistenteChatWidgetTest` CT-22 (posse) | G3, G6, G9 |
-| **Escopo com discriminante nulo** (fecha ou abre?) | fecha: CT-03 (config nula), CT-19 (painel corrente nulo), CT-23 (organização corrente nula no `/admin`) | G1, G6, G9 |
+| **Escopo com discriminante nulo** (fecha ou abre?) | fecha: CT-03 (config nula), CT-19 (painel corrente nulo), CT-23 (organização corrente nula no `/admin`); organização nula no ledger vai ao `default`, nunca à do usuário nem a nulo: CT-28 | G1, G6, G9 |
 | **Saída do estado de erro** (4xx tem destino) | CT-12 (depois do 404 do catálogo, o `/admin` abre); 404 do chat: o botão some no próximo carregamento — CT-16 linhas "desligado"; e a conversa volta ao religar — CT-26 | G3, G5, G6 |
 
 ## Índice de Cenários
@@ -883,11 +958,13 @@ CT-23 vive em `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` (`Tests\Tenancy
 | CT-19 | cada forma de ficar fora da lista recusa; na lista, responde em qualquer painel | R10 | EP + rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/AgentesIaNoSettingsChatTest.php` | M44, M45, M46, M47, M57 |
 | CT-20 | os widgets somem e voltam, com os agentes intactos | R11 | EP + 2-switch | G7 | Pest feature HTTP | `tests/Kit/AgentesIaNoSettingsChatTest.php` | M48, M50 |
 | CT-21 | as trilhas de IA do `/infra` continuam com o uso desligado | R11 | EP | G7 | Pest feature HTTP | `tests/Kit/AgentesIaNoSettingsChatTest.php` | M49 |
-| CT-22 | a tela do catálogo aberta recusa a ação depois que o uso é desligado | R6b | estado × evento + rastreio de efeito | G3 | componente Livewire/Filament | `tests/Kit/AgentesIaNoSettingsTest.php` | M51, M52, M53, M54, M59 |
+| CT-22 | a tela do catálogo aberta recusa a ação depois que o uso é desligado | R14 | estado × evento + rastreio de efeito | G3 | componente Livewire/Filament | `tests/Kit/AgentesIaNoSettingsTest.php` | M51, M52, M53, M54, M59 |
 | CT-23 | com organizações, o chat no `/admin` abre e lista só as conversas de quem está nele | R13 | EP (painel × dono) | G9 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` | M66, M67 |
 | CT-24 | a conversa criada no `/app` aparece no chat do `/admin` da mesma pessoa | R13 | EP (painel × dono) | G6 | componente Livewire/Filament | `tests/Kit/AgentesIaNoSettingsChatTest.php` | M65 |
 | CT-25 | salvar outro campo da tela não apaga o uso nem a lista | R4 | EP | G2 | componente Livewire/Filament | `tests/Kit/AgentesIaNoSettingsTest.php` | M61 |
 | CT-26 | o `/app` sai da lista e volta, e a conversa volta com as mensagens | R13 | 2-switch | G6 | componente Livewire/Filament | `tests/Kit/AgentesIaNoSettingsChatTest.php` | M64 |
+| CT-27 | o chat montado recusa o update sem action depois que o uso é desligado | R15 | tabela de decisão + rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/AgentesIaNoSettingsChatTest.php` | M68, M69, M70, M71 |
+| CT-28 | a execução gravada pelo chat leva o tenant da rota, ou o `default` fora de organização | R16 | EP | G9 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` | M72, M73, M74 |
 | CT-B01 | o chat entra na pilha no painel que nunca o teve | R12 | EP | G8 | browser | `tests/Browser/AgentesIaNoSettingsTest.php` | ver `05` |
 
 ## Tabela de cogitado e cortado
@@ -896,7 +973,7 @@ CT-23 vive em `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` (`Tests\Tenancy
 |---|---|
 | chat no `/app` com organização (suíte Tenancy) | a decisão é pelo id do painel, igual com e sem organização; o lote T0 já liga `['app']` no `TelasSemDockNemChatTenancyTest` CT-10, que renderiza o chat no `/app/{organização}`. A suíte Tenancy desta feature cobre o painel que muda (`/admin`, CT-23) |
 | gravado pela tela vale no request seguinte (salvar → alinhar → GET) | mata o mesmo conjunto que CT-07 (gravação) + CT-04 (banco → config → efeito) |
-| ida e volta do chat no navegador no `/admin` (enviar → resposta) | o update Livewire recebe o painel pelo `SetUpPanel` persistente (`vendor/filament/filament/src/FilamentServiceProvider.php:packageBooted():128`), e CT-18/CT-19 já exercitam as ações com o painel corrente; o browser não mataria mutante novo |
+| ida e volta do chat no navegador no `/admin` (enviar → resposta) | o update Livewire recebe o painel pelo `SetUpPanel` persistente (`vendor/filament/filament/src/FilamentServiceProvider.php:addPersistentMiddleware():128`), e CT-18/CT-19 já exercitam as ações com o painel corrente; o browser não mataria mutante novo |
 | `KIT_AGENTES_IA=talvez` no ambiente | o `00` fixa só o default (RQ-07); valor ilegível não tem cláusula. A semente passa pelo settings tipado (`bool`) |
 | `warning` no canal `ai` na recusa do catálogo | log sem cláusula no `00` (Proibição 12) |
 | widget do catálogo montado direto por Livewire com o uso desligado, ou polling depois de desligar | RQ-09 fala de exibição no dashboard (CT-20); montar o widget fora do dashboard não tem cláusula |

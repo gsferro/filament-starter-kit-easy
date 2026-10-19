@@ -53,10 +53,10 @@ desenho que se pede aqui: interruptor e lista de painéis no settings, decididos
 
 ### `app/Settings/ConfiguracoesDoKit.php`
 
-- Contrato de propriedade nova: três lugares — a propriedade, a linha em `mapaDeConfiguracao()` e o `add()` numa migration de settings nova (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao():443`; o docblock da classe, "Ao acrescentar uma propriedade")
-- Precedente direto da lista de painéis "vazio = nenhum": `app/Settings/ConfiguracoesDoKit.php:$dock_paineis:240`, mapeada em `app/Settings/ConfiguracoesDoKit.php:'dock_paineis':511`
+- Contrato de propriedade nova: três lugares — a propriedade, a linha em `mapaDeConfiguracao()` e o `add()` numa migration de settings nova (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao():460`; o docblock da classe, "Ao acrescentar uma propriedade")
+- Precedente direto da lista de painéis "vazio = nenhum": `app/Settings/ConfiguracoesDoKit.php:$dock_paineis:240`, mapeada em `app/Settings/ConfiguracoesDoKit.php:'dock_paineis':528`
 - Precedente do par interruptor + lista: `app/Settings/ConfiguracoesDoKit.php:$dashboard_dinamico_habilitado:228` e `:$dashboard_dinamico_paineis:231`
-- `aplicarNaConfig()` sobrepõe a config com o banco uma vez por boot (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig():605`): quem lê `config()` por request recebe o banco sem consulta extra (`.ai/rules/settings.md`)
+- `aplicarNaConfig()` sobrepõe a config com o banco uma vez por boot (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig():629`): quem lê `config()` por request recebe o banco sem consulta extra (`.ai/rules/settings.md`)
 
 ### `database/settings/`
 
@@ -90,23 +90,23 @@ desenho que se pede aqui: interruptor e lista de painéis no settings, decididos
 
 ### O chat do Assistente
 
-- Registrado só no `/app`, como render hook `BODY_END` do painel (`app/Providers/Filament/AppPanelProvider.php:BODY_END:166`), que não monta o componente em tela de autenticação (`app/Providers/Filament/AppPanelProvider.php:corrente():169`)
-- Hooks globais do kit, sem `scopes`, valem para todo painel: `app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraBotaoVoltarAoTopo():160` (e `:configuraVersaoNoRodape():132`), chamados de `app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraFilamentGlobal():63`
+- Registrado só no `/app` até esta feature, como render hook `BODY_END` do painel que não montava o componente em tela de autenticação — removido no passo 7 (o estado anterior está em `git show main:app/Providers/Filament/AppPanelProvider.php`) *(alterado em 2026-10-19: reconciliação)*
+- Hooks globais do kit, sem `scopes`, valem para todo painel: `app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraBotaoVoltarAoTopo():163` (e `:configuraVersaoNoRodape():135`), chamados de `app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraFilamentGlobal():65`
 - A CSS do chat já é asset global do pacote `kit` (`app/Providers/KitServiceProvider.php:'kit-assistente-chat':755`), então o componente já tem estilo em qualquer painel
-- Ponto único de autorização das actions: `app/Livewire/AssistenteChatWidget.php:assertContexto():219` — 403 sem usuário, 404 em conversa alheia, com `warning` no canal `ai`
+- Ponto único de autorização das actions: `app/Livewire/AssistenteChatWidget.php:assertContexto():226` — 403 sem usuário, 404 em conversa alheia, com `warning` no canal `ai`
 - `Filament::getCurrentPanel()` está disponível no update Livewire: `SetUpPanel` é middleware persistente (`vendor/filament/filament/src/FilamentServiceProvider.php:addPersistentMiddleware():128`)
-- A pilha de botões flutuantes descobre o chat pelo DOM para a faixa de colisão com o dock (`resources/views/filament/voltar-ao-topo.blade.php:temChat:164`), **mas o recuo do botão "voltar ao topo" é decidido pelo id do painel**: `bottom-24` só no `/app`, `bottom-6` nos outros (`resources/views/filament/voltar-ao-topo.blade.php:$recuoDoBotao:97`). Com o chat no `/admin` ou no `/infra`, os dois botões se sobreporiam; com o chat desligado no `/app`, sobra um recuo de 4,5 rem sem nada embaixo. O recuo precisa seguir a **mesma condição** que renderiza o chat *(alterado em 2026-10-19: revisão profunda, achado do Codex)*
+- A pilha de botões flutuantes descobre o chat pelo DOM para a faixa de colisão com o dock (`resources/views/filament/voltar-ao-topo.blade.php:temChat:167`), **mas o recuo do botão "voltar ao topo" é decidido pelo id do painel**: `bottom-24` só no `/app`, `bottom-6` nos outros (`resources/views/filament/voltar-ao-topo.blade.php:$recuoDoBotao:100`). Com o chat no `/admin` ou no `/infra`, os dois botões se sobreporiam; com o chat desligado no `/app`, sobra um recuo de 4,5 rem sem nada embaixo. O recuo precisa seguir a **mesma condição** que renderiza o chat *(alterado em 2026-10-19: revisão profunda, achado do Codex)*
 
 ### Testes que dependem do estado atual (lote T0)
 
 Com o uso nascendo desligado, estes casos passam a precisar ligá-lo no arranjo:
 
-- `tests/Kit/AgenteIaResourceTest.php:'ViewAny:AgenteIa':119` e os demais do arquivo (`CreateAgenteIa` por `Livewire::test`)
-- `tests/Kit/PaginasInfraTest.php:'agentes de IA':108`; `tests/Kit/PermissoesDeResourcesTest.php:'admin: AgenteIa':66`
-- `tests/Kit/CarregamentoContinuoTest.php:'/admin/agentes-ia | master_global | rolagem | Scroll | kit':132`; `tests/Kit/VisoesDeTabelaTest.php:'/admin/agentes-ia':122` (e as linhas `/admin/agentes-ia` do dataset)
-- `tests/Browser/TelasDoKitTest.php:'/admin/agentes-ia/create':44` e `:47` (o lote de `telasDoKit()` e o formulário do agente)
-- Chat: `tests/Kit/TelasSemDockNemChatTest.php:'controle app':90` (CT-04 afirma chat só no `/app`), `tests/Tenancy/TelasSemDockNemChatTenancyTest.php:'[CT-10]':7`, `tests/Kit/AssistenteChatWidgetTest.php:'[CT-15]':67` e irmãos (CT-16, CT-22, CT-24, CT-25, CT-26), `tests/Browser/AssistenteChatEstiloTest.php:'[CT-B09]':70` e `'[CT-B10]':93`, `tests/Browser/PilhaDeBotoesFlutuantesTest.php:'[CT-B01]':157` e irmãos, `tests/Browser/BoasVindasTest.php` (só cita o hook em comentário)
-- Helpers-modelo em `tests/Pest.php:ligarDock():603` e `tests/Pest.php:ligarDashboardDinamico():589`
+- `tests/Kit/AgenteIaResourceTest.php:'ViewAny:AgenteIa':123` e os demais do arquivo (`CreateAgenteIa` por `Livewire::test`)
+- `tests/Kit/PaginasInfraTest.php:'agentes de IA':110`; `tests/Kit/PermissoesDeResourcesTest.php:'admin: AgenteIa':68`
+- `tests/Kit/CarregamentoContinuoTest.php:'/admin/agentes-ia | master_global | rolagem | Scroll | kit':134`; `tests/Kit/VisoesDeTabelaTest.php:'/admin/agentes-ia':124` (e as linhas `/admin/agentes-ia` do dataset)
+- `tests/Browser/TelasDoKitTest.php:'/admin/agentes-ia/create':46` e `:53` (o lote de `telasDoKit()` e o formulário do agente)
+- Chat: `tests/Kit/TelasSemDockNemChatTest.php:'controle app':92` (CT-04 afirma chat só no `/app`), `tests/Tenancy/TelasSemDockNemChatTenancyTest.php:'[CT-10]':7`, `tests/Kit/AssistenteChatWidgetTest.php:'[CT-15]':73` e irmãos (CT-16, CT-22, CT-24, CT-25, CT-26), `tests/Browser/AssistenteChatEstiloTest.php:'[CT-B09]':71` e `'[CT-B10]':94`, `tests/Browser/PilhaDeBotoesFlutuantesTest.php:'[CT-B01]':85` e irmãos, `tests/Browser/BoasVindasTest.php` (só cita o hook em comentário)
+- Helpers-modelo em `tests/Pest.php:ligarDock():605` e `tests/Pest.php:ligarDashboardDinamico():591`
 
 ### `kit:update`
 
@@ -283,7 +283,7 @@ mudam.
 - Resource: `public static function shouldRegisterNavigation(): bool { return AgentesDeIa::habilitado() && parent::shouldRegisterNavigation(); }` e `public static function canAccess(): bool { return AgentesDeIa::habilitado() && parent::canAccess(); }` — o `parent::` mantém a policy (sem ele, `CanAuthorizeResourceAccess` deixaria de consultar `ViewAny`)
 - Trait: `public static function authorizeResourceAccess(): void { if (! AgentesDeIa::habilitado()) { Log::channel('ai')->warning('[ExigeAgentesDeIaLigados@authorizeResourceAccess] Catálogo recusado com o uso de agentes desligado | pagina: '.static::class, ['user_id' => auth()->id(), 'pagina' => static::class, 'motivo' => 'agentes_ia_desligado']); abort(404); } parent::authorizeResourceAccess(); }` — `use ExigeAgentesDeIaLigados;` em `ListAgentesIa`, `CreateAgenteIa` e `EditAgenteIa`
 - Uma frase no docblock existente do Resource: "ligado pelo settings; desligado some do menu e responde 404 (wiki `agentes-ia-no-settings`)" *(alterado em 2026-10-19: Ponytail)*
-- O trait sobrescreve também `authorizeAccess()` (`static::authorizeResourceAccess()` antes do `parent::`): o `mount()` de `CreateRecord`/`EditRecord` confere `canCreate()`/`canEdit()` (403) antes de o Livewire rodar o hook do trait, e sem isto quem não tem a permissão recebia 403 com o uso desligado; `ListRecords` declara o método vazio, então o `parent::` existe nas três *(alterado em 2026-10-19: causa (b) do lote A, CT-11)*
+- O trait sobrescreve também `authorizeAccess()` (só o interruptor, por `exigirUsoDeAgentesLigado()`, antes do `parent::`; a policy do índice continua com o hook do vendor — CR-02): o `mount()` de `CreateRecord`/`EditRecord` confere `canCreate()`/`canEdit()` (403) antes de o Livewire rodar o hook do trait, e sem isto quem não tem a permissão recebia 403 com o uso desligado; `ListRecords` declara o método vazio, então o `parent::` existe nas três *(alterado em 2026-10-19: causa (b) do lote A, CT-11)*
 - O trait vale também no `hydrate` de toda Page do Resource (`CanAuthorizeResourceAccess::hydrateCanAuthorizeResourceAccess()`): salvar numa tela já aberta depois de desligar responde 404 e nada grava (P-06) *(alterado em 2026-10-19: Q6 do `04`)*
 - **Atende**: RQ-04, RQ-05, RQ-06, P-04, P-06
 - **Logs**: o `warning` acima, em `ai`, só na recusa (sem log por abertura normal)
@@ -305,6 +305,7 @@ mudam.
 - `ConfiguraFilamentGlobal::configuraChatDoAssistente()`: `FilamentView::registerRenderHook(PanelsRenderHook::BODY_END, fn (): string => AgentesDeIa::chatNaTela() ? Blade::render('@livewire(\'assistente-chat-widget\')') : '')`, chamado em `configuraFilamentGlobal()` ao lado de `configuraBotaoVoltarAoTopo()`; docblock explica o "sem `scopes`" e a decisão por request
 - `resources/views/filament/voltar-ao-topo.blade.php`: `$recuoDoBotao = AgentesDeIa::chatNaTela() ? 'bottom-24' : 'bottom-6'` no lugar da comparação com `'app'` — o recuo existe por causa do chat, então segue o chat (comentário da blade e docblock de `VoltarAoTopoTest` atualizados) *(alterado em 2026-10-19: revisão profunda)*
 - `AppPanelProvider`: remover o `->renderHook(PanelsRenderHook::BODY_END, ...)` do chat e o comentário; deixar uma linha apontando para o hook global
+- `AssistenteChatWidget`: guarda extraída para `exigirUsoNoPainel(User $user)`, chamada por `assertContexto()` (toda action) e por um `hydrate()` novo (todo update do componente já montado, inclusive `$refresh` — RD-01, CT-27) *(alterado em 2026-10-19: step 9)*
 - `AssistenteChatWidget::assertContexto()`: depois do `abort_unless($user instanceof User, 403)`, `if (! AgentesDeIa::assistenteNoPainel(Filament::getCurrentPanel())) { Log::channel('ai')->warning('[AssistenteChatWidget@assertContexto] Chat recusado com o uso de agentes desligado no painel | painel: '.(Filament::getCurrentPanel()?->getId() ?? 'nenhum'), ['user_id' => $user->id, 'painel' => Filament::getCurrentPanel()?->getId(), 'motivo' => 'agentes_ia_desligado']); abort(404); }` — o docblock do método ganha a terceira condição
 - O docblock da classe ("embarcada em todas as telas do painel via render hook ... registrado no PanelProvider") passa a dizer: hook global, painéis da lista do settings
 - **Atende**: RQ-02, RQ-08, P-01, P-03
@@ -316,8 +317,8 @@ mudam.
 
 - **Path**: `tests/Pest.php` (helper `ligarAgentesDeIa(bool $ligado = true, array $paineis = []): void` → `config()->set('kit.agentes_ia.habilitado', $ligado); config()->set('kit.agentes_ia.paineis', $paineis);`, ao lado de `ligarDock()`), e os arquivos de `### Testes que dependem do estado atual`
 - Catálogo: `ligarAgentesDeIa()` no `beforeEach` ou no arranjo de `AgenteIaResourceTest`, `PaginasInfraTest` (bloco do admin), `PermissoesDeResourcesTest`, `CarregamentoContinuoTest`, `VisoesDeTabelaTest`, `TelasDoKitTest` (lote `telasDoKit()` do admin e o formulário do agente)
-- Contagem fixa: `tests/Kit/KitInfoTest.php:toHaveCount():191` passa a 71, com a linha de histórico `69 → 71 na feature agentes-ia-no-settings` *(alterado em 2026-10-19: revisão profunda, achado do Codex)*
-- Recuo do "voltar ao topo": `tests/Kit/VoltarAoTopoTest.php:'levanta o botão no /app':64` e `:'mantém o botão na posição padrão':70` ligam o chat no `/app` (`ligarAgentesDeIa(true, ['app'])`) e o docblock deixa de dizer "o chat só está no /app"; `tests/Kit/AssistenteChatCssTest.php:'ana /app':141` idem, e o CT-01 do mesmo arquivo (GET do `/app` esperando a raiz do chat) *(alterado em 2026-10-19: revisão profunda; CT-01 achado pelo lote T0 vermelho)*
+- Contagem fixa: `tests/Kit/KitInfoTest.php:toHaveCount():192` passa a 71, com a linha de histórico `69 → 71 na feature agentes-ia-no-settings` *(alterado em 2026-10-19: revisão profunda, achado do Codex)*
+- Recuo do "voltar ao topo": `tests/Kit/VoltarAoTopoTest.php:'levanta o botão no /app':65` e `:'mantém o botão na posição padrão':73` ligam o chat no `/app` (`ligarAgentesDeIa(true, ['app'])`) e o docblock deixa de dizer "o chat só está no /app"; `tests/Kit/AssistenteChatCssTest.php:'ana /app':143` idem, e o CT-01 do mesmo arquivo (GET do `/app` esperando a raiz do chat) *(alterado em 2026-10-19: revisão profunda; CT-01 achado pelo lote T0 vermelho)*
 - Chat: `ligarAgentesDeIa(true, ['app'])` em `TelasSemDockNemChatTest` CT-04/CT-09 (CT-11 só mede o dock, sem mudança), `TelasSemDockNemChatTenancyTest` CT-10, `AssistenteChatWidgetTest` nos casos que chamam action (CT-16, CT-22, CT-24, CT-25, CT-26; CT-15 só renderiza e não passa por `assertContexto()`), com `Filament::setCurrentPanel('app')` onde o componente é testado direto, `AssistenteChatEstiloTest`, `PilhaDeBotoesFlutuantesTest` (o helper `abrirPainelDaPilha()` ou o arranjo); `BoasVindasTest` só cita o hook do `AppPanelProvider` em comentário, que é corrigido *(alterado em 2026-10-19: revisão profunda)*
 - `phpunit.xml`: `<env name="KIT_AGENTES_IA" value="false" force="true"/>` e `<env name="KIT_AGENTES_IA_PAINEIS" value="" force="true"/>` no bloco das chaves `KIT_*` (D10)
 - `MEDIR_PILHA_FLUTUANTE` e `abrirPainelDaPilha()` movidos de `tests/Browser/PilhaDeBotoesFlutuantesTest.php` para `tests/Pest.php` (D11), sem clone

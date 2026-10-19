@@ -41,7 +41,7 @@ sistema: são instruções à sessão, cumpridas e registradas em `03-progresso.
 ## Perguntas ao Solicitante
 
 <!-- Raia requisito: só o solicitante responde. A sessão seguiu a recomendação de cada uma como premissa
-     (P-01 a P-04, P-06 para a Q6 e P-07 para a Q9), porque a execução foi autônoma; a resposta entra como Adendo e, se divergir, a premissa
+     (P-01 a P-04, P-06 para a Q6, P-07 para a Q9 e P-08 para a Q10), porque a execução foi autônoma; a resposta entra como Adendo e, se divergir, a premissa
      é revogada e o código ajustado. -->
 
 | ID | Pergunta | Afeta | Recomendação | Estado |
@@ -53,6 +53,7 @@ sistema: são instruções à sessão, cumpridas e registradas em `03-progresso.
 | Q6 | Uma tela do catálogo já aberta (criar ou editar um agente) quando a instalação desliga o uso: a próxima ação nela (salvar) é recusada com 404 e nada é gravado, ou ainda grava? (devolvida pela derivação do `04`, era Q?2) | RQ-05 | Recusa com 404 e nada gravado — falha fechado, a mesma regra de P-03 para o chat | aberta |
 | Q8 | Os rótulos e textos de ajuda dos dois campos novos ("Usar agentes de IA", "Painéis onde o chat do Assistente aparece") só existem no plano. O solicitante quer decidir o texto? (era Q?4 do `04`) | RQ-01, RQ-02 | Não — aceitar o texto do plano; nenhum cenário depende dele. Sem bloqueio | aberta |
 | Q9 | Com o chat em mais de um painel, as conversas de uma pessoa são as mesmas em todos os painéis da lista (o histórico segue a pessoa), ou separadas por painel? (ADV-22 da revisão adversarial) | P-01 | As mesmas: a conversa é da pessoa, não do painel — é o que o chat já faz (posse pelo participante), e separar por painel criaria histórico que some ao trocar de painel | aberta |
+| Q10 | Com o chat no `/admin` ou no `/infra` (painéis sem organização na rota), a execução e o orçamento de IA vão para o tenant `default` do ledger (a instalação), como já acontece com job, comando e seeder — ou o pedido quer atribuí-los a alguma organização da pessoa? (CR-01 da revisão do diff) | P-01 | O tenant `default`: fora de uma rota de organização não há organização a escolher, e é o desenho já escrito do ledger; quem precisa de orçamento por organização usa o chat dentro do `/app/{organização}` | aberta |
 
 ## Premissas
 
@@ -67,6 +68,7 @@ sistema: são instruções à sessão, cumpridas e registradas em `03-progresso.
 | P-05 | O interruptor e a lista nascem no `.env` (`KIT_AGENTES_IA`, `KIT_AGENTES_IA_PAINEIS`), semeiam o banco na migration de settings e, a partir daí, o banco vence — o mesmo regime do dock e do dashboard dinâmico | step 4 — leitura de "como é feito hoje com outros pacotes no settings" (RQ-03) | 2026-10-19 | RQ-03, RQ-07 | vigente |
 | P-06 | Com o uso desligado depois de uma tela do catálogo (criar ou editar) já estar aberta, a próxima ação nela responde 404 e nada é gravado | step 7 — Q6 devolvida pela derivação do `04`, premissa de comportamento, falha fechado | 2026-10-19 | RQ-05 | vigente |
 | P-07 | As conversas do chat são da pessoa: o histórico dela aparece no chat de qualquer painel da lista, e só o dela | step 7 — ADV-22 da revisão adversarial (Q9), premissa de comportamento | 2026-10-19 | P-01 | vigente |
+| P-08 | Com o chat num painel sem organização na rota (`/admin`, `/infra`), a execução é registrada e o orçamento é conferido no tenant `default` do ledger de IA (a instalação), nunca numa organização da pessoa | step 9 — CR-01 (`/code-review`), premissa de comportamento (Q10) | 2026-10-19 | P-01 | vigente |
 
 ## Fora de Escopo (declarado)
 
