@@ -57,6 +57,7 @@ function abrirPainelDoEstiloDoChat(string $tema): object
     test()->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     test()->actingAs(usuarioDoKit('panel_user', 'ana@example.com'));
     ligarDock([]);
+    ligarAgentesDeIa(true, ['app']);
     test()->get('/app')->assertOk();
     $pagina = $tema === 'escuro' ? visit('/app')->on()->desktop()->inDarkMode() : visit('/app')->on()->desktop()->inLightMode();
     $pagina->resize(1280, 800)->assertPathIs('/app')

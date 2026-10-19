@@ -19,6 +19,8 @@ it('[CT-04] a tela entrega somente os componentes permitidos com sessão', funct
     $sentinela = 'Sentinela da pilha 7f3c';
     conversaPara($mestre, $sentinela);
     ligarDock(['admin', 'app', 'infra']);
+    // O chat só está no /app porque a lista do settings diz isso (feature `agentes-ia-no-settings`).
+    ligarAgentesDeIa(true, ['app']);
     $this->actingAs($mestre);
     $url = match ($tela) {
         'comum'    => '/'.$painel,
@@ -95,6 +97,7 @@ it('[CT-09] destravar devolve dock e chat ao app', function (): void {
     $mestre = usuarioDoKit('master_global');
     conversaPara($mestre, 'Sentinela da pilha 7f3c');
     ligarDock(['app']);
+    ligarAgentesDeIa(true, ['app']);
     $this->actingAs($mestre)->get('/app')->assertOk();
     $this->post(route('lockscreen.app.lock-session'))->assertRedirect();
     app()->forgetInstance(DockContext::class);

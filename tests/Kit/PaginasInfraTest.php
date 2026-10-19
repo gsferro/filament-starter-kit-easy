@@ -17,6 +17,8 @@ use Spatie\Permission\Models\Role;
  */
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+    // O catálogo `/admin/agentes-ia` só existe com o uso de agentes ligado (feature `agentes-ia-no-settings`).
+    ligarAgentesDeIa();
 
     $this->master = User::create([
         'name'     => 'Master',

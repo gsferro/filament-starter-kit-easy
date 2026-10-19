@@ -8,7 +8,7 @@ Vinte diagramas Mermaid mostram como o kit funciona hoje: arquitetura, acesso po
 
 ## DG-01 — Arquitetura em camadas
 
-Do navegador aos três painéis Filament (`app/Providers/Filament/AppPanelProvider.php:id:81`, `app/Providers/Filament/AdminPanelProvider.php:id:70`, `app/Providers/Filament/InfraPanelProvider.php:id:91`), pelo acesso por papel, até banco, fila, cache e os serviços opcionais. É o mesmo bloco do README — a fonte é única.
+Do navegador aos três painéis Filament (`app/Providers/Filament/AppPanelProvider.php:id:79`, `app/Providers/Filament/AdminPanelProvider.php:id:70`, `app/Providers/Filament/InfraPanelProvider.php:id:91`), pelo acesso por papel, até banco, fila, cache e os serviços opcionais. É o mesmo bloco do README — a fonte é única.
 
 ```mermaid
 flowchart TD
@@ -28,7 +28,7 @@ accDescr: Do navegador aos três painéis Filament, pelo acesso por papel, até 
   painel_admin --> acesso_por_papel
   painel_infra --> acesso_por_papel
   acesso_por_papel --> configuracoes[Configurações]
-  acesso_por_papel --> agentes_ia[Agentes de IA]
+  acesso_por_papel --> agentes_ia["Agentes de IA (KIT_AGENTES_IA)"]
   subgraph camada_infra ["Infraestrutura"]
     banco[("Banco de dados")]
     fila[Fila]

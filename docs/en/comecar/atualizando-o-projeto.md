@@ -139,6 +139,16 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
 
+**In v0.51.0 there is a settings migration, and the Assistant chat starts off.** Run
+`php artisan migrate` after `kit:update`: it seeds the *Usar agentes de IA* switch and the *Painéis
+onde o chat do Assistente aparece* list from `KIT_AGENTES_IA` and `KIT_AGENTES_IA_PAINEIS` — **off and
+empty** by default. If you want the `/admin/agentes-ia` catalog and the `/app` chat as before, turn
+both on in the Aplicação tab of `/admin/configuracoes-da-aplicacao` (or set `KIT_AGENTES_IA=true` and
+`KIT_AGENTES_IA_PAINEIS=app` in `.env` **before** running the migration). While usage is off, the
+catalog leaves the menu and answers 404, the *Agentes de IA* widget group leaves the `/admin`
+dashboard and the chat appears in no panel; nothing is deleted. See
+[Kit settings](../../recursos/configuracoes-do-kit/).
+
 ### A new screen: reseed both seeders
 
 The "next steps" the command prints mention `filament:assets` and the tests, **not the seeders** —

@@ -138,6 +138,16 @@ que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
 
+**Na v0.51.0 há uma migration de settings e o chat do Assistente nasce desligado.** Rode
+`php artisan migrate` depois do `kit:update`: ela semeia o interruptor *Usar agentes de IA* e a lista
+*Painéis onde o chat do Assistente aparece* a partir de `KIT_AGENTES_IA` e `KIT_AGENTES_IA_PAINEIS` —
+**desligado e vazia** por padrão. Quem quer o catálogo `/admin/agentes-ia` e o chat do `/app` como
+antes liga os dois na aba Aplicação de `/admin/configuracoes-da-aplicacao` (ou põe `KIT_AGENTES_IA=true`
+e `KIT_AGENTES_IA_PAINEIS=app` no `.env` **antes** de rodar a migration). Enquanto o uso está
+desligado, o catálogo some do menu e responde 404, o grupo de widgets *Agentes de IA* some do
+dashboard do `/admin` e o chat não aparece em painel nenhum; nada é apagado. Ver
+[Configurações do kit](../../recursos/configuracoes-do-kit/).
+
 ### Tela nova: ressemeie os dois seeders
 
 Os "próximos passos" que o comando imprime citam `filament:assets` e os testes, **não os seeders** —

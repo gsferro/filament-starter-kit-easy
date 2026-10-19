@@ -187,8 +187,9 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * 63 → 66 na feature `dock-de-acoes-rapidas`: `dock_paineis`, `dock_layout` e `dock_estilo`.
      * 66 → 69 na feature `estudo-de-pacotes-rodada-3`: `tabela_carregamento`, `visoes_de_tabela` e
      * `visoes_de_tabela_compartilhadas`.
+     * 69 → 71 na feature `agentes-ia-no-settings`: `agentes_ia_habilitado` e `agentes_ia_paineis`.
      */
-    expect($propriedades)->toHaveCount(69);
+    expect($propriedades)->toHaveCount(71);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));

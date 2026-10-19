@@ -2,6 +2,7 @@
 
 namespace App\Providers\Concerns;
 
+use App\Support\AgentesDeIa;
 use App\Support\CarregamentoDaTabela;
 use App\Support\Paineis;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
@@ -22,6 +23,7 @@ use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Blade;
 
 /**
  * Configuração GLOBAL do Filament — vale para os três painéis (app, admin, infra).
@@ -97,6 +99,7 @@ trait ConfiguraFilamentGlobal
         $this->configuraPanelSwitch();
         $this->configuraSeletorDeIdioma();
         $this->configuraBotaoVoltarAoTopo();
+        $this->configuraChatDoAssistente();
         $this->configuraVersaoNoRodape();
     }
 
@@ -162,6 +165,27 @@ trait ConfiguraFilamentGlobal
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,
             fn (): View => view('filament.voltar-ao-topo'),
+        );
+    }
+
+    /**
+     * O chat do Assistente, nos painéis que a instalação escolher.
+     *
+     * Mesma técnica e mesma justificativa de `configuraBotaoVoltarAoTopo()`: **sem `scopes:`**, o
+     * hook vale para `app`, `admin`, `infra` e qualquer painel novo. Até a wiki
+     * `agentes-ia-no-settings` o hook vivia só no `AppPanelProvider`; três cópias, uma por
+     * provider, divergiriam. Quem decide, por REQUEST, é `App\Support\AgentesDeIa::chatNaTela()`:
+     * o interruptor e a lista de painéis da tela de configurações (config já sobreposta pelo
+     * banco no boot — zero consulta extra) e a tela de autenticação (`App\Support\TelaDeAutenticacao`),
+     * onde o chat nunca é montado: numa sessão bloqueada, o slide-over mostraria os títulos das
+     * conversas. A folha do chat é asset global do pacote `kit` (`KitServiceProvider`), então o
+     * componente já tem estilo em qualquer painel.
+     */
+    private function configuraChatDoAssistente(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            fn (): string => AgentesDeIa::chatNaTela() ? Blade::render('@livewire(\'assistente-chat-widget\')') : '',
         );
     }
 

@@ -25,7 +25,6 @@ use App\Support\CorPrimaria;
 use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
 use App\Support\SeletorDeOrganizacao;
-use App\Support\TelaDeAutenticacao;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
@@ -52,7 +51,6 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Jeffgreco13\FilamentBreezy\BreezyCore;
@@ -156,18 +154,9 @@ class AppPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
             ])
-            // Chat do assistente embarcado em TODA tela deste painel. Render hook (e não um
-            // widget de dashboard) porque a superfície precisa acompanhar o usuário em
-            // qualquer página. O próprio componente renderiza vazio quando não há usuário
-            // autenticado — o hook também roda na tela de login.
-            // Para tirar o assistente do painel, remova estas linhas; para tê-lo no admin ou
-            // no infra, replique-as no PanelProvider correspondente.
-            ->renderHook(
-                PanelsRenderHook::BODY_END,
-                // Nas telas de autenticação (bloqueio, 2FA, registro por convite) o chat não é
-                // montado: numa sessão bloqueada, o slide-over mostraria os títulos das conversas.
-                fn (): string => TelaDeAutenticacao::corrente() ? '' : Blade::render('@livewire(\'assistente-chat-widget\')'),
-            )
+            // O chat do Assistente não é mais registrado aqui: o render hook é GLOBAL
+            // (`ConfiguraFilamentGlobal::configuraChatDoAssistente()`), e quem decide em que
+            // painel ele aparece é a tela de configurações (`App\Support\AgentesDeIa`).
             ->bootUsing(function (Panel $panel): void {
                 // Registra as sugestões "Criar X" no request, com auth já resolvido.
                 AcoesDeCriacao::registrar();

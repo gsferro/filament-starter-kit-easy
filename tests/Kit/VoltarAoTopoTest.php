@@ -53,21 +53,26 @@ it('alcança também as telas que vêm de plugin', function (string $rota): void
 ])->group('kit');
 
 /**
- * O offset existe por causa do chat, e o chat só está no /app.
+ * O offset existe por causa do chat, e o chat está onde a tela de configurações diz (feature
+ * `agentes-ia-no-settings`): aqui, ligado só no /app, como o kit sempre foi.
  *
  * `bottom-24` = 96px levanta o botão acima do widget de chat, que ocupa de 24px a 80px do
- * rodapé (`bottom-6` + `h-14`). Nos outros dois painéis não há chat, e `bottom-6` é o certo.
+ * rodapé (`bottom-6` + `h-14`). Nos painéis sem chat, `bottom-6` é o certo.
  *
  * Se este caso cair, provavelmente a posição do chat mudou — e aí os dois arquivos precisam
  * mudar juntos.
  */
 it('levanta o botão no /app para não colidir com o chat', function (): void {
+    ligarAgentesDeIa(true, ['app']);
+
     $this->get('/app')
         ->assertSuccessful()
         ->assertSee('bottom-24', escape: false);
 })->group('kit');
 
 it('mantém o botão na posição padrão onde não há chat', function (string $painel): void {
+    ligarAgentesDeIa(true, ['app']);
+
     $this->get("/{$painel}")
         ->assertSuccessful()
         ->assertSee('bottom-6', escape: false)

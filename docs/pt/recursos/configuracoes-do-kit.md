@@ -20,7 +20,7 @@ Filament (`?tab=…::data::tab`); um link antigo nesse formato não quebra, só 
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário, colunas arrastáveis, **carregamento da tabela** (paginação, rolagem infinita ou botão "Carregar mais"), **visões salvas** e o compartilhamento delas — os defaults de **toda** tabela dos três painéis ([detalhes](../visoes-de-tabela-e-carregamento/)) | Paginação e aparência; Carregamento e visões |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) | Cadastro sem convite (cadastro e aprovação); E-mail verificado (validação de e-mail) |
 | **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) | Página única de login; Login social (com uma seção por provedor); Proteção anti-robô; Rodapé da tela de login |
-| **Aplicação** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível | Comportamento dos painéis; Dashboard dinâmico; Dock de atalhos; Organizações |
+| **Aplicação** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), os **agentes de IA** (o interruptor do uso e os painéis do chat do Assistente), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível | Comportamento dos painéis; Dashboard dinâmico; Dock de atalhos; Agentes de IA; Organizações |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
@@ -72,7 +72,7 @@ aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a t
 As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.
 
 Se o interruptor estiver ligado e o campo vazio, o rodapé mostra a assinatura e, ao lado, **a versão do kit rotulada**
-(`kit 0.50.0`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
+(`kit 0.51.0`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
 impede essa leitura, e é requisito do kit, não detalhe de tela.
 
 **`APP_VERSION` semeia UMA vez, na instalação. Depois dela, quem manda é a tela.**
@@ -205,6 +205,25 @@ Layout e estilo não têm variável: quem os muda é esta tela. Como no restante
 o `.env` e salvar vale no próximo F5. Quem vê o dock continua sendo definido pela permissão
 `Usar:Dock`, não por esta seção.
 
+## Os agentes de IA: um interruptor e os painéis do chat
+
+Ainda na aba **Aplicação**, a seção *Agentes de IA* liga a camada de IA do kit e decide onde o
+chat do Assistente aparece:
+
+| Opção | O que define | Nasce |
+|---|---|---|
+| **Usar agentes de IA** | ligado, o catálogo *Agentes de IA* volta ao menu do `/admin` e o chat pode aparecer; desligado, o catálogo some do menu, do hub, da busca ⌘K e do dock, a URL `/admin/agentes-ia` responde **404** (mesmo para quem tem a permissão), o grupo de widgets *Agentes de IA* some do dashboard do `/admin` e o chat não aparece em painel nenhum | **desligado** |
+| **Painéis onde o chat do Assistente aparece** | os painéis (admin, app, infra) em que o botão flutuante do chat é montado; só vale com o interruptor ligado | **nenhum** |
+
+Os dois nascem das variáveis `KIT_AGENTES_IA` e `KIT_AGENTES_IA_PAINEIS` (ids separados por vírgula,
+em `config/kit.php` → `agentes_ia`), desligado e vazia no `.env.example`. **Vazia significa nenhum
+painel**, como no dock. Como no restante da aba, o banco vence o `.env` e salvar vale no próximo F5:
+nada é consultado no banco para decidir, e nada é apagado ao desligar — os agentes, as conversas e os
+favoritos continuam gravados e voltam ao religar. Até a v0.50.0 o chat era fixo no `/app`; agora ele
+pode estar em qualquer painel, e um chat já aberto quando o uso é desligado recusa a próxima mensagem
+com 404. Quem abre o catálogo continua sendo definido pela permissão `ViewAny:AgenteIa`: o interruptor
+é uma condição a mais, não substitui a permissão.
+
 ## Um seletor para quem não tem o que trocar
 
 Com a multi-organização ligada, a seção *Organizações* da aba **Aplicação** tem *Ocultar o seletor quando houver uma
@@ -242,11 +261,11 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:605`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:629`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:443`) — `KIT_TENANCY`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:460`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:414`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:

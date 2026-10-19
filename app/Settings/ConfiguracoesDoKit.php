@@ -245,6 +245,23 @@ final class ConfiguracoesDoKit extends Settings
     /** Estilo do dock — um `value` de `HoceineEl\QuickActionDock\Enums\DockStyle`. */
     public string $dock_estilo;
 
+    /**
+     * Uso dos agentes de IA. Nasce DESLIGADO (RQ-07 da wiki `agentes-ia-no-settings`):
+     * desligado, o catálogo "Agentes de IA" some do menu do /admin e responde 404, os widgets
+     * dele somem e o chat do Assistente não aparece em painel nenhum. Nada é apagado. Lido por
+     * request em `App\Support\AgentesDeIa::habilitado()`.
+     */
+    public bool $agentes_ia_habilitado;
+
+    /**
+     * Painéis em que o chat do Assistente aparece. **Vazio = nenhum**, como `$dock_paineis`;
+     * só vale com o interruptor acima ligado. Lido por request em
+     * `App\Support\AgentesDeIa::assistenteNoPainel()`.
+     *
+     * @var array<int, string>
+     */
+    public array $agentes_ia_paineis;
+
     public string $rotulo_da_organizacao;
 
     public string $rotulo_das_organizacoes;
@@ -511,6 +528,13 @@ final class ConfiguracoesDoKit extends Settings
             'dock_paineis'                  => 'kit.dock.paineis',
             'dock_layout'                   => 'kit.dock.layout',
             'dock_estilo'                   => 'kit.dock.estilo',
+            /*
+             * Os agentes de IA entram pelo MAPA e nada mais muda: `App\Support\AgentesDeIa` lê
+             * `kit.agentes_ia.*` por request, já sobreposta pelo banco no boot — zero consulta ao
+             * banco para decidir se o catálogo, os widgets ou o chat aparecem.
+             */
+            'agentes_ia_habilitado'         => 'kit.agentes_ia.habilitado',
+            'agentes_ia_paineis'            => 'kit.agentes_ia.paineis',
             'rotulo_da_organizacao'         => 'kit.tenancy.label',
             'rotulo_das_organizacoes'       => 'kit.tenancy.label_plural',
             'ocultar_seletor_unico'         => 'kit.tenancy.ocultar_seletor_unico',

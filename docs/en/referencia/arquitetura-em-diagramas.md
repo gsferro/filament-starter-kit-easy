@@ -8,7 +8,7 @@ Twenty Mermaid diagrams show how the kit works today: architecture, role-based a
 
 ## DG-01 — Layered architecture
 
-From the browser to the three Filament panels (`app/Providers/Filament/AppPanelProvider.php:id:81`, `app/Providers/Filament/AdminPanelProvider.php:id:70`, `app/Providers/Filament/InfraPanelProvider.php:id:91`), through role-based access, down to the database, queue, cache and the optional services. It is the same block as the README — a single source.
+From the browser to the three Filament panels (`app/Providers/Filament/AppPanelProvider.php:id:79`, `app/Providers/Filament/AdminPanelProvider.php:id:70`, `app/Providers/Filament/InfraPanelProvider.php:id:91`), through role-based access, down to the database, queue, cache and the optional services. It is the same block as the README — a single source.
 
 ```mermaid
 flowchart TD
@@ -28,7 +28,7 @@ accDescr: From the browser to the three Filament panels, through role-based acce
   painel_admin --> acesso_por_papel
   painel_infra --> acesso_por_papel
   acesso_por_papel --> configuracoes[Settings]
-  acesso_por_papel --> agentes_ia[AI agents]
+  acesso_por_papel --> agentes_ia["AI agents (KIT_AGENTES_IA)"]
   subgraph camada_infra ["Infrastructure"]
     banco[("Database")]
     fila[Queue]

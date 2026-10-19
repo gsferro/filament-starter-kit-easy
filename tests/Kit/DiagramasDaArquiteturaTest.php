@@ -1174,7 +1174,7 @@ it('[CT-56] o extrator acha as três formas de default desligado, só no código
         test()->assertContains($chave, $doKitPhp, "config/kit.php deveria conter {$chave} extraída como desligada por padrão");
     }
 
-    expect($doKitPhp)->toHaveCount(22, 'piso das 22 chaves — extraído: '.implode(', ', $doKitPhp));
+    expect($doKitPhp)->toHaveCount(23, 'piso das 23 chaves — extraído: '.implode(', ', $doKitPhp));
 
     // Mapa da guarda = extraído (R57 usa exatamente este conjunto).
     expect(array_keys(mapaOptInDaGuarda()))->toEqualCanonicalizing($doKitPhp);
@@ -1211,6 +1211,9 @@ function mapaOptInDaGuarda(): array
         'KIT_TENANCY_OCULTAR_SELETOR_UNICO' => ['SeletorDeOrganizacao', 'ocultar o seletor', 'seletor de organização'],
         // estudo-de-pacotes-rodada-3 — idem: nenhum diagrama desenha as visões salvas hoje.
         'KIT_TABELA_VISOES_SALVAS'          => ['VisoesDeTabela', 'visões salvas', 'saved views', 'remember-table'],
+        // agentes-ia-no-settings — o catálogo e o chat do Assistente nascem desligados: todo bloco
+        // que os desenha cita a chave.
+        'KIT_AGENTES_IA'                    => ['AgentesDeIa', 'Agentes de IA', 'AI agents', 'AssistenteChatWidget', 'assistente-chat-widget'],
     ];
 }
 

@@ -1120,6 +1120,40 @@ class ConfiguracoesDoKit extends SettingsPage
                         ->visible(DockDeAtalhos::pacoteInstalado()),
                 ]),
 
+            /*
+                 * Agentes de IA (wiki `agentes-ia-no-settings`). Interruptor + lista de painéis, com
+                 * a semântica do dock (vazio = nenhum) e a forma do dashboard dinâmico (o select só
+                 * aparece com o interruptor ligado). Lidos por REQUEST em `App\Support\AgentesDeIa`,
+                 * via config sobreposta pelo banco no boot: salvar aqui vale no próximo F5, sem
+                 * consulta extra ao banco.
+                 *
+                 * Sem `mutateFormDataBeforeSave()`: o select oculto não é desidratado
+                 * (`vendor/filament/schemas/src/Components/Concerns/HasState.php:55`,
+                 * `$isDehydratedWhenHidden = false`) e o `fill()` do plugin aplica só as chaves
+                 * presentes (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:83`),
+                 * então a lista gravada fica — o interruptor desligado já a torna inerte, e religar
+                 * devolve a escolha anterior. Nada é apagado (D4).
+                 */
+            $this->secao('aplicacao', 'agentes-ia', 'Agentes de IA', 'heroicon-o-cpu-chip')
+                ->description('O catálogo "Agentes de IA" do /admin e o chat do Assistente. Tudo nasce desligado: ligue aqui e escolha os painéis do chat.')
+                ->columnSpanFull()
+                ->schema([
+                    Toggle::make('agentes_ia_habilitado')
+                        ->label('Usar agentes de IA')
+                        ->helperText('Desligado (padrão), o catálogo "Agentes de IA" some do menu do /admin e a URL dele responde 404, mesmo para quem tem a permissão; os widgets do catálogo somem do dashboard e o chat do Assistente não aparece em painel nenhum. Ligado, o catálogo volta e o chat aparece nos painéis escolhidos abaixo. Nada é apagado ao desligar.')
+                        ->live(),
+
+                    Select::make('agentes_ia_paineis')
+                        ->label('Painéis onde o chat do Assistente aparece')
+                        ->helperText('Em branco = nenhum painel, como no dock. Escolha os painéis em que o botão do chat deve aparecer. O catálogo continua só no /admin.')
+                        ->multiple()
+                        // Como no dock: o Select múltiplo valida cada item contra as opções, não
+                        // o tipo do conjunto — texto solto chegaria à propriedade `array` do settings.
+                        ->rule('array')
+                        ->options(Paineis::opcoes())
+                        ->visible(fn (Get $get): bool => (bool) $get('agentes_ia_habilitado')),
+                ]),
+
             $this->secao('aplicacao', 'organizacoes', 'Organizações', 'heroicon-o-building-office-2')
                 ->schema([
                     TextInput::make('rotulo_da_organizacao')

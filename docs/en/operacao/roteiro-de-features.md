@@ -133,7 +133,7 @@ Where the route has `{org}`, it is multi-tenant mode — without it, the path is
 ### Assistant sequence, from prompt to ledger
 
 The widget works in two phases: `enviar()` validates the question (up to 2000 characters,
-`app/Livewire/AssistenteChatWidget.php:Validate:43`) and stores it as pending; `responder()` streams
+`app/Livewire/AssistenteChatWidget.php:Validate:47`) and stores it as pending; `responder()` streams
 through the agent. The SDK wraps the pipeline with `RememberConversation` **before** `middleware()`
 runs, because `Assistente` uses `RemembersConversations`
 (`vendor/laravel/ai/src/Providers/Concerns/GeneratesText.php:RemembersConversations:148`); inside
@@ -149,7 +149,7 @@ sequenceDiagram
 accTitle: Assistant sequence
 accDescr: RememberConversation wraps the pipeline; the budget guard and the four catalog guardrails run in their real order before the provider; the output filter acts on the response, without stopping the stream; only the request that reaches the provider becomes a row in ai_runs.
   participant usuario as User
-  participant widget as AssistenteChatWidget
+  participant widget as AssistenteChatWidget (KIT_AGENTES_IA)
   participant remember as RememberConversation (vendor)
   participant budget as BudgetGuardMiddleware
   participant prompt_injection as PromptInjectionGuardMiddleware
@@ -192,8 +192,10 @@ The ledger comes from an event listener, never a direct call:
 `Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class)`
 (`app/Providers/KitServiceProvider.php:AgentStreamed:483`), and `RegistrarAiRun::handle()` writes to
 `ai_runs` with `status: 'ok'` (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`) — a request
-blocked by any layer above **never** reaches this row. The widget only exists on the `/app` panel
-(`app/Providers/Filament/AppPanelProvider.php:BODY_END:166`).
+blocked by any layer above **never** reaches this row. The widget exists on the panels the settings
+screen picks, mounted by a global render hook
+(`app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraChatDoAssistente:184`) decided by
+`App\Support\AgentesDeIa` on every request — and only with AI agents usage on (`KIT_AGENTES_IA`).
 
 ## What the roadmap **does not** cover on its own
 
