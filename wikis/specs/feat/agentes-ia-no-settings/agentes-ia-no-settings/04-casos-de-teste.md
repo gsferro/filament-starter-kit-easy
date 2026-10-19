@@ -104,10 +104,10 @@ Gate de camada da regra: R6/R7 (autorização) têm cenário HTTP por fora do co
 |---|---|---|
 | `App\Support\AgentesDeIa::habilitado()` / `::assistenteNoPainel()`, trait `ExigeAgentesDeIaLigados`, `authorizeResourceAccess()`, `fonteDeDadosDisponivel()` | escolha de implementação | detalhe: só na lista de arquivos do filtro de pilha do CT-06; nenhum `Então` os chama |
 | aba `aplicacao`, seção "Agentes de IA", ícone, id da seção | escolha de implementação (o `00` diz "tela de configurações", não a aba) | detalhe: o CT localiza o campo por `chaveDoCampo()`, sem afirmar a aba |
-| rótulos "Usar agentes de IA", "Painéis onde o chat do Assistente aparece" e os textos de ajuda | comportamento visível que só o PRD determina | Q8 respondida: texto do plano aceito; nenhum cenário depende dele |
+| rótulos "Usar agentes de IA", "Painéis onde o chat do Assistente aparece" e os textos de ajuda | comportamento visível que só o PRD determina | Q8 aberta no `00` (sem bloqueio, recomendação: texto do plano) *(alterado em 2026-10-19: QA-03)*; nenhum cenário depende dele |
 | `Select` visível só com o toggle ligado | comportamento visível só do PRD | não vira oráculo; o que é do `00` é "nada é apagado ao desligar" (Fora de Escopo), e isso é o CT-07 |
 | `warning` no canal `ai` na recusa do **catálogo** (passo 5 do plano) | log sem cláusula no `00` (Proibição 12) | nenhum CT; conferência da dimensão D do quality gate |
-| texto e contexto do `warning` do chat (`[AssistenteChatWidget@assertContexto] ...`, `motivo => agentes_ia_desligado`) | o `00` (P-03) determina **que** há um `warning` no canal `ai`, não o texto | o CT-18 afirma um `warning` no canal `ai`, uma vez; prefixo e `motivo` são detalhe |
+| texto e contexto do `warning` do chat (`[AssistenteChatWidget@exigirUsoNoPainel] ...`, `motivo => agentes_ia_desligado`) *(alterado em 2026-10-19: QA-04)* | o `00` (P-03) determina **que** há um `warning` no canal `ai`, não o texto | o CT-18 afirma um `warning` no canal `ai`, uma vez; prefixo e `motivo` são detalhe |
 | formato de `KIT_AGENTES_IA_PAINEIS` ("ids separados por vírgula") | o `00` (P-05) nomeia a variável, não o formato | detalhe de fixture do CT-02 |
 | hook global em `BODY_END` (`ConfiguraFilamentGlobal`) e remoção do hook do `AppPanelProvider` | escolha de implementação | detalhe do filtro do CT-06; o oráculo é o HTML de cada painel (CT-16) |
 | "zero consulta ao banco" no docblock do decisor | o oráculo vem de RQ-03 ("como é feito hoje com outros pacotes no settings"): os vizinhos (dock, CT-35) decidem pela config sobreposta no boot, sem consultar o settings | CT-06, com o observável do vizinho |
@@ -819,7 +819,7 @@ O "nunca foi consultado" também vale para o `GuardaPrompt`. As linhas de contro
       E as duas mensagens anteriores estão nela, na ordem em que foram gravadas
 ```
 
-CT-23 vive em `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` (`Tests\TenancyTestCase`): GET do `/admin` para o render e `Livewire::test(AssistenteChatWidget::class)` com `Filament::setCurrentPanel('admin')` para o histórico — a Carla é a persona de controle, com conversa real no banco. CT-24 e CT-26 vivem em `tests/Kit/AgentesIaNoSettingsTest.php`.
+CT-23 vive em `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` (`Tests\TenancyTestCase`): GET do `/admin` para o render e `Livewire::test(AssistenteChatWidget::class)` com `Filament::setCurrentPanel('admin')` para o histórico — a Carla é a persona de controle, com conversa real no banco. CT-24 e CT-26 vivem em `tests/Kit/AgentesIaNoSettingsChatTest.php` *(alterado em 2026-10-19: QA-03)*.
 
 #### Mutantes previstos
 

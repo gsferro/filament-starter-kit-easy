@@ -7,7 +7,7 @@
 <!-- Os quatro itens de processo do Texto Original, que não são cláusulas do sistema. -->
 
 - [x] Branch criada — `git checkout -b feat/agentes-ia-no-settings` a partir de `main` (`27e47714`), 2026-10-19
-- [ ] `codex --yolo` usado como auxiliar
+- [x] `codex --yolo` usado como auxiliar — `codex exec --yolo -s read-only` na revisão profunda do plano (despacho 1: 47 premissas conferidas, 5 achados), 2026-10-19
 - [ ] PR aberto
 - [ ] Tag + release criadas depois de o PR passar
 
@@ -51,7 +51,7 @@
 - [x] `tests/Kit/AgentesIaNoSettingsChatTest.php` (CT-16 a CT-21, CT-24, CT-26, CT-27) — `vendor/bin/pest tests/Kit/AgentesIaNoSettingsChatTest.php --compact` 51/51 (259 asserções) com o CT-27 do step 9, despachos 5 e 5b, 2026-10-19
 - [x] `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` (CT-23, CT-28) — `vendor/bin/pest tests/Tenancy/AgentesIaNoSettingsTenancyTest.php --compact` 3/3, 11 asserções, com o CT-28 do step 9 (despachos 6 e 6b), 2026-10-19
 - [x] `tests/Browser/AgentesIaNoSettingsTest.php` (CT-B01) — `vendor/bin/pest tests/Browser/AgentesIaNoSettingsTest.php --compact` 2/2 (34 asserções) rerodado pela sessão com os helpers em `tests/Pest.php`; `PilhaDeBotoesFlutuantesTest` + `AssistenteChatEstiloTest` 27/27 na mesma rodada, 2026-10-19
-- [ ] `tests/Pest.php` — `ligarAgentesDeIa()` (D7) e os helpers da pilha movidos (D11)
+- [x] `tests/Pest.php` — `ligarAgentesDeIa()` (D7) e os helpers da pilha movidos (D11) — `grep -rlc ligarAgentesDeIa tests` → 14 arquivos; `HelpersDeTesteTest` verde na suíte completa, 2026-10-19
 
 ## Tickets
 <!-- Step 8. -->
@@ -63,8 +63,9 @@ Não fatiado — 2026-10-19: 9 RQ vigentes (+6 P-nn vigentes), 26 CT + 1 CT-B, c
 - [x] `vendor/bin/filacheck --fix` — "All 17 rules passed!", 2026-10-19
 - [x] `vendor/bin/pest tests/Kit/AgentesIaNoSettingsTest.php --compact` — 73/73 (278 asserções); `AgentesIaNoSettingsChatTest.php` 51/51 (259); `tests/Tenancy/AgentesIaNoSettingsTenancyTest.php` 3/3 (11), 2026-10-19
 - [x] `vendor/bin/pest tests/Browser/AgentesIaNoSettingsTest.php --compact` — 2/2 (34 asserções); na mesma rodada `PilhaDeBotoesFlutuantesTest` + `AssistenteChatEstiloTest` 27/27 (os dois vermelhos da primeira rodada foram `rename … Acesso negado` no cache de views, colisão com o lote A em paralelo; verdes sozinhos), 2026-10-19
-- [ ] `php artisan test --testsuite=Kit,Tenancy --parallel`: nada mais no suite quebrou além da **baseline** de `main` (falhas pré-existentes por nome)
-- [x] `pest --mutate --path=app/Support/AgentesDeIa.php`: no Windows o `--mutate` não mede (`.ai/rules/testes.md`) — amostragem manual de 8 mutantes aplicados um a um e restaurados (script `falsificabilidade.py`, `php vendor/pestphp/pest/bin/pest … --filter`): **8/8 mortos** — M-a trait sem `authorizeAccess()` → CT-11 2 vermelhos (403); M-b chat sem `hydrate()` → CT-27 4/5 vermelhos (controle verde); M-c `habilitado()` sempre `true` → CT-09/CT-11 12 vermelhos; M-d `assistenteNoPainel()` sem a guarda do nulo → CT-19 1 erro (`TypeError` no painel nulo); M-e `chatNaTela()` sem a tela de autenticação → CT-17 5 vermelhos; M-f `ResolvedorDeTenant` pela organização do usuário → CT-28 `/admin` vermelho; M-g widgets sempre visíveis → CT-20 2 vermelhos; M-h `Resource::canAccess()` sem o interruptor → CT-09/CT-11 2 vermelhos; `git status -- app` igual antes e depois, 2026-10-19
+- [x] `php artisan test --testsuite=Browser --compact` (suíte de navegador inteira) — 164 testes: 126 verdes, 37 pulados (guardas `naArvoreDoKit()`/arte, iguais à release anterior), 1 vermelho = o CT-B01 por `rename … Acesso negado` no cache de views (o quality gate rodava testes em paralelo); rerodado sozinho: 2/2, 36 asserções, 2026-10-19
+- [x] `php artisan test --testsuite=Kit,Tenancy --parallel`: nada mais no suite quebrou além da **baseline** de `main` (falhas pré-existentes por nome) — `php artisan test --testsuite=Kit,Tenancy --parallel --compact` na árvore final (d9211c96): **4.977 testes, 4.974 verdes, 3 pulados, 0 vermelhos** (baseline: 4.850, 4.846 verdes, 3 pulados, 1 vermelho causado pela própria wiki — resolvido); +127 testes (lotes A/B/C e linhas de dataset), 350 s; a rodada intermediária acusou 4 listas paralelas (`KitInfoTest`, mapa opt-in dos diagramas, contagens dos READMEs, citações de `docs/`), todas corrigidas, 2026-10-19
+- [x] `pest --mutate --path=app/Support/AgentesDeIa.php`: no Windows o `--mutate` não mede (`.ai/rules/testes.md`) — amostragem manual de 8 mutantes aplicados um a um e restaurados (script `falsificabilidade.py`, `php vendor/pestphp/pest/bin/pest … --filter`): **8/8 mortos** — M-a trait sem `authorizeAccess()` → CT-11 2 vermelhos (403); M-b chat sem `hydrate()` → CT-27 4/5 vermelhos (controle verde); M-c `habilitado()` sempre `true` → CT-09/CT-11 12 vermelhos; M-d `assistenteNoPainel()` sem a guarda do nulo → CT-19 1 erro (`TypeError` no painel nulo); M-e `chatNaTela()` sem a tela de autenticação → CT-17 5 vermelhos; M-f `ResolvedorDeTenant` pela organização do usuário → CT-28 `/admin` vermelho; M-g widgets sempre visíveis → CT-20 2 vermelhos; M-h `Resource::canAccess()` sem o interruptor → rerodado sozinho com `PYTHONIOENCODING=utf-8` (o script original morreu no `print` do ⌘ antes de gravar o M-h — QA-01): `php vendor/pestphp/pest/bin/pest tests/Kit/AgentesIaNoSettingsTest.php --filter="CT-09|CT-11" --compact` → mutante M-h aplicado: AgenteIaResource::canAccess() sem AgentesDeIa::habilitado() · comando: php vendor/pestphp/pest/bin/pest tests/Kit/AgentesIaNoSettingsTest.php --filter=CT-09|CT-11 --compact · resultado: failed tests= 19 passed= 17 failed= 2 · vermelho: __pest_evaluable_it__CT_09__cada_superf?cie_de_navega?o_lista_o_cat?logo_s?_com_o_uso_ligado with data set "dataset "te · vermelho: __pest_evaluable_it__CT_09__cada_superf?cie_de_navega?o_lista_o_cat?logo_s?_com_o_uso_ligado with data set "dataset "re · restaurado: True (saída em `scratchpad/falsificabilidade-mh.out`: 2 linhas do CT-09 vermelhas, as de telas e registros do ⌘K); `git status -- app` igual antes e depois, 2026-10-19
 - [x] **Custo medido**: consultas de `GET /admin` com o uso ligado × desligado, contra o `## Modelo de Execução` — CT-06 (`AgentesIaNoSettingsTest`): soma das consultas à tabela `settings` em dois requests com o uso ligado = soma com o uso desligado, e nenhuma consulta ao `settings` com arquivo da feature na pilha (controle positivo do contador ≥ 1); verde, 2026-10-19
 - [x] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação: achados fechados ou rejeitados com motivo — 12 achados na tabela `## Revisão do Diff (step 9)`: 7 corrigidos, 2 viraram CT (CT-27, CT-28; P-08), 1 para o step 12, 3 rejeitados com motivo, 2026-10-19
 - [x] Roteiro "Desenhado × Implementado" do `05-*-browser.md` preenchido — 2 linhas ✅ com a evidência do CT-B01, 2026-10-19
@@ -78,7 +79,7 @@ Não fatiado — 2026-10-19: 9 RQ vigentes (+6 P-nn vigentes), 26 CT + 1 CT-B, c
 - [x] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final — seção nova em `configuracoes-do-kit` (pt/en), nota v0.51.0 em `atualizando-o-projeto` (pt/en), `wikis/ia.md`, `roteiro-de-features` (DG-11 e prosa do widget), diagrama DG-01 (docs + READMEs) com `KIT_AGENTES_IA`, READMEs (bullet da IA, 85 specs, 197/232 arquivos de teste, badge 2.265), CHANGELOG Unreleased; 16 citações de `docs/` reancoradas; `SiteDeDocumentacaoTest` + `CitacoesDeCodigoTest` + `DiagramasDaArquiteturaTest` verdes, 2026-10-19
 - [x] `php artisan kit:info` lista as duas propriedades novas — `php artisan migrate` local (`2026_10_19_100000_add_agentes_ia_to_kit_settings DONE`) e `kit:info` imprime `Agentes Ia Habilitado .. não` e `Agentes Ia Paineis .. —`, 2026-10-19
 - [x] Adendo 1 incorporado (RQ-09: grupo de widgets "Agentes de IA" some com o uso desligado — `04` re-derivado antes do teste) — R11 com origem RQ-09, CT-20 verde (3 linhas), 2026-10-19
-- [ ] `git commit`
+- [x] `git commit` — 6 commits em `feat/agentes-ia-no-settings` (`git log --oneline main..HEAD`: 65ce8c2b, b11144da, 98c45918, 084dc71a, 866bb7fb, d9211c96) + o commit de release depois do veredito, 2026-10-19
 
 ## Revisão do Diff (step 9)
 
@@ -122,9 +123,10 @@ Re-revisão: não exigida — nenhuma correção tocou eixo de fronteira de dado
 
 <!-- Preenchido no step 11. Enquanto vazio, a feature NÃO está concluída e o PR não abre. -->
 
-- **Ciclo**: — · **Veredito**: — · **Data**: —
-- **Relatório**: `06-relatorio-qa.md`
-- **Débito**: —
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação (1 Major documental: QA-01, evidência do mutante M-h; 4 Minor + 1 cosmético de texto da wiki) · **Data**: 2026-10-19
+- **Relatório**: `06-relatorio-qa.md` (ciclo 1 gravado verbatim; o ciclo 2 o substitui)
+- **Correções do ciclo 1**: QA-01 (M-h rerodado com saída gravada), QA-02 (`02`: D1–D11 e `hydrate()`/`authorizeAccess()` na Superfície), QA-03 (`04`: Q8 aberta; path de CT-24/CT-26), QA-04 (`01`/`04`: prefixos de log reais), QA-05 (glossário: "Catálogo de agentes"), QA-06 (três checkboxes fechados com evidência)
+- **Ciclo 2**: {pendente}
 
 ## Candidatos a Rule
 

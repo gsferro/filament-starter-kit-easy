@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.51.0] - 2026-10-19
+
 ### Adicionado
 
 - Agentes de IA ligados pelo settings, por painel (`wikis/specs/feat/agentes-ia-no-settings/`): a aba
@@ -24,12 +26,36 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   recuo do botão "voltar ao topo" segue a presença do chat em vez do id do painel.
 - `kit:info` passa a listar as duas propriedades novas; `phpunit.xml` fixa `KIT_AGENTES_IA=false` e
   `KIT_AGENTES_IA_PAINEIS=` para a suíte medir o kit de fábrica.
-
 - Documentação: as visões salvas e o carregamento contínuo de tabela (v0.49.0) entram nos dois
   READMEs ("O que já vem pronto" e tabela "Documentação completa") e na visão geral de Recursos
   do site; a página de configurações do site documenta a chave fixa das abas (`?tab=identidade`…
   `?tab=aplicacao`) e o link antigo `?tab=…::data::tab` abrindo na primeira aba, e
   "Atualizando o projeto" ganha a nota da v0.50.0 (nada a instalar nem migrar).
+
+### Validação
+
+- Suíte local `Kit,Tenancy --parallel`: 4.977 testes (4.974 verdes, 3 pulados, 0 vermelhos; +127 sobre a
+  baseline de 4.850). Navegador (`--testsuite=Browser`): 164 execuções, 126 verdes, 37 pulados (as mesmas
+  guardas da release anterior), 1 colisão de cache de views com outro processo, verde ao rerodar sozinho
+  (CT-B01, 2/2). PHPStan nível 8: 0 erros. `filacheck`: 17/17.
+- Mutação por amostragem manual (o `pest --mutate` não mede no Windows): 8 mutantes do decisor, do trait,
+  do chat, dos widgets, do Resource e do resolvedor de tenant, 8 mortos pelo CT previsto.
+- Revisão do diff por dois revisores cegos (`/code-review` e passe de eixos): 12 achados — 7 corrigidos,
+  2 viraram caso de teste antes da correção (CT-27, CT-28), 3 rejeitados com motivo. Revisão adversarial
+  dos casos de teste: 23 achados, 22 aplicados. Wiki da feature:
+  `wikis/specs/feat/agentes-ia-no-settings/`.
+
+### Atualizando
+
+- Rode `php artisan migrate` depois do `kit:update`: a migration de settings semeia `agentes_ia_habilitado`
+  e `agentes_ia_paineis` a partir de `KIT_AGENTES_IA` e `KIT_AGENTES_IA_PAINEIS` — **desligado e vazia** por
+  padrão. **O chat do Assistente some do `/app` até alguém ligar** o uso e marcar o `/app` na aba Aplicação
+  de `/admin/configuracoes-da-aplicacao` (ou pôr `KIT_AGENTES_IA=true` e `KIT_AGENTES_IA_PAINEIS=app` no
+  `.env` antes da migration). O catálogo `/admin/agentes-ia` também só existe com o uso ligado. Nada é
+  apagado. Quem tem teste próprio sobre o catálogo ou o chat liga o uso no arranjo com
+  `ligarAgentesDeIa()` de `tests/Pest.php`; os helpers da pilha de botões flutuantes
+  (`abrirPainelDaPilha()`, `moverDockDaPilha()`, `rolarPaginaDaPilha()`, `MEDIR_PILHA_FLUTUANTE`)
+  passaram a viver em `tests/Pest.php`.
 
 ## [0.50.0] - 2026-10-15
 
