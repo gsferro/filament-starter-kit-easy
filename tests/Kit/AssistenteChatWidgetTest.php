@@ -8,6 +8,7 @@ use Database\Seeders\AssistenteSeeder;
 use Database\Seeders\GuardaPromptSeeder;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Models\Conversation;
 use Laravel\Ai\Models\ConversationMessage;
@@ -38,6 +39,11 @@ beforeEach(function (): void {
      */
     $this->seed([AssistenteSeeder::class, GuardaPromptSeeder::class]);
     config(['ai.providers.llamacpp.models.text.default' => 'modelo-de-teste']);
+
+    // As ações do widget exigem o uso de agentes ligado no painel corrente (feature
+    // `agentes-ia-no-settings`); no teste direto do componente o painel é fixado à mão.
+    ligarAgentesDeIa(true, ['app']);
+    Filament::setCurrentPanel('app');
 });
 
 /**

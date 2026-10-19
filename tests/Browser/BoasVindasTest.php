@@ -34,7 +34,7 @@ beforeEach(function (): void {
  *
  * `assertNoJavaScriptErrors()` e não `assertNoSmoke()`: a `/` é HTML de autoria do kit DENTRO de um
  * painel bootado com ~30 plugins e o render hook `BODY_END` do `assistente-chat-widget`
- * (`AppPanelProvider.php:94-97`). `assertNoSmoke()` reprova em qualquer `console.log` de vendor, e
+ * (global, `app/Providers/Concerns/ConfiguraFilamentGlobal.php:configuraChatDoAssistente()`, ligado nos painéis que o settings escolher). `assertNoSmoke()` reprova em qualquer `console.log` de vendor, e
  * a suíte ficaria vermelha por dívida de terceiro — é o mesmo raciocínio que o CT-B04 de
  * `TelasDoKitTest.php` usa para justificar o inverso lá, onde as telas são todas de autoria
  * própria. Ver ADR-05.

@@ -8,6 +8,7 @@ it('[CT-10] bloqueio com tenancy não entrega dock nem chat e o painel entrega',
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     ['acme' => $acme, 'usuario' => $usuario] = arranjarFavoritosDoDockTenancy();
     conversaPara($usuario, 'Sentinela da pilha 7f3c');
+    ligarAgentesDeIa(true, ['app']);
     $this->get('/app/'.$acme->slug)->assertOk();
     if ($bloquear) {
         $this->post(route('lockscreen.app.lock-session'))->assertRedirect();

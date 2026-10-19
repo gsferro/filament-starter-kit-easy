@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Providers\KitServiceProvider;
 use App\Settings\ConfiguracoesDoKit;
 use App\Support\ProvedorSocial;
+use Database\Seeders\PapeisSeeder;
+use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\FilamentManager;
 use Filament\Forms\Components\Select;
@@ -603,6 +605,23 @@ function ligarDashboardDinamico(bool $ligado = true, array $paineis = []): void
 function ligarDock(array $paineis = ['admin', 'app', 'infra']): void
 {
     config()->set('kit.dock.paineis', $paineis);
+}
+
+/**
+ * Liga o uso dos agentes de IA e escolhe os painéis do chat do Assistente (`[]` = nenhum
+ * painel, como no dock). A suíte mede o kit de fábrica — desligado (`phpunit.xml` fixa
+ * `KIT_AGENTES_IA=false`) —, então quem abre o catálogo `/admin/agentes-ia` ou espera o chat
+ * numa tela liga aqui, no arranjo.
+ *
+ * Aqui e não num arquivo de teste porque o lote T0 da feature `agentes-ia-no-settings` o usa
+ * em treze arquivos (catálogo, chat, pilha de botões e os testes da própria feature) — `.ai/rules/testes.md`.
+ *
+ * @param  list<string>  $paineis
+ */
+function ligarAgentesDeIa(bool $ligado = true, array $paineis = []): void
+{
+    config()->set('kit.agentes_ia.habilitado', $ligado);
+    config()->set('kit.agentes_ia.paineis', $paineis);
 }
 
 /**
@@ -2804,4 +2823,87 @@ function consultasDoGet(string $url): array
     }
 
     return $consultas;
+}
+
+/*
+ * A pilha de botões flutuantes no navegador: a medição em JS e o arranjo que abre um painel
+ * com o dock. Vieram de `tests/Browser/PilhaDeBotoesFlutuantesTest.php` na feature
+ * `agentes-ia-no-settings`, porque o CT-B01 dela (`tests/Browser/AgentesIaNoSettingsTest.php`)
+ * mede a mesma pilha no `/admin` e no `/infra` — helper de dois arquivos mora aqui
+ * (`.ai/rules/testes.md`). `$chatEm` diz em que painéis o chat do Assistente está ligado.
+ */
+const MEDIR_PILHA_FLUTUANTE = <<<'JS'
+(() => {
+    const vw = document.documentElement.clientWidth, vh = document.documentElement.clientHeight;
+    const raiz = document.querySelector('.qad-root');
+    const medir = el => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect(), s = getComputedStyle(el);
+        return {left:r.left, right:r.right, top:r.top, bottom:r.bottom, width:r.width, height:r.height,
+            centroX:r.left+r.width/2, direita:vw-r.right, inferior:vh-r.bottom,
+            visivel:s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity)>0 && r.width>0 && r.height>0};
+    };
+    const gatilho = medir(document.querySelector('.qad-root .qad-trigger'));
+    let dock = gatilho ? {...gatilho} : null;
+    if (dock && raiz.dataset.open === 'true') {
+        for (const el of raiz.querySelectorAll('.qad-item')) {
+            const r = medir(el);
+            if (!r.visivel) continue;
+            dock.left=Math.min(dock.left,r.left); dock.right=Math.max(dock.right,r.right);
+            dock.top=Math.min(dock.top,r.top); dock.bottom=Math.max(dock.bottom,r.bottom);
+        }
+    }
+    if (raiz?.dataset.mode === 'bar') dock = medir(raiz);
+    return {vw,vh,offset:raiz ? parseFloat(getComputedStyle(raiz).getPropertyValue('--qad-offset')) : null,
+        raiz:medir(raiz),gatilho,dock,chat:medir(document.querySelector('[data-assistente-chat] button[aria-label="Abrir assistente"]')),
+        voltar:medir(document.querySelector('[data-voltar-ao-topo]'))};
+})()
+JS;
+
+function abrirPainelDaPilha(string $painel = '/app', bool $dock = true, bool $celular = false, bool $barra = false, array $chatEm = ['app']): object
+{
+    test()->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+    ligarAgentesDeIa(true, $chatEm);
+    $papel   = ['/app' => 'panel_user', '/admin' => 'admin', '/infra' => 'infra'][$painel];
+    $usuario = usuarioDoKit($papel, 'pessoa@example.com');
+    if ($dock) {
+        concederDock($papel);
+    }
+    ligarDock(['admin', 'app', 'infra']);
+    if ($barra) {
+        DB::table('users')->where('id', $usuario->id)->update(['dock_layout' => 'bar']);
+        $usuario->refresh();
+    }
+    test()->actingAs($usuario);
+    test()->get($painel)->assertOk();
+    $pagina = $celular ? visit($painel)->on()->iPhone15()->inLightMode() : visit($painel)->on()->desktop()->inLightMode();
+    if (! $celular) {
+        $pagina->resize(1280, 800);
+    }
+    $pagina->assertPathIs($painel);
+    if ($dock) {
+        $pagina->assertVisible('.qad-root .qad-trigger');
+    }
+
+    return $pagina;
+}
+
+/** Move o dock para um canto e espera o assentamento; rola a página até o "voltar ao topo" aparecer. Os dois vieram com `abrirPainelDaPilha()`. */
+function moverDockDaPilha(object $pagina, string $canto = 'bottom-right'): void
+{
+    if ($pagina->attribute('.qad-root', 'data-open') !== 'true') {
+        $pagina->click('.qad-root .qad-trigger');
+    }
+    $pagina->click('.qad-move-toggle')->click('[data-corner="'.$canto.'"]');
+    // A barra tem padding interno: o canto e da raiz, o eixo continua sendo do gatilho.
+    $base       = $pagina->attribute('.qad-root', 'data-mode') === 'bar' ? 'm.raiz' : 'm.gatilho';
+    $horizontal = $base.(str_ends_with($canto, 'right') ? '.direita' : '.left');
+    $vertical   = $base.(str_starts_with($canto, 'bottom') ? '.inferior' : '.top');
+    $pagina->assertScript('() => { const m = '.MEDIR_PILHA_FLUTUANTE.'; return Math.abs('.$horizontal.'-m.offset)<=1 && Math.abs('.$vertical.'-m.offset)<=1 && !document.querySelector(".qad-root").hasAttribute("data-moving") && !document.querySelector(".qad-root").hasAttribute("data-settling"); }');
+}
+
+function rolarPaginaDaPilha(object $pagina): void
+{
+    $pagina->script("document.body.style.minHeight='4000px'; window.scrollTo({top:800,behavior:'instant'})");
+    $pagina->assertScript('() => { const m = '.MEDIR_PILHA_FLUTUANTE.'; return window.scrollY>=799 && m.voltar.visivel; }');
 }

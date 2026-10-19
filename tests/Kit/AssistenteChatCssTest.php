@@ -42,6 +42,7 @@ function xpathDoChat(string $html): DOMXPath
 it('[CT-01] toda classe emitida pelo chat tem regra escopada ou no Filament', function (string $origem, int $piso): void {
     $ana = usuarioDoKit('panel_user', 'ana@example.com');
     $this->actingAs($ana);
+    ligarAgentesDeIa(true, ['app']);
     if ($origem === 'historico') {
         conversaPara($ana, 'Conversa de teste');
     }
@@ -90,6 +91,7 @@ it('[CT-02] toda regra do chat permanece sob o escopo', function (): void {
 });
 
 it('[CT-03] o HTML servido posiciona os botoes sem JavaScript', function (string $papel, string $painel, string $recuo): void {
+    ligarAgentesDeIa(true, ['app']);
     $this->actingAs(usuarioDoKit($papel, 'pessoa@example.com'));
     $html   = $this->get($painel)->assertOk()->getContent();
     $xpath  = xpathDoChat($html);

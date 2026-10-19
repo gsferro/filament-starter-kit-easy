@@ -40,12 +40,15 @@ beforeEach(function (): void {
  */
 it('abre as telas autenticadas do painel', function (array $rotas): void {
     $this->actingAs(usuarioDoKit('master_global'));
+    // `/admin/agentes-ia` só existe com o uso de agentes ligado (feature `agentes-ia-no-settings`).
+    ligarAgentesDeIa();
 
     visit(array_values(array_diff($rotas, ['/admin/agentes-ia/create'])))->assertNoJavaScriptErrors();
 })->with(collect(telasDoKit())->map(fn (array $rotas): array => [$rotas])->all());
 
 it('renderiza o formulario de agente no chrome headless', function (): void {
     $this->actingAs(usuarioDoKit('master_global'));
+    ligarAgentesDeIa();
 
     visit('/admin/agentes-ia/create')
         ->assertVisible('#form\.nome')
