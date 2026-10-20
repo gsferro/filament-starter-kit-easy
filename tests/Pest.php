@@ -3,6 +3,7 @@
 use App\Console\Commands\KitUpdate;
 use App\Filament\Admin\Resources\Users\UserResource;
 use App\Filament\App\Resources\Projetos\ProjetoResource;
+use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\DashboardClassico;
 use App\Models\Convite;
 use App\Models\Role;
@@ -2906,4 +2907,52 @@ function rolarPaginaDaPilha(object $pagina): void
 {
     $pagina->script("document.body.style.minHeight='4000px'; window.scrollTo({top:800,behavior:'instant'})");
     $pagina->assertScript('() => { const m = '.MEDIR_PILHA_FLUTUANTE.'; return window.scrollY>=799 && m.voltar.visivel; }');
+}
+
+/**
+ * Trava a sessão por inatividade como a barreira real faz: autentica, torna a sessão ociosa e
+ * PEDE a página por um GET de verdade, confirmando o redirecionamento para a tela de bloqueio do
+ * painel. Nunca grava o destino nem a marca de trava à força.
+ *
+ * Aqui, e não num arquivo de teste, porque `tests/Kit/BloqueioDeSessaoTest.php` e
+ * `tests/Tenancy/BloqueioComRetornoTenancyTest.php` a usam (wiki `desbloqueio-volta-a-pagina`).
+ *
+ * @param  array<string, string>  $cabecalhos
+ */
+function travadaPorInatividadeAoPedir(string $url, array $cabecalhos = [], ?User $usuario = null): void
+{
+    $teste = test();
+
+    if ($usuario !== null) {
+        $teste->actingAs($usuario);
+    }
+
+    session(['session_last_activity' => time() - (config('lockscreen.idle_timeout') + 60)]);
+
+    $painel = explode('/', ltrim((string) parse_url($url, PHP_URL_PATH), '/'))[0];
+
+    $teste->withHeaders($cabecalhos)->get($url)->assertRedirect(route("lockscreen.{$painel}.page"));
+    $teste->flushHeaders();
+}
+
+/** A senha digitada na tela de bloqueio do painel (componente), já com a ação `authenticate` chamada. */
+function desbloquearPorSenha(string $painel, string $senha = 'password'): Testable
+{
+    Filament::setCurrentPanel($painel);
+
+    return Livewire::test(TelaBloqueio::class)
+        ->set('data.password', $senha)
+        ->call('authenticate');
+}
+
+/** O endereço do redirecionamento do componente, decodificado (a query é comparada equivalente). */
+function destinoDoComponente(Testable $componente): string
+{
+    return urldecode((string) ($componente->effects['redirect'] ?? ''));
+}
+
+/** O endereço absoluto esperado para um caminho do app, decodificado. */
+function enderecoDe(string $caminho): string
+{
+    return urldecode(url($caminho));
 }

@@ -12,8 +12,10 @@ use Filament\Facades\Filament;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Log;
 use lockscreen\FilamentLockscreen\Http\Livewire\LockerScreen;
 
@@ -254,6 +256,17 @@ class TelaBloqueio extends LockerScreen
      * Livewire\...\Redirector could not be converted to int`. A URL `/{painel}/screen/lock`
      * fica nas mãos do usuário (favorito, histórico), então abrir a tela destravada não é
      * hipótese remota.
+     *
+     * A segunda guarda lê o VALOR da marca, não a existência da chave: o pacote destrava
+     * gravando `false` (`vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:lockscreen:121`),
+     * então depois do primeiro desbloqueio a chave existe para sempre e `has()` nunca mais
+     * mandaria a sessão destravada de volta ao painel.
+     *
+     * Por último, o destino do desbloqueio quando nenhuma página foi guardada (a tela aberta
+     * direto): a raiz do painel. Sem isto o `redirect()->intended()` do pacote cai no default
+     * `/` do Laravel — a página pública de boas-vindas, que é a "tela raiz" de que a wiki
+     * `desbloqueio-volta-a-pagina` nasceu. A página que a trava interceptou é guardada por
+     * `App\Http\Middleware\BloquearSessaoComRetorno` e, presente, não é tocada aqui.
      */
     public function mount(): void
     {
@@ -265,8 +278,31 @@ class TelaBloqueio extends LockerScreen
             $this->sairPara($panel->getLoginUrl() ?? url($panel->getPath()));
         }
 
-        if (! session()->has('lockscreen')) {
+        if (session('lockscreen') !== true) {
             $this->sairPara(url($panel->getPath()));
+        }
+
+        $this->garantirDestinoDoDesbloqueio();
+    }
+
+    /**
+     * O `authenticate()` do pacote, com o mesmo fallback do `mount()` antes dele.
+     *
+     * O `intended()` do pacote CONSOME a página guardada. Um segundo envio no mesmo componente
+     * (duplo clique, ou o envio repetido antes de a navegação sair) acharia a chave vazia e
+     * cairia em `/` — o CT-11 da wiki `desbloqueio-volta-a-pagina` mediu exatamente isso.
+     */
+    public function authenticate(): Redirector|RedirectResponse|Application|null
+    {
+        $this->garantirDestinoDoDesbloqueio();
+
+        return parent::authenticate();
+    }
+
+    private function garantirDestinoDoDesbloqueio(): void
+    {
+        if (! session()->has('url.intended')) {
+            redirect()->setIntendedUrl(Paineis::url(Paineis::correnteOuPadrao()));
         }
     }
 
