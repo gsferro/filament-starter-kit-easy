@@ -84,3 +84,13 @@ The 2FA challenge only exists for whoever already confirmed it before — it is 
 forced logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:268`,
 `app/Providers/Filament/AppPanelProvider.php:enableRateLimit:375`,
 `app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:291`).
+
+Unlocking takes the person back to the page the lock intercepted, like Laravel's login *intended*: the
+requested URL (with its query) when idleness locked the session, or the last one they tried to open
+while it was already locked — by password and by the social provider's callback for the same account.
+With no saved page (the lock screen opened from a bookmark), it goes to the panel root; on `/app`, to
+the organization the person was in, if they still have access to it. Requests that expect JSON and
+Livewire calls never become the destination, and another account signing in on the lock screen does
+not inherit the page. The page is saved by `App\Http\Middleware\BloquearSessaoComRetorno`, which
+replaces the package's middleware through a binding in `AppServiceProvider` (the package only saved
+the page on a manual lock).

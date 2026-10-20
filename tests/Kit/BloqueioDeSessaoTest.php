@@ -8,10 +8,13 @@ use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
 use Laravel\Socialite\Socialite;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
 /**
@@ -379,6 +382,47 @@ it('[CT-06] o bloqueio manual a partir de uma página, com query, volta a essa p
         ->and(session('lockscreen'))->toBeFalse();
 });
 
+/**
+ * Envia a ação `authenticate` pela rota HTTP de update do Livewire, com os cabeçalhos e a query
+ * pedidos. O `Livewire::test` monta o componente com `withHeaders`/`withQueryParams`, mas as
+ * chamadas seguintes (`SubsequentRender`) usam um `RequestBroker` novo, só com `X-Livewire`: o
+ * Referer e a query somem. Aqui eles chegam, e um listener de `RouteMatched` registra o que o
+ * servidor viu (o controle de que não é vácuo).
+ *
+ * @param  array<string, string>  $cabecalhos
+ * @param  array<string, string>  $consulta
+ * @return array{destino: string, vistos: list<array{referer: ?string, query: array<string, mixed>}>}
+ */
+function authenticatePelaRotaDeUpdate(Testable $componente, array $cabecalhos = [], array $consulta = [], string $senha = 'password'): array
+{
+    $vistos = [];
+
+    Event::listen(RouteMatched::class, function (RouteMatched $evento) use (&$vistos): void {
+        $vistos[] = [
+            'referer' => $evento->request->headers->get('referer'),
+            'query'   => $evento->request->query(),
+        ];
+    });
+
+    $uri = app('livewire')->getUpdateUri().($consulta === [] ? '' : '?'.http_build_query($consulta));
+
+    $resposta = test()->withHeaders($cabecalhos + ['X-Livewire' => 'true'])->postJson($uri, [
+        'components' => [[
+            'snapshot' => json_encode($componente->snapshot),
+            'calls'    => [['path' => '', 'method' => 'authenticate', 'params' => []]],
+            'updates'  => ['data.password' => $senha],
+        ]],
+    ]);
+    test()->flushHeaders();
+
+    $resposta->assertOk();
+
+    return [
+        'destino' => urldecode((string) $resposta->json('components.0.effects.redirect')),
+        'vistos'  => $vistos,
+    ];
+}
+
 it('[CT-25] query na própria tela de bloqueio não escolhe o destino', function (): void {
     $this->actingAs(usuarioMaster());
     travadaPorInatividadeAoPedir('/admin/users');
@@ -389,12 +433,13 @@ it('[CT-25] query na própria tela de bloqueio não escolhe o destino', function
 
     Filament::setCurrentPanel('admin');
 
-    $componente = Livewire::withQueryParams($consulta)
-        ->test(TelaBloqueio::class)
-        ->set('data.password', 'password')
-        ->call('authenticate');
+    $componente = Livewire::withQueryParams($consulta)->test(TelaBloqueio::class);
 
-    $destino = destinoDoComponente($componente);
+    ['destino' => $destino, 'vistos' => $vistos] = authenticatePelaRotaDeUpdate($componente, [], $consulta);
+
+    // Controle: a query chegou ao servidor na requisição da AÇÃO (o `Livewire::test` a descarta).
+    expect($vistos)->not->toBeEmpty()
+        ->and($vistos[0]['query'])->toMatchArray($consulta);
 
     expect($destino)->toBe(enderecoDe('/admin/users'))
         ->and($destino)->not->toContain('externo.example');
@@ -406,18 +451,18 @@ it('[CT-07] requisição que não é GET navegável não vira destino', function
 
     $cabecalhos = ['Referer' => url('/admin/shield/roles')];
 
-    session(['session_last_activity' => time() - (config('lockscreen.idle_timeout') + 60)]);
-
     if ($requisicao === 'json') {
+        session(['session_last_activity' => time() - (config('lockscreen.idle_timeout') + 60)]);
+
         $this->withHeaders($cabecalhos + ['Accept' => 'application/json'])->get('/admin/users');
         $this->flushHeaders();
     } else {
+        // O pacote deixa toda chamada Livewire passar sem travar: a linha parte da sessão JÁ
+        // travada, sem pedido de página, e a chamada X-Livewire chega depois, com o mesmo Referer.
+        session(['lockscreen' => true]);
+
         $this->withHeaders($cabecalhos + ['X-Livewire' => 'true'])->get('/admin/users');
         $this->flushHeaders();
-
-        // A barreira do pacote deixa a chamada de componente passar sem travar: a marca é forçada
-        // aqui, que é o estado de partida do cenário (sessão travada sem página guardada).
-        session(['lockscreen' => true]);
     }
 
     expect(session('lockscreen'))->toBeTrue();
@@ -549,12 +594,13 @@ it('[CT-24] a tela aberta direto ignora o Referer, de dentro ou de fora do siste
 
     Filament::setCurrentPanel('admin');
 
-    $componente = Livewire::withHeaders(['Referer' => $referer])
-        ->test(TelaBloqueio::class)
-        ->set('data.password', 'password')
-        ->call('authenticate');
+    $componente = Livewire::withHeaders(['Referer' => $referer])->test(TelaBloqueio::class);
 
-    $destino = destinoDoComponente($componente);
+    ['destino' => $destino, 'vistos' => $vistos] = authenticatePelaRotaDeUpdate($componente, ['Referer' => $referer]);
+
+    // Controle: o Referer chegou ao servidor na requisição da AÇÃO (o `Livewire::test` o descarta).
+    expect($vistos)->not->toBeEmpty()
+        ->and($vistos[0]['referer'])->toBe($referer);
 
     expect($destino)->toBe(enderecoDe('/admin'))
         ->and($destino)->not->toBe(urldecode($referer));
@@ -602,7 +648,9 @@ it('[CT-31] o provedor negado não destrava nem gasta a página: a senha certa e
         ->and(session('lockscreen'))->toBeFalse();
 });
 
-it('[CT-14] a volta do provedor destrava e leva à página pedida', function (): void {
+it('[CT-14] a volta do provedor destrava e leva à página pedida, com o login unificado ligado ou desligado', function (bool $unificado): void {
+    ligarLoginUnificado($unificado);
+
     $conta = usuarioMaster();
     provedorDevolve($conta);
     $this->actingAs($conta);
@@ -613,7 +661,10 @@ it('[CT-14] a volta do provedor destrava e leva à página pedida', function ():
     expect(destinoDaResposta($resposta))->toBe(enderecoDe('/admin/users?q=ana'))
         ->and(session('lockscreen'))->toBeFalse()
         ->and(auth()->id())->toBe($conta->id);
-});
+})->with([
+    'unificado desligado' => [false],
+    'unificado ligado'    => [true],
+]);
 
 it('[CT-15] com a tela de bloqueio aberta direto, o provedor leva à raiz do painel dela', function (string $painel, string $raiz): void {
     $conta = usuarioMaster();

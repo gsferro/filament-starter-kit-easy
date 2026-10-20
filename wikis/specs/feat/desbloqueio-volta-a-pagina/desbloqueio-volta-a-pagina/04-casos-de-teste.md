@@ -17,7 +17,7 @@
 
 - Técnicas aplicadas: EP (painel; tipo de requisição; mecanismo de desbloqueio), tabela estado × evento (16 células, abaixo), 2-switch (ciclo de volta), exemplo discriminante (Referer ≠ URL pedida, query string, painel ≠ painel padrão), rastreio de efeito (consumo da página guardada: aconteceu / não aconteceu na falha / uma só vez), idempotência (segundo desbloqueio), superfície Livewire (valor fora do domínio e tipo errado).
 - Técnica escalada acima do perfil: tabela estado × evento completa em área `padrão` — o defeito de "tela raiz" mora justamente nas células de ciclo (S3), que a amostragem não alcança.
-- Cenários: 37 · Regras: 13 · Mutantes previstos: 71 · Sem matador: 0
+- Cenários: 37 · Regras: 13 · Mutantes previstos: 72 · Sem matador: 0
 <!-- derivado do arquivo por grep -c; recalcular a cada cenário novo -->
 
 ## Varredura SFDIPOT
@@ -214,7 +214,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
     Cenário: [CT-25] query na própria tela de bloqueio não escolhe o destino
       Dado a sessão foi travada por inatividade ao pedir "/admin/users"
       E a tela de bloqueio foi aberta em "/admin/screen/lock?redirect=https://externo.example/x&intended=/infra"
-      Quando o usuário informa a senha correta na tela de bloqueio do painel admin, com a mesma query na montagem do componente e na ação authenticate
+      Quando o usuário informa a senha correta na tela de bloqueio do painel admin, com a mesma query na montagem do componente e na requisição da ação authenticate
       Então o desbloqueio redireciona exatamente para "/admin/users"
       E nenhum redirecionamento aponta para o host "externo.example"
 
@@ -245,7 +245,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | M69 | o retorno do provedor usa a primeira página guardada e ignora a pedida em outra aba | CT-36 (linha `provedor`) | destino exato `/admin/shield/roles`; o mutante redireciona a `/admin/users` |
 | M43 | a tela de bloqueio lê `redirect`/`intended` da própria query como destino | CT-25 | destino `/admin/users`; o mutante redireciona a `https://externo.example/x` ou `/infra` |
 
-> Arnês de CT-24 e CT-25: `Livewire::test(TelaBloqueio::class)` com `withHeaders(["Referer" => …])` / `withQueryParams([...])` equivalentes valem para a montagem E para a chamada de `authenticate` — o mesmo Referer/query nos dois.
+> Arnês de CT-24 e CT-25: o Referer/query precisam chegar TAMBÉM à requisição da ação `authenticate`, e não só à montagem. No `Livewire::test` as chamadas seguintes **descartam** os cabeçalhos e a query da montagem (`SubsequentRender`/`RequestBroker`), então `withHeaders`/`withQueryParams` na montagem sozinhos tornam o cenário vácuo. O executor envia a ação pela rota HTTP de update do Livewire com os cabeçalhos/query (ou equivalente que confirmar no vendor), e um controle mostra que o Referer/query estavam na requisição da ação.
 
 > Arnês de CT-36: `Livewire::test(TelaBloqueio::class)` é montado ANTES do segundo `GET`; a linha `provedor` não depende do componente (o callback lê a sessão), e é a referência de simetria da linha `senha`.
 
@@ -259,17 +259,19 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 
 ```gherkin
     Esquema do Cenário: [CT-07] requisição que não é GET navegável não vira destino
-      Dado o usuário do painel admin visitou "/admin/shield/roles" com a sessão ativa e a sessão ficou ociosa
-      E a sessão foi travada por <requisição> com o Referer "/admin/shield/roles"
+      Dado o usuário do painel admin visitou "/admin/shield/roles" com a sessão ativa
+      E <situação>
       E a marca de trava é verdadeira e a tela de bloqueio do painel admin abre sem redirecionar
       Quando o usuário informa a senha correta na tela de bloqueio do painel admin
       Então o desbloqueio redireciona exatamente para "/admin"
       E o destino não é o endereço da requisição que travou a sessão nem "/admin/shield/roles"
 
       Exemplos:
-        | requisição                                                         | # partição       |
-        | um GET a "/admin/users" que espera JSON (Accept: application/json) | JSON             |
-        | uma chamada de componente Livewire (cabeçalho X-Livewire)          | Livewire (POST)  |
+        | situação                                                                                                                                  | # partição       |
+        | a sessão ficou ociosa e foi travada por um GET a "/admin/users" que espera JSON (Accept: application/json), com o Referer "/admin/shield/roles" | JSON             |
+        | a marca de trava foi forçada na sessão, sem pedido de página, e chega uma chamada de componente Livewire (X-Livewire) com o Referer "/admin/shield/roles" | Livewire (POST)  |
+
+      O pacote deixa toda chamada Livewire passar sem travar (`vendor/marjose123/filament-lockscreen/src/Http/Middleware/Locker.php:handle:22-24`): "a sessão foi travada por uma chamada Livewire" nunca acontece. Por isso a linha Livewire parte da sessão **já travada** e a chamada chega depois.
 
     Cenário: [CT-08] uma chamada de componente com a sessão já travada não troca a página guardada
       Dado a sessão foi travada por inatividade ao pedir "/admin/users"
@@ -324,7 +326,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | M45 | o POST com a sessão já travada sobrescreve a página guardada | equivalente — idem M44 (CT-26 @obsoleto) | destino `/admin/users`; o mutante redireciona ao endereço do POST |
 | M59 | em sessão já travada, o GET que espera JSON com Referer diferente sobrescreve a página guardada (a régua usa o "anterior" do request) | CT-27 (linhas com Referer) | destino exato `/admin/users`; o mutante redireciona ao Referer enviado (`/admin/shield/roles` ou `https://externo.example/x`) |
 | M46 | em sessão já travada, o GET que espera JSON sobrescreve a página guardada | CT-27 | destino `/admin/users`; o mutante redireciona a `/admin/shield/roles` |
-| M56 | a barreira deixa de travar a sessão para requisição JSON/Livewire (a marca fica falsa) | CT-07 | no `Dado`, `session('lockscreen')` é `true` e a tela abre sem redirecionar; o mutante deixa `false` |
+| M56 | a barreira deixa de travar a sessão para o GET que espera JSON (a marca fica falsa) | CT-07 (linha JSON) | no `Dado`, `session('lockscreen')` é `true` e a tela abre sem redirecionar; o mutante deixa `false`. Na linha Livewire o mutante é **equivalente**: o pacote já deixa a chamada Livewire passar sem travar (`Locker.php:handle:22-24`), então a marca não depende dela e nenhum teste a distingue |
 
 > R3 tem 4 cenários (teto padrão: 3): são partições distintas do tipo de requisição, cada uma com matador próprio (M44…M46, M56); o gate vence o teto.
 
@@ -378,7 +380,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
     Esquema do Cenário: [CT-24] a tela aberta direto ignora o Referer, de dentro ou de fora do sistema
       Dado a marca de trava foi forçada na sessão do usuário do painel admin, sem pedido de página
       E a tela de bloqueio foi aberta com o Referer "<referer>"
-      Quando o usuário informa a senha correta na tela de bloqueio do painel admin, com o mesmo Referer "<referer>" na montagem do componente e na ação authenticate
+      Quando o usuário informa a senha correta na tela de bloqueio do painel admin, com o mesmo Referer "<referer>" na montagem do componente e na requisição da ação authenticate
       Então o desbloqueio redireciona exatamente para "/admin"
       E o destino não é o Referer "<referer>"
 
@@ -459,11 +461,16 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 > `P-01`, `RQ-02`, `RQ-03` · perfil **completo** · técnica: **EP por situação de partida** (com página / tela aberta direto) + exemplo discriminante (painel ≠ painel padrão do usuário)
 
 ```gherkin
-    Cenário: [CT-14] a volta do provedor destrava e leva à página pedida
-      Dado o usuário do provedor "google" é o dono da sessão e a sessão foi travada por inatividade ao pedir "/admin/users?q=ana"
+    Esquema do Cenário: [CT-14] a volta do provedor destrava e leva à página pedida, com o login unificado ligado ou desligado
+      Dado o usuário do provedor "google" é o dono da sessão, com acesso ao painel admin, e a sessão foi travada por inatividade ao pedir "/admin/users?q=ana", com o login unificado <unificado>
       Quando o provedor devolve a pessoa ao callback com a mesma conta
       Então o redirecionamento do callback é exatamente "/admin/users?q=ana"
       E a marca de trava da sessão é falsa e o usuário autenticado é a conta A, a mesma de antes de travar
+
+      Exemplos:
+        | unificado  | # partição                                                                      |
+        | desligado  | destino pelo painel                                                             |
+        | ligado     | destino validado contra os painéis acessíveis (`DestinoAposLogin::urlPara`)    |
 
     Esquema do Cenário: [CT-15] com a tela de bloqueio aberta direto, o provedor leva à raiz do painel dela
       Dado o usuário do provedor "google" é o dono da sessão e a tela de bloqueio do <painel> foi aberta direto, sem pedido de página
@@ -527,6 +534,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | M20 | o provedor ignora a página guardada e vai ao painel do usuário | CT-14 | destino `/admin/users?q=ana`; o mutante redireciona a `/admin` |
 | M21 | sem página, o provedor vai ao painel padrão ou a `/` | CT-15 (linha `infra`) | destino `/infra`; o mutante redireciona a `/admin` ou `/` |
 | M22 | o callback usa parâmetro da query como destino | CT-16 | destino `/admin/users`; o mutante redireciona a `https://externo.example/x` ou `/infra` |
+| M72 | com o login unificado ligado, a validação da página contra os painéis acessíveis a descarta e o retorno cai na raiz | CT-14 (linha `ligado`) | destino exato `/admin/users?q=ana` para conta com acesso ao `/admin`; o mutante redireciona a `/admin` ou ao seletor de painel |
 | M23 | o desbloqueio social leva à página mas não destrava a sessão | CT-14 | `session('lockscreen')` é `false`; o mutante deixa `true` |
 | M24 | o retorno à página se aplica também ao login comum depois de "Trocar de conta": o destino guardado sobrevive ao logout **fora da sessão** (cookie, cache) | CT-29 | o destino do login da conta B não é `/admin/users?q=ana` nem `/admin/users`; o mutante redireciona a eles. Mutante morto só para destino guardado fora da sessão: destino guardado na sessão some no logout por construção (a sessão é invalidada) e não discrimina |
 | M36 | o retorno social usa a página guardada para qualquer conta que volte | CT-22 | o destino não é `/admin/users?q=ana`; o mutante redireciona a ela |
@@ -811,7 +819,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | CT-12 | senha errada não leva e mantém a trava | R5 | rastreio de efeito | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M18, M19 |
 | CT-13 | senha errada não gasta a página guardada | R5 | rastreio de efeito | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M17 |
 | CT-31 | provedor negado não destrava nem gasta a página | R5 | rastreio de efeito | G4 | Pest feature HTTP | `tests/Kit/BloqueioDeSessaoTest.php` | M51, M52 |
-| CT-14 | provedor destrava e leva à página | R6 | EP + discriminante | G4 | Pest feature HTTP | `tests/Kit/BloqueioDeSessaoTest.php` | M20, M23, M58 |
+| CT-14 | provedor destrava e leva à página | R6 | EP + discriminante | G4 | Pest feature HTTP | `tests/Kit/BloqueioDeSessaoTest.php` | M20, M23, M58, M72 |
 | CT-15 | provedor, tela aberta direto: raiz do painel dela | R6 | EP por painel | G4 | Pest feature HTTP | `tests/Kit/BloqueioDeSessaoTest.php` | M21, M55 |
 | CT-16 | parâmetro de destino no callback é ignorado | R6 | superfície | G4 | Pest feature HTTP | `tests/Kit/BloqueioDeSessaoTest.php` | M22 |
 | CT-22 | outra conta no provedor não herda a página guardada | R6 | EP por conta | G4 | Pest feature HTTP | `tests/Kit/BloqueioDeSessaoTest.php` | M36, M37, M38 |

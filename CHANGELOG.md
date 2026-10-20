@@ -5,6 +5,22 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+
+- Desbloqueio da sessão volta à página em que a pessoa estava (`wikis/specs/feat/desbloqueio-volta-a-pagina/`):
+  depois do bloqueio por inatividade, a senha (e a volta do provedor social da mesma conta) levava a
+  `/`, a página pública de boas-vindas — o `marjose123/filament-lockscreen` só guarda a página no
+  bloqueio manual. Agora vale a régua do *intended* do Laravel: a URL interceptada, com a query, ou a
+  última pedida com a sessão já travada. Sem página, a raiz do painel (no `/app`, a organização da
+  sessão, se ainda acessível). `App\Http\Middleware\BloquearSessaoComRetorno` substitui o `Locker`
+  do pacote por bind no container.
+- Tela de bloqueio aberta com a sessão já destravada volta ao painel: a guarda lia a existência da
+  marca `lockscreen`, que o pacote grava `false` ao destravar.
+- Pedido JSON com a sessão travada não troca mais a página guardada pelo `Referer`; duplo envio da
+  senha volta duas vezes à página; logout forçado do limite de tentativas não deixa página para o
+  próximo login; outra conta que entra pela tela (provedor ou link de confirmação de vínculo) não
+  herda a página de quem travou.
+
 ## [0.51.0] - 2026-10-19
 
 ### Adicionado
