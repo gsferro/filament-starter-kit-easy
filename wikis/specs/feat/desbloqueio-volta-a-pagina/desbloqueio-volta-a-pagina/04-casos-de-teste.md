@@ -301,10 +301,11 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 
     Esquema do Cenário: [CT-27] um GET que espera JSON com a sessão já travada não troca a página guardada, com ou sem Referer
       Dado a sessão foi travada por inatividade ao pedir "/admin/users"
-      E um GET a "/admin/users" que espera JSON chegou com a sessão já travada, <referer>
+      E um GET a "/admin?formato=json" que espera JSON chegou com a sessão já travada, <referer>
       Quando o usuário informa a senha correta na tela de bloqueio do painel admin
       Então o desbloqueio redireciona exatamente para "/admin/users"
-      E o destino não é o Referer enviado nem "/admin/shield/roles"
+      E o destino não é o Referer enviado, nem "/admin/shield/roles", nem o endereço do GET JSON
+      # *(alterado em 2026-10-20: amostragem manual de mutantes — com o GET JSON na mesma URL da página guardada, o mutante "JSON tratado como página" era equivalente e sobrevivia)*
 
       Exemplos:
         | referer                                      | # partição |

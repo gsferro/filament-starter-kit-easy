@@ -498,13 +498,14 @@ it('[CT-27] um GET que espera JSON com a sessão já travada não troca a págin
 
     $cabecalhos = $referer === null ? [] : ['Referer' => str_starts_with($referer, '/') ? url($referer) : $referer];
 
-    $this->withHeaders($cabecalhos)->getJson('/admin/users');
+    $this->withHeaders($cabecalhos)->getJson('/admin?formato=json');
     $this->flushHeaders();
 
     $destino = destinoDoComponente(desbloquearPorSenha('admin'));
 
     expect($destino)->toBe(enderecoDe('/admin/users'))
-        ->and($destino)->not->toBe(enderecoDe('/admin/shield/roles'));
+        ->and($destino)->not->toBe(enderecoDe('/admin/shield/roles'))
+        ->and($destino)->not->toBe(enderecoDe('/admin?formato=json'));
 
     if ($referer !== null) {
         expect($destino)->not->toBe(enderecoDe($referer));

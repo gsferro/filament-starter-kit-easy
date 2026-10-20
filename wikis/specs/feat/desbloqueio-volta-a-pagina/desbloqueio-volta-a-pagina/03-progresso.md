@@ -8,7 +8,7 @@
 
 - [x] Analisar se o pacote base tem a funcionalidade nativa — parcial: só o bloqueio manual guarda a página; `01`, `## Contexto`, 2026-10-20
 - [x] Usar o `codex --yolo` como auxiliar — análise independente do vendor, despacho 1, 2026-10-20
-- [x] Usar o Blueprint no processo — `filament/blueprint` ligado por `bp:on` (sem estado commitado), `planning/overview.md` + `checklist.md` aplicados em `01`, `## Consistência do Ciclo de Vida (Blueprint)`, 2026-10-20
+- [x] Usar o Blueprint no processo — relatório de conformidade `reviewing-filament-plans` por sub-agente cego (62 Conforms, 2 Mismatched — CT-24/CT-25, fortalecidos —, 3 Not verified — RD-03/RD-04, fechados depois), `bp:off` com o lock restaurado ao commitado; `filament/blueprint` ligado por `bp:on` (sem estado commitado), `planning/overview.md` + `checklist.md` aplicados em `01`, `## Consistência do Ciclo de Vida (Blueprint)`, 2026-10-20
 - [x] Criar branch específica — `feat/desbloqueio-volta-a-pagina`, 2026-10-20
 - [ ] Abrir o PR
 - [ ] Tag + release
@@ -38,22 +38,22 @@ Não fatiado — 2026-10-20: 3 RQ vigentes, 31 CT, compactação: não, 3 pergun
 
 ## Verificação Final
 
-- [ ] `/ponytail:ponytail-review` no diff (validar contra over-engineering)
-- [ ] `vendor/bin/pint --dirty`
+- [x] `/ponytail:ponytail-review` no diff (validar contra over-engineering) — passe no plano (step 6, -2 linhas) e CR-08 no diff (`isMethod('GET')` redundante, cortado), 2026-10-20
+- [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}`, 2026-10-20
 - [x] `vendor/bin/filacheck --fix` — All 17 rules passed, 2026-10-20
-- [ ] `composer types:check`
-- [ ] Testes da feature verdes
-- [ ] Suítes Kit e Tenancy sem regressão além da baseline de `main`
-- [ ] `pest --mutate` na classe nova: score, duração e sobreviventes listados
-- [ ] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação
-- [ ] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*`
-- [ ] `rastreabilidade.sh {wiki}` silencioso
-- [ ] `checkbox-sem-evidencia.sh {wiki}` silencioso
-- [ ] Citações reverificadas: `citacoes.sh {wiki}` silencioso
-- [ ] `ids-ct.sh {wiki}` silencioso
-- [ ] `conformidade-rules.sh {wiki} main` silencioso
+- [x] `composer types:check` — `vendor/bin/phpstan analyse` nos 4 arquivos de `app/`: `{"result":"passed","errors":0}`, 2026-10-20
+- [x] Testes da feature verdes — `php artisan test --compact tests/Kit/BloqueioDeSessaoTest.php` 75/75 (374 asserções); `tests/Tenancy/BloqueioComRetornoTenancyTest.php` 5/5, 2026-10-20
+- [x] Suítes Kit e Tenancy sem regressão além da baseline de `main` — `php artisan test --testsuite=Kit --parallel --compact` sobre `aaca0153`: 4385/4395, 3 pulados, 7 vermelhos explicados: 3 `BlueprintForaDoPacoteTest` (o `bp:on` temporário, desligado depois: `composer validate` ok, `install --dry-run` "Nothing to install"), 1 `CitacoesDeCodigoTest` (citações de `tests/Pest.php` deslocadas, corrigidas: 3/3) e 3 `SiteDeDocumentacaoTest` (números dos READMEs, sincronizados: 118/118 com citações e diagramas) — o da baseline incluído; Tenancy 639/639, 2026-10-20
+- [x] `pest --mutate` na classe nova: score, duração e sobreviventes listados — no Windows o plugin não certifica (`.ai/rules/testes.md`); amostragem manual de 8 mutantes (`scratchpad/mutantes_manuais.py`: aplica, roda o CT previsto, `git checkout`): 8/8 mortos depois de endurecer o CT-27 (M-a sobrevivia — GET JSON na mesma URL da página guardada, mutante equivalente no cenário; corrigido no `04` e no teste: 3/3 vermelhos com o mutante); `app/` limpo depois, 2026-10-20
+- [x] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação — 8 CR + 4 RD + 1 CX; 9 roteados (premissa/teste → CT → correção), 4 rejeitados com motivo; re-revisão única fechou RD-01/RD-02 e trouxe RD-03/RD-04 (Minor), fechados; ver `## Revisão do Diff (step 9)`, 2026-10-20
+- [x] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*` — `grep -c 'alterado em 2026-10-20'` nos três > 0; ver `## Desvios do Plano`, 2026-10-20
+- [x] `rastreabilidade.sh {wiki}` silencioso — exit 0, 2026-10-20
+- [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — exit 0, 2026-10-20
+- [x] Citações reverificadas: `citacoes.sh {wiki}` silencioso — exit 0, 2026-10-20
+- [x] `ids-ct.sh {wiki}` silencioso — `ids-ct.sh {wiki} 'tests/{Kit/BloqueioDeSessaoTest.php,Tenancy/BloqueioComRetornoTenancyTest.php}'` exit 0 (CT-26 `@obsoleto`), 2026-10-20
+- [x] `conformidade-rules.sh {wiki} main` silencioso — exit 0, nenhuma rule violada, 2026-10-20
 - [x] Falsificabilidade em cópia temporária, revertendo só o patch do fix — mais forte que a cópia: os 8 CT do step 9 (CT-27 ×2, CT-11, CT-32 unificado, CT-33, CT-35 ×2, CT-34) foram escritos e rodados ANTES da correção e falharam pela causa (b), com a saída literal no retorno do `fw-executor-ct`; 8 de 8 falham sem o fix. O CT-11 da 1ª rodada também nasceu vermelho (`'http://localhost:8000' starts with "…/admin"`) antes do fallback no `authenticate()`, 2026-10-20
-- [ ] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final
+- [x] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final — `docs/{pt,en}/autenticacao/index.md` (parágrafo do desbloqueio), `CHANGELOG.md` `[Unreleased] › Corrigido`, READMEs (números objetivos), 2026-10-20
 - [ ] `git commit`
 
 ## Revisão do Diff (step 9)
@@ -78,6 +78,18 @@ Não fatiado — 2026-10-20: 3 RQ vigentes, 31 CT, compactação: não, 3 pergun
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
+| `app.md` — painel corrente por `Paineis::correnteOuPadrao()`, URL nula por `Paineis::url()` | `app/**` | aplicada | `TelaBloqueio::raizDoPainel()` usa `Paineis::correnteOuPadrao()` e cai em `Paineis::url($panel)` quando `getUrl()` é nulo; o redirect nunca recebe `null` |
+| `app.md` — papel por `ContextoDePapeis`, DTO em `app/Data`, URL de arquivo por `asset()` | `app/**` | n.a. | o diff não atribui papel, não cria DTO nem gera URL de disco |
+| `auth.md` — `$layout` redeclarado; cobertura em par de `fi-auth-layout` | `app/Filament/Pages/Auth/**` | aplicada | `$layout` intacto; os dois casos do par seguem em `tests/Kit/BloqueioDeSessaoTest.php` ('renderiza a tela de bloqueio com o layout do login…' e 'não vaza o layout de login…'), verdes |
+| `auth.md` — redirect em `mount()` por `HttpResponseException`, sem `routeIs()` | `app/Filament/Pages/Auth/**` | aplicada | as guardas do `mount()` saem por `sairPara()`; o fallback novo só grava sessão, não redireciona |
+| `auth.md` — página fora do painel resolve o painel da conta antes de `canAccessPanel()` | `app/Filament/Pages/Auth/**` | n.a. | a tela de bloqueio é servida dentro do painel (`/{painel}/screen/lock`); `canAccessTenant()` é chamado no usuário autenticado |
+| `filament.md` — permissões, Resource, Page/Widget novos, cartões, Blueprint v5, alias de trait `as protected` | `app/Filament/**` | n.a. / aplicada | nenhum Resource, Page, Widget ou Action novo; `filacheck --fix` 17/17; o alias `configBaseDoAuthDesigner` preexistente não mudou |
+| `providers.md` — rota do kit no `KitServiceProvider` | `app/Providers/**` | n.a. | nenhuma rota nova; só um `bind()` no `AppServiceProvider`, que viaja pelo `kit:update` (`app/Providers` em `KitUpdate::CAMINHOS_DO_KIT`) |
+| `css-filament.md` — CSS do kit para blade de vendor | `app/Providers/**` | n.a. | nenhuma classe CSS nem blade nova |
+| `specs.md` — vendor citado com `file:line` lido; citação por símbolo; CT citado pelo ID | `wikis/specs/**` | aplicada | toda afirmação de vendor do `01` cita `arquivo:símbolo:linha`; `citacoes.sh` exit 0 |
+| `testes.md` — helper de mais de um arquivo em `tests/Pest.php` | `tests/**` | aplicada | `travadaPorInatividadeAoPedir`, `desbloquearPorSenha`, `destinoDoComponente` e `enderecoDe` em `tests/Pest.php` |
+| `testes.md` — `/app` boota com GET real antes do primeiro `Livewire::test()`; papéis por suíte | `tests/**` | aplicada | os CT de Tenancy fazem `get('/app/{org}/users')` antes do componente; persona `admin_app` (o `panel_user` toma 403) |
+| `testes.md` — `--mutate` no Windows não mede | `tests/**` | aplicada | mutação certificada por amostragem manual (`scratchpad/mutantes_manuais.py`), não pelo plugin |
 
 ## Quality Gate
 
@@ -143,6 +155,8 @@ Ponytail via skill `ponytail-review` (namespace `ponytail:` não instalado neste
 - Passo 3: além de honrar a página para a mesma conta, descarta `url.intended` quando outra conta volta numa sessão travada — no login unificado `urlDoPainel()` consome a chave de qualquer um, e sem o descarte a P-06 não valeria. Fonte corrigida: `01`, passo 3 *(alterado em 2026-10-20: P-06)*
 
 ## Notas de Implementação
+
+- A porta 8000 desta máquina serve outra aplicação (redireciona a `/projetos`): o quality gate usa o kit servido em `http://127.0.0.1:8123` (`php artisan serve`)
 
 - Baseline em `main` (2026-10-20): Kit 4341/4345 — 1 falha pré-existente: `SiteDeDocumentacaoTest` › *mantém os números objetivos dos READMEs sincronizados com a árvore*; 3 pulados — Tenancy 634/634 (`php artisan test --testsuite=Kit --parallel --compact`; idem Tenancy)
 - Suíte existente com a implementação, antes dos CT novos: 408/408 (`php artisan test --compact tests/Kit/BloqueioDeSessaoTest.php tests/Kit/LoginSocialGoogleTest.php tests/Kit/LoginSocialPorPainelTest.php tests/Kit/LoginSocialProvedoresTest.php tests/Kit/LoginUnificadoTest.php`); PHPStan 0 erros nos 4 arquivos
