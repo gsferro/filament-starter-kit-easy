@@ -73,16 +73,16 @@
         },
         {
             "name": "anselmokossa/filament-sentinel",
-            "version": "v1.2.1",
+            "version": "v1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/anselmocossa/filament-sentinel.git",
-                "reference": "515bbcc6f8c2131db36332fcdb05eed7fc50bb52"
+                "reference": "e29eaf2a01b54a5936ba692d3984071bc8274db7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/anselmocossa/filament-sentinel/zipball/515bbcc6f8c2131db36332fcdb05eed7fc50bb52",
-                "reference": "515bbcc6f8c2131db36332fcdb05eed7fc50bb52",
+                "url": "https://api.github.com/repos/anselmocossa/filament-sentinel/zipball/e29eaf2a01b54a5936ba692d3984071bc8274db7",
+                "reference": "e29eaf2a01b54a5936ba692d3984071bc8274db7",
                 "shasum": ""
             },
             "require": {
@@ -135,9 +135,9 @@
             ],
             "support": {
                 "issues": "https://github.com/anselmocossa/filament-sentinel/issues",
-                "source": "https://github.com/anselmocossa/filament-sentinel/tree/v1.2.1"
+                "source": "https://github.com/anselmocossa/filament-sentinel/tree/v1.3.0"
             },
-            "time": "2026-08-04T21:47:02+00:00"
+            "time": "2026-08-04T22:19:22+00:00"
         },
         {
             "name": "asignua/filament-infinite-scroll",
@@ -7191,28 +7191,28 @@
         },
         {
             "name": "mike-bronner/laravel-model-caching",
-            "version": "13.1.10",
+            "version": "13.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mike-bronner/laravel-model-caching.git",
-                "reference": "9b1d97049e5f6e7151f0c42dc9887c0aff7ee74f"
+                "reference": "645597cc8813abfe442cb6832a7913a4d3f6ec0f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mike-bronner/laravel-model-caching/zipball/9b1d97049e5f6e7151f0c42dc9887c0aff7ee74f",
-                "reference": "9b1d97049e5f6e7151f0c42dc9887c0aff7ee74f",
+                "url": "https://api.github.com/repos/mike-bronner/laravel-model-caching/zipball/645597cc8813abfe442cb6832a7913a4d3f6ec0f",
+                "reference": "645597cc8813abfe442cb6832a7913a4d3f6ec0f",
                 "shasum": ""
             },
             "require": {
-                "illuminate/cache": "^11.0|^12.0|^13.0",
-                "illuminate/config": "^11.0|^12.0|^13.0",
-                "illuminate/console": "^11.0|^12.0|^13.0",
-                "illuminate/container": "^11.0|^12.0|^13.0",
-                "illuminate/database": "^11.0|^12.0|^13.0",
-                "illuminate/http": "^11.0|^12.0|^13.0",
-                "illuminate/support": "^11.0|^12.0|^13.0",
+                "illuminate/cache": "^12.0|^13.0",
+                "illuminate/config": "^12.0|^13.0",
+                "illuminate/console": "^12.0|^13.0",
+                "illuminate/container": "^12.0|^13.0",
+                "illuminate/database": "^12.0|^13.0",
+                "illuminate/http": "^12.0|^13.0",
+                "illuminate/support": "^12.0|^13.0",
                 "mikebronner/laravel-pivot-events": "^13.1",
-                "php": ">=8.2"
+                "php": ">=8.3"
             },
             "replace": {
                 "genealabs/laravel-model-caching": "self.version",
@@ -7225,13 +7225,12 @@
                 "larastan/larastan": "^2.0|^3.0",
                 "laravel/boost": "^2.0",
                 "laravel/pint": "^1.27",
-                "orchestra/testbench": "^9.0|^10.0|^11.0",
-                "pestphp/pest": "^3.0|^4.0",
-                "pestphp/pest-plugin-laravel": "^3.0|^4.0",
-                "phpunit/phpunit": "^10.5|^11.5|^12.5",
+                "mike-bronner/clean-code": "^0.2",
+                "mike-bronner/laravel-development-settings": "^0.6",
+                "orchestra/testbench": "^10.0|^11.0",
+                "pestphp/pest": "^4.0|^5.0",
+                "pestphp/pest-plugin-laravel": "^4.0|^5.0",
                 "predis/predis": "^2.0|^3.0",
-                "slevomat/coding-standard": "^7.0|^8.14",
-                "squizlabs/php_codesniffer": "^3.6|^4.0",
                 "symfony/thanks": "^1.2"
             },
             "suggest": {
@@ -7263,9 +7262,9 @@
             "description": "Automatic caching for Eloquent models.",
             "support": {
                 "issues": "https://github.com/mike-bronner/laravel-model-caching/issues",
-                "source": "https://github.com/mike-bronner/laravel-model-caching/tree/13.1.10"
+                "source": "https://github.com/mike-bronner/laravel-model-caching/tree/13.2.0"
             },
-            "time": "2026-09-09T21:06:54+00:00"
+            "time": "2026-10-15T22:01:55+00:00"
         },
         {
             "name": "mikebronner/laravel-pivot-events",

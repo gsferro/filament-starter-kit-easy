@@ -37,6 +37,12 @@
                     <dt>{{ __('sentinel::sentinel.labels.permission_kind') }}</dt>
                     <dd style="font-family:inherit">{{ __('sentinel::sentinel.kinds.'.$auth['kind']) }}</dd>
                 @endisset
+                @isset($auth['held_permission'])
+                    <dt>{{ __('sentinel::sentinel.labels.page_permission') }}</dt>
+                    <dd>{{ $auth['held_permission'] }}</dd>
+                    <dt></dt>
+                    <dd style="font-family:inherit">{{ __('sentinel::sentinel.labels.page_permission_held') }}</dd>
+                @endisset
                 @isset($auth['missing_roles'])
                     <dt>{{ trans_choice('sentinel::sentinel.labels.missing_roles', count($auth['missing_roles'])) }}</dt>
                     <dd>{{ implode(', ', $auth['missing_roles']) }}</dd>
