@@ -45,6 +45,30 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   bind dele no `AppServiceProvider`; quem customizou a `TelaBloqueio` ou trocou o middleware de bloqueio
   revisa o diff.
 
+### Validação local dos quatro cenários (2026-10-20)
+
+- **Os quatro cenários de `wikis/checklist-de-release.md`** (create-project e `kit:update`, com e sem
+  tenancy) rodaram em 2026-10-20 **sobre a tag publicada** `v0.51.1` (anterior `v0.51.0`), em
+  `validacao-v0.51.1/` fora da árvore do kit. **Liso** nos seis critérios. O arquivo novo
+  (`app/Http/Middleware/BloquearSessaoComRetorno.php`) e o bind dele no `AppServiceProvider` estão
+  presentes nos quatro. O `kit:update` dos cenários 3 e 4 aplicou **5 arquivos novos e 13 modificados** e
+  marcou `config/kit.php` em `0.51.1`; sem migration nova (`Nothing to migrate`). Os 2 "risky" por cenário
+  são os mesmos da release anterior.
+
+  | Cenário | Saída de `php artisan test --testsuite=Kit,Tenancy --parallel --compact` | `kit.version` | tenancy |
+  |---|---|---|---|
+  | 1 `novo-sem-tenant` — `create-project` `v0.51.1` | `{"tool":"pest","result":"passed","tests":5037,"passed":4098,"assertions":19393,"duration_ms":550759,"skipped":939,"risky":2}` | `0.51.1` | `NAO` |
+  | 2 `novo-com-tenant` — `create-project` `v0.51.1` + `kit:tenancy --force` | `{"tool":"pest","result":"passed","tests":5037,"passed":4098,"assertions":19393,"duration_ms":629722,"skipped":939,"risky":2}` | `0.51.1` | `SIM` |
+  | 3 `velho-sem-tenant` — `create-project` `v0.51.0` + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":5037,"passed":4098,"assertions":19393,"duration_ms":551181,"skipped":939,"risky":2}` | `0.51.1` | `NAO` |
+  | 4 `velho-com-tenant` — `create-project` `v0.51.0` + `kit:tenancy --force` + commit + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":5037,"passed":4098,"assertions":19393,"duration_ms":545870,"skipped":939,"risky":2}` | `0.51.1` | `SIM` |
+
+  **Teto de pulados confirmado: 939**, idêntico ao da `v0.51.0` nos quatro — nenhum caso novo guardado por
+  `naArvoreDoKit()` (os 60 testes a mais desta release rodam todos fora da árvore do kit). A 1ª rodada foi
+  descartada: o git desta máquina não tem identidade fora da árvore do kit, todo commit dos cenários falhou e,
+  com ele, o `kit:tenancy` e o `kit:update` (que recusa árvore suja e sai com código 0); a suíte também não
+  rodou, porque `--log-junit` junto de `--compact` fez o paratest imprimir o uso. A rodada válida exporta
+  `GIT_AUTHOR_*`/`GIT_COMMITTER_*` e lê os pulados do JSON do Pest.
+
 ## [0.51.0] - 2026-10-19
 
 ### Adicionado

@@ -57,6 +57,11 @@ composer create-project gsferro/starter-kit-easy velho-com-tenant "vX.Y.(Z-1)" -
 
 ### Ligar a tenancy (cenários 2 e 4)
 
+> **O git precisa de identidade nesses diretórios.** Fora da árvore do kit a máquina pode não ter
+> `user.email`, e aí todo `git commit` abaixo falha — e o `kit:tenancy` e o `kit:update` recusam em seguida,
+> saindo com código 0. Antes de começar: `export GIT_AUTHOR_NAME=… GIT_AUTHOR_EMAIL=… GIT_COMMITTER_NAME=…
+> GIT_COMMITTER_EMAIL=…` (ou `git config --global`). Achado da validação da `v0.51.1`.
+
 ```bash
 cd novo-com-tenant
 git init && git add -A && git commit -m "estado antes da tenancy"   # o comando EXIGE git
@@ -136,7 +141,9 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto local: 939**, medido nos quatro cenários da `v0.51.0` **sobre a tag publicada** (2026-10-20),
+> **Teto local: 939**, confirmado sem mudança nos quatro cenários da `v0.51.1` sobre a tag publicada
+> (2026-10-20, seção `0.51.1 / Validação local dos quatro cenários` do `CHANGELOG.md`) e medido nos quatro
+> cenários da `v0.51.0` **sobre a tag publicada** (2026-10-20),
 > 33 arquivos, decomposição com `--log-junit` no `CHANGELOG.md`, seção `0.51.0 / Validação`. O `+15`
 > sobre o 924 acumula três releases sem cenários (`v0.48.0` a `v0.50.0`): +11 de
 > `ConfiguracoesDoKitDocumentacaoTest` (README, `docs/`, CHANGELOG, `.ai/rules`) e +4 de
