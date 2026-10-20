@@ -20,6 +20,7 @@ use App\Settings\ConfiguracoesDoKit;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\DensidadeDoLayout;
 use App\Support\DestinoAposLogin;
+use App\Support\DockDeAtalhos;
 use App\Support\PoliciesDeVendor;
 use App\Support\ProxiesConfiaveis;
 use App\Support\TetoDeUpload;
@@ -171,6 +172,8 @@ class KitServiceProvider extends ServiceProvider
         $this->configureOrdemDasCascadeLayers();
         $this->configureDensidadeDoLayout();
         $this->configureCorrecoesDeCss();
+        // A cópia corrigida do bundle do dock no lugar do `dist/` (ver DockDeAtalhos::SCRIPT_CORRIGIDO).
+        DockDeAtalhos::servirScriptCorrigido();
         $this->configureTelaDeLogin();
         $this->configureLoginUnificado();
         $this->registrarPainelNoLogDeAcesso();

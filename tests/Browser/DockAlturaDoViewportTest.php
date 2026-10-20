@@ -14,16 +14,18 @@
 /** @return array{top: float, bottom: float, alturaVisivel: int, innerHeight: int} */
 function medirDockNaAlturaDoViewport(object $pagina, int $excesso): array
 {
+    // A sentinela no `--qad-transform` prova que o pacote REPOSICIONOU depois do resize: a medida
+    // só é lida quando o `place()` a sobrescreveu, em vez de esperar um tempo fixo.
     $pagina->script(<<<JS
         (() => {
             const real = document.documentElement.clientHeight;
             Object.defineProperty(window, 'innerHeight', {configurable: true, get: () => real + {$excesso}});
+            document.querySelector('.qad-root').style.setProperty('--qad-transform', 'sentinela');
             window.dispatchEvent(new Event('resize'));
         })()
     JS);
 
-    $pagina->assertScript('() => { const r = document.querySelector(".qad-root"); return r.hasAttribute("data-placed") && ! r.hasAttribute("data-settling"); }');
-    $pagina->wait(0.3);
+    $pagina->assertScript('() => document.querySelector(".qad-root").style.getPropertyValue("--qad-transform") !== "sentinela"');
 
     return json_decode((string) $pagina->script(<<<'JS'
         JSON.stringify((() => {

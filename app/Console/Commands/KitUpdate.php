@@ -222,6 +222,9 @@ class KitUpdate extends Command
          * `php artisan filament:assets` — que continua no aviso pós-update para os demais.
          */
         'public/css/kit',
+        // A cópia corrigida do bundle do dock (DockDeAtalhos::SCRIPT_CORRIGIDO): servida direto de
+        // `public/`, sem passar pelo `filament:assets` — sem esta linha, quem atualiza nunca a recebe.
+        'public/js/kit',
         'resources/css/filament',
         'resources/views/auth',
         'resources/views/errors',

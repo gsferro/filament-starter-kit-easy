@@ -2,8 +2,20 @@
 
 use Symfony\Component\Finder\Finder;
 
-it('[CT-01] toda classe nomeada em tests declara namespace', function (): void {
-    $violacoes = [];
+/*
+ * Issue #170: classe declarada em `tests/` fora do PSR-4 (`Tests\` => `tests/`) vira aviso
+ * `does not comply with psr-4` no `composer dump-autoload --optimize` de quem instala.
+ */
+
+/**
+ * As declarações nomeadas (classe, interface, trait, enum) de cada arquivo de `tests/`, com o
+ * namespace em que cada uma está.
+ *
+ * @return list<array{arquivo: string, linha: int, nome: string, namespace: string}>
+ */
+function declaracoesNomeadasEmTests(): array
+{
+    $declaracoes = [];
 
     foreach (Finder::create()->files()->in(base_path('tests'))->name('*.php') as $arquivo) {
         $tokens = array_values(array_filter(
@@ -45,12 +57,41 @@ it('[CT-01] toda classe nomeada em tests declara namespace', function (): void {
 
             $proximo = $tokens[$indice + 1] ?? null;
 
-            // Só uma declaração nomeada tem T_STRING após T_CLASS; new class e ::class não têm.
-            if ($token[0] === T_CLASS && is_array($proximo) && $proximo[0] === T_STRING && $namespace === '') {
-                $violacoes[] = $arquivo->getRelativePathname().':'.$token[2].' '.$proximo[1];
+            // Só uma declaração nomeada tem T_STRING logo depois; `new class` e `::class` não têm.
+            if (in_array($token[0], [T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM], true) && is_array($proximo) && $proximo[0] === T_STRING) {
+                $declaracoes[] = ['arquivo' => $arquivo->getRelativePathname(), 'linha' => $token[2], 'nome' => $proximo[1], 'namespace' => $namespace];
             }
         }
     }
 
-    expect($violacoes)->toBe([], "Classes sem namespace em tests/:\n".implode("\n", $violacoes));
+    return $declaracoes;
+}
+
+it('[CT-01] toda classe, interface, trait e enum nomeado em tests declara namespace', function (): void {
+    $violacoes = array_map(
+        static fn (array $d): string => "{$d['arquivo']}:{$d['linha']} {$d['nome']}",
+        array_values(array_filter(declaracoesNomeadasEmTests(), static fn (array $d): bool => $d['namespace'] === '')),
+    );
+
+    expect($violacoes)->toBe([], "Declarações sem namespace em tests/:\n".implode("\n", $violacoes));
+});
+
+it('[CT-02] a declaração fora de arquivo *Test.php casa com o PSR-4: namespace = pasta, nome = arquivo', function (): void {
+    $violacoes = [];
+
+    foreach (declaracoesNomeadasEmTests() as $d) {
+        if (str_ends_with($d['arquivo'], 'Test.php') || $d['namespace'] === '') {
+            continue;
+        }
+
+        $caminho  = str_replace('/', '\\', str_replace('\\', '/', $d['arquivo']));
+        $pasta    = dirname($caminho);
+        $esperado = 'Tests'.($pasta === '.' ? '' : '\\'.$pasta);
+
+        if ($d['namespace'] !== $esperado || $d['nome'] !== pathinfo($d['arquivo'], PATHINFO_FILENAME)) {
+            $violacoes[] = "{$d['arquivo']}:{$d['linha']} {$d['namespace']}\\{$d['nome']} (esperado {$esperado}\\".pathinfo($d['arquivo'], PATHINFO_FILENAME).')';
+        }
+    }
+
+    expect($violacoes)->toBe([], "Fora do PSR-4 (Tests\\ => tests/):\n".implode("\n", $violacoes));
 });
