@@ -45,6 +45,76 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   dos casos de teste: 23 achados, 22 aplicados. Wiki da feature:
   `wikis/specs/feat/agentes-ia-no-settings/`.
 
+- **Os quatro cenários de `wikis/checklist-de-release.md`** (create-project e `kit:update`, com e sem
+  tenancy) rodaram em 2026-10-19/20 **sobre a tag publicada** `v0.51.0` (anterior `v0.50.0`), em
+  `validacao-v0.51.0/` fora da árvore do kit, pelo `cenarios.sh` da sessão (um log por cenário;
+  `create-project` de 15 a 18 min cada nesta máquina pelo antivírus no primeiro acesso aos arquivos).
+  Conferência independente dos logs contra a tabela do checklist por `codex exec --yolo -s read-only`,
+  sem o contexto da sessão: **liso** nos seis critérios. Os três arquivos novos
+  (`app/Support/AgentesDeIa.php`, `app/Filament/Concerns/ExigeAgentesDeIaLigados.php`,
+  `database/settings/2026_10_19_100000_add_agentes_ia_to_kit_settings.php`) presentes nos quatro;
+  settings `[agentes_ia_habilitado, agentes_ia_paineis]` = `[false,[]]` e `kit:info` com
+  "Agentes Ia Habilitado .. não / Agentes Ia Paineis .. —" nos quatro. O `kit:update` dos cenários 3 e
+  4 listou e aplicou **45 arquivos** (7 novos, 38 modificados) e marcou `config/kit.php` em `0.51.0`;
+  os 8 arquivos do diff `v0.50.0..v0.51.0` que ele não entrega são `wikis/specs/` (export-ignore e
+  exclusão do `KitUpdate`, deliberadas). Os 2 "risky" por cenário são os mesmos 2 da suíte na
+  árvore do kit (acima); o JUnit não os identifica.
+
+  | Cenário | Saída de `php artisan test --testsuite=Kit,Tenancy --parallel --compact` | `kit.version` | tenancy | migration nova |
+  |---|---|---|---|---|
+  | 1 `novo-sem-tenant` — `create-project` `v0.51.0` | `{"tool":"pest","result":"passed","tests":4977,"passed":4038,"assertions":19037,"duration_ms":547861,"skipped":939,"risky":2}` | `0.51.0` | `NAO` | rodou no `kit:install` |
+  | 2 `novo-com-tenant` — `create-project` `v0.51.0` + `kit:tenancy --force` | `{"tool":"pest","result":"passed","tests":4977,"passed":4038,"assertions":19037,"duration_ms":528663,"skipped":939,"risky":2}` | `0.51.0` | `SIM` | rodou no `kit:install` (`…-tenancy.log:104` DONE) |
+  | 3 `velho-sem-tenant` — `create-project` `v0.50.0` + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":4977,"passed":4038,"assertions":19037,"duration_ms":497491,"skipped":939,"risky":2}` | `0.51.0` | `NAO` | `2026_10_19_100000_add_agentes_ia_to_kit_settings .. 10.47ms DONE` |
+  | 4 `velho-com-tenant` — `create-project` `v0.50.0` + `kit:tenancy --force` + commit + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":4977,"passed":4038,"assertions":19037,"duration_ms":483653,"skipped":939,"risky":2}` | `0.51.0` | `SIM` | `2026_10_19_100000_add_agentes_ia_to_kit_settings .. 10.72ms DONE` |
+
+  **Teto local novo: 939**, medido com `--log-junit` no cenário 1 (`novo-sem-tenant-junit.xml`, 4.977
+  casos, 939 `<skipped>`) e idêntico na saída dos quatro, **33 arquivos**. Aumento de **15 sobre o teto
+  924** da `v0.47.1` — as três releases seguintes (`v0.48.0`, `v0.49.0`, `v0.50.0`) não rodaram os
+  cenários, então o `+15` acumula as duas: **+11** em `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php`
+  (`v0.50.0`: CT-02, CT-19 e correções do step 9 da wiki de configurações — README PT/EN, `docs/`,
+  `CHANGELOG.md`, `.ai/rules`; 7 guardas, datasets 2+2+2+1+8+1+1 = 17) e **+4** em
+  `tests/Kit/PacotesRodada3Test.php` (arquivo novo da `v0.49.0`: `docs/` PT/EN, capturas em `art/`,
+  CSS fonte × publicado; 3 guardas, 2+1+1 = 4). Todas são `->skip(fn () => ! naArvoreDoKit(), …)`
+  (sentinela `.github`) sobre verificações documentais e de artefatos da árvore mantenedora; nenhuma
+  encobre falha funcional, e nenhum outro arquivo mudou de contagem. Decomposição completa:
+
+  | Arquivo | Pulados |
+  |---|---|
+  | `tests/Kit/AcoesPinadasPorShaTest.php` | 2 |
+  | `tests/Kit/AnexosPrivadosDocumentacaoTest.php` | 8 |
+  | `tests/Kit/ArquiteturaDoCodigoTest.php` | 1 |
+  | `tests/Kit/BlueprintForaDoPacoteTest.php` | 1 |
+  | `tests/Kit/ChecklistDeReleaseTest.php` | 22 |
+  | `tests/Kit/CitacoesDeCodigoTest.php` | 3 |
+  | `tests/Kit/CoberturaDeTestesTest.php` | 20 |
+  | `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php` | 17 |
+  | `tests/Kit/ConstraintDeDependenciaTest.php` | 1 |
+  | `tests/Kit/DeployDockerLocalTest.php` | 3 |
+  | `tests/Kit/DeployMultiambienteDockerTest.php` | 72 |
+  | `tests/Kit/DiagramasDaArquiteturaTest.php` | 528 |
+  | `tests/Kit/DuasRotasDeEntregaTest.php` | 3 |
+  | `tests/Kit/GuardasDosDiagramasTest.php` | 47 |
+  | `tests/Kit/HostLocalTest.php` | 3 |
+  | `tests/Kit/KitInfoTest.php` | 2 |
+  | `tests/Kit/KitUpdateTest.php` | 8 |
+  | `tests/Kit/LoginSocialGoogleTest.php` | 8 |
+  | `tests/Kit/LoginSocialProvedoresTest.php` | 21 |
+  | `tests/Kit/LogoDarkModeTest.php` | 4 |
+  | `tests/Kit/MysqlNoDockerTest.php` | 4 |
+  | `tests/Kit/PacotesRodada3Test.php` | 4 |
+  | `tests/Kit/PageHeaderTest.php` | 3 |
+  | `tests/Kit/ProxiesConfiaveisTest.php` | 1 |
+  | `tests/Kit/QualidadeDeCodigoTest.php` | 2 |
+  | `tests/Kit/RaizDeUrlRegistradaTest.php` | 1 |
+  | `tests/Kit/RecorteDaCoberturaTest.php` | 2 |
+  | `tests/Kit/RedeDeDocumentacaoTest.php` | 20 |
+  | `tests/Kit/SiteDeDocumentacaoTest.php` | 68 |
+  | `tests/Kit/SituacaoDaContaDocumentacaoTest.php` | 2 |
+  | `tests/Kit/UnificaLogoDoTenantTest.php` | 2 |
+  | `tests/Kit/UploadLimiteETiposDocumentacaoTest.php` | 6 |
+  | `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | 50 |
+  | **Total** | **939** |
+
 ### Atualizando
 
 - Rode `php artisan migrate` depois do `kit:update`: a migration de settings semeia `agentes_ia_habilitado`

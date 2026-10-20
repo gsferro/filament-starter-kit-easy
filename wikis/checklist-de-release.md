@@ -136,7 +136,13 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto local candidato: 924**, medido nos quatro cenários desta revisão (2026-10-09),
+> **Teto local: 939**, medido nos quatro cenários da `v0.51.0` **sobre a tag publicada** (2026-10-20),
+> 33 arquivos, decomposição com `--log-junit` no `CHANGELOG.md`, seção `0.51.0 / Validação`. O `+15`
+> sobre o 924 acumula três releases sem cenários (`v0.48.0` a `v0.50.0`): +11 de
+> `ConfiguracoesDoKitDocumentacaoTest` (README, `docs/`, CHANGELOG, `.ai/rules`) e +4 de
+> `PacotesRodada3Test` (`docs/`, `art/`, CSS publicado), todos guardados por `naArvoreDoKit()`.
+>
+> **Teto anterior: 924**, medido nos quatro cenários da revisão de 2026-10-09,
 > com artefato local e dependências/assets reutilizados; não comprova a tag publicada.
 > Decomposição completa no `CHANGELOG.md`, seção `0.47.1 / Validação local antes da publicação`: 32 arquivos.
 > O aumento de dois são as linhas PT/EN do CT-09 de `UnificaLogoDoTenantTest`, que leem `docs/`
