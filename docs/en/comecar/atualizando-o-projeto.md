@@ -38,7 +38,7 @@ What it does, in order:
 The flow is **non-interactive** when there is no terminal (CI, `--no-interaction`) — never "no
 TTY": it turns into a report and exits without applying anything, unless `--all` or `--only-new`
 already gave the approval on the command line
-(`app/Console/Commands/KitUpdate.php:isInteractive:451`).
+(`app/Console/Commands/KitUpdate.php:isInteractive:454`).
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 ```
 
 The order comes straight from `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:399`): pre-flight (`:preVoo:486`), temporary remote
+(`app/Console/Commands/KitUpdate.php:handle:402`): pre-flight (`:preVoo:486`), temporary remote
 (`:vincularKit:545`), restricted diff (`:arquivosAlterados:651`), summary (`:mostrarResumo:827`),
 the terminal check (`:isInteractive:449`), the temporary branch (`:prepararBranch:847`), the
 file-by-file review (`:revisarEAplicar:896`), the `composer.json` report
@@ -138,6 +138,11 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 `kit:update` shows: fields moved inside `secao()` and tabs inside `aba()`. Tabs got a fixed key in
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
+
+**In v0.51.2 there is nothing to install or migrate**: the dock button no longer slides off screen on
+desktop. `kit:update` brings `public/js/kit/quick-action-dock.js`, a fixed copy of the dock package's script
+served in place of the original — do not edit it: after a `composer update` of
+`hoceineel/filament-quick-action-dock`, run the kit suite, which warns if the copy is out of date.
 
 **In v0.51.1 there is nothing to install or migrate**: unlocking the session now returns to the page
 the person was on (see [Authentication](../../autenticacao/)). Whoever customized `TelaBloqueio` or
@@ -222,7 +227,7 @@ section above, "A new kit dependency").
 
 A path that **entered** `CAMINHOS_DO_KIT` after your version — such as the authored folders under
 `resources/views/vendor` — is compared against **your tree**, not only tag against tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:696`): the file you do not have shows up as
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:699`): the file you do not have shows up as
 "novo no kit" even if the kit has not changed it since your version, and a file your project does not
 have shows up as "novo no kit" even if the kit changed it between the tags — that is the label `--only-new`
 applies. This behaviour holds from the version that introduced it (the class that runs is the installed

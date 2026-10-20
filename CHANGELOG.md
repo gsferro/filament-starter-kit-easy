@@ -5,6 +5,39 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.51.2] - 2026-10-20
+
+### Corrigido
+
+- O botão do dock de atalhos não desce mais para fora da tela no desktop
+  (`wikis/specs/fix/dock-altura-do-viewport/`). O `hoceineel/filament-quick-action-dock` mede a altura
+  do viewport por `window.innerHeight` — a largura já usa `documentElement.clientWidth` —, e num Chrome
+  desktop medido o `innerHeight` veio 867 (igual ao `outerHeight`) com a área visível de 780: cada
+  reposicionamento (resize, polling do Livewire) levava o `bottom-center` para y = 787, abaixo da borda, e o
+  botão "nascia e sumia"; movê-lo à mão disfarçava. O kit serve `public/js/kit/quick-action-dock.js`, o
+  bundle do pacote com essa única medida trocada pelo `clientHeight`, no lugar do original
+  (`DockDeAtalhos::servirScriptCorrigido()`); a correção cobre o posicionamento, a direção de abertura do
+  menu e o primeiro paint. Issue e PR upstream: HoceineEl/filament-quick-action-dock#2 e #3.
+- Fixtures de teste sem namespace geravam 12 avisos `does not comply with psr-4` no
+  `composer install --optimize-autoloader` de quem instala (#170): as 12 classes foram para arquivos
+  próprios com namespace, e `tests/Kit/FixturesComNamespaceTest.php` reprova declaração nomeada sem
+  namespace ou fora do PSR-4 em `tests/`.
+
+### Alterado
+
+- `anselmokossa/filament-sentinel` 1.2.1 → 1.3.0 (#168): a página 403 passa a dizer quando a pessoa TEM a
+  permissão da página e a recusa veio de outro lugar. As views e as traduções do sentinel que o kit publica
+  (publish cru, nunca editadas) foram republicadas da 1.3.0. Débito declarado: essas cópias cruas poderiam
+  sair — o pacote serviria as próprias —, mas apagá-las muda o que o kit instala, e o `kit:update` não as
+  apagaria nos projetos já atualizados.
+- `mike-bronner/laravel-model-caching` 13.1.10 → 13.2.0 (#169) e `playwright` 1.64.0 → 1.64.1 (#167).
+
+### Atualizando
+
+- Nada a instalar nem migrar. O `kit:update` traz a cópia corrigida do script do dock em `public/js/kit/` —
+  não a edite; depois de um `composer update` do pacote do dock, rode a suíte do kit, que acusa a cópia
+  defasada com o comando que a regenera.
+
 ## [0.51.1] - 2026-10-20
 
 ### Corrigido

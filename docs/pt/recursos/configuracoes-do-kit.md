@@ -72,7 +72,7 @@ aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a t
 As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.
 
 Se o interruptor estiver ligado e o campo vazio, o rodapé mostra a assinatura e, ao lado, **a versão do kit rotulada**
-(`kit 0.51.1`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
+(`kit 0.51.2`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
 impede essa leitura, e é requisito do kit, não detalhe de tela.
 
 **`APP_VERSION` semeia UMA vez, na instalação. Depois dela, quem manda é a tela.**
@@ -263,7 +263,7 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:629`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:427`); as chaves sobrepostas são
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:430`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
 (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:460`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:414`) não está nesse mapa, então o banco nunca a sobrescreve.
