@@ -42,9 +42,25 @@ Não fatiado — 2026-10-20: 3 RQ vigentes, 31 CT, compactação: não, 3 pergun
 - [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}`, 2026-10-20
 - [x] `vendor/bin/filacheck --fix` — All 17 rules passed, 2026-10-20
 - [x] `composer types:check` — `vendor/bin/phpstan analyse` nos 4 arquivos de `app/`: `{"result":"passed","errors":0}`, 2026-10-20
-- [x] Testes da feature verdes — `php artisan test --compact tests/Kit/BloqueioDeSessaoTest.php` 75/75 (374 asserções); `tests/Tenancy/BloqueioComRetornoTenancyTest.php` 5/5, 2026-10-20
+- [x] Testes da feature verdes — `php artisan test --compact tests/Kit/BloqueioDeSessaoTest.php` 75/75 (377 asserções — `{"tool":"pest","result":"passed","tests":75,"passed":75,"assertions":377}` depois do CT-27 endurecido); `tests/Tenancy/BloqueioComRetornoTenancyTest.php` 5/5, 2026-10-20
 - [x] Suítes Kit e Tenancy sem regressão além da baseline de `main` — `php artisan test --testsuite=Kit --parallel --compact` sobre `aaca0153`: 4385/4395, 3 pulados, 7 vermelhos explicados: 3 `BlueprintForaDoPacoteTest` (o `bp:on` temporário, desligado depois: `composer validate` ok, `install --dry-run` "Nothing to install"), 1 `CitacoesDeCodigoTest` (citações de `tests/Pest.php` deslocadas, corrigidas: 3/3) e 3 `SiteDeDocumentacaoTest` (números dos READMEs, sincronizados: 118/118 com citações e diagramas) — o da baseline incluído; Tenancy 639/639, 2026-10-20
-- [x] `pest --mutate` na classe nova: score, duração e sobreviventes listados — no Windows o plugin não certifica (`.ai/rules/testes.md`); amostragem manual de 8 mutantes (`scratchpad/mutantes_manuais.py`: aplica, roda o CT previsto, `git checkout`): 8/8 mortos depois de endurecer o CT-27 (M-a sobrevivia — GET JSON na mesma URL da página guardada, mutante equivalente no cenário; corrigido no `04` e no teste: 3/3 vermelhos com o mutante); `app/` limpo depois, 2026-10-20
+- [x] Mutação por amostragem manual (o `pest --mutate` não certifica no Windows — `.ai/rules/testes.md`, `UNTESTED do pest-plugin-mutate…`) — 8 mutantes nos pontos de decisão, cada um aplicado, testado pelo CT previsto e revertido por `git checkout` (`scratchpad/mutantes_manuais.py`); 8/8 mortos depois de endurecer o CT-27; `app/` limpo depois, 2026-10-20 *(alterado em 2026-10-20: QA-04 do quality gate)*
+
+  Saída literal da 1ª rodada (`PYTHONIOENCODING=utf-8 python mutantes_manuais.py`):
+
+  ```
+  M-a JSON não restaura | SOBREVIVEU — \[CT-27\] — tests=3 passed=3 failed=0
+  M-b previous() no lugar de fullUrl() | MORTO — \[CT-01\] — tests=4 passed=0 failed=4
+  M-c guarda volta a has() | MORTO — \[CT-18\] — tests=3 passed=0 failed=3
+  M-d social: toda conta é desbloqueio | MORTO — \[CT-22\] — tests=2 passed=0 failed=2
+  M-e vínculo não descarta | MORTO — \[CT-32\] — tests=2 passed=1 failed=1
+  M-f logout forçado não limpa | MORTO — \[CT-35\] — tests=2 passed=0 failed=2
+  M-g sem canAccessTenant | MORTO — \[CT-37\] — tests=1 passed=0 failed=1
+  M-h propriedade vence a sessão | MORTO — \[CT-36\] — tests=2 passed=1 failed=1
+  app/ limpo depois: sim
+  ```
+
+  M-a sobreviveu porque o GET JSON do CT-27 ia à mesma URL da página guardada (mutante equivalente no cenário). Com o CT-27 em `/admin?formato=json` (commit `ced101d2`), a 2ª rodada do M-a deu `{"tool":"pest","result":"failed","tests":3,"passed":0,…,"failed":3}`, e sem o mutante `"tests":3,"passed":3`.
 - [x] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação — 8 CR + 4 RD + 1 CX; 9 roteados (premissa/teste → CT → correção), 4 rejeitados com motivo; re-revisão única fechou RD-01/RD-02 e trouxe RD-03/RD-04 (Minor), fechados; ver `## Revisão do Diff (step 9)`, 2026-10-20
 - [x] Desvios propagados ao `01`/`02`/`04` de origem, marcados `*(alterado em …)*` — `grep -c 'alterado em 2026-10-20'` nos três > 0; ver `## Desvios do Plano`, 2026-10-20
 - [x] `rastreabilidade.sh {wiki}` silencioso — exit 0, 2026-10-20
@@ -93,6 +109,8 @@ Não fatiado — 2026-10-20: 3 RQ vigentes, 31 CT, compactação: não, 3 pergun
 
 ## Quality Gate
 
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-10-20 — 0 Blocker, 2 Major (QA-01 número de asserções, QA-02 PRD/ADR/docblock descrevendo o `authenticate()` de antes do step 9), 3 Minor (QA-03 colisão de `[CT-10]` com a wiki `phpstan-nivel-8`, QA-04 saída da amostragem de mutantes, QA-05 despachos fora da tabela) — todos destino 1, corrigidos no commit seguinte. Suspeita não confirmada (`lockscreen_raiz_gravada` sobrando depois do desbloqueio social) **rejeitada**: só muda o destino quando a página interceptada é exatamente a raiz gravada e a organização ficou inacessível — e aí leva à raiz acessível em vez de um 404
+
 ## Candidatos a Rule
 
 ## Auditoria Pré-Implementação
@@ -140,6 +158,13 @@ Ponytail via skill `ponytail-review` (namespace `ponytail:` não instalado neste
 |---|---|---|---|---|---|---|---|
 | 2 | 7 | `general-purpose` — derivação do `04` pela `feature-test-design` (3 rodadas: derivação, P-06/Q?2, fechamento dos ADV) | sonnet | conversa, corpo dos passos do `01` (o agente declarou ter visto a lógica do passo 1 ao imprimir o `01` — higiene tocada, registrada no cabeçalho do `04`) | 31 CT, 58 mutantes, 0 sem matador, `## Sem CT-B` | 181k + 190k + 237k tokens · 6,0 + 0,7 + 3,4 min | totais por `grep -c` conferidos pelo agente; costuras confirmadas pela sessão; amostra CT-01/CT-03/CT-21 lida |
 | 3 | 7 | `fw-adversario-ct` — revisão adversarial | opus (agente) | `01`, `02`, `03`, código | 24 achados; 21 aceitos, 3 rejeitados (ADV-07, ADV-08, ADV-14) | 67k tokens · 4,2 min | achados conferidos contra o `04`; rejeições com prova (`grep -c '->spa('` = 0) |
+| 4 | 7 | `fw-adversario-ct` — re-revisão única | opus (agente) | `01`, `02`, `03`, código | 22 fechados, 7 ajustes de oráculo, 3 rejeições confirmadas | 100k tokens · 0,9 min | ajustes aplicados pela derivação; nenhum arquivo alterado pelo agente |
+| 5 | impl. | `fw-executor-ct` — CT-01…CT-37 em 6 lotes | do agente | `01`, `03`, conversa | 75 testes no Kit e 5 no Tenancy; vermelhos (b) reportados com saída literal antes de cada correção | ~196k–258k tokens por lote · 1,3–7,5 min | `git status` conferido entre lotes; `app/` intocado pelo agente |
+| 6 | 9 | `/code-review high main...HEAD` | sub-agente do comando | conversa | 8 achados (CR-01…CR-08) | 104k tokens · 3,4 min | achados reproduzidos contra o código; CR-01 confirmado como estado local do `bp:on` |
+| 7 | 9 | `fw-revisor-diff` — passe de eixos + re-revisão | opus (agente) | `01`, `03`, wiki, conversa | RD-01, RD-02; re-revisão: RD-01/RD-02 fechados, RD-03/RD-04 | 78k + 94k tokens · 4,2 + 2,1 min | `git status --porcelain` antes/depois devolvido; nenhuma escrita do agente |
+| 8 | 9 | `codex exec --yolo` — revisão do diff, somente leitura | não exposto pelo host | wiki, conversa | CX-01 (= RD-01) e 9 hipóteses descartadas | 77k tokens | achado reproduzido pelo CT-27 com `Referer` (vermelho antes da correção) |
+| 9 | 9/11 | `general-purpose` — `reviewing-filament-plans` (Blueprint) | opus | conversa | 67 obrigações: 62 Conforms, 2 Mismatched (CT-24/25), 3 Not verified (RD-03/04) | 207k tokens · 8,1 min | F-01 conferido no vendor (`SubsequentRender`); CT-24/25 refeitos com controle |
+| 10 | 11 | `fw-qa-gate` — quality gate, ciclo 1 | opus (agente) | conversa | REPROVADO → especificação (QA-01…QA-05, todos texto) | 209k tokens · 7,0 min | `06` gravado verbatim entre os delimitadores; `git status --porcelain` vazio antes e depois |
 | 1 | 3 | `codex exec --yolo` — análise do vendor, somente leitura | não exposto pelo host | a conclusão da sessão | tabela cenário × destino, 2 achados novos (P-05, contexto social) | — | 3 afirmações conferidas com `grep -n` no vendor (`vendor/marjose123/filament-lockscreen/src/Http/Middleware/Locker.php:setIntendedUrl:32`, `vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:lockscreen:121`, a guarda `has('lockscreen')` do `mount()` da `TelaBloqueio` em `main`); `git status --porcelain` limpo antes e depois |
 
 ## Blockers

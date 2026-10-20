@@ -76,7 +76,9 @@ login unificado, `urlDoPainel()` já consome `url.intended` validando o painel
 - **Detectar a trava por "o `$next` não foi chamado"**, não comparando a URL do redirect: independe do path configurado
   em `Lockscreen::setUrl()` e do painel.
 - **Fallback do P-02 no `mount()` e antes do `authenticate()`** (grava `url.intended` = raiz do painel quando vazia), sem reescrever o
-  `authenticate()`: o método do pacote tem rate limit e logout forçado; a sobrescrita só chama o fallback e `parent::` *(alterado em 2026-10-20: CT-11)*
+  `authenticate()`: o método do pacote tem rate limit e logout forçado; a sobrescrita prepara o destino (a página da sessão vence a lida no
+  `mount()`; a raiz marcada em `lockscreen_raiz_gravada` é recalculada), grava `url.intended`, chama `parent::` e limpa as chaves ao
+  destravar ou ao deslogar *(alterado em 2026-10-20: QA-02 do quality gate)*
 - **Desbloqueio social só honra a página quando quem volta é a mesma conta da sessão travada** — o "Trocar de conta" e
   o botão de outro provedor podem trazer outra pessoa; para ela o destino é o de um login comum (falha fechado).
 
@@ -87,8 +89,10 @@ a feature não tem model, resource, campo nem widget — as seções de Commands
 não se aplicam; o que se aplica é o caminho de estado compartilhado *travar → guardar → destravar → redirecionar*.
 
 - **Regra canônica**: o destino é `url.intended`, gravado **uma vez por requisição interceptada** com o `fullUrl()`
-  de um GET que não espera JSON; ninguém mais escreve a chave nesse caminho, exceto o fallback da raiz do painel
-  quando ela está vazia. Quem consome (`pull`) é o desbloqueio bem-sucedido — senha ou provedor da mesma conta
+  de um GET que não espera JSON. Os outros escritores só preservam ou descartam: o ramo JSON do middleware repõe o valor
+  anterior; o `mount()` grava a raiz do painel quando a chave está vazia (e a marca); o `authenticate()` regrava o destino
+  antes de cada envio; o `retorno()` e o `confirmarVinculo()` a apagam para outra conta ou link. Quem consome (`pull`) é o
+  desbloqueio bem-sucedido — senha ou provedor da mesma conta *(alterado em 2026-10-20: QA-02 do quality gate)*
 - **Estágios**:
 
   | # | Transição | `url.intended` depois | Visível |
@@ -100,7 +104,7 @@ não se aplicam; o que se aplica é o caminho de estado compartilhado *travar �
   | 5 | senha errada | mantém | erro no campo |
   | 6 | senha certa | consumida | redirect a X/Y |
   | 7 | provedor, mesma conta | consumida | redirect a X/Y (unificado: validado por `DestinoAposLogin`) |
-  | 8 | provedor, outra conta | não usada pelo destino | destino de login comum |
+  | 8 | provedor, outra conta | apagada antes do `Auth::login()` (P-06) | destino de login comum *(alterado em 2026-10-20: QA-02 do quality gate)* |
 
 - **Checagem de consistência**: ida e volta — depois do estágio 6, um segundo ciclo sem página guardada termina na raiz
   do painel, não no X do primeiro (a chave foi consumida); 5 seguido de 6 ainda leva a X

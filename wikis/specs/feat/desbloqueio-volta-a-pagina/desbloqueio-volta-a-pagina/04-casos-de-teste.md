@@ -795,6 +795,10 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | Escopo com discriminante nulo | CT-09 (destino nulo → raiz do painel, não pública); CT-34 (organização da sessão ≠ primeira da conta) | G1 · G2 |
 | Saída do estado de erro | CT-18 (destino alcançável com 200), CT-12 (erro na própria tela, que continua alcançável: CT-13), CT-21 | G3 · G1 · G2 |
 
+## Colisão de ID com outra wiki no mesmo arquivo de teste
+
+`tests/Kit/BloqueioDeSessaoTest.php` já tinha um `it('[CT-10] …')` da wiki `phpstan-nivel-8` (o visitante da tela de bloqueio é levado ao login do painel). O CT-10 desta wiki é o `it('[CT-10] o segundo ciclo de trava…')`. Para rodar só o desta wiki: `--filter='\[CT-10\] o segundo ciclo'`; o `ids-ct.sh` não distingue os dois — a prova de presença do CT-10 desta wiki é o filtro acima, que precisa casar exatamente um teste *(acrescentado em 2026-10-20: QA-03 do quality gate)*.
+
 ## Índice de Cenários
 
 | ID | Cenário | Regra | Técnica | Grupo | Costura | Arquivo | Mata |

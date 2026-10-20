@@ -58,7 +58,7 @@ class TelaBloqueio extends LockerScreen
     protected static string $layout = 'filament-auth-designer::components.layouts.auth';
 
     /**
-     * Para onde o desbloqueio leva — lido UMA vez, no `mount()`.
+     * Para onde o desbloqueio leva — preenchido no `mount()` e atualizado a cada envio.
      *
      * Existe porque o `intended()` do pacote consome `url.intended`: um segundo envio (duplo
      * clique) acharia a chave vazia e perderia a página (CR-04 do step 9). `#[Locked]` porque é
