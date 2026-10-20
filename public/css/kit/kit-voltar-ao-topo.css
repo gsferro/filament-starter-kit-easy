@@ -31,8 +31,8 @@
 /*
  * O recuo soma a partir da `--kit-pilha-base`, que o script da pilha (na blade) publica no
  * `<html>` quando o dock de atalhos ocupa o lugar dos botões flutuantes. Sem a variável —
- * sem JS, sem dock — valem os 6rem (/app, acima do chat) e 1.5rem de sempre. O 4.5rem do
- * `/app` é o chat (3.5rem) mais o espaço entre vizinhos (1rem).
+ * sem JS, sem dock — valem os 6rem (acima do chat, nos painéis em que ele está ligado pelo
+ * settings) e 1.5rem de sempre. O 4.5rem é o chat (3.5rem) mais o espaço entre vizinhos (1rem).
  */
 [data-voltar-ao-topo].bottom-24 { bottom: calc(var(--kit-pilha-base, 1.5rem) + 4.5rem); }
 [data-voltar-ao-topo].bottom-6 { bottom: var(--kit-pilha-base, 1.5rem); }
