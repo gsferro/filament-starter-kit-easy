@@ -17,7 +17,6 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
-use Filament\Pages\Page;
 use Filament\Panel;
 use Filament\Resources\Resource;
 use Filament\Support\Facades\FilamentView;
@@ -35,6 +34,7 @@ use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyExceptio
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Kit\fixtures\PaginaDoPainelNovoDoDock;
 
 /**
  * O dock de atalhos (Quick Action Dock) — a suíte single-tenant.
@@ -564,9 +564,6 @@ it('[CT-65] o painel com o dock desligado consulta a settings tanto quanto um pa
 | R5, R6, R7 — favoritos por usuário, gravação pelo slideover e catálogo
 |--------------------------------------------------------------------------
 */
-
-/** Uma página que só existe para ser registrada num painel criado em tempo de teste (CT-21). */
-class PaginaDoPainelNovoDoDock extends Page {}
 
 /** A URL que o dock abre para o destino: a lista do Resource ou a página avulsa. */
 function urlDoDestinoDoDock(string $painel, string $destino): string

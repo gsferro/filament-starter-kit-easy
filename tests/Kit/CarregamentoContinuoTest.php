@@ -12,22 +12,13 @@ use Asignua\FilamentInfiniteScroll\InfiniteScrollRegistry;
 use BezhanSalleh\FilamentExceptions\Resources\ExceptionResource\Pages\ListExceptions;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
-use Filament\Tables\Table;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Exceptions\MethodNotFoundException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Tapp\FilamentAuditing\Filament\Resources\Audits\Pages\ListAudits;
-
-/** Fixture local: o lote permite somente este arquivo, sem criar outro em Fixtures. */
-class ListUsersAgrupaveisL7 extends ListUsers
-{
-    public function table(Table $table): Table
-    {
-        return parent::table($table)->groups(['name']);
-    }
-}
+use Tests\Kit\fixtures\ListUsersAgrupaveisL7;
 
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
