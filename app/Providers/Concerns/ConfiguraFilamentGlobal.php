@@ -100,6 +100,7 @@ trait ConfiguraFilamentGlobal
         $this->configuraSeletorDeIdioma();
         $this->configuraBotaoVoltarAoTopo();
         $this->configuraChatDoAssistente();
+        $this->configuraAlturaDoDock();
         $this->configuraVersaoNoRodape();
     }
 
@@ -181,6 +182,22 @@ trait ConfiguraFilamentGlobal
      * conversas. A folha do chat é asset global do pacote `kit` (`KitServiceProvider`), então o
      * componente já tem estilo em qualquer painel.
      */
+    /**
+     * O dock posicionado pela área visível, e não pelo `window.innerHeight`.
+     *
+     * Global, sem `scopes:`, pela mesma razão do "voltar ao topo": o dock pode estar em qualquer
+     * painel, e o script não faz nada onde o componente do pacote não é registrado. Precisa ser o
+     * `HEAD_END`: o listener de `alpine:init` dele tem de rodar antes do do pacote, que vem no fim
+     * do body — o porquê está na blade e na wiki `fix/dock-altura-do-viewport`.
+     */
+    private function configuraAlturaDoDock(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            fn (): View => view('filament.dock-altura-do-viewport'),
+        );
+    }
+
     private function configuraChatDoAssistente(): void
     {
         FilamentView::registerRenderHook(
