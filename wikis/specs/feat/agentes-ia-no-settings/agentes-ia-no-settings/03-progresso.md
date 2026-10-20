@@ -132,7 +132,7 @@ Re-revisão: não exigida — nenhuma correção tocou eixo de fronteira de dado
 ## Candidatos a Rule
 
 <!-- Step 12. -->
-- 2026-10-19 — rota: sessão principal, **sem MCP** (Boost `CONNECT_TIMEOUT` nesta sessão: `record-rule` e o `search-docs` do gate 4 indisponíveis) — apresentados 2 · gravados 0 · recusados 0 · descartados no gate 0 · poda 0 — **aprovação pendente do usuário** (a `requirement-to-rule` não grava sem o prompt único aprovado; a execução foi autônoma). Os dois candidatos, com os gates, estão na mensagem final da sessão e abaixo; se aprovados, gravar pelo `record-rule` quando o Boost voltar (fallback manual só com aviso).
+- 2026-10-19 — rota: sessão principal, **sem MCP** (Boost `CONNECT_TIMEOUT` nesta sessão: `record-rule` e o `search-docs` do gate 4 indisponíveis; gate 4 ⚠️ não verificado nos dois) — apresentados 2 · gravados 2 · recusados 0 · descartados no gate 0 · poda 0. **Aprovados pelo solicitante no chat** ("aprovado as rules", 2026-10-19) e gravados pelo **fallback manual** da `requirement-to-rule` (aviso dado: a doc do Boost recomenda o `record-rule`; reconciliar quando o MCP voltar): R-cand-1 como parágrafo novo na seção existente de `.ai/rules/filament.md` ("Em Page, canAccess() sozinho basta; em Resource são dois métodos"), R-cand-2 como seção nova em `.ai/rules/settings.md` com enforcement em `tests/Kit/SemanticaDoVazioNasListasDePaineisTest.php` (2 `it()`: docblock das 7 listas e `helperText` dos 7 selects). O índice `.ai/rules/index.md` não muda (mesmos arquivos e globs). Commit em `main`, depois do merge do PR #171.
 
 | # | Candidato | Glob | Gate 1 durável | Gate 2 escopável | Gate 3 não-inferível (irmãos lidos) | Gate 4 não-redundante | Recorrência |
 |---|---|---|---|---|---|---|---|
