@@ -1,6 +1,6 @@
 # Progresso — Desbloqueio da sessão volta para a página em que a pessoa estava
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-10-20
 
 **Base do PR**: `main`
 
@@ -109,9 +109,14 @@ Não fatiado — 2026-10-20: 3 RQ vigentes, 31 CT, compactação: não, 3 pergun
 
 ## Quality Gate
 
-- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-10-20 — 0 Blocker, 2 Major (QA-01 número de asserções, QA-02 PRD/ADR/docblock descrevendo o `authenticate()` de antes do step 9), 3 Minor (QA-03 colisão de `[CT-10]` com a wiki `phpstan-nivel-8`, QA-04 saída da amostragem de mutantes, QA-05 despachos fora da tabela) — todos destino 1, corrigidos no commit seguinte. Suspeita não confirmada (`lockscreen_raiz_gravada` sobrando depois do desbloqueio social) **rejeitada**: só muda o destino quando a página interceptada é exatamente a raiz gravada e a organização ficou inacessível — e aí leva à raiz acessível em vez de um 404
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-10-20 — 0 Blocker, 2 Major (QA-01 número de asserções, QA-02 PRD/ADR/docblock descrevendo o `authenticate()` de antes do step 9), 3 Minor (QA-03 colisão de `[CT-10]` com a wiki `phpstan-nivel-8`, QA-04 saída da amostragem de mutantes, QA-05 despachos fora da tabela) — todos destino 1, corrigidos no commit seguinte. Suspeita não confirmada (`lockscreen_raiz_gravada` sobrando depois do desbloqueio social): a rejeição do ciclo 1 estava **incompleta** — o gate do ciclo 2 mostrou que, se a organização da sessão mudou, uma página interceptada idêntica à raiz antiga é redirecionada para a raiz da organização atual. Vira **débito declarado** (abaixo), não achado: sem repro, e o caso exige a página interceptada ser exatamente a raiz gravada
+- **Ciclo**: 2 · **Veredito**: APROVADO COM DÉBITO · **Data**: 2026-10-20 — 0 achados abertos; QA-01…QA-05 reconferidos e fechados; regressão adjacente 490/490 (9 arquivos)
+- **Relatório**: `06-relatorio-qa.md`
+- **Débito**: B, C, E sem sondagem dinâmica (sem `--agent` nem Playwright MCP; a ociosidade exige 1800 s) · D log real não lido (`NullHandler` no `phpunit.xml`) · J passo TIA fora do escopo autorizado · K2 mutante não reproduzido pelo gate (o hook `guarda-subagente` negou montar a cópia) · suspeita `lockscreen_raiz_gravada` sobrando após desbloqueio social/vínculo (ver acima)
 
 ## Candidatos a Rule
+
+- 2026-10-20 — rota: sessão principal (MCP `search-docs` + `record-rule`) — apresentados 2 · gravados 2 · recusados 0 · descartados no gate 2 · poda 0 — gravadas `.ai/rules/controllers-auth.md` (login × sessão travada, `app/Http/Controllers/Auth/**`) e `.ai/rules/kit.md` (`Livewire::test` e cabeçalhos, `tests/Kit/**`); descartados: bind de middleware de pacote (gate 4, container do framework) e colisão de ID de CT (sem recorrência)
 
 ## Auditoria Pré-Implementação
 

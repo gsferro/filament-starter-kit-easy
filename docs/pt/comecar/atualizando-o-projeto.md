@@ -138,6 +138,11 @@ que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
 
+**Na v0.51.1 não há nada a instalar nem migrar**: o desbloqueio da sessão passa a voltar à página
+em que a pessoa estava (ver [Autenticação](../../autenticacao/)). Quem customizou a `TelaBloqueio`
+ou registrou o próprio middleware de bloqueio revisa o diff que o `kit:update` mostra: o
+`AppServiceProvider` ganha o bind do `Locker` do pacote para `App\Http\Middleware\BloquearSessaoComRetorno`.
+
 **Na v0.51.0 há uma migration de settings e o chat do Assistente nasce desligado.** Rode
 `php artisan migrate` depois do `kit:update`: ela semeia o interruptor *Usar agentes de IA* e a lista
 *Painéis onde o chat do Assistente aparece* a partir de `KIT_AGENTES_IA` e `KIT_AGENTES_IA_PAINEIS` —

@@ -231,7 +231,7 @@ The other two already come complete.
 |---|---:|
 | Reference documents (`wikis/`) | **12** |
 | Specified features (`wikis/specs/`) | **86** |
-| Project rules for AI agents (`.ai/rules/`, excluding the index) | **23** |
+| Project rules for AI agents (`.ai/rules/`, excluding the index) | **25** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
 

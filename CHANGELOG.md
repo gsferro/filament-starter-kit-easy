@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.51.1] - 2026-10-20
+
 ### Corrigido
 
 - Desbloqueio da sessão volta à página em que a pessoa estava (`wikis/specs/feat/desbloqueio-volta-a-pagina/`):
@@ -20,6 +22,28 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   senha volta duas vezes à página; logout forçado do limite de tentativas não deixa página para o
   próximo login; outra conta que entra pela tela (provedor ou link de confirmação de vínculo) não
   herda a página de quem travou.
+
+### Validação
+
+- Casos da feature: `tests/Kit/BloqueioDeSessaoTest.php` 75/75 e `tests/Tenancy/BloqueioComRetornoTenancyTest.php`
+  5/5; suítes adjacentes de login social, login unificado, vínculo, identidade e docs 490/490. Suíte local
+  `Kit` 4385/4395 sobre o commit da revisão do diff (os 7 vermelhos eram o Blueprint ligado temporariamente,
+  duas citações deslocadas e os números dos READMEs, todos corrigidos), `Tenancy` 639/639. PHPStan nível 8:
+  0 erros. `filacheck`: 17/17.
+- Mutação por amostragem manual (o `pest --mutate` não mede no Windows): 8 mutantes do middleware, da tela de
+  bloqueio e do login social, 8 mortos pelo CT previsto — um deles só depois de o CT-27 ganhar uma URL própria
+  para o pedido JSON.
+- Revisão do diff por três revisores cegos (`/code-review`, passe de eixos e `codex exec`): 13 achados, 9
+  viraram caso de teste antes da correção, 4 rejeitados com motivo; re-revisão única com 2 achados novos,
+  fechados do mesmo jeito. Conformidade com o plano pelo Filament Blueprint (`reviewing-filament-plans`): 62
+  de 67 obrigações conformes na primeira passada, o resto fechado depois. Quality gate: APROVADO COM DÉBITO
+  no ciclo 2. Wiki: `wikis/specs/feat/desbloqueio-volta-a-pagina/`.
+
+### Atualizando
+
+- Nada a instalar nem migrar. O `kit:update` traz `app/Http/Middleware/BloquearSessaoComRetorno.php` e o
+  bind dele no `AppServiceProvider`; quem customizou a `TelaBloqueio` ou trocou o middleware de bloqueio
+  revisa o diff.
 
 ## [0.51.0] - 2026-10-19
 
