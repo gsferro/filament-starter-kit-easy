@@ -139,6 +139,11 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
 
+**In v0.51.1 there is nothing to install or migrate**: unlocking the session now returns to the page
+the person was on (see [Authentication](../../autenticacao/)). Whoever customized `TelaBloqueio` or
+registered their own lock middleware reviews the diff that `kit:update` shows: `AppServiceProvider`
+gains the binding of the package's `Locker` to `App\Http\Middleware\BloquearSessaoComRetorno`.
+
 **In v0.51.0 there is a settings migration, and the Assistant chat starts off.** Run
 `php artisan migrate` after `kit:update`: it seeds the *Usar agentes de IA* switch and the *Painéis
 onde o chat do Assistente aparece* list from `KIT_AGENTES_IA` and `KIT_AGENTES_IA_PAINEIS` — **off and

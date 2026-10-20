@@ -330,6 +330,20 @@ final class LoginSocialController extends Controller
             return $this->aguardarAprovacao($provedor, $user, $mascarado);
         }
 
+        /*
+         * Desbloqueio é a volta da MESMA conta que travou: ela volta à página que a trava
+         * interceptou (`App\Http\Middleware\BloquearSessaoComRetorno`). Outra conta numa sessão
+         * travada é um login comum — a página da primeira pessoa é descartada, porque no login
+         * unificado `urlDoPainel()` consome `url.intended` de qualquer um. Lido ANTES do
+         * `Auth::login()`, que troca o usuário da sessão.
+         */
+        $sessaoTravada = session('lockscreen') === true;
+        $desbloqueio   = $sessaoTravada && Auth::id() === $user->getKey();
+
+        if ($sessaoTravada && ! $desbloqueio) {
+            session()->forget('url.intended');
+        }
+
         if (ConfiguracaoDoLogin::unificado()) {
             // Só os painéis em que ESTE provedor está autorizado (ADR-09 da wiki login-unificado).
             DestinoAposLogin::restringirAosPaineisAutorizados($provedor);
@@ -350,14 +364,23 @@ final class LoginSocialController extends Controller
         Log::channel('autenticacao')->info(
             "[LoginSocialController@retorno] Autenticado pelo provedor | provedor: {$provedor->value} - user: {$user->getKey()} - email: ".$mascarado,
             [
-                'user_id'    => $user->getKey(),
-                'email'      => $mascarado,
-                'conta_nova' => $novo,
-                'provedor'   => $provedor->value,
+                'user_id'     => $user->getKey(),
+                'email'       => $mascarado,
+                'conta_nova'  => $novo,
+                'provedor'    => $provedor->value,
+                'desbloqueio' => $desbloqueio,
             ],
         );
 
-        return redirect()->to($novo ? $this->urlDoPerfil($user) : $this->urlDoPainel($user));
+        if ($novo) {
+            return redirect()->to($this->urlDoPerfil($user));
+        }
+
+        // No unificado, `urlDoPainel()` já consumiu e validou a página; aqui o `intended()` acha
+        // a chave vazia e usa o default. No não unificado, é ele quem a consome.
+        return $desbloqueio
+            ? redirect()->intended($this->urlDoPainel($user))
+            : redirect()->to($this->urlDoPainel($user));
     }
 
     /**
@@ -561,6 +584,15 @@ final class LoginSocialController extends Controller
 
         if ($user->aprovacao_pendente) {
             return $this->aguardarAprovacao($provedor, $user, $mascarado);
+        }
+
+        /*
+         * O link do e-mail não é desbloqueio da tela, nem quando a mesma conta o abre: numa
+         * sessão travada, a página que a trava guardou sai (P-07) — senão o `urlDoPainel()` do
+         * unificado a entregaria a quem confirma, e no não unificado ela ficaria velha na sessão.
+         */
+        if (session('lockscreen') === true) {
+            session()->forget('url.intended');
         }
 
         if (ConfiguracaoDoLogin::unificado()) {

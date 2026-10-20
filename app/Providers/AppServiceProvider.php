@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use App\Filament\Pages\Auth\TelaBloqueio;
+use App\Http\Middleware\BloquearSessaoComRetorno;
 use App\Support\GerenciadorAntiRobo;
 use Ddr\FilamentCaptcha\CaptchaManager;
 use Illuminate\Support\ServiceProvider;
 use lockscreen\FilamentLockscreen\Http\Livewire\LockerScreen;
+use lockscreen\FilamentLockscreen\Http\Middleware\Locker;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,11 @@ class AppServiceProvider extends ServiceProvider
         // do login (auth-designer). A rota do pacote resolve a classe pelo container,
         // então o bind entrega a nossa subclasse — mesma mídia, mesmo tema.
         $this->app->bind(LockerScreen::class, TelaBloqueio::class);
+
+        // O middleware do mesmo pacote, pelo mesmo caminho: o plugin registra `Locker::class` nos
+        // painéis e o pipeline o resolve pelo container. A subclasse guarda a página que a trava
+        // interceptou, para o desbloqueio voltar a ela e não à raiz.
+        $this->app->bind(Locker::class, BloquearSessaoComRetorno::class);
 
         // O captcha do `ddr/filament-captcha` lendo a config DO KIT, com falha fechada e log. O
         // pacote registra o singleton dele em `packageRegistered()`; este provider é registrado

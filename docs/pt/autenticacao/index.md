@@ -83,3 +83,12 @@ cima. O bloqueio por ociosidade usa `config('lockscreen.idle_timeout')` = 1800
 tentativas com força de logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:268`,
 `app/Providers/Filament/AppPanelProvider.php:enableRateLimit:375`,
 `app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:291`).
+
+Desbloquear leva de volta à página que a trava interceptou, como o *intended* do login do Laravel: a URL
+pedida (com a query) quando a ociosidade travou a sessão, ou a última que a pessoa tentou abrir com ela
+já travada — pela senha e pela volta do provedor social da mesma conta. Sem página guardada (a tela
+aberta por favorito), vai à raiz do painel; no `/app`, à organização em que a pessoa estava, se ela
+ainda a acessa. Pedido que espera JSON e chamada Livewire não viram destino, e outra conta que entra
+pela tela não herda a página. Quem guarda a página é `App\Http\Middleware\BloquearSessaoComRetorno`,
+que substitui o middleware do pacote por bind no `AppServiceProvider` (o pacote só guardava a página
+no bloqueio manual).
