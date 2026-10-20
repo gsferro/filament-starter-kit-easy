@@ -898,3 +898,30 @@ it('[CT-35] esgotar as tentativas desloga e o próximo login segue o destino de 
     'com página (travada ao pedir /admin/users?q=ana)' => ['pagina'],
     'fallback (tela aberta direto, raiz /admin)'       => ['fallback'],
 ]);
+
+it('[CT-36] com o componente da tela já montado, uma página pedida em outra aba, ainda travada, vira o destino', function (string $mecanismo): void {
+    $conta = usuarioMaster();
+    $this->actingAs($conta);
+    travadaPorInatividadeAoPedir('/admin/users');
+
+    // Aba 1: o componente é montado ANTES do pedido da aba 2.
+    Filament::setCurrentPanel('admin');
+    $componente = Livewire::test(TelaBloqueio::class);
+
+    // Aba 2: pede outra página com a sessão já travada.
+    $this->get('/admin/shield/roles')->assertRedirect(route('lockscreen.admin.page'));
+
+    if ($mecanismo === 'senha') {
+        $destino = destinoDoComponente($componente->set('data.password', 'password')->call('authenticate'));
+    } else {
+        provedorDevolve($conta);
+
+        $destino = destinoDaResposta($this->get('/auth/google/callback'));
+    }
+
+    expect($destino)->toBe(enderecoDe('/admin/shield/roles'))
+        ->and($destino)->not->toBe(enderecoDe('/admin/users'));
+})->with([
+    'senha correta, enviada no componente já montado' => ['senha'],
+    'volta do provedor google com a mesma conta'      => ['provedor'],
+]);

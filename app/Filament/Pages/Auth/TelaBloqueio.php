@@ -3,6 +3,7 @@
 namespace App\Filament\Pages\Auth;
 
 use App\Models\Tenant;
+use App\Models\User;
 use App\Support\IdentidadeDoKit;
 use App\Support\Paineis;
 use Caresome\FilamentAuthDesigner\Concerns\HasAuthDesignerLayout;
@@ -65,6 +66,9 @@ class TelaBloqueio extends LockerScreen
      */
     #[Locked]
     public ?string $destinoDoDesbloqueio = null;
+
+    /** Chave de sessão: o destino guardado é a raiz calculada no `mount()`, não uma página. */
+    private const RAIZ_GRAVADA = 'lockscreen_raiz_gravada';
 
     protected function getAuthDesignerPageKey(): string
     {
@@ -295,7 +299,12 @@ class TelaBloqueio extends LockerScreen
 
         // Na sessão também, e não só na propriedade: a volta do provedor social lê a chave.
         if (! session()->has('url.intended')) {
-            redirect()->setIntendedUrl($this->raizDoPainel());
+            $raiz = $this->raizDoPainel();
+
+            // Marca na sessão que este destino é a raiz calculada, não uma página: outra
+            // montagem da tela (ou o envio) precisa saber disso para recalculá-la (RD-04).
+            session()->put(self::RAIZ_GRAVADA, $raiz);
+            redirect()->setIntendedUrl($raiz);
         }
 
         $this->destinoDoDesbloqueio = session('url.intended');
@@ -311,12 +320,27 @@ class TelaBloqueio extends LockerScreen
      */
     public function authenticate(): Redirector|RedirectResponse|Application|null
     {
-        redirect()->setIntendedUrl($this->destinoDoDesbloqueio ?? $this->raizDoPainel());
+        // A chave da sessão vence: outra aba pode ter guardado uma página mais nova depois do
+        // `mount()` (P-03), e é ela que a volta do provedor social também lê. A propriedade só
+        // cobre a chave já consumida por um envio anterior (RD-03 do step 9).
+        $this->destinoDoDesbloqueio = session('url.intended') ?? $this->destinoDoDesbloqueio;
+
+        // A raiz que o próprio `mount()` gravou não é página: é recalculada no envio, porque a
+        // organização da sessão pode ter deixado de ser acessível nesse meio-tempo (RD-04).
+        if ($this->destinoDoDesbloqueio === null || $this->destinoDoDesbloqueio === session(self::RAIZ_GRAVADA)) {
+            $this->destinoDoDesbloqueio = $this->raizDoPainel();
+        }
+
+        redirect()->setIntendedUrl($this->destinoDoDesbloqueio);
 
         $resposta = parent::authenticate();
 
+        if (session('lockscreen') === false) {
+            session()->forget(self::RAIZ_GRAVADA);
+        }
+
         if (! Filament::auth()->check()) {
-            session()->forget('url.intended');
+            session()->forget(['url.intended', self::RAIZ_GRAVADA]);
         }
 
         return $resposta;
@@ -324,15 +348,23 @@ class TelaBloqueio extends LockerScreen
 
     /**
      * A raiz do painel da tela — no `/app`, a da organização em que a pessoa estava (a da sessão),
-     * não a primeira da conta, que é o que `Panel::getUrl()` sem tenant escolhe (P-08). O acesso
-     * à organização continua decidido pelo painel no request seguinte.
+     * não a primeira da conta, que é o que `Panel::getUrl()` sem tenant escolhe (P-08), desde que
+     * a pessoa ainda a acesse.
      */
     private function raizDoPainel(): string
     {
         $panel       = Paineis::correnteOuPadrao();
         $organizacao = $this->organizacaoResolvida();
 
-        return ($organizacao instanceof Tenant ? $panel->getUrl($organizacao) : null) ?? Paineis::url($panel);
+        // A organização da sessão é a última visitada — a pessoa pode ter sido removida dela
+        // enquanto a sessão estava travada (RD-04 do step 9). Sem acesso, a raiz que o painel
+        // escolhe, que é sempre uma organização dela.
+        $pessoa    = Filament::auth()->user();
+        $acessivel = $organizacao instanceof Tenant
+            && $pessoa instanceof User
+            && $pessoa->canAccessTenant($organizacao);
+
+        return ($acessivel ? $panel->getUrl($organizacao) : null) ?? Paineis::url($panel);
     }
 
     private function sairPara(string $url): never

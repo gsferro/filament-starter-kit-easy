@@ -20,6 +20,9 @@ e `tests/Kit/LoginSocialTest.php`-família.
 | P-03 | 1 | o ramo "já travada" do pacote é sobrescrito pela mesma regra |
 | P-04 | 1 | GET sem `expectsJson()`; Livewire nem chega ao ramo (o pacote passa adiante) |
 | P-06 | 3 | `Auth::id()` comparado ao usuário do provedor antes do `Auth::login()` |
+| P-07 | 3 | `confirmarVinculo()` descarta `url.intended` numa sessão travada *(alterado em 2026-10-20: step 9)* |
+| P-08 | 2 | fallback pela organização da sessão (`raizDoPainel()`) *(alterado em 2026-10-20: step 9)* |
+| P-09 | 2 | `forget` de `url.intended` quando o envio termina deslogado *(alterado em 2026-10-20: step 9)* |
 | P-05 | 2 | a guarda do `mount()` passa a ler o valor da marca, não a existência da chave |
 
 ## Objetivo
@@ -54,7 +57,7 @@ O Laravel resolve middleware pelo container — o mesmo caminho que o kit já us
 por `TelaBloqueio` (`app/Providers/AppServiceProvider.php:bind():23`).
 
 ### `app/Filament/Pages/Auth/TelaBloqueio.php`
-`mount()` já sobrescreve as duas guardas do pacote (`app/Filament/Pages/Auth/TelaBloqueio.php:mount():271`). Não
+`mount()` já sobrescreve as duas guardas do pacote (`app/Filament/Pages/Auth/TelaBloqueio.php:mount():282`). Não
 sobrescreve `authenticate()` — e não precisa: basta que `url.intended` exista quando ele roda.
 
 ### `app/Http/Controllers/Auth/LoginSocialController.php`
@@ -171,17 +174,20 @@ na nota do canal.
 - **Criar** `app/Http/Middleware/BloquearSessaoComRetorno.php` (`php artisan make:class` não serve a middleware: `php artisan make:middleware BloquearSessaoComRetorno --no-interaction`, depois `extends Locker`)
 - Assinatura: `public function handle(Request $request, Closure $next): mixed`
 - Lógica: chama `parent::handle($request, $closure)` com um closure que marca `$seguiu = true` e delega a `$next`. Se não seguiu
-  **e** `$request->isMethod('GET') && ! $request->expectsJson()`, grava
+  **e** `! $request->expectsJson()`, grava
   `redirect()->setIntendedUrl($request->fullUrl())` e loga
 - **Log** `Log::channel('autenticacao')->info('[BloquearSessaoComRetorno@handle] Página de retorno guardada ao travar a sessão | painel: {id} - caminho: {path}', ['painel' => …, 'caminho' => $request->path(), 'user_id' => …])` — só o path, nunca a query
 - **Bind** em `app/Providers/AppServiceProvider.php:register()`: `$this->app->bind(Locker::class, BloquearSessaoComRetorno::class);`
+- Se não seguiu **e** espera JSON: repõe o `url.intended` lido antes do `parent::handle()` (ou o remove) — o ramo da sessão já travada do pacote grava `previous()` antes de devolver *(alterado em 2026-10-20: RD-01/CX-01 do step 9; o `isMethod('GET')` saiu, CR-08: `! $seguiu` já implica GET)*
 - RQ-01, RQ-02, RQ-03, P-03, P-04
 
 ### 2. Fallback do desbloqueio para a raiz do painel e guarda da sessão destravada
 - **Editar** `TelaBloqueio::mount()`: depois das duas guardas, `if (! session()->has('url.intended')) { redirect()->setIntendedUrl(Paineis::url($panel)); }`
 - Sem log (caminho comum ao abrir a tela por favorito; não é decisão de fluxo relevante)
-- **Editar** a segunda guarda do `mount()` (era `session()->has('lockscreen')` em `main`, hoje `app/Filament/Pages/Auth/TelaBloqueio.php:lockscreen:281`): `session()->has('lockscreen')` → `session('lockscreen') !== true`. O pacote destrava gravando `false` (`vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:lockscreen:121`), então a chave existe depois do desbloqueio e a guarda de hoje nunca dispara para quem já destravou
-- **Sobrescrever** `authenticate()` só para aplicar o mesmo fallback antes de `parent::authenticate()`: o `intended()` do pacote consome a página, e um segundo envio no mesmo componente cairia em `/` *(alterado em 2026-10-20: CT-11 vermelho por (b) — o fallback só no `mount()` não cobria o segundo envio)*
+- **Editar** a segunda guarda do `mount()` (era `session()->has('lockscreen')` em `main`, hoje `app/Filament/Pages/Auth/TelaBloqueio.php:lockscreen:292`): `session()->has('lockscreen')` → `session('lockscreen') !== true`. O pacote destrava gravando `false` (`vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:lockscreen:121`), então a chave existe depois do desbloqueio e a guarda de hoje nunca dispara para quem já destravou
+- **Propriedade** `#[Locked] public ?string $destinoDoDesbloqueio`, lida uma vez no `mount()` (depois do fallback); o `authenticate()` a repõe em `url.intended` antes de `parent::authenticate()` e remove a chave se o envio terminar deslogado (logout forçado do rate limit, P-09). Fallback = `raizDoPainel()`: no `/app`, `Panel::getUrl($organizacaoDaSessao)` (P-08) *(alterado em 2026-10-20: CR-02, CR-04, CR-05 do step 9)*
+- Re-revisão do step 9: no envio, a página da sessão vence a propriedade (outra aba pode ter guardado uma mais nova — RD-03); a raiz que o `mount()` grava é marcada na sessão e recalculada no envio, e só usa a organização da sessão se `canAccessTenant` (RD-04) *(alterado em 2026-10-20)*
+- Histórico: a 1ª correção do CT-11 só aplicava o mesmo fallback antes de `parent::authenticate()`: o `intended()` do pacote consome a página, e um segundo envio no mesmo componente cairia em `/` *(alterado em 2026-10-20: CT-11 vermelho por (b) — o fallback só no `mount()` não cobria o segundo envio)*
 - RQ-01, P-02, P-05
 
 ### 3. Desbloqueio pelo provedor social volta à página
@@ -189,6 +195,7 @@ na nota do canal.
 - No retorno final: `$novo` continua indo ao perfil; senão, `$desbloqueio ? redirect()->intended($this->urlDoPainel($user)) : redirect()->to($this->urlDoPainel($user))`.
   No unificado, `urlDoPainel()` já consome e valida `url.intended`; no não unificado, `intended()` o consome
 - Outra conta numa sessão travada (P-06): `session()->forget('url.intended')` antes do `Auth::login()` — no unificado `urlDoPainel()` consome a chave de qualquer um *(alterado em 2026-10-20: P-06)*
+- **Editar** `confirmarVinculo()`: numa sessão travada, `session()->forget('url.intended')` antes do `Auth::login()` — o link do e-mail não é desbloqueio (P-07) *(alterado em 2026-10-20: CR-03/RD-02 do step 9)*
 - **Log**: acrescentar `'desbloqueio' => $desbloqueio` ao contexto do `info` de `retorno()` que já existe
 - RQ-02, P-01
 

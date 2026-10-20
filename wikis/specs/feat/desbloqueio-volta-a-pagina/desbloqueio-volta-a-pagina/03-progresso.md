@@ -52,7 +52,7 @@ Não fatiado — 2026-10-20: 3 RQ vigentes, 31 CT, compactação: não, 3 pergun
 - [ ] Citações reverificadas: `citacoes.sh {wiki}` silencioso
 - [ ] `ids-ct.sh {wiki}` silencioso
 - [ ] `conformidade-rules.sh {wiki} main` silencioso
-- [ ] Falsificabilidade em cópia temporária, revertendo só o patch do fix
+- [x] Falsificabilidade em cópia temporária, revertendo só o patch do fix — mais forte que a cópia: os 8 CT do step 9 (CT-27 ×2, CT-11, CT-32 unificado, CT-33, CT-35 ×2, CT-34) foram escritos e rodados ANTES da correção e falharam pela causa (b), com a saída literal no retorno do `fw-executor-ct`; 8 de 8 falham sem o fix. O CT-11 da 1ª rodada também nasceu vermelho (`'http://localhost:8000' starts with "…/admin"`) antes do fallback no `authenticate()`, 2026-10-20
 - [ ] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final
 - [ ] `git commit`
 
@@ -70,6 +70,8 @@ Não fatiado — 2026-10-20: 3 RQ vigentes, 31 CT, compactação: não, 3 pergun
 | CR-05 | `/code-review` | o fallback grava a raiz antes do rate limit; com `forceLogout: true` (kit) a página sobra para o próximo login | premissa → CT → correção | P-09 / (CT do step 9) | — |
 | CR-06 | `/code-review` | GET que não é página (imagem, download) vira destino | — | — | P-04 reescrita no step 7 (ADV-08, concordância do adversário): a régua é a do *intended* do Laravel |
 | CR-07 | `/code-review` | login social não unificado sem trava deixa `url.intended` velho, que a tela aberta direto depois reaproveita | — | — | semântica preexistente do login comum (Fora de Escopo do `00`); o `redirect()->to()` de hoje já deixa a chave — débito declarado |
+| RD-03 | eixos (re-revisão) | o destino lido no `mount()` sobrescrevia uma página mais nova guardada por outra aba; senha × provedor assimétricos | teste (viola P-03) → CT → correção | — / CT-36 | — |
+| RD-04 | eixos (re-revisão) | fallback pela organização da sessão sem conferir acesso: pessoa removida da organização ia a um 404 | premissa refinada → CT → correção | P-08 / CT-37 | — |
 | CR-08 | `/code-review` | `isMethod('GET')` redundante: os dois ramos que não chamam `$next` já exigem GET | simplificação | — | aceito, sem CT (sem mudança de comportamento) |
 
 ## Conformidade com Rules
@@ -131,6 +133,12 @@ Ponytail via skill `ponytail-review` (namespace `ponytail:` não instalado neste
 ## Blockers
 
 ## Desvios do Plano
+
+- Passo 1: restauração de `url.intended` no GET JSON e corte do `isMethod('GET')` (RD-01/CX-01, CR-08). Fonte corrigida: `01`, passo 1 *(alterado em 2026-10-20)*
+- Passo 2: destino em propriedade `#[Locked]`, reposto a cada envio; `forget` após logout forçado; fallback pela organização da sessão (CR-02, CR-04, CR-05, CT-11). Fonte corrigida: `01`, passo 2; `02`, Superfície Livewire *(alterado em 2026-10-20)*
+- Passo 3: `confirmarVinculo()` descarta a página numa sessão travada (CR-03/RD-02). Fonte corrigida: `01`, passo 3; `00`, Fora de Escopo *(alterado em 2026-10-20)*
+- Passo 2 (re-revisão): a chave da sessão vence a propriedade (RD-03); a raiz gravada pelo `mount()` é marcada na sessão (`lockscreen_raiz_gravada`) e recalculada no envio, com `canAccessTenant` (RD-04). CT-36 e CT-37 nasceram vermelhos (`'…/admin/users'` ≠ `'…/admin/shield/roles'`; `'…/app/globex' not to start with '…/app/globex'`). Fonte corrigida: `01`, passo 2 *(alterado em 2026-10-20)*
+- CT-26 `@obsoleto`: nenhuma rota POST do painel atravessa a barreira (`php artisan route:list --path=admin --method=POST` → `lock-session`, `logout`, `configuracoes-do-kit` só com `web`). Fonte: `04` *(alterado em 2026-10-20)*
 
 - Passo 3: além de honrar a página para a mesma conta, descarta `url.intended` quando outra conta volta numa sessão travada — no login unificado `urlDoPainel()` consome a chave de qualquer um, e sem o descarte a P-06 não valeria. Fonte corrigida: `01`, passo 3 *(alterado em 2026-10-20: P-06)*
 

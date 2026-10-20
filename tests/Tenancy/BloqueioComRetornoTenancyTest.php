@@ -4,6 +4,8 @@ use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Illuminate\Support\Facades\DB;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Desbloqueio da sessão com a volta à página, no painel `/app` COM organização.
@@ -105,4 +107,38 @@ it('[CT-34] sem página guardada, o desbloqueio volta à organização em que a 
     $this->followingRedirects()->get($destino)->assertOk();
 
     expect(request()->path())->toStartWith('app/globex');
+});
+
+it('[CT-37] sem página guardada, a organização da sessão que a pessoa perdeu não é destino: vale a raiz que ela acessa', function (): void {
+    $acme   = organizacaoComRegistro('acme');
+    $globex = organizacaoComRegistro('globex');
+
+    $pessoa = usuarioComPapel('admin_app', $acme);
+    papelNaOrganizacao($pessoa, 'admin_app', $globex);
+    $pessoa->tenants()->attach([$acme->id, $globex->id]);
+
+    $this->actingAs($pessoa)->get('/app/globex/users')->assertOk();
+
+    expect((string) session('tenant_corrente'))->toBe((string) $globex->getKey());
+
+    session(['lockscreen' => true]);
+    $this->get(route('lockscreen.app.page'))->assertOk();
+
+    // Removida de globex pelo caminho de papéis do kit (pivô de papéis) e pelo vínculo de organização.
+    DB::table(pivotDePapeis())
+        ->where('model_id', $pessoa->getKey())
+        ->where('team_id', $globex->getKey())
+        ->delete();
+    $pessoa->tenants()->detach($globex->id);
+    $pessoa->unsetRelation('roles');
+    $pessoa->unsetRelation('tenants');
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    $destino = destinoDoComponente(desbloquearPorSenha('app'));
+
+    expect($destino)->not->toStartWith(enderecoDe('/app/globex'));
+
+    $this->followingRedirects()->get($destino)->assertOk();
+
+    expect(request()->path())->toStartWith('app/acme');
 });

@@ -2,7 +2,7 @@
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação.
-> Revisão adversarial: **FEITA** por `fw-adversario-ct` (contexto novo, só `00` + `04`) — achados ADV-01…ADV-24; aceitos incorporados nesta versão (CT-23…CT-31, M39…M58 e endurecimento de CT-01, CT-05…CT-08, CT-10, CT-14, CT-15, CT-17, CT-18, CT-21, CT-22); ADV-07, ADV-08 e ADV-14 rejeitados, em `## Cogitado e cortado`. O fechamento criou cenário novo: a re-revisão única (teto de 2 rodadas) cabe à sessão principal. Revisão do diff (step 9): RD-01/CX-01, CR-04, P-07, P-08 e P-09 incorporados — CT-32…CT-35, CT-11 e CT-27 endurecidos, M59…M67; os CT nascem antes da correção e devem falhar com o código atual.
+> Revisão adversarial: **FEITA** por `fw-adversario-ct` (contexto novo, só `00` + `04`) — achados ADV-01…ADV-24; aceitos incorporados nesta versão (CT-23…CT-31, M39…M58 e endurecimento de CT-01, CT-05…CT-08, CT-10, CT-14, CT-15, CT-17, CT-18, CT-21, CT-22); ADV-07, ADV-08 e ADV-14 rejeitados, em `## Cogitado e cortado`. O fechamento criou cenário novo: a re-revisão única (teto de 2 rodadas) cabe à sessão principal. Revisão do diff (step 9): RD-01/CX-01, CR-04, P-07, P-08 e P-09 incorporados — CT-32…CT-35, CT-11 e CT-27 endurecidos, M59…M67; re-revisão do diff: RD-03 (CT-36) e RD-04 (CT-37), M68…M71; os CT nascem antes da correção e devem falhar com o código atual.
 > Versões (lidas de `composer.lock`; `composer.phar` ausente e `composer show` não executado): Pest 5.1.1 · Filament 5.10.2 · Livewire 4.4.7 · Laravel 13.36.0 · `marjose123/filament-lockscreen` 3.4.1.
 
 ## Perfil de Derivação
@@ -17,7 +17,7 @@
 
 - Técnicas aplicadas: EP (painel; tipo de requisição; mecanismo de desbloqueio), tabela estado × evento (16 células, abaixo), 2-switch (ciclo de volta), exemplo discriminante (Referer ≠ URL pedida, query string, painel ≠ painel padrão), rastreio de efeito (consumo da página guardada: aconteceu / não aconteceu na falha / uma só vez), idempotência (segundo desbloqueio), superfície Livewire (valor fora do domínio e tipo errado).
 - Técnica escalada acima do perfil: tabela estado × evento completa em área `padrão` — o defeito de "tela raiz" mora justamente nas células de ciclo (S3), que a amostragem não alcança.
-- Cenários: 35 · Regras: 13 · Mutantes previstos: 67 · Sem matador: 0
+- Cenários: 37 · Regras: 13 · Mutantes previstos: 71 · Sem matador: 0
 <!-- derivado do arquivo por grep -c; recalcular a cada cenário novo -->
 
 ## Varredura SFDIPOT
@@ -39,7 +39,7 @@ Fora do eixo T: a borda do tempo de inatividade (`LOCKSCREEN_IDLE_TIMEOUT`) é F
 | Regra | Área (perfil herdado) | Origem (`RQ`/`P-nn`) | Técnica | Cenários |
 |---|---|---|---|---|
 | R1 — Pedido de página interceptado por inatividade é o destino do desbloqueio por senha (URL inteira, a pedida e não a anterior) | retorno por senha (padrão) | RQ-01, RQ-02, RQ-03 | EP por painel + exemplo discriminante | CT-01…CT-03 |
-| R2 — Enquanto travada, o destino é a última página que a pessoa tentou abrir; nunca a tela de bloqueio; o bloqueio manual segue valendo | retorno por senha (padrão) | RQ-02, RQ-03, P-03 | tabela estado × evento (S1/S2 × pedido) | CT-04…CT-06, CT-25 |
+| R2 — Enquanto travada, o destino é a última página que a pessoa tentou abrir; nunca a tela de bloqueio; o bloqueio manual segue valendo | retorno por senha (padrão) | RQ-02, RQ-03, P-03 | tabela estado × evento (S1/S2 × pedido) | CT-04…CT-06, CT-25, CT-36 |
 | R3 — Só o GET interceptado que não espera JSON conta como destino; JSON, chamada de componente e envio não-GET não (P-04, régua do *intended*) | retorno por senha (padrão) | RQ-03, P-04 | EP por tipo de requisição (cada inválida isolada) | CT-07, CT-08, CT-26, CT-27 (com Referer) |
 | R4 — Sem página a que voltar, o desbloqueio vai à raiz do painel da tela de bloqueio, nunca à pública; nada vaza entre ciclos nem entre envios | retorno por senha (padrão) | RQ-01, P-02 | EP por painel + 2-switch + idempotência | CT-09…CT-11 (CT-11: duplo envio exato), CT-23, CT-24, CT-30 |
 | R5 — Só o desbloqueio bem-sucedido leva à página; a falha não leva nem gasta o destino | retorno por senha (padrão) | RQ-02 | rastreio de efeito | CT-12, CT-13, CT-31 |
@@ -49,13 +49,13 @@ Fora do eixo T: a borda do tempo de inatividade (`LOCKSCREEN_IDLE_TIMEOUT`) é F
 | R9 — Superfície do componente: o cliente não escolhe o destino nem destrava com tipo errado | retorno por senha (padrão) | RQ-03, RQ-02 | superfície Livewire (fora do domínio, tipo errado) | CT-19, CT-20 |
 | R10 — O retorno não concede o que a organização nega | fronteira de organização (padrão) | RQ-03 | cenário escrito "como se a negativa fosse falsa" | CT-21 |
 | R11 — O link de vínculo do e-mail, numa sessão travada, não é desbloqueio: só descarta a página guardada | link de vínculo (padrão) | P-07 | EP por configuração + 2-switch | CT-32, CT-33 |
-| R12 — Sem página guardada, o desbloqueio volta à organização da sessão | fronteira de organização (padrão) | P-08 | discriminante de tenant | CT-34 |
+| R12 — Sem página guardada, o desbloqueio volta à organização da sessão, desde que a pessoa ainda a acesse; senão, à raiz que ela acessa | fronteira de organização (padrão) | P-08 | discriminante de tenant + estado × operação | CT-34, CT-37 |
 | R13 — O logout forçado por excesso de tentativas não deixa página guardada | logout forçado (padrão) | P-09 | EP por situação de partida + rastreio de efeito | CT-35 |
 
 Cobertura (sem recorte aberto; Q3 aberta no `00` e seguida como P-06):
 - RQ-02 — coberta: CT-01, CT-04…CT-06, CT-12…CT-17, CT-22, CT-28, CT-29, CT-31 (a outra conta no provedor segue o destino de um login comum: P-06, Q3 aberta no `00` e seguida como premissa).
 - RQ-03 — coberta: CT-01, CT-03…CT-08, CT-19…CT-21, CT-23…CT-27 (o bloqueio manual é `POST` sob CSRF; sem recorte aberto — fato, Q?2 retirada).
-- RQ-01, P-01…P-09 — cobertas integralmente (RQ-01: R1, R4, R8; P-01 e P-06: R6; P-02: R4; P-03: R2; P-04: R3 (régua do *intended*: CT-07, CT-08, CT-26, CT-27); P-05: R8; P-07: R11; P-08: R12; P-09: R13).
+- RQ-01, P-01…P-09 — cobertas integralmente (RQ-01: R1, R4, R8; P-01 e P-06: R6; P-02: R4; P-03: R2 (CT-36: componente já montado); P-04: R3 (régua do *intended*: CT-07, CT-08, CT-26, CT-27); P-05: R8; P-07: R11; P-08: R12; P-09: R13).
 
 ### Matriz estado × evento da sessão (uma só; 4 estados × 4 operações = 16 células: 11 com CT novo, 2 com teste existente, 2 fora de escopo (S0×O4, S3×O4), 1 lacuna)
 
@@ -217,6 +217,18 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
       Quando o usuário informa a senha correta na tela de bloqueio do painel admin, com a mesma query na montagem do componente e na ação authenticate
       Então o desbloqueio redireciona exatamente para "/admin/users"
       E nenhum redirecionamento aponta para o host "externo.example"
+
+    Esquema do Cenário: [CT-36] com o componente da tela já montado, uma página pedida em outra aba, ainda travada, vira o destino
+      Dado a sessão foi travada por inatividade ao pedir "/admin/users" e a tela de bloqueio do painel admin foi montada na aba 1
+      E, depois da montagem, a aba 2 pediu "/admin/shield/roles" com a sessão já travada
+      Quando o usuário desbloqueia a aba 1 por <mecanismo>
+      Então o desbloqueio redireciona exatamente para "/admin/shield/roles"
+      E o destino não é "/admin/users"
+
+      Exemplos:
+        | mecanismo                                       | # partição |
+        | senha correta, enviada no componente já montado | senha      |
+        | volta do provedor "google" com a mesma conta    | provedor   |
 ```
 
 #### Mutantes previstos
@@ -229,11 +241,15 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | M9 | com a sessão já travada, o pedido guarda o "anterior" (a própria tela de bloqueio) em vez da URL pedida | CT-04 (linha S2) | destino `/admin/shield/roles`; o mutante redireciona à tela de bloqueio |
 | M53 | o bloqueio manual guarda só o caminho e perde a query | CT-06 | destino exato `/admin/users?q=ana`; o mutante redireciona a `/admin/users` |
 | M54 | abrir a tela de bloqueio de outro painel regrava o destino | CT-05 (linha `/infra/screen/lock`) | destino `/admin/users`; o mutante redireciona a uma tela de bloqueio ou `/infra` |
+| M68 | a ação `authenticate` usa a página lida na montagem do componente e não a guardada na sessão no momento do envio | CT-36 (linha `senha`) | destino exato `/admin/shield/roles`; o mutante redireciona a `/admin/users` |
+| M69 | o retorno do provedor usa a primeira página guardada e ignora a pedida em outra aba | CT-36 (linha `provedor`) | destino exato `/admin/shield/roles`; o mutante redireciona a `/admin/users` |
 | M43 | a tela de bloqueio lê `redirect`/`intended` da própria query como destino | CT-25 | destino `/admin/users`; o mutante redireciona a `https://externo.example/x` ou `/infra` |
 
 > Arnês de CT-24 e CT-25: `Livewire::test(TelaBloqueio::class)` com `withHeaders(["Referer" => …])` / `withQueryParams([...])` equivalentes valem para a montagem E para a chamada de `authenticate` — o mesmo Referer/query nos dois.
 
-> R2 tem 4 cenários (teto padrão: 3): o gate vence o teto — CT-25 e a linha extra de CT-05 têm matador próprio (M43, M54) que nenhum outro cenário mata.
+> Arnês de CT-36: `Livewire::test(TelaBloqueio::class)` é montado ANTES do segundo `GET`; a linha `provedor` não depende do componente (o callback lê a sessão), e é a referência de simetria da linha `senha`.
+
+> R2 tem 5 cenários (teto padrão: 3): o gate vence o teto — CT-25, CT-36 e a linha extra de CT-05 têm matador próprio (M43, M54, M68, M69) que nenhum outro cenário mata.
 
 ---
 
@@ -675,9 +691,9 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 
 ---
 
-## Regra R12 — Sem página guardada, o desbloqueio volta à organização da sessão
+## Regra R12 — Sem página guardada, o desbloqueio volta à organização da sessão, desde que a pessoa ainda a acesse
 
-> `P-08` · perfil **padrão** · técnica: **discriminante de tenant** (a organização da sessão ≠ a primeira da conta)
+> `P-08` · perfil **padrão** · técnica: **discriminante de tenant** (a organização da sessão ≠ a primeira da conta) + **estado × operação** (organização acessível × removida)
 
 ```gherkin
     Cenário: [CT-34] sem página guardada, o desbloqueio volta à organização em que a pessoa estava
@@ -687,7 +703,18 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
       E ao seguir o destino devolvido pelo desbloqueio, seguindo os redirecionamentos
       Então o desbloqueio redirecionou para um endereço que começa com "/app/globex"
       E o destino não começa com "/app/acme" e a resposta final foi 200 numa URL sob "/app/globex"
+
+    Cenário: [CT-37] sem página guardada, a organização da sessão que a pessoa perdeu não é destino: vale a raiz que ela acessa
+      Dado a pessoa participa de acme e globex, trabalha em "/app/globex/users" (visita real, 200), com a organização da sessão globex
+      E a marca de trava foi forçada na sessão, sem pedido de página, e a tela de bloqueio do painel app foi aberta
+      E a pessoa foi removida da organização globex enquanto a sessão está travada
+      Quando a pessoa informa a senha correta na tela de bloqueio do painel app
+      E ao seguir o destino devolvido pelo desbloqueio, seguindo os redirecionamentos
+      Então o desbloqueio redirecionou para um endereço que não começa com "/app/globex"
+      E a resposta final foi 200 numa URL sob "/app/acme"
 ```
+
+> Arnês de CT-37: remover o vínculo da pessoa com globex pelo caminho de papéis do kit (`papelNaOrganizacao`/pivô de papéis), com a sessão travada e a organização da sessão ainda globex.
 
 > Arnês: `duasOrganizacoes()` de `tests/Pest.php` (a pessoa é `panel_user` em acme e globex); acme é a primeira da conta, e é por isso que o cenário discrimina.
 
@@ -696,6 +723,8 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M64 | o fallback leva à primeira organização da conta | CT-34 | destino começa com `/app/globex`; o mutante redireciona a `/app/acme…` |
+| M70 | o fallback leva à organização da sessão sem conferir se a pessoa ainda a acessa | CT-37 | destino não começa com `/app/globex`; o mutante redireciona a `/app/globex…` |
+| M71 | o fallback não conferido deixa a pessoa numa resposta de erro em vez da raiz que ela acessa | CT-37 | resposta final 200 sob `/app/acme`; o mutante termina em 403/404 |
 | M65 | o fallback leva à raiz `/app` sem organização, que resolve para a primeira | CT-34 | destino começa com `/app/globex`; o mutante redireciona a `/app` |
 
 ---
@@ -768,6 +797,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | CT-05 | abrir a tela de bloqueio não troca o destino | R2 | estado × evento | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M6, M54 |
 | CT-06 | bloqueio manual volta à página do clique | R2 | estado × evento | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M8, M53 |
 | CT-25 | query na tela de bloqueio não escolhe o destino | R2 | superfície | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M43 |
+| CT-36 | página pedida em outra aba, com o componente já montado, vira o destino (senha e provedor) | R2 | estado × evento + simetria | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M68, M69 |
 | CT-07 | JSON e chamada Livewire não viram destino | R3 | EP | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M10, M11, M56 |
 | CT-08 | chamada de componente não troca a página guardada | R3 | estado × evento | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M12 |
 | ~~CT-26~~ | envio não-GET não vira destino — @obsoleto: sem rota POST que atravesse a barreira | R3 | EP | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M44, M45 |
@@ -794,7 +824,8 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | CT-21 | retorno a organização alheia segue recusado | R10 | negativa como falsa | G2 | componente Livewire/Filament | `tests/Tenancy/BloqueioComRetornoTenancyTest.php` | M34, M35, M57 |
 | CT-32 | link de vínculo de outra conta não entrega a página de A (unificado ligado/desligado) | R11 | EP por configuração | G4 | Pest feature HTTP | `tests/Kit/BloqueioDeSessaoTest.php` | M61, M62 |
 | CT-33 | link da mesma conta não deixa a página antiga para o ciclo seguinte | R11 | 2-switch | G4 | Pest feature HTTP | `tests/Kit/BloqueioDeSessaoTest.php` | M63 |
-| CT-34 | sem página, o desbloqueio volta à organização da sessão | R12 | discriminante de tenant | G2 | componente Livewire/Filament | `tests/Tenancy/BloqueioComRetornoTenancyTest.php` | M64, M65 |
+| CT-34 | sem página, o desbloqueio volta à organização da sessão (ainda acessível) | R12 | discriminante de tenant | G2 | componente Livewire/Filament | `tests/Tenancy/BloqueioComRetornoTenancyTest.php` | M64, M65 |
+| CT-37 | sem página, organização perdida não é destino: vale a raiz acessível | R12 | estado × operação | G2 | componente Livewire/Filament | `tests/Tenancy/BloqueioComRetornoTenancyTest.php` | M70, M71 |
 | CT-35 | logout forçado não deixa página guardada para o próximo login | R13 | EP + rastreio de efeito | G1 | componente Livewire/Filament | `tests/Kit/BloqueioDeSessaoTest.php` | M66, M67 |
 
 ## Cogitado e cortado
