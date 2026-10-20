@@ -586,6 +586,15 @@ final class LoginSocialController extends Controller
             return $this->aguardarAprovacao($provedor, $user, $mascarado);
         }
 
+        /*
+         * O link do e-mail não é desbloqueio da tela, nem quando a mesma conta o abre: numa
+         * sessão travada, a página que a trava guardou sai (P-07) — senão o `urlDoPainel()` do
+         * unificado a entregaria a quem confirma, e no não unificado ela ficaria velha na sessão.
+         */
+        if (session('lockscreen') === true) {
+            session()->forget('url.intended');
+        }
+
         if (ConfiguracaoDoLogin::unificado()) {
             // Só os painéis em que ESTE provedor está autorizado (ADR-09 da wiki login-unificado).
             DestinoAposLogin::restringirAosPaineisAutorizados($provedor);

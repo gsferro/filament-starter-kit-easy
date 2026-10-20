@@ -2,11 +2,13 @@
 
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaLogin;
+use App\Filament\Pages\Auth\TelaLoginUnificada;
 use App\Models\User;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
 use Laravel\Socialite\Socialite;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
@@ -445,17 +447,28 @@ it('[CT-08] uma chamada de componente com a sessão já travada não troca a pá
         ->and($destino)->not->toBe(enderecoDe('/admin/shield/roles'));
 });
 
-it('[CT-27] um GET que espera JSON com a sessão já travada não troca a página guardada', function (): void {
+it('[CT-27] um GET que espera JSON com a sessão já travada não troca a página guardada, com ou sem Referer', function (?string $referer): void {
     $this->actingAs(usuarioMaster());
     travadaPorInatividadeAoPedir('/admin/users');
 
-    $this->getJson('/admin/shield/roles');
+    $cabecalhos = $referer === null ? [] : ['Referer' => str_starts_with($referer, '/') ? url($referer) : $referer];
+
+    $this->withHeaders($cabecalhos)->getJson('/admin/users');
+    $this->flushHeaders();
 
     $destino = destinoDoComponente(desbloquearPorSenha('admin'));
 
     expect($destino)->toBe(enderecoDe('/admin/users'))
         ->and($destino)->not->toBe(enderecoDe('/admin/shield/roles'));
-});
+
+    if ($referer !== null) {
+        expect($destino)->not->toBe(enderecoDe($referer));
+    }
+})->with([
+    'sem Referer' => [null],
+    'interno'     => ['/admin/shield/roles'],
+    'externo'     => ['https://externo.example/x'],
+]);
 
 it('[CT-09] a tela de bloqueio aberta direto leva à raiz do painel, nunca à página pública', function (string $painel, string $raiz): void {
     $this->actingAs(usuarioMaster());
@@ -485,18 +498,20 @@ it('[CT-10] o segundo ciclo de trava não herda a página do primeiro', function
         ->and($destino)->not->toBe(enderecoDe('/admin/users'));
 });
 
-it('[CT-11] um segundo envio da senha, depois do desbloqueio, não cai na página pública', function (): void {
+it('[CT-11] o duplo envio da senha correta leva, nos dois envios, à página guardada', function (): void {
     $this->actingAs(usuarioMaster());
-    travadaPorInatividadeAoPedir('/admin/users');
+    travadaPorInatividadeAoPedir('/admin/users?q=ana');
 
     $componente = desbloquearPorSenha('admin');
+    $primeiro   = destinoDoComponente($componente);
 
     $componente->call('authenticate');
+    $segundo = destinoDoComponente($componente);
 
-    $destino = destinoDoComponente($componente);
-
-    expect($destino)->toStartWith(enderecoDe('/admin'))
-        ->and($destino)->not->toBe(enderecoDe('/'));
+    expect($primeiro)->toBe(enderecoDe('/admin/users?q=ana'))
+        ->and($segundo)->toBe(enderecoDe('/admin/users?q=ana'))
+        ->and($primeiro)->not->toBe(enderecoDe('/'))
+        ->and($segundo)->not->toBe(enderecoDe('/'));
 });
 
 it('[CT-23] depois de uma visita real, a trava sem pedido de página vai à raiz, não à última visitada', function (string $trava): void {
@@ -781,3 +796,105 @@ it('[CT-20] senha com tipo errado é recusada sem exceção e mantém a trava', 
 
     expect(session('lockscreen'))->toBeTrue();
 });
+
+/** O link assinado de confirmação de vínculo (a mesma rota e parâmetros que o e-mail carrega). */
+function linkDeConfirmacaoDoVinculo(User $conta, ProvedorSocial $provedor, string $sub): string
+{
+    return URL::temporarySignedRoute('auth.social.confirmar', now()->addMinutes(30), [
+        'provedor' => $provedor->value,
+        'user'     => $conta->getKey(),
+        'sub'      => $sub,
+    ]);
+}
+
+it('[CT-32] a outra conta que confirma o vínculo pelo link não recebe a página guardada de A', function (bool $unificado): void {
+    config()->set('kit.login.vinculo_confirmar', true);
+    ligarLoginUnificado($unificado);
+    ligarProvedor(ProvedorSocial::Google);
+
+    $contaA = usuarioMaster();
+    $contaB = contaComAcessoAoAdmin();
+    $this->actingAs($contaA);
+    travadaPorInatividadeAoPedir('/admin/users?q=ana');
+
+    $resposta = $this->get(linkDeConfirmacaoDoVinculo($contaB, ProvedorSocial::Google, 'google-sub-b'));
+    $destino  = destinoDaResposta($resposta);
+
+    $this->get($destino);
+
+    expect($destino)->not->toBe(enderecoDe('/admin/users?q=ana'))
+        ->and($destino)->not->toBe(enderecoDe('/admin/users'))
+        ->and(auth()->id())->toBe($contaB->id);
+})->with([
+    'unificado ligado'    => [true],
+    'unificado desligado' => [false],
+]);
+
+it('[CT-33] a mesma conta que confirma o vínculo não deixa a página antiga para o ciclo seguinte', function (): void {
+    config()->set('kit.login.vinculo_confirmar', true);
+    ligarProvedor(ProvedorSocial::Google);
+
+    $contaA = usuarioMaster();
+    $this->actingAs($contaA);
+    travadaPorInatividadeAoPedir('/admin/users?q=ana');
+
+    $this->get(linkDeConfirmacaoDoVinculo($contaA, ProvedorSocial::Google, 'google-sub-a'))->assertRedirect();
+
+    session(['lockscreen' => true]);
+    telaDeBloqueioAbre('admin');
+
+    $destino = destinoDoComponente(desbloquearPorSenha('admin'));
+
+    expect($destino)->toBe(enderecoDe('/admin'))
+        ->and($destino)->not->toBe(enderecoDe('/admin/users'))
+        ->and($destino)->not->toBe(enderecoDe('/admin/users?q=ana'));
+});
+
+it('[CT-35] esgotar as tentativas desloga e o próximo login segue o destino de um login sem página guardada', function (string $partida): void {
+    ligarLoginUnificado();
+
+    $conta = usuarioMaster();
+
+    $entrar = function () use ($conta): string {
+        Filament::auth()->logout();
+        Filament::setCurrentPanel('app');
+
+        $login = Livewire::test(TelaLoginUnificada::class)
+            ->fillForm(['email' => $conta->email, 'password' => 'password'])
+            ->call('authenticate');
+
+        return destinoDoComponente($login);
+    };
+
+    // D0: o login de referência, sem nenhuma trava, para a mesma conta e configuração.
+    $d0 = $entrar();
+
+    expect($d0)->not->toBe('')
+        ->and($d0)->not->toBe(enderecoDe('/admin'))
+        ->and($d0)->not->toBe(enderecoDe('/admin/users?q=ana'));
+
+    if ($partida === 'pagina') {
+        travadaPorInatividadeAoPedir('/admin/users?q=ana');
+    } else {
+        session(['lockscreen' => true]);
+    }
+
+    Filament::setCurrentPanel('admin');
+    $tela = Livewire::test(TelaBloqueio::class);
+
+    for ($tentativa = 0; $tentativa < 8 && auth()->check(); $tentativa++) {
+        $tela->set('data.password', 'senha-errada')->call('authenticate');
+    }
+
+    expect(auth()->check())->toBeFalse();
+
+    $destino = $entrar();
+
+    expect($destino)->toBe($d0)
+        ->and($destino)->not->toBe(enderecoDe('/admin'))
+        ->and($destino)->not->toBe(enderecoDe('/admin/users?q=ana'))
+        ->and(session()->has('url.intended'))->toBeFalse();
+})->with([
+    'com página (travada ao pedir /admin/users?q=ana)' => ['pagina'],
+    'fallback (tela aberta direto, raiz /admin)'       => ['fallback'],
+]);

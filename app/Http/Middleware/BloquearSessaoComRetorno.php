@@ -30,9 +30,9 @@ use lockscreen\FilamentLockscreen\Http\Middleware\Locker;
  * ## Por que "o `$next` não foi chamado" decide
  *
  * Os dois únicos caminhos do `parent::handle()` que não passam a requisição adiante são os dois
- * redirects para a tela de bloqueio. Detectar por aí independe do path configurado em
- * `Lockscreen::setUrl()` e do painel — e grava DEPOIS do pacote, que é o que sobrescreve o
- * `previous()` do ramo da sessão já travada.
+ * redirects para a tela de bloqueio — e os dois só existem para GET, então `! $seguiu` já implica
+ * GET. Detectar por aí independe do path configurado em `Lockscreen::setUrl()` e do painel — e
+ * grava DEPOIS do pacote, que é o que sobrescreve o `previous()` do ramo da sessão já travada.
  *
  * Quem coloca esta classe no lugar da do pacote é o bind em `AppServiceProvider::register()`: o
  * plugin registra `Locker::class` no `authMiddleware` dos painéis e o pipeline o resolve pelo
@@ -42,7 +42,8 @@ class BloquearSessaoComRetorno extends Locker
 {
     public function handle(Request $request, Closure $next): mixed
     {
-        $seguiu = false;
+        $seguiu   = false;
+        $guardada = $request->session()->get('url.intended');
 
         $resposta = parent::handle($request, function (Request $request) use ($next, &$seguiu): mixed {
             $seguiu = true;
@@ -50,7 +51,23 @@ class BloquearSessaoComRetorno extends Locker
             return $next($request);
         });
 
-        if (! $seguiu && $request->isMethod('GET') && ! $request->expectsJson()) {
+        if ($seguiu) {
+            return $resposta;
+        }
+
+        /*
+         * O pedido que espera JSON não é destino — mas o ramo da sessão já travada do pacote
+         * grava `previous()` (o `Referer`, que pode ser de fora) ANTES de devolver. Desfazer é
+         * a única forma de "não trocar": a página guardada antes volta, ou a chave some.
+         * Achado RD-01 (fw-revisor-diff) e CX-01 (Codex) do step 9.
+         */
+        if ($request->expectsJson()) {
+            if ($guardada === null) {
+                $request->session()->forget('url.intended');
+            } else {
+                $request->session()->put('url.intended', $guardada);
+            }
+        } else {
             redirect()->setIntendedUrl($request->fullUrl());
 
             Log::channel('autenticacao')->info(

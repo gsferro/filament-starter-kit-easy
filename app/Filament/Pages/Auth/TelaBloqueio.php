@@ -17,6 +17,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Locked;
 use lockscreen\FilamentLockscreen\Http\Livewire\LockerScreen;
 
 /**
@@ -54,6 +55,16 @@ class TelaBloqueio extends LockerScreen
      * auth-designer também declara a propriedade.
      */
     protected static string $layout = 'filament-auth-designer::components.layouts.auth';
+
+    /**
+     * Para onde o desbloqueio leva — lido UMA vez, no `mount()`.
+     *
+     * Existe porque o `intended()` do pacote consome `url.intended`: um segundo envio (duplo
+     * clique) acharia a chave vazia e perderia a página (CR-04 do step 9). `#[Locked]` porque é
+     * destino de redirect: o cliente não escreve nele entre requests.
+     */
+    #[Locked]
+    public ?string $destinoDoDesbloqueio = null;
 
     protected function getAuthDesignerPageKey(): string
     {
@@ -282,28 +293,46 @@ class TelaBloqueio extends LockerScreen
             $this->sairPara(url($panel->getPath()));
         }
 
-        $this->garantirDestinoDoDesbloqueio();
+        // Na sessão também, e não só na propriedade: a volta do provedor social lê a chave.
+        if (! session()->has('url.intended')) {
+            redirect()->setIntendedUrl($this->raizDoPainel());
+        }
+
+        $this->destinoDoDesbloqueio = session('url.intended');
     }
 
     /**
-     * O `authenticate()` do pacote, com o mesmo fallback do `mount()` antes dele.
+     * O `authenticate()` do pacote, com o destino do `mount()` reposto antes de cada envio.
      *
-     * O `intended()` do pacote CONSOME a página guardada. Um segundo envio no mesmo componente
-     * (duplo clique, ou o envio repetido antes de a navegação sair) acharia a chave vazia e
-     * cairia em `/` — o CT-11 da wiki `desbloqueio-volta-a-pagina` mediu exatamente isso.
+     * O `intended()` do pacote CONSOME a página guardada: sem repor, o segundo envio no mesmo
+     * componente (duplo clique) cairia na raiz — ou em `/`. E o logout forçado do rate limit
+     * (`forceLogout: true` nos três painéis) não invalida a sessão: a página reposta sobraria para
+     * o próximo login, de qualquer pessoa, por isso sai quando o envio termina deslogado (P-09).
      */
     public function authenticate(): Redirector|RedirectResponse|Application|null
     {
-        $this->garantirDestinoDoDesbloqueio();
+        redirect()->setIntendedUrl($this->destinoDoDesbloqueio ?? $this->raizDoPainel());
 
-        return parent::authenticate();
+        $resposta = parent::authenticate();
+
+        if (! Filament::auth()->check()) {
+            session()->forget('url.intended');
+        }
+
+        return $resposta;
     }
 
-    private function garantirDestinoDoDesbloqueio(): void
+    /**
+     * A raiz do painel da tela — no `/app`, a da organização em que a pessoa estava (a da sessão),
+     * não a primeira da conta, que é o que `Panel::getUrl()` sem tenant escolhe (P-08). O acesso
+     * à organização continua decidido pelo painel no request seguinte.
+     */
+    private function raizDoPainel(): string
     {
-        if (! session()->has('url.intended')) {
-            redirect()->setIntendedUrl(Paineis::url(Paineis::correnteOuPadrao()));
-        }
+        $panel       = Paineis::correnteOuPadrao();
+        $organizacao = $this->organizacaoResolvida();
+
+        return ($organizacao instanceof Tenant ? $panel->getUrl($organizacao) : null) ?? Paineis::url($panel);
     }
 
     private function sairPara(string $url): never

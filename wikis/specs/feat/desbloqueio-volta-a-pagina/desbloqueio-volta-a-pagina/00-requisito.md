@@ -57,11 +57,14 @@ instruções à sessão, cumpridas e registradas em `03-progresso.md` (`## Proce
 | P-03 | Com a sessão já travada, a página de retorno é a última que a pessoa tentou abrir no painel — não a própria tela de bloqueio | step 4 — leitura de RQ-03 ("volta para a url que voce entrou") | 2026-10-20 | RQ-03 | vigente |
 | P-04 | A régua de "página em que estava" é a do *intended* do Laravel: um GET interceptado que não espera JSON vira destino; chamada de componente da tela (Livewire), requisição que espera JSON e envio que não seja GET não viram *(alterado em 2026-10-20: ADV-08 da revisão adversarial — o texto antigo tinha duas réguas, "abertura de página" e "a do Laravel")* | step 4 — leitura de RQ-03 | 2026-10-20 | RQ-03 | vigente |
 | P-06 | Só a mesma conta que estava na sessão travada volta à página pelo provedor social; outra conta segue o destino de um login comum | step 7 — Q3 devolvida pela derivação do `04`, premissa de comportamento, falha fechado | 2026-10-20 | RQ-02, P-01 | vigente |
+| P-07 | Na confirmação de vínculo social pelo link do e-mail aberta numa sessão travada, a página guardada é descartada: o link não é um desbloqueio da tela | step 9 — CR-03 (`/code-review`) e RD-02 (`fw-revisor-diff`) | 2026-10-20 | P-06 | vigente |
+| P-08 | Sem página guardada, no painel com organização o desbloqueio volta à organização em que a pessoa estava (a da sessão), não à primeira da conta | step 9 — CR-02 (`/code-review`), premissa de comportamento, falha fechado | 2026-10-20 | P-02 | vigente |
+| P-09 | O logout forçado por excesso de tentativas na tela de bloqueio não deixa página guardada para o próximo login | step 9 — CR-05 (`/code-review`), premissa de comportamento, falha fechado | 2026-10-20 | P-02 | vigente |
 | P-05 | Com a sessão já destravada, abrir a tela de bloqueio leva de volta ao painel — ela só aparece para a sessão travada | step 3 — análise do vendor pelo Codex (a marca de trava fica na sessão com valor falso depois de destravar) | 2026-10-20 | RQ-01 | vigente |
 
 ## Fora de Escopo (declarado)
 
 - O tempo de inatividade e o kill-switch do bloqueio (`LOCKSCREEN_IDLE_TIMEOUT`, `LOCKSCREEN_ENABLED`): não mudam
 - O login comum (por senha ou provedor, sem sessão travada): continua com o destino de hoje
-- A confirmação de vínculo social pelo link do e-mail: é um fluxo de outra aba, não um desbloqueio da tela
+- A confirmação de vínculo social pelo link do e-mail: é um fluxo de outra aba, não um desbloqueio da tela — que, numa sessão travada, só descarta a página guardada (P-07) *(alterado em 2026-10-20: CR-03/RD-02)*
 - Contar inatividade no navegador (timer em JavaScript): o bloqueio continua disparando na próxima navegação, como hoje

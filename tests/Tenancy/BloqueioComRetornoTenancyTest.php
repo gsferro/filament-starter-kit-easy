@@ -81,3 +81,28 @@ it('[CT-21] o retorno a uma organização da qual a pessoa não participa contin
 
     expect((string) session('tenant_corrente'))->toBe((string) $acme->getKey());
 });
+
+it('[CT-34] sem página guardada, o desbloqueio volta à organização em que a pessoa estava', function (): void {
+    $acme   = organizacaoComRegistro('acme');
+    $globex = organizacaoComRegistro('globex');
+
+    $pessoa = usuarioComPapel('admin_app', $acme);
+    papelNaOrganizacao($pessoa, 'admin_app', $globex);
+    $pessoa->tenants()->attach([$acme->id, $globex->id]);
+
+    $this->actingAs($pessoa)->get('/app/globex/users')->assertOk();
+
+    expect((string) session('tenant_corrente'))->toBe((string) $globex->getKey());
+
+    session(['lockscreen' => true]);
+    $this->get(route('lockscreen.app.page'))->assertOk();
+
+    $destino = destinoDoComponente(desbloquearPorSenha('app'));
+
+    expect($destino)->toStartWith(enderecoDe('/app/globex'))
+        ->and($destino)->not->toStartWith(enderecoDe('/app/acme'));
+
+    $this->followingRedirects()->get($destino)->assertOk();
+
+    expect(request()->path())->toStartWith('app/globex');
+});

@@ -1,6 +1,6 @@
 # Progresso — Desbloqueio da sessão volta para a página em que a pessoa estava
 
-**Estado**: em implementação
+**Estado**: em revisão
 
 **Base do PR**: `main`
 
@@ -60,6 +60,17 @@ Não fatiado — 2026-10-20: 3 RQ vigentes, 31 CT, compactação: não, 3 pergun
 
 | ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
 |---|---|---|---|---|---|
+| RD-01 | eixos (`fw-revisor-diff`) | sessão já travada + GET JSON com `Referer`: o ramo do pacote sobrescreve `url.intended` com `previous()` antes do filtro de JSON; o CT-27 passava por coincidência | teste (viola P-04) → CT → correção | — / CT-27 endurecido | — |
+| CX-01 | Codex (`codex exec --yolo`, cego) | o mesmo de RD-01, achado de forma independente | idem RD-01 | — / CT-27 | — |
+| RD-02 | eixos | `confirmarVinculo()` faz `Auth::login()` numa sessão travada sem descartar a página de outra conta; no não unificado a página fica velha na sessão | premissa → CT → correção | P-07 / (CT do step 9) | — |
+| CR-01 | `/code-review` | `composer.json`/`lock` com `filament/blueprint` e o repositório privado | processo — estado temporário do `bp:on`, nunca staged; `bp:off` antes do PR | — | não é defeito do diff commitado (o `git diff main...HEAD` não toca `composer.*`) |
+| CR-02 | `/code-review` | fallback no `/app` usa `Panel::getUrl()` → primeira organização da conta, não a da sessão | premissa → CT → correção | P-08 / (CT do step 9) | — |
+| CR-03 | `/code-review` | o mesmo de RD-02 | idem RD-02 | P-07 | — |
+| CR-04 | `/code-review` | duplo envio: o segundo acha a página consumida e vai à raiz do painel, não à página | teste (viola P-02/RQ-02) → CT → correção | — / CT-11 endurecido | — |
+| CR-05 | `/code-review` | o fallback grava a raiz antes do rate limit; com `forceLogout: true` (kit) a página sobra para o próximo login | premissa → CT → correção | P-09 / (CT do step 9) | — |
+| CR-06 | `/code-review` | GET que não é página (imagem, download) vira destino | — | — | P-04 reescrita no step 7 (ADV-08, concordância do adversário): a régua é a do *intended* do Laravel |
+| CR-07 | `/code-review` | login social não unificado sem trava deixa `url.intended` velho, que a tela aberta direto depois reaproveita | — | — | semântica preexistente do login comum (Fora de Escopo do `00`); o `redirect()->to()` de hoje já deixa a chave — débito declarado |
+| CR-08 | `/code-review` | `isMethod('GET')` redundante: os dois ramos que não chamam `$next` já exigem GET | simplificação | — | aceito, sem CT (sem mudança de comportamento) |
 
 ## Conformidade com Rules
 
