@@ -271,7 +271,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
         | a sessão ficou ociosa e foi travada por um GET a "/admin/users" que espera JSON (Accept: application/json), com o Referer "/admin/shield/roles" | JSON             |
         | a marca de trava foi forçada na sessão, sem pedido de página, e chega uma chamada de componente Livewire (X-Livewire) com o Referer "/admin/shield/roles" | Livewire (POST)  |
 
-      O pacote deixa toda chamada Livewire passar sem travar (`vendor/marjose123/filament-lockscreen/src/Http/Middleware/Locker.php:handle:22-24`): "a sessão foi travada por uma chamada Livewire" nunca acontece. Por isso a linha Livewire parte da sessão **já travada** e a chamada chega depois.
+      O pacote deixa toda chamada Livewire passar sem travar (`vendor/marjose123/filament-lockscreen/src/Http/Middleware/Locker.php:isLivewireRequest:22-24`): "a sessão foi travada por uma chamada Livewire" nunca acontece. Por isso a linha Livewire parte da sessão **já travada** e a chamada chega depois.
 
     Cenário: [CT-08] uma chamada de componente com a sessão já travada não troca a página guardada
       Dado a sessão foi travada por inatividade ao pedir "/admin/users"
@@ -327,7 +327,7 @@ Funcionalidade: Desbloqueio volta para a página em que a pessoa estava
 | M45 | o POST com a sessão já travada sobrescreve a página guardada | equivalente — idem M44 (CT-26 @obsoleto) | destino `/admin/users`; o mutante redireciona ao endereço do POST |
 | M59 | em sessão já travada, o GET que espera JSON com Referer diferente sobrescreve a página guardada (a régua usa o "anterior" do request) | CT-27 (linhas com Referer) | destino exato `/admin/users`; o mutante redireciona ao Referer enviado (`/admin/shield/roles` ou `https://externo.example/x`) |
 | M46 | em sessão já travada, o GET que espera JSON sobrescreve a página guardada | CT-27 | destino `/admin/users`; o mutante redireciona a `/admin/shield/roles` |
-| M56 | a barreira deixa de travar a sessão para o GET que espera JSON (a marca fica falsa) | CT-07 (linha JSON) | no `Dado`, `session('lockscreen')` é `true` e a tela abre sem redirecionar; o mutante deixa `false`. Na linha Livewire o mutante é **equivalente**: o pacote já deixa a chamada Livewire passar sem travar (`Locker.php:handle:22-24`), então a marca não depende dela e nenhum teste a distingue |
+| M56 | a barreira deixa de travar a sessão para o GET que espera JSON (a marca fica falsa) | CT-07 (linha JSON) | no `Dado`, `session('lockscreen')` é `true` e a tela abre sem redirecionar; o mutante deixa `false`. Na linha Livewire o mutante é **equivalente**: o pacote já deixa a chamada Livewire passar sem travar (`Locker.php:isLivewireRequest:22-24`), então a marca não depende dela e nenhum teste a distingue |
 
 > R3 tem 4 cenários (teto padrão: 3): são partições distintas do tipo de requisição, cada uma com matador próprio (M44…M46, M56); o gate vence o teto.
 

@@ -11,9 +11,9 @@ sobre o código que a feature toca, para confirmar que nenhum ponto novo fica ao
 
 | Origem | Ponto | Alcançável pelo cliente | O que a feature muda | Fronteira |
 |---|---|---|---|---|
-| projeto | `app/Filament/Pages/Auth/TelaBloqueio.php:mount():282` | não — gancho de ciclo de vida, o Livewire recusa chamada por `$wire` | grava `url.intended` com a raiz do painel quando vazia; a guarda passa a ler o valor da marca | servidor: painel corrente, sessão |
+| projeto | `app/Filament/Pages/Auth/TelaBloqueio.php:mount():286` | não — gancho de ciclo de vida, o Livewire recusa chamada por `$wire` | grava `url.intended` com a raiz do painel quando vazia; a guarda passa a ler o valor da marca | servidor: painel corrente, sessão |
 | projeto | `public ?array $data` (herdada de `LockerScreen`) | sim — escrita entre requests | nada | `authenticate()` do pacote só lê `data.password` |
-| projeto | `app/Filament/Pages/Auth/TelaBloqueio.php:authenticate():312` (sobrescreve a do pacote) | sim — ação do formulário, sem argumento | grava a raiz do painel em `url.intended` quando vazia e delega a `parent::authenticate()` *(alterado em 2026-10-20: CT-11)* | rate limit do pacote; nenhum valor do cliente entra no destino |
+| projeto | `app/Filament/Pages/Auth/TelaBloqueio.php:authenticate():321` (sobrescreve a do pacote) | sim — ação do formulário, sem argumento | grava a raiz do painel em `url.intended` quando vazia e delega a `parent::authenticate()` *(alterado em 2026-10-20: CT-11)* | rate limit do pacote; nenhum valor do cliente entra no destino |
 | projeto | `#[Locked] public ?string $destinoDoDesbloqueio` | não para escrita — `#[Locked]` recusa o update do cliente; o valor vai ao navegador no snapshot (é a URL da própria pessoa) | nova — destino lido uma vez no `mount()` *(alterado em 2026-10-20: CR-04 do step 9)* | servidor: `url.intended` da sessão ou a raiz do painel |
 | projeto | `urlsDasLogos()`, `getAuthDesignerConfig()`, `content()` | sim — `public function` | nada | sem argumento do cliente |
 | middleware | `App\Http\Middleware\BloquearSessaoComRetorno` | não — não é componente; a URL guardada é a do próprio request (`fullUrl()`), nunca um valor do formulário | novo | só GET sem `expectsJson()` |

@@ -57,7 +57,7 @@ O Laravel resolve middleware pelo container — o mesmo caminho que o kit já us
 por `TelaBloqueio` (`app/Providers/AppServiceProvider.php:bind():23`).
 
 ### `app/Filament/Pages/Auth/TelaBloqueio.php`
-`mount()` já sobrescreve as duas guardas do pacote (`app/Filament/Pages/Auth/TelaBloqueio.php:mount():282`). Não
+`mount()` já sobrescreve as duas guardas do pacote (`app/Filament/Pages/Auth/TelaBloqueio.php:mount():286`). Não
 sobrescreve `authenticate()` — e não precisa: basta que `url.intended` exista quando ele roda.
 
 ### `app/Http/Controllers/Auth/LoginSocialController.php`
@@ -184,7 +184,7 @@ na nota do canal.
 ### 2. Fallback do desbloqueio para a raiz do painel e guarda da sessão destravada
 - **Editar** `TelaBloqueio::mount()`: depois das duas guardas, `if (! session()->has('url.intended')) { redirect()->setIntendedUrl(Paineis::url($panel)); }`
 - Sem log (caminho comum ao abrir a tela por favorito; não é decisão de fluxo relevante)
-- **Editar** a segunda guarda do `mount()` (era `session()->has('lockscreen')` em `main`, hoje `app/Filament/Pages/Auth/TelaBloqueio.php:lockscreen:292`): `session()->has('lockscreen')` → `session('lockscreen') !== true`. O pacote destrava gravando `false` (`vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:lockscreen:121`), então a chave existe depois do desbloqueio e a guarda de hoje nunca dispara para quem já destravou
+- **Editar** a segunda guarda do `mount()` (era `session()->has('lockscreen')` em `main`, hoje `app/Filament/Pages/Auth/TelaBloqueio.php:lockscreen:296`): `session()->has('lockscreen')` → `session('lockscreen') !== true`. O pacote destrava gravando `false` (`vendor/marjose123/filament-lockscreen/src/Http/Livewire/LockerScreen.php:lockscreen:121`), então a chave existe depois do desbloqueio e a guarda de hoje nunca dispara para quem já destravou
 - **Propriedade** `#[Locked] public ?string $destinoDoDesbloqueio`, lida uma vez no `mount()` (depois do fallback); o `authenticate()` a repõe em `url.intended` antes de `parent::authenticate()` e remove a chave se o envio terminar deslogado (logout forçado do rate limit, P-09). Fallback = `raizDoPainel()`: no `/app`, `Panel::getUrl($organizacaoDaSessao)` (P-08) *(alterado em 2026-10-20: CR-02, CR-04, CR-05 do step 9)*
 - Re-revisão do step 9: no envio, a página da sessão vence a propriedade (outra aba pode ter guardado uma mais nova — RD-03); a raiz que o `mount()` grava é marcada na sessão e recalculada no envio, e só usa a organização da sessão se `canAccessTenant` (RD-04) *(alterado em 2026-10-20)*
 - Histórico: a 1ª correção do CT-11 só aplicava o mesmo fallback antes de `parent::authenticate()`: o `intended()` do pacote consome a página, e um segundo envio no mesmo componente cairia em `/` *(alterado em 2026-10-20: CT-11 vermelho por (b) — o fallback só no `mount()` não cobria o segundo envio)*
