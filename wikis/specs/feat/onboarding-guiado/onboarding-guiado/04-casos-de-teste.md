@@ -1,6 +1,6 @@
 # Casos de Teste — onboarding-guiado: jornadas semeadas, interruptor no settings e rule de manutenção
 
-> Requisito: `00-requisito.md` (Texto Original + Adendos 1, 2, 3 + P-01..P-19) · Plano: `01-plano-acao.md` · Superfície Livewire: `02-decisoes-arquiteturais.md`
+> Requisito: `00-requisito.md` (Texto Original + Adendos 1, 2, 3 + P-01..P-24) · Plano: `01-plano-acao.md` · Superfície Livewire: `02-decisoes-arquiteturais.md`
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação (a feature não existe). O `vendor/` e o `app/` foram lidos só para nomes (classes, rotas, colunas) e para saber se um efeito **tem destinatário** no caminho feliz.
 > Revisão adversarial: concluída — 38 achados, todos fechados (2026-10-21); 2ª e última rodada: 16 achados (ADV2-01..ADV2-16), todos fechados (2026-10-21), ver `## Fechamento da 2ª rodada adversarial`. Fechamento: 17 cenários novos (CT-43…CT-59), 1 CT-B novo (CT-B02), linhas e asserções novas em 16 cenários existentes, 1 oráculo invertido corrigido (CT-11, ADV-21); mutantes da revisão e das premissas novas M110…M176 não contam para o teto por regra (SKILL.md, passo 6, item 1). Detalhe em `## Fechamento da revisão adversarial`.
 > Perguntas da derivação renumeradas pela sessão: Q?1–Q?7 → Q11–Q17 (premissas P-04..P-10, tratadas como decididas); Q?8–Q?10 → Q18–Q20 (desenho); Q?11–Q?16 da revisão → Q21–Q26 (P-11..P-16); ADV-12 → P-17.
@@ -22,7 +22,7 @@
 - Técnicas aplicadas: EP, BVA 2-valores (contagem de convites 0/1), tabela de decisão (semente × banco; modo × resposta do `kit:install`), matriz papel × ação, tabela estado × operação (uma, 20 células), rastreio de efeito (direção "não aconteceu" com destinatário real e controle positivo), 2-switch, idempotência ancorada no agregado persistido
 - Técnica escalada: R16 (área D) usa **2-switch** além de EP, porque o defeito plausível é o progresso do passo escondido sumir ou contar no numerador, que só aparece ao religar a feature; e **BVA** na borda de 100 % (CT-56, ADV-07)
 - `Quando` com sequência (CT-04, CT-12, CT-28, CT-51, CT-58, CT-61, CT-65): evento único declarado — é o **2-switch** (o oráculo é o destino do segundo evento, que não existe sem o primeiro); ADV-27..29
-- Cenários: 65 · Regras: 27 · Mutantes previstos: 173 · Sem matador: 0
+- Cenários: 71 · Regras: 32 · Mutantes previstos: 192 · Sem matador: 0
 <!-- derivado por grep -c (template-04 §Contagem do cabeçalho). O CT-B01, o CT-B02 e seus mutantes (MB1–MB6) estão no 05. IDs M22 e M69 fundidos em M20 e M56 (teto de 6 por regra no perfil completo); M109 acrescentado à R14. -->
 - Lacunas declaradas (não são mutantes sem matador): o recorte de RQ-13 "alterar tela existente" e as linhas da taxonomia marcadas "lacuna declarada"
 
@@ -69,6 +69,11 @@
 | R25 — Passos de organização só existem e só aparecem com a multi-organização ligada | D (completo) | P-12, P-17, RQ-09, RQ-24 | 2-switch, EP | CT-51, CT-52, CT-64 |
 | R26 — Passo cuja tela a pessoa não pode abrir não aparece nem conta no percentual | D (completo) | P-11, RQ-23 | matriz papel × tela, EP por painel | CT-53, CT-54, CT-65 |
 | R27 — Os arquivos da feature viajam pelas duas rotas de entrega do kit | F (mínimo) | RQ-04, RQ-06, RQ-26 (o que a instalação precisa ter para semear e para o agente ler a rule) | EP por arquivo × rota | CT-57 |
+| R28 — Escrever a chave de outra jornada direto no checklist não troca a jornada | C (padrão) | P-20, RQ-28 | EP | CT-66 |
+| R29 — A falha da semeadura do tutorial não interrompe o `kit:install` | E (padrão) | P-21, RQ-06, RQ-19, RQ-20 | rastreio de efeito | CT-67 |
+| R30 — O passo do dashboard dinâmico exige poder montar o dashboard dinâmico do painel | D (completo) | P-22, P-03, P-11 | tabela de decisão | CT-68 |
+| R31 — Nenhum passo semeado fica escondido de todo mundo | D (completo) | P-23, RQ-02, P-11 | EP por painel | CT-69 |
+| R32 — O canal de log do tutorial existe no projeto atualizado, e a configuração de log do projeto não é sobrescrita | F (mínimo) | P-24, RQ-02 | tabela de decisão (escalada), EP | CT-70, CT-71 |
 
 Cobertura por cláusula (toda `RQ` e toda `P-nn` vigente):
 
@@ -86,7 +91,7 @@ Cobertura por cláusula (toda `RQ` e toda `P-nn` vigente):
 - RQ-12 — CT-03, CT-07, CT-11, CT-44, CT-45 (URL da página, P-04)
 - P-01 — CT-32, CT-33, CT-59 · P-02 — CT-12, CT-56 · P-03 — CT-27, CT-28, CT-36, CT-17 (tour não aponta tela ausente)
 - P-04 — CT-45 · P-05 — CT-46 · P-06 — CT-15, CT-47, CT-37 (linha `admin_app`) · P-07 — CT-26 (linha desligado) · P-08 — CT-34, CT-49 · P-09 — CT-50 · P-10 — CT-38 (linha `--no-seed`)
-- P-11 — CT-53, CT-54, CT-65 · P-12 — CT-51, CT-64 · P-13 — CT-27 (linha "Execuções de IA") · P-14 — CT-48 · P-15 — CT-39 · P-16 — CT-42 · P-17 — CT-52 · P-18 — CT-62 · P-19 — CT-61
+- P-11 — CT-53, CT-54, CT-65 · P-12 — CT-51, CT-64 · P-13 — CT-27 (linha "Execuções de IA") · P-14 — CT-48 · P-15 — CT-39 · P-16 — CT-42 · P-17 — CT-52 · P-18 — CT-62 · P-19 — CT-61 · P-20 — CT-66 · P-21 — CT-67 · P-22 — CT-68 · P-23 — CT-69 · P-24 — CT-70, CT-71
 - Nenhuma `RQ` está com Estado `aberta` no `00`; Q1–Q8 e Q10 estão respondidas; Q11–Q17 e Q21–Q28 estão abertas **com premissa vigente** (P-04..P-16, P-18, P-19), tratada como decidida pela sessão. A `P-04` citada no `02` (linha `completeStep`) é anterior à numeração atual: o comportamento dela é a RQ-30 (Adendo 3), não a P-04 de hoje (página com 404)
 
 ### Matriz estado × operação (única, área B)
@@ -1130,7 +1135,7 @@ O mutante "passo de Configurações semeado como manual" é o M56 (R12), morto t
         | nenhuma                                          | app    | a Ana            | N₀ (controle do /app) | Hub (cards) | visível  |
         | o hub de cartões                                 | app    | a Ana            | N₀ − 1   | Hub (cards)            | ausente  |
         | o dock fora do /app (ligado no /admin e /infra)  | app    | a Ana            | N₀ − 1   | Dock de atalhos        | ausente  |
-        | o dashboard dinâmico só no /app                  | app    | a Ana            | N₀ − 1   | Dashboard dinâmico     | ausente  |
+        | o dashboard dinâmico só no /app                  | app    | o administrador geral | N₀′ − 1 (controle dele no /app) | Dashboard dinâmico | ausente  |
         | o dashboard dinâmico só no /app                  | admin  | a administradora | 11       | Dashboard dinâmico     | visível  |
 
     Cenário: [CT-28] o passo escondido sai do percentual e volta concluído ao religar a feature
@@ -1161,7 +1166,7 @@ O mutante "passo de Configurações semeado como manual" é o M56 (R12), morto t
       E o widget "Jornadas de onboarding concluídas", aberto pelo administrador geral, continua contando a jornada dela como concluída
 ```
 
-ADV2-05: as linhas 14–18 do CT-27 cobrem o `/app` com a Ana; a contagem do `/app` é relativa ao controle da própria tabela (`N₀`, linha 14) porque o número absoluto depende de quais telas do `/app` o `panel_user` abre (P-11, ADV2-13) — `@premissa P-11`. ADV2-14: o CT-56 ficou com um `Quando` só; a contagem do widget foi para o CT-60. P-19 (Q28): CT-61, 2-switch a partir do estado do CT-56.
+ADV2-05: as linhas 14–18 do CT-27 cobrem o `/app` com a Ana, exceto a 17: o `panel_user` não pode montar o dashboard e nunca vê esse passo (P-22), então a linha 17 usa o administrador geral, contado contra o próprio controle; a contagem do `/app` é relativa ao controle da própria tabela (`N₀`, linha 14) porque o número absoluto depende de quais telas do `/app` o `panel_user` abre (P-11, ADV2-13) — `@premissa P-11`. ADV2-14: o CT-56 ficou com um `Quando` só; a contagem do widget foi para o CT-60. P-19 (Q28): CT-61, 2-switch a partir do estado do CT-56.
 
 ADV-05/06/22: as linhas 10–12 do CT-27 usam a persona do outro painel (a Íris no `/infra` com o dock só no `/admin`; o dinâmico só no `/infra`, visto do `/infra` e do `/admin`). P-13: a linha 13 prova que "Execuções de IA" **não** some com os agentes desligados. ADV-07: CT-56 é a borda de 100 % — o passo escondido e pendente não impede a conclusão (o widget, no CT-60).
 
@@ -1696,6 +1701,197 @@ ADV-16. Molde: `tests/Kit/KitUpdateTest.php` (`KitUpdate::CAMINHOS_DO_KIT`) e o 
 
 ---
 
+## Regra R28 — Escrever a chave de outra jornada direto no checklist não troca a jornada
+
+> `P-20` (step 9, CR-01) · perfil **padrão** · técnica: **EP** (chave fora do domínio: jornada de outro painel, chave inexistente) · arquivo `tests/Kit/OnboardingGuiadoConsumoTest.php` (G6)
+
+```gherkin
+  Regra: a jornada do checklist só muda para uma jornada que a pessoa vê no painel corrente
+
+    Esquema do Cenário: [CT-66] a chave de uma jornada invisível escrita direto na propriedade do checklist não muda o checklist
+      Dado as jornadas do kit semeadas, o tutorial ligado e a administradora com o checklist montado no /admin, na jornada do /admin
+      Quando a propriedade flowKey do checklist recebe <chave> diretamente, sem a troca de aba
+      Então o checklist continua mostrando a jornada do /admin
+      E concluir em seguida o passo de Usuários, sem informar a jornada, grava o progresso na jornada do /admin e nenhum na jornada <outra>
+
+      Exemplos:
+        | chave                       | outra        | # partição                 |
+        | "primeiros-passos-infra"    | do /infra    | jornada de outro painel    |
+        | "primeiros-passos-app"      | do /app      | jornada de outro painel    |
+        | "jornada-que-nao-existe"    | do /infra    | chave inexistente          |
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M177 | a validação da jornada só em `selectFlow`; o `set` direto da propriedade (sem `#[Locked]`) passa — P-20 | CT-66 (linhas 1 e 2) | jornada do `/admin` mostrada; o mutante mostra a do `/infra`/`/app` |
+| M178 | chave inválida cai na primeira jornada encontrada (de qualquer painel), não na visível do painel | CT-66 (linha 3) | jornada do `/admin` e progresso só nela; o mutante resolve para outra jornada |
+| M179 | a chave escrita é ignorada na exibição, mas usada nas ações (o `completeStep` sem jornada lê a propriedade) | CT-66 (segunda asserção) | progresso na jornada do `/admin`; o mutante grava na outra |
+
+---
+
+## Regra R29 — A falha da semeadura do tutorial não interrompe o `kit:install`
+
+> `P-21` (step 9, CR-02), `RQ-06`, `RQ-19`, `RQ-20` · perfil **padrão** · técnica: **rastreio de efeito** (o efeito que precisa acontecer mesmo com a falha: o resumo com a senha) · arquivo `tests/Kit/OnboardingGuiadoInstalacaoTest.php` (G11)
+
+```gherkin
+  Regra: se a semeadura do tutorial falha durante o kit:install, a instalação termina e o resumo final aparece com o aviso de como semear depois
+
+    Esquema do Cenário: [CT-67] com a semeadura do tutorial falhando, o kit:install mostra o resumo final e o aviso
+      Dado um diretório de instalação novo do kit, sem multi-organização
+      E a semeadura do tutorial forçada a lançar exceção
+      Quando o kit:install roda <modo>
+      Então a saída traz o resumo final com a senha do administrador gerada
+      E traz o aviso com o comando do seeder pai para semear depois
+      E o administrador existe no banco, e não há jornada de onboarding
+
+      Exemplos:
+        | modo                                                            |
+        | interativo, respondendo sim a "Popular os tutoriais guiados?"   |
+        | não interativo, com --onboarding                                |
+```
+
+A falha é induzida no teste (o seeder pai trocado no container por um que lança), sem alterar código da aplicação.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M180 | a semeadura do tutorial chamada sem tratamento: a exceção sobe e o comando aborta antes do resumo — P-21 | CT-67 (primeira asserção) | resumo com a senha; o mutante para na exceção |
+| M181 | a falha é engolida em silêncio (sem aviso) | CT-67 (segunda asserção) | comando do seeder pai na saída; o mutante não avisa |
+| M182 | a falha da semeadura do tutorial marca a instalação como "banco não populado" e pula os passos seguintes | CT-67 (terceira asserção) | administrador existe; o mutante não o cria |
+
+---
+
+## Regra R30 — O passo do dashboard dinâmico exige poder montar o dashboard dinâmico do painel
+
+> `P-22` (step 9, CR-03), `P-03`, `P-11` · perfil **completo** (área D) · técnica: **tabela de decisão** (dinâmico ligado no painel × permissão de montar o dashboard) · arquivo `tests/Kit/OnboardingGuiadoConsumoTest.php` (G8)
+
+```gherkin
+  Regra: o passo do dashboard dinâmico aparece só com o dinâmico ligado no painel e para quem pode montar o dashboard dinâmico daquele painel
+
+    Esquema do Cenário: [CT-68] o passo do dashboard dinâmico segue a permissão de montar o dashboard do painel
+      Dado as jornadas do kit semeadas sem multi-organização, o tutorial ligado e todas as features da tabela ligadas
+      E <persona> no <painel>, <permissao>
+      Quando o checklist do <painel> é montado para ela
+      Então o passo "Dashboard dinâmico" está <presenca>
+      E a jornada tem <visiveis> passos visíveis
+
+      Exemplos:
+        | persona          | painel | permissao                                                         | presenca | visiveis       |
+        | a administradora | admin  | com a permissão de montar o dashboard                             | visível  | N₄ (controle)  |
+        | a administradora | admin  | sem a permissão de montar o dashboard                             | ausente  | N₄ − 1         |
+        | a Íris           | infra  | com a permissão de montar o dashboard                             | visível  | N₅ (controle)  |
+        | a Íris           | infra  | sem a permissão de montar o dashboard                             | ausente  | N₅ − 1         |
+        | a Íris           | infra  | com a do papel infra, e com o papel admin sem ela                 | visível  | N₅             |
+```
+
+A página é `App\Filament\{Admin,Infra}\Pages\Dashboard` (rota `filament.{painel}.pages.dashboard-dinamico`), nome só para o arranjo. A permissão de montar é `Manage:Dashboard`, o `canEdit()` da página (abrir a página não filtra: ela é a home do painel e abre para todos). O dinâmico fica ligado em todas as linhas; a única variável é a permissão (o dinâmico desligado é o CT-27, P-03). A última linha prova que basta um dos papéis da pessoa ter a permissão. Contagem relativa ao controle da própria persona (`@premissa P-11`).
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M183 | o passo segue só o dinâmico ligado no painel (P-03), sem a permissão de montar — P-22 | CT-68 (linhas 2 e 4) | ausente; o mutante mostra |
+| M184 | o passo segue o `canAccess()` da página do dinâmico (abrir), não o `canEdit()` (montar) | CT-68 (linhas 2 e 4) | ausente sem a permissão de montar; o mutante mostra porque a página abre para todos |
+| M185 | o passo exige a permissão em todos os papéis da pessoa | CT-68 (linha 5) | visível com a permissão só no papel infra; o mutante esconde |
+| M186 | o passo escondido continua no total | CT-68 (linhas 2 e 4, coluna visiveis) | `N − 1`; o mutante mantém `N` |
+
+---
+
+## Regra R31 — Nenhum passo semeado fica escondido de todo mundo
+
+> `P-23` (step 9, CR-04), `RQ-02`, `P-11` · perfil **completo** (área D) · técnica: **EP por painel** (união das personas do painel) · arquivo `tests/Kit/OnboardingGuiadoSemeaduraTest.php` (G8)
+
+```gherkin
+  Regra: todo passo semeado é visível para alguém no seu painel quando as features dele estão ligadas
+
+    Esquema do Cenário: [CT-69] com tudo ligado, a união do que as personas do painel veem cobre todos os passos semeados do painel
+      Dado o seeder pai rodado sem multi-organização, o tutorial ligado e todas as features da tabela ligadas
+      E as personas do <painel>: <personas>, com as permissões dos papéis como semeadas
+      Quando o checklist do <painel> é montado para cada uma delas
+      Então todo passo semeado na jornada do <painel> aparece para ao menos uma delas
+      E toda condição de visibilidade citada por um passo semeado do <painel> está registrada no <painel>
+
+      Exemplos:
+        | painel | personas                                                |
+        | admin  | a administradora, o administrador geral (master_global) |
+        | app    | a Ana, o administrador geral (master_global)            |
+        | infra  | a Íris, o administrador geral (master_global)           |
+```
+
+O CT-23 afirma que toda chave citada resolve; o CT-69 afirma o efeito que a P-23 protege (passo invisível para todos), painel a painel.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M187 | condição de visibilidade com chave digitada errada num seeder filho (`tela:usuario` em vez da registrada): a chave desconhecida esconde o passo de todos — P-23 | CT-69 | o passo aparece para alguém; o mutante o esconde de todos |
+| M188 | condição de tela registrada só no plugin do `/admin` (os passos do `/app` e do `/infra` que a citam somem para todos) | CT-69 (linhas app e infra) | passo visível e condição registrada no painel; o mutante esconde |
+| M189 | passo semeado citando condição de feature que não é registrada naquele painel (ex.: a do hub no `/infra`) | CT-69 (linha infra, segunda asserção) | condição registrada no painel; o mutante cita chave não registrada |
+
+---
+
+## Regra R32 — O canal de log do tutorial existe no projeto atualizado, e a configuração de log do projeto não é sobrescrita
+
+*(alterado em 2026-10-21: P-24 reescrita na rodada 2 do step 9)*
+
+> `P-24` (step 9, RD-02; redação revista na rodada 2, RD2-03 e CR2-02), `RQ-02` · perfil **mínimo** (área F) · técnica: **tabela de decisão** (canal `onboarding` declarado × não declarado no `config/logging.php` do projeto) + **EP** (`config/logging.php` dentro × fora dos caminhos do `kit:update`) · arquivo `tests/Kit/OnboardingGuiadoInstalacaoTest.php` (G12)
+
+Técnica escalada acima do mínimo (só EP): as duas colunas da tabela pedem ações opostas sobre a mesma condição — suprir o canal quando falta, não tocar quando existe —, e uma partição sozinha não distingue "suprir sempre" de "suprir só quando falta". Teto do mínimo (1 cenário por regra) estourado em 1: o CT-71 é o único matador de M194 e M195 (o gate vence o teto); a regra tem duas costuras reais (o boot da aplicação e a lista de entrega) e não foi desdobrada porque a sessão fixou o ID R32. Seis mutantes, um acima do teto do perfil padrão, pelo mesmo motivo.
+
+| | D1 | D2 |
+|---|---|---|
+| C1 — o `config/logging.php` do projeto declara o canal `onboarding` | não | sim (driver `single`, caminho `storage/logs/onboarding-do-projeto.log`) |
+| A1 — `onboarding` resolve para uma configuração definida, sem logger de emergência | sim | sim |
+| A2 — a configuração de `onboarding` é a que o projeto declarou | — (não há declaração) | sim |
+| A3 — o canal próprio `auditoria-do-projeto`, padrão do projeto, continua o do projeto | sim | sim |
+
+Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 vale nas duas colunas e é o destinatário real do não-efeito "não sobrescreve".
+
+```gherkin
+  Regra: no projeto atualizado, o canal de log do tutorial existe sem que a configuração de log do projeto seja sobrescrita
+
+    Esquema do Cenário: [CT-70] o canal de log do tutorial resolve, e o que o projeto declarou na configuração de log vence
+      Dado a aplicação do projeto iniciada com um config/logging.php que <declaracao>
+      E esse config/logging.php declara o canal próprio auditoria-do-projeto como canal padrão
+      Quando um aviso é gravado no canal onboarding
+      Então a configuração do canal onboarding é <configuracao>
+      E o aviso não aciona o logger de emergência ("Log [onboarding] is not defined")
+      E o canal auditoria-do-projeto continua definido e continua sendo o canal padrão
+
+      Exemplos:
+        | linha | declaracao                                                                                   | configuracao                                                                 |
+        | D1    | não declara o canal onboarding                                                               | definida (não nula, com driver)                                              |
+        | D2    | declara o canal onboarding com driver single e caminho storage/logs/onboarding-do-projeto.log | driver single e caminho storage/logs/onboarding-do-projeto.log — a do projeto |
+
+    Cenário: [CT-71] o config/logging.php do projeto não está entre os caminhos que o kit:update entrega
+      Dado a árvore do kit
+      Quando config/logging.php é conferido contra os caminhos entregues pelo kit:update
+      Então ele não está coberto por nenhum desses caminhos, nem como arquivo nem por um diretório que o contenha
+      E o config do pacote de onboarding está coberto por esses caminhos
+```
+
+- **Por que "não lança exceção" não é oráculo**: o `LogManager` lança `"Log [{$name}] is not defined."` quando a configuração do canal é nula (`vendor/laravel/framework/src/Illuminate/Log/LogManager.php:resolve:222`), mas o `get()` captura e devolve o logger de emergência, que grava `Unable to create configured logger. Using emergency logger.` (`vendor/laravel/framework/src/Illuminate/Log/LogManager.php:get:140`). O erro nunca chega a quem gravou o aviso. A primeira asserção (configuração do canal) é o oráculo; a segunda observa o destino real do logger de emergência (`storage/logs/laravel.log` do cenário), com o arquivo isolado por cenário para não medir aviso de outro teste
+- **O `Dado` vale antes do boot** (`@premissa` de mecanismo, raia desenho — Q29, decidida em D12 do `01`: aplicação nova com `afterBootstrapping(LoadConfiguration::class)`): a configuração de log do cenário é a que a aplicação carrega ao iniciar. `config()->set()` depois do boot não exercita o caminho que supre o canal (falso vermelho se o kit supre no boot; falso verde se o teste só apaga e relê). E o `config/logging.php` da árvore do kit não serve de `Dado` para a linha D1: se ele declarar o canal, a linha passa medindo o kit, não o projeto
+- **Proibição 12 não se aplica**: o cenário afirma a existência e a origem da configuração do canal (P-24), não o conteúdo de uma linha de log; o `warning` do tutorial continua fora de CT (`## Fronteira com o Plano`)
+- A segunda asserção do CT-71 é controle positivo: com `caminhosDoKit()` vazio ou mal lido, a primeira passaria no vácuo
+- `App\Console\Commands\KitUpdate::CAMINHOS_DO_KIT` (molde `tests/Kit/KitUpdateTest.php`, helper `caminhosDoKit()` de `tests/Pest.php`, a mesma noção de "coberto" do CT-57); canal `onboarding`
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M190 | nada supre o canal: só o `config/logging.php` da árvore do kit o declara, e o projeto, cujo arquivo não o tem, fica sem ele (o estado que o RD-02 achou) — P-24 | CT-70 (linha D1) | configuração de `onboarding` definida; o mutante deixa nula e o aviso cai no logger de emergência |
+| M191 | o kit supre o canal por mesclagem rasa da configuração de log: a chave `channels` do projeto substitui a do kit inteira | CT-70 (linha D1) | configuração definida; o mutante perde o canal justamente no projeto que declara `channels` próprio |
+| M192 | o kit grava o seu canal `onboarding` sempre (ou mescla em profundidade com o kit por cima), mesmo quando o projeto o declara | CT-70 (linha D2) | driver `single` e caminho `storage/logs/onboarding-do-projeto.log`; o mutante põe os do kit |
+| M193 | o kit troca a configuração de log inteira pela do esqueleto ao subir | CT-70 (linhas D1 e D2, última asserção) | `auditoria-do-projeto` definido e padrão; o mutante apaga o canal e devolve o padrão do esqueleto |
+| M194 | `config/logging.php` listado em `CAMINHOS_DO_KIT`: o arquivo do esqueleto entregue inteiro apaga os canais próprios do projeto (RD2-03, CR2-02) | CT-71 (primeira asserção) | não coberto; o mutante cobre pelo arquivo |
+| M195 | `config/` inteiro listado em `CAMINHOS_DO_KIT` para levar os configs novos da feature | CT-71 (primeira asserção) | não coberto nem por diretório; o mutante cobre pelo prefixo |
+
+---
+
 ## Checklist de Taxonomia
 
 | Item | Cenário que mata | Grupo |
@@ -1715,7 +1911,7 @@ ADV-16. Molde: `tests/Kit/KitUpdateTest.php` (`KitUpdate::CAMINHOS_DO_KIT`) e o 
 | Unicode / limite de varchar | limite da coluna: CT-59 (todo valor semeado cabe e não chega truncado); acento e "⌘" nos dois idiomas: lacuna declarada — CT-32 afirma não vazio e pt_BR ≠ en, não a integridade do caractere; tentado: afirmar o título pt_BR literal, recusado porque o texto não é do `00` | G7 |
 | Unicidade + soft delete | não se aplica: os models do pacote não usam `SoftDeletes` (apagar é físico — CT-31 cobre o recriar) | — |
 | CRUD combinado | CT-31 (apagar → re-semear recria), CT-30 (criar na autoria → re-semear preserva), CT-33 (editar pela autoria: jornada, passo e condição), CT-08 (ver/editar com o tutorial desligado) | G7, G9, G3 |
-| Mass assignment | `settings`: não se aplica — a SettingsPage grava só o estado do schema (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:save:73` e `:save:83`); `onboarding_*`: lacuna declarada — formulário de autoria do pacote, anterior à feature e não alterado por ela; nenhuma coluna de autorização nas tabelas (`create_onboarding_tables.php.stub:up:24`), escrito como se fosse falso no CT-33 (chave, painel e demais campos não mudam) | G9 |
+| Mass assignment | `settings`: não se aplica — a SettingsPage grava só o estado do schema (`vendor/filament/spatie-laravel-settings-plugin/src/Pages/SettingsPage.php:save:62` e `:save:83`); `onboarding_*`: lacuna declarada — formulário de autoria do pacote, anterior à feature e não alterado por ela; nenhuma coluna de autorização nas tabelas (`create_onboarding_tables.php.stub:up:24`), escrito como se fosse falso no CT-33 (chave, painel e demais campos não mudam) | G9 |
 | Upload | não se aplica: o seeder não envia mídia (Fora de Escopo); a mídia da jornada de teste do CT-13 é URL, não upload | — |
 | Precisão monetária | não se aplica: sem valor monetário | — |
 | **Superfície Livewire** (método público, prop pública) | todos os métodos públicos do checklist (`completeStep`, `skipStep`, `undoStep`, `startTour`, `tourProgress`, `finishTour`, `openMedia`, `videoProgress`, `dismissFlow`, `restoreFlow`, `restartFlow`, `selectFlow`, `startOnboarding`, `remindMeLater`, `neverShowOnboarding`, `showOnboardingAgain`, `toggle`) desligado: CT-13 (`/admin`), CT-43 (`/app`, `/infra`), com o controle ligado no CT-14; fora do domínio e tipo errado ligado: CT-18 (`stepKey`, `flowKey`, `selectFlow`/`$flowKey`, `tourProgress`, `$arguments['flow']`); Pages e relation manager da autoria já abertos: CT-46; `$onboardingScopeType`/`$onboardingScopeId`/`$onboardingPanel`: não se aplica — `#[Locked]` (`vendor/wallacemartinss/filament-onboarding/src/Concerns/InteractsWithOnboarding.php:$onboardingPanel:57`); `$isOpen`: só UI, `toggle` desligado em CT-13; `StartTourAction`: não se aplica — não usada (`02`) | G6, G3 |
@@ -1793,6 +1989,12 @@ ADV-16. Molde: `tests/Kit/KitUpdateTest.php` (`KitUpdate::CAMINHOS_DO_KIT`) e o 
 | CT-63 | dentro da organização, a ação do checklist montado é recusada depois do desligar | R8 | estado × evento | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M165 |
 | CT-64 | desligar a multi-organização esconde os passos de organização do /app sem apagar | R25 | EP | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M172 |
 | CT-65 | o passo concluído cuja tela a pessoa deixa de abrir sai também do numerador | R26 | 2-switch | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M175, M176 |
+| CT-66 | a chave de uma jornada invisível escrita direto no checklist não muda o checklist | R28 | EP | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M177, M178, M179 |
+| CT-67 | com a semeadura do tutorial falhando, o kit:install mostra o resumo e o aviso | R29 | rastreio de efeito | G11 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M180, M181, M182 |
+| CT-68 | o passo do dashboard dinâmico segue a permissão de montar o dashboard do painel | R30 | tabela de decisão | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M183, M184, M185, M186 |
+| CT-69 | com tudo ligado, as personas do painel cobrem todos os passos semeados | R31 | EP por painel | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M187, M188, M189 |
+| CT-70 | o canal de log do tutorial resolve, e a declaração do projeto vence | R32 | tabela de decisão | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M190, M191, M192, M193 |
+| CT-71 | o config/logging.php do projeto não está nos caminhos do kit:update | R32 | EP | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M194, M195 |
 
 ## Tabela de cogitado e cortado
 

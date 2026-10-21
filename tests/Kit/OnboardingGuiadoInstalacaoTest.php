@@ -2,20 +2,26 @@
 
 use App\Filament\Infra\Pages\Pulse;
 use App\Filament\Pages\PrimeirosPassos;
+use App\Models\User;
 use Database\Seeders\Onboarding\PulseSeeder;
 use Database\Seeders\OnboardingSeeder;
 use Filament\Facades\Filament;
-use Filament\Pages\Page;
-use Filament\Resources\Resource;
 use Illuminate\Console\OutputStyle;
+use Illuminate\Container\Container;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Database\Seeder;
+use Illuminate\Foundation\Bootstrap\LoadConfiguration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Finder\Finder;
+use Tests\Kit\fixtures\PaginaNovaDoOnboardingParaTeste;
+use Tests\Kit\fixtures\RecursoNovoDoOnboardingParaTeste;
 
 /**
  * Tutorial guiado (wiki `onboarding-guiado`) — lote da instalação e dos arquivos: G11 (`kit:install`) e
@@ -210,12 +216,6 @@ it('[CT-39] a rule de onboarding está em .ai/rules, indexada, e cobre as telas 
 | R22 — o inventário
 --------------------------------------------------------------------------- */
 
-/** Uma Page que ninguém declarou no inventário. */
-class PaginaNovaDoOnboardingParaTeste extends Page {}
-
-/** Um Resource que ninguém declarou no inventário. */
-class RecursoNovoDoOnboardingParaTeste extends Resource {}
-
 /**
  * As telas de painel sem seeder de onboarding mapeado (e chamado pelo pai) nem isenção com motivo —
  * a verificação do inventário como função dos painéis e das tabelas, para os controles negativos.
@@ -375,3 +375,109 @@ it('[CT-57] cada arquivo da feature está nas duas rotas de entrega', function (
             ->and($kit)->toBeTrue("{$arquivo} não está coberto pelos caminhos do kit:update");
     }
 })->with(['seeder pai', 'seeders filhos', 'migration de settings', 'rule', 'config do pacote']);
+
+it('[CT-70] o canal de log do tutorial resolve, e o que o projeto declarou na configuração de log vence', function (string $linha): void {
+    $anterior = app();
+    $pasta    = sys_get_temp_dir().'/kit_log_onboarding_'.getmypid().'_'.$linha;
+
+    foreach (['framework/cache/data', 'framework/views', 'framework/sessions', 'logs'] as $sub) {
+        File::ensureDirectoryExists("{$pasta}/{$sub}");
+    }
+
+    try {
+        // O Dado vale ANTES do boot (Q29/D12): aplicação nova, config de log ajustada logo depois do LoadConfiguration.
+        $app = require base_path('bootstrap/app.php');
+        $app->useStoragePath($pasta);
+        $app->afterBootstrapping(LoadConfiguration::class, function ($app) use ($linha, $pasta): void {
+            $canais = ['auditoria-do-projeto' => ['driver' => 'null']];
+
+            if ($linha === 'D2') {
+                $canais['onboarding'] = ['driver' => 'single', 'path' => $pasta.'/logs/onboarding-do-projeto.log'];
+            }
+
+            $app['config']->set('logging.channels', $canais);
+            $app['config']->set('logging.default', 'auditoria-do-projeto');
+        });
+        $app->make(Kernel::class)->bootstrap();
+
+        $config = $app['config']->get('logging.channels.onboarding');
+
+        expect($config)->not->toBeNull('o canal onboarding não está definido')
+            ->and($config)->toHaveKey('driver');
+
+        if ($linha === 'D2') {
+            expect($config['driver'])->toBe('single')
+                ->and($config['path'])->toBe($pasta.'/logs/onboarding-do-projeto.log');
+        }
+
+        $logger     = $app['log']->channel('onboarding');
+        $emergencia = $app->storagePath('logs/laravel.log');
+        $destinos   = array_map(fn ($handler): string => method_exists($handler, 'getUrl') ? (string) $handler->getUrl() : '', $logger->getLogger()->getHandlers());
+
+        // O logger de emergência é um StreamHandler em storage/logs/laravel.log; o canal resolvido não grava lá.
+        $this->assertNotContains($emergencia, $destinos, 'o aviso cairia no logger de emergência ("Log [onboarding] is not defined")');
+
+        $logger->warning('aviso do tutorial');
+
+        expect($app['config']->get('logging.channels.auditoria-do-projeto'))->not->toBeNull()
+            ->and($app['config']->get('logging.default'))->toBe('auditoria-do-projeto');
+    } finally {
+        Container::setInstance($anterior);
+        Facade::clearResolvedInstances();
+        Facade::setFacadeApplication($anterior);
+        File::deleteDirectory($pasta);
+    }
+})->with(['D1', 'D2']);
+
+it('[CT-71] o config/logging.php do projeto não está entre os caminhos que o kit:update entrega', function (): void {
+    $coberto = static fn (string $arquivo): bool => collect(caminhosDoKit())->contains(
+        fn (string $caminho): bool => $arquivo === $caminho || str_starts_with($arquivo, rtrim($caminho, '/').'/'),
+    );
+
+    expect($coberto('config/logging.php'))->toBeFalse('config/logging.php está coberto pelos caminhos do kit:update')
+        ->and($coberto('config/filament-onboarding.php'))->toBeTrue('o config do pacote de onboarding deveria estar coberto (controle positivo)');
+});
+
+/* ---------------------------------------------------------------------------
+| R29 — a semeadura do tutorial falha durante o kit:install
+--------------------------------------------------------------------------- */
+
+it('[CT-67] com a semeadura do tutorial falhando, o kit:install mostra o resumo final e o aviso', function (string $modo): void {
+    instalacaoNovaDoOnboarding();
+
+    // A semeadura forçada a lançar: o seeder pai trocado no container (o `db:seed --class` o resolve por ele).
+    app()->bind(OnboardingSeeder::class, fn () => new class extends Seeder
+    {
+        public function run(): void
+        {
+            throw new RuntimeException('falha induzida na semeadura do tutorial');
+        }
+    });
+
+    $execucao = null;
+    $erro     = null;
+
+    try {
+        $execucao = $modo === 'interativo'
+            ? rodarKitInstallDoOnboarding([], ['Popular os tutoriais guiados?' => true])
+            : rodarKitInstallDoOnboarding(['--onboarding' => true]);
+    } catch (Throwable $excecao) {
+        $erro = $excecao;
+    }
+
+    expect($erro)->toBeNull('o kit:install abortou com a exceção: '.($erro?->getMessage() ?? ''));
+
+    $saida = $execucao['saida'];
+
+    expect($saida)->toContain('Pronto! O projeto está instalado.')
+        // O resumo interativo traz a linha "Senha do administrador"; o não interativo, o banner
+        // "Login inicial: … / {senha}". Os dois são o resumo final com a senha gerada.
+        ->and($saida)->toMatch('~Senha do administrador|Login inicial: \S+ / \S+~')
+        ->and($saida)->toContain('db:seed --class=OnboardingSeeder');
+
+    expect(User::query()->count())->toBeGreaterThan(0)
+        ->and(DB::table('onboarding_flows')->count())->toBe(0);
+})->with([
+    'interativo, sim'              => ['interativo'],
+    'não interativo, --onboarding' => ['nao interativo'],
+]);

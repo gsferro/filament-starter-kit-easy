@@ -3120,6 +3120,9 @@ function fotografiaDoOnboarding(): array
 function checklistDoOnboarding(string $painel, User $pessoa): Testable
 {
     fronteiraDeRequest();
+    // Uma sessão por pessoa, como no navegador: herdada da anterior, o `AuthenticateSession` do
+    // painel compara o hash da senha guardado com o da nova pessoa e a desloga.
+    test()->flushSession();
     test()->actingAs($pessoa);
 
     if ($painel === 'app') {
@@ -3282,11 +3285,31 @@ function concluirPassosVisiveisDoAdminNoOnboarding(User $admin): void
  */
 function textoDoDashboardDoMaster(): string
 {
-    $master   = User::query()->where('email', 'master@example.com')->first() ?? usuarioDoKit('master_global', 'master@example.com');
-    $resposta = abrirComoPessoaNoOnboarding($master, '/admin');
+    $master = User::query()->where('email', 'master@example.com')->first() ?? usuarioDoKit('master_global', 'master@example.com');
 
-    // Com o hub ligado o `/admin` pode redirecionar: aí o componente é lido direto.
-    if ($resposta->getStatusCode() === 200 && preg_match('~progresso-?onboarding~i', $resposta->getContent()) !== 1) {
+    /*
+     * O widget só é lido se o dashboard CLÁSSICO o montou — renderizar o componente direto pularia o
+     * `canView()`, que é justamente a guarda medida (P-02). Com o dashboard dinâmico ligado, o
+     * `/admin` vai para a grade que cada pessoa monta, onde o widget só está se alguém o pôs: o
+     * dinâmico fica desligado SÓ durante esta leitura, e a contagem do widget não depende dele.
+     */
+    $dinamico = config('kit.dashboard_dinamico.habilitado');
+    config()->set('kit.dashboard_dinamico.habilitado', false);
+
+    // Outra pessoa já usou a sessão do teste: o `AuthenticateSession` compararia o hash de senha
+    // dela com o do master e mandaria para o login (302). Sessão nova, como num navegador novo.
+    test()->flushSession();
+
+    try {
+        $resposta = abrirComoPessoaNoOnboarding($master, '/admin');
+    } finally {
+        config()->set('kit.dashboard_dinamico.habilitado', $dinamico);
+    }
+
+    // Sem o 200, um redirect (login, hub) viraria '' e faria passar todo `not->toContain`.
+    $resposta->assertOk();
+
+    if (preg_match('~progresso-?onboarding~i', $resposta->getContent()) !== 1) {
         return '';
     }
 
@@ -3296,4 +3319,16 @@ function textoDoDashboardDoMaster(): string
     $html = Livewire::test(ProgressoOnboarding::class)->html();
 
     return (string) preg_replace('~\s+~', ' ', strip_tags($html));
+}
+
+/**
+ * As chaves dos passos visíveis do checklist da pessoa no painel — usada pelos testes de consumo e
+ * de semeadura do onboarding (`.ai/rules/testes.md`: helper de mais de um arquivo vive aqui).
+ *
+ * @return list<string>
+ */
+function visiveisNoChecklistDoOnboarding(string $painel, User $pessoa): array
+{
+    // `master_global` pode não ter jornada alguma num painel: lista vazia, e não erro.
+    return checklistDoOnboarding($painel, $pessoa)->instance()->flowState()?->steps->map(fn ($passo): string => $passo->key())->all() ?? [];
 }

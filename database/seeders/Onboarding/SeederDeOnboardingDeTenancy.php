@@ -12,12 +12,12 @@ namespace Database\Seeders\Onboarding;
  */
 abstract class SeederDeOnboardingDeTenancy extends SeederDeOnboarding
 {
-    public function __invoke(array $parameters = [])
+    public function __invoke(array $parameters = []): mixed
     {
         if (! config('kit.tenancy.enabled')) {
             $this->command?->warn(class_basename(static::class).': multi-tenant desligado — nada a semear.');
 
-            return;
+            return null;
         }
 
         return parent::__invoke($parameters);

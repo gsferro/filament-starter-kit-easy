@@ -248,7 +248,7 @@ nothing.
 **Seeding does not turn the switch on.** Run `php artisan db:seed --class=OnboardingSeeder` (or use
 `kit:install --onboarding` during installation) to create the content, and enable usage on this
 screen. The two can be done in either order. Seeing the tutorial still requires the
-`View:OnboardingProgress` permission; authoring follows `ViewAny:OnboardingFlow` and
+`View:PrimeirosPassos` permission; authoring follows `ViewAny:OnboardingFlow` and
 `ViewAny:OnboardingCondition`.
 
 ## A selector for people with nothing to switch to
@@ -291,7 +291,7 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:640`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:444`); the overridden keys are exactly
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:467`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
 (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:469`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:414`) is not in that map, so the database never overrides it.

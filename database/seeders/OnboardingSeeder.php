@@ -183,6 +183,17 @@ final class OnboardingSeeder extends Seeder
         'app'   => [ExceptionResource::class => 'registrada fora da navegação neste painel; o passo das exceções é o do /infra'],
     ];
 
+    /**
+     * Todo seeder filho que ensina ao menos uma tela, em qualquer painel — a fonte da visibilidade
+     * padrão `tela:{chave}` (`SeederDeOnboarding`) e das condições que a respondem (`TutorialGuiado`).
+     *
+     * @return list<class-string<Onboarding\SeederDeOnboarding>>
+     */
+    public static function filhosComTela(): array
+    {
+        return array_values(array_unique(array_merge(...array_values(array_map('array_values', self::TELAS)))));
+    }
+
     public function run(): void
     {
         $tenancy = (bool) config('kit.tenancy.enabled');

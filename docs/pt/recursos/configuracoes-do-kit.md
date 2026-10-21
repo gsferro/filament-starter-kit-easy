@@ -241,7 +241,7 @@ Um checklist já aberto recusa a próxima ação enquanto o uso estiver desligad
 **Semear não liga o interruptor.** Rode `php artisan db:seed --class=OnboardingSeeder` (ou use
 `kit:install --onboarding` na instalação) para criar o conteúdo e ligue o uso nesta tela. As duas
 coisas podem ser feitas em qualquer ordem. Quem vê o tutorial continua precisando da permissão
-`View:OnboardingProgress`; a autoria segue `ViewAny:OnboardingFlow` e `ViewAny:OnboardingCondition`.
+`View:PrimeirosPassos`; a autoria segue `ViewAny:OnboardingFlow` e `ViewAny:OnboardingCondition`.
 
 ## Um seletor para quem não tem o que trocar
 
@@ -282,7 +282,7 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:640`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:444`); as chaves sobrepostas são
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:467`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
 (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:469`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:414`) não está nesse mapa, então o banco nunca a sobrescreve.

@@ -73,7 +73,7 @@ it('não deixa isenção apontando tela que nenhum painel registra', function ()
 });
 
 it('faz todo seeder do inventário ser um filho chamado pelo pai', function (): void {
-    $doInventario = array_unique(array_merge(...array_values(array_map('array_values', OnboardingSeeder::TELAS))));
+    $doInventario = OnboardingSeeder::filhosComTela();
 
     expect(array_values(array_diff($doInventario, filhosDoOnboarding())))->toBe([]);
 });

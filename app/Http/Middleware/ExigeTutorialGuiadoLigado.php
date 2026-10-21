@@ -33,6 +33,11 @@ class ExigeTutorialGuiadoLigado
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // O interruptor primeiro: ligado (o caso que nunca recusa), nada de rota nem de resources.
+        if (TutorialGuiado::habilitado()) {
+            return $next($request);
+        }
+
         $rota   = (string) $request->route()?->getName();
         $painel = Filament::getCurrentPanel();
 
@@ -46,16 +51,12 @@ class ExigeTutorialGuiadoLigado
             return $next($request);
         }
 
-        if (! TutorialGuiado::habilitado()) {
-            Log::channel('onboarding')->warning(
-                '[ExigeTutorialGuiadoLigado@handle] Tela de onboarding recusada com o tutorial desligado | rota: '.$rota,
-                ['user_id' => auth()->id(), 'rota' => $rota, 'motivo' => 'tutorial_desligado'],
-            );
+        Log::channel('onboarding')->warning(
+            '[ExigeTutorialGuiadoLigado@handle] Tela de onboarding recusada com o tutorial desligado | rota: '.$rota,
+            ['user_id' => auth()->id(), 'rota' => $rota, 'motivo' => 'tutorial_desligado'],
+        );
 
-            abort(404);
-        }
-
-        return $next($request);
+        abort(404);
     }
 
     /** As rotas dos dois Resources de autoria — só existem no `/admin`. */

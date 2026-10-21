@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Tests](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
-[![Test cases](https://img.shields.io/badge/test%20cases-2,309-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
+[![Test cases](https://img.shields.io/badge/test%20cases-2,387-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -188,11 +188,11 @@ Not a showcase: it's the inventory of everything that already exists, and of wha
 
 | | `/app` | `/admin` | `/infra` | **Total** |
 |---|---:|---:|---:|---:|
-| **Navigable screens** | 14 | 31 | 28 | **73** |
+| **Navigable screens** | 15 | 32 | 29 | **76** |
 | Resources | 4 | 8 | 8 | **20** |
-| Standalone pages | 5 | 5 | 13 | **23** |
+| Standalone pages | 6 | 6 | 14 | **26** |
 | Widgets | 1 | 9 | 19 | **29** |
-| `GET` routes | 23 | 38 | 34 | **95** |
+| `GET` routes | 24 | 39 | 35 | **98** |
 
 `/app` is the smallest on purpose — it is born **empty**, because that's where your business comes in.
 The other two already come complete.
@@ -222,7 +222,7 @@ The other two already come complete.
 |---|---:|
 | Test cases (`Kit` + `Tenancy`, measured on 2026-09-26) | **2,990**, with **12,578 assertions** |
 | Screens swept in a real browser | **55** |
-| Test files | **201** in `Kit` + `Tenancy` (**237** in total) |
+| Test files | **207** in `Kit` + `Tenancy` (**244** in total) |
 | PHPStan | **level 8**, zero errors |
 | Test coverage (`app/`, line) | **85 %** — see [what the number leaves out](docs/en/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** rules, all passing |
@@ -230,8 +230,8 @@ The other two already come complete.
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **12** |
-| Specified features (`wikis/specs/`) | **87** |
-| Project rules for AI agents (`.ai/rules/`, excluding the index) | **25** |
+| Specified features (`wikis/specs/`) | **88** |
+| Project rules for AI agents (`.ai/rules/`, excluding the index) | **26** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
 

@@ -64,11 +64,11 @@ feature, e um teste do kit fica vermelho quando nasce Resource ou Page sem seede
 
 - O plugin está registrado só no `/admin`, com `->launcher(false)->tours(false)` e
   `->manageFlows((bool) config('filament-onboarding.enabled', true))`
-  (`app/Providers/Filament/AdminPanelProvider.php:make:275`). A chave
+  (`app/Providers/Filament/AdminPanelProvider.php:plugin:285`). A chave
   `filament-onboarding.enabled` **não existe** no `config/filament-onboarding.php` publicado: o
   `manageFlows` vale sempre `true`. O widget `ProgressoOnboarding` cita a mesma chave inexistente no
   docblock
-- `config/filament-onboarding.php:'locales':25` está em `['en']`: texto pt_BR gravado pelo seeder
+- `config/filament-onboarding.php:'locales':27` está em `['en']`: texto pt_BR gravado pelo seeder
   aparece, mas não é editável no painel
 - Nenhuma jornada, passo ou condição existe; nenhum seeder toca o pacote
 
@@ -108,7 +108,7 @@ feature, e um teste do kit fica vermelho quando nasce Resource ou Page sem seede
 - Tenancy: `config('kit.tenancy.enabled')`, perguntado direto (sem helper); `DatabaseSeeder` usa o
   mesmo `if` para o `TenantsSeeder`. Com tenancy desligada as rotas de tenant do `/app` continuam
   registradas
-- `KitInstall::semear()` (`app/Console/Commands/KitInstall.php:semear:432`) roda `db:seed --force`
+- `KitInstall::semear()` (`app/Console/Commands/KitInstall.php:semear:437`) roda `db:seed --force`
   numa task; opções em `$signature` (`--no-seed` etc.)
 - Seeders do kit: `updateOrCreate`, docblock "Idempotente", nunca factory/faker
 - Decisores por request reaproveitados nas condições de visibilidade: `DockDeAtalhos::habilitadoNoPainel()`,
@@ -134,6 +134,8 @@ feature, e um teste do kit fica vermelho quando nasce Resource ou Page sem seede
 | D7 | Channel de log `onboarding` novo | convenção (um channel por feature) | — | sessão, 2026-10-21 |
 | D8 | O teste de inventário lê o mapa `OnboardingSeeder::TELAS` (tela → seeder filho) e a lista `OnboardingSeeder::ISENTAS` (tela → motivo) | Q7 | surpreendente | sessão, 2026-10-21 |
 | D10 | Helpers de `kit:install` de verdade (`diretorioDeInstalacaoDoKit`, `rodarKitInstallDeVerdade`, `rodarKitInstallDigitandoASenha`) sobem para `tests/Pest.php` quando um segundo arquivo os usar | Q18 (era Q?8) | trade-off | sessão, 2026-10-21 |
+| D7b | O canal `onboarding` é garantido pelo `KitServiceProvider` (declarado só quando o `config/logging.php` do projeto não o tem) e o `config/logging.php` fica FORA de `KitUpdate::CAMINHOS_DO_KIT` — mesmo motivo das rotas do kit (`.ai/rules/providers.md`): arquivo do esqueleto não viaja sem apagar o do projeto (P-24) *(alterado em 2026-10-21: rodada 2 do step 9, RD2-03/CR2-02)* | gsferro no chat, 2026-10-21 | surpreendente | gsferro, 2026-10-21 |
+| D12 | CT-70 sobe uma aplicação nova (`bootstrap/app.php`) com `afterBootstrapping(LoadConfiguration::class)` ajustando o `logging.channels` antes de os providers subirem — prova o fio do provider, não um método isolado | Q29 (era Q?1 da re-derivação do CT-70) | trade-off | sessão, 2026-10-21 |
 | D11 | `KIT_ONBOARDING=false` com `force="true"` no `phpunit.xml`: a suíte mede o kit de fábrica; quem precisa liga por `ligarTutorialGuiado()` | Q19 (era Q?9) | difícil de reverter | sessão, 2026-10-21 |
 | D12 | A verificação do inventário do onboarding é uma função que recebe os painéis (controles negativos e suíte Tenancy) | Q20 (era Q?10) | surpreendente | sessão, 2026-10-21 |
 | D9 | O 404 da autoria e da página de progresso vem de um middleware de painel persistente (`isPersistent: true`, que o Filament 5 reaplica nos updates Livewire — `search-docs`, "Applying middleware"), e não do trait nas Pages que `.ai/rules/filament.md` descreve para o `AgenteIaResource`: as telas são do vendor, e o trait exigiria subclassificar 2 Resources e 7 Pages só para levar duas linhas | Q1 (Adendo 1) | difícil de reverter (troca por trait é local) | sessão, 2026-10-21 |
@@ -168,10 +170,10 @@ As rotas de autoria (`filament.admin.resources.onboarding-flows.*`, `…onboardi
 | Tela / Componente | Tipo | Rota | Interação do usuário | Depende de JS? |
 |---|---|---|---|---|
 | Seção "Tutorial guiado" em Configurações da aplicação | Filament (SettingsPage) | `/admin/configuracoes-da-aplicacao` | liga/desliga e salva | Não |
-| Página "Primeiros passos" | Filament Page (vendor) | `/{painel}/onboarding` | vê a jornada, abre passo, inicia tour | Não (o tour sim) |
+| Página "Primeiros passos" | Filament Page (subclasse do kit `App\Filament\Pages\PrimeirosPassos` sobre a do vendor) *(alterado em 2026-10-21: desvio do passo 3)* | `/{painel}/onboarding` | vê a jornada, abre passo, inicia tour | Não (o tour sim) |
 | Checklist flutuante (launcher) | Livewire (subclasse do kit sobre o do vendor), render hook `BODY_END` | todas as telas dos três painéis | abre checklist, marca, inicia tour | Sim |
 | Tour | Alpine (vendor) | telas das features | avança, pula, conclui | Sim |
-| Autoria: Onboarding e Condições | Filament Resource (vendor) | `/admin/onboarding-flows`, `/admin/onboarding-conditions` | edita o que o seeder criou | Não |
+| Autoria: Onboarding e Condições | Filament Resource (subclasses do kit `JornadaResource`/`CondicaoResource` sobre as do vendor) *(alterado em 2026-10-21: D4)* | `/admin/onboarding-flows`, `/admin/onboarding-conditions` | edita o que o seeder criou | Não |
 
 ## Variáveis de Ambiente
 
@@ -223,7 +225,7 @@ Nenhuma nova. `wallacemartinss/filament-onboarding` ^2.1 já está no `composer.
 
 ## Channel de Log da Feature
 
-`config/logging.php` não tem `onboarding` (conferido no step 3). O passo 1 cria:
+`config/logging.php` não tem `onboarding` (conferido no step 3). O passo 1 cria o canal abaixo, e o `KitServiceProvider::garantirCanalDoTutorialGuiado()` o declara em tempo de boot quando o `config/logging.php` do projeto não o tem — projeto atualizado pelo `kit:update`, que não entrega esse arquivo (D7b, P-24) *(alterado em 2026-10-21: rodada 2 do step 9)*:
 
 No molde do channel irmão `dock-de-acoes-rapidas` (driver por `LOG_KIT_DRIVER`, `NullHandler` na suíte):
 

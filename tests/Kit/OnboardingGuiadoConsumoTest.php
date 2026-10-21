@@ -7,6 +7,8 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Wallacemartinss\FilamentOnboarding\Facades\Onboarding;
 use Wallacemartinss\FilamentOnboarding\Models\OnboardingFlow;
 use Wallacemartinss\FilamentOnboarding\Models\OnboardingStep;
@@ -286,6 +288,8 @@ it('[CT-56] com todos os passos visíveis concluídos e um escondido pendente, a
 
 it('[CT-60] o widget de progresso conta como concluída a jornada com um passo escondido pendente', function (): void {
     $this->seed(OnboardingSeeder::class);
+    // "o tutorial ligado" (Dado do 04) — sem isto o widget some pelo `canView()` (P-02).
+    ligarTutorialGuiado();
     ligarFeaturesDoOnboarding();
     ligarDock(['app', 'infra']);
 
@@ -331,7 +335,7 @@ it('[CT-54] a persona padrão de cada painel abre a tela de todo passo visível 
         }
 
         if ($status === 403) {
-            expect($visiveis)->not->toContain($passo->key, "o passo {$passo->key} leva a 403 e está no checklist");
+            $this->assertNotContains($passo->key, $visiveis, "o passo {$passo->key} leva a 403 e está no checklist");
         }
     }
 
@@ -587,4 +591,87 @@ it('[CT-48] concluir um passo num painel não conclui o passo de mesmo nome em o
 })->with([
     'infra para app' => ['infra', 'app'],
     'app para infra' => ['app', 'infra'],
+]);
+
+/* ---------------------------------------------------------------------------
+| R28 — escrever a chave de outra jornada direto no checklist
+--------------------------------------------------------------------------- */
+
+it('[CT-66] a chave de uma jornada invisível escrita direto na propriedade do checklist não muda o checklist', function (string $chave, string $outra): void {
+    $this->seed(OnboardingSeeder::class);
+    ligarFeaturesDoOnboarding();
+    ligarTutorialGuiado(true);
+
+    $admin = usuarioDoKit('admin', 'admin@example.com');
+    $admin->assignRole('infra');
+
+    $checklist = checklistDoOnboarding('admin', $admin);
+
+    expect($checklist->instance()->flowState()->flow->panel_id)->toBe('admin');
+
+    $checklist->set('flowKey', $chave);
+
+    expect($checklist->instance()->flowState()?->flow->panel_id)->toBe('admin', 'o checklist deixou de mostrar a jornada do /admin');
+
+    $checklist->call('completeStep', 'usuarios');
+
+    $jornadaAdmin = OnboardingFlow::query()->where('panel_id', 'admin')->firstOrFail();
+    $linha        = progressoDoPassoDaPessoa($admin, 'usuarios');
+
+    expect($linha)->not->toBeNull()
+        ->and($linha->flow_id)->toBe($jornadaAdmin->getKey())
+        ->and(DB::table('onboarding_step_progress')->where('flow_id', '!=', $jornadaAdmin->getKey())->count())->toBe(0, "há progresso na jornada {$outra}");
+})->with([
+    'jornada do /infra'      => ['primeiros-passos-infra', 'do /infra'],
+    'jornada do /app'        => ['primeiros-passos-app', 'do /app'],
+    'chave que não existe'   => ['jornada-que-nao-existe', 'do /infra'],
+]);
+
+/* ---------------------------------------------------------------------------
+| R30 — o passo do dashboard dinâmico segue a permissão da página
+--------------------------------------------------------------------------- */
+
+it('[CT-68] o passo do dashboard dinâmico segue a permissão da página do dashboard dinâmico do painel', function (string $painel, string $permissao): void {
+    $this->seed(OnboardingSeeder::class);
+    ligarFeaturesDoOnboarding();
+    ligarTutorialGuiado(true);
+
+    $pessoa = pessoaDoPainelDoOnboarding($painel);
+    $papel  = ['admin' => 'admin', 'infra' => 'infra'][$painel];
+
+    // A permissão `Manage:Dashboard` é a da página do dinâmico: o controle a concede ao papel.
+    Permission::findOrCreate('Manage:Dashboard', 'web');
+    papelDoKit($papel)->givePermissionTo('Manage:Dashboard');
+
+    if ($permissao === 'com a do infra, admin sem a do admin') {
+        $pessoa->assignRole('admin');
+        semAPermissao('admin', 'Manage:Dashboard');
+    }
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    noPainelDoShield($painel);
+
+    $controle = visiveisNoChecklistDoOnboarding($painel, $pessoa);
+
+    expect($controle)->toContain('dashboard-dinamico');
+
+    if ($permissao === 'com a do infra, admin sem a do admin') {
+        return;
+    }
+
+    if ($permissao === 'sem') {
+        semAPermissao($papel, 'Manage:Dashboard');
+        noPainelDoShield($painel);
+
+        $depois = visiveisNoChecklistDoOnboarding($painel, $pessoa);
+
+        expect($depois)->not->toContain('dashboard-dinamico')
+            ->and(count($depois))->toBe(count($controle) - 1);
+    }
+})->with([
+    'admin, com'                       => ['admin', 'com'],
+    'admin, sem'                       => ['admin', 'sem'],
+    'infra, com'                       => ['infra', 'com'],
+    'infra, sem'                       => ['infra', 'sem'],
+    'infra com, admin sem a do admin'  => ['infra', 'com a do infra, admin sem a do admin'],
 ]);

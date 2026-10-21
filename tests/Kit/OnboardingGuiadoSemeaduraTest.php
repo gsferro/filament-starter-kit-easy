@@ -20,7 +20,6 @@ use App\Filament\Infra\Pages\HubDeInfraestrutura;
 use App\Filament\Infra\Pages\Pulse;
 use App\Filament\Infra\Resources\AiRuns\AiRunResource;
 use App\Filament\Pages\MyProfilePage;
-use App\Models\User;
 use BezhanSalleh\FilamentExceptions\Resources\ExceptionResource;
 use Bityukov\CommandCenter\Filament\Pages\Commands;
 use Croustibat\FilamentJobsMonitor\Resources\QueueMonitorResource;
@@ -83,12 +82,6 @@ function passosDoPainelNoOnboarding(string $painel)
 function passoDoPainelNoOnboarding(string $painel, string $chave): OnboardingStep
 {
     return OnboardingStep::query()->where('flow_id', jornadaSemeadaDoPainel($painel)->getKey())->where('key', $chave)->firstOrFail();
-}
-
-/** As chaves dos passos visíveis do checklist da pessoa no painel. */
-function visiveisNoChecklistDoOnboarding(string $painel, User $pessoa): array
-{
-    return checklistDoOnboarding($painel, $pessoa)->instance()->flowState()->steps->map(fn ($passo): string => $passo->key())->all();
 }
 
 /* ---------------------------------------------------------------------------
@@ -361,12 +354,13 @@ function desligarFeatureDoOnboarding(string $desligada): void
     };
 }
 
-it('[CT-27] desligar a feature esconde exatamente o passo dela no painel', function (string $desligada, string $painel, ?int $visiveis, string $passoDaFeature, bool $presente): void {
+it('[CT-27] desligar a feature esconde exatamente o passo dela no painel', function (string $desligada, string $painel, ?int $visiveis, string $passoDaFeature, bool $presente, bool $peloAdministradorGeral = false): void {
     semearOnboardingDoKit();
     ligarFeaturesDoOnboarding();
     ligarTutorialGuiado(true);
 
-    $pessoa = pessoaDoPainelDoOnboarding($painel);
+    // O `panel_user` não monta o dashboard e nunca vê o passo dele (P-22): a linha usa o `master_global`.
+    $pessoa = $peloAdministradorGeral ? usuarioDoKit('master_global', 'master@example.com') : pessoaDoPainelDoOnboarding($painel);
 
     // Contagem relativa ao controle do próprio painel quando o 04 não fixa o número (`@premissa P-11`).
     $controle = count(visiveisNoChecklistDoOnboarding($painel, $pessoa));
@@ -408,7 +402,7 @@ it('[CT-27] desligar a feature esconde exatamente o passo dela no painel', funct
     'app, nenhuma'                  => ['nenhuma', 'app', null, 'hub-de-navegacao', true],
     'app, hub'                      => ['hub', 'app', null, 'hub-de-navegacao', false],
     'app, dock fora do app'         => ['dock fora do app', 'app', null, 'dock-de-atalhos', false],
-    'app, dinâmico fora do app'     => ['dinamico fora do app', 'app', null, 'dashboard-dinamico', false],
+    'app, dinâmico fora do app'     => ['dinamico fora do app', 'app', null, 'dashboard-dinamico', false, true],
     'admin, dinâmico fora do app'   => ['dinamico fora do app', 'admin', 11, 'dashboard-dinamico', true],
 ]);
 
@@ -437,6 +431,8 @@ it('[CT-28] o passo escondido sai do percentual e volta concluído ao religar a 
 
 it('[CT-61] a jornada concluída continua concluída quando o passo escondido volta a aparecer', function (): void {
     semearOnboardingDoKit();
+    // "o tutorial ligado" (Dado do 04) — sem isto o widget some pelo `canView()` (P-02).
+    ligarTutorialGuiado();
     ligarFeaturesDoOnboarding();
     ligarDock(['app', 'infra']);
 
@@ -804,3 +800,35 @@ it('[CT-52] o seeder filho de organização rodado sozinho com a multi-organiza�
     'convites da organização' => ['Database\\Seeders\\Onboarding\\ConvitesDaOrganizacaoSeeder'],
     'projetos'                => ['Database\\Seeders\\Onboarding\\ProjetosSeeder'],
 ]);
+
+/* ---------------------------------------------------------------------------
+| R31 — nenhum passo semeado fica escondido de todo mundo
+--------------------------------------------------------------------------- */
+
+it('[CT-69] com tudo ligado, a união do que as personas do painel veem cobre todos os passos semeados do painel', function (string $painel): void {
+    semearOnboardingDoKit();
+    ligarFeaturesDoOnboarding();
+    ligarTutorialGuiado(true);
+
+    $personas = [
+        pessoaDoPainelDoOnboarding($painel),
+        usuarioDoKit('master_global', 'master@example.com'),
+    ];
+
+    $uniao = [];
+
+    foreach ($personas as $pessoa) {
+        $uniao = [...$uniao, ...visiveisNoChecklistDoOnboarding($painel, $pessoa)];
+    }
+
+    $semeados = passosDoPainelNoOnboarding($painel)->pluck('key')->all();
+
+    expect(array_values(array_diff($semeados, $uniao)))->toBe([], "passos semeados em /{$painel} invisíveis para todas as personas");
+
+    foreach (passosDoPainelNoOnboarding($painel) as $passo) {
+        if (filled($passo->visibility_condition)) {
+            expect(Onboarding::conditions()->has($passo->visibility_condition))
+                ->toBeTrue("o passo {$passo->key} cita {$passo->visibility_condition}, não registrada em /{$painel}");
+        }
+    }
+})->with(['admin', 'app', 'infra']);

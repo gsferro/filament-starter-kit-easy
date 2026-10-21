@@ -103,6 +103,6 @@ Sem `data-testid` próprio: o markup é do pacote; dívida registrada, seletor p
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | Checklist flutuante em todas as telas dos três painéis (render hook `BODY_END`) | | | |
-| 2 | Tour Alpine do pacote, iniciado pelo checklist e pela página | | | |
-| 3 | Paradas por `route` + alvo nomeado pelo pacote ou popover centralizado | | | |
+| 1 | Checklist flutuante em todas as telas dos três painéis (render hook `BODY_END`) | render hook `BODY_END` do plugin (`vendor/wallacemartinss/filament-onboarding/src/FilamentOnboardingPlugin.php:BODY_END:109`), montando a subclasse `App\Livewire\ChecklistDoOnboarding` registrada sob o nome do pacote | ✅ | CT-B01 (`/admin`) e CT-B02 (`/infra`) verdes; CT-15 nos três painéis; `vendor/bin/pest tests/Browser/OnboardingGuiadoTest.php` 2026-10-21 |
+| 2 | Tour Alpine do pacote, iniciado pelo checklist e pela página | tour do pacote (`x-data="onboardingTour"`) iniciado pelo `startTour` do checklist; pela página "Primeiros passos" só no CT-16 de componente | ⚠️ | checklist: CT-B01/CT-B02 (popover visível, console sem erro); início pela página não tem CT-B — a costura `browser` cobre só o checklist (teto do perfil, `05` linha 6) |
+| 3 | Paradas por `route` + alvo nomeado pelo pacote ou popover centralizado | paradas semeadas com `route` do painel da jornada; primeira parada aberta no navegador | ✅ | CT-17 (rotas resolvem no painel da jornada) e CT-B01/CT-B02 (título pt_BR da primeira parada visível) |

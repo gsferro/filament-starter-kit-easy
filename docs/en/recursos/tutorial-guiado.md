@@ -67,7 +67,7 @@ of the panel where the feature lives.
 | `PerfilEDoisFatoresSeeder` | admin, app, infra | "Meu perfil" | automatically, with 2FA confirmed | — |
 | `BuscaGlobalSeeder` | admin, app, infra | Dashboard (⌘K / Ctrl+K search) | when the tour ends | — |
 | `HubDeNavegacaoSeeder` | admin, app | Card hub | when the tour ends | the hub is off |
-| `DashboardDinamicoSeeder` | admin, app, infra | Dynamic dashboard | when the tour ends | the dynamic dashboard is off in the panel |
+| `DashboardDinamicoSeeder` | admin, app, infra | Dynamic dashboard | when the tour ends | the dynamic dashboard is off in the panel, or the person cannot build it (`Manage:Dashboard`) |
 | `DockDeAtalhosSeeder` | admin, app, infra | Shortcut dock | when the tour ends | the dock is not enabled in the panel |
 | `BloqueioDeTelaSeeder` | admin, app, infra | Lock screen | when the tour ends | screen locking is off |
 | `UsuariosSeeder` | admin | "Usuários" | when the tour ends | — |
@@ -122,14 +122,16 @@ Conditions are the checks that make a step complete or appear automatically. The
 - **In the database**, editable under **Onboarding → Condições**: `convidou_alguem` and
   `convidou_alguem_na_organizacao` (the latter only with tenancy) count the invitations the person
   has sent.
-- **In code**, in `App\Support\TutorialGuiado::condicoes()`: `tem_dois_fatores` and those that check
-  whether a feature is enabled (`dock_no_painel`, `dashboard_dinamico_no_painel`,
-  `bloqueio_de_tela_ligado`, `hub_ligado`, `agentes_de_ia_ligados`, `central_de_comandos_ligada`,
-  `demo_ligada`). They appear in the step editor's selector.
+- **In code**, in `App\Support\TutorialGuiado::condicoes()`: `tem_dois_fatores`; one
+  `tela:{chave}` per step that teaches a screen (the step shows for whoever can open that screen in
+  the panel, which already covers the permission and the feature switch); and the ones for steps
+  without a screen of their own (`dock_no_painel`, `bloqueio_de_tela_ligado`, `multi_tenant_ligado`)
+  plus `dashboard_dinamico_no_painel` (on in the panel and the person can build the dashboard).
+  They appear in the step editor's selector.
 
 ## Who can see it
 
-Anyone with the **Primeiros passos** page permission (`View:OnboardingProgress`, on the roles
+Anyone with the **Primeiros passos** page permission (`View:PrimeirosPassos`, on the roles
 screen), with the switch on. Without it, the person sees neither the checklist nor the menu item.
 Authoring (journeys and conditions) follows the `ViewAny:OnboardingFlow` and
 `ViewAny:OnboardingCondition` permissions.

@@ -89,7 +89,7 @@ abstract class SeederDeOnboarding extends Seeder
      */
     private function visibilidadePadrao(string $chave): ?string
     {
-        $comTela = in_array(static::class, array_merge(...array_values(OnboardingSeeder::TELAS)), true);
+        $comTela = in_array(static::class, OnboardingSeeder::filhosComTela(), true);
 
         return $comTela ? "tela:{$chave}" : null;
     }

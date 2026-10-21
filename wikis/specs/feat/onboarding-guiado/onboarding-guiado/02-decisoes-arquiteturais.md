@@ -6,8 +6,8 @@ por um trait nas Pages sem migração de dado, então não é difícil de revert
 
 ## Superfície Livewire
 
-A feature não cria componente Livewire, Page nem Widget próprios: registra os do pacote nos três
-painéis (o checklist flutuante `OnboardingLauncher`, montado em toda tela pelo render hook, e a
+A feature registra os componentes do pacote nos três painéis por duas subclasses finas do kit (o
+checklist e a página — re-varredura de 2026-10-21 sobre o código final, antes do step 9) (o checklist flutuante `OnboardingLauncher`, montado em toda tela pelo render hook, e a
 página `OnboardingProgress`) e acrescenta condições ao `canView()` de um widget existente. A tabela
 inventaria o que o cliente alcança no pacote.
 
@@ -25,6 +25,10 @@ Greps rodados no step 3 (`V=vendor/wallacemartinss/filament-onboarding/src`):
 | `dismissFlow`, `restoreFlow`, `restartFlow` (`?string $flowKey`), e `$arguments['flow']` das actions da página de progresso | `$wire` no checklist e `mountAction` na página | `resolveFlowState` só acha jornada visível no painel corrente | `vendor/wallacemartinss/filament-onboarding/src/Pages/OnboardingProgress.php:$flowKey:106` |
 | `public ?string $flowKey` (sem `#[Locked]`) | `$wire.set('flowKey', …)` | escolhe só entre jornadas já visíveis; chave inválida resolve para nulo | `vendor/wallacemartinss/filament-onboarding/src/Concerns/InteractsWithOnboarding.php:$flowKey:31` |
 | `$onboardingScopeType`, `$onboardingScopeId`, `$onboardingPanel` | — | `#[Locked]` no vendor | `vendor/wallacemartinss/filament-onboarding/src/Concerns/InteractsWithOnboarding.php:$onboardingPanel:57` |
+| `ChecklistDoOnboarding::hydrate()` (kit, subclasse do checklist) | todo update Livewire do checklist | recusa 404 com `TutorialGuiado::visivel()` falso, antes de qualquer ação (RQ-30) | `app/Livewire/ChecklistDoOnboarding.php:hydrate:28` |
+| `ChecklistDoOnboarding::selectFlow(string $flowKey)` (kit) | `$wire.selectFlow('…')` | só aceita chave de jornada visível neste painel (`resolveFlowState()`), senão ignora (CT-18) | `app/Livewire/ChecklistDoOnboarding.php:selectFlow:49` |
+| `ChecklistDoOnboarding::updatedFlowKey()` (kit) — `$wire.set('flowKey', …)` direto | `$wire.set` | chave de jornada que a pessoa não vê neste painel volta para nulo; o checklist segue na jornada visível (P-20, CT-66) *(alterado em 2026-10-21: CR-01 do step 9)* | `app/Livewire/ChecklistDoOnboarding.php:updatedFlowKey:64` |
+| `PrimeirosPassos` (kit, subclasse da Page do vendor) — `restartFlowAction`/`dismissFlowAction`/`restoreFlowAction` com `$arguments['flow']` | `mountAction` na página | `canAccess()` do `ExigePermissaoDaTela` + interruptor; middleware persistente 404 desligado; `resolveFlowState()` do vendor | `app/Filament/Pages/PrimeirosPassos.php:regraLocalDeAcesso:30` |
 | `public bool $isOpen` | `$wire.set` | só UI | `vendor/wallacemartinss/filament-onboarding/src/Livewire/OnboardingLauncher.php:$isOpen:23` |
 | `StartTourAction` (`$data['tour']`) | — | **não usada** pela feature (botões nas telas estão fora de escopo) | `vendor/wallacemartinss/filament-onboarding/src/Actions/StartTourAction.php:$chosen:64` |
 | Models `OnboardingFlow`, `OnboardingStep`, `OnboardingCondition` | autoria no `/admin` | policies do kit (`App\Support\PoliciesDeVendor`) + interruptor (passo 3) + 404 do middleware | `app/Support/PoliciesDeVendor.php:OnboardingFlowPolicy:76` |

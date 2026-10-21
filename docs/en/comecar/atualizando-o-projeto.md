@@ -164,7 +164,7 @@ after `kit:update`: the new settings migration adds `onboarding_habilitado`, see
 `KIT_ONBOARDING` (**false** by default). The `wallacemartinss/filament-onboarding` package was
 already a kit dependency. To use it, run `php artisan db:seed --class=OnboardingSeeder` and turn on
 *Usar o tutorial guiado* on the **Aplicação** tab of `/admin/configuracoes-da-aplicacao`. Seeding
-does not turn the switch on. See [Guided tutorial](../../recursos/tutorial-guiado/).
+does not turn the switch on. See [Guided tutorial](../../recursos/tutorial-guiado/). `config/logging.php` is yours and `kit:update` does not deliver it: the kit declares the `onboarding` log channel, shaped like your `ai` channel, when your file lacks it.
 
 ### A new screen: reseed both seeders
 

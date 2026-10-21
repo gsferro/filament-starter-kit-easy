@@ -163,7 +163,7 @@ dashboard do `/admin` e o chat não aparece em painel nenhum; nada é apagado. V
 `KIT_ONBOARDING` (**false** por padrão). O pacote `wallacemartinss/filament-onboarding` já era
 dependência do kit. Para usar, rode `php artisan db:seed --class=OnboardingSeeder` e ligue
 *Usar o tutorial guiado* na aba **Aplicação** de `/admin/configuracoes-da-aplicacao`. Semear não
-liga o interruptor. Ver [Tutorial guiado](../../recursos/tutorial-guiado/).
+liga o interruptor. Ver [Tutorial guiado](../../recursos/tutorial-guiado/). O `config/logging.php` é seu e o `kit:update` não o entrega: o canal de log `onboarding` é declarado pelo kit, no molde do seu canal `ai`, quando o seu arquivo não o tem.
 
 ### Tela nova: ressemeie os dois seeders
 

@@ -466,10 +466,19 @@ class KitInstall extends Command
         }
 
         $this->components->task('Populando as jornadas do tutorial guiado', function (): bool {
-            $codigo = $this->callSilently('db:seed', ['--class' => 'OnboardingSeeder', '--force' => true]);
+            /*
+             * `callSilently` LANÇA quando o seeder lança — sem o try, a falha do tutorial (opcional)
+             * abortava a instalação antes do resumo com a senha gerada do administrador (P-21).
+             */
+            try {
+                $codigo = $this->callSilently('db:seed', ['--class' => 'OnboardingSeeder', '--force' => true]);
+            } catch (Throwable $erro) {
+                report($erro);
+                $codigo = self::FAILURE;
+            }
 
             if ($codigo !== self::SUCCESS) {
-                $this->avisos[] = 'As jornadas do tutorial guiado não foram semeadas. Rode: php artisan db:seed --class=OnboardingSeeder';
+                $this->avisos[] = 'As jornadas do tutorial guiado não foram semeadas, ou ficaram incompletas. Rode: php artisan db:seed --class=OnboardingSeeder';
             }
 
             return $codigo === self::SUCCESS;

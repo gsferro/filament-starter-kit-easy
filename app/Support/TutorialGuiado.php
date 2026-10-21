@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Filament\Pages\PrimeirosPassos;
+use Closure;
+use Database\Seeders\Onboarding\DashboardDinamicoSeeder;
 use Database\Seeders\OnboardingSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +24,8 @@ use Wallacemartinss\FilamentOnboarding\FilamentOnboardingPlugin;
  *
  * Nasce DESLIGADO (RQ-11). Desligado, nada do pacote aparece: o checklist, os tours e a página
  * "Primeiros passos" somem pelo `skipWhen()` do plugin (nenhuma tabela `onboarding_*` é lida), a
- * autoria some do menu pelas policies e responde 404 pelo middleware
+ * autoria some do menu pelas subclasses `JornadaResource`/`CondicaoResource` (não pelas policies:
+ * o `Gate::before` do `master_global` as venceria) e responde 404 pelo middleware
  * `App\Http\Middleware\ExigeTutorialGuiadoLigado`, e o checklist já aberto recusa a próxima ação
  * (`App\Livewire\ChecklistDoOnboarding`).
  *
@@ -77,17 +80,20 @@ final class TutorialGuiado
      *   cobre de uma vez a permissão, o interruptor da feature (hub, agentes de IA, central de
      *   comandos, demonstração) e o multi-tenant. A chave é a do passo, que é o nome do filho em
      *   kebab-case (`UsuariosSeeder` → `tela:usuarios`).
-     * - as demais, dos passos SEM tela própria: dock, dashboard dinâmico, bloqueio de tela e a troca
-     *   de organização.
+     * - `dashboard_dinamico_no_painel` — o dinâmico ligado no painel E a página dele deixa a pessoa
+     *   MONTAR a grade (`canEdit()`, `Manage:Dashboard`), que é o que o passo ensina (P-22): a página
+     *   é a home do painel e abre para todos.
+     * - as demais, dos passos SEM tela própria: dock, bloqueio de tela e a troca de organização.
      *
-     * @return array<string, \Closure(Model, ?Model): bool>
+     * @return array<string, Closure(Model, ?Model): bool>
      */
     public static function condicoes(): array
     {
         $condicoes = [
             'tem_dois_fatores'             => fn (Model $usuario): bool => method_exists($usuario, 'hasConfirmedTwoFactor') && $usuario->hasConfirmedTwoFactor(),
             'dock_no_painel'               => fn (): bool => DockDeAtalhos::pacoteInstalado() && DockDeAtalhos::habilitadoNoPainel(Filament::getCurrentPanel()),
-            'dashboard_dinamico_no_painel' => fn (): bool => DashboardDinamico::habilitado(Filament::getCurrentPanel()),
+            'dashboard_dinamico_no_painel' => fn (): bool => DashboardDinamico::habilitado(Filament::getCurrentPanel())
+                && self::abreATelaDo(DashboardDinamicoSeeder::class, fn (string $pagina): bool => $pagina::canEdit()),
             'bloqueio_de_tela_ligado'      => fn (): bool => (bool) config('lockscreen.enabled'),
             'multi_tenant_ligado'          => fn (): bool => (bool) config('kit.tenancy.enabled'),
         ];
@@ -105,7 +111,7 @@ final class TutorialGuiado
         $rotulos = [
             'tem_dois_fatores'             => 'Tem a autenticação em dois fatores confirmada',
             'dock_no_painel'               => 'O dock de atalhos está ligado neste painel',
-            'dashboard_dinamico_no_painel' => 'O dashboard dinâmico está ligado neste painel',
+            'dashboard_dinamico_no_painel' => 'O dashboard dinâmico está ligado neste painel e a pessoa pode montá-lo',
             'bloqueio_de_tela_ligado'      => 'O bloqueio de tela está ligado',
             'multi_tenant_ligado'          => 'O modo multi-tenant está ligado',
         ];
@@ -124,20 +130,27 @@ final class TutorialGuiado
      */
     private static function filhosComTela(): array
     {
-        $filhos = array_unique(array_merge(...array_values(array_map('array_values', OnboardingSeeder::TELAS))));
-
-        return collect($filhos)
+        return collect(OnboardingSeeder::filhosComTela())
             ->mapWithKeys(fn (string $filho): array => [Str::kebab(Str::beforeLast(class_basename($filho), 'Seeder')) => $filho])
             ->all();
     }
 
-    /** Alguma tela que o filho ensina, no painel corrente, abre para quem está aqui? Fora de painel, não. */
-    private static function abreATelaDo(string $filho): bool
+    /**
+     * Alguma tela que o filho ensina, no painel corrente, abre para quem está aqui (e passa em
+     * `$alemDeAbrir`, quando dada)? Fora de painel, não.
+     *
+     * @param  null|Closure(class-string): bool  $alemDeAbrir
+     */
+    private static function abreATelaDo(string $filho, ?Closure $alemDeAbrir = null): bool
     {
-        $telas = array_keys(OnboardingSeeder::TELAS[Filament::getCurrentPanel()?->getId()] ?? [], $filho, true);
+        $painel = Filament::getCurrentPanel()?->getId();
 
-        foreach ($telas as $tela) {
-            if ($tela::canAccess()) {
+        if ($painel === null) {
+            return false;
+        }
+
+        foreach (array_keys(OnboardingSeeder::TELAS[$painel] ?? [], $filho, true) as $tela) {
+            if ($tela::canAccess() && ($alemDeAbrir === null || $alemDeAbrir($tela))) {
                 return true;
             }
         }

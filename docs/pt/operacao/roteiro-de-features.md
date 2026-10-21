@@ -192,7 +192,7 @@ accDescr: RememberConversation envolve o pipeline; o orçamento e os quatro guar
 
 O ledger nasce de um listener de evento, nunca de uma chamada direta:
 `Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class)`
-(`app/Providers/KitServiceProvider.php:AgentStreamed:500`), e `RegistrarAiRun::handle()` grava em
+(`app/Providers/KitServiceProvider.php:AgentStreamed:523`), e `RegistrarAiRun::handle()` grava em
 `ai_runs` com `status: 'ok'` (`app/Ai/Listeners/RegistrarAiRun.php:AiRun::create:44`) — pedido
 bloqueado por qualquer camada acima **não** chega a esta linha. O widget existe nos painéis que a tela de
 configurações escolher, montado por um render hook global

@@ -14,9 +14,10 @@ use Wallacemartinss\FilamentOnboarding\Livewire\OnboardingLauncher;
  * depois de a tela abrir — nada é gravado (RQ-30 da wiki `onboarding-guiado`).
  *
  * Por que uma subclasse: o checklist mora nas telas das FEATURES, não nas rotas do onboarding,
- * então o middleware `ExigeTutorialGuiadoLigado` não o alcança; e o trait do vendor resolve o
- * sujeito por `resolveSubject()`, não por `current()`, então o `skipWhen()` do plugin também não
- * o desliga depois de montado. O `hydrate()` roda antes de toda ação de update.
+ * então o middleware `ExigeTutorialGuiadoLigado` não o alcança. O vendor já transforma a ação em
+ * no-op silencioso quando o `skipWhen()` diz sim (`InteractsWithOnboarding::onboarding()` consulta
+ * `shouldSkip`), mas o requisito pede RECUSA (404), com trilha no canal `onboarding` — não um clique
+ * que parece funcionar e não faz nada. O `hydrate()` roda antes de toda ação de update.
  *
  * Registrada sob o MESMO nome do pacote (`filament-onboarding-launcher`) no `KitServiceProvider`,
  * que boota depois do provider do pacote: o render hook do plugin monta pelo nome, e passa a
@@ -30,9 +31,11 @@ class ChecklistDoOnboarding extends OnboardingLauncher
             return;
         }
 
+        $motivo = TutorialGuiado::habilitado() ? 'sem_permissao_da_pagina' : 'tutorial_desligado';
+
         Log::channel('onboarding')->warning(
-            '[ChecklistDoOnboarding@hydrate] Ação do checklist recusada com o tutorial desligado | user_id: '.auth()->id(),
-            ['user_id' => auth()->id(), 'motivo' => 'tutorial_desligado'],
+            '[ChecklistDoOnboarding@hydrate] Ação do checklist recusada | motivo: '.$motivo,
+            ['user_id' => auth()->id(), 'motivo' => $motivo],
         );
 
         abort(404);
@@ -50,5 +53,23 @@ class ChecklistDoOnboarding extends OnboardingLauncher
         }
 
         parent::selectFlow($flowKey);
+    }
+
+    /**
+     * A mesma guarda para `flowKey` escrito DIRETO pelo cliente (`$wire.set('flowKey', …)`), que não
+     * passa pelo `selectFlow()` — a propriedade é pública e sem `#[Locked]` no trait do vendor
+     * (P-20 da wiki `onboarding-guiado`). Chave de jornada que a pessoa não vê neste painel volta
+     * para nulo, e o checklist segue na jornada visível.
+     */
+    public function updatedFlowKey(?string $flowKey): void
+    {
+        if ($flowKey !== null && $this->resolveFlowState($flowKey) === null) {
+            Log::channel('onboarding')->warning(
+                '[ChecklistDoOnboarding@updatedFlowKey] Jornada fora do painel recusada no checklist | flow: '.$flowKey,
+                ['user_id' => auth()->id(), 'flow' => $flowKey, 'motivo' => 'jornada_invisivel'],
+            );
+
+            $this->flowKey = null;
+        }
     }
 }

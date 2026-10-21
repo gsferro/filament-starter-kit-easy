@@ -65,7 +65,7 @@ painel em que a feature vive.
 | `PerfilEDoisFatoresSeeder` | admin, app, infra | Meu perfil | sozinho, com o 2FA confirmado | — |
 | `BuscaGlobalSeeder` | admin, app, infra | Dashboard (busca ⌘K / Ctrl+K) | ao terminar o tour | — |
 | `HubDeNavegacaoSeeder` | admin, app | Hub de cartões | ao terminar o tour | o hub está desligado |
-| `DashboardDinamicoSeeder` | admin, app, infra | Dashboard dinâmico | ao terminar o tour | o dashboard dinâmico está desligado no painel |
+| `DashboardDinamicoSeeder` | admin, app, infra | Dashboard dinâmico | ao terminar o tour | o dashboard dinâmico está desligado no painel, ou a pessoa não pode montá-lo (`Manage:Dashboard`) |
 | `DockDeAtalhosSeeder` | admin, app, infra | Dock de atalhos | ao terminar o tour | o dock está fora do painel |
 | `BloqueioDeTelaSeeder` | admin, app, infra | Bloqueio de tela | ao terminar o tour | o bloqueio de tela está desligado |
 | `UsuariosSeeder` | admin | Usuários | ao terminar o tour | — |
@@ -119,14 +119,16 @@ As condições são as perguntas que fazem um passo concluir ou aparecer sozinho
 
 - **No banco**, editáveis em **Onboarding → Condições**: `convidou_alguem` e
   `convidou_alguem_na_organizacao` (esta só com tenancy) contam os convites que a pessoa enviou.
-- **No código**, em `App\Support\TutorialGuiado::condicoes()`: `tem_dois_fatores` e as que leem
-  se uma feature está ligada (`dock_no_painel`, `dashboard_dinamico_no_painel`,
-  `bloqueio_de_tela_ligado`, `hub_ligado`, `agentes_de_ia_ligados`, `central_de_comandos_ligada`,
-  `demo_ligada`). Elas aparecem no seletor do editor de passos.
+- **No código**, em `App\Support\TutorialGuiado::condicoes()`: `tem_dois_fatores`; uma
+  `tela:{chave}` por passo que ensina uma tela (o passo aparece para quem abre a tela no painel, o
+  que já cobre a permissão e o interruptor da feature); e as dos passos sem tela própria
+  (`dock_no_painel`, `bloqueio_de_tela_ligado`, `multi_tenant_ligado`) mais
+  `dashboard_dinamico_no_painel` (ligado no painel e a pessoa pode montar o dashboard). Elas
+  aparecem no seletor do editor de passos.
 
 ## Quem vê
 
-Quem tem a permissão da página **Primeiros passos** (`View:OnboardingProgress`, na tela de papéis),
+Quem tem a permissão da página **Primeiros passos** (`View:PrimeirosPassos`, na tela de papéis),
 com o interruptor ligado. Sem ela, a pessoa não vê o checklist nem o item de menu. A autoria (jornadas
 e condições) segue as permissões `ViewAny:OnboardingFlow` e `ViewAny:OnboardingCondition`.
 
