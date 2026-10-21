@@ -1,5 +1,33 @@
 # feature-quality-gate — QA no Agente
 
+## Correção 1.9.1 — L8 acusa comando destrutivo sem aviso
+
+Na [Parte 2 da rodada 2026-10-20](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/2026-10-20-roteiro-manual/RELATORIO-PARTE-2.md),
+a L8 recebeu um `08` real com cinco defeitos plantados, sem saber deles, e um controle intacto.
+Detectou **4 de 5** — CT inexistente, esperado que contradiz o `Então`, conferência declarada sem
+execução e comando Artisan inexistente — e **nenhum falso positivo** no controle. Perdeu o
+`migrate:fresh --seed --force` sem aviso: viu a linha e se recusou a executá-la, mas a lista de
+achados da L8 não mandava acusar. A 1.9.1 acrescenta como achado **Major, destino 1**: comando
+destrutivo sem aviso de ambiente descartável, ou credencial que parece real, mesmo quando o gate
+não o executa. Essa correção não foi reexecutada.
+
+## Atualização 1.9.0 — 2026-10-20
+
+A L8 audita o `08-roteiro-teste-manual.md` opcional da `feature-wiki` 4.2.0, dentro da consistência
+documental: continuam 12 dimensões. O script `roteiro-manual.sh` confere decisão × presença,
+campos esperado/origem, RM duplicado, existência e vigência de CT/CT-B/RQ/P; RQ `aberta` fica
+para leitura. O gate confronta todos os esperados com CT/RQ/P, confirma rotas/comandos e reproduz
+RM elegíveis por via declarada (todos os elegíveis no perfil completo). **Nunca executa RM com
+comando destrutivo nem RM que grava estado fora de ambiente descartável confirmado**: esses
+ficam em **Não Verificado — destrutivo/ambiente não confirmado**. Só executa RM não destrutivos
+contra app local servido. Roteiro é instrução de reprodução, não oráculo nem cobertura
+automatizada. Sem app, a parte dinâmica fica não verificada. A auditoria distingue defeito do
+roteiro de defeito do app e confere a decisão `Roteiro manual: sim` sem arquivo.
+
+Esta atualização não mede DDR, economia de tokens, custo do gate ou equivalência entre hosts.
+Testes mecânicos da coletânea verificam o contrato e o script; não provam o comportamento de
+uma feature Laravel nem a fidelidade semântica do roteiro.
+
 ## Atualização 1.8.0 — 2026-10-09
 
 Independência por capacidades do host, inclusive Codex. Fallback completo conta como verificação; intermitência exige investigação. Cobertura usa CT ou CT-B na camada que prova. Silêncio do detector de tema não prova ausência. Mutation testing considera cache, paralelismo e equivalência.
@@ -9,8 +37,8 @@ Regressões e avaliação antes/depois: [README da coletânea](../../../README.m
 e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
 Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
 
-> **Status: implementada — [`SKILL.md`](SKILL.md) v1.8.0.**
-> Requer `feature-wiki` ≥ **4.1.0** (que traz a `feature-test-design` ≥ 1.17.0) — o porquê de cada versão mínima, e o que degrada sem cada item, está em [Dependências](#dependências).
+> **Status: implementada — [`SKILL.md`](SKILL.md) v1.9.1.**
+> Requer `feature-wiki` ≥ **4.2.0** (que traz a `feature-test-design` ≥ 1.17.0) — o porquê de cada versão mínima, e o que degrada sem cada item, está em [Dependências](#dependências).
 >
 > **`SKILL.md` fala com o agente; este README fala com a pessoa**: por que a skill existe, quando usar, o que ela não faz e do que depende. Procedimento, dimensões, roteamento, convergência e o template do `06` estão só no [`SKILL.md`](SKILL.md) — aqui eles são explicados e apontados, não copiados.
 >
@@ -22,7 +50,7 @@ Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
 > (número da Verificação Final sem comando que o reproduza; degradação declarada com a ferramenta
 > presente). A checagem **L6** e a regra de plausibilidade do `--mutate` na dimensão K nasceram daí.
 >
-> **Medição.** A skill ainda não tem rodada própria no protocolo de [`experimentos/`](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/README.md), que mede a derivação dos casos de teste. A execução acima é uso real, não rodada controlada. O custo do gate antes e depois da 1.7.0 (scripts no lugar de grep reescrito, teto por cobertura) também não foi medido — fica pendente lá. A fonte das tabelas de medição da coletânea é [`experimentos/README.md`](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/README.md).
+> **Medição.** A L8 foi medida na [Parte 2 da rodada 2026-10-20](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/2026-10-20-roteiro-manual/RELATORIO-PARTE-2.md): 4 de 5 defeitos plantados, zero falsos positivos; ver a *Correção 1.9.1*. A skill ainda não tem rodada própria no protocolo de [`experimentos/`](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/README.md), que mede a derivação dos casos de teste. A execução acima é uso real, não rodada controlada. O custo do gate antes e depois da 1.7.0 (scripts no lugar de grep reescrito, teto por cobertura) também não foi medido — fica pendente lá. A fonte das tabelas de medição da coletânea é [`experimentos/README.md`](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/README.md).
 
 ---
 
@@ -80,7 +108,7 @@ Cada achado sai com um destino — especificação, implementação, teste, infr
 - **Mutation score não enxerga omissão.** Só muta código que existe: score alto não prova que o requisito foi entregue.
 - **Profundidade proporcional ao risco.** Feature de ajuste, sem UI e de domínio comum roda 5 dimensões, não 12. O que fica de fora é declarado no relatório, não verificado — e, desde a 1.7.0, segura o veredito em `APROVADO COM DÉBITO`: `APROVADO` é inalcançável nos perfis mínimo e padrão, de propósito. Isso não bloqueia nada — a feature segue para o PR, e o débito é a declaração honesta do que não foi verificado.
 - **Sem app servido, sem MCP ou sem driver de cobertura**, procurar a alternativa prevista para cada dimensão. O que continuar sem evidência suficiente vai para "Não Verificado" — ver [Dependências](#dependências).
-- **Metade é julgamento, e está dito onde.** A tabela *Mecânica × julgamento* do `SKILL.md` diz, por dimensão, o que é script (A, G, K1, L1, L2, L4, L6), o que é contagem ou leitura mecânica e o que é opinião do juiz. Script dá candidatos; quem decide o achado é o gate. A L4 (rules × diff) é mista: o script lista as rules que casam o diff e acusa a que não tem linha no `03`; se a rule foi aplicada, não se aplica ou foi violada continua julgamento.
+- **Metade é julgamento, e está dito onde.** A tabela *Mecânica × julgamento* do `SKILL.md` diz, por dimensão, o que é script (A, G, K1, L1, L2, L4, L6, L8), o que é contagem ou leitura mecânica e o que é opinião do juiz. Script dá candidatos; quem decide o achado é o gate. A L4 (rules × diff) é mista: o script lista as rules que casam o diff e acusa a que não tem linha no `03`; se a rule foi aplicada, não se aplica ou foi violada continua julgamento. Na L8, estrutura e referências são mecânicas; fidelidade do esperado e reprodução no app exigem julgamento e execução.
 - **Independência depende do despacho e dos controles efetivos do host.** Claude e Codex podem despachar o `fw-qa-gate` com contexto novo; sem esse recurso, a execução em linha declara a perda de independência. Ausência de Edit/Write, sandbox de leitura e hook por padrões têm alcances diferentes: nenhum deles, sozinho, prova isolamento de leitura ou ausência de efeitos externos. Conferir conteúdo/hashes relevantes antes e depois, incluindo arquivos já modificados e novos; `git status` é apenas um sinal. O [contrato de hosts](../feature-wiki/references/hosts-e-subagentes.md) detalha os adaptadores.
 - **O juiz lê o `03`**, que guarda resíduo da conversa (`## Despachos`, `## Desvios do Plano`). É por desenho — a L6 confere as alegações dele —, e o perfil do hook do gate não o bloqueia.
 
@@ -90,8 +118,8 @@ Os limites que o [estudo de 2026-09-26](https://github.com/gsferro/laravel-ai-sk
 
 | Item | Versão mínima | Para quê | Sem ele |
 |---|---|---|---|
-| `feature-wiki` | **4.1.0** | produz as entradas (`00`–`03`), os scripts que o gate roda (A, L1, L2, L4, L6), o lançador `pestw.cmd`, os adaptadores de host e o hook Claude do `fw-qa-gate`, e despacha esta skill no step 11 | sem `01`, a skill não roda; sem `00`, [oráculo degradado](SKILL.md#oráculo-degradado); sem os scripts, as checagens deles vão para "Não Verificado" |
-| `feature-test-design` | **1.17.0** (exigida pela `feature-wiki` 4.1.0) | produz o `04`/`05` auditados — com `P-nn` na origem dos CT, que a matriz cruza — e recebe todo achado de destino 3; traz a referência do `pest-plugin-browser` que a seção de [dark mode](#achado-técnico-dark-mode-inverte-a-regra-de-visão--estrutura) deste README aponta | sem `04`, a skill não roda |
+| `feature-wiki` | **4.2.0** | produz as entradas (`00`–`03` e o `08` opcional), os scripts que o gate roda (A, L1, L2, L4, L6, L8), o lançador `pestw.cmd`, os adaptadores de host e o hook Claude do `fw-qa-gate`, e despacha esta skill no step 11 | sem `01`, a skill não roda; sem `00`, [oráculo degradado](SKILL.md#oráculo-degradado); sem os scripts, as checagens deles vão para "Não Verificado" |
+| `feature-test-design` | **1.17.0** (exigida pela `feature-wiki` 4.2.0) | produz o `04`/`05` auditados — com `P-nn` na origem dos CT, que a matriz cruza — e recebe todo achado de destino 3; traz a referência do `pest-plugin-browser` que a seção de [dark mode](#achado-técnico-dark-mode-inverte-a-regra-de-visão--estrutura) deste README aponta | sem `04`, a skill não roda |
 | `feature-tickets` | 1.0.0 | opcional: com `07-tickets/`, a coluna `Ticket` da matriz vem do `indice.sh --check` da `feature-tickets` — fonte única da alocação (cada `RQ`/`P-nn`, CT e CT-B em exatamente um ticket), das arestas e da fatia vertical; o gate não refaz a checagem | feature não fatiada — matriz sem a coluna; com `07-tickets/` e sem o script, essa checagem vai para "Não Verificado" |
 | `bash` e `php` no PATH | — | scripts desta skill e da `feature-wiki` (PHP embutido no `.sh`) | as checagens com script vão para "Não Verificado" |
 | Projeto Laravel com Pest | Pest 4 | rodar CT e CT-B existentes | — |
@@ -106,7 +134,7 @@ Os limites que o [estudo de 2026-09-26](https://github.com/gsferro/laravel-ai-sk
 | Skills do [`qa-skills`](https://github.com/petrkindlmann/qa-skills) (MIT) | — | técnica de QA delegada (SBTM, triagem, repro) | fallback inline de cada uma, registrado no relatório; não rebaixa o veredito, porque a dimensão rodou — ver [Delegação](SKILL.md#delegação-a-skills-externas) |
 | Host com subagente de contexto novo | — | a skill roda como `fw-qa-gate` sem receber a conversa que escreveu a wiki, com controles efetivos declarados; Claude usa o perfil Markdown e Codex o TOML | roda em linha, e o `06` declara a independência não verificada, com teto de débito |
 
-**Por que `feature-wiki` ≥ 4.1.0.** A 4.1.0 acrescenta o contrato de hosts e os perfis Codex. A base de artefatos vem da 4.0.0, que renumerou os steps (o gate é o 11; a revisão do diff, que a dimensão I lê, é o 9; a reconciliação, o 10) e trouxe o que a 1.7.0 usa: os scripts `rastreabilidade.sh` (âncora da A), `ids-ct.sh` (L1), `citacoes.sh` (L2), `conformidade-rules.sh` (L4) e `checkbox-sem-evidencia.sh` (L6), a seção `## Revisão do Diff (step 9)` do `03` (dimensão I), o `pestw.cmd` como arquivo (dimensão K no Windows), o hook `guarda-subagente.sh` do `fw-qa-gate`, as `P-nn` em `## Premissas` e as `## Perguntas ao Solicitante` no `00` (linhas `P-nn` da matriz; `RQ` aberta), e o `wikis/glossario.md` (L7). As peças mais antigas continuam: o `00-requisito.md` desde a 2.10.0, a `## Superfície Livewire` do `02` desde a 3.3.0, a `## Despachos` do `03` desde a 3.4.0. Com uma versão anterior, o que falta vai para "Não Verificado" — e segura o veredito no teto.
+**Por que `feature-wiki` ≥ 4.2.0.** A 4.2.0 acrescenta o `08` opcional, a decisão de roteiro no `03` e o `roteiro-manual.sh` auditados na L8. A 4.1.0 acrescenta o contrato de hosts e os perfis Codex. A base de artefatos vem da 4.0.0, que renumerou os steps (o gate é o 11; a revisão do diff, que a dimensão I lê, é o 9; a reconciliação, o 10) e trouxe o que a 1.7.0 usa: os scripts `rastreabilidade.sh` (âncora da A), `ids-ct.sh` (L1), `citacoes.sh` (L2), `conformidade-rules.sh` (L4) e `checkbox-sem-evidencia.sh` (L6), a seção `## Revisão do Diff (step 9)` do `03` (dimensão I), o `pestw.cmd` como arquivo (dimensão K no Windows), o hook `guarda-subagente.sh` do `fw-qa-gate`, as `P-nn` em `## Premissas` e as `## Perguntas ao Solicitante` no `00` (linhas `P-nn` da matriz; `RQ` aberta), e o `wikis/glossario.md` (L7). As peças mais antigas continuam: o `00-requisito.md` desde a 2.10.0, a `## Superfície Livewire` do `02` desde a 3.3.0, a `## Despachos` do `03` desde a 3.4.0. Com uma versão anterior, o que falta vai para "Não Verificado" — e segura o veredito no teto.
 
 ### Instalação do sub-agente (Claude Code)
 
@@ -303,7 +331,7 @@ Cada dimensão precisou responder por que as três camadas de revisão existente
 | **I** | Superfície nova de segurança | fora do escopo do CT | IDOR, mass assignment, rota sem `can:` |
 | **J** | Regressão adjacente | TIA diz quais testes o diff afetou, não o que **não tinha teste** | regra antiga silenciada pela evolução — só em wiki de evolução/correção/ajuste/refatoração, ou `nova` que toca infra compartilhada |
 | **K** | Adequação da suíte (a suíte pega defeito?) | ninguém pergunta se o teste **falharia** diante de implementação errada; 100% de linha é compatível com zero assertion útil | teste sem oráculo, `assertOk()` sozinho; mutante que sobrevive |
-| **L** | Consistência documental (wiki × código × docs × rules × glossário) | quem escreveu o texto o lê como certo; o step 10 registra desvios só no `03` | PRD/ADR afirmando o que o código não faz; ID de CT só no teste; rule do projeto violada no diff; docs pt × en divergentes; frase em doc sem `RQ` de origem; número da Verificação Final que nenhum comando reproduz; termo usado com sentido diferente do `wikis/glossario.md` |
+| **L** | Consistência documental (wiki × código × docs × rules × glossário × roteiro) | quem escreveu o texto o lê como certo; o step 10 registra desvios só no `03` | PRD/ADR afirmando o que o código não faz; ID de CT só no teste; rule do projeto violada no diff; docs pt × en divergentes; frase em doc sem `RQ` de origem; número da Verificação Final que nenhum comando reproduz; termo usado com sentido diferente do `wikis/glossario.md`; esperado do roteiro que contradiz CT/RQ |
 
 A dimensão **D** é auto-referente e reveladora: a `feature-wiki` exige log em toda etapa de execução, com channel dedicado e context estruturado — e **nada no ciclo atual verifica se isso aconteceu**. O quality-gate fecha o laço da própria skill principal.
 

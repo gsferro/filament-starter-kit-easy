@@ -6,7 +6,7 @@ license: MIT
 compatibility: >-
   Laravel com Pest e requisito 00, ou comportamento acordado materializado em 00 mínimo para legado. Mutation testing exige plugin e driver compatíveis; Windows usa lançador .cmd validado. CT-B exigem runner browser instalado. Revisão adversarial usa contexto novo em qualquer host; sem ele, lacuna declarada.
 metadata:
-  version: "1.17.3"
+  version: "1.17.4"
   requires: "feature-wiki>=4.1.0"
 ---
 

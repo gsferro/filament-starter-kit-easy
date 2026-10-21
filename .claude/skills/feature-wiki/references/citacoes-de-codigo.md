@@ -14,6 +14,7 @@ onde a wiki pode citar código fica no corpo, step 4, *Path e número por arquiv
 | `02` (ADR) | **proibido** na ADR: cita módulo ou classe por nome, nunca `arquivo:linha` nem contagem. Exceção: a `## Superfície Livewire`, re-varrida antes do step 9 e com as citações conferidas no step 10 | decisão envelhece devagar; path envelhece no próprio ciclo (3.5.1) |
 | `01`, `03`, `04`, `05` | permitido | coberto pela reconciliação do step 10 (`citacoes.sh`, `ids-ct.sh`) |
 | `07-tickets/` | permitido pela reconciliação, mas o ticket não leva path: aponta passos do `01` por número e link (regra da `feature-tickets`) | conferido no step 10 pelo `indice.sh --check` |
+| `08` (opcional) | permitido | nasce após o step 10; nas voltas do gate, caminhos e citações entram na mesma reconciliação |
 
 ## Por que o símbolo — as duas classes de erro
 

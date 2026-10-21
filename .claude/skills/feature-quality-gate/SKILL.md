@@ -6,8 +6,8 @@ license: MIT
 compatibility: >-
   Laravel com Pest, Bash e PHP. Revisor independente em host com subagentes, incluindo Claude e Codex; sem contexto novo, declare independência não verificada. App, MCP, driver e plugins são opcionais conforme dimensões aplicáveis. Falta de capacidade só rebaixa quando deixa dimensão ou independência não verificada.
 metadata:
-  version: "1.8.0"
-  requires: "feature-wiki>=4.1.0"
+  version: "1.9.1"
+  requires: "feature-wiki>=4.2.0"
 ---
 
 # Feature Quality Gate — QA no Agente, com Roteamento
@@ -28,6 +28,7 @@ Ausência de recurso vira limitação registrada, nunca prova de aprovação.
 | **Matriz de Rastreabilidade** | Tabela `RQ`/`P-nn` → passo do PRD → CT → CT-B → ticket → código → resultado. Sigla **RTM** (*Requirements Traceability Matrix*) só em contexto de QA formal / auditoria |
 | **CT** | Caso de Teste de backend (`04-casos-de-teste.md`) |
 | **CT-B** | Caso de Teste de Browser (`05-casos-de-teste-browser.md`) |
+| **RM** | Caso do roteiro manual opcional (`08-roteiro-teste-manual.md`), derivado de CT/CT-B e RQ; não é oráculo nem cobertura automatizada |
 | **PRD** | Plano de ação (`01-plano-acao.md`) |
 | **SBTM** | Session-Based Test Management — exploratório com charter e time-box |
 | **RCRCRC** | Heurística de regressão: Recent, Core, Risk, Configuration, Repaired, Chronic |
@@ -141,12 +142,13 @@ Playwright MCP, skills de `qa-skills`, Pest 5, `pest-plugin-agent`, PCOV ou Xdeb
 | `04-casos-de-teste.md` (+ `## Costuras de Teste`, `## Índice de Cenários`) | sim | não roda |
 | `05-casos-de-teste-browser.md` | se alguma costura do `04` é `browser` | dimensões G/H limitadas |
 | `07-tickets/` (`feature-tickets`) | se existir | matriz sem a coluna `Ticket` — feature não fatiada |
+| `08-roteiro-teste-manual.md` | se existir | L8 audita o roteiro; ausência com `Roteiro manual: sim` no `03` é candidata a achado de `roteiro-manual.sh`; nos demais casos, L8 não aplicável |
 | `wikis/glossario.md` | se existir | L7 confere só se a feature decidiu termo sem registrá-lo |
 | `06-relatorio-qa.md` do ciclo anterior | ciclo ≥ 2 | sem dedupe — achado já rejeitado (destino 5) reaparece |
 | `.ai/rules/*.md` (as que o `conformidade-rules.sh` lista), docs de usuário e `CHANGELOG` tocados | para a dimensão L | L4/L5 não rodam — declarar em "Não Verificado" |
-| App servido e acessível na `APP_URL` | para dimensões dinâmicas | dimensões B, C, D, E, F, G, H, I ficam estáticas |
+| App servido e acessível na `APP_URL` | para dimensões dinâmicas | dimensões B, C, D, E, F, G, H, I e a L8 com roteiro ficam estáticas; a parte dinâmica vai para "Não Verificado" |
 | Driver de cobertura (PCOV ou Xdebug) | para a dimensão K medida | K roda só o passo estático; a medição vai para "Não Verificado" |
-| Scripts da `feature-wiki` (`{skills}/feature-wiki/scripts/`), desta skill (`{skills}/feature-quality-gate/scripts/`) e, com `07-tickets/`, da `feature-tickets`, com `bash` e `php` | para A (e a coluna `Ticket`), G, K1, L1, L2, L4, L6 | a checagem vai para "Não Verificado" — o gate não reescreve o script à mão |
+| Scripts da `feature-wiki` (`{skills}/feature-wiki/scripts/`), desta skill (`{skills}/feature-quality-gate/scripts/`) e, com `07-tickets/`, da `feature-tickets`, com `bash` e `php` | para A (e a coluna `Ticket`), G, K1, L1, L2, L4, L6, L8 | a checagem vai para "Não Verificado" — o gate não reescreve o script à mão |
 | Diff da feature (`git diff`) | sim | escopo indefinido |
 
 O `03` é **degradável**, não obrigatório: sem ele o gate ainda confronta `00` × código × app, que é
@@ -199,8 +201,9 @@ Determinar o escopo **antes** de começar. Três fatores:
 > é grep, custa segundos, e é a checagem com melhor razão achado/esforço da skill inteira. O que
 > o perfil decide é se roda também a medição por mutação.
 >
-> **A dimensão L tampouco é pulada.** É leitura de texto contra código, sem app servido, e a
-> defasagem que ela pega foi, no caso medido, 27 dos 31 achados de uma revisão pós-entrega.
+> **A dimensão L tampouco é pulada.** L1–L7 confrontam texto e código; L8 acrescenta o roteiro
+> manual opcional, inclusive execução com app servido. A defasagem documental que L pegou foi,
+> no caso medido, 27 dos 31 achados de uma revisão pós-entrega; esse número antecede a L8.
 >
 > **A dimensão J segue a natureza, não o perfil.** Roda em todo perfil quando a natureza não é
 > `nova` **ou** quando o campo **Toca infra compartilhada?** do `01` é `sim` ([Regressão Condicional](#regressão-condicional));
@@ -216,7 +219,7 @@ Determinar o escopo **antes** de começar. Três fatores:
 
 ### 1. Verificar entradas
 
-**Em sub-agente**, o primeiro comando é `git status --porcelain`, guardado para o retorno. Ler `00`, `01`, `04`, `05` (se existir), `03`, `07-tickets/` (se existir) e `wikis/glossario.md` (se existir). Rodar `git diff --stat` para delimitar o escopo. Ler também as rules que o `conformidade-rules.sh` lista (L4), as docs de usuário e o `CHANGELOG` tocados pelo diff, e a tabela `## Conformidade com Rules` do `03` — entradas da dimensão L. Aplicar o gate de entrada; se faltar o `00`, decidir entre pedir ou modo degradado.
+**Em sub-agente**, o primeiro comando é `git status --porcelain`, guardado para o retorno. Ler `00`, `01`, `04`, `05` (se existir), `03`, `07-tickets/` (se existir), `08-roteiro-teste-manual.md` (se existir) e `wikis/glossario.md` (se existir). Rodar `git diff --stat` para delimitar o escopo. Ler também as rules que o `conformidade-rules.sh` lista (L4), as docs de usuário e o `CHANGELOG` tocados pelo diff, e a tabela `## Conformidade com Rules` do `03` — entradas da dimensão L. Aplicar o gate de entrada; se faltar o `00`, decidir entre pedir ou modo degradado.
 
 ### 2. Auditar o requisito ANTES de validar qualquer coisa
 
@@ -294,10 +297,10 @@ candidatas a achado), exit 0 = mecanismo não detectado; não aplicabilidade exi
 | I | misto | rota sem `can:` por grep (mecânico); o resto é julgamento, só sobre o que o step 9 não cobriu |
 | J | misto | `pest --parallel --tia` e CT/CT-B da ancestral por ID (mecânico); RCRCRC (julgamento) |
 | K | misto | K1 `k1-oraculo-fraco.sh` (heurístico; `assertSee` de layout é julgamento); K2 `pest --mutate`, com a plausibilidade julgada |
-| L | misto | L1 `ids-ct.sh`, L2 `citacoes.sh`, L6 `checkbox-sem-evidencia.sh` + reprodução dos números (mecânico); L4 misto: `conformidade-rules.sh` lista a rule casada sem linha no `03` (mecânico), aplicada / n.a. / violada é julgamento; L3, L5, L7 julgamento |
+| L | misto | L1 `ids-ct.sh`, L2 `citacoes.sh`, L6 `checkbox-sem-evidencia.sh` + reprodução dos números (mecânico); L4 misto: `conformidade-rules.sh` lista a rule casada sem linha no `03` (mecânico), aplicada / n.a. / violada é julgamento; L8 misto: `roteiro-manual.sh` confere estrutura e referências (mecânico), esperado × Então do CT/RQ e reprodução no app são julgamento; L3, L5, L7 julgamento |
 
 Chamada: `bash {skills}/feature-wiki/scripts/{script}` (`rastreabilidade.sh`, `ids-ct.sh`,
-`citacoes.sh`, `conformidade-rules.sh`, `checkbox-sem-evidencia.sh`), `bash {skills}/feature-quality-gate/scripts/{script}`
+`citacoes.sh`, `conformidade-rules.sh`, `checkbox-sem-evidencia.sh`, `roteiro-manual.sh`), `bash {skills}/feature-quality-gate/scripts/{script}`
 (`dark-mode.sh`, `k1-oraculo-fraco.sh`) ou `bash {skills}/feature-tickets/scripts/indice.sh --check {wiki}`;
 uso e exemplo de falha no cabeçalho de cada script.
 
@@ -573,7 +576,7 @@ Sem driver de cobertura, rodar só o passo 1 e declarar o passo 2 em
 ### L — Consistência Documental (wiki × código × docs × rules)
 
 **O que é**: as dimensões A–K perguntam se o produto e o instrumento estão certos. Esta pergunta
-se o que está **escrito** sobre eles ainda é verdade: PRD, ADR, `04`, docs de usuário, CHANGELOG,
+se o que está **escrito** sobre eles ainda é verdade: PRD, ADR, `04`, roteiro manual opcional, docs de usuário, CHANGELOG,
 glossário e as rules do projeto, contra o código que foi entregue.
 
 **Por que escapa**: o step 10 da `feature-wiki` manda registrar "Desvios do Plano", e o agente
@@ -584,11 +587,12 @@ independente, **27 desta dimensão** — PRD e ADR com a guarda antiga, oito IDs
 citação de vendor 4 linhas fora, consequência invalidada ainda nas docs pt/en e na ADR, e duas
 rules do projeto violadas no código novo.
 
-**Entrada**: `00`–`05`, `git diff`, as rules de `.ai/rules/*.md` que casam o diff,
+**Entrada**: `00`–`05`, `08-roteiro-teste-manual.md` se existir, `git diff`, as rules de `.ai/rules/*.md` que casam o diff,
 docs de usuário e CHANGELOG tocados, `wikis/glossario.md`, e a tabela `## Conformidade com Rules` do `03` — o que o
 implementador **declarou**; esta dimensão confere a declaração.
 
-**Como verificar** — sete checagens, todas estáticas, na ordem de custo:
+**Como verificar** — oito checagens dentro da dimensão L; continuam **12 dimensões**. L1–L7 são
+estáticas; L8 combina checagem mecânica, leitura e execução, quando há roteiro:
 
 | # | Checagem | Como | Achado se |
 |---|---|---|---|
@@ -599,6 +603,21 @@ implementador **declarou**; esta dimensão confere a declaração.
 | L5 | Docs × comportamento × rastro | docs pt × en × CHANGELOG × README contra o comportamento final; cada frase nova procurada no `00`/`02`. Passo sem `RQ` que o `rastreabilidade.sh` listou é o mesmo crescimento, do lado do plano | pt e en dizem coisas diferentes; consequência invalidada ainda descrita; frase em doc de usuário **sem `RQ` nem ADR** de origem — crescimento sem rastro, o mesmo padrão que a matriz chama de "código sem `RQ`" |
 | **L6** | Alegações da `## Verificação Final` e de `## Despachos` do `03` | primeiro `bash {skills}/feature-wiki/scripts/checkbox-sem-evidencia.sh {wiki}` (`[x]` sem ` — {evidência}`); depois, cada `[x]` com **número**: reproduzir o comando que o gera (`grep -c`, `citacoes.sh`, `pest`); cada **degradação declarada** ("sem PCOV", "plugin ausente", "MCP indisponível"): prova negativa (`php -m`, `ls vendor/…`); cada `Duration` de `--mutate`: heurística considerando testes selecionados, processos e cache; dúvida indispensável à K é prova pendente. A coluna `Custo` de `## Despachos` (tokens · duração) é o que o host reportou, e `—` quando ele não reporta: não é número a reproduzir, e `—` não é achado | checkbox fechado sem evidência; célula de `Custo` vazia (nem valor nem `—`); número que nenhum comando reproduz; degradação declarada com a ferramenta presente; score declarado certificado com prova indispensável ainda pendente. **É a checagem que acusa o orquestrador**, e só um juiz que não viu a conversa a faz sem viés |
 | **L7** | Vocabulário × glossário | ler `wikis/glossario.md`; para cada termo, `grep -rn` do termo e do "Não confundir com" no `00`, `01`, `04`, `05` e nas views do diff; conferir os termos decididos na feature (resposta de pergunta de significado, `## Decisões de Desenho` do `01`) contra o glossário | termo do `01`/`04`/UI com sentido diferente do glossário, ou trocado pelo "Não confundir com"; termo do `00` com sentido diferente do glossário sem pergunta registrada; termo decidido na feature que não entrou no glossário |
+| **L8** | Roteiro manual × CT × app | primeiro `bash {skills}/feature-wiki/scripts/roteiro-manual.sh {wiki}`: decisão × presença, esperado/origem, existência e vigência de CT/CT-B/RQ/P, RM duplicado; depois conferir cada esperado contra o **Então** do CT/CT-B e a RQ/P citados, ler cláusulas `aberta` (não são achado do script), confirmar rotas/comandos existentes (`php artisan route:list` / `php artisan list`, conforme a via) e reproduzir somente RM elegíveis no escopo abaixo | CT/CT-B/RQ/P inexistente ou não vigente; esperado contradiz CT/RQ/P ou inventa comportamento sem rastro; passo não reproduzível por erro do roteiro; decisão × presença incompatível ou `08` sem decisão; conferência declarada sem execução; comando destrutivo sem aviso de ambiente descartável, ou credencial que parece real — achado mesmo quando o gate não o executa |
+
+**Escopo da L8**: o `08` é opcional e pertence à `feature-wiki`. Sem ele, somente a decisão
+`Roteiro manual: sim` no `03` cobra o arquivo; registrar o achado que `roteiro-manual.sh` produz.
+Nos demais casos sem `08`, registrar `L8 n/a — sem 08`. Com `08`, ler todos os esperados.
+O gate **nunca executa RM com comando destrutivo nem RM que grava estado fora de ambiente
+descartável confirmado**; esses vão para `Não Verificado — destrutivo/ambiente não confirmado`.
+Executar apenas RM não destrutivos contra o **app local servido**: ao menos um elegível por via
+declarada; no perfil **completo, todos os RM elegíveis**. A restrição vale também para preparo
+e limpeza: não executar um comando vedado como pré-condição de RM elegível.
+Registrar os RM executados e o resultado observado. Sem app local ou capacidade para uma via, a parte
+dinâmica fica em "Não Verificado", com a causa; exit 0 do script não substitui a leitura nem a
+execução. O roteiro **não é oráculo** e nunca aprova uma RQ por si só. App que diverge do CT/RQ
+gera achado na dimensão de comportamento correspondente, destino **2**; roteiro que diverge do
+CT/RQ gera achado **L8**, destino **1**. Achados distintos podem coexistir.
 
 Por que a L7 existe (estudo §2.5, item 4): o glossário é o único lugar durável e global para o
 vocabulário do domínio; termo decidido numa feature e escrito diferente na seguinte é o mal-entendido
@@ -621,6 +640,13 @@ que o Gherkin e a UI propagam, e quem escreveu a wiki não o vê.
 | L6 célula de `Custo` vazia em `## Despachos` | Cosmético | **1** — o valor que o host reportou, ou `—` |
 | L7 termo do `00` com outro sentido, sem pergunta registrada | Major | **1** — pergunta ao solicitante (raia requisito) |
 | L7 termo divergente no `01`/`04`/UI; termo decidido fora do glossário | Minor | **1** — alinhar o texto ao glossário; o termo decidido entra em `wikis/glossario.md` |
+| L8 CT/CT-B/RQ/P inexistente ou não vigente | Minor | **1** — corrigir o rastro do roteiro |
+| L8 esperado contradiz CT/RQ ou inventa comportamento sem rastro | Major | **1** — alinhar o roteiro à fonte; se esconder comportamento não pedido, também **2** |
+| L8 passo não reproduzível por erro do roteiro | Minor | **1** — corrigir pré-condição, comando, rota ou ação descrita |
+| L8 decisão `Roteiro manual: sim` no `03`, sem `08` | Minor | **1** — cumprir a decisão ou registrar sua revisão |
+| L8 `08` sem decisão no `03`, ou com decisão `não` | Minor | **1** — reconciliar a decisão e a presença do roteiro |
+| L8 conferência declarada sem rodar | Major | **1** — corrigir a alegação e registrar o que foi executado, como na L6 |
+| L8 comando destrutivo sem aviso de ambiente descartável, ou credencial que parece real | Major | **1** — acrescentar o aviso ou trocar por comando não destrutivo; remover a credencial |
 | L1 contagem do cabeçalho errada | Cosmético | **1** — recalcular pelos comandos `grep -c` de `{skills}/feature-test-design/references/template-04.md`, §*Contagem do cabeçalho*, nunca à mão |
 
 > **Achado de número: procure a cópia antes de fechar.** Medido: este gate acusou uma contagem
@@ -846,7 +872,7 @@ Violação de qualquer uma invalida a execução:
 - [ ] Em sub-agente: `git status --porcelain` guardado antes do primeiro passo
 - [ ] `00-requisito.md` lido; cláusulas `RQ` e `P-nn` vigentes identificadas (ou modo degradado declarado, pelos três casos)
 - [ ] `01` lido: `## Natureza da Wiki` e `## Cobertura do Requisito`
-- [ ] `04` e `05` lidos; diff delimitado; `07-tickets/` e `wikis/glossario.md` lidos se existirem
+- [ ] `04` e `05` lidos; diff delimitado; `07-tickets/`, `08-roteiro-teste-manual.md` e `wikis/glossario.md` lidos se existirem
 - [ ] Rules que casam o diff (`conformidade-rules.sh`), docs de usuário e CHANGELOG tocados lidos; tabela `## Conformidade com Rules` do `03` em mãos
 - [ ] Perfil de esforço definido pelo gate de risco; J incluída se a natureza não é `nova` ou se `Toca infra compartilhada?` é `sim`
 
@@ -855,11 +881,12 @@ Violação de qualquer uma invalida a execução:
 - [ ] Ambiguidades do requisito auditadas **antes** de validar comportamento; cada `RQ` `aberta` classificada (sem implementação → teto; implementada → Major, especificação)
 - [ ] Matriz de Rastreabilidade montada e conferida contra a realidade (não só contra o mapa declarado): `rastreabilidade.sh` rodado, `git diff` por passo, linhas `P-nn`, coluna `Ticket` pelo `indice.sh --check` se há `07-tickets/`
 - [ ] Todas as dimensões do perfil executadas; as fora do perfil **declaradas com motivo**
-- [ ] Scripts rodados, não reescritos: A (+ `indice.sh --check` com `07-tickets/`, fonte da coluna `Ticket`), G (`--mecanismo` e nível 1 com `--diff-filter=AM`), K1, L1 (`ids-ct.sh`), L2 (`citacoes.sh`), L4 (`conformidade-rules.sh`), L6 — exit de cada um registrado; script ausente → "Não Verificado"
+- [ ] Scripts rodados, não reescritos: A (+ `indice.sh --check` com `07-tickets/`, fonte da coluna `Ticket`), G (`--mecanismo` e nível 1 com `--diff-filter=AM`), K1, L1 (`ids-ct.sh`), L2 (`citacoes.sh`), L4 (`conformidade-rules.sh`), L6, L8 (`roteiro-manual.sh`) — exit de cada um registrado; script ausente → "Não Verificado"
 - [ ] Dimensão D verificou log real, incluindo **PII no context**
 - [ ] Dimensão I leu `## Revisão do Diff (step 9)` do `03` e declarou o que cobriu além dela
 - [ ] Dimensão L conferiu IDs de CT, citações, PRD/ADR × código, rules × diff, docs pt × en × CHANGELOG e vocabulário × glossário — inclusive a declaração do `03`
 - [ ] **L6**: todo número da `## Verificação Final` reproduzido pelo comando; toda degradação declarada conferida com a prova negativa; `Duration` do `--mutate` plausível
+- [ ] **L8**: decisão × presença do `08`, vigência e esperados × Então do CT/RQ/P conferidos; só RM não destrutivos no app local servido, gravação só em descartável confirmado (completo: todos os elegíveis); demais em Não Verificado; roteiro nunca usado como oráculo
 - [ ] Todo achado que envolve um valor numérico sai com o `grep -rn` do valor na wiki inteira — a ação exigida nomeia cada arquivo que o repete
 - [ ] Dimensão K: cabeçalho do `04` lido (`Revisão adversarial: NÃO FEITA` → "Não Verificado"); subprocessos e sobreviventes conferidos, com duração julgada considerando testes selecionados, processos e cache; prova indispensável pendente → "Não Verificado" e teto de débito; equivalente só fechado com prova
 - [ ] Dimensão G detectou o mecanismo de tema do projeto antes de validar
@@ -881,7 +908,7 @@ Violação de qualquer uma invalida a execução:
 
 | Skill | Relação |
 |---|---|
-| `feature-wiki` | produz as entradas (`00`–`03`), os scripts que o gate roda (`{skills}/feature-wiki/scripts/`) e o hook do `fw-qa-gate`, e invoca esta skill no step 11 |
+| `feature-wiki` | produz as entradas (`00`–`03` e o `08` opcional), os scripts que o gate roda (`{skills}/feature-wiki/scripts/`) e o hook do `fw-qa-gate`, e invoca esta skill no step 11 |
 | `feature-test-design` | produz o `04`/`05` que esta skill audita, e **recebe de volta** todo achado de destino 3 — o achado é um mutante que sobreviveu, e a lacuna de derivação é o que precisa fechar |
 | `feature-tickets` | produz `07-tickets/` e o `indice.sh --check`, fonte única da alocação a ticket e da coluna `Ticket` da matriz (CT-B conta como CT); o gate não refaz a checagem |
 | `requirement-to-rule` | step 12: candidato a Project Rule só pela definição de *Vale virar rule* dela; o gate não tem critério próprio |

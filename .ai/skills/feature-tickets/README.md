@@ -1,5 +1,18 @@
 # feature-tickets — Fatias Verticais Ancoradas no Requisito
 
+## Correção 1.1.1 — um roteiro manual por feature
+
+A `feature-wiki` 4.2.0 pode entregar o `08-roteiro-teste-manual.md`, se a decisão de gerá-lo
+estiver registrada. Em feature fatiada, existe **um único `08` na pasta da feature**, gerado
+depois do último ticket `concluído`, após a reconciliação
+do step 10 e antes do quality gate. Cada `RM-nn` informa o **`Ticket`** de origem para o revisor
+localizar a fatia. A `feature-tickets` não escreve um roteiro por ticket e não antecipa esse
+artefato numa fatia incompleta; o dono continua sendo a wiki.
+
+O esperado continua rastreado aos CT/CT-B/RQ/P-nn existentes; o ticket só localiza a entrega.
+Este esclarecimento altera o README e a versão, sem mudar o corpo do `SKILL.md`, o formato dos
+tickets, a revisão humana de cada entregável ou os quadros gerados por script.
+
 ## Atualização 1.1.0 — 2026-10-09
 
 Invocação explícita preservada no Codex por agents/openai.yaml. Índice rejeita estados por prefixo e CT sem origem. Espelho grava Issue com Status recuado, preserva fim de linha e permanece idempotente no simulador gh.
@@ -9,7 +22,7 @@ Regressões e avaliação antes/depois: [README da coletânea](../../../README.m
 e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
 Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
 
-> **Status: atualizada — [`SKILL.md`](SKILL.md) v1.1.0 (2026-10-09).**
+> **Status: atualizada — [`SKILL.md`](SKILL.md) v1.1.1 (2026-10-20).**
 > Requer `feature-wiki` ≥ **4.1.0** e `feature-test-design` ≥ **1.17.0** — o porquê de cada versão
 > mínima está em [Dependências](#dependências).
 >
@@ -505,6 +518,9 @@ cujo `Status` mudou. Nenhuma chamada levou `--label`.
   `**Issue**` do ticket, sem label de estado.
 - **Um ponto de revisão humana por entregável**: o ticket entra `em revisão` quando os CT dele ficam
   verdes, e só o desenvolvedor o marca `concluído`.
+
+O roteiro manual opcional `08` não é uma entrega adicional de cada ticket: ele reúne os fluxos
+da feature concluída, com `Ticket` em cada RM, sob responsabilidade da `feature-wiki`.
 
 ## Diferença para a `/to-tickets`
 

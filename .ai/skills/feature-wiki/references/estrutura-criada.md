@@ -1,4 +1,4 @@
-> Referência da feature-wiki 4.0.0. Lida em: step 4 (antes de decidir os arquivos extras). Fonte única de: arquivos extras `05-*` e exemplo de árvore criada — com o glossário do projeto, os tickets do step 8 e o quadro entre features.
+> Referência da feature-wiki 4.2.0. Lida em: step 4 (antes de decidir os arquivos extras). Fonte única de: arquivos extras `05-*` e exemplo de árvore criada — com o glossário do projeto, os tickets do step 8 e o quadro entre features.
 
 # Estrutura criada
 
@@ -36,9 +36,10 @@ wikis/
                 ├── 05-api-contract.md                ← extra quando necessário
                 ├── 05-rollback.md                    ← extra quando necessário
                 ├── 06-relatorio-qa.md                ← saída do feature-quality-gate
-                └── 07-tickets/                       ← só se o step 8 fatiou (feature-tickets)
-                    ├── README.md                         ← quadro da feature, gerado pelo indice.sh — nunca editado
-                    ├── 00-prefactor-consulta-por-turma.md ← prefactoring, quando há: vem primeiro
-                    ├── 01-coordenador-dispara-lote.md    ← um ticket vertical por arquivo, em ordem de dependência
-                    └── 02-coordenador-notificado.md
+                ├── 07-tickets/                       ← só se o step 8 fatiou (feature-tickets)
+                │   ├── README.md                         ← quadro da feature, gerado pelo indice.sh — nunca editado
+                │   ├── 00-prefactor-consulta-por-turma.md ← prefactoring, quando há: vem primeiro
+                │   ├── 01-coordenador-dispara-lote.md    ← um ticket vertical por arquivo, em ordem de dependência
+                │   └── 02-coordenador-notificado.md
+                └── 08-roteiro-teste-manual.md         ← opcional: decisão só no 03, pergunta não bloqueante no step 4, gerado entre 10 e 11
 ```
