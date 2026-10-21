@@ -262,6 +262,15 @@ final class ConfiguracoesDoKit extends Settings
      */
     public array $agentes_ia_paineis;
 
+    /**
+     * Uso do tutorial guiado. Nasce DESLIGADO (RQ-11 da wiki `onboarding-guiado`): desligado, a
+     * autoria das jornadas some do menu do /admin e responde 404, e o checklist, os tours e a
+     * página "Primeiros passos" não aparecem em painel nenhum. Sem lista de painéis — cada
+     * jornada declara o dela. Semear as jornadas não liga. Nada é apagado. Lido por request em
+     * `App\Support\TutorialGuiado::habilitado()`.
+     */
+    public bool $onboarding_habilitado;
+
     public string $rotulo_da_organizacao;
 
     public string $rotulo_das_organizacoes;
@@ -535,6 +544,8 @@ final class ConfiguracoesDoKit extends Settings
              */
             'agentes_ia_habilitado'         => 'kit.agentes_ia.habilitado',
             'agentes_ia_paineis'            => 'kit.agentes_ia.paineis',
+            // Idem: `App\Support\TutorialGuiado` lê `kit.onboarding.habilitado` por request.
+            'onboarding_habilitado'         => 'kit.onboarding.habilitado',
             'rotulo_da_organizacao'         => 'kit.tenancy.label',
             'rotulo_das_organizacoes'       => 'kit.tenancy.label_plural',
             'ocultar_seletor_unico'         => 'kit.tenancy.ocultar_seletor_unico',

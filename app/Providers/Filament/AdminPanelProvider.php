@@ -10,15 +10,18 @@ use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaRecuperarSenha;
 use App\Filament\Pages\DashboardClassico;
 use App\Filament\Pages\MyProfilePage;
+use App\Filament\Pages\PrimeirosPassos;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use App\Http\Middleware\ExigeTutorialGuiadoLigado;
 use App\Livewire\DefinirSenhaPorEmail;
 use App\Support\AvatarDeIniciais;
 use App\Support\CabecalhoDoPainel;
 use App\Support\CorPrimaria;
 use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
+use App\Support\TutorialGuiado;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
@@ -52,7 +55,6 @@ use MortalKiller\FilamentPageHeader\PageHeaderPlugin;
 use Prodstarter\FilamentNotificationCenter\FilamentNotificationCenterPlugin;
 use pxlrbt\FilamentEnvironmentIndicator\EnvironmentIndicatorPlugin;
 use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
-use Wallacemartinss\FilamentOnboarding\FilamentOnboardingPlugin;
 use Wezlo\FilamentSearchSpotlight\Categories\ActionsCategory;
 use Wezlo\FilamentSearchSpotlight\Categories\RecordsCategory;
 use Wezlo\FilamentSearchSpotlight\FilamentSearchSpotlightPlugin;
@@ -137,6 +139,8 @@ class AdminPanelProvider extends PanelProvider
                 // Par sempre registrado — o decisor é por request (ver AppPanelProvider).
                 Dashboard::class,
                 DashboardClassico::class,
+                // "Primeiros passos" do tutorial guiado — decisor por request (`TutorialGuiado`).
+                PrimeirosPassos::class,
             ])
             ->widgets([
                 AccountWidget::class,
@@ -267,15 +271,18 @@ class AdminPanelProvider extends PanelProvider
                     ->enableIdleTimeout((int) config('lockscreen.idle_timeout'))
                     ->enableRateLimit(limit: 5, decayMinutes: 5, forceLogout: true),
 
-                /**
-                 * AUTORIA das jornadas de onboarding — e só ela: hoje nenhum outro
-                 * painel registra o FilamentOnboardingPlugin. O consumo (launcher e
-                 * tours) vem desligado aqui; nada os liga em nenhum painel ainda.
+                /*
+                 * Tutorial guiado (wiki `onboarding-guiado`) — registrado nos TRÊS painéis, sempre
+                 * (`.ai/rules/providers-filament.md`: a página "Primeiros passos" resolve o plugin
+                 * pelo painel corrente). Quem decide se aparece é `App\Support\TutorialGuiado`,
+                 * por request: interruptor do settings + permissão da página.
                  */
-                FilamentOnboardingPlugin::make()
-                    ->manageFlows((bool) config('filament-onboarding.enabled', true))
-                    ->launcher(false)
-                    ->tours(false),
+                // Aqui, como nos outros dois painéis, o consumo: launcher (o checklist flutuante),
+                // tours e a página "Primeiros passos".
+                // A AUTORIA das jornadas fica em `App\Filament\Admin\Resources\Onboarding` (subclasses
+                // descobertas pelo `discoverResources()`), não no `manageFlows()` do plugin: só
+                // a subclasse esconde o menu do `master_global` com o tutorial desligado.
+                TutorialGuiado::plugin(),
 
                 EnvironmentIndicatorPlugin::make()
                     ->visible(fn (): bool => ! app()->isProduction()),
@@ -443,6 +450,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            // Persistente: reaplicado nos updates Livewire — a tela do onboarding já aberta
+            // recusa a próxima ação quando o tutorial é desligado (wiki `onboarding-guiado`).
+            ->authMiddleware([
+                ExigeTutorialGuiadoLigado::class,
+            ], isPersistent: true);
     }
 }

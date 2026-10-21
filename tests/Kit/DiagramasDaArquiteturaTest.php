@@ -1168,13 +1168,15 @@ it('[CT-56] o extrator acha as três formas de default desligado, só no código
         // feat/estudo-de-pacotes-rodada-3: visões salvas de tabela (o carregamento não é booleano;
         // o compartilhamento mora em config/remember-table.php)
         'KIT_TABELA_VISOES_SALVAS',
+        // feat/onboarding-guiado: o interruptor do tutorial guiado
+        'KIT_ONBOARDING',
     ];
 
     foreach ($esperadas as $chave) {
         test()->assertContains($chave, $doKitPhp, "config/kit.php deveria conter {$chave} extraída como desligada por padrão");
     }
 
-    expect($doKitPhp)->toHaveCount(23, 'piso das 23 chaves — extraído: '.implode(', ', $doKitPhp));
+    expect($doKitPhp)->toHaveCount(24, 'piso das 24 chaves — extraído: '.implode(', ', $doKitPhp));
 
     // Mapa da guarda = extraído (R57 usa exatamente este conjunto).
     expect(array_keys(mapaOptInDaGuarda()))->toEqualCanonicalizing($doKitPhp);
@@ -1214,6 +1216,9 @@ function mapaOptInDaGuarda(): array
         // agentes-ia-no-settings — o catálogo e o chat do Assistente nascem desligados: todo bloco
         // que os desenha cita a chave.
         'KIT_AGENTES_IA'                    => ['AgentesDeIa', 'Agentes de IA', 'AI agents', 'AssistenteChatWidget', 'assistente-chat-widget'],
+        // onboarding-guiado — o tutorial nasce desligado; nenhum diagrama o desenha hoje: a
+        // assinatura existe para o dia em que um desenhar, e aí ele cita a chave.
+        'KIT_ONBOARDING'                    => ['TutorialGuiado', 'tutorial guiado', 'guided tutorial', 'OnboardingSeeder'],
     ];
 }
 
@@ -5493,7 +5498,7 @@ it('[CT-66] a citação de arquivo do kit resolve pelo símbolo, e a de número 
     'real, piso 5, @premissa P-22'                    => ['os comentários reais de Providers/Filament/AppPanelProvider.php', 'aceita, com as cinco citações de email_verified_at conferidas'],
     'número nu que apodrece no próximo edit (A-08 a)' => ['`KitServiceProvider.php:429`', 'recusa: sem símbolo'],
     'símbolo certo, linha velha'                      => ['`KitServiceProvider.php:ver-logs:172`', 'recusa: a linha 172 não contém ver-logs'],
-    'forma certa'                                     => ['`KitServiceProvider.php:ver-logs:465`', 'aceita'],
+    'forma certa'                                     => ['`KitServiceProvider.php:ver-logs:479`', 'aceita'],
 ]);
 
 /*

@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\EntrarNoPainelController;
 use App\Http\Middleware\RaizDeUrlSemPublic;
 use App\Http\Responses\RespostaDeCadastro;
 use App\Http\Responses\RespostaDeLogin;
+use App\Livewire\ChecklistDoOnboarding;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Observers\TenantObserver;
@@ -50,6 +51,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Events\AgentPrompted;
 use Laravel\Ai\Events\AgentStreamed;
+use Livewire\Livewire;
 use MDDev\DynamicDashboard\DashboardModelHelper;
 use MDDev\DynamicDashboard\Models\Dashboard;
 use MDDev\DynamicDashboard\Models\DashboardWidget;
@@ -177,6 +179,18 @@ class KitServiceProvider extends ServiceProvider
         $this->configureTelaDeLogin();
         $this->configureLoginUnificado();
         $this->registrarPainelNoLogDeAcesso();
+        $this->configureChecklistDoOnboarding();
+    }
+
+    /**
+     * O checklist flutuante do tutorial guiado passa a ser a subclasse do kit, que recusa a ação
+     * seguinte quando o tutorial foi desligado com a tela aberta (RQ-30 da wiki
+     * `onboarding-guiado`). Mesmo nome do pacote: o render hook do plugin monta por ele. Os
+     * providers de pacote bootam antes dos da aplicação, então este registro vence o do pacote.
+     */
+    private function configureChecklistDoOnboarding(): void
+    {
+        Livewire::component('filament-onboarding-launcher', ChecklistDoOnboarding::class);
     }
 
     /**

@@ -22,7 +22,9 @@ return [
     |
     */
 
-    'locales' => ['en'],
+    // pt_BR e en: os dois idiomas do kit — o conteúdo semeado (OnboardingSeeder) vem nos dois,
+    // e só os locales listados aqui ficam editáveis na autoria.
+    'locales' => ['pt_BR', 'en'],
 
     /*
     | Locale used when the current one has no content. Defaults to the

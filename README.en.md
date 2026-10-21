@@ -253,6 +253,7 @@ The other two already come complete.
 - Panel Switch: switch panels from the user menu
 - **DTOs with `spatie/laravel-data`**: every structured value crossing a class boundary is a typed object, with an automated guard — credentials never go into a DTO, and API consumption/responses require one ([details](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/dto-com-laravel-data.html))
 - **Shortcut dock** (off by default): floating button with up to 10 favourites per user, from any panel, managed in a slideover; needs the `Usar:Dock` permission ([details](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/dock-de-atalhos.html) · [animation](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-de-atalhos.gif))
+- **Guided tutorial** (off by default): getting-started journeys across all three panels, with a floating checklist and tours per feature; seeding creates the content, and the switch on the settings screen enables usage ([details](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/tutorial-guiado.html))
 - **Optional anti-robot protection** (off by default): reCAPTCHA v2/v3, Turnstile or hCaptcha on the login, password reset and register screens, via `ddr/filament-captcha` ([details](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/protecao-anti-robo.html))
 - **Single login page** (off by default): `KIT_LOGIN_UNIFICADO=true` sends `/admin/login`, `/infra/login` and `/app/login` to `/login`; whoever can access one panel goes straight in, whoever can access more than one picks from a card screen after signing in. **Heads-up**: external SSO (SAML / corporate OIDC) is not pre-configured yet and does not go through that rule — see [the docs page](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/login-unificado.html)
 - **Social login per panel**: each provider can be enabled separately for `/app`, `/admin` and `/infra`; button, route and destination respect the panel of origin
@@ -309,7 +310,7 @@ navigation: **[https://gsferro.github.io/filament-starter-kit-easy/en/](https://
 |---|---|
 | [Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/) | advanced install, database, commands, customisation, and how to update a project born from the kit |
 | [Authentication](https://gsferro.github.io/filament-starter-kit-easy/en/autenticacao/) | invitations, open registration, social login, anti-robot protection, user states |
-| [Features](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/) | multi-tenancy, attachments and media, CSV import/export, `/infra` trails, kit settings, card hub, shortcut dock, saved table views and continuous loading, DTOs with Laravel Data |
+| [Features](https://gsferro.github.io/filament-starter-kit-easy/en/recursos/) | multi-tenancy, attachments and media, CSV import/export, `/infra` trails, kit settings, card hub, shortcut dock, saved table views and continuous loading, guided tutorial, DTOs with Laravel Data |
 | [Operations](https://gsferro.github.io/filament-starter-kit-easy/en/operacao/) | AI agents, the complete feature roadmap, conventions, what to do after creating a Resource |
 | [Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/) | code quality, search and language, the 82 installed packages |
 
@@ -435,6 +436,8 @@ php artisan kit:install --custom   # redoes only name and colour, without touchi
 php artisan kit:install --no-custom   # installs without asking anything
 php artisan kit:install --no-npm      # skips installing and building the front-end assets
 php artisan kit:install --no-seed     # doesn't seed the database (roles, initial user, AI agents)
+php artisan kit:install --onboarding  # seeds the guided tutorial without prompting; leaves the switch off
+php artisan db:seed --class=OnboardingSeeder # seeds the tutorial later; enable it in settings
 php artisan kit:install --no-support  # skips the invitation to star the kit on GitHub
 #   --create-project is internal to post-create-project-cmd: removes what only serves the kit's own repository
 php artisan kit:admin             # changes the administrator's e-mail and password (asks for confirmation)

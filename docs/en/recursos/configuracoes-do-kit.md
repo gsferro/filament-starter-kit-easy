@@ -20,7 +20,7 @@ Filament (`?tab=…::data::tab`); an old link in that format does not break, it 
 | **Tabelas** (tables) | rows per page, striped rows, recall of the user's filter/search/sort, draggable columns, **table loading** (pagination, infinite scroll or a "Load more" button), **saved views** and their sharing — the defaults for **every** table in all three panels ([details](../visoes-de-tabela-e-carregamento/)) | Paginação e aparência (pagination and appearance); Carregamento e visões (loading and views) |
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) | Cadastro sem convite (registration and approval); E-mail verificado (e-mail verification) |
 | **Login** | the single login page at `/login` ([details](../../autenticacao/login-unificado/)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../../autenticacao/login-social/)) | Página única de login (single login page); Login social (with a section per provider); Proteção anti-robô (bot protection); Rodapé da tela de login (login footer) |
-| **Aplicação** (application) | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), the **AI agents** (the usage switch and the panels of the Assistant chat), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable | Comportamento dos painéis (panel behaviour); Dashboard dinâmico (dynamic dashboard); Dock de atalhos (shortcut dock); Agentes de IA (AI agents); Organizações (organisations) |
+| **Aplicação** (application) | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), the **AI agents** (the usage switch and the panels of the Assistant chat), the **guided tutorial** (checklist, tours and authoring), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable | Comportamento dos painéis (panel behaviour); Dashboard dinâmico (dynamic dashboard); Dock de atalhos (shortcut dock); Agentes de IA (AI agents); Tutorial guiado (guided tutorial); Organizações (organisations) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
 
@@ -230,6 +230,27 @@ chat was fixed on `/app`; now it can live in any panel, and a chat already open 
 off refuses the next message with 404. Who opens the catalog is still decided by the
 `ViewAny:AgenteIa` permission: the switch is one more condition, not a replacement for it.
 
+## The guided tutorial: seeding and enabling are separate choices
+
+Still on the **Aplicação** tab, the *Tutorial guiado* section enables the getting-started journeys
+across all three panels ([how it works](../tutorial-guiado/)):
+
+| Option | What it defines | Ships as |
+|---|---|---|
+| **Usar o tutorial guiado** (use the guided tutorial) | on, shows the floating checklist, tours, *Primeiros passos* page and authoring screens; off, the *Onboarding* and *Condições* menus disappear from `/admin` and their URLs return **404** (even for users with the permission), the *Jornadas de onboarding concluídas* widget disappears from the `/admin` dashboard, and the checklist, tours and *Primeiros passos* page appear in no panel | **off** |
+
+The switch is seeded by `KIT_ONBOARDING` (`config/kit.php` → `onboarding.habilitado`), set to
+`false` in `.env.example`. As in the rest of the tab, the database wins over `.env`. There is no
+panel list: each journey declares its own. Turning it off deletes nothing; turning it back on
+restores progress. A checklist already open refuses the next action while usage is off, saving
+nothing.
+
+**Seeding does not turn the switch on.** Run `php artisan db:seed --class=OnboardingSeeder` (or use
+`kit:install --onboarding` during installation) to create the content, and enable usage on this
+screen. The two can be done in either order. Seeing the tutorial still requires the
+`View:OnboardingProgress` permission; authoring follows `ViewAny:OnboardingFlow` and
+`ViewAny:OnboardingCondition`.
+
 ## A selector for people with nothing to switch to
 
 With multi-organization enabled, the *Organizações* section on the **Aplicação** tab has *Ocultar o seletor quando houver uma
@@ -268,11 +289,11 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:629`), called at boot by
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:640`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:430`); the overridden keys are exactly
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:444`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:460`) — `KIT_TENANCY`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:469`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:414`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:

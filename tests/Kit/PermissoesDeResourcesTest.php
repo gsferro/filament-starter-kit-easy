@@ -2,6 +2,8 @@
 
 use App\Filament\Admin\Resources\AgentesIa\AgenteIaResource;
 use App\Filament\Admin\Resources\Convites\ConviteResource;
+use App\Filament\Admin\Resources\Onboarding\CondicaoResource;
+use App\Filament\Admin\Resources\Onboarding\JornadaResource;
 use App\Filament\Admin\Resources\Roles\RoleResource;
 use App\Filament\Admin\Resources\Tenants\TenantResource;
 use App\Filament\Admin\Resources\Users\UserResource;
@@ -18,8 +20,6 @@ use Illuminate\Support\Facades\Gate;
 use Tapp\FilamentAuditing\Filament\Resources\Audits\AuditResource;
 use Tapp\FilamentAuthenticationLog\Resources\AuthenticationLogResource;
 use Tapp\FilamentMailLog\Resources\MailLogResource;
-use Wallacemartinss\FilamentOnboarding\Resources\OnboardingConditions\OnboardingConditionResource;
-use Wallacemartinss\FilamentOnboarding\Resources\OnboardingFlows\OnboardingFlowResource;
 
 /**
  * A permissão `ViewAny:{Model}` decide o acesso a TODO resource dos painéis globais — de fato.
@@ -53,6 +53,8 @@ beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
     // O catálogo `/admin/agentes-ia` só existe com o uso de agentes ligado (feature `agentes-ia-no-settings`).
     ligarAgentesDeIa();
+    // A autoria do onboarding só existe com o tutorial guiado ligado (feature `onboarding-guiado`).
+    ligarTutorialGuiado();
 });
 
 /**
@@ -69,8 +71,8 @@ function resourcesDosPaineisGlobais(): array
         'admin: Convite'             => ['admin', ConviteResource::class],
         'admin: Role'                => ['admin', RoleResource::class],
         'admin: User'                => ['admin', UserResource::class],
-        'admin: OnboardingFlow'      => ['admin', OnboardingFlowResource::class],
-        'admin: OnboardingCondition' => ['admin', OnboardingConditionResource::class],
+        'admin: OnboardingFlow'      => ['admin', JornadaResource::class],
+        'admin: OnboardingCondition' => ['admin', CondicaoResource::class],
         'admin: Exception'           => ['admin', ExceptionResource::class],
         'infra: AiRun'               => ['infra', AiRunResource::class],
         'infra: QueueMonitor'        => ['infra', QueueMonitorResource::class],

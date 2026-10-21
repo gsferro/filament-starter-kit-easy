@@ -1154,6 +1154,20 @@ class ConfiguracoesDoKit extends SettingsPage
                         ->visible(fn (Get $get): bool => (bool) $get('agentes_ia_habilitado')),
                 ]),
 
+            /*
+             * Tutorial guiado (wiki `onboarding-guiado`). Só o interruptor: cada jornada declara o
+             * painel dela (RQ-22). Lido por REQUEST em `App\Support\TutorialGuiado`, via config
+             * sobreposta pelo banco no boot — salvar vale no próximo F5.
+             */
+            $this->secao('aplicacao', 'tutorial-guiado', 'Tutorial guiado', 'heroicon-o-map')
+                ->description('Checklist flutuante, tours e a página "Primeiros passos" nos três painéis, com a autoria das jornadas no /admin. Nasce desligado.')
+                ->columnSpanFull()
+                ->schema([
+                    Toggle::make('onboarding_habilitado')
+                        ->label('Usar o tutorial guiado')
+                        ->helperText('Desligado (padrão), a autoria ("Onboarding" e "Condições") some do menu do /admin e a URL dela responde 404, mesmo para quem tem a permissão; o checklist, os tours e a página "Primeiros passos" não aparecem em painel nenhum. As jornadas vêm do seeder (php artisan db:seed --class=OnboardingSeeder), que não liga este interruptor. Nada é apagado ao desligar.'),
+                ]),
+
             $this->secao('aplicacao', 'organizacoes', 'Organizações', 'heroicon-o-building-office-2')
                 ->schema([
                     TextInput::make('rotulo_da_organizacao')

@@ -253,6 +253,7 @@ dois já vêm completos.
 - Panel Switch: troca de painel pelo menu do usuário
 - **DTO com `spatie/laravel-data`**: todo dado estruturado que cruza fronteira de classe é objeto tipado, com guarda automático — credencial não entra em DTO, e consumo/resposta de API exige um ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/dto-com-laravel-data.html))
 - **Dock de atalhos** (desligado por default): botão flutuante com até 10 favoritos por usuário, de qualquer painel, gerenciados num slideover; exige a permissão `Usar:Dock` ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/dock-de-atalhos.html) · [animação](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-de-atalhos.gif))
+- **Tutorial guiado** (desligado por default): jornadas de primeiros passos nos três painéis, com checklist flutuante e tours por feature; semear cria o conteúdo, e o interruptor na tela de configurações liga o uso ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/tutorial-guiado.html))
 - **Proteção anti-robô opcional** (desligada por default): reCAPTCHA v2/v3, Turnstile ou hCaptcha nas telas de login, recuperação de senha e registro, via `ddr/filament-captcha` ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/protecao-anti-robo.html))
 - **Página única de login** (desligada por default): `KIT_LOGIN_UNIFICADO=true` leva `/admin/login`, `/infra/login` e `/app/login` a `/login`; quem acessa um painel entra direto, quem acessa mais de um escolhe numa tela de cartões depois de entrar. **Atenção**: SSO externo (SAML/OIDC corporativo) ainda não é pré-configurado e não passa por essa regra — ver [a página de docs](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/login-unificado.html)
 - **Login social por painel**: cada provedor pode ser liberado separadamente em `/app`, `/admin` e `/infra`; botão, rota e destino respeitam o painel de origem
@@ -309,7 +310,7 @@ navegação: **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https:/
 |---|---|
 | [Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/) | instalação avançada, banco, comandos, personalização, e como atualizar um projeto que já nasceu do kit |
 | [Autenticação](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/) | convites, registro aberto, login social, proteção anti-robô, estados do usuário |
-| [Recursos](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/) | multi-tenancy, anexos e mídia, import/export CSV, trilhas do `/infra`, configurações do kit, hub de cartões, dock de atalhos, visões salvas e carregamento contínuo de tabela, DTO com Laravel Data |
+| [Recursos](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/) | multi-tenancy, anexos e mídia, import/export CSV, trilhas do `/infra`, configurações do kit, hub de cartões, dock de atalhos, visões salvas e carregamento contínuo de tabela, tutorial guiado, DTO com Laravel Data |
 | [Operação](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/) | agentes de IA, roteiro completo de features, convenções, o que fazer depois de criar um Resource |
 | [Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/) | qualidade de código, busca e idioma, os 82 pacotes instalados |
 
@@ -434,6 +435,8 @@ php artisan kit:install --custom   # refaz só nome e cor, sem tocar no banco
 php artisan kit:install --no-custom   # instala sem perguntar nada
 php artisan kit:install --no-npm      # pula a instalação e o build dos assets front-end
 php artisan kit:install --no-seed     # não popula o banco (papéis, usuário inicial, agentes de IA)
+php artisan kit:install --onboarding  # semeia o tutorial guiado sem perguntar; não liga o interruptor
+php artisan db:seed --class=OnboardingSeeder # semeia o tutorial depois; ligue nas configurações
 php artisan kit:install --no-support  # pula o convite para dar uma estrela ao kit no GitHub
 #   --create-project é uso interno do post-create-project-cmd: apaga o que só serve ao repositório do kit
 php artisan kit:admin             # troca e-mail e senha do administrador (pede confirmação)

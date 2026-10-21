@@ -20,7 +20,7 @@ Filament (`?tab=…::data::tab`); um link antigo nesse formato não quebra, só 
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário, colunas arrastáveis, **carregamento da tabela** (paginação, rolagem infinita ou botão "Carregar mais"), **visões salvas** e o compartilhamento delas — os defaults de **toda** tabela dos três painéis ([detalhes](../visoes-de-tabela-e-carregamento/)) | Paginação e aparência; Carregamento e visões |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) | Cadastro sem convite (cadastro e aprovação); E-mail verificado (validação de e-mail) |
 | **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) | Página única de login; Login social (com uma seção por provedor); Proteção anti-robô; Rodapé da tela de login |
-| **Aplicação** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), os **agentes de IA** (o interruptor do uso e os painéis do chat do Assistente), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível | Comportamento dos painéis; Dashboard dinâmico; Dock de atalhos; Agentes de IA; Organizações |
+| **Aplicação** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), os **agentes de IA** (o interruptor do uso e os painéis do chat do Assistente), o **tutorial guiado** (checklist, tours e autoria), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível | Comportamento dos painéis; Dashboard dinâmico; Dock de atalhos; Agentes de IA; Tutorial guiado; Organizações |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
@@ -224,6 +224,25 @@ pode estar em qualquer painel, e um chat já aberto quando o uso é desligado re
 com 404. Quem abre o catálogo continua sendo definido pela permissão `ViewAny:AgenteIa`: o interruptor
 é uma condição a mais, não substitui a permissão.
 
+## O tutorial guiado: semear e ligar são escolhas separadas
+
+Ainda na aba **Aplicação**, a seção *Tutorial guiado* liga as jornadas de primeiros passos nos
+três painéis ([como funciona](../tutorial-guiado/)):
+
+| Opção | O que define | Nasce |
+|---|---|---|
+| **Usar o tutorial guiado** | ligado, mostra o checklist flutuante, os tours, a página *Primeiros passos* e a autoria; desligado, os menus *Onboarding* e *Condições* somem do `/admin` e suas URLs respondem **404** (mesmo para quem tem a permissão), o widget *Jornadas de onboarding concluídas* some do dashboard do `/admin` e o checklist, os tours e a página *Primeiros passos* não aparecem em painel nenhum | **desligado** |
+
+O interruptor nasce da variável `KIT_ONBOARDING` (`config/kit.php` → `onboarding.habilitado`),
+com `false` no `.env.example`. Como no restante da aba, o banco vence o `.env`. Não há lista de
+painéis: cada jornada declara o seu. Nada é apagado ao desligar; ao religar, o progresso volta.
+Um checklist já aberto recusa a próxima ação enquanto o uso estiver desligado, sem gravar nada.
+
+**Semear não liga o interruptor.** Rode `php artisan db:seed --class=OnboardingSeeder` (ou use
+`kit:install --onboarding` na instalação) para criar o conteúdo e ligue o uso nesta tela. As duas
+coisas podem ser feitas em qualquer ordem. Quem vê o tutorial continua precisando da permissão
+`View:OnboardingProgress`; a autoria segue `ViewAny:OnboardingFlow` e `ViewAny:OnboardingCondition`.
+
 ## Um seletor para quem não tem o que trocar
 
 Com a multi-organização ligada, a seção *Organizações* da aba **Aplicação** tem *Ocultar o seletor quando houver uma
@@ -261,11 +280,11 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:629`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:640`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:430`); as chaves sobrepostas são
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:444`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:460`) — `KIT_TENANCY`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:469`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:414`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:

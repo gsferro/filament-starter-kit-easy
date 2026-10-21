@@ -42,6 +42,8 @@ it('abre as telas autenticadas do painel', function (array $rotas): void {
     $this->actingAs(usuarioDoKit('master_global'));
     // `/admin/agentes-ia` só existe com o uso de agentes ligado (feature `agentes-ia-no-settings`).
     ligarAgentesDeIa();
+    // A autoria do onboarding e `/{painel}/onboarding` só existem com o tutorial guiado ligado.
+    ligarTutorialGuiado();
 
     visit(array_values(array_diff($rotas, ['/admin/agentes-ia/create'])))->assertNoJavaScriptErrors();
 })->with(collect(telasDoKit())->map(fn (array $rotas): array => [$rotas])->all());
