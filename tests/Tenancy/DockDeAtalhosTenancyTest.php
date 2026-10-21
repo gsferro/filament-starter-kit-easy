@@ -11,11 +11,20 @@ use App\Support\Paineis;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
-use Filament\Pages\Page;
 use Filament\Resources\Resource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Tenancy\Fixtures\PaginaComFalhaDeAcessoDoDock;
+use Tests\Tenancy\Fixtures\PaginaTetoDock1;
+use Tests\Tenancy\Fixtures\PaginaTetoDock2;
+use Tests\Tenancy\Fixtures\PaginaTetoDock3;
+use Tests\Tenancy\Fixtures\PaginaTetoDock4;
+use Tests\Tenancy\Fixtures\PaginaTetoDock5;
+use Tests\Tenancy\Fixtures\PaginaTetoDock6;
+use Tests\Tenancy\Fixtures\PaginaTetoDock7;
+use Tests\Tenancy\Fixtures\PaginaTetoDock8;
+use Tests\Tenancy\Fixtures\PaginaTetoDock9;
 
 /**
  * O dock de atalhos — a suíte multi-organização (`permission.teams` ligado).
@@ -258,17 +267,6 @@ it('[CT-28] slideover recusa chave de organização sem vínculo ou inexistente'
     expect(atalhosGravados($usuario))->toBe([$chaves['PA']]);
 })->with(['IDOR' => ['sem vínculo'], 'sem organização' => ['sem organização'], 'inexistente' => ['inexistente']]);
 
-class PaginaComFalhaDeAcessoDoDock extends Page
-{
-    public static ?string $painelAvaliado = null;
-
-    public static function canAccess(): bool
-    {
-        static::$painelAvaliado = Filament::getCurrentPanel()->getId();
-        throw new RuntimeException('Falha de acesso deliberada do CT-29');
-    }
-}
-
 it('[CT-29] avaliação de favoritos preserva painel organização team e permissão do request', function (string $favorito): void {
     $acme   = tenant('Acme', 'acme');
     $globex = tenant('Globex', 'globex');
@@ -447,16 +445,6 @@ it('[CT-58] admin oculta favorito de organização desvinculada sem apagá-lo', 
         ->assertDontSee(ProjetoResource::getUrl('index', panel: 'app', tenant: $globex), false);
     expect(atalhosGravados($usuario))->toBe([$chaves['PA'], $chaves['PG']]);
 });
-
-class PaginaTetoDock1 extends Page {}
-class PaginaTetoDock2 extends Page {}
-class PaginaTetoDock3 extends Page {}
-class PaginaTetoDock4 extends Page {}
-class PaginaTetoDock5 extends Page {}
-class PaginaTetoDock6 extends Page {}
-class PaginaTetoDock7 extends Page {}
-class PaginaTetoDock8 extends Page {}
-class PaginaTetoDock9 extends Page {}
 
 it('[CT-61] favorito de organização sem acesso fica fora dos escolhidos e das opções', function (): void {
     ['acme' => $acme, 'globex' => $globex, 'usuario' => $usuario, 'chaves' => $chaves] = arranjarFavoritosDoDockTenancy();

@@ -30,6 +30,8 @@ return [
         'missing_permissions' => 'Missing permission|Missing permissions',
         'missing_roles' => 'Missing role|Missing roles',
         'permission_kind' => 'Guards',
+        'page_permission' => 'Page permission',
+        'page_permission_held' => 'You hold this one — the denial came from somewhere else.',
         'reason' => 'Reason',
         'support_prompt' => 'Need help? Contact',
         'support_word' => 'support',

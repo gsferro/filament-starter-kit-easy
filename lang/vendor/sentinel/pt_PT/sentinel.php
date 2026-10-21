@@ -30,6 +30,8 @@ return [
         'missing_permissions' => 'Permissão em falta|Permissões em falta',
         'missing_roles' => 'Papel em falta|Papéis em falta',
         'permission_kind' => 'Protege',
+        'page_permission' => 'Permissão da página',
+        'page_permission_held' => 'Tem esta permissão — a recusa veio de outro sítio.',
         'reason' => 'Motivo',
         'support_prompt' => 'Precisa de ajuda? Contacte o',
         'support_word' => 'suporte',

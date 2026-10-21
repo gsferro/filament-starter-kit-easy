@@ -14,6 +14,7 @@ use Filament\Panel;
 use Filament\Resources\Pages\Page as PaginaDeResource;
 use Filament\Resources\Resource;
 use Filament\Support\Contracts\HasLabel;
+use Filament\Support\Facades\FilamentAsset;
 use HoceineEl\QuickActionDock\Enums\DockLayout;
 use HoceineEl\QuickActionDock\Enums\DockStyle;
 use HoceineEl\QuickActionDock\QuickActionDockPlugin;
@@ -22,6 +23,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Stringable;
 use Throwable;
 use UnitEnum;
 use WeakMap;
@@ -84,8 +86,73 @@ final class DockDeAtalhos
     /** O pacote que monta o dock, como o `kit:update` o relata a quem atualiza. */
     public const PACOTE = 'hoceineel/filament-quick-action-dock';
 
+    /**
+     * A cópia corrigida do bundle do pacote, servida no lugar do `dist/` (relativo a `public/`).
+     *
+     * O pacote mede o viewport como `{width: documentElement.clientWidth, height: window.innerHeight}`
+     * (função `b()` de `vendor/hoceineel/filament-quick-action-dock/dist/quick-action-dock.js`) — e o
+     * dock `fixed` vive no layout viewport, o `clientHeight`. Num Chrome desktop medido o
+     * `innerHeight` veio 867 (= `outerHeight`) com a área visível de 780: cada reposicionamento levava
+     * o `bottom-center` a y = 787, fora da tela ("nasce e some"). A cópia é o `dist/` instalado com
+     * UMA substituição, `TRECHO_DO_PACOTE` → `TRECHO_CORRIGIDO`, e cobre os três chamadores de `b()`
+     * (o `env()` do componente, o `apply()`, que decide a direção do menu, e o `prePlace` do primeiro
+     * paint). Ver `wikis/specs/fix/dock-altura-do-viewport/`; issue e PR upstream:
+     * HoceineEl/filament-quick-action-dock#2 e #3.
+     */
+    public const SCRIPT_CORRIGIDO = 'js/kit/quick-action-dock.js';
+
+    /** O trecho do bundle do pacote que mede a altura pelo `innerHeight` — aparece uma vez. */
+    public const TRECHO_DO_PACOTE = 'height:window.innerHeight}';
+
+    /** O mesmo trecho medido pela área visível, como a largura já é. */
+    public const TRECHO_CORRIGIDO = 'height:document.documentElement.clientHeight||window.innerHeight}';
+
     /** @var WeakMap<Request, array<string, mixed>>|null */
     private static ?WeakMap $memo = null;
+
+    /**
+     * Faz o asset do pacote apontar para a cópia corrigida (`SCRIPT_CORRIGIDO`).
+     *
+     * O `AssetManager` do Filament não troca registro: um segundo `FilamentAsset::register()` com o
+     * mesmo id ACRESCENTA, e o bundle subiria duas vezes. Por isso o kit não registra nada — muda o
+     * `html()` do `DockScript` que o pacote já registrou, e um `html` sem `<script` é usado como `src`
+     * (`Filament\Support\Assets\Js::getHtml()`). Chamado do `KitServiceProvider::boot()`, depois do
+     * `packageBooted()` do pacote. Sem o pacote, ou sem a cópia, nada muda.
+     *
+     * O `src` é calculado na RENDERIZAÇÃO, não aqui: no boot não há request garantido, e o `asset()`
+     * congelaria o `APP_URL` — atrás de proxy, num host diferente ou no servidor de teste do
+     * `pest-plugin-browser` (`127.0.0.1:porta`), o script não carregaria e o dock nunca seria
+     * posicionado (`.ai/rules/app.md`, a mesma família de URL congelada).
+     */
+    public static function servirScriptCorrigido(): void
+    {
+        if (! self::pacoteInstalado() || ! is_file(public_path(self::SCRIPT_CORRIGIDO))) {
+            return;
+        }
+
+        foreach (FilamentAsset::getScripts([self::PACOTE]) as $script) {
+            if ($script->getId() === 'quick-action-dock') {
+                $script->html(new class implements Htmlable, Stringable
+                {
+                    public function toHtml(): string
+                    {
+                        return DockDeAtalhos::srcDoScriptCorrigido();
+                    }
+
+                    public function __toString(): string
+                    {
+                        return $this->toHtml();
+                    }
+                });
+            }
+        }
+    }
+
+    /** A URL da cópia corrigida no host do request corrente, versionada pelo conteúdo. */
+    public static function srcDoScriptCorrigido(): string
+    {
+        return asset(self::SCRIPT_CORRIGIDO).'?v='.substr((string) md5_file(public_path(self::SCRIPT_CORRIGIDO)), 0, 8);
+    }
 
     /**
      * O pacote do dock está instalado?
