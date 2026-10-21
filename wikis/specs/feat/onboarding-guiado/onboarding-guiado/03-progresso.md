@@ -23,7 +23,7 @@
 - [x] Permissão da página de progresso na matriz de papéis — `View:PrimeirosPassos` gerada pelo Shield para a Page do kit (`PermissoesDeTelasTest`; CT-47/CT-62 usam `semAPermissao(..., 'View:PrimeirosPassos')`), 2026-10-21
 
 ## 4. Condições em código
-- [x] `tem_dois_fatores` e as sete condições de visibilidade no `->conditions()` do plugin — `app/Support/TutorialGuiado.php:tem_dois_fatores:93`; visibilidade como `tela:{chave}` + quatro sem tela (desvio P-11..P-13), 2026-10-21
+- [x] `tem_dois_fatores` e as condições de visibilidade no `->conditions()` do plugin *(alterado em 2026-10-21: QA-01 — eram sete; viraram `tela:{chave}` mais quatro sem tela)* — `app/Support/TutorialGuiado.php:tem_dois_fatores:93`; visibilidade como `tela:{chave}` + quatro sem tela (desvio P-11..P-13), 2026-10-21
 
 ## 5. Seeders: pai, base e filhos
 - [x] `SeederDeOnboarding` (base) e `OnboardingSeeder` (pai, `FILHOS`, `FILHOS_DE_TENANCY`, `TELAS`, `ISENTAS`) — `database/seeders/Onboarding/SeederDeOnboarding.php`, `database/seeders/OnboardingSeeder.php`, 2026-10-21
@@ -35,7 +35,7 @@
 
 ## 7. Rule e teste de inventário
 - [x] `.ai/rules/onboarding.md` e linha no índice — `.ai/rules/index.md` linha 20, 2026-10-21
-- [x] `tests/Kit/InventarioDeOnboardingTest.php` — arquivo presente, verde no `--filter=Onboarding` (291/291), 2026-10-21
+- [x] `tests/Kit/InventarioDeOnboardingTest.php` — arquivo presente, verde no `--filter=Onboarding` (293/293, reproduzido pelo quality gate no ciclo 1), 2026-10-21
 
 ## 8. Documentação
 - [x] `docs/{pt,en}/recursos/tutorial-guiado.md` e índices — os dois arquivos presentes; reconciliados no step 10 (RD2-02), 2026-10-21
@@ -62,10 +62,10 @@ IDs por arquivo, derivados por `grep -o "\[CT-B\?[0-9]*\]"` em 2026-10-21 (71 CT
 - [x] `/ponytail:ponytail-review` no diff — `/ponytail-review` (o comando sem o namespace é o que a instalação expõe) sobre o diff das correções: 1 corte (`! method_exists(..., 'canEdit') ||`), aplicado; `net: -0 lines`, 2026-10-21
 - [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"fixed"}` (TutorialGuiado.php), 2026-10-21
 - [x] `vendor/bin/filacheck --fix` — `All 17 rules passed!`, 2026-10-21
-- [x] `vendor/bin/pest --filter=Onboarding --compact` — `{"result":"passed","tests":291,"passed":291}` + CT-70/71 3/3, 2026-10-21
+- [x] `vendor/bin/pest --filter=Onboarding --compact` — `{"result":"passed","tests":293,"passed":293,"assertions":3110}` (com o CT-70 reescrito e o CT-71; o 291 anterior era de antes deles — QA-02), 2026-10-21
 - [x] `vendor/bin/pest --parallel --tia`: nada mais quebrou além da baseline de `main` — suíte inteira sem `--tia` (mede mais que o TIA): `vendor/bin/pest --parallel --exclude-testsuite=Browser` → `{"result":"passed","tests":5321,"passed":5318,"skipped":3,"risky":2}`; browser da feature em série (`OnboardingGuiadoTest` + `TelasDoKitTest`) 9/9. Com `--parallel`, o browser dá 132 erros `playwright-server.json: No such file` (ambiente: o plugin não sobe o servidor em paralelo) — o browser inteiro roda em série, 2026-10-21
 - [x] `/code-review high main...HEAD` + passe de eixos (step 9) — rodada 1 (CR-01..10, RD-01..04) e rodada 2 (CR2-01..09, RD2-01..04), despachos 14, 15, 19, 20, 2026-10-21
-- [x] Desvios propagados ao `01`/`02`/`04`/`05` — `01` (D7b, D12, Channel de Log, Superfície de UI com as subclasses), `02` (Superfície Livewire com `updatedFlowKey`), `04` (R30, R32, CT-27 linha 17), `05` (Desenhado × Implementado), 2026-10-21
+- [x] Desvios propagados ao `01`/`02`/`04`/`05` — `01` (D7b, D13, Channel de Log, Superfície de UI com as subclasses), `02` (Superfície Livewire com `updatedFlowKey`), `04` (R30, R32, CT-27 linha 17), `05` (Desenhado × Implementado), 2026-10-21
 - [x] `rastreabilidade.sh` silencioso — exit 0, sem saída, 2026-10-21
 - [x] `checkbox-sem-evidencia.sh` silencioso — exit 0, sem saída, 2026-10-21
 - [x] `citacoes.sh` silencioso — `citacoes.sh` exit 0 após corrigir 6 linhas deslocadas, 2026-10-21
@@ -132,7 +132,9 @@ Rodada 2 encerra o teto de 2 do step 9: nenhum achado estrutural; os dois de fro
 
 ## Quality Gate
 
-<!-- Preenchido no step 11. -->
+| Ciclo | Data | Veredito | Achados | Destino | O que mudou |
+|---|---|---|---|---|---|
+| 1 | 2026-10-21 | REPROVADO → especificação | 0 Blocker · 2 Major (QA-01, QA-02) · 4 Minor (QA-03..06) · 1 Cosmético (QA-07); 7 dimensões não verificadas (app na URL informada não era o kit) | 1 (wiki) | QA-01: `01` passos 3/4/5 e `03` com as condições reais; QA-02: 293/293; QA-03: coluna `Arquivo` do índice do `04`; QA-04: origens do `08`; QA-05: `.ai/rules/onboarding.md` (chave nova + `visibility_condition`); QA-06: glossário (Tutorial guiado, Jornada, Passo); QA-07: D13, D9, Adendo 3. Ambiente do ciclo 2: SQLite descartável no scratchpad, kit em `http://127.0.0.1:8011`, tutorial ligado e semeado |
 
 ## Candidatos a Rule
 
@@ -205,11 +207,13 @@ Roteiro manual: sim — 2026-10-21 — resposta a Q9 — tours, checklist e pág
 | 15 | 9 | `/code-review high main...HEAD` (sub-agente nativo) | herdado | conversa | CR-01..10 | — (idem) | CR-01 reproduzido pelo CT-66 vermelho; CR-07 conferido no `composer.json` |
 | 16 | 10 | `fw-executor-ctb` — CT-B do onboarding | herdado | `01`, `02`, conversa | `tests/Browser/OnboardingGuiadoTest.php` (untracked) | — (idem) | pendente: rodar no step 10 |
 | 17 | 9 | `general-purpose` do #7 (`SendMessage`) — CT-66..70 para os achados | opus | idem 7 | R28–R32, CT-66..70, M177–M191 | — (idem) | regras e mutantes lidos no `04` |
-| 18 | 9 | `fw-executor-ct` do #10 (`SendMessage`) — testes dos CT-66..70 | sonnet | `01`, `02`, conversa | CT-66..70 nos três arquivos `tests/Kit/OnboardingGuiado*` | — (idem) | vermelhos antes das correções (TDD); verdes depois: `pest --filter=Onboarding` 291/291, 2026-10-21 |
+| 18 | 9 | `fw-executor-ct` do #10 (`SendMessage`) — testes dos CT-66..70 | sonnet | `01`, `02`, conversa | CT-66..70 nos três arquivos `tests/Kit/OnboardingGuiado*` | — (idem) | vermelhos antes das correções (TDD); verdes depois: `pest --filter=Onboarding` 291/291, 2026-10-21 (antes do CT-70 reescrito e do CT-71; hoje 293/293) |
 | 19 | 9 | `fw-revisor-diff` — rodada 2, correções não commitadas | herdado | `01`, `03`, conversa | RD2-01..04 | 122 295 tokens · 483 s | `git status` e hashes (sha1) dos arquivos tocados iguais antes/depois; RD2-03 conferido em `KitUpdate::aplicar()` (checkout do arquivo inteiro) |
 | 20 | 9 | `/code-review high` — rodada 2 (diff não commitado) | nativo | conversa | CR2-01..09 | 102 565 tokens · 231 s | CR2-01 conferido no helper (sem `assertOk`); CR2-02 confirmado pela `.ai/rules/commands.md` (1ª rodada roda a classe antiga) |
 | 21 | 9 | `general-purpose` + `feature-test-design` — re-derivação de R32 pela P-24 reescrita | opus | `01`, `02`, `03`, código, conversa | CT-70 reescrito, CT-71 novo, M190–M195, Q?1 → Q29 | 120 855 tokens · 214 s | contagens refeitas por `grep -c` (71 cenários, 32 regras, 192 mutantes) |
 | 22 | 9 | `fw-executor-ct` — CT-70 e CT-71 | herdado | `01`, `02`, conversa | 1 verde, 2 vermelhos (b) antes da correção | 83 532 tokens · 80 s | saída do pest conferida; `app/` e `config/` intactos (`git diff --stat`) |
+| 23 | 10 | `general-purpose` — veredito de conformidade com rules | sonnet | `01`, `03`, conversa | 16 rules, 2 violações (`specs.md`, `testes.md`) | 156 477 tokens · 799 s | violações reproduzidas (`CitacoesDeCodigoTest` vermelho; `not->toContain` com mensagem lido) e corrigidas pela sessão |
+| 24 | 11 | `fw-qa-gate` — ciclo 1 | herdado | conversa | `06` (REPROVADO → especificação) | 270 313 tokens · 1175 s | `git status --porcelain` vazio antes e depois; `06` gravado só com o conteúdo entre os delimitadores; QA-02 reproduzido (293) |
 | 5 | 3 | `Explore` — greps da Superfície Livewire do pacote | haiku | conversa | 4 greps colados, tabela das ações do checklist | 51 891 tokens · 56 s | `findStepState()` e `$flowKey` do trait lidos; revelou o caso do checklist já aberto (Q10) |
 
 ## Blockers

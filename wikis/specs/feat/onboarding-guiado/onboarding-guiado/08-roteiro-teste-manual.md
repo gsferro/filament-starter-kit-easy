@@ -2,7 +2,7 @@
 
 > **Para quem**: revisor do PR e quem homologa o tutorial antes da release
 > **Requisito/Casos**: [00-requisito.md](00-requisito.md) · [04-casos-de-teste.md](04-casos-de-teste.md) · [05-casos-de-teste-browser.md](05-casos-de-teste-browser.md)
-> **Base**: 9b4ad23c + correções do step 9 (não commitadas) · 2026-10-21
+> **Base**: 259732f8 (correções do step 9 commitadas) + ciclo 2 do gate · 2026-10-21
 > **Vias**: ambas
 > **Conferência**: 0 de 9 roteiros executados pela sessão
 > **Auditoria**: pendente — próximo ciclo do quality gate
@@ -39,14 +39,14 @@
 
 ### RM-02 — Ligar e desligar o tutorial pela tela · Via: aplicação
 
-**Origem**: RQ-11 · CT-05
+**Origem**: RQ-10 · CT-05
 **Conferência**: não executado — sem app servido em ambiente descartável confirmado
 
 | # | Ação | Comando / tela | Resultado esperado | Origem | Resultado obtido |
 |---|---|---|---|---|---|
 | 1 | Entrar como administradora | `/admin/configuracoes-da-aplicacao`, aba Aplicação, seção "Tutorial guiado" | prep — interruptor "Usar o tutorial guiado" desmarcado | prep · CT-05 | |
-| 2 | Marcar o interruptor e salvar | botão Salvar | Valor gravado `true` e, no request seguinte, `config:show kit.onboarding.habilitado` = `true` (linha `false → true` do CT-05) | CT-05 · RQ-11 | |
-| 3 | Desmarcar e salvar | botão Salvar | Valor gravado `false` e config efetiva `false` (linha `true → false`); deixar ligado de novo para os RM seguintes | CT-05 · RQ-11 | |
+| 2 | Marcar o interruptor e salvar | botão Salvar | Valor gravado `true` e, no request seguinte, `config:show kit.onboarding.habilitado` = `true` (linha `false → true` do CT-05) | CT-05 · RQ-10 | |
+| 3 | Desmarcar e salvar | botão Salvar | Valor gravado `false` e config efetiva `false` (linha `true → false`); deixar ligado de novo para os RM seguintes | CT-05 · RQ-10 | |
 
 ### RM-03 — O dashboard de cada painel traz o checklist da jornada daquele painel · Via: aplicação
 
@@ -93,14 +93,14 @@
 
 ### RM-07 — Tutorial desligado: telas sem checklist e URLs em 404 · Via: aplicação
 
-**Origem**: RQ-11 · CT-11 · CT-45 · CT-08
+**Origem**: RQ-16 · RQ-17 · P-04 · CT-11 · CT-45 · CT-08
 **Conferência**: não executado — sem app servido em ambiente descartável confirmado
 
 | # | Ação | Comando / tela | Resultado esperado | Origem | Resultado obtido |
 |---|---|---|---|---|---|
-| 1 | Desligar o tutorial (RM-02 passo 3) e abrir o dashboard como administradora | `/admin` | Checklist flutuante ausente; item "Primeiros passos" ausente da navegação; marcação de tour ausente; sem tela de boas-vindas (linha administradora/desligado do CT-11) | CT-11 · RQ-11 | |
-| 2 | Abrir a página como administradora | `/admin/onboarding` | 404, sem a página no corpo — recusa pelo interruptor, mesmo com a permissão da página (CT-45) | CT-45 · RQ-11 | |
-| 3 | Como administrador geral, abrir a autoria | `/admin/onboarding-flows` e `/admin/onboarding-conditions` | 404 nas duas, sem a página de autoria no corpo (CT-08, linhas do `master_global`) | CT-08 · RQ-11 | |
+| 1 | Desligar o tutorial (RM-02 passo 3) e abrir o dashboard como administradora | `/admin` | Checklist flutuante ausente; item "Primeiros passos" ausente da navegação; marcação de tour ausente; sem tela de boas-vindas (linha administradora/desligado do CT-11) | CT-11 · RQ-17 | |
+| 2 | Abrir a página como administradora | `/admin/onboarding` | 404, sem a página no corpo — recusa pelo interruptor, mesmo com a permissão da página (CT-45) | CT-45 · RQ-17 · P-04 | |
+| 3 | Como administrador geral, abrir a autoria | `/admin/onboarding-flows` e `/admin/onboarding-conditions` | 404 nas duas, sem a página de autoria no corpo (CT-08, linhas do `master_global`) | CT-08 · RQ-16 | |
 
 ### RM-08 — Tutorial ligado, sem a permissão da página: 403 · Via: aplicação
 

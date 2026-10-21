@@ -138,7 +138,7 @@ Legenda conferida célula a célula: O1, O2, O4, O5, O6, O10 são leitura, sem e
 
 Cenários da 2ª rodada adversarial nos grupos existentes: CT-60 e CT-62 em G5; CT-61 e CT-65 em G8; CT-63 e CT-64 em G10.
 
-Arquivos: G1–G9, G11, G12 em `tests/Kit/OnboardingGuiadoTest.php`; G10 em `tests/Tenancy/OnboardingGuiadoTenancyTest.php`; G13 em `tests/Browser/OnboardingGuiadoTest.php`. O plano cita `tests/Kit/InventarioDeOnboardingTest.php` (passo 7); a instrução desta derivação fixa o inventário no `OnboardingGuiadoTest.php` — a sessão decide.
+Arquivos: G1–G9, G11, G12 em `tests/Kit/OnboardingGuiado{Interruptor,Consumo,Semeadura,Instalacao}Test.php` *(alterado em 2026-10-21: QA-03 — o arquivo único foi dividido em quatro na implementação)*; G10 em `tests/Tenancy/OnboardingGuiadoTenancyTest.php`; G13 em `tests/Browser/OnboardingGuiadoTest.php`. O plano cita `tests/Kit/InventarioDeOnboardingTest.php` (passo 7); a instrução desta derivação fixa o inventário no `OnboardingGuiadoTest.php` — a sessão decide.
 
 Divergência declarada (Project Rule vence a skill): a skill chama a costura HTTP de "teste em `tests/Feature`"; neste projeto os testes do kit vivem em `tests/Kit` e `tests/Tenancy`, com o `TestCase`/`TenancyTestCase` + `RefreshDatabase` do `tests/Pest.php`.
 
@@ -1874,7 +1874,7 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 ```
 
 - **Por que "não lança exceção" não é oráculo**: o `LogManager` lança `"Log [{$name}] is not defined."` quando a configuração do canal é nula (`vendor/laravel/framework/src/Illuminate/Log/LogManager.php:resolve:222`), mas o `get()` captura e devolve o logger de emergência, que grava `Unable to create configured logger. Using emergency logger.` (`vendor/laravel/framework/src/Illuminate/Log/LogManager.php:get:140`). O erro nunca chega a quem gravou o aviso. A primeira asserção (configuração do canal) é o oráculo; a segunda observa o destino real do logger de emergência (`storage/logs/laravel.log` do cenário), com o arquivo isolado por cenário para não medir aviso de outro teste
-- **O `Dado` vale antes do boot** (`@premissa` de mecanismo, raia desenho — Q29, decidida em D12 do `01`: aplicação nova com `afterBootstrapping(LoadConfiguration::class)`): a configuração de log do cenário é a que a aplicação carrega ao iniciar. `config()->set()` depois do boot não exercita o caminho que supre o canal (falso vermelho se o kit supre no boot; falso verde se o teste só apaga e relê). E o `config/logging.php` da árvore do kit não serve de `Dado` para a linha D1: se ele declarar o canal, a linha passa medindo o kit, não o projeto
+- **O `Dado` vale antes do boot** (`@premissa` de mecanismo, raia desenho — Q29, decidida em D13 do `01`: aplicação nova com `afterBootstrapping(LoadConfiguration::class)`): a configuração de log do cenário é a que a aplicação carrega ao iniciar. `config()->set()` depois do boot não exercita o caminho que supre o canal (falso vermelho se o kit supre no boot; falso verde se o teste só apaga e relê). E o `config/logging.php` da árvore do kit não serve de `Dado` para a linha D1: se ele declarar o canal, a linha passa medindo o kit, não o projeto
 - **Proibição 12 não se aplica**: o cenário afirma a existência e a origem da configuração do canal (P-24), não o conteúdo de uma linha de log; o `warning` do tutorial continua fora de CT (`## Fronteira com o Plano`)
 - A segunda asserção do CT-71 é controle positivo: com `caminhosDoKit()` vazio ou mal lido, a primeira passaria no vácuo
 - `App\Console\Commands\KitUpdate::CAMINHOS_DO_KIT` (molde `tests/Kit/KitUpdateTest.php`, helper `caminhosDoKit()` de `tests/Pest.php`, a mesma noção de "coberto" do CT-57); canal `onboarding`
@@ -1924,71 +1924,71 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 
 | ID | Cenário | Regra | Técnica | Grupo | Costura | Arquivo | Mata |
 |----|---------|-------|---------|-------|---------|---------|------|
-| CT-01 | a config lida do ambiente de fábrica desliga o tutorial | R1 | EP | G1 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M1, M2 |
-| CT-02 | a migration de settings semeia o banco com o que o ambiente diz | R1 | EP | G1 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M3, M4 |
-| CT-03 | depois do boot, o que está gravado decide, não o .env | R2 | tabela de decisão | G1 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M5, M6, M9 |
-| CT-04 | o request seguinte obedece ao interruptor, nos dois sentidos | R2 | 2-switch | G1 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M7, M8 |
-| CT-05 | a administradora liga e desliga o tutorial pela tela | R3 | EP, gate de escrita | G2 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M10, M11 |
-| CT-06 | o settings do tutorial é um interruptor só | R3 | EP | G2 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M12, M13 |
-| CT-07 | cada superfície lista a autoria só com o tutorial ligado | R4 | EP por superfície | G4 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M14, M15, M16, M17 |
-| CT-08 | as sete rotas de autoria respondem 404 desligado, para qualquer persona | R5 | matriz papel × ação | G3 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M18, M19, M20, M21 |
-| CT-09 | ligado, a permissão decide | R5 | matriz papel × ação | G3 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M17, M23 |
-| CT-10 | depois do 404 da autoria, o /admin continua abrindo | R5 | saída do erro | G3 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M24 |
-| CT-11 | tela do painel sem checklist, tour, boas-vindas e item com o tutorial desligado | R6 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M25, M26, M27, M28, M29 |
-| CT-12 | o widget de progresso some e volta, com o progresso intacto | R7 | 2-switch | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M30, M31, M32 |
-| CT-13 | a ação do checklist montado é recusada depois do desligar | R8 | estado × evento, rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M33, M34, M35, M36, M37, M118, M119 |
-| CT-14 | ligado, a mesma ação produz o efeito | R8 | rastreio de efeito (controle) | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M38 |
-| CT-15 | o dashboard de cada painel traz o checklist da jornada daquele painel | R9 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M39, M40, M41, M42, M43, M121 |
-| CT-16 | a página "Primeiros passos" mostra a jornada do painel e nenhuma outra | R9 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M40, M42 |
-| CT-17 | as paradas de tour resolvem dentro do painel da jornada | R10 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M44, M45, M46 |
-| CT-18 | entrada fora do domínio no checklist do /admin não grava fora dele | R11 | EP (fora do domínio, tipo) | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M47, M48, M49, M50 |
-| CT-19 | o passo concluído por uma pessoa não conclui para a outra | R11 | identidade | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M51 |
-| CT-20 | sem multi-organização, cada painel recebe a sua jornada com os passos da tabela | R12 | EP por painel | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M52, M53, M54, M55, M56, M57 |
-| CT-21 | o seeder filho rodado sozinho cria só o passo da sua feature | R13 | EP por filho | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M58, M59, M60 |
-| CT-22 | o interruptor gravado continua o mesmo depois de semear | R14 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M61, M62, M109 |
-| CT-23 | toda chave de condição citada resolve no painel do passo | R15 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M63, M64 |
-| CT-24 | "Perfil e 2FA" conclui só com o segundo fator confirmado, em cada painel | R15 | EP, painel | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M64, M65 |
-| CT-25 | "Convites" do /admin conclui quando a própria pessoa já convidou | R15 | BVA 2-valores, identidade | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M63, M66, M67, M127 |
-| CT-26 | "Configurações da aplicação" conclui pela visita à tela | R15 | EP | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M56, M68, M128 |
-| CT-27 | desligar a feature esconde exatamente o passo dela no painel | R16 | EP decisor × painel | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M70, M71, M72, M73, M129, M130, M159 |
-| CT-28 | o passo escondido sai do percentual e volta concluído ao religar | R16 | 2-switch | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M73, M74, M75 |
-| CT-29 | o seeder pai rodado duas vezes deixa o banco igual | R17 | idempotência | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M76 |
-| CT-30 | o que o administrador editou sobrevive ao re-semear | R17 | EP por edição | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M77, M78, M79, M132, M133, M134 |
-| CT-31 | o que falta é recriado, e o resto fica como está | R17 | EP por ausência | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M77, M80, M81 |
-| CT-32 | textos semeados nos dois idiomas | R18 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M82, M83, M84, M135 |
-| CT-33 | a autoria grava os dois idiomas de uma jornada semeada | R18 | gate de escrita | G9 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M85, M136, M137 |
+| CT-01 | a config lida do ambiente de fábrica desliga o tutorial | R1 | EP | G1 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M1, M2 |
+| CT-02 | a migration de settings semeia o banco com o que o ambiente diz | R1 | EP | G1 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M3, M4 |
+| CT-03 | depois do boot, o que está gravado decide, não o .env | R2 | tabela de decisão | G1 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M5, M6, M9 |
+| CT-04 | o request seguinte obedece ao interruptor, nos dois sentidos | R2 | 2-switch | G1 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M7, M8 |
+| CT-05 | a administradora liga e desliga o tutorial pela tela | R3 | EP, gate de escrita | G2 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M10, M11 |
+| CT-06 | o settings do tutorial é um interruptor só | R3 | EP | G2 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M12, M13 |
+| CT-07 | cada superfície lista a autoria só com o tutorial ligado | R4 | EP por superfície | G4 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M14, M15, M16, M17 |
+| CT-08 | as sete rotas de autoria respondem 404 desligado, para qualquer persona | R5 | matriz papel × ação | G3 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M18, M19, M20, M21 |
+| CT-09 | ligado, a permissão decide | R5 | matriz papel × ação | G3 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M17, M23 |
+| CT-10 | depois do 404 da autoria, o /admin continua abrindo | R5 | saída do erro | G3 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M24 |
+| CT-11 | tela do painel sem checklist, tour, boas-vindas e item com o tutorial desligado | R6 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M25, M26, M27, M28, M29 |
+| CT-12 | o widget de progresso some e volta, com o progresso intacto | R7 | 2-switch | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M30, M31, M32 |
+| CT-13 | a ação do checklist montado é recusada depois do desligar | R8 | estado × evento, rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M33, M34, M35, M36, M37, M118, M119 |
+| CT-14 | ligado, a mesma ação produz o efeito | R8 | rastreio de efeito (controle) | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M38 |
+| CT-15 | o dashboard de cada painel traz o checklist da jornada daquele painel | R9 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M39, M40, M41, M42, M43, M121 |
+| CT-16 | a página "Primeiros passos" mostra a jornada do painel e nenhuma outra | R9 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M40, M42 |
+| CT-17 | as paradas de tour resolvem dentro do painel da jornada | R10 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M44, M45, M46 |
+| CT-18 | entrada fora do domínio no checklist do /admin não grava fora dele | R11 | EP (fora do domínio, tipo) | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M47, M48, M49, M50 |
+| CT-19 | o passo concluído por uma pessoa não conclui para a outra | R11 | identidade | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M51 |
+| CT-20 | sem multi-organização, cada painel recebe a sua jornada com os passos da tabela | R12 | EP por painel | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M52, M53, M54, M55, M56, M57 |
+| CT-21 | o seeder filho rodado sozinho cria só o passo da sua feature | R13 | EP por filho | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M58, M59, M60 |
+| CT-22 | o interruptor gravado continua o mesmo depois de semear | R14 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M61, M62, M109 |
+| CT-23 | toda chave de condição citada resolve no painel do passo | R15 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M63, M64 |
+| CT-24 | "Perfil e 2FA" conclui só com o segundo fator confirmado, em cada painel | R15 | EP, painel | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M64, M65 |
+| CT-25 | "Convites" do /admin conclui quando a própria pessoa já convidou | R15 | BVA 2-valores, identidade | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M63, M66, M67, M127 |
+| CT-26 | "Configurações da aplicação" conclui pela visita à tela | R15 | EP | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M56, M68, M128 |
+| CT-27 | desligar a feature esconde exatamente o passo dela no painel | R16 | EP decisor × painel | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M70, M71, M72, M73, M129, M130, M159 |
+| CT-28 | o passo escondido sai do percentual e volta concluído ao religar | R16 | 2-switch | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M73, M74, M75 |
+| CT-29 | o seeder pai rodado duas vezes deixa o banco igual | R17 | idempotência | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M76 |
+| CT-30 | o que o administrador editou sobrevive ao re-semear | R17 | EP por edição | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M77, M78, M79, M132, M133, M134 |
+| CT-31 | o que falta é recriado, e o resto fica como está | R17 | EP por ausência | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M77, M80, M81 |
+| CT-32 | textos semeados nos dois idiomas | R18 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M82, M83, M84, M135 |
+| CT-33 | a autoria grava os dois idiomas de uma jornada semeada | R18 | gate de escrita | G9 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M85, M136, M137 |
 | CT-34 | com multi-organização, /admin e /app ganham os passos de organização | R19 | EP | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M86, M87, M88, M138, M139 |
 | CT-35 | ligar a multi-organização depois e re-semear acrescenta só o que falta | R19 | 2-switch | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M89 |
 | CT-36 | Projetos aparece no /app da organização só com a demo ligada | R19 | EP | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M87, M90 |
 | CT-37 | dentro da organização, checklist e página seguem o interruptor | R19 | EP | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M91, M140 |
-| CT-38 | o kit:install semeia conforme modo e resposta, tutorial desligado | R20 | tabela de decisão | G11 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M92, M93, M94, M95, M96, M141, M142, M144 |
-| CT-39 | a rule de onboarding está em .ai/rules, indexada, cobre as telas | R21 | EP | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M97, M98, M99, M145 |
-| CT-40 | o inventário acusa exatamente a tela, a isenção ou o filho defeituoso | R22 | EP | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M100, M101, M102, M103 |
+| CT-38 | o kit:install semeia conforme modo e resposta, tutorial desligado | R20 | tabela de decisão | G11 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M92, M93, M94, M95, M96, M141, M142, M144 |
+| CT-39 | a rule de onboarding está em .ai/rules, indexada, cobre as telas | R21 | EP | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M97, M98, M99, M145 |
+| CT-40 | o inventário acusa exatamente a tela, a isenção ou o filho defeituoso | R22 | EP | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M100, M101, M102, M103 |
 | CT-41 | com multi-organização, toda tela de organização tem seeder ou isenção | R22 | EP | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M104 |
-| CT-42 | a página do tutorial guiado de cada idioma ensina a semear e tabela os seeders | R23 | EP por idioma | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M105, M106, M107, M108, M146, M147 |
-| CT-43 | no /app e no /infra, a ação do checklist montado é recusada depois do desligar | R8 | estado × evento, EP por painel | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M120 |
-| CT-44 | "Primeiros passos" some de toda superfície de navegação com o tutorial desligado | R6 | EP por superfície | G4 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M114, M164 |
-| CT-45 | a URL da página "Primeiros passos" responde 404 desligado, nos três painéis | R6 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M115, M116, M117 |
-| CT-46 | a tela de autoria aberta recusa a ação depois do desligar | R5 | estado × evento | G3 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M112, M113, M163 |
-| CT-47 | a permissão da página decide quem vê o checklist, e todo papel a recebe | R9 | matriz papel × painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M122, M123, M166 |
-| CT-48 | concluir num painel não conclui o passo de mesmo nome em outro | R11 | EP por painel | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M124, M125, M168 |
+| CT-42 | a página do tutorial guiado de cada idioma ensina a semear e tabela os seeders | R23 | EP por idioma | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M105, M106, M107, M108, M146, M147 |
+| CT-43 | no /app e no /infra, a ação do checklist montado é recusada depois do desligar | R8 | estado × evento, EP por painel | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M120 |
+| CT-44 | "Primeiros passos" some de toda superfície de navegação com o tutorial desligado | R6 | EP por superfície | G4 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M114, M164 |
+| CT-45 | a URL da página "Primeiros passos" responde 404 desligado, nos três painéis | R6 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M115, M116, M117 |
+| CT-46 | a tela de autoria aberta recusa a ação depois do desligar | R5 | estado × evento | G3 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M112, M113, M163 |
+| CT-47 | a permissão da página decide quem vê o checklist, e todo papel a recebe | R9 | matriz papel × painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M122, M123, M166 |
+| CT-48 | concluir num painel não conclui o passo de mesmo nome em outro | R11 | EP por painel | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M124, M125, M168 |
 | CT-49 | "Convites" do /app conclui só na organização em que a pessoa convidou | R24 | EP | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M148, M149, M170 |
 | CT-50 | concluir numa organização não conclui na outra | R24 | EP | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M150 |
 | CT-51 | desligar a multi-organização esconde os passos de organização sem apagar | R25 | 2-switch | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M151, M152, M171 |
-| CT-52 | filho de organização sozinho, multi-organização desligada, não cria nada | R25 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M153, M173 |
-| CT-53 | tirar a permissão da tela de um passo tira o passo do checklist | R26 | matriz papel × tela | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M154, M174 |
-| CT-54 | a persona padrão de cada painel abre a tela de todo passo visível | R26 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M155, M156 |
+| CT-52 | filho de organização sozinho, multi-organização desligada, não cria nada | R25 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M153, M173 |
+| CT-53 | tirar a permissão da tela de um passo tira o passo do checklist | R26 | matriz papel × tela | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M154, M174 |
+| CT-54 | a persona padrão de cada painel abre a tela de todo passo visível | R26 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M155, M156 |
 | CT-55 | com multi-organização, kit:install --onboarding semeia os passos de organização | R20 | tabela de decisão | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M143 |
-| CT-56 | todos os visíveis concluídos e um escondido pendente: jornada concluída | R16 | BVA (100 %) | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M131 |
-| CT-57 | cada arquivo da feature está nas duas rotas de entrega | R27 | EP arquivo × rota | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M157, M158 |
-| CT-58 | o que a tela grava vale no request seguinte, nos dois sentidos | R3 | 2-switch | G2 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M110, M111 |
-| CT-59 | todo valor semeado em coluna com limite cabe no limite | R12 | BVA (comprimento) | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M126 |
-| CT-60 | o widget conta como concluída a jornada com um passo escondido pendente | R16 | BVA (100 %) | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M131, M160 |
-| CT-61 | a jornada concluída continua concluída quando o passo escondido volta | R16 | 2-switch | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M161, M162 |
-| CT-62 | ligado e sem a permissão da página, a URL responde 403 | R9 | matriz papel × painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoTest.php` | M167 |
+| CT-56 | todos os visíveis concluídos e um escondido pendente: jornada concluída | R16 | BVA (100 %) | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M131 |
+| CT-57 | cada arquivo da feature está nas duas rotas de entrega | R27 | EP arquivo × rota | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M157, M158 |
+| CT-58 | o que a tela grava vale no request seguinte, nos dois sentidos | R3 | 2-switch | G2 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | M110, M111 |
+| CT-59 | todo valor semeado em coluna com limite cabe no limite | R12 | BVA (comprimento) | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M126 |
+| CT-60 | o widget conta como concluída a jornada com um passo escondido pendente | R16 | BVA (100 %) | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M131, M160 |
+| CT-61 | a jornada concluída continua concluída quando o passo escondido volta | R16 | 2-switch | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M161, M162 |
+| CT-62 | ligado e sem a permissão da página, a URL responde 403 | R9 | matriz papel × painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M167 |
 | CT-63 | dentro da organização, a ação do checklist montado é recusada depois do desligar | R8 | estado × evento | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M165 |
 | CT-64 | desligar a multi-organização esconde os passos de organização do /app sem apagar | R25 | EP | G10 | Pest feature HTTP + componente Livewire/Filament | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | M172 |
-| CT-65 | o passo concluído cuja tela a pessoa deixa de abrir sai também do numerador | R26 | 2-switch | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoTest.php` | M175, M176 |
+| CT-65 | o passo concluído cuja tela a pessoa deixa de abrir sai também do numerador | R26 | 2-switch | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M175, M176 |
 | CT-66 | a chave de uma jornada invisível escrita direto no checklist não muda o checklist | R28 | EP | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M177, M178, M179 |
 | CT-67 | com a semeadura do tutorial falhando, o kit:install mostra o resumo e o aviso | R29 | rastreio de efeito | G11 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M180, M181, M182 |
 | CT-68 | o passo do dashboard dinâmico segue a permissão de montar o dashboard do painel | R30 | tabela de decisão | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M183, M184, M185, M186 |
@@ -2080,7 +2080,7 @@ Revisão do `fw-adversario-ct`, 2ª rodada (ADV2-01..ADV2-16), fechada pela sess
 
 ### Para materializar só a diferença
 
-CT **novos** (inteiros): CT-60, CT-61, CT-62 e CT-65 (`tests/Kit/OnboardingGuiadoTest.php`); CT-63 e CT-64 (`tests/Tenancy/OnboardingGuiadoTenancyTest.php`).
+CT **novos** (inteiros): CT-60, CT-61, CT-62 e CT-65 (`tests/Kit/OnboardingGuiado{Consumo,Semeadura}Test.php`); CT-63 e CT-64 (`tests/Tenancy/OnboardingGuiadoTenancyTest.php`).
 
 CT **existentes que ganharam linhas de `Exemplos`** (as linhas antigas não mudaram):
 

@@ -1,6 +1,6 @@
 # Plano de Ação — Onboarding guiado: jornadas semeadas, interruptor no settings e rule de manutenção
 
-> Requisito: `00-requisito.md` (Texto Original + Adendos 1 e 2)
+> Requisito: `00-requisito.md` (Texto Original + Adendos 1, 2 e 3)
 
 ## Natureza da Wiki
 
@@ -135,7 +135,7 @@ feature, e um teste do kit fica vermelho quando nasce Resource ou Page sem seede
 | D8 | O teste de inventário lê o mapa `OnboardingSeeder::TELAS` (tela → seeder filho) e a lista `OnboardingSeeder::ISENTAS` (tela → motivo) | Q7 | surpreendente | sessão, 2026-10-21 |
 | D10 | Helpers de `kit:install` de verdade (`diretorioDeInstalacaoDoKit`, `rodarKitInstallDeVerdade`, `rodarKitInstallDigitandoASenha`) sobem para `tests/Pest.php` quando um segundo arquivo os usar | Q18 (era Q?8) | trade-off | sessão, 2026-10-21 |
 | D7b | O canal `onboarding` é garantido pelo `KitServiceProvider` (declarado só quando o `config/logging.php` do projeto não o tem) e o `config/logging.php` fica FORA de `KitUpdate::CAMINHOS_DO_KIT` — mesmo motivo das rotas do kit (`.ai/rules/providers.md`): arquivo do esqueleto não viaja sem apagar o do projeto (P-24) *(alterado em 2026-10-21: rodada 2 do step 9, RD2-03/CR2-02)* | gsferro no chat, 2026-10-21 | surpreendente | gsferro, 2026-10-21 |
-| D12 | CT-70 sobe uma aplicação nova (`bootstrap/app.php`) com `afterBootstrapping(LoadConfiguration::class)` ajustando o `logging.channels` antes de os providers subirem — prova o fio do provider, não um método isolado | Q29 (era Q?1 da re-derivação do CT-70) | trade-off | sessão, 2026-10-21 |
+| D13 | CT-70 sobe uma aplicação nova (`bootstrap/app.php`) com `afterBootstrapping(LoadConfiguration::class)` ajustando o `logging.channels` antes de os providers subirem — prova o fio do provider, não um método isolado | Q29 (era Q?1 da re-derivação do CT-70) | trade-off | sessão, 2026-10-21 |
 | D11 | `KIT_ONBOARDING=false` com `force="true"` no `phpunit.xml`: a suíte mede o kit de fábrica; quem precisa liga por `ligarTutorialGuiado()` | Q19 (era Q?9) | difícil de reverter | sessão, 2026-10-21 |
 | D12 | A verificação do inventário do onboarding é uma função que recebe os painéis (controles negativos e suíte Tenancy) | Q20 (era Q?10) | surpreendente | sessão, 2026-10-21 |
 | D9 | O 404 da autoria e da página de progresso vem de um middleware de painel persistente (`isPersistent: true`, que o Filament 5 reaplica nos updates Livewire — `search-docs`, "Applying middleware"), e não do trait nas Pages que `.ai/rules/filament.md` descreve para o `AgenteIaResource`: as telas são do vendor, e o trait exigiria subclassificar 2 Resources e 7 Pages só para levar duas linhas | Q1 (Adendo 1) | difícil de reverter (troca por trait é local) | sessão, 2026-10-21 |
@@ -148,7 +148,7 @@ feature, e um teste do kit fica vermelho quando nasce Resource ou Page sem seede
   2026-10-21: D4)*
 - **Middleware**: `App\Http\Middleware\ExigeTutorialGuiadoLigado`, persistente, nos três painéis —
   responde 404 nas rotas de autoria e na página de progresso com o interruptor desligado, antes da
-  permissão (ADR-01)
+  permissão (D9)
 - **Página de progresso**: permissão da tela gerada pelo Shield, concedida a `panel_user` e `admin`
   nos três painéis pelo `PapeisSeeder` (ver passo 3)
 - **Guards**: inalterados
@@ -266,7 +266,7 @@ No molde do channel irmão `dock-de-acoes-rapidas` (driver por `LOG_KIT_DRIVER`,
 > Skills: `filament-development`, `laravel-best-practices`
 
 - **Paths**: `app/Providers/Filament/{Admin,App,Infra}PanelProvider.php`; `app/Http/Middleware/ExigeTutorialGuiadoLigado.php`; `app/Filament/Admin/Resources/Onboarding/{Jornada,Condicao}Resource.php`; `app/Livewire/ChecklistDoOnboarding.php`; `app/Providers/KitServiceProvider.php`; `app/Filament/Admin/Widgets/ProgressoOnboarding.php`; `database/seeders/PapeisSeeder.php` (se a permissão da página não cair na matriz sozinha)
-- Nos três painéis, o mesmo registro (helper estático para não repetir, ex.: `TutorialGuiado::plugin(): FilamentOnboardingPlugin`):
+- *(alterado em 2026-10-21: QA-01 do quality gate — o registro real é `->launcher(fn (): bool => self::visivel())->tours(fn (): bool => self::visivel())->welcome(false)->progressPage(false)->progressPageNavigation(...)->skipWhen(fn (): bool => ! self::visivel())->conditions(...)`, com `visivel()` = `PrimeirosPassos::canAccess()`; ver o item da subclasse abaixo)* Desenho original — nos três painéis, o mesmo registro (helper estático para não repetir, ex.: `TutorialGuiado::plugin(): FilamentOnboardingPlugin`):
   `->launcher(fn (): bool => TutorialGuiado::habilitado())->tours(fn (): bool => TutorialGuiado::habilitado())->welcome(false)->progressPage()->progressPageNavigation(label: 'Primeiros passos', icon: 'heroicon-o-map')->skipWhen(fn (): bool => ! TutorialGuiado::habilitado() || ! PermissaoDaTela::permite(OnboardingProgress::class))`;
   no `/admin`, além disso `->manageFlows()` **sem** a chave inexistente
 - Plugin nos três painéis também atende `.ai/rules/providers-filament.md` (`OnboardingProgress::plugin()` resolve pelo painel corrente)
@@ -294,9 +294,7 @@ No molde do channel irmão `dock-de-acoes-rapidas` (driver por `LOG_KIT_DRIVER`,
 - *(alterado em 2026-10-21: revisão adversarial — P-11/P-12/P-13)* Passo com tela: visibilidade padrão `tela:{chave}`, gerada de `OnboardingSeeder::TELAS` e respondida pelo `canAccess()` da tela no painel corrente; sem tela: `dock_no_painel`, `dashboard_dinamico_no_painel`, `bloqueio_de_tela_ligado`, `multi_tenant_ligado`. As condições `hub_ligado`, `agentes_de_ia_ligados`, `central_de_comandos_ligada` e `demo_ligada` não existem mais
 - **Path**: `app/Support/TutorialGuiado.php` — um array passado a `->conditions($condicoes, $rotulos)` dentro de `TutorialGuiado::plugin()` (registrado no boot pelo plugin, `FilamentOnboardingPlugin::conditions()`), uma closure por chave. *(alterado em 2026-10-21: Ponytail, step 6 — eram oito classes em `app/Onboarding/Conditions/`)*
 - Conclusão: `tem_dois_fatores` → `fn (Model $usuario): bool => $usuario->hasConfirmedTwoFactor()`
-- Visibilidade (P-03), uma por decisor, lendo o painel por `Filament::getCurrentPanel()`:
-  `dock_no_painel`, `dashboard_dinamico_no_painel`, `bloqueio_de_tela_ligado`, `hub_ligado`,
-  `agentes_de_ia_ligados`, `central_de_comandos_ligada`, `demo_ligada`
+- Visibilidade (P-03, P-11), lendo o painel por `Filament::getCurrentPanel()`: `tela:{chave}` (uma por filho com tela) e, para os passos sem tela própria, `dock_no_painel`, `bloqueio_de_tela_ligado`, `multi_tenant_ligado`; `dashboard_dinamico_no_painel` exige também o `canEdit()` da página (P-22) *(alterado em 2026-10-21: QA-01 — a lista de sete condições é o desenho anterior ao item do topo deste passo)*
 - Rótulos em pt_BR no segundo array (o que o editor de passos mostra)
 - **Atende**: RQ-03, P-03
 - **Logs**: nenhum — a exceção numa condição já é registrada pelo pacote
@@ -310,35 +308,35 @@ No molde do channel irmão `dock-de-acoes-rapidas` (driver por `LOG_KIT_DRIVER`,
 - Pai `OnboardingSeeder::run()`: chama os filhos de `FILHOS` e, se `config('kit.tenancy.enabled')`, os de `FILHOS_DE_TENANCY`; constantes `TELAS` e `ISENTAS` (D8). Não toca o settings (RQ-21). Não entra no `DatabaseSeeder`
 - Filhos (um por feature — RQ-05, RQ-23), com o painel e o modo de conclusão da tabela aprovada:
 
-| Seeder filho | Painel(is) | Conclui por | Visibilidade |
+| Seeder filho | Painel(is) | Conclui por | Visibilidade *(alterado em 2026-10-21: QA-01 — padrão `tela:{chave}` nos filhos com tela, P-11)* |
 |---|---|---|---|
-| `PerfilEDoisFatoresSeeder` | admin, app, infra | condição `tem_dois_fatores` | — |
+| `PerfilEDoisFatoresSeeder` | admin, app, infra | condição `tem_dois_fatores` | `tela:perfil-e-dois-fatores` |
 | `BuscaGlobalSeeder` | admin, app, infra | tour (manual) | — |
 | `DockDeAtalhosSeeder` | admin, app, infra | tour (manual) | `dock_no_painel` |
 | `BloqueioDeTelaSeeder` | admin, app, infra | tour (manual) | `bloqueio_de_tela_ligado` |
 | `DashboardDinamicoSeeder` | admin, app, infra | tour (manual) | `dashboard_dinamico_no_painel` |
-| `UsuariosSeeder` | admin | tour (manual) | — |
-| `ConvitesSeeder` | admin | condição `convidou_alguem` (banco) | — |
-| `PapeisEPermissoesSeeder` | admin | tour (manual) | — |
-| `ConfiguracoesDaAplicacaoSeeder` | admin | visita | — |
-| `AgentesDeIaSeeder` | admin | tour (manual) | `agentes_de_ia_ligados` |
-| `HubDeNavegacaoSeeder` | admin, app | tour (manual) | `hub_ligado` |
-| `OrganizacoesSeeder` *(tenancy)* | admin | tour (manual) | — |
-| `MembrosDaOrganizacaoSeeder` *(tenancy)* | app | tour (manual) | — |
-| `ConvitesDaOrganizacaoSeeder` *(tenancy)* | app | condição `convidou_alguem_na_organizacao` (banco, com `scope_column` `tenant_id`) | — |
-| `ConvitesRecebidosSeeder` *(tenancy)* | app | tour (manual) | — |
-| `TrocaDeOrganizacaoSeeder` *(tenancy)* | app | tour (manual) | — |
-| `ProjetosSeeder` *(tenancy)* | app | tour (manual) | `demo_ligada` |
-| `HubDeInfraestruturaSeeder` | infra | tour (manual) | — |
-| `PulseSeeder` | infra | tour (manual) | — |
-| `BackupsSeeder` | infra | tour (manual) | — |
-| `LogsDaAplicacaoSeeder` | infra | tour (manual) | — |
-| `ExcecoesSeeder` | infra | tour (manual) | — |
-| `FilasSeeder` | infra | tour (manual) | — |
-| `AuditoriaSeeder` | infra | tour (manual) | — |
-| `ExecucoesDeIaSeeder` | infra | tour (manual) | — |
-| `LixeiraSeeder` | infra | tour (manual) | — |
-| `CentralDeComandosSeeder` | infra | tour (manual) | `central_de_comandos_ligada` |
+| `UsuariosSeeder` | admin | tour (manual) | `tela:usuarios` |
+| `ConvitesSeeder` | admin | condição `convidou_alguem` (banco) | `tela:convites` |
+| `PapeisEPermissoesSeeder` | admin | tour (manual) | `tela:papeis-e-permissoes` |
+| `ConfiguracoesDaAplicacaoSeeder` | admin | visita | `tela:configuracoes-da-aplicacao` |
+| `AgentesDeIaSeeder` | admin | tour (manual) | `tela:agentes-de-ia` |
+| `HubDeNavegacaoSeeder` | admin, app | tour (manual) | `tela:hub-de-navegacao` |
+| `OrganizacoesSeeder` *(tenancy)* | admin | tour (manual) | `tela:organizacoes` |
+| `MembrosDaOrganizacaoSeeder` *(tenancy)* | app | tour (manual) | `tela:membros-da-organizacao` |
+| `ConvitesDaOrganizacaoSeeder` *(tenancy)* | app | condição `convidou_alguem_na_organizacao` (banco, com `scope_column` `tenant_id`) | `tela:convites-da-organizacao` |
+| `ConvitesRecebidosSeeder` *(tenancy)* | app | tour (manual) | `tela:convites-recebidos` |
+| `TrocaDeOrganizacaoSeeder` *(tenancy)* | app | tour (manual) | `multi_tenant_ligado` |
+| `ProjetosSeeder` *(tenancy)* | app | tour (manual) | `tela:projetos` |
+| `HubDeInfraestruturaSeeder` | infra | tour (manual) | `tela:hub-de-infraestrutura` |
+| `PulseSeeder` | infra | tour (manual) | `tela:pulse` |
+| `BackupsSeeder` | infra | tour (manual) | `tela:backups` |
+| `LogsDaAplicacaoSeeder` | infra | tour (manual) | `tela:logs-da-aplicacao` |
+| `ExcecoesSeeder` | infra | tour (manual) | `tela:excecoes` |
+| `FilasSeeder` | infra | tour (manual) | `tela:filas` |
+| `AuditoriaSeeder` | infra | tour (manual) | `tela:auditoria` |
+| `ExecucoesDeIaSeeder` | infra | tour (manual) | `tela:execucoes-de-ia` |
+| `LixeiraSeeder` | infra | tour (manual) | `tela:lixeira` |
+| `CentralDeComandosSeeder` | infra | tour (manual) | `tela:central-de-comandos` |
 
 - Paradas de tour: `route` = nome da rota da tela (conferido no `route:list` do step 3); `target` só dos
   alvos que o pacote nomeia (`part:table`, `part:search`, `action:submit`, `field:x`) ou nenhum
