@@ -141,8 +141,8 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto local: 939**, confirmado sem mudança nos quatro cenários da `v0.51.1` sobre a tag publicada
-> (2026-10-20, seção `0.51.1 / Validação local dos quatro cenários` do `CHANGELOG.md`) e medido nos quatro
+> **Teto local: 939**, confirmado sem mudança nos quatro cenários da `v0.51.2` e da `v0.51.1` sobre as tags
+> publicadas (2026-10-20, seções `Validação local dos quatro cenários` das duas no `CHANGELOG.md`) e medido nos quatro
 > cenários da `v0.51.0` **sobre a tag publicada** (2026-10-20),
 > 33 arquivos, decomposição com `--log-junit` no `CHANGELOG.md`, seção `0.51.0 / Validação`. O `+15`
 > sobre o 924 acumula três releases sem cenários (`v0.48.0` a `v0.50.0`): +11 de

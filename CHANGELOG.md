@@ -38,6 +38,36 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   não a edite; depois de um `composer update` do pacote do dock, rode a suíte do kit, que acusa a cópia
   defasada com o comando que a regenera.
 
+### Validação
+
+- Casos novos: `tests/Browser/DockAlturaDoViewportTest.php` 3/3 (o CT-B01 fica vermelho com o bundle original do
+  pacote — botão embaixo em 863 com a área visível até 800 — e verde com a cópia), `tests/Kit/DockScriptCorrigidoTest.php`
+  2/2, `tests/Kit/FixturesComNamespaceTest.php` 2/2 (as duas guardas provadas com violações temporárias). Suíte local
+  `Kit` 4397/4402 antes de corrigir duas citações dos diagramas (depois, `DiagramasDaArquiteturaTest` +
+  `CitacoesDeCodigoTest` 531/531), `Tenancy` 639/639. PHPStan nível 8: 0 erros. `filacheck`: ok. A CI pegou um
+  defeito só de Linux na guarda nova (`dirname()` com `\`), corrigido antes do merge.
+- `/code-review high`: 9 achados, 8 corrigidos — entre eles os dois que derrubaram a 1ª versão da correção do dock (o
+  embrulho do `Alpine.data` deixava a direção do menu e o primeiro paint com o `innerHeight`) — e 1 rejeitado com motivo
+  (as cópias cruas do sentinel, débito acima).
+
+### Validação local dos quatro cenários (2026-10-20)
+
+- **Os quatro cenários de `wikis/checklist-de-release.md`** rodaram em 2026-10-20 **sobre a tag publicada** `v0.51.2`
+  (anterior `v0.51.1`), em `validacao-v0.51.2/` fora da árvore do kit. **Liso** nos seis critérios. A cópia corrigida do
+  dock (`public/js/kit/quick-action-dock.js`) está presente e servida nos quatro, e o `composer dump-autoload --optimize`
+  de cada projeto instalado dá **0** avisos `does not comply with psr-4` (#170). O `kit:update` dos cenários 3 e 4 aplicou
+  **16 arquivos novos e 15 modificados** — entre os novos a cópia do dock, que só chega por `public/js/kit` em
+  `CAMINHOS_DO_KIT`, e as 12 fixtures — e marcou `config/kit.php` em `0.51.2`; sem migration nova.
+
+  | Cenário | Saída de `php artisan test --testsuite=Kit,Tenancy --parallel --compact` | `kit.version` | tenancy |
+  |---|---|---|---|
+  | 1 `novo-sem-tenant` — `create-project` `v0.51.2` | `{"tool":"pest","result":"passed","tests":5041,"passed":4102,"assertions":19401,"duration_ms":506885,"skipped":939,"risky":2}` | `0.51.2` | `NAO` |
+  | 2 `novo-com-tenant` — `create-project` `v0.51.2` + `kit:tenancy --force` | `{"tool":"pest","result":"passed","tests":5041,"passed":4102,"assertions":19401,"duration_ms":499710,"skipped":939,"risky":2}` | `0.51.2` | `SIM` |
+  | 3 `velho-sem-tenant` — `create-project` `v0.51.1` + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":5041,"passed":4102,"assertions":19401,"duration_ms":509891,"skipped":939,"risky":2}` | `0.51.2` | `NAO` |
+  | 4 `velho-com-tenant` — `create-project` `v0.51.1` + `kit:tenancy --force` + commit + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":5041,"passed":4102,"assertions":19401,"duration_ms":500111,"skipped":939,"risky":2}` | `0.51.2` | `SIM` |
+
+  **Teto de pulados confirmado: 939**, idêntico ao da `v0.51.1` — os casos novos rodam todos fora da árvore do kit.
+
 ## [0.51.1] - 2026-10-20
 
 ### Corrigido
