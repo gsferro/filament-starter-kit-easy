@@ -84,9 +84,10 @@ it('[CT-02] a declaração fora de arquivo *Test.php casa com o PSR-4: namespace
             continue;
         }
 
-        $caminho  = str_replace('/', '\\', str_replace('\\', '/', $d['arquivo']));
-        $pasta    = dirname($caminho);
-        $esperado = 'Tests'.($pasta === '.' ? '' : '\\'.$pasta);
+        // `dirname()` sobre o caminho com `/`, que vale nos dois sistemas: no Linux ele não reconhece
+        // `\` como separador e devolveria `.` para todo arquivo (foi a CI que mostrou).
+        $pasta    = dirname(str_replace('\\', '/', $d['arquivo']));
+        $esperado = 'Tests'.($pasta === '.' ? '' : '\\'.str_replace('/', '\\', $pasta));
 
         if ($d['namespace'] !== $esperado || $d['nome'] !== pathinfo($d['arquivo'], PATHINFO_FILENAME)) {
             $violacoes[] = "{$d['arquivo']}:{$d['linha']} {$d['namespace']}\\{$d['nome']} (esperado {$esperado}\\".pathinfo($d['arquivo'], PATHINFO_FILENAME).')';
