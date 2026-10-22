@@ -173,7 +173,8 @@ As rotas de autoria (`filament.admin.resources.onboarding-flows.*`, `…onboardi
 |---|---|---|---|---|
 | Seção "Tutorial guiado" em Configurações da aplicação | Filament (SettingsPage) | `/admin/configuracoes-da-aplicacao` | liga/desliga e salva | Não |
 | Página "Primeiros passos" | Filament Page (subclasse do kit `App\Filament\Pages\PrimeirosPassos` sobre a do vendor) *(alterado em 2026-10-21: desvio do passo 3)* | `/{painel}/onboarding` | vê a jornada, abre passo, inicia tour | Não (o tour sim) |
-| Checklist flutuante (launcher) | Livewire (subclasse do kit sobre o do vendor), render hook `BODY_END` | todas as telas dos três painéis | abre checklist, marca, inicia tour | Sim |
+| Checklist flutuante (launcher) | Livewire (subclasse do kit sobre o do vendor), render hook `BODY_END` | todas as telas dos três painéis | abre checklist, marca, inicia tour; Esc fecha (P-28) | Sim |
+| Contraste do tutorial (botão primário, destaque, texto secundário) | CSS do kit (`resources/css/filament/kit.css`, variáveis `--fio-theme-*` do pacote + o botão primário no tom 700) | checklist e página nos três painéis | leitura (AA, P-27) | Não *(alterado em 2026-10-22: QA-15 e QA-16 do gate, ciclo 3)* |
 | Tour | Alpine (vendor) | telas das features | avança, pula, conclui | Sim |
 | Autoria: Onboarding e Condições | Filament Resource (subclasses do kit `JornadaResource`/`CondicaoResource` sobre as do vendor) *(alterado em 2026-10-21: D4)* | `/admin/onboarding-flows`, `/admin/onboarding-conditions` | edita o que o seeder criou | Não |
 
@@ -289,7 +290,7 @@ No molde do channel irmão `dock-de-acoes-rapidas` (driver por `LOG_KIT_DRIVER`,
 - **Logs**:
   - `Log::channel('onboarding')->warning('[ExigeTutorialGuiadoLigado@handle] Tela de onboarding recusada com o tutorial desligado | rota: '.$nome, ['user_id' => auth()->id(), 'rota' => $nome, 'motivo' => 'tutorial_desligado'])`
   - `Log::channel('onboarding')->warning('[ChecklistDoOnboarding@hydrate] Ação do checklist recusada | motivo: '.$motivo, ['user_id' => auth()->id(), 'motivo' => $motivo])`, com `$motivo` = `tutorial_desligado` ou `sem_permissao_da_pagina` *(alterado em 2026-10-21: RD-03 e QA-10)*
-  - `Log::channel('onboarding')->warning('[ChecklistDoOnboarding@updatedFlowKey] Jornada fora do painel recusada no checklist', ['user_id' => auth()->id(), 'motivo' => 'jornada_invisivel'])` — sem o valor do cliente na mensagem (P-26) *(alterado em 2026-10-21: CR2-08 e QA-11)*
+  - `Log::channel('onboarding')->warning('[ChecklistDoOnboarding@updatedFlowKey] Jornada fora do painel recusada no checklist', ['user_id' => auth()->id(), 'flow' => Str::limit(preg_replace('/\s+/', ' ', $flowKey), 80), 'motivo' => 'jornada_invisivel'])` — sem o valor do cliente na mensagem, e no context sem quebra de linha e truncado (P-26) *(alterado em 2026-10-22: QA-18 do gate, ciclo 3)* *(alterado em 2026-10-21: CR2-08 e QA-11)*
 
 ### 4. Condições em código
 

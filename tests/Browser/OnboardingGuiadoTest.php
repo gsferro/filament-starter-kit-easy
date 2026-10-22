@@ -72,3 +72,88 @@ it('[CT-B02] o tour do passo de Pulse abre no navegador a partir do checklist do
         ->assertSeeIn('[x-data^="onboardingTour"] [role="dialog"][aria-modal="true"]', $titulos['parada'])
         ->assertNoJavaScriptErrors();
 });
+
+/**
+ * Linhas do tutorial da pessoa (progresso de passos, de jornada e preferências), na íntegra.
+ *
+ * @return array<string, array<int, array<string, mixed>>>
+ */
+function linhasDoTutorialDa(object $pessoa): array
+{
+    $linhas = [];
+
+    foreach (['onboarding_step_progress', 'onboarding_flow_progress', 'onboarding_preferences'] as $tabela) {
+        $linhas[$tabela] = DB::table($tabela)
+            ->where('subject_id', (string) $pessoa->getKey())
+            ->orderBy('id')
+            ->get()
+            ->map(static fn (object $linha): array => (array) $linha)
+            ->all();
+    }
+
+    return $linhas;
+}
+
+dataset('onboarding-contraste', [
+    '/admin claro'  => ['admin', 'admin', false],
+    '/admin escuro' => ['admin', 'admin', true],
+    '/infra claro'  => ['infra', 'infra', false],
+    '/infra escuro' => ['infra', 'infra', true],
+]);
+
+it('[CT-B03] a página "Primeiros passos" com o checklist aberto não tem problema sério de acessibilidade', function (string $painel, string $persona, bool $escuro): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, OnboardingSeeder::class]);
+    ligarTutorialGuiado();
+    $pessoa  = pessoaDoPainelDoOnboarding($persona);
+    $titulos = titulosDoTourSemeado($painel, $painel === 'admin' ? 'usuarios' : 'pulse');
+
+    $this->actingAs($pessoa);
+    $this->get("/{$painel}/onboarding");
+
+    $pagina = visit("/{$painel}/onboarding")->on()->desktop();
+    $pagina = $escuro ? $pagina->inDarkMode() : $pagina->inLightMode();
+
+    $pagina->assertPathIs("/{$painel}/onboarding")
+        ->assertScript("document.documentElement.classList.contains('dark')", $escuro)
+        ->assertSeeIn('.fi-main .fi-header-heading', $titulos['jornada'])
+        ->click('button[aria-label="'.$titulos['jornada'].'"]')
+        ->assertVisible('[role="dialog"][aria-label="'.$titulos['jornada'].'"]')
+        ->assertNoAccessibilityIssues();
+})->with('onboarding-contraste');
+
+it('[CT-B04] a tecla Esc fecha o checklist aberto, sem concluir nem dispensar nada', function (string $foco): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, OnboardingSeeder::class]);
+    ligarTutorialGuiado();
+    $administradora = pessoaDoPainelDoOnboarding('admin');
+    $titulo         = titulosDoTourSemeado('admin', 'usuarios')['jornada'];
+    $botao          = 'button[aria-label="'.$titulo.'"]';
+    $painel         = '[role="dialog"][aria-label="'.$titulo.'"]';
+    $iniciarTour    = '[wire\:click*="startTour"][wire\:click*="usuarios"]';
+    $seletorDoFoco  = $foco === 'botao' ? $botao : $painel.' '.$iniciarTour;
+
+    $this->actingAs($administradora);
+    $this->get('/admin');
+
+    $pagina = visit('/admin')->on()->desktop()->inLightMode();
+    $pagina->assertPathIs('/admin')
+        ->keys($botao, 'Enter')
+        ->assertVisible($painel);
+
+    $antes = linhasDoTutorialDa($administradora);
+
+    $pagina->keys($seletorDoFoco, 'Escape')
+        ->assertMissing($painel)
+        ->assertVisible($botao)
+        ->assertMissing('[x-data^="onboardingTour"] [role="dialog"][aria-modal="true"]')
+        ->click($botao)
+        ->assertVisible($painel.' '.$iniciarTour);
+
+    expect(linhasDoTutorialDa($administradora))->toBe($antes);
+
+    $pagina->refresh()
+        ->assertPathIs('/admin')
+        ->assertVisible($botao);
+})->with([
+    'foco no botão do checklist'                  => ['botao'],
+    'foco dentro do painel, no botão do tour'     => ['painel'],
+]);

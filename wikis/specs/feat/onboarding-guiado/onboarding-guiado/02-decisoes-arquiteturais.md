@@ -1,7 +1,7 @@
 # Decisões Arquiteturais — Onboarding guiado
 
 Nenhuma decisão passou nos três portões. As escolhas de desenho estão em `## Decisões de Desenho`
-do `01` (D1 a D13, mais D7b): a do 404 por middleware de painel (D9) é a mais próxima de uma ADR, mas troca-se
+do `01` (D1 a D15, mais D7b): a do 404 por middleware de painel (D9) é a mais próxima de uma ADR, mas troca-se
 por um trait nas Pages sem migração de dado, então não é difícil de reverter.
 
 ## Superfície Livewire

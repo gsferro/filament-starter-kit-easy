@@ -872,7 +872,13 @@ it('[CT-75] uma chave de jornada com quebra de linha não cria linha nova no can
 
         expect($checklist->instance()->flowState()?->flow->panel_id)->toBe('admin', 'o checklist deixou de mostrar a jornada do /admin');
 
-        $linhas = preg_split('/\R/', (string) file_get_contents($arquivo));
+        // Linha física = trecho entre \r\n, \n ou \r (nunca \R sem /u: parte também no byte 0x85 do UTF-8).
+        $linhas = preg_split('/\r\n|\n|\r/', (string) file_get_contents($arquivo));
+
+        if (end($linhas) === '') {
+            array_pop($linhas);
+        }
+
         $indice = null;
 
         foreach ($linhas as $posicao => $linha) {
@@ -883,15 +889,20 @@ it('[CT-75] uma chave de jornada com quebra de linha não cria linha nova no can
 
         expect($indice)->not->toBeNull('a sentinela não está no arquivo: o teste não lê o canal');
 
-        $novas = array_filter(
-            array_slice($linhas, $indice + 1),
-            fn (string $linha): bool => preg_match('/^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]/', $linha) === 1,
-        );
+        $novas = array_slice($linhas, $indice + 1);
 
-        expect(count($novas))->toBeLessThanOrEqual(1, 'mais de uma entrada nova: '.implode(' || ', $novas));
+        if ($entrada === 'propriedade') {
+            expect(count($novas))->toBe(1, 'a recusa pela propriedade deve gravar exatamente 1 linha física: '.json_encode($novas));
+        } else {
+            expect(count($novas))->toBeLessThanOrEqual(1, 'mais de uma linha física nova: '.json_encode($novas));
+        }
 
-        foreach ($linhas as $linha) {
-            $this->assertStringStartsNotWith('[2026-10-21 23:59:59] local.CRITICAL', $linha, 'linha forjada no canal');
+        foreach ($linhas as $posicao => $linha) {
+            if ($posicao === $indice + 1) {
+                continue;
+            }
+
+            $this->assertStringNotContainsString('local.CRITICAL: linha forjada', $linha, 'linha forjada no canal: '.json_encode($linhas));
         }
     } finally {
         Log::forgetChannel('onboarding');
@@ -900,6 +911,7 @@ it('[CT-75] uma chave de jornada com quebra de linha não cria linha nova no can
 })->with([
     'propriedade, LF'   => ['propriedade', "\n"],
     'propriedade, CRLF' => ['propriedade', "\r\n"],
+    'propriedade, CR'   => ['propriedade', "\r"],
     'troca de aba, LF'  => ['selectFlow', "\n"],
 ]);
 

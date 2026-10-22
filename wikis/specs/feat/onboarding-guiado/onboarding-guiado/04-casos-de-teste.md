@@ -1,6 +1,6 @@
 # Casos de Teste — onboarding-guiado: jornadas semeadas, interruptor no settings e rule de manutenção
 
-> Requisito: `00-requisito.md` (Texto Original + Adendos 1, 2, 3 + P-01..P-26) · Plano: `01-plano-acao.md` · Superfície Livewire: `02-decisoes-arquiteturais.md`
+> Requisito: `00-requisito.md` (Texto Original + Adendos 1, 2, 3 + P-01..P-28) · Plano: `01-plano-acao.md` · Superfície Livewire: `02-decisoes-arquiteturais.md`
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação (a feature não existe). O `vendor/` e o `app/` foram lidos só para nomes (classes, rotas, colunas) e para saber se um efeito **tem destinatário** no caminho feliz.
 > Revisão adversarial: concluída — 38 achados, todos fechados (2026-10-21); 2ª e última rodada: 16 achados (ADV2-01..ADV2-16), todos fechados (2026-10-21), ver `## Fechamento da 2ª rodada adversarial`. Fechamento: 17 cenários novos (CT-43…CT-59), 1 CT-B novo (CT-B02), linhas e asserções novas em 16 cenários existentes, 1 oráculo invertido corrigido (CT-11, ADV-21); mutantes da revisão e das premissas novas M110…M176 não contam para o teto por regra (SKILL.md, passo 6, item 1). Detalhe em `## Fechamento da revisão adversarial`.
 > Perguntas da derivação renumeradas pela sessão: Q?1–Q?7 → Q11–Q17 (premissas P-04..P-10, tratadas como decididas); Q?8–Q?10 → Q18–Q20 (desenho); Q?11–Q?16 da revisão → Q21–Q26 (P-11..P-16); ADV-12 → P-17.
@@ -22,9 +22,11 @@
 - Técnicas aplicadas: EP, BVA 2-valores (contagem de convites 0/1), tabela de decisão (semente × banco; modo × resposta do `kit:install`), matriz papel × ação, tabela estado × operação (uma, 20 células), rastreio de efeito (direção "não aconteceu" com destinatário real e controle positivo), 2-switch, idempotência ancorada no agregado persistido
 - Técnica escalada: R16 (área D) usa **2-switch** além de EP, porque o defeito plausível é o progresso do passo escondido sumir ou contar no numerador, que só aparece ao religar a feature; e **BVA** na borda de 100 % (CT-56, ADV-07)
 - Quality gate, ciclo 2 (2026-10-21): QA-08 → R33/CT-72; QA-09 → R34/CT-73, CT-74 (P-25); QA-11 → R35/CT-75 (P-26); QA-12 → CT-16 re-derivado (linha `/app` com 5 passos, P-22; oráculo pela chave da jornada). Ver `## Fechamento do quality gate, ciclo 2`
+- Quality gate, ciclo 3 (2026-10-22): QA-15 → P-27 → R36/CT-B03 (`05`); QA-16 → P-28 → R37/CT-B04 (`05`); QA-17 → CT-75 reescrito (mesmo ID: linhas físicas depois da sentinela; linha CR; M208–M210). Ver `## Fechamento do quality gate, ciclo 3`
 - `Quando` com sequência (CT-04, CT-12, CT-28, CT-51, CT-58, CT-61, CT-65, CT-74): evento único declarado — é o **2-switch** (o oráculo é o destino do segundo evento, que não existe sem o primeiro); ADV-27..29
-- Cenários: 75 · Regras: 35 · Mutantes previstos: 204 · Sem matador: 0
-<!-- derivado por grep -c (template-04 §Contagem do cabeçalho). O CT-B01, o CT-B02 e seus mutantes (MB1–MB6) estão no 05. IDs M22 e M69 fundidos em M20 e M56 (teto de 6 por regra no perfil completo); M109 acrescentado à R14. -->
+- Cenários: 75 · Regras: 37 · Mutantes previstos: 207 · Sem matador: 0
+- No `05` (mesmos `grep -c`, com `CT-B` e `MB`): CT-B: 4 · Mutantes MB: 16 · Sem matador: 0
+<!-- derivado por grep -c (template-04 §Contagem do cabeçalho), recalculado em 2026-10-22 (quality gate, ciclo 3). Os CT-B01..CT-B04 e seus mutantes (MB1–MB16) estão no 05; as regras R36 e R37 têm seção no 04 e cenário no 05. IDs M22 e M69 fundidos em M20 e M56 (teto de 6 por regra no perfil completo); M109 acrescentado à R14. -->
 - Lacunas declaradas (não são mutantes sem matador): o recorte de RQ-13 "alterar tela existente" e as linhas da taxonomia marcadas "lacuna declarada"
 
 ## Varredura SFDIPOT
@@ -77,7 +79,9 @@
 | R32 — O canal de log do tutorial existe no projeto atualizado, e a configuração de log do projeto não é sobrescrita | F (mínimo) | P-24, RQ-02 | tabela de decisão (escalada), EP | CT-70, CT-71 |
 | R33 — Ligado, a página "Primeiros passos" abre com passo concluído e o mostra concluído, nos três painéis e nos três modos de conclusão | C (padrão) | RQ-28, P-06, P-22 | EP modo de conclusão × painel (each choice; visita só existe no `/admin`) | CT-72 |
 | R34 — Ligado, o custo de abrir uma tela não cresce com os passos que ensinam a mesma tela, e a decisão de acesso vale só para o request | C (padrão) | P-25, P-11 | cardinalidade com controle (mesmos passos extras, com e sem a condição), 2-switch | CT-73, CT-74 |
-| R35 — Um valor recusado vindo do navegador não forja linha no log do tutorial | C (padrão) | P-26, P-20 | EP forma da quebra × ponto de entrada, rastreio de efeito ("no máximo uma vez") | CT-75 |
+| R35 — Um valor recusado vindo do navegador não forja linha no log do tutorial | C (padrão) | P-26, P-20 | EP forma da quebra (LF, CRLF, CR) × ponto de entrada, rastreio de efeito (linhas físicas: "exatamente uma" / "no máximo uma") | CT-75 |
+| R36 — Os botões e os rótulos de status do checklist aberto e da página "Primeiros passos" passam o axe no nível serious, nos temas claro e escuro | C (padrão) | P-27, RQ-28 | EP painel (tema do kit × tema próprio) × tema, controle positivo (checklist visível, tema efetivo) | CT-B03 (05) |
+| R37 — O checklist aberto fecha com a tecla Esc, sem gravar nada | C (padrão) | P-28, RQ-28 | EP por foco (botão que abriu × dentro do painel), rastreio de efeito ("não aconteceu", com destinatário) | CT-B04 (05) |
 
 Cobertura por cláusula (toda `RQ` e toda `P-nn` vigente):
 
@@ -97,6 +101,7 @@ Cobertura por cláusula (toda `RQ` e toda `P-nn` vigente):
 - P-04 — CT-45 · P-05 — CT-46 · P-06 — CT-15, CT-47, CT-37 (linha `admin_app`) · P-07 — CT-26 (linha desligado) · P-08 — CT-34, CT-49 · P-09 — CT-50 · P-10 — CT-38 (linha `--no-seed`)
 - P-11 — CT-53, CT-54, CT-65 · P-12 — CT-51, CT-64 · P-13 — CT-27 (linha "Execuções de IA") · P-14 — CT-48 · P-15 — CT-39 · P-16 — CT-42 · P-17 — CT-52 · P-18 — CT-62 · P-19 — CT-61 · P-20 — CT-66 · P-21 — CT-67 · P-22 — CT-68, CT-16 (linha `/app`: 5 passos) · P-23 — CT-69 · P-24 — CT-70, CT-71
 - P-25 — CT-73 (consultas não crescem com passos da mesma tela), CT-74 (a decisão não atravessa o request) · P-26 — CT-75
+- P-27 — CT-B03 (`05`: página e checklist aberto, `/admin` e `/infra` × claro e escuro) · P-28 — CT-B04 (`05`: foco no botão que abriu e dentro do painel)
 - Nenhuma `RQ` está com Estado `aberta` no `00`; Q1–Q8 e Q10 estão respondidas; Q11–Q17 e Q21–Q28 estão abertas **com premissa vigente** (P-04..P-16, P-18, P-19), tratada como decidida pela sessão. A `P-04` citada no `02` (linha `completeStep`) é anterior à numeração atual: o comportamento dela é a RQ-30 (Adendo 3), não a P-04 de hoje (página com 404)
 
 ### Matriz estado × operação (única, área B)
@@ -140,6 +145,7 @@ Legenda conferida célula a célula: O1, O2, O4, O5, O6, O10 são leitura, sem e
 | G11 `kit:install` | R20 | Pest feature HTTP | existente — `tests/Kit/ResumoDoKitInstallTest.php` (`diretorioDeInstalacaoDoKit`, `rodarKitInstallDeVerdade`, `rodarKitInstallDigitandoASenha`) — ver Q18 | o requisito afirma o diálogo e o desfecho do comando real | sessão, 2026-10-21 — confirmadas no fechamento da revisão adversarial |
 | G12 Rule, inventário, documentação e rotas de entrega | R21, R22 (CT-40), R23, R27 | Pest feature HTTP | existente — `tests/Kit/InventarioDeTelasTest.php` (`telasRegistradasNoPainel`), `tests/Kit/ConfiguracoesDoKitDocumentacaoTest.php`, `painelRegistradoEmTeste` | enumera os painéis da aplicação de pé e lê arquivos da árvore | sessão, 2026-10-21 — confirmadas no fechamento da revisão adversarial |
 | G13 Tour no navegador | R9 (CT-B01, CT-B02) | browser | existente — molde `tests/Browser/AgentesIaNoSettingsTest.php`; arquivo `tests/Browser/OnboardingGuiadoTest.php` | o tour é Alpine: só o navegador prova que ele abre o popover (JS executado) | sessão, 2026-10-21 — confirmadas no fechamento da revisão adversarial |
+| G14 Acessibilidade do tutorial no navegador | R36 (CT-B03), R37 (CT-B04) | browser | existente — o arquivo do G13, `tests/Browser/OnboardingGuiadoTest.php` (mesmas fixtures e `titulosDoTourSemeado()`) | contraste é cor computada nos dois temas (axe) e o Esc é evento de teclado com foco: só o navegador prova | sessão, 2026-10-22 — confirmada sob a decisão de gsferro de corrigir QA-15/QA-16 (contraste e Esc só o navegador prova) |
 
 Cenários da 2ª rodada adversarial nos grupos existentes: CT-60 e CT-62 em G5; CT-61 e CT-65 em G8; CT-63 e CT-64 em G10.
 
@@ -1993,9 +1999,9 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 
 *(nova em 2026-10-21: QA-11 do quality gate, ciclo 2)*
 
-> `P-26` ("um valor vindo do navegador e recusado pelo checklist não cria linha nova no log do tutorial (quebra de linha não forja registro)"), `P-20` · perfil **padrão** (área C) · técnica: **EP** — forma da quebra de linha (LF, CRLF) × ponto de entrada da chave da jornada (propriedade escrita direto, troca de aba) — com **rastreio de efeito** na direção "no máximo uma vez" · arquivo `tests/Kit/OnboardingGuiadoConsumoTest.php` (G6)
+> `P-26` ("um valor vindo do navegador e recusado pelo checklist não cria linha nova no log do tutorial (quebra de linha não forja registro)"), `P-20` · perfil **padrão** (área C) · técnica: **EP** — forma da quebra de linha (LF, CRLF, CR) × ponto de entrada da chave da jornada (propriedade escrita direto, troca de aba) — com **rastreio de efeito** contado em linhas físicas ("exatamente uma" pela propriedade, "no máximo uma" pela troca de aba) *(alterado em 2026-10-22: QA-17 do quality gate, ciclo 3)* · arquivo `tests/Kit/OnboardingGuiadoConsumoTest.php` (G6)
 
-**Proibição 12 não se aplica**: o cenário não afirma o texto do aviso de recusa (que continua sem CT, `## Fronteira com o Plano`); afirma o efeito que a P-26 proíbe — linha nova forjada no arquivo do canal — e o "no máximo uma entrada por recusa".
+**Proibição 12 não se aplica**: o cenário não afirma o texto do aviso de recusa (que continua sem CT, `## Fronteira com o Plano`); afirma o efeito que a P-26 proíbe — linha nova forjada no arquivo do canal — e a contagem de linhas físicas por recusa (exatamente uma pela propriedade, como controle positivo de que o valor passou pelo canal observado; no máximo uma pela troca de aba).
 
 ```gherkin
   Regra: a chave de jornada recusada pelo checklist, com quebra de linha, não cria linha nova no canal de log do tutorial
@@ -2005,30 +2011,59 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
       E o canal de log do tutorial gravando num arquivo do cenário, com uma linha sentinela já gravada nele
       Quando o checklist recebe, pela <entrada>, o valor "qa-gate" + <quebra> + "[2026-10-21 23:59:59] local.CRITICAL: linha forjada"
       Então o checklist continua mostrando a jornada do /admin
-      E a linha sentinela está no arquivo, e depois dela há no máximo uma entrada nova
-      E nenhuma linha do arquivo, separando por qualquer quebra de linha, começa com "[2026-10-21 23:59:59] local.CRITICAL"
+      E a linha sentinela está no arquivo, e depois dela há <linhas físicas> linha física, separando por \r\n, \n ou \r
+      E nenhuma linha física do arquivo, fora da primeira depois da sentinela, contém "local.CRITICAL: linha forjada"
 
       Exemplos:
-        | entrada                                  | quebra        | # partição                                  |
-        | propriedade flowKey escrita direto       | LF (\n)       | quebra simples; a entrada do QA-11 (P-20)   |
-        | propriedade flowKey escrita direto       | CRLF (\r\n)   | quebra do Windows                           |
-        | troca de aba (selectFlow)                | LF (\n)       | segundo ponto de entrada da chave           |
+        | entrada                                  | quebra        | linhas físicas | # partição                                                                 |
+        | propriedade flowKey escrita direto       | LF (\n)       | exatamente 1   | quebra simples; a entrada do QA-11 (P-20)                                  |
+        | propriedade flowKey escrita direto       | CRLF (\r\n)   | exatamente 1   | quebra do Windows; o `\r` que sobra de tirar só o `\n` vira quebra no formatter (QA-17) |
+        | propriedade flowKey escrita direto       | CR (\r)       | exatamente 1   | `\r` sozinho: o tratamento de `\r\n` e `\n` não o alcança                  |
+        | troca de aba (selectFlow)                | LF (\n)       | no máximo 1    | segundo ponto de entrada da chave (ver Q?3)                                |
 ```
+
+*(alterado em 2026-10-22: QA-17 do quality gate, ciclo 3)* — o oráculo deixou de contar só as linhas que começam com `[` e passou a contar as **linhas físicas** depois da sentinela; a última asserção deixou de ser "começa com" e passou a "contém, fora da primeira linha nova"; linha `CR (\r)` e coluna `linhas físicas` acrescentadas; M205 desdobrado (M205 só `\n`, M208 só `\r\n`), M209 e M210 novos. Motivo medido: com o tratamento só de `\n`, o `\r` vai escapado no JSON do context, o formatter de linha o devolve como quebra real, e a linha forjada nasce com um espaço na frente (`" [2026-10-21 23:59:59] local.CRITICAL: linha forjada"`) — o oráculo antigo, ancorado em `^\[`, não a via.
 
 - **`@premissa` de mecanismo (raia desenho)**: o canal `onboarding` tem o **caminho** desviado para um arquivo do cenário, mantendo o driver e o formatter que o projeto declara — a quebra de linha só vira linha nova pelo formatter de linha do Laravel. **Nunca** `Log::spy()` / `Log::partialMock()->shouldReceive('channel')` (o molde de `tests/Pest.php` para outros canais): o mock recebe a string e não prova linha nenhuma no arquivo
 - **A sentinela é o controle positivo da observação**: gravada no canal antes da ação, ela prova que o teste lê o arquivo para onde o canal escreve — sem ela, um canal que grava em outro lugar passa as duas negativas no vácuo
-- **"Entrada nova"** = linha que começa pelo cabeçalho de data do formatter (`[AAAA-MM-DD hh:mm:ss]`), depois da sentinela; a linha forjada também começa assim e, se existir, conta como segunda entrada
-- **"Qualquer quebra de linha"** = `\n`, `\r\n` e `\r` (`preg_split('/\R/')`): um `\r` que sobra depois de tirar só o `\n` ainda abre linha para quem lê o arquivo
-- A linha 3 vale como guarda mesmo se a troca de aba hoje não registrar a recusa: o mutante M206 é a regressão em que ela passa a registrar o valor cru
+- **"Linha física"** = trecho do arquivo entre quebras `\r\n`, `\n` ou `\r` — separar por `/\r\n|\n|\r/`, **não** por `\R` sem o modificador `u`, que também parte no byte `0x85` de um caractere UTF-8. Conta-se da linha seguinte à da sentinela até o fim, descartando só o trecho vazio que o `\n` final do arquivo produz. Nenhum filtro por prefixo: a linha forjada conta qualquer que seja o primeiro caractere
+- **"Exatamente 1" (linhas 1–3) é controle positivo, não oráculo de log** (Proibição 12): a recusa pela propriedade grava uma entrada no canal do tutorial (medido no QA-11, ciclo 3, dimensão B: "gera 1 linha"); exigir exatamente uma prova que o valor recusado **passou** pelo formatter do canal observado. Com "no máximo 1", uma recusa que deixasse de passar pelo canal (M210) passaria as duas negativas no vácuo. O cenário não afirma nível, texto nem campos da entrada
+- **"No máximo 1" (linha 4)**: o `00` não diz se a troca de aba registra a recusa, e o log não é cláusula; a linha vale como guarda do M206 — a regressão em que ela passa a registrar o valor cru. Apertar para "exatamente 1" é a Q?3
+- **"Fora da primeira"**: a única linha nova é a entrada da recusa, que pode trazer o valor tratado (numa linha só); o texto forjado em qualquer outra linha física é a forja que a P-26 proíbe, com ou sem `[` na coluna 0
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M204 | o valor do cliente concatenado na mensagem do aviso sem tratamento (o estado atual, QA-11) | CT-75 (linhas 1–3) | nenhuma linha começa com o texto forjado; o mutante grava a linha `CRITICAL` falsa |
-| M205 | tratamento que remove só uma forma de quebra: só `\r\n` (sobra o `\n` da linha 1) ou só `\n` (sobra o `\r` da linha 2) | CT-75 (linha 1 ou linha 2) | nenhuma linha forjada, separando por `\R`; o mutante deixa uma quebra que abre a linha |
-| M206 | o tratamento só no gancho da propriedade `flowKey`; a troca de aba registra a chave recusada crua | CT-75 (linha 3) | nenhuma linha forjada; o mutante forja pela troca de aba |
-| M207 | a recusa registrada duas vezes (no gancho da propriedade e de novo ao resolver a jornada no render) | CT-75 (segunda asserção, linhas 1 e 2) | no máximo uma entrada depois da sentinela; o mutante grava duas |
+| M204 | o valor do cliente concatenado na mensagem do aviso sem tratamento (o estado do QA-11) | CT-75 (linhas 1–4) | 1 (ou ≤ 1) linha física depois da sentinela e o texto forjado fora dela; o mutante grava a linha `CRITICAL` falsa como segunda linha física |
+| M205 | tratamento que troca só `\n` (`preg_replace('/\n/', …)`): sobra o `\r` do CRLF, que vai escapado no JSON do context e volta como quebra real pelo formatter (o K5 do QA-17) | CT-75 (linha 2) | exatamente 1 linha física depois da sentinela; o mutante produz 2, a segunda `" [2026-10-21 23:59:59] local.CRITICAL: linha forjada…"` — e a última asserção a acha pelo "contém" |
+| M206 | o tratamento só no gancho da propriedade `flowKey`; a troca de aba registra a chave recusada crua | CT-75 (linha 4) | no máximo 1 linha física e o texto forjado fora da primeira; o mutante forja pela troca de aba |
+| M207 | a recusa registrada duas vezes (no gancho da propriedade e de novo ao resolver a jornada no render) | CT-75 (linhas 1–3) | exatamente 1 linha física depois da sentinela; o mutante grava 2 |
+| M208 | tratamento que troca só a sequência `\r\n` (`str_replace("\r\n", …)`): o `\n` sozinho passa | CT-75 (linha 1) | exatamente 1 linha física; o mutante produz 2, a segunda com o texto forjado |
+| M209 | tratamento de `\r\n` e `\n` (`str_replace(["\r\n", "\n"], …)`), sem o `\r` sozinho | CT-75 (linha 3) | exatamente 1 linha física; o mutante deixa o `\r`, que o formatter devolve como quebra — 2 linhas, a segunda com o texto forjado |
+| M210 | a recusa da propriedade registrada fora do canal do tutorial (canal padrão), com o valor cru: o arquivo observado não recebe nada e as negativas passam no vácuo | CT-75 (linhas 1–3) | exatamente 1 linha física depois da sentinela; o mutante deixa 0 |
+
+Estouro do teto de mutantes da regra (perfil padrão, 2 a 5): M208–M210 nascem de achado medido do quality gate (QA-17, o K5 e o oráculo ancorado em `^\[`), como os mutantes da revisão adversarial — não contam para o teto (SKILL.md, passo 6, item 1).
+
+---
+
+## Regra R36 — Os botões e os rótulos de status do checklist aberto e da página "Primeiros passos" passam o axe no nível serious, nos temas claro e escuro
+
+*(nova em 2026-10-22: QA-15 do quality gate, ciclo 3)*
+
+> `P-27` ("os botões e os rótulos de status que o tutorial guiado mostra (checklist e página "Primeiros passos") têm contraste suficiente para leitura (WCAG AA), nos temas claro e escuro, como o resto das telas do kit"), `RQ-28` · perfil **padrão** (área C) · técnica: **EP** painel (tema do kit × tema próprio) × tema (claro × escuro), com três controles positivos (checklist visível quando o axe roda, conteúdo da página presente, tema efetivo no documento) · grupo **G14** (`browser`)
+
+Cenário e mutantes no `05`: **CT-B03** (MB7–MB11). Só o navegador computa contraste (princípio 3: pixel/acessibilidade). Escolha dos painéis (`/admin` e `/infra`) justificada no próprio CT-B03; o `/app` é a Q?2.
+
+---
+
+## Regra R37 — O checklist aberto fecha com a tecla Esc, sem gravar nada
+
+*(nova em 2026-10-22: QA-16 do quality gate, ciclo 3)*
+
+> `P-28` ("o checklist flutuante aberto fecha com a tecla Esc"), `RQ-28` · perfil **padrão** (área C) · técnica: **EP** por foco (no botão que abriu × dentro do painel) com **rastreio de efeito** na direção "não aconteceu" — concluir, pular, dispensar, "lembrar depois" e "não mostrar mais", com destinatário (passos pendentes, jornada não dispensada) · grupo **G14** (`browser`)
+
+Cenário e mutantes no `05`: **CT-B04** (MB12–MB16). "Fecha" é o observável de P-28; "sem gravar nada" é o invariante de quem fecha um diálogo (o `00` não dá ao Esc nenhum efeito além de fechar), e o rastreio de efeito o guarda contra o mutante que liga o Esc a um verbo do pacote que grava (MB15, MB16).
 
 ---
 
@@ -2058,6 +2093,7 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 | **Estado do framework usado sem validar** | não se aplica: a feature não consome `$filters`, `$tableFilters`, `$tableSearch` nem `$tableSortColumn` (`02`, "Valores do cliente que viram índice"); a ordenação do CT-46 é só o gatilho do update | — |
 | **IDOR por entidade** (por tabela persistida) | `settings`: não se aplica — configuração da instalação, sem dono; `onboarding_flows`, `onboarding_steps`, `onboarding_conditions`: CT-08, CT-09, CT-46; `onboarding_step_progress`, `onboarding_flow_progress`: CT-19, CT-48, CT-50, CT-18, CT-13; `onboarding_preferences`: CT-13 (desligado), ligado: lacuna declarada — preferência só do sujeito resolvido no servidor (`02`, linha `completeStep`), sem cenário de segunda pessoa | G3, G6, G10 |
 | **Escopo com discriminante nulo** (fecha ou abre?) | `panel_id` nulo abriria a jornada em todos os painéis — fecha: CT-15 (inclusive para `master_global`), CT-16; organização: progresso e convite por organização aberta (CT-49, CT-50); `master_global` sem painel no papel vê só a jornada do painel corrente (CT-15) | G5, G10 |
+| **Acessibilidade** (contraste e teclado) *(novo em 2026-10-22: QA-15, QA-16)* | contraste no nível serious do axe, nos dois temas: CT-B03 (página e checklist aberto, `/admin` e `/infra`); fechar o diálogo pelo teclado: CT-B04 (Esc, foco no botão e dentro do painel); ordem de Tab e foco devolvido ao botão depois do Esc: lacuna declarada — nem o `00` nem P-28 os pedem (QA-16 mediu que o Tab já alcança o botão) | G14 |
 | **Saída do estado de erro** (4xx tem destino) | 404 da autoria → o `/admin` abre: CT-10; 404 da página "Primeiros passos" (CT-45) → o dashboard do mesmo painel abre sem o checklist (CT-11, linhas desligado); 404 da ação do checklist → próximo carregamento sem checklist e painel abrindo: CT-04, CT-58 | G3, G5, G1, G2 |
 
 ## Índice de Cenários
@@ -2138,7 +2174,11 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 | CT-72 | a página "Primeiros passos" abre com um passo já concluído e o mostra concluído | R33 | EP modo × painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M197, M198, M199, M200 |
 | CT-73 | dez passos a mais que ensinam a tela de Usuários não acrescentam consultas | R34 | cardinalidade com controle | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M201, M202 |
 | CT-74 | a decisão de acesso à tela vale só para o request em que foi tomada | R34 | 2-switch | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M203 |
-| CT-75 | uma chave de jornada com quebra de linha não cria linha nova no canal de log do tutorial | R35 | EP, rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M204, M205, M206, M207 |
+| CT-75 | uma chave de jornada com quebra de linha não cria linha nova no canal de log do tutorial *(alterado em 2026-10-22: QA-17 do quality gate, ciclo 3)* | R35 | EP, rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M204, M205, M206, M207, M208, M209, M210 |
+| CT-B01 | o tour do passo de Usuários abre no navegador a partir do checklist do /admin (`05`) | R9 | EP por painel | G13 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB1, MB2, MB3, MB4 |
+| CT-B02 | o tour do passo de Pulse abre no navegador a partir do checklist do /infra (`05`) | R9 | EP por painel | G13 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB5, MB6 |
+| CT-B03 | a página "Primeiros passos" com o checklist aberto não tem problema sério de acessibilidade, no /admin e no /infra, claro e escuro (`05`) | R36 | EP painel × tema, controle positivo | G14 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB7, MB8, MB9, MB10, MB11 |
+| CT-B04 | a tecla Esc fecha o checklist aberto, sem concluir nem dispensar nada (`05`) | R37 | EP por foco, rastreio de efeito | G14 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB12, MB13, MB14, MB15, MB16 |
 
 ## Tabela de cogitado e cortado
 
@@ -2157,6 +2197,13 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 | linha `admin_app` no CT-47 | o papel só existe na suíte Tenancy (`.ai/rules/testes.md`); virou a linha 3 do CT-37 |
 | linha "status 403 da página sem a permissão" no CT-47 | outro `Quando` e outro `Então`; virou Q?17 → Q27 → P-18, cenário próprio CT-62 |
 | CT próprio para os verbos restantes do checklist (ADV-01) | cabem no `Esquema` do CT-13 sem custo de cenário (um `Esquema` conta 1); o controle de cada um entrou no CT-14 |
+| CT-B03 no `/app` (QA-15 mediu 7/6 violações lá) | o defeito é a mesma regra CSS do pacote nos três painéis; o `/app` só mata um mutante a mais se carregar tema próprio, distinto do `/admin` — Q?2 decide; se sim, a linha entra (o gate vence o teto) |
+| CT-B03 com uma linha "dashboard com o tutorial desligado" como controle | não mata mutante (gate, item 4); virou pré-requisito medido no `05` (linha de base do axe no documento inteiro) |
+| CT-B03 com `getComputedStyle` da cor do botão | P-27 diz "contraste AA", não qual cor; fixar a cor seria oráculo do plano. O axe mede a razão, que é a cláusula |
+| CT-B04 no `/infra` e no `/app` | mesmo componente e mesma view nos três painéis; nenhum mutante plausível do Esc depende do painel (QA-16: igual nas seis combinações) |
+| CT-B04 com a abertura por clique, além do Enter | a abertura não é a regra; o que muda o resultado do Esc é o foco, e a linha 2 já move o foco para dentro do painel |
+| CT-B04 afirmando o foco devolvido ao botão depois do Esc | nem o `00` nem a P-28 pedem; registrado como lacuna declarada na taxonomia (Acessibilidade) |
+| CT-75 com U+2028 e U+0085 (NEL) | o formatter não os transforma em `\r`/`\n`; não abrem linha física para quem lê o arquivo por `\r\n`, `\n` ou `\r`, e o QA-11 (ciclo 3, dimensão B) mediu 1 linha pelo app. Sem mutante plausível que só eles matem |
 
 ## Fechamento da revisão adversarial
 
@@ -2276,3 +2323,32 @@ A página "Primeiros passos" expõe no corpo a chave da jornada (`primeiros-pass
 ❓ Q31 (era Q?2; decidida pela sessão em 2026-10-21: rótulo pela invariante e linha 2 com a P-22) · raia: desenho · afeta: CT-37 · depende de: —
 A linha 2 do CT-37 diz "só com passos cuja tela ela abre" (P-11), mas a P-22 também esconde da Carla (`panel_user`) o passo do dashboard dinâmico, cuja tela ela **abre** (só não pode montar). O texto do `04` fica incompleto, e o rótulo do dataset (`'200, 11 passos'`) está defasado no teste.
 ➡️ Recomendação: na materialização, renomear o rótulo para a invariante (ex.: `'200, só passos que ela vê (P-11, P-22)'`) e, se a sessão autorizar mexer no CT-37, acrescentar "e sem o passo do dashboard dinâmico (P-22)" à linha 2. Esta derivação não reescreveu o CT-37.
+
+## Fechamento do quality gate, ciclo 3
+
+Achados de destino 3 do `06-relatorio-qa.md` (ciclo 3), derivados em 2026-10-22 a partir do `00` (P-26, P-27, P-28, RQ-28) e só das seções QA-15, QA-16 e QA-17 do `06`. Nenhum ID existente foi renumerado; o CT-75 foi reescrito com o mesmo ID. **Revisão adversarial: não rodada** — o teto de 2 rodadas foi atingido (`## Fechamento da 2ª rodada adversarial`); os dois CT-B novos e o CT-75 reescrito ficam sem re-revisão independente, registrado aqui como débito para o quality gate.
+
+| Achado | Destino |
+|---|---|
+| QA-15 | P-27 → R36, CT-B03 (`05`: página "Primeiros passos" com o checklist aberto, `/admin` e `/infra` × claro e escuro, `assertNoAccessibilityIssues()` nível serious, com três controles positivos); MB7–MB11; costura nova G14 (`browser`, a confirmar pela sessão) |
+| QA-16 | P-28 → R37, CT-B04 (`05`: Esc com o foco no botão que abriu e dentro do painel; não-efeito sobre progresso, preferências e recarga); MB12–MB16; G14 |
+| QA-17 | CT-75 reescrito (mesmo ID): linhas físicas depois da sentinela (exatamente 1 pela propriedade, no máximo 1 pela troca de aba), texto forjado proibido fora da primeira linha nova, linha `CR (\r)` nova; M205 agora só `\n`, morto pela linha 2; M208 (só `\r\n`, linha 1), M209 (sem o `\r` sozinho, linha 3), M210 (recusa fora do canal observado, controle) |
+
+### Para materializar só a diferença
+
+- CT-B **novos** (inteiros): CT-B03 e CT-B04, em `tests/Browser/OnboardingGuiadoTest.php`. Cada um tem de falhar antes da correção: o CT-B03 com `color-contrast` serious nas quatro linhas (o estado atual é o MB7); o CT-B04 com o painel ainda visível depois do Esc nas duas linhas (o estado atual é o MB12). Antes do primeiro vermelho do CT-B03, medir a linha de base do `05` (dashboard com o tutorial desligado, dois temas)
+- CT-75 **cujo oráculo mudou** (`tests/Kit/OnboardingGuiadoConsumoTest.php`): (1) separar por `/\r\n|\n|\r/` em vez de `/\R/`; (2) trocar o `array_filter` por `^\[` pela contagem de todas as linhas físicas depois da sentinela (sem o trecho vazio final), com `toBe(1)` nas linhas da propriedade e `toBeLessThanOrEqual(1)` na troca de aba; (3) trocar o `assertStringStartsNotWith` por "não contém `local.CRITICAL: linha forjada`" em toda linha física exceto a primeira depois da sentinela; (4) dataset novo `'propriedade, CR' => ['propriedade', "\r"]` e a coluna do esperado. Prova: o K5 do QA-17 (`preg_replace('/\n/', …)`) tem de ficar vermelho na linha CRLF numa cópia descartável, e o código atual (`\s+`) verde nas quatro
+
+Perguntas do ciclo 3 (numeração provisória; a sessão renumera):
+
+❓ Q32 (era Q?1; decidida pela sessão em 2026-10-22: seguir a ➡️, linha de base antes do primeiro vermelho) · raia: desenho · afeta: CT-B03 · depende de: —
+O `assertNoAccessibilityIssues()` do plugin roda o axe no documento inteiro, sem escopo nem filtro de regra. Se a página "Primeiros passos" (ou o shell do painel) tiver uma violação serious alheia ao tutorial — não de contraste, ou de outra peça do kit —, o CT-B03 fica vermelho depois da correção do QA-15, por motivo que não é o dele.
+➡️ Recomendação: medir a linha de base do `05` antes do primeiro vermelho. Se o dashboard com o tutorial desligado passar nos dois temas, seguir com o oráculo do documento inteiro (é o que a P-27 compara: "como o resto das telas do kit"). Se não passar, registrar a violação alheia como achado próprio e **não** trocar o oráculo por um `axe.run` escopado sem decisão da sessão.
+
+❓ Q33 (era Q?2; decidida pela sessão em 2026-10-22: os três painéis usam `CorPrimaria::paleta()`, sem linha do `/app`) · raia: desenho · afeta: CT-B03 · depende de: —
+O `/app` carrega o mesmo CSS de tema que o `/admin`? O CT-B03 cobre o `/admin` (tema do kit) e o `/infra` (tema próprio) porque o defeito é o mesmo nos três e o que distingue os painéis é onde a correção mora (MB9).
+➡️ Recomendação: conferir na materialização a configuração de tema/cores dos três painéis. Se o `/app` tiver tema ou `primary` próprio, acrescentar as linhas `/app` × claro e escuro ao `Esquema` do CT-B03 (o gate vence o teto); se compartilhar o do `/admin`, manter o corte.
+
+❓ Q34 (era Q?3; decidida pela sessão em 2026-10-22: o `selectFlow` não registra recusa, a linha 4 fica "no máximo 1") · raia: desenho · afeta: CT-75 (linha 4) · depende de: —
+A troca de aba (`selectFlow`) com chave recusada registra a recusa no canal do tutorial? Se registra, a linha 4 pode passar de "no máximo 1" a "exatamente 1" e ganhar o mesmo controle positivo das linhas 1–3 (o M210 pela troca de aba).
+➡️ Recomendação: conferir no primeiro verde da linha 4 a contagem real (0 ou 1). Se for 1, apertar para "exatamente 1"; se for 0, manter "no máximo 1" — o log não é cláusula, e a linha segue como guarda do M206.

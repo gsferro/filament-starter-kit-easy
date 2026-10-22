@@ -35,24 +35,24 @@
 
 ## 7. Rule e teste de inventário
 - [x] `.ai/rules/onboarding.md` e linha no índice — `.ai/rules/index.md` linha 20, 2026-10-21
-- [x] `tests/Kit/InventarioDeOnboardingTest.php` — arquivo presente, verde no `--filter=Onboarding` (305/305 depois do ciclo 2), 2026-10-21
+- [x] `tests/Kit/InventarioDeOnboardingTest.php` — arquivo presente, verde no `--filter=Onboarding` (312/312 depois do ciclo 3; 305 no ciclo 2), 2026-10-22
 
 ## 8. Documentação
 - [x] `docs/{pt,en}/recursos/tutorial-guiado.md` e índices — os dois arquivos presentes; reconciliados no step 10 (RD2-02), 2026-10-21
-- [x] Configurações, instalação avançada, READMEs e CHANGELOG — `CHANGELOG.md` `[Unreleased]` (Adicionado + Atualizando); READMEs com as contagens derivadas pelo `SiteDeDocumentacaoTest` (76 telas, 26 páginas, 98 rotas `GET`, 88 specs, 26 rules, 207/244 arquivos, badge 2.387); `docs/{pt,en}/comecar/atualizando-o-projeto.md` com o canal de log; redirects `site/public/{pt,en}/recursos/tutorial-guiado.html`, 2026-10-21
+- [x] Configurações, instalação avançada, READMEs e CHANGELOG — `CHANGELOG.md` `[Unreleased]` (Adicionado + Atualizando); READMEs com as contagens derivadas pelo `SiteDeDocumentacaoTest` (76 telas, 26 páginas, 98 rotas `GET`, 88 specs, 26 rules, 207/244 arquivos, badge 2.393); `docs/{pt,en}/comecar/atualizando-o-projeto.md` com o canal de log; redirects `site/public/{pt,en}/recursos/tutorial-guiado.html`, 2026-10-21
 
 ## Testes
 
-IDs por arquivo, derivados por `grep -o "\[CT-B\?[0-9]*\]"` em 2026-10-21 (71 CT + 2 CT-B, igual ao `04`/`05`):
+IDs por arquivo, derivados por `grep -o "\[CT-B\?[0-9]*\]"` em 2026-10-22 (75 CT + 4 CT-B = 79 IDs, igual ao `04`/`05`) *(alterado em 2026-10-22: QA-18)*:
 
 | Arquivo | CT |
 |---|---|
 | `tests/Kit/OnboardingGuiadoInterruptorTest.php` | CT-01..CT-10, CT-44, CT-46, CT-58 (13) |
-| `tests/Kit/OnboardingGuiadoConsumoTest.php` | CT-11..CT-16, CT-18, CT-19, CT-26, CT-43, CT-45, CT-47, CT-48, CT-54, CT-56, CT-60, CT-62, CT-66, CT-68 (19) |
+| `tests/Kit/OnboardingGuiadoConsumoTest.php` | CT-11..CT-16, CT-18, CT-19, CT-26, CT-43, CT-45, CT-47, CT-48, CT-54, CT-56, CT-60, CT-62, CT-66, CT-68, CT-72..CT-75 (23) |
 | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | CT-17, CT-20..CT-25, CT-27..CT-33, CT-52, CT-53, CT-59, CT-61, CT-65, CT-69 (20) |
 | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | CT-38..CT-40, CT-42, CT-57, CT-67, CT-70, CT-71 (8) |
 | `tests/Tenancy/OnboardingGuiadoTenancyTest.php` | CT-34..CT-37, CT-41, CT-49..CT-51, CT-55, CT-63, CT-64 (11) |
-| `tests/Browser/OnboardingGuiadoTest.php` | CT-B01, CT-B02 |
+| `tests/Browser/OnboardingGuiadoTest.php` | CT-B01..CT-B04 |
 | `tests/Kit/InventarioDeOnboardingTest.php` | guarda da rule `.ai/rules/onboarding.md` (sem CT próprio: o CT-40 a exercita) |
 
 ## Tickets
@@ -62,8 +62,8 @@ IDs por arquivo, derivados por `grep -o "\[CT-B\?[0-9]*\]"` em 2026-10-21 (71 CT
 - [x] `/ponytail:ponytail-review` no diff — `/ponytail-review` (o comando sem o namespace é o que a instalação expõe) sobre o diff das correções: 1 corte (`! method_exists(..., 'canEdit') ||`), aplicado; `net: -0 lines`, 2026-10-21
 - [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"fixed"}` (TutorialGuiado.php), 2026-10-21
 - [x] `vendor/bin/filacheck --fix` — `All 17 rules passed!`, 2026-10-21
-- [x] `vendor/bin/pest --filter=Onboarding --compact` — `{"result":"passed","tests":305,"passed":305,"assertions":3206}` depois do ciclo 2 (293/293 no ciclo 1; o 291 anterior era de antes do CT-70 reescrito e do CT-71 — QA-02), 2026-10-21
-- [x] `vendor/bin/pest --parallel --tia`: nada mais quebrou além da baseline de `main` — suíte inteira sem `--tia` (mede mais que o TIA): `vendor/bin/pest --parallel --exclude-testsuite=Browser` → `{"result":"passed","tests":5321,"passed":5318,"skipped":3,"risky":2}`; browser da feature em série (`OnboardingGuiadoTest` + `TelasDoKitTest`) 9/9. Com `--parallel`, o browser dá 132 erros `playwright-server.json: No such file` (ambiente: o plugin não sobe o servidor em paralelo) — o browser inteiro roda em série, 2026-10-21
+- [x] `vendor/bin/pest --filter=Onboarding --compact` — `{"result":"passed","tests":312,"passed":312,"assertions":3241}` depois do ciclo 3, 2026-10-22 (305/305 no ciclo 2; 293/293 no ciclo 1; o 291 anterior era de antes do CT-70 reescrito e do CT-71 — QA-02), 2026-10-21
+- [x] `vendor/bin/pest --parallel --tia`: nada mais quebrou além da baseline de `main` — suíte inteira sem `--tia` (mede mais que o TIA): `vendor/bin/pest --parallel --processes=4 --exclude-testsuite=Browser` → `{"result":"passed","tests":5333,"passed":5330,"skipped":3,"risky":2}` no HEAD `10b422b1` (2026-10-22; antes do ciclo 2 eram 5321/5318); browser da feature em série (`OnboardingGuiadoTest` + `TelasDoKitTest`) 9/9. Com `--parallel`, o browser dá 132 erros `playwright-server.json: No such file` (ambiente: o plugin não sobe o servidor em paralelo) — o browser inteiro roda em série, 2026-10-21
 - [x] `/code-review high main...HEAD` + passe de eixos (step 9) — rodada 1 (CR-01..10, RD-01..04) e rodada 2 (CR2-01..09, RD2-01..04), despachos 14, 15, 19, 20, 2026-10-21
 - [x] Desvios propagados ao `01`/`02`/`04`/`05` — `01` (D7b, D13, Channel de Log, Superfície de UI com as subclasses), `02` (Superfície Livewire com `updatedFlowKey`), `04` (R30, R32, CT-27 linha 17), `05` (Desenhado × Implementado), 2026-10-21
 - [x] `rastreabilidade.sh` silencioso — exit 0, sem saída, 2026-10-21
@@ -73,7 +73,7 @@ IDs por arquivo, derivados por `grep -o "\[CT-B\?[0-9]*\]"` em 2026-10-21 (71 CT
 - [ ] `pest --mutate` — não rodado: débito declarado (no Windows exige o `pestw.cmd` por chunk; os 192 mutantes do `04` têm cenário matador nomeado, e a falsificabilidade dos CT de achado foi provada em cópia temporária)
 - [x] `ids-ct.sh` silencioso — `ids-ct.sh {wiki} 'tests/**/OnboardingGuiado*.php'` exit 0, sem saída, 2026-10-21
 - [x] `conformidade-rules.sh` silencioso — exit 0, sem saída (16 rules com veredito; 2 violações corrigidas: `specs.md` e `testes.md`), 2026-10-21
-- [x] Falsificabilidade dos CT de achado — ciclo 2 do gate: CT-72 7/7, CT-73 1/1 (sem a memória), CT-74 1/1 (memória estática presa ao container, M203), CT-75 2/3 (sem sanitizar o context; a linha `selectFlow` é controle) falham sem a correção — mutantes aplicados na árvore com backup e hash conferido depois (`scratchpad/falsif2.py`), 2026-10-21. Step 9: 4 de 5 falham sem o fix (CT-66 3/3, CT-67 2/2, CT-68 2/5 — as linhas "sem", as demais são controle —, CT-70 1/1 — depois reescrito); CT-69 passa sem o patch do CR-04 porque o patch é refator (achatamento do `TELAS` sem perda, mesmo resultado): o CT-69 é guarda do defeito descrito, e mata o mutante M187 (chave `hub-de-navegacao` → `hub-navegacao` no seeder filho: 2 de 3 painéis falham). Cópia: `git worktree --detach` + `git diff HEAD` aplicado + `vendor` copiado, um patch revertido por vez (`scratchpad/reverte.py`), 2026-10-21. Rodada 2: CT-70 (D1) e CT-71 vermelhos sem a correção do canal, escritos pelo `fw-executor-ct` antes dela (2 de 3; a linha D2 é o controle que mata o M192), verdes depois — 3/3, 2026-10-21
+- [x] Falsificabilidade dos CT de achado — ciclo 3 do gate: CT-B03 4/4 e CT-B04 2/2 vermelhos antes das correções (executor, mesma árvore sem elas); `.fio-hero-description` intermitente (2 de 3 rodadas vermelhas no `/admin` claro) antes do `--fio-theme-text-muted`, 0 de 4 depois; CT-75 refeito vermelho com M205 (2/4) e M209 (1/4) por `auto_prepend_file` sobre cópia no scratchpad, 2026-10-22. ciclo 2 do gate: CT-72 7/7, CT-73 1/1 (sem a memória), CT-74 1/1 (memória estática presa ao container, M203), CT-75 2/3 (sem sanitizar o context; a linha `selectFlow` é controle) falham sem a correção — mutantes aplicados na árvore com backup e hash conferido depois (`scratchpad/falsif2.py`), 2026-10-21. Step 9: 4 de 5 falham sem o fix (CT-66 3/3, CT-67 2/2, CT-68 2/5 — as linhas "sem", as demais são controle —, CT-70 1/1 — depois reescrito); CT-69 passa sem o patch do CR-04 porque o patch é refator (achatamento do `TELAS` sem perda, mesmo resultado): o CT-69 é guarda do defeito descrito, e mata o mutante M187 (chave `hub-de-navegacao` → `hub-navegacao` no seeder filho: 2 de 3 painéis falham). Cópia: `git worktree --detach` + `git diff HEAD` aplicado + `vendor` copiado, um patch revertido por vez (`scratchpad/reverte.py`), 2026-10-21. Rodada 2: CT-70 (D1) e CT-71 vermelhos sem a correção do canal, escritos pelo `fw-executor-ct` antes dela (2 de 3; a linha D2 é o controle que mata o M192), verdes depois — 3/3, 2026-10-21
 - [x] Docs pt/en, CHANGELOG e README reconciliados — RD2-02 nas docs do tutorial ("Some quando", condições, `View:PrimeirosPassos` também em `configuracoes-do-kit.md`), citações do `KitServiceProvider` (+23) em 6 docs, `roteiro-manual.sh` exit 0, 2026-10-21
 - [ ] `git commit`
 
@@ -116,7 +116,7 @@ Rodada 2 encerra o teto de 2 do step 9: nenhum achado estrutural; os dois de fro
 | `.ai/rules/app.md` | `app/**` | aplicada | painel corrente com nulo tratado: `app/Support/TutorialGuiado.php:abreATelaDo:149`, `app/Http/Middleware/ExigeTutorialGuiadoLigado.php:handle:34` |
 | `.ai/rules/commands.md` | `app/Console/Commands/**` | aplicada | `KitUpdate::CAMINHOS_DO_KIT` leva `config/filament-onboarding.php` (muda entre as tags); `config/logging.php` fora (P-24, CT-71); `KitInstall::semearTutorialGuiado` não grava `.env` |
 | `.ai/rules/config.md` | `config/**` | aplicada | `config/kit.php:'onboarding':650` com `filter_var(..., FILTER_VALIDATE_BOOLEAN)`; leitor único `TutorialGuiado::habilitado()` |
-| `.ai/rules/css-filament.md` | `app/Providers/**` | n.a. | o diff não toca `resources/css/filament/**`; o plugin traz o próprio CSS |
+| `.ai/rules/css-filament.md` | `resources/css/filament/**`, `app/Providers/**` | aplicada | `resources/css/filament/kit.css` (P-27) só declara variáveis `--fio-theme-*` e o fundo do `.fio-button--primary` escopado em `:root`, sem utilitária sem escopo e sem `@layer`; `php artisan filament:assets` rodado (`public/css/kit/kit-correcoes.css`); CT-B03 |
 | `.ai/rules/filament-resources.md` | `app/Filament/**/Resources/**` | aplicada | `JornadaResource`/`CondicaoResource` com `BadgeContagemNavegacao`; `BadgeDeNavegacaoTest` e `PermissoesDeResourcesTest` verdes |
 | `.ai/rules/filament.md` | `app/Filament/**` | aplicada | `app/Filament/Pages/PrimeirosPassos.php:regraLocalDeAcesso:30` com `ExigePermissaoDaTela`; par `canAccess()`/`shouldRegisterNavigation()` nos Resources |
 | `.ai/rules/kit.md` | `tests/Kit/**` | aplicada | ação com middleware persistente pela rota de update (`tests/Kit/OnboardingGuiadoInterruptorTest.php:acaoPelaRotaDeUpdateDoOnboarding:403`) |
@@ -138,6 +138,8 @@ Rodada 2 encerra o teto de 2 do step 9: nenhum achado estrutural; os dois de fro
 |---|---|---|---|---|---|
 | 1 | 2026-10-21 | REPROVADO → especificação | 0 Blocker · 2 Major (QA-01, QA-02) · 4 Minor (QA-03..06) · 1 Cosmético (QA-07); 7 dimensões não verificadas (app na URL informada não era o kit) | 1 (wiki) | QA-01: `01` passos 3/4/5 e `03` com as condições reais; QA-02: 293/293; QA-03: coluna `Arquivo` do índice do `04`; QA-04: origens do `08`; QA-05: `.ai/rules/onboarding.md` (chave nova + `visibility_condition`); QA-06: glossário (Tutorial guiado, Jornada, Passo); QA-07: D13, D9, Adendo 3. Ambiente do ciclo 2: SQLite descartável no scratchpad, kit em `http://127.0.0.1:8011`, tutorial ligado e semeado |
 | 2 | 2026-10-21 | REPROVADO → especificação | 1 Blocker (QA-08: página "Primeiros passos" dava 500 com passo concluído) · 2 Major (QA-09 N+1, QA-10 PRD) · 4 Minor (QA-11..14); G, H, K não verificadas | 3 → 2 (QA-08, QA-09, QA-11), 1 (QA-10, 12, 13, 14) | QA-08: CT-72 + view publicada corrigida e pasta em `CAMINHOS_DO_KIT`; QA-09: P-25, CT-73/74 + memória por request; QA-11: P-26, CT-75 + valor do cliente fora da mensagem e sem quebra no context; QA-12: CT-16 refeito (5 no `/app`, chave da jornada), rótulo do CT-37 (Q31); QA-10: passo 3 do `01`; QA-13: preparação e esperados do `08`; QA-14: `02` e docs de tenancy |
+| 3 | 2026-10-22 | REPROVADO → especificação (teto do loop: escalado ao usuário) | 0 Blocker · 1 Major (QA-18: números e linha de log defasados na wiki) · 3 Minor (QA-15 contraste AA dos botões do pacote, QA-16 Esc no checklist, QA-17 CT-75 deixa passar sanitização só de `
+`); K não verificada; app passou em A–J | 1 (QA-18), 3 (QA-15, QA-16, QA-17) | decisão de gsferro em 2026-10-22: corrigir os quatro e rodar um 4º ciclo autorizado; Esc fecha o checklist (P-28). Feito: QA-18 (`03`, `02`, `01`); QA-15 → P-27, CT-B03, `kit.css`; QA-16 → P-28, CT-B04, view do launcher; QA-17 → CT-75 refeito (mata M205/M209). A cópia morta `resources/css/vendor/filament-onboarding/onboarding.css` foi apagada a pedido de gsferro |
 
 ## Candidatos a Rule
 
@@ -220,6 +222,12 @@ Roteiro manual: sim — 2026-10-21 — resposta a Q9 — tours, checklist e pág
 | 25 | 11 | `fw-qa-gate` — ciclo 2 (kit servido na 8011, SQLite descartável) | herdado | conversa | `06` (REPROVADO → especificação, QA-08..14) | 351 299 tokens · 1816 s | `git status --porcelain` vazio antes e depois; QA-08 reproduzido pelo CT-72 vermelho; QA-09 reproduzido (84 × 52 consultas) |
 | 26 | 11 | `general-purpose` + `feature-test-design` — CT dos achados do ciclo 2 | opus | `01`, `02`, `03`, `app/`, conversa | R33–R35, CT-72..75, CT-16 refeito, M196–M207, Q?1/Q?2 → Q30/Q31 | 203 413 tokens · 388 s | contagens por `grep -c` (75 · 35 · 204 · 0) |
 | 27 | 11 | `fw-executor-ct` — CT-16, CT-72..75, rótulo do CT-37 | herdado | `01`, `02`, conversa | cortado no `maxTurns` (40) com os 5 `it()` escritos; retomado por `SendMessage`: CT-72/73/75 vermelhos (b), CT-16/74 verdes | 173 531 tokens · 429 s (2 partes) | saída do pest conferida; o CT-73 foi refeito pela sessão (classe a: deriva de consultas do arnês, controles intercalados) |
+| 28 | 11 | `fw-qa-gate` — ciclo 3 | herdado | conversa | `06` (REPROVADO → especificação, QA-15..18) | 316 356 tokens · 1743 s | `git status --porcelain` vazio antes e depois; QA-18 conferido (`grep` de 5321/2.387/71 CT no `03`) |
+| C3 | 11 | `codex exec --yolo` — rascunho da descrição do PR (só leitura, saída no scratchpad) | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/pr-body.md` | — | árvore limpa depois; amostra conferida; número da suíte defasado corrigido pela sessão |
+| C4 | 11 | `codex exec --yolo` — plano da release v0.52.0 (só leitura) | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/plano-release.md` | — | árvore limpa depois; `config/kit.php:'version':26`, as 6 ocorrências de `0.51.2` e a tensão do checklist (`:304-323`) conferidas |
+| 29 | 11 | `general-purpose` + `feature-test-design` — CT-B03/B04 (P-27/P-28) e CT-75 refeito | opus | `01`, `02`, `03`, `app/`, conversa | R36/R37, CT-B03, CT-B04, MB7–MB16, M208–M210, Q?1..3 → Q32..Q34 | 190 108 tokens · 503 s | contagens (75 · 37 · 207 · 0; CT-B 4); desvio de leitura declarado (o `06` inteiro, sem uso como oráculo) |
+| 30 | 11 | `fw-executor-ctb` — CT-B03 e CT-B04 | herdado | `01`, `02`, conversa | 6 vermelhos (b) antes da correção; linha de base do `/infra` já falha (Q32) | 93 252 tokens · 1134 s | screenshot e saída do pest conferidos; `app/` e CSS intactos |
+| 31 | 11 | `fw-executor-ct` — CT-75 refeito | herdado | `01`, `02`, conversa | verde no código; vermelho com M205 e M209 | 77 098 tokens · 551 s | mutantes por `auto_prepend_file` sobre cópia no scratchpad; `app/` intacto |
 | 5 | 3 | `Explore` — greps da Superfície Livewire do pacote | haiku | conversa | 4 greps colados, tabela das ações do checklist | 51 891 tokens · 56 s | `findStepState()` e `$flowKey` do trait lidos; revelou o caso do checklist já aberto (Q10) |
 
 ## Blockers
@@ -234,6 +242,7 @@ Roteiro manual: sim — 2026-10-21 — resposta a Q9 — tours, checklist e pág
 - Passo 7 (P-15): a rule ganhou os caminhos das features base sem tela própria.
 - `config/filament-onboarding.php` entrou em `KitUpdate::CAMINHOS_DO_KIT` (ADV-16).
 - Step 9, rodada 2 (P-24 reescrita): `config/logging.php` NÃO entra em `KitUpdate::CAMINHOS_DO_KIT`; o canal `onboarding` chega ao projeto atualizado pelo `KitServiceProvider::garantirCanalDoTutorialGuiado()`. Fonte corrigida: `01`, D7b e Channel de Log da Feature.
+- Gate, ciclo 3: o contraste do tutorial vem das variáveis `--fio-theme-*` do pacote no `kit.css`, mais o fundo do `.fio-button--primary` (P-27); o Esc entrou na view publicada do launcher (P-28). Fonte: `01` Superfície de UI.
 - Gate, ciclo 2 (QA-08): a página "Primeiros passos" passou a ler `progress->completed_at` na view publicada, que virou autoral e entrou em `KitUpdate::CAMINHOS_DO_KIT`. Fonte: `01` passo 3. (QA-09) `TutorialGuiado::abre()` memoriza o acesso por tela no request. Fonte: `01` Modelo de Execução.
 - Step 9 (P-22): a condição `dashboard_dinamico_no_painel` exige também o `canEdit()` da página (montar), não só o dinâmico ligado. Fonte: `00` P-22, `04` R30, `02` (sem mudança: a condição não é superfície Livewire).
 - Inventário de telas dos CT-B: `/{painel}/onboarding` entra em `telasDoKit()` e o `TelasDoKitTest` liga o tutorial com `ligarTutorialGuiado()` (padrão dos agentes de IA), em vez de isenção.
@@ -244,6 +253,7 @@ Roteiro manual: sim — 2026-10-21 — resposta a Q9 — tours, checklist e pág
 - `Date::use(CarbonImmutable)` do kit quebra qualquer pacote que tipe retorno `Illuminate\Support\Carbon` sobre coluna de data (QA-08): o `StepState::completedAt()` do onboarding dava `TypeError`. Nenhum CT abria a página com passo concluído — o gate pegou no app servido.
 - O formatter do Laravel (`allowInlineLineBreaks`) devolve a quebra de linha do JSON do context como linha real: valor do cliente no context forja registro tanto quanto na mensagem (QA-11).
 - No processo do teste, os render hooks de painel se acumulam a cada request (o `PanelSwitch` pergunta `canAccessPanel()` mais vezes por GET): contagem de consultas entre requests precisa de controle intercalado (CT-73).
+- O dashboard do `/infra` já falha no axe (`color-contrast` serious) sem o tutorial, em widgets alheios (`AccountWidget`, `FilamentInfoWidget`, releases do Composer): linha de base do CT-B03 (Q32), achado fora do escopo desta feature.
 - `Log::channel()` com canal sem configuração não lança: o `get()` do `LogManager` cai no logger de emergência (`vendor/laravel/framework/src/Illuminate/Log/LogManager.php:get:140`). Daí o CT-70 afirmar a configuração do canal, não a ausência de exceção.
 - Inserir código no topo do `KitServiceProvider` ou de `tests/Pest.php` desloca citações `arquivo:símbolo:linha` espalhadas por docs, providers e testes (+23 linhas, 8 arquivos nesta feature); `DiagramasDaArquiteturaTest` [CT-66] e `CitacoesDeCodigoTest` acusam.
 - O `updated{Prop}` do Livewire não é chamável pelo `$wire` (`SupportLifecycleHooks` bloqueia `updated*`), e o snapshot adulterado cai no checksum: o `updatedFlowKey()` cobre todos os caminhos de escrita do `flowKey` (RD2, eixo Propriedade pública).
