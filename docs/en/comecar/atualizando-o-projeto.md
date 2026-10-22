@@ -38,7 +38,7 @@ What it does, in order:
 The flow is **non-interactive** when there is no terminal (CI, `--no-interaction`) — never "no
 TTY": it turns into a report and exits without applying anything, unless `--all` or `--only-new`
 already gave the approval on the command line
-(`app/Console/Commands/KitUpdate.php:isInteractive:456`).
+(`app/Console/Commands/KitUpdate.php:isInteractive:457`).
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 ```
 
 The order comes straight from `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:404`): pre-flight (`:preVoo:486`), temporary remote
+(`app/Console/Commands/KitUpdate.php:handle:405`): pre-flight (`:preVoo:486`), temporary remote
 (`:vincularKit:545`), restricted diff (`:arquivosAlterados:651`), summary (`:mostrarResumo:827`),
 the terminal check (`:isInteractive:449`), the temporary branch (`:prepararBranch:847`), the
 file-by-file review (`:revisarEAplicar:896`), the `composer.json` report
@@ -164,7 +164,7 @@ after `kit:update`: the new settings migration adds `onboarding_habilitado`, see
 `KIT_ONBOARDING` (**false** by default). The `wallacemartinss/filament-onboarding` package was
 already a kit dependency. To use it, run `php artisan db:seed --class=OnboardingSeeder` and turn on
 *Usar o tutorial guiado* on the **Aplicação** tab of `/admin/configuracoes-da-aplicacao`. Seeding
-does not turn the switch on. See [Guided tutorial](../../recursos/tutorial-guiado/). `config/logging.php` is yours and `kit:update` does not deliver it: the kit declares the `onboarding` log channel, shaped like your `ai` channel, when your file lacks it.
+does not turn the switch on. See [Guided tutorial](../../recursos/tutorial-guiado/). `config/logging.php` is yours and `kit:update` does not deliver it: the kit declares the `onboarding` log channel, shaped like your `ai` channel, when your file lacks it. The views in `resources/views/vendor/filament-onboarding` now belong to the kit (the "Primeiros passos" page was fixed): if you customized them, review the diff.
 
 ### A new screen: reseed both seeders
 
@@ -234,7 +234,7 @@ section above, "A new kit dependency").
 
 A path that **entered** `CAMINHOS_DO_KIT` after your version — such as the authored folders under
 `resources/views/vendor` — is compared against **your tree**, not only tag against tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:701`): the file you do not have shows up as
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:702`): the file you do not have shows up as
 "novo no kit" even if the kit has not changed it since your version, and a file your project does not
 have shows up as "novo no kit" even if the kit changed it between the tags — that is the label `--only-new`
 applies. This behaviour holds from the version that introduced it (the class that runs is the installed

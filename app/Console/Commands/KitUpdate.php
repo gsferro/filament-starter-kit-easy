@@ -245,6 +245,7 @@ class KitUpdate extends Command
         'resources/views/vendor/filament-auth-designer',
         'resources/views/vendor/filament-captcha',
         'resources/views/vendor/filament-clear-cache',
+        'resources/views/vendor/filament-onboarding',
         'routes/console.php',
         // Os testes do kit acompanham a atualização: é com eles que você
         // confere se a fundação continua de pé depois de aplicar.

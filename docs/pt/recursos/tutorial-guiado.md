@@ -94,12 +94,12 @@ seeder pai os chama **só** quando `KIT_TENANCY=true`:
 
 | Seeder filho | Painel | Tela | Conclui | Some quando |
 |---|---|---|---|---|
-| `OrganizacoesSeeder` | admin | Organizações | ao terminar o tour | — |
-| `MembrosDaOrganizacaoSeeder` | app | Usuários da organização | ao terminar o tour | — |
-| `ConvitesDaOrganizacaoSeeder` | app | Convites da organização | sozinho, depois do primeiro convite na organização | — |
-| `ConvitesRecebidosSeeder` | app | Convites recebidos | ao terminar o tour | — |
-| `TrocaDeOrganizacaoSeeder` | app | Seletor de organização | ao terminar o tour | — |
-| `ProjetosSeeder` | app | Projetos (demonstração) | ao terminar o tour | o cenário de demonstração está desligado |
+| `OrganizacoesSeeder` | admin | Organizações | ao terminar o tour | o modo multi-tenant foi desligado depois de semear |
+| `MembrosDaOrganizacaoSeeder` | app | Usuários da organização | ao terminar o tour | o modo multi-tenant foi desligado depois de semear |
+| `ConvitesDaOrganizacaoSeeder` | app | Convites da organização | sozinho, depois do primeiro convite na organização | o modo multi-tenant foi desligado depois de semear |
+| `ConvitesRecebidosSeeder` | app | Convites recebidos | ao terminar o tour | o modo multi-tenant foi desligado depois de semear |
+| `TrocaDeOrganizacaoSeeder` | app | Seletor de organização | ao terminar o tour | o modo multi-tenant foi desligado depois de semear |
+| `ProjetosSeeder` | app | Projetos (demonstração) | ao terminar o tour | o cenário de demonstração está desligado, ou o modo multi-tenant foi desligado depois de semear |
 
 As jornadas são as mesmas em todas as organizações, mas **o progresso é por organização**: a mesma
 pessoa faz os primeiros passos separadamente em cada uma. Ligou a tenancy depois de semear? O

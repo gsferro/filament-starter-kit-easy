@@ -1,6 +1,6 @@
 # Casos de Teste — onboarding-guiado: jornadas semeadas, interruptor no settings e rule de manutenção
 
-> Requisito: `00-requisito.md` (Texto Original + Adendos 1, 2, 3 + P-01..P-24) · Plano: `01-plano-acao.md` · Superfície Livewire: `02-decisoes-arquiteturais.md`
+> Requisito: `00-requisito.md` (Texto Original + Adendos 1, 2, 3 + P-01..P-26) · Plano: `01-plano-acao.md` · Superfície Livewire: `02-decisoes-arquiteturais.md`
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação (a feature não existe). O `vendor/` e o `app/` foram lidos só para nomes (classes, rotas, colunas) e para saber se um efeito **tem destinatário** no caminho feliz.
 > Revisão adversarial: concluída — 38 achados, todos fechados (2026-10-21); 2ª e última rodada: 16 achados (ADV2-01..ADV2-16), todos fechados (2026-10-21), ver `## Fechamento da 2ª rodada adversarial`. Fechamento: 17 cenários novos (CT-43…CT-59), 1 CT-B novo (CT-B02), linhas e asserções novas em 16 cenários existentes, 1 oráculo invertido corrigido (CT-11, ADV-21); mutantes da revisão e das premissas novas M110…M176 não contam para o teto por regra (SKILL.md, passo 6, item 1). Detalhe em `## Fechamento da revisão adversarial`.
 > Perguntas da derivação renumeradas pela sessão: Q?1–Q?7 → Q11–Q17 (premissas P-04..P-10, tratadas como decididas); Q?8–Q?10 → Q18–Q20 (desenho); Q?11–Q?16 da revisão → Q21–Q26 (P-11..P-16); ADV-12 → P-17.
@@ -21,8 +21,9 @@
 - Probabilidade 3 em D: 27 seeders filhos, condições em dois mecanismos, sete decisores de visibilidade, multi-organização e re-semeadura sobre dado existente. Impacto 3 em D: RQ-25 — sobrescrever o texto que o administrador editou é perda irreversível de autoria
 - Técnicas aplicadas: EP, BVA 2-valores (contagem de convites 0/1), tabela de decisão (semente × banco; modo × resposta do `kit:install`), matriz papel × ação, tabela estado × operação (uma, 20 células), rastreio de efeito (direção "não aconteceu" com destinatário real e controle positivo), 2-switch, idempotência ancorada no agregado persistido
 - Técnica escalada: R16 (área D) usa **2-switch** além de EP, porque o defeito plausível é o progresso do passo escondido sumir ou contar no numerador, que só aparece ao religar a feature; e **BVA** na borda de 100 % (CT-56, ADV-07)
-- `Quando` com sequência (CT-04, CT-12, CT-28, CT-51, CT-58, CT-61, CT-65): evento único declarado — é o **2-switch** (o oráculo é o destino do segundo evento, que não existe sem o primeiro); ADV-27..29
-- Cenários: 71 · Regras: 32 · Mutantes previstos: 192 · Sem matador: 0
+- Quality gate, ciclo 2 (2026-10-21): QA-08 → R33/CT-72; QA-09 → R34/CT-73, CT-74 (P-25); QA-11 → R35/CT-75 (P-26); QA-12 → CT-16 re-derivado (linha `/app` com 5 passos, P-22; oráculo pela chave da jornada). Ver `## Fechamento do quality gate, ciclo 2`
+- `Quando` com sequência (CT-04, CT-12, CT-28, CT-51, CT-58, CT-61, CT-65, CT-74): evento único declarado — é o **2-switch** (o oráculo é o destino do segundo evento, que não existe sem o primeiro); ADV-27..29
+- Cenários: 75 · Regras: 35 · Mutantes previstos: 204 · Sem matador: 0
 <!-- derivado por grep -c (template-04 §Contagem do cabeçalho). O CT-B01, o CT-B02 e seus mutantes (MB1–MB6) estão no 05. IDs M22 e M69 fundidos em M20 e M56 (teto de 6 por regra no perfil completo); M109 acrescentado à R14. -->
 - Lacunas declaradas (não são mutantes sem matador): o recorte de RQ-13 "alterar tela existente" e as linhas da taxonomia marcadas "lacuna declarada"
 
@@ -50,7 +51,7 @@
 | R6 — Desligado, checklist, tours, boas-vindas e "Primeiros passos" (menu, hub, ⌘K, dock e URL) não aparecem em painel nenhum | B (completo) | RQ-17, RQ-12, RQ-29, P-04 | EP por painel e por superfície, controle positivo | CT-11, CT-44, CT-45 |
 | R7 — Desligado, o widget de progresso some do dashboard e volta ao religar, sem perder dado | B (completo) | P-02 | 2-switch | CT-12 |
 | R8 — Desligado depois de a tela abrir o checklist, toda ação dele responde 404 e nada é gravado, nos três painéis | B (completo) | RQ-30 | tabela estado × evento (mount ligado → desliga → ação), rastreio de efeito com controle, EP por painel | CT-13, CT-14, CT-43, CT-63 |
-| R9 — Ligado, o checklist, o item "Primeiros passos" e a página aparecem nos três painéis com a jornada do painel para quem tem a permissão da página, e a boas-vindas não | C (padrão) | RQ-28, RQ-18, RQ-22, RQ-29, P-06, P-18 | EP por painel, matriz papel × painel | CT-15, CT-16, CT-47, CT-62, CT-B01, CT-B02 (05) |
+| R9 — Ligado, o checklist, o item "Primeiros passos" e a página aparecem nos três painéis com a jornada do painel para quem tem a permissão da página, e a boas-vindas não | C (padrão) | RQ-28, RQ-18, RQ-22, RQ-29, P-06, P-18, P-22 (CT-16, linha `/app`) | EP por painel, matriz papel × painel | CT-15, CT-16, CT-47, CT-62, CT-B01, CT-B02 (05) |
 | R10 — Todo passo semeado tem tour, e cada parada aponta para uma tela existente do painel da jornada | C (padrão) | RQ-18, P-03 | EP (todos os passos) | CT-17 |
 | R11 — Ligado, as ações do checklist só alcançam as jornadas visíveis da própria pessoa no painel corrente; cada painel tem o seu progresso | C (padrão) | RQ-28, RQ-18, P-14 | EP (fora do domínio, tipo), identidade, EP por painel | CT-18, CT-19, CT-48 |
 | R12 — O seeder pai cria uma jornada por painel com os passos da tabela aprovada, no modo de conclusão dela, com textos que cabem no schema | D (completo) | RQ-02, RQ-04, RQ-18, RQ-23, RQ-09 | EP por painel, contagem por modo, BVA (comprimento da coluna) | CT-20, CT-59 |
@@ -74,6 +75,9 @@
 | R30 — O passo do dashboard dinâmico exige poder montar o dashboard dinâmico do painel | D (completo) | P-22, P-03, P-11 | tabela de decisão | CT-68 |
 | R31 — Nenhum passo semeado fica escondido de todo mundo | D (completo) | P-23, RQ-02, P-11 | EP por painel | CT-69 |
 | R32 — O canal de log do tutorial existe no projeto atualizado, e a configuração de log do projeto não é sobrescrita | F (mínimo) | P-24, RQ-02 | tabela de decisão (escalada), EP | CT-70, CT-71 |
+| R33 — Ligado, a página "Primeiros passos" abre com passo concluído e o mostra concluído, nos três painéis e nos três modos de conclusão | C (padrão) | RQ-28, P-06, P-22 | EP modo de conclusão × painel (each choice; visita só existe no `/admin`) | CT-72 |
+| R34 — Ligado, o custo de abrir uma tela não cresce com os passos que ensinam a mesma tela, e a decisão de acesso vale só para o request | C (padrão) | P-25, P-11 | cardinalidade com controle (mesmos passos extras, com e sem a condição), 2-switch | CT-73, CT-74 |
+| R35 — Um valor recusado vindo do navegador não forja linha no log do tutorial | C (padrão) | P-26, P-20 | EP forma da quebra × ponto de entrada, rastreio de efeito ("no máximo uma vez") | CT-75 |
 
 Cobertura por cláusula (toda `RQ` e toda `P-nn` vigente):
 
@@ -86,12 +90,13 @@ Cobertura por cláusula (toda `RQ` e toda `P-nn` vigente):
 - RQ-17 — CT-11, CT-13, CT-43 (o tour não inicia), CT-44, CT-45 · RQ-18 — CT-15, CT-17, CT-20 · RQ-19, RQ-20 — CT-38, CT-55
 - RQ-21 — CT-22, CT-38 · RQ-22 — CT-06 · RQ-23 — CT-20, CT-27, CT-34 (modos dos passos de organização, P-08)
 - RQ-24 — CT-34, CT-35, CT-36, CT-49…CT-52 · RQ-25 — CT-29, CT-30, CT-31, CT-35 · RQ-26 — CT-39, CT-57 · RQ-27 — CT-40, CT-41
-- RQ-28 — CT-15, CT-16, CT-37, CT-47, CT-48, CT-B01, CT-B02
+- RQ-28 — CT-15, CT-16, CT-37, CT-47, CT-48, CT-72 (página com passo concluído, três painéis × três modos), CT-B01, CT-B02
 - RQ-29 — CT-11 (desligado), CT-15 (ligado) · RQ-30 — CT-13, CT-14, CT-43, CT-26 (linha desligado, P-07) · RQ-31 — CT-04, CT-58
 - RQ-12 — CT-03, CT-07, CT-11, CT-44, CT-45 (URL da página, P-04)
 - P-01 — CT-32, CT-33, CT-59 · P-02 — CT-12, CT-56 · P-03 — CT-27, CT-28, CT-36, CT-17 (tour não aponta tela ausente)
 - P-04 — CT-45 · P-05 — CT-46 · P-06 — CT-15, CT-47, CT-37 (linha `admin_app`) · P-07 — CT-26 (linha desligado) · P-08 — CT-34, CT-49 · P-09 — CT-50 · P-10 — CT-38 (linha `--no-seed`)
-- P-11 — CT-53, CT-54, CT-65 · P-12 — CT-51, CT-64 · P-13 — CT-27 (linha "Execuções de IA") · P-14 — CT-48 · P-15 — CT-39 · P-16 — CT-42 · P-17 — CT-52 · P-18 — CT-62 · P-19 — CT-61 · P-20 — CT-66 · P-21 — CT-67 · P-22 — CT-68 · P-23 — CT-69 · P-24 — CT-70, CT-71
+- P-11 — CT-53, CT-54, CT-65 · P-12 — CT-51, CT-64 · P-13 — CT-27 (linha "Execuções de IA") · P-14 — CT-48 · P-15 — CT-39 · P-16 — CT-42 · P-17 — CT-52 · P-18 — CT-62 · P-19 — CT-61 · P-20 — CT-66 · P-21 — CT-67 · P-22 — CT-68, CT-16 (linha `/app`: 5 passos) · P-23 — CT-69 · P-24 — CT-70, CT-71
+- P-25 — CT-73 (consultas não crescem com passos da mesma tela), CT-74 (a decisão não atravessa o request) · P-26 — CT-75
 - Nenhuma `RQ` está com Estado `aberta` no `00`; Q1–Q8 e Q10 estão respondidas; Q11–Q17 e Q21–Q28 estão abertas **com premissa vigente** (P-04..P-16, P-18, P-19), tratada como decidida pela sessão. A `P-04` citada no `02` (linha `completeStep`) é anterior à numeração atual: o comportamento dela é a RQ-30 (Adendo 3), não a P-04 de hoje (página com 404)
 
 ### Matriz estado × operação (única, área B)
@@ -108,7 +113,7 @@ Legenda: `❌` = recusa + não-efeito de **cada** efeito do caminho feliz daquel
 | O3 ação Livewire numa tela de autoria já aberta | ❌ 404, jornada, passo e condição inalterados · CT-46 | ✅ grava · CT-33 |
 | O4 render do checklist nos três painéis | ❌ ausente · CT-11 | ✅ presente, com a jornada do painel · CT-15 |
 | O5 "Primeiros passos" na navegação (barra, hub, ⌘K, dock) | ❌ ausente · CT-11 (barra), CT-44 (as quatro) | ✅ presente · CT-15, CT-44 |
-| O6 GET `/{painel}/onboarding` | ❌ 404 nos três painéis, com a permissão da página · CT-45 | ✅ 200 com a jornada do painel · CT-16 |
+| O6 GET `/{painel}/onboarding` | ❌ 404 nos três painéis, com a permissão da página · CT-45 | ✅ 200 com a jornada do painel · CT-16; com passo concluído · CT-72 |
 | O7 ações do checklist (tela montada com o tutorial ligado) | ❌ 404; progresso, preferência, sessão e eventos de tour e mídia inalterados · CT-13 (`/admin`), CT-43 (`/app`, `/infra`) | ✅ cada verbo produz o seu efeito · CT-14 |
 | O8 visita à tela de um passo de visita | ❌ passo continua pendente, nenhuma linha de progresso · CT-26 (linha desligado) | ✅ passo concluído · CT-26 |
 | O9 widget de progresso no dashboard do `/admin` | ❌ ausente, progresso intacto · CT-12 | ✅ presente, mesmos números · CT-12 |
@@ -138,6 +143,8 @@ Legenda conferida célula a célula: O1, O2, O4, O5, O6, O10 são leitura, sem e
 
 Cenários da 2ª rodada adversarial nos grupos existentes: CT-60 e CT-62 em G5; CT-61 e CT-65 em G8; CT-63 e CT-64 em G10.
 
+Cenários do quality gate, ciclo 2, nos grupos existentes (sem costura nova; a sessão confere): CT-72, CT-73 e CT-74 em G5 (o `Quando` é um GET real; no CT-72 o passo de tour é concluído antes pelo checklist montado, como no CT-14); CT-75 em G6 (a entrada é o update Livewire do checklist, como no CT-66).
+
 Arquivos: G1–G9, G11, G12 em `tests/Kit/OnboardingGuiado{Interruptor,Consumo,Semeadura,Instalacao}Test.php` *(alterado em 2026-10-21: QA-03 — o arquivo único foi dividido em quatro na implementação)*; G10 em `tests/Tenancy/OnboardingGuiadoTenancyTest.php`; G13 em `tests/Browser/OnboardingGuiadoTest.php`. O plano cita `tests/Kit/InventarioDeOnboardingTest.php` (passo 7); a instrução desta derivação fixa o inventário no `OnboardingGuiadoTest.php` — a sessão decide.
 
 Divergência declarada (Project Rule vence a skill): a skill chama a costura HTTP de "teste em `tests/Feature`"; neste projeto os testes do kit vivem em `tests/Kit` e `tests/Tenancy`, com o `TestCase`/`TenancyTestCase` + `RefreshDatabase` do `tests/Pest.php`.
@@ -159,7 +166,7 @@ Gate de camada da regra: R5 (autorização) tem o HTTP por fora do componente (C
 | `OnboardingSeeder` fora do `DatabaseSeeder` | o `00` determina o efeito (RQ-06: semear é escolha), não o arquivo | o efeito é afirmado no CT-38 (o `kit:install` com a resposta padrão não cria jornada) |
 | "Falha vira aviso com o comando a rodar" no `kit:install` | comportamento visível só do plano para a **falha** do seeder | nenhum cenário; o aviso do `--no-seed --onboarding` é da P-10 e é afirmado no CT-38 |
 | condição `tela:{chave-do-passo}` (P-11), `multi_tenant_ligado`, classe `SeederDeOnboardingDeTenancy` | nomes que a implementação expõe (`adv-fechamento.md`), usados só para nomear | o oráculo de P-11 é o passo ausente e a contagem (CT-53, CT-54); o de P-17 é o banco vazio (CT-52) |
-| `warning` no channel `onboarding` (middleware e checklist) e `info` do seeder | log sem cláusula de auditoria no `00` (Proibição 12) | nenhum CT; dimensão D do quality gate |
+| `warning` no channel `onboarding` (middleware e checklist) e `info` do seeder | log sem cláusula de auditoria no `00` (Proibição 12) | nenhum CT sobre o texto do aviso; dimensão D do quality gate. A P-26 (valor do cliente não forja linha nova no canal) é premissa vigente: CT-75 |
 | "tour" × "manual (tour)" na tabela aprovada | o pacote não tem modo "tour": o tour **é** a tarefa de um passo `manual` (`vendor/wallacemartinss/filament-onboarding/src/Enums/CompletionMode.php:Manual:14`; `vendor/wallacemartinss/filament-onboarding/src/Concerns/InteractsWithOnboarding.php:finishTour:287`) | premissa de mecanismo `@premissa` no CT-20: as duas grafias da tabela viram `manual` com tour |
 | título "Primeiros passos no Admin/App/Infra" | o Adendo 1 cita o título; o oráculo usa só o prefixo "Primeiros passos" e o `panel_id`, para não fixar a forma exata do sufixo | detalhe |
 | `KitInfoTest` 71 → 72, `QualidadeDeCodigoTest`, `DiagramasDaArquiteturaTest` (listas paralelas) | listas paralelas do plano, não comportamento | ficam a cargo dos testes existentes, que acusam sozinhos |
@@ -246,7 +253,7 @@ Com o tutorial ligado, alguém de um papel sem a permissão da página "Primeiro
 - Status 200 nunca sozinho: junto, `assertSeeLivewire` da Page (`ListOnboardingFlows`, `OnboardingProgress`…) ou o conteúdo afirmado
 
 ### Fakes
-- Nenhum de serviço externo. `Log` não é observado (Proibição 12)
+- Nenhum de serviço externo. `Log` não é observado (Proibição 12), com uma exceção: o CT-75 observa o **arquivo** do canal `onboarding` porque a P-26 é premissa vigente (a linha forjada é o efeito que ela proíbe), nunca o conteúdo do aviso
 
 ### Estratégia de DB
 - `RefreshDatabase` dos blocos `Kit` e `Tenancy` em `tests/Pest.php`. O boot roda antes das migrations e o alinhamento é no-op: quem quer o caminho banco → config chama `alinharConfiguracoesDoKit()`
@@ -772,19 +779,21 @@ ADV-01: as linhas de `openMedia`, `videoProgress`, `restoreFlow`, `selectFlow`, 
         | o administrador geral (master_global) | infra  |
         | o administrador geral (master_global) | admin  |
 
+    # (alterado em 2026-10-21: QA-12 do quality gate, ciclo 2)
     Esquema do Cenário: [CT-16] a página "Primeiros passos" mostra a jornada do painel e nenhuma outra
       Dado as jornadas do kit semeadas sem multi-organização, o tutorial ligado e todas as features da tabela ligadas
-      E <persona>
+      E <persona>, com as permissões do papel como semeadas
       Quando ela abre /<painel>/onboarding
       Então a resposta é 200 com a Page OnboardingProgress
-      E a jornada listada é a do painel <painel>, com <passos> passos
-      E o título da jornada de <outro painel> não está no corpo
+      E a jornada listada é a do painel <painel>, com exatamente <passos> passos
+      E a chave primeiros-passos-<painel> está no corpo
+      E as chaves primeiros-passos-<outros painéis> não estão no corpo
 
       Exemplos:
-        | persona            | painel | passos | outro painel |
-        | a administradora   | admin  | 11     | infra        |
-        | a Ana              | app    | 6      | admin        |
-        | a Íris             | infra  | 15     | app          |
+        | persona            | painel | passos | outros painéis | # origem da contagem                              |
+        | a administradora   | admin  | 11     | app, infra     | tabela aprovada                                   |
+        | a Ana              | app    | 5      | admin, infra   | tabela aprovada − dashboard dinâmico (P-22)       |
+        | a Íris             | infra  | 15     | admin, app     | tabela aprovada                                   |
 
     Esquema do Cenário: [CT-47] a permissão da página decide quem vê o checklist, e todo papel do kit a recebe no seu painel
       Dado a instalação nova semeada (papéis e jornadas) e o tutorial ligado
@@ -818,12 +827,14 @@ ADV-01: as linhas de `openMedia`, `videoProgress`, `restoreFlow`, `selectFlow`, 
 
 P-06: as linhas "como semeada" provam que a instalação nova concede (nenhum `givePermissionTo` no arranjo); as linhas "retirada" usam `semAPermissao()` e provam que a permissão é quem decide. ADV2-09: linha 6 do CT-47 (`/app`). P-18 (Q27): CT-62 — 403 sem a permissão com o tutorial ligado; o controle 200 é o CT-16 e o 404 desligado é o CT-45. `admin_app` está no CT-37 (só existe com multi-organização). Estouro do teto do perfil padrão em R9 (4 cenários além dos CT-B): CT-62 nasce de premissa decidida no fechamento da revisão e não cabe no `Esquema` do CT-47 (outro `Quando` e outro `Então`).
 
+CT-16 *(alterado em 2026-10-21: QA-12 do quality gate, ciclo 2)*: a linha `/app` passa de 6 a **5** passos — o `panel_user` não pode montar o dashboard dinâmico, e o passo dele não aparece para a Ana (P-22, CT-68); os outros cinco passos do `/app` têm tela que a Ana abre (CT-54, P-11), então o número é exato, sem a faixa `1..6` que o teste usava. O oráculo de exclusão troca o **título** (as três jornadas se chamam "Primeiros passos", e o oráculo por título nunca falhava) pela **chave** `primeiros-passos-{painel}`, que distingue o painel. A asserção positiva da própria chave é controle: sem ela, uma página que não expõe chave nenhuma passa a negativa no vácuo (ver Q?1 do fechamento do ciclo 2). O `Dado` declara as permissões como semeadas porque a contagem do `/app` depende delas (P-11, P-22).
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M39 | plugin com consumo só no `/admin` (como hoje) | CT-15 (linhas app e infra) | checklist presente; o mutante não renderiza |
-| M40 | jornada semeada com `panel_id` nulo (vale para todos os painéis) | CT-15 (segunda asserção), CT-16 (última) | nenhuma jornada de outro painel; o mutante oferece as três em cada painel |
+| M40 | jornada semeada com `panel_id` nulo (vale para todos os painéis) | CT-15 (segunda asserção), CT-16 (última) | nenhuma jornada de outro painel; no CT-16, nenhuma chave `primeiros-passos-` de outro painel no corpo; o mutante lista as três em cada painel |
 | M41 | `welcome(true)` (o default do pacote) | CT-15 (última asserção) | sem `fio-welcome-layer` para quem nunca abriu; o mutante o renderiza |
 | M42 | permissão da página não concedida ao papel `infra` (`skipWhen` pela permissão) | CT-15 e CT-16 (linha infra) | checklist e 200; o mutante esconde e responde 403 |
 | M43 | `progressPage()` registrado sem item de navegação | CT-15 (terceira asserção) | item presente; o mutante não lista |
@@ -832,6 +843,7 @@ P-06: as linhas "como semeada" provam que a instalação nova concede (nenhum `g
 | M123 | o checklist ignora a permissão da página (`skipWhen` só pelo interruptor) — P-06 | CT-47 (linhas 4, 5 e 6) | ausente; o mutante mostra |
 | M166 | a permissão da página consultada sempre no painel `admin` (o predicado sem o painel corrente) — ADV2-09 | CT-47 (linha 6) | ausente no `/app` sem a permissão; o mutante mostra |
 | M167 | sem a permissão, a página responde 404 (mesmo guarda do tutorial desligado) ou 200 (página do vendor sem barreira) — P-18 | CT-62 | 403; o mutante responde 404 ou 200 |
+| M196 | a regra da P-22 (poder montar o dashboard dinâmico) aplicada só no `/admin` e no `/infra`; no `/app` o passo do dinâmico aparece para quem não pode montar — QA-12 | CT-16 (linha `app`) | exatamente 5 passos; o mutante dá 6 |
 
 ---
 
@@ -1339,7 +1351,7 @@ ADV-19: títulos de passo e de parada podem coincidir nos dois idiomas por nome 
       Exemplos:
         | persona                   | estado    | tela                   | resultado                                                              |
         | a Carla (panel_user)      | ligado    | /app/acme              | o checklist está no corpo, com a jornada do /app                       |
-        | a Carla (panel_user)      | ligado    | /app/acme/onboarding   | 200 com a Page OnboardingProgress e a jornada do /app, só com passos cuja tela ela abre |
+        | a Carla (panel_user)      | ligado    | /app/acme/onboarding   | 200 com a Page OnboardingProgress e a jornada do /app, só com passos cuja tela ela abre e sem o passo do dashboard dinâmico (P-22) *(alterado em 2026-10-21: Q31)* |
         | o Davi (admin_app)        | ligado    | /app/acme              | o checklist está no corpo, com a jornada do /app                       |
         | a Carla (panel_user)      | desligado | /app/acme              | o checklist não está no corpo, nem o item "Primeiros passos"           |
         | a Carla (panel_user)      | desligado | /app/acme/onboarding   | 404                                                                    |
@@ -1892,6 +1904,134 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 
 ---
 
+## Regra R33 — Com o tutorial ligado, a página "Primeiros passos" abre com passo concluído e o mostra concluído, nos três painéis e nos três modos de conclusão
+
+*(nova em 2026-10-21: QA-08 do quality gate, ciclo 2)*
+
+> `RQ-28` ("a página 'Primeiros passos' no menu, nos três painéis" — a página existe para mostrar o progresso), `P-06`, `P-22` (contagem do `/app`) · perfil **padrão** (área C) · técnica: **EP** em duas dimensões — modo de conclusão (tour, visita, condição) × painel (`admin`, `app`, `infra`) —, cada partição de cada dimensão ao menos uma vez e o produto completo onde a tabela aprovada permite (a visita só existe no `/admin`: "Configurações da aplicação") · arquivo `tests/Kit/OnboardingGuiadoConsumoTest.php` (G5)
+
+```gherkin
+  Regra: com o tutorial ligado, a página "Primeiros passos" mostra o progresso da jornada do painel, inclusive o passo já concluído
+
+    Esquema do Cenário: [CT-72] a página "Primeiros passos" abre com um passo já concluído e o mostra concluído
+      Dado as jornadas do kit semeadas sem multi-organização, o tutorial ligado e todas as features da tabela ligadas
+      E <persona> com o passo "<passo>" concluído por <modo>, e nenhum outro passo da jornada do <painel> concluído
+      Quando ela abre /<painel>/onboarding
+      Então a resposta é 200 com a Page OnboardingProgress
+      E o passo "<passo>" aparece concluído, e o passo "<pendente>" aparece pendente
+      E a contagem da jornada é 1 concluído de <total>
+
+      Exemplos:
+        | persona          | painel | passo                      | modo                                                          | pendente                   | total |
+        | a administradora | admin  | Configurações da aplicação | visita (ela abriu /admin/configuracoes-da-aplicacao)          | Usuários                   | 11    |
+        | a administradora | admin  | Usuários                   | tour (ela terminou o tour pelo checklist)                     | Configurações da aplicação | 11    |
+        | a administradora | admin  | Convites                   | condição (1 convite enviado por ela)                          | Usuários                   | 11    |
+        | a Ana            | app    | Busca ⌘K                   | tour (ela terminou o tour pelo checklist)                     | Perfil e 2FA               | 5     |
+        | a Ana            | app    | Perfil e 2FA               | condição (segundo fator confirmado)                           | Busca ⌘K                   | 5     |
+        | a Íris           | infra  | Pulse                      | tour (ela terminou o tour pelo checklist)                     | Backups                    | 15    |
+        | a Íris           | infra  | Perfil e 2FA               | condição (segundo fator confirmado)                           | Pulse                      | 15    |
+```
+
+- **Por que este cenário e não o CT-16/CT-18**: o CT-16 abre a página com **zero** passos concluídos; o CT-18 conclui um passo do `/infra` e abre a página do `/admin`, onde o passo não aparece. Nenhum dos dois renderiza um passo concluído **visível** — o defeito do QA-08 mora exatamente aí
+- **A conclusão vem pela ação real**, nunca por `insert` na tabela de progresso (`## Setup Global`): visita = GET real da tela com o tutorial ligado (como o CT-26, linha 1); tour = `finishTour` no checklist montado no painel (como o CT-14), com `fronteiraDeRequest()` antes do GET da página; condição = `breezySession` confirmada ou `Convite::factory()` com `convidado_por_id` dela (como o CT-24 e o CT-25). No `/app`, GET real antes do `Livewire::test`
+- **"Aparece concluído"** é lido na linha do passo na página (a marca de concluído que a página dá ao passo); o passo `<pendente>` da mesma resposta é o **controle** de que a marca discrimina — sem ele, uma página que marca tudo (ou nada) do mesmo jeito passaria
+- **Contagem**: "1 concluído de `<total>`" é o progresso da jornada como a página o expõe; `<total>` é o mesmo do CT-16 (11 / 5 / 15) — o `/app` com 5 pela P-22. "Nenhum outro passo concluído" no `Dado` faz o 1 discriminar (o "Perfil e 2FA" fica pendente nas linhas que não são dele: sem segundo fator)
+- O mesmo `KitServiceProvider` sobe nos testes (a data do kit é imutável), então o cenário reproduz o 500 do QA-08 antes da correção — o CT tem de falhar primeiro
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M197 | a página quebra ao renderizar passo concluído: a data de conclusão lida por um retorno tipado que não aceita a data imutável que o kit usa (o estado atual, QA-08) | CT-72 (todas as linhas) | 200 com a Page; o mutante responde 500 |
+| M198 | correção que lê a conclusão só da linha de progresso gravada: o passo concluído por condição (decidido na leitura) aparece pendente na página | CT-72 (linhas 3, 5, 7) | "`<passo>`" concluído e 1 de `<total>`; o mutante mostra pendente e 0 de `<total>` |
+| M199 | correção que pula os passos concluídos na lista da página (para não ler a data de conclusão) | CT-72 (segunda e terceira asserções) | o passo concluído está na página, e o total é `<total>`; o mutante o omite (0 de `<total>` − 1, ou 1 de `<total>` sem a linha do passo) |
+| M200 | correção feita só na página de um painel (a do `/admin`), com o `/app` e o `/infra` ainda renderizando pela view antiga | CT-72 (linhas 4–7) | 200 no `/app` e no `/infra`; o mutante responde 500 |
+
+---
+
+## Regra R34 — Com o tutorial ligado, o custo de abrir uma tela não cresce com os passos que ensinam a mesma tela, e a decisão de acesso vale só para o request
+
+*(nova em 2026-10-21: QA-09 do quality gate, ciclo 2)*
+
+> `P-25` ("o custo de abrir uma tela do painel não cresce com o número de passos que ensinam a mesma tela: o acesso a cada tela é decidido uma vez por request"), `P-11` · perfil **padrão** (área C) · técnica: **cardinalidade com controle** — o mesmo número de passos extras (10) com e sem a condição de visibilidade da tela; a única variável entre a medida e o controle é a condição — e **2-switch** para "uma vez por **request**" (a decisão não sobrevive ao request seguinte) · arquivo `tests/Kit/OnboardingGuiadoConsumoTest.php` (G5)
+
+```gherkin
+  Regra: com o tutorial ligado, abrir uma tela custa o mesmo número de consultas por mais passos que ensinem a mesma tela, e o acesso decidido num request não vale para o seguinte
+
+    Cenário: [CT-73] dez passos a mais que ensinam a tela de Usuários não acrescentam consultas ao abrir uma tela do /admin
+      Dado as jornadas do kit semeadas sem multi-organização, o tutorial ligado e a administradora, que já abriu /admin/configuracoes-da-aplicacao uma vez
+      E dez passos extras na jornada do /admin, e C₀ = o número de consultas ao banco de ela abrir /admin/configuracoes-da-aplicacao com os dez sem condição de visibilidade (controle)
+      Quando ela abre /admin/configuracoes-da-aplicacao com os mesmos dez passos extras citando a condição de visibilidade da tela de Usuários
+      Então o número de consultas ao banco desse request não passa C₀
+      E o checklist da resposta mostra os dez passos extras visíveis
+
+    Cenário: [CT-74] a decisão de acesso à tela vale só para o request em que foi tomada
+      Dado as jornadas do kit semeadas sem multi-organização, o tutorial ligado e a administradora
+      E ela já abriu o dashboard do /admin, com o passo "Usuários" visível no checklist e a jornada com N visíveis
+      Quando a permissão de abrir a tela de Usuários é retirada do papel admin e ela abre o dashboard do /admin de novo
+      Então o passo "Usuários" não está no checklist da segunda resposta
+      E a jornada mostra N − 1 passos visíveis
+```
+
+- **Por que o controle e não um número absoluto**: o total de consultas da tela depende de tudo o que ela carrega (medido no QA-09: 53 com o tutorial ligado, 56 com dez passos extras sem condição) e muda com qualquer feature; o número do requisito é "não cresce". Medida e controle têm os **mesmos** dez passos extras, então o custo de ter passos se anula, e sobra só o custo da condição de tela. A jornada semeada já tem o passo "Usuários", que decide a tela de Usuários nos dois requests: com a decisão uma vez por request, os dez extras acrescentam zero; com a decisão por passo, acrescentam ≈ 3 por passo (QA-09: 86 contra 56)
+- **Aquecimento**: a primeira abertura do `Dado` carrega os caches (permissões, settings) antes das duas medidas; o oráculo é "não passa C₀", e não "igual", para que um cache aquecido entre as medidas não gere falso vermelho
+- **Anti-vácuo**: a segunda asserção do CT-73 prova que a condição foi avaliada e deu "pode abrir" — uma implementação que esconde os passos de condição sem avaliá-la também gastaria menos consultas
+- Consultas contadas por `DB::listen` ou `DB::enableQueryLog()` em volta do GET, como em `tests/Kit/VisoesDeTabelaTest.php` e `consultasDuranteACaptura()` (`tests/Kit/DockDeAtalhosTest.php`); os passos extras pelos models do pacote (`OnboardingStep` na jornada `primeiros-passos-admin`), com a condição de visibilidade da tela de Usuários pela chave que o kit registra (`tela:{chave}`, nome só para o arranjo — `## Fronteira com o Plano`)
+- **CT-74**: os dois GET rodam no mesmo processo PHP, com `fronteiraDeRequest()` entre eles e `semAPermissao('admin', …)` + `noPainelDoShield('admin')` para retirar a permissão — é o que faz uma memória estática (do processo) falhar aqui, e não só em produção com worker persistente. 2-switch declarado como evento único (`## Perfil de Derivação`)
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M201 | o acesso à tela é decidido de novo a cada passo que cita a tela (o estado atual, QA-09: N+1 em toda tela do painel) | CT-73 | consultas ≤ C₀; o mutante soma ≈ 3 por passo extra (≈ C₀ + 30) |
+| M202 | memória chaveada pelo passo (ou pela condição de cada passo), não pela tela: passos diferentes que ensinam a mesma tela não aproveitam a decisão | CT-73 | consultas ≤ C₀; o mutante consulta uma vez por passo extra |
+| M203 | memória estática do processo (ou cache sem o request e a pessoa na chave): a decisão do primeiro request vale para o seguinte | CT-74 | "Usuários" ausente e N − 1 no segundo request; o mutante mantém o passo visível, decidido antes da retirada |
+
+---
+
+## Regra R35 — Um valor recusado vindo do navegador não forja linha no log do tutorial
+
+*(nova em 2026-10-21: QA-11 do quality gate, ciclo 2)*
+
+> `P-26` ("um valor vindo do navegador e recusado pelo checklist não cria linha nova no log do tutorial (quebra de linha não forja registro)"), `P-20` · perfil **padrão** (área C) · técnica: **EP** — forma da quebra de linha (LF, CRLF) × ponto de entrada da chave da jornada (propriedade escrita direto, troca de aba) — com **rastreio de efeito** na direção "no máximo uma vez" · arquivo `tests/Kit/OnboardingGuiadoConsumoTest.php` (G6)
+
+**Proibição 12 não se aplica**: o cenário não afirma o texto do aviso de recusa (que continua sem CT, `## Fronteira com o Plano`); afirma o efeito que a P-26 proíbe — linha nova forjada no arquivo do canal — e o "no máximo uma entrada por recusa".
+
+```gherkin
+  Regra: a chave de jornada recusada pelo checklist, com quebra de linha, não cria linha nova no canal de log do tutorial
+
+    Esquema do Cenário: [CT-75] uma chave de jornada com quebra de linha não cria linha nova no canal de log do tutorial
+      Dado as jornadas do kit semeadas, o tutorial ligado e a administradora com o checklist montado no /admin, na jornada do /admin
+      E o canal de log do tutorial gravando num arquivo do cenário, com uma linha sentinela já gravada nele
+      Quando o checklist recebe, pela <entrada>, o valor "qa-gate" + <quebra> + "[2026-10-21 23:59:59] local.CRITICAL: linha forjada"
+      Então o checklist continua mostrando a jornada do /admin
+      E a linha sentinela está no arquivo, e depois dela há no máximo uma entrada nova
+      E nenhuma linha do arquivo, separando por qualquer quebra de linha, começa com "[2026-10-21 23:59:59] local.CRITICAL"
+
+      Exemplos:
+        | entrada                                  | quebra        | # partição                                  |
+        | propriedade flowKey escrita direto       | LF (\n)       | quebra simples; a entrada do QA-11 (P-20)   |
+        | propriedade flowKey escrita direto       | CRLF (\r\n)   | quebra do Windows                           |
+        | troca de aba (selectFlow)                | LF (\n)       | segundo ponto de entrada da chave           |
+```
+
+- **`@premissa` de mecanismo (raia desenho)**: o canal `onboarding` tem o **caminho** desviado para um arquivo do cenário, mantendo o driver e o formatter que o projeto declara — a quebra de linha só vira linha nova pelo formatter de linha do Laravel. **Nunca** `Log::spy()` / `Log::partialMock()->shouldReceive('channel')` (o molde de `tests/Pest.php` para outros canais): o mock recebe a string e não prova linha nenhuma no arquivo
+- **A sentinela é o controle positivo da observação**: gravada no canal antes da ação, ela prova que o teste lê o arquivo para onde o canal escreve — sem ela, um canal que grava em outro lugar passa as duas negativas no vácuo
+- **"Entrada nova"** = linha que começa pelo cabeçalho de data do formatter (`[AAAA-MM-DD hh:mm:ss]`), depois da sentinela; a linha forjada também começa assim e, se existir, conta como segunda entrada
+- **"Qualquer quebra de linha"** = `\n`, `\r\n` e `\r` (`preg_split('/\R/')`): um `\r` que sobra depois de tirar só o `\n` ainda abre linha para quem lê o arquivo
+- A linha 3 vale como guarda mesmo se a troca de aba hoje não registrar a recusa: o mutante M206 é a regressão em que ela passa a registrar o valor cru
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M204 | o valor do cliente concatenado na mensagem do aviso sem tratamento (o estado atual, QA-11) | CT-75 (linhas 1–3) | nenhuma linha começa com o texto forjado; o mutante grava a linha `CRITICAL` falsa |
+| M205 | tratamento que remove só uma forma de quebra: só `\r\n` (sobra o `\n` da linha 1) ou só `\n` (sobra o `\r` da linha 2) | CT-75 (linha 1 ou linha 2) | nenhuma linha forjada, separando por `\R`; o mutante deixa uma quebra que abre a linha |
+| M206 | o tratamento só no gancho da propriedade `flowKey`; a troca de aba registra a chave recusada crua | CT-75 (linha 3) | nenhuma linha forjada; o mutante forja pela troca de aba |
+| M207 | a recusa registrada duas vezes (no gancho da propriedade e de novo ao resolver a jornada no render) | CT-75 (segunda asserção, linhas 1 e 2) | no máximo uma entrada depois da sentinela; o mutante grava duas |
+
+---
+
 ## Checklist de Taxonomia
 
 | Item | Cenário que mata | Grupo |
@@ -1901,10 +2041,10 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 | Autorização por fora do componente de UI | CT-08, CT-09, CT-45 (HTTP); checklist sem rota própria — desvio declarado em `## Costuras de Teste` | G3, G5 |
 | Idempotência (ancorada no agregado) | CT-29 (re-semear, agregado persistido), CT-30 (edições, desativações, modo trocado e passo da autoria preservados), CT-35 (re-semear com multi-organização ligada) | G7, G10 |
 | Concorrência | não se aplica: sem contador, saldo ou limite; o seeder roda de uma linha de comando, e a chave única do pacote (`onboarding_flows.key`, `(flow_id, key)`) é a barreira — `vendor/wallacemartinss/filament-onboarding/database/migrations/create_onboarding_tables.php.stub:up:24` | — |
-| **Fronteira no ponto de entrada** (gravação) | CT-05 e CT-58 (tela), CT-02 (semente da migration), CT-18 (valores fora do domínio no checklist), CT-59 (comprimento na gravação do seeder) | G2, G1, G6, G7 |
+| **Fronteira no ponto de entrada** (gravação) | CT-05 e CT-58 (tela), CT-02 (semente da migration), CT-18 (valores fora do domínio no checklist), CT-59 (comprimento na gravação do seeder), CT-75 (chave com quebra de linha não forja linha no log, P-26) | G2, G1, G6, G7 |
 | **Domínio condicionado** (tipo × valor) | modo de conclusão × condição: CT-20 e CT-34 (contagem por modo), CT-24/CT-25/CT-49 (condição decide o passo de modo condição), CT-26 (visita) | G7, G8, G5, G10 |
 | **Estado × operação** | matriz única em `## Mapa de Regras`: 20 células, todas com CT | G1, G3, G4, G5, G6, G9 |
-| Cardinalidade (0 / 1 / N) | convites 0/1: CT-25, CT-49; passos por painel 6/11/15, 10/11/12 e 14/15: CT-20, CT-27, CT-34, CT-53; jornadas 3: CT-20; passos 32/38 na instalação: CT-38, CT-55 | G8, G7, G10, G11 |
+| Cardinalidade (0 / 1 / N) | convites 0/1: CT-25, CT-49; passos por painel 6/11/15, 10/11/12 e 14/15: CT-20, CT-27, CT-34, CT-53; jornadas 3: CT-20; passos 32/38 na instalação: CT-38, CT-55; custo por cardinalidade de passos da mesma tela (N+1): CT-73 | G8, G7, G10, G11 |
 | Ausente ≠ null ≠ vazio | variável ausente × `.env.example`: CT-01; motivo de isenção vazio: CT-40; `panel_id` nulo (vale para todos os painéis): CT-15, CT-16 | G1, G12, G5 |
 | Paginação / ordenação | ordem de passo editada preservada: CT-30 (linha 5); a feature não cria listagem | G7 |
 | Timezone / DST | não se aplica: sem dado temporal decidido pela feature | — |
@@ -1939,7 +2079,7 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 | CT-13 | a ação do checklist montado é recusada depois do desligar | R8 | estado × evento, rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M33, M34, M35, M36, M37, M118, M119 |
 | CT-14 | ligado, a mesma ação produz o efeito | R8 | rastreio de efeito (controle) | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M38 |
 | CT-15 | o dashboard de cada painel traz o checklist da jornada daquele painel | R9 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M39, M40, M41, M42, M43, M121 |
-| CT-16 | a página "Primeiros passos" mostra a jornada do painel e nenhuma outra | R9 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M40, M42 |
+| CT-16 | a página "Primeiros passos" mostra a jornada do painel e nenhuma outra *(alterado em 2026-10-21: QA-12 do quality gate, ciclo 2)* | R9 | EP por painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M40, M42, M196 |
 | CT-17 | as paradas de tour resolvem dentro do painel da jornada | R10 | EP | G7 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M44, M45, M46 |
 | CT-18 | entrada fora do domínio no checklist do /admin não grava fora dele | R11 | EP (fora do domínio, tipo) | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M47, M48, M49, M50 |
 | CT-19 | o passo concluído por uma pessoa não conclui para a outra | R11 | identidade | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M51 |
@@ -1995,6 +2135,10 @@ Nenhuma coluna colapsada: C1 é a única condição de que a ação depende; A3 
 | CT-69 | com tudo ligado, as personas do painel cobrem todos os passos semeados | R31 | EP por painel | G8 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoSemeaduraTest.php` | M187, M188, M189 |
 | CT-70 | o canal de log do tutorial resolve, e a declaração do projeto vence | R32 | tabela de decisão | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M190, M191, M192, M193 |
 | CT-71 | o config/logging.php do projeto não está nos caminhos do kit:update | R32 | EP | G12 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoInstalacaoTest.php` | M194, M195 |
+| CT-72 | a página "Primeiros passos" abre com um passo já concluído e o mostra concluído | R33 | EP modo × painel | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M197, M198, M199, M200 |
+| CT-73 | dez passos a mais que ensinam a tela de Usuários não acrescentam consultas | R34 | cardinalidade com controle | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M201, M202 |
+| CT-74 | a decisão de acesso à tela vale só para o request em que foi tomada | R34 | 2-switch | G5 | Pest feature HTTP | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M203 |
+| CT-75 | uma chave de jornada com quebra de linha não cria linha nova no canal de log do tutorial | R35 | EP, rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M204, M205, M206, M207 |
 
 ## Tabela de cogitado e cortado
 
@@ -2105,3 +2249,30 @@ CT **existentes cujo oráculo mudou** (rever o teste já escrito):
 | CT-54 | o `Quando` percorre todos os passos com tela da jornada, e o `Então` ganhou "todo passo cuja tela responde 403 para ela está ausente do checklist" |
 | CT-56 | a asserção do widget saiu (foi para o CT-60); o `Quando` ficou só com a montagem do checklist |
 | CT-59 | o limite comparado é o declarado nas migrations (constante do teste), não o do schema |
+
+## Fechamento do quality gate, ciclo 2
+
+Achados de destino 3 do `06-relatorio-qa.md` (ciclo 2), derivados em 2026-10-21 a partir do `00` (RQ-28, P-22, P-25, P-26) e das seções QA-08, QA-09, QA-11 e QA-12 do `06`. Nenhum ID existente foi renumerado. Revisão adversarial: não refeita — o teto de 2 rodadas foi atingido (`## Fechamento da 2ª rodada adversarial`); fica a cargo da sessão decidir se os quatro cenários novos pedem uma rodada extra.
+
+| Achado | Destino |
+|---|---|
+| QA-08 | R33, CT-72 (página com passo concluído: três modos × três painéis); M197–M200 |
+| QA-09 | P-25 → R34, CT-73 (consultas com controle) e CT-74 (a decisão não atravessa o request); M201–M203 |
+| QA-11 | P-26 → R35, CT-75 (LF, CRLF, troca de aba; sentinela como controle); M204–M207 |
+| QA-12 | CT-16 re-derivado: linha `/app` com 5 passos (P-22), contagem exata nas três linhas, oráculo pela chave `primeiros-passos-{painel}` com controle positivo; M40 reescrito; M196 |
+
+### Para materializar só a diferença
+
+- CT **novos** (inteiros): CT-72, CT-73, CT-74 e CT-75, em `tests/Kit/OnboardingGuiadoConsumoTest.php`. Cada um tem de falhar antes da correção (CT-72 com 500; CT-73 com ≈ C₀ + 30; CT-75 com a linha `CRITICAL` forjada nas linhas 1 e 2). O CT-74 pode passar antes da correção (o estado atual não memoriza): ele guarda a correção, e a prova dele é rodar contra a memória estática numa cópia descartável
+- CT-16 **cujo oráculo mudou**: dataset `app` de 6 para 5 e `toBe($passos)` também no `/app` (sai a faixa `1..6` com `@premissa P-11`); asserção positiva da chave do próprio painel antes das negativas
+- **Fora do `04`** (rótulo de teste, não oráculo): o dataset do CT-37 em `tests/Tenancy/OnboardingGuiadoTenancyTest.php` ainda se chama `'200, 11 passos'`; o `04` já diz "só com passos cuja tela ela abre" (ADV2-13). Ver Q?2
+
+Perguntas do ciclo 2 (numeração provisória; a sessão renumera):
+
+❓ Q30 (era Q?1; decidida pela sessão em 2026-10-21: seguir a ➡️, conferir no primeiro vermelho) · raia: desenho · afeta: CT-16 · depende de: —
+A página "Primeiros passos" expõe no corpo a chave da jornada (`primeiros-passos-{painel}`)? O CT-16 afirma a chave do próprio painel como controle positivo antes das negativas; se a página não a renderiza, a negativa é vácua.
+➡️ Recomendação: confirmar no primeiro vermelho do CT-16. Se a chave não estiver no corpo, trocar o par por um passo **exclusivo** de outro painel lido na lista de passos da página (ex.: "Pulse", só do `/infra`, ausente em `/admin/onboarding` e `/app/onboarding`; "Usuários", só do `/admin`, ausente nos outros dois), com o passo exclusivo do próprio painel como controle — nunca voltar ao título, que é igual nas três.
+
+❓ Q31 (era Q?2; decidida pela sessão em 2026-10-21: rótulo pela invariante e linha 2 com a P-22) · raia: desenho · afeta: CT-37 · depende de: —
+A linha 2 do CT-37 diz "só com passos cuja tela ela abre" (P-11), mas a P-22 também esconde da Carla (`panel_user`) o passo do dashboard dinâmico, cuja tela ela **abre** (só não pode montar). O texto do `04` fica incompleto, e o rótulo do dataset (`'200, 11 passos'`) está defasado no teste.
+➡️ Recomendação: na materialização, renomear o rótulo para a invariante (ex.: `'200, só passos que ela vê (P-11, P-22)'`) e, se a sessão autorizar mexer no CT-37, acrescentar "e sem o passo do dashboard dinâmico (P-22)" à linha 2. Esta derivação não reescreveu o CT-37.

@@ -301,13 +301,14 @@ it('[CT-37] dentro da organização, o checklist e a página seguem o interrupto
         // P-11: só passos cuja tela ela abre — sem número absoluto para o panel_user.
         expect($fluxo->key())->toBe('primeiros-passos-app')
             ->and($fluxo->total())->toBeGreaterThan(0)
-            ->and($fluxo->total())->toBeLessThanOrEqual($noBanco);
+            ->and($fluxo->total())->toBeLessThanOrEqual($noBanco)
+            ->and($fluxo->steps->map(fn ($passo): string => $passo->key())->all())->not->toContain('dashboard-dinamico');
     } else {
         $this->get('/app/acme/onboarding')->assertNotFound();
     }
 })->with([
     'Carla, ligado, dashboard'     => ['carla', true, 'dashboard', 'checklist no corpo'],
-    'Carla, ligado, página'        => ['carla', true, 'pagina', '200, 11 passos'],
+    'Carla, ligado, página'        => ['carla', true, 'pagina', '200, só passos de tela que ela abre, sem o dashboard dinâmico'],
     'Davi, ligado, dashboard'      => ['davi', true, 'dashboard', 'checklist no corpo'],
     'Carla, desligado, dashboard'  => ['carla', false, 'dashboard', 'sem checklist nem item'],
     'Carla, desligado, página'     => ['carla', false, 'pagina', '404'],

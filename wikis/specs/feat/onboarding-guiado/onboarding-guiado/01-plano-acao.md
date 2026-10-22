@@ -136,6 +136,8 @@ feature, e um teste do kit fica vermelho quando nasce Resource ou Page sem seede
 | D10 | Helpers de `kit:install` de verdade (`diretorioDeInstalacaoDoKit`, `rodarKitInstallDeVerdade`, `rodarKitInstallDigitandoASenha`) sobem para `tests/Pest.php` quando um segundo arquivo os usar | Q18 (era Q?8) | trade-off | sessão, 2026-10-21 |
 | D7b | O canal `onboarding` é garantido pelo `KitServiceProvider` (declarado só quando o `config/logging.php` do projeto não o tem) e o `config/logging.php` fica FORA de `KitUpdate::CAMINHOS_DO_KIT` — mesmo motivo das rotas do kit (`.ai/rules/providers.md`): arquivo do esqueleto não viaja sem apagar o do projeto (P-24) *(alterado em 2026-10-21: rodada 2 do step 9, RD2-03/CR2-02)* | gsferro no chat, 2026-10-21 | surpreendente | gsferro, 2026-10-21 |
 | D13 | CT-70 sobe uma aplicação nova (`bootstrap/app.php`) com `afterBootstrapping(LoadConfiguration::class)` ajustando o `logging.channels` antes de os providers subirem — prova o fio do provider, não um método isolado | Q29 (era Q?1 da re-derivação do CT-70) | trade-off | sessão, 2026-10-21 |
+| D14 | CT-16 distingue o painel pela chave da jornada no corpo; se a página não a mostrar, por um passo exclusivo de cada painel, com o do próprio painel como controle | Q30 | trade-off | sessão, 2026-10-21 |
+| D15 | O rótulo do dataset do CT-37 descreve a invariante (P-11, P-22), não uma contagem | Q31 | surpreendente | sessão, 2026-10-21 |
 | D11 | `KIT_ONBOARDING=false` com `force="true"` no `phpunit.xml`: a suíte mede o kit de fábrica; quem precisa liga por `ligarTutorialGuiado()` | Q19 (era Q?9) | difícil de reverter | sessão, 2026-10-21 |
 | D12 | A verificação do inventário do onboarding é uma função que recebe os painéis (controles negativos e suíte Tenancy) | Q20 (era Q?10) | surpreendente | sessão, 2026-10-21 |
 | D9 | O 404 da autoria e da página de progresso vem de um middleware de painel persistente (`isPersistent: true`, que o Filament 5 reaplica nos updates Livewire — `search-docs`, "Applying middleware"), e não do trait nas Pages que `.ai/rules/filament.md` descreve para o `AgenteIaResource`: as telas são do vendor, e o trait exigiria subclassificar 2 Resources e 7 Pages só para levar duas linhas | Q1 (Adendo 1) | difícil de reverter (troca por trait é local) | sessão, 2026-10-21 |
@@ -195,9 +197,9 @@ Nenhum.
 |---|---|
 | Quantos requests a tela custa? | Desligado: 1, e nenhuma tabela `onboarding_*` lida (skipWhen). Ligado: o render hook monta um componente Livewire do pacote; os tours rodam no cliente |
 | O que é adiado, e por qual gatilho? | nada do kit |
-| O que é memoizado por request? | nada do kit; o interruptor vem de `config()` (sem query) |
+| O que é memoizado por request? | o `canAccess()` de cada tela que a condição `tela:{chave}` pergunta, uma vez por tela, preso ao objeto do request (`TutorialGuiado::abre()`, P-25); o interruptor vem de `config()` (sem query) *(alterado em 2026-10-21: QA-09 do gate, ciclo 2)* |
 | O que é cacheado entre requests? | definições de jornada no cache do pacote (TTL 3600 s), limpas pelo seeder ao gravar por Eloquent |
-| Custo do caminho principal | desligado: zero query a mais por tela; ligado: o custo do pacote, inalterado |
+| Custo do caminho principal | desligado: zero query a mais por tela; ligado: o custo do pacote mais uma checagem de acesso por tela distinta da jornada (cada uma paga as consultas de papel do `Gate::before`), que não cresce com o número de passos (CT-73) *(alterado em 2026-10-21: QA-09)* |
 
 ## Impacto em Features Existentes
 
@@ -280,12 +282,14 @@ No molde do channel irmão `dock-de-acoes-rapidas` (driver por `LOG_KIT_DRIVER`,
   somem: a permissão da página passa a ser "usa o tutorial") e no middleware (403 na rota da página com
   o tutorial ligado e sem a permissão). *(alterado em 2026-10-21: revisão profunda, step 5)*
 - Autoria: subclasses `app/Filament/Admin/Resources/Onboarding/{Jornada,Condicao}Resource.php` (D4) *(alterado em 2026-10-21: a policy não alcança o `master_global`)*
-- Checklist já montado (RQ-30): `App\Livewire\ChecklistDoOnboarding extends Wallacemartinss\FilamentOnboarding\Livewire\OnboardingLauncher`, com `hydrate()` que registra o `warning` e faz `abort(404)` quando o interruptor está desligado; registrado sob o mesmo nome do pacote (`Livewire::component('filament-onboarding-launcher', …)`) num provider do kit que boota depois do pacote — o render hook do plugin continua montando pelo nome. O middleware não alcança este caso: o checklist mora nas telas das features, não nas rotas do onboarding
+- Checklist já montado (RQ-30): `App\Livewire\ChecklistDoOnboarding extends Wallacemartinss\FilamentOnboarding\Livewire\OnboardingLauncher`, com `hydrate()` que registra o `warning` e faz `abort(404)` quando `TutorialGuiado::visivel()` é falso — interruptor desligado OU permissão da página retirada — *(alterado em 2026-10-21: RD-03 do step 9 e QA-10 do gate)*; `selectFlow()` e `updatedFlowKey()` só aceitam jornada visível no painel (P-20, CT-18, CT-66); registrado sob o mesmo nome do pacote (`Livewire::component('filament-onboarding-launcher', …)`) num provider do kit que boota depois do pacote — o render hook do plugin continua montando pelo nome. O middleware não alcança este caso: o checklist mora nas telas das features, não nas rotas do onboarding
+- A view publicada `resources/views/vendor/filament-onboarding/pages/progress.blade.php` lê `progress->completed_at` em vez do `completedAt()` do pacote (tipado `Illuminate\Support\Carbon`, quebrava com o `Date::use(CarbonImmutable)` do kit); a pasta entra em `KitUpdate::CAMINHOS_DO_KIT` por ser autoral (`.ai/rules/vendor.md`) *(alterado em 2026-10-21: QA-08 do gate, ciclo 2; CT-72)*
 - Widget `ProgressoOnboarding::canView()` acrescenta `TutorialGuiado::habilitado()` (P-02); docblock corrigido (a chave citada não existe)
 - **Atende**: RQ-12, RQ-15, RQ-16, RQ-17, RQ-28, RQ-29, RQ-30, RQ-31, P-02
 - **Logs**:
   - `Log::channel('onboarding')->warning('[ExigeTutorialGuiadoLigado@handle] Tela de onboarding recusada com o tutorial desligado | rota: '.$nome, ['user_id' => auth()->id(), 'rota' => $nome, 'motivo' => 'tutorial_desligado'])`
-  - `Log::channel('onboarding')->warning('[ChecklistDoOnboarding@hydrate] Ação do checklist recusada com o tutorial desligado | user_id: '.auth()->id(), ['user_id' => auth()->id(), 'motivo' => 'tutorial_desligado'])`
+  - `Log::channel('onboarding')->warning('[ChecklistDoOnboarding@hydrate] Ação do checklist recusada | motivo: '.$motivo, ['user_id' => auth()->id(), 'motivo' => $motivo])`, com `$motivo` = `tutorial_desligado` ou `sem_permissao_da_pagina` *(alterado em 2026-10-21: RD-03 e QA-10)*
+  - `Log::channel('onboarding')->warning('[ChecklistDoOnboarding@updatedFlowKey] Jornada fora do painel recusada no checklist', ['user_id' => auth()->id(), 'motivo' => 'jornada_invisivel'])` — sem o valor do cliente na mensagem (P-26) *(alterado em 2026-10-21: CR2-08 e QA-11)*
 
 ### 4. Condições em código
 

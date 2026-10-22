@@ -2,7 +2,7 @@
 
 > **Para quem**: revisor do PR e quem homologa o tutorial antes da release
 > **Requisito/Casos**: [00-requisito.md](00-requisito.md) · [04-casos-de-teste.md](04-casos-de-teste.md) · [05-casos-de-teste-browser.md](05-casos-de-teste-browser.md)
-> **Base**: 259732f8 (correções do step 9 commitadas) + ciclo 2 do gate · 2026-10-21
+> **Base**: correções dos ciclos 1 e 2 do gate (ver `03`, `## Quality Gate`) · 2026-10-21
 > **Vias**: ambas
 > **Conferência**: 0 de 9 roteiros executados pela sessão
 > **Auditoria**: pendente — próximo ciclo do quality gate
@@ -14,7 +14,8 @@
 |---|---|---|---|
 | 1 | Banco local descartável, sem multi-organização | `.env` local conforme `.env.example` (`KIT_ONBOARDING=false`, `KIT_TENANCY=false`); `php artisan migrate:fresh --seed` — **destrutivo: apenas em banco local descartável confirmado; o quality gate não executa** | `php artisan config:show kit.onboarding.habilitado` responde `false` |
 | 2 | Assets do painel | `npm run build` | o `/admin/login` abre sem `Unable to locate file in Vite manifest` |
-| 3 | Servir a aplicação | `composer run dev`; `http://localhost:8000` (ou a URL do Herd/`APP_URL` local) | `/admin/login` responde 200 |
+| 3 | Servir a aplicação | `composer run dev`; a URL do `APP_URL` local (confirme que é o kit: o título da tela de login é o `APP_NAME`) | `/login` leva à tela de login do kit |
+| 4 | Ligar as features da tabela, como administrador geral | `/admin/configuracoes-da-aplicacao`: hub de cartões ligado; dock e dashboard dinâmico ligados nos três painéis; agentes de IA ligados nos três painéis | as contagens dos RM-05 e RM-06 (11 no `/admin`, 15 no `/infra`) valem só com essas quatro ligadas *(alterado em 2026-10-21: QA-13 do gate)* |
 
 ## Dados e usuários de teste
 
@@ -55,9 +56,9 @@
 
 | # | Ação | Comando / tela | Resultado esperado | Origem | Resultado obtido |
 |---|---|---|---|---|---|
-| 1 | Com o tutorial ligado, entrar como administradora e abrir o dashboard | `/admin` | Checklist flutuante presente com a jornada do `/admin`, título começando por "Primeiros passos"; nenhuma jornada de outro painel oferecida; item "Primeiros passos" na navegação; sem tela de boas-vindas do pacote | CT-15 (linha administradora) | |
-| 2 | Entrar como Ana | `/app` | Mesmas quatro pós-condições, com a jornada do `/app` | CT-15 (linha Ana) | |
-| 3 | Entrar como Íris | `/infra` | Mesmas quatro pós-condições, com a jornada do `/infra` | CT-15 (linha Íris) | |
+| 1 | Com o tutorial ligado, entrar como administradora e abrir o dashboard | `/admin` | Checklist flutuante presente com a jornada do `/admin` (título começando por "Primeiros passos", que é igual nos três painéis; o painel se reconhece pelos passos: "Conheça a tela de usuários" e "Conheça as configurações da aplicação" só existem no `/admin`); nenhuma jornada de outro painel oferecida; item "Primeiros passos" na navegação; sem tela de boas-vindas do pacote | CT-15 (linha administradora) | |
+| 2 | Entrar como Ana | `/app` | Mesmas quatro pós-condições, com a jornada do `/app` (sem "Conheça a tela de usuários" nem "Acompanhe a saúde da aplicação") | CT-15 (linha Ana) | |
+| 3 | Entrar como Íris | `/infra` | Mesmas quatro pós-condições, com a jornada do `/infra` ("Acompanhe a saúde da aplicação" e "Conheça os backups" presentes) | CT-15 (linha Íris) | |
 
 ### RM-04 — O tour de um passo abre pelo checklist · Via: aplicação
 
@@ -75,8 +76,8 @@
 
 | # | Ação | Comando / tela | Resultado esperado | Origem | Resultado obtido |
 |---|---|---|---|---|---|
-| 1 | Como administradora, com todas as features da tabela ligadas | `/admin/onboarding` | Responde 200 com a página; jornada do `/admin` com 11 passos; o título da jornada do `/infra` não aparece | CT-16 (linha administradora) | |
-| 2 | Como Íris | `/infra/onboarding` | 200; jornada do `/infra` com 15 passos; título da jornada do `/app` ausente | CT-16 (linha Íris) | |
+| 1 | Como administradora, com as features da preparação 4 ligadas | `/admin/onboarding` | Responde 200 com a página; jornada do `/admin` com 11 passos; nenhum passo exclusivo do `/infra` ("Acompanhe a saúde da aplicação", "Conheça os backups") aparece | CT-16 (linha administradora) | |
+| 2 | Como Íris | `/infra/onboarding` | 200; jornada do `/infra` com 15 passos; nenhum passo exclusivo do `/admin` ("Conheça a tela de usuários") aparece | CT-16 (linha Íris) | |
 
 ### RM-06 — Feature desligada esconde só o passo dela · Via: aplicação
 

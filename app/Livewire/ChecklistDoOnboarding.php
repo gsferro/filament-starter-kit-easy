@@ -6,6 +6,7 @@ namespace App\Livewire;
 
 use App\Support\TutorialGuiado;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Wallacemartinss\FilamentOnboarding\Livewire\OnboardingLauncher;
 
 /**
@@ -65,8 +66,10 @@ class ChecklistDoOnboarding extends OnboardingLauncher
     {
         if ($flowKey !== null && $this->resolveFlowState($flowKey) === null) {
             Log::channel('onboarding')->warning(
-                '[ChecklistDoOnboarding@updatedFlowKey] Jornada fora do painel recusada no checklist | flow: '.$flowKey,
-                ['user_id' => auth()->id(), 'flow' => $flowKey, 'motivo' => 'jornada_invisivel'],
+                // O valor do cliente sai da mensagem e entra no context sem quebra de linha: o formatter do Laravel
+                // devolve a quebra do JSON como linha real, e o valor forjava registros no log (P-26).
+                '[ChecklistDoOnboarding@updatedFlowKey] Jornada fora do painel recusada no checklist',
+                ['user_id' => auth()->id(), 'flow' => Str::limit((string) preg_replace('/\s+/', ' ', $flowKey), 80), 'motivo' => 'jornada_invisivel'],
             );
 
             $this->flowKey = null;

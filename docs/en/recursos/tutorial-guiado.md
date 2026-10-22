@@ -96,12 +96,12 @@ and the parent seeder calls them **only** when `KIT_TENANCY=true`:
 
 | Child seeder | Panel | Screen | Completes | Hidden when |
 |---|---|---|---|---|
-| `OrganizacoesSeeder` | admin | "Organizações" | when the tour ends | — |
-| `MembrosDaOrganizacaoSeeder` | app | "Usuários da organização" | when the tour ends | — |
-| `ConvitesDaOrganizacaoSeeder` | app | "Convites da organização" | automatically, after the first invitation in the organisation | — |
-| `ConvitesRecebidosSeeder` | app | "Convites recebidos" | when the tour ends | — |
-| `TrocaDeOrganizacaoSeeder` | app | Organisation selector | when the tour ends | — |
-| `ProjetosSeeder` | app | "Projetos" (demo) | when the tour ends | the demo scenario is off |
+| `OrganizacoesSeeder` | admin | "Organizações" | when the tour ends | multi-tenant mode was turned off after seeding |
+| `MembrosDaOrganizacaoSeeder` | app | "Usuários da organização" | when the tour ends | multi-tenant mode was turned off after seeding |
+| `ConvitesDaOrganizacaoSeeder` | app | "Convites da organização" | automatically, after the first invitation in the organisation | multi-tenant mode was turned off after seeding |
+| `ConvitesRecebidosSeeder` | app | "Convites recebidos" | when the tour ends | multi-tenant mode was turned off after seeding |
+| `TrocaDeOrganizacaoSeeder` | app | Organisation selector | when the tour ends | multi-tenant mode was turned off after seeding |
+| `ProjetosSeeder` | app | "Projetos" (demo) | when the tour ends | the demo scenario is off, or multi-tenant mode was turned off after seeding |
 
 The journeys are the same across all organisations, but **progress is per organisation**: the same
 person goes through the first steps separately in each one. Enabled tenancy after seeding?

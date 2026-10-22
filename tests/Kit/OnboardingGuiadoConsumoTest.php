@@ -5,7 +5,9 @@ use App\Models\User;
 use Database\Seeders\OnboardingSeeder;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
@@ -169,28 +171,21 @@ it('[CT-16] a página "Primeiros passos" mostra a jornada do painel e nenhuma ou
 
     $html = $resposta->getContent();
 
-    foreach (OnboardingFlow::query()->where('panel_id', '!=', $painel)->get() as $outra) {
-        $this->assertStringNotContainsString($outra->key, $html, "a jornada de /{$outra->panel_id} está no corpo");
+    // Controle positivo: a chave da jornada do painel está no corpo (o `wire:key` da seção).
+    $this->assertStringContainsString("primeiros-passos-{$painel}", $html, "a chave da jornada de /{$painel} não está no corpo");
+
+    foreach (array_diff(['admin', 'app', 'infra'], [$painel]) as $outro) {
+        $this->assertStringNotContainsString("primeiros-passos-{$outro}", $html, "a jornada de /{$outro} está no corpo");
     }
 
     $flows = Onboarding::for($pessoa)->flows($painel);
 
     expect($flows)->toHaveCount(1)
-        ->and($flows->first()->flow->panel_id)->toBe($painel);
-
-    // `@premissa P-11`: a contagem do `/app` depende de quais telas o `panel_user` abre; o 04
-    // afirma 6 e a P-11 manda sumir o passo de tela que o papel não abre. Invariante: no máximo
-    // os 6 do 04, e ao menos um.
-    if ($painel === 'app') {
-        expect($flows->first()->total())->toBeLessThanOrEqual($passos)->toBeGreaterThan(0);
-
-        return;
-    }
-
-    expect($flows->first()->total())->toBe($passos);
+        ->and($flows->first()->flow->panel_id)->toBe($painel)
+        ->and($flows->first()->total())->toBe($passos);
 })->with([
     'admin' => ['admin', 11],
-    'app'   => ['app', 6],
+    'app'   => ['app', 5],
     'infra' => ['infra', 15],
 ]);
 
@@ -675,3 +670,245 @@ it('[CT-68] o passo do dashboard dinâmico segue a permissão da página do dash
     'infra, sem'                       => ['infra', 'sem'],
     'infra com, admin sem a do admin'  => ['infra', 'com a do infra, admin sem a do admin'],
 ]);
+
+/* ---------------------------------------------------------------------------
+| R33 — a página "Primeiros passos" com passo concluído
+--------------------------------------------------------------------------- */
+
+/** A abertura do `<article>` do passo na página (`wire:key` da jornada + passo), ou `null`. */
+function azulejoDoPassoNaPagina(string $html, string $jornada, string $passo): ?string
+{
+    $chave = preg_quote("fio-tile-{$jornada}-{$passo}", '~');
+
+    return preg_match('~<article\b[^>]*"'.$chave.'"[^>]*>~s', $html, $achado) === 1 ? $achado[0] : null;
+}
+
+it('[CT-72] a página "Primeiros passos" abre com um passo já concluído e o mostra concluído', function (string $painel, string $passo, string $modo, string $pendente, int $total): void {
+    $this->seed(OnboardingSeeder::class);
+    ligarFeaturesDoOnboarding();
+    ligarTutorialGuiado(true);
+
+    $pessoa = pessoaDoPainelDoOnboarding($painel);
+
+    match ($modo) {
+        'visita'      => abrirComoPessoaNoOnboarding($pessoa, '/admin/configuracoes-da-aplicacao')->assertOk(),
+        'tour'        => checklistDoOnboarding($painel, $pessoa)->call('finishTour', $passo),
+        'convite'     => ofertaPara('convidado@example.com', null, 'panel_user', ['convidado_por_id' => $pessoa->getKey()]),
+        'doisFatores' => doisFatoresPassadosNoOnboarding($pessoa, $painel),
+    };
+
+    $resposta = abrirComoPessoaNoOnboarding($pessoa, "/{$painel}/onboarding")
+        ->assertOk()
+        ->assertSeeLivewire(PrimeirosPassos::class);
+
+    $html      = $resposta->getContent();
+    $jornada   = "primeiros-passos-{$painel}";
+    $concluido = azulejoDoPassoNaPagina($html, $jornada, $passo);
+    $aberto    = azulejoDoPassoNaPagina($html, $jornada, $pendente);
+
+    expect($concluido)->not->toBeNull("o passo {$passo} não está na página")
+        ->and($aberto)->not->toBeNull("o passo {$pendente} não está na página");
+
+    $this->assertStringContainsString('fio-tile--done', (string) $concluido, "o passo {$passo} não aparece concluído");
+    $this->assertStringNotContainsString('fio-tile--done', (string) $aberto, "o passo {$pendente} aparece concluído");
+
+    $contagem = e(__('filament-onboarding::onboarding.page.meta.completed', ['count' => 1, 'total' => $total]));
+
+    $this->assertStringContainsString($contagem, $html, "a contagem não é \"{$contagem}\"");
+})->with([
+    'admin, visita'   => ['admin', 'configuracoes-da-aplicacao', 'visita', 'usuarios', 11],
+    'admin, tour'     => ['admin', 'usuarios', 'tour', 'configuracoes-da-aplicacao', 11],
+    'admin, condição' => ['admin', 'convites', 'convite', 'usuarios', 11],
+    'app, tour'       => ['app', 'busca-global', 'tour', 'perfil-e-dois-fatores', 5],
+    'app, condição'   => ['app', 'perfil-e-dois-fatores', 'doisFatores', 'busca-global', 5],
+    'infra, tour'     => ['infra', 'pulse', 'tour', 'backups', 15],
+    'infra, condição' => ['infra', 'perfil-e-dois-fatores', 'doisFatores', 'pulse', 15],
+]);
+
+/* ---------------------------------------------------------------------------
+| R34 — o custo de abrir uma tela não cresce com os passos da mesma tela
+--------------------------------------------------------------------------- */
+
+/**
+ * As consultas ao banco de um GET, e o HTML da resposta.
+ *
+ * @return array{0: int, 1: string}
+ */
+function consultasEHtmlDoGetNoOnboarding(User $pessoa, string $url): array
+{
+    $consultas = 0;
+    $ativo     = true;
+
+    DB::listen(function () use (&$consultas, &$ativo): void {
+        if ($ativo) {
+            $consultas++;
+        }
+    });
+
+    try {
+        $resposta = abrirComoPessoaNoOnboarding($pessoa, $url)->assertOk();
+    } finally {
+        $ativo = false;
+    }
+
+    return [$consultas, $resposta->getContent()];
+}
+
+it('[CT-73] dez passos a mais que ensinam a tela de Usuários não acrescentam consultas ao abrir uma tela do /admin', function (): void {
+    $this->seed(OnboardingSeeder::class);
+    ligarFeaturesDoOnboarding();
+    ligarTutorialGuiado(true);
+
+    $admin = pessoaDoPainelDoOnboarding('admin');
+    $tela  = '/admin/configuracoes-da-aplicacao';
+
+    // O aquecimento: a primeira abertura carrega permissões e settings antes das duas medidas.
+    abrirComoPessoaNoOnboarding($admin, $tela)->assertOk();
+
+    $jornada = OnboardingFlow::query()->where('key', 'primeiros-passos-admin')->firstOrFail();
+
+    foreach (range(1, 10) as $n) {
+        OnboardingStep::query()->create([
+            'flow_id'              => $jornada->getKey(),
+            'key'                  => "extra-{$n}",
+            'title'                => ['pt_BR' => "Passo extra {$n}", 'en' => "Extra step {$n}"],
+            'sort_order'           => 500 + $n,
+            'is_active'            => true,
+            'is_required'          => true,
+            'visibility_condition' => null,
+        ]);
+    }
+
+    // Controle: os dez extras sem condição (um GET de aquecimento depois da mudança, para o cache de
+    // definições do pacote, limpo pelo `saved`, não entrar na conta).
+    abrirComoPessoaNoOnboarding($admin, $tela)->assertOk();
+    [$controle] = consultasEHtmlDoGetNoOnboarding($admin, $tela);
+
+    $extras = fn (?string $condicao) => OnboardingStep::query()->where('key', 'like', 'extra-%')->get()->each->update(['visibility_condition' => $condicao]);
+
+    $extras('tela:usuarios');
+    abrirComoPessoaNoOnboarding($admin, $tela)->assertOk();
+    [$medida] = consultasEHtmlDoGetNoOnboarding($admin, $tela);
+
+    /*
+     * Controle de novo, na mesma distância: no processo do teste os render hooks de painel se
+     * acumulam a cada request (o `PanelSwitch` pergunta `canAccessPanel()` mais vezes a cada GET),
+     * e a contagem sobe uns poucos por request mesmo sem mudança nenhuma. A medida fica entre dois
+     * controles equidistantes, e a deriva linear se cancela.
+     */
+    $extras(null);
+    abrirComoPessoaNoOnboarding($admin, $tela)->assertOk();
+    [$controleDepois] = consultasEHtmlDoGetNoOnboarding($admin, $tela);
+
+    $esperado = intdiv($controle + $controleDepois, 2);
+
+    expect($medida)->toBeLessThanOrEqual($esperado, "consultas: {$medida} com a condição, {$controle}/{$controleDepois} nos controles");
+
+    $extras('tela:usuarios');
+
+    // Anti-vácuo: a condição foi avaliada e deu "pode abrir" — os dez extras estão visíveis.
+    $visiveis = visiveisNoChecklistDoOnboarding('admin', $admin);
+
+    foreach (range(1, 10) as $n) {
+        expect($visiveis)->toContain("extra-{$n}");
+    }
+
+});
+
+it('[CT-74] a decisão de acesso à tela vale só para o request em que foi tomada', function (): void {
+    $this->seed(OnboardingSeeder::class);
+    ligarTutorialGuiado(true);
+
+    $admin = pessoaDoPainelDoOnboarding('admin');
+
+    abrirComoPessoaNoOnboarding($admin, '/admin')->assertOk();
+
+    $antes = visiveisNoChecklistDoOnboarding('admin', $admin);
+
+    expect($antes)->toContain('usuarios');
+
+    semAPermissao('admin', 'ViewAny:User');
+    noPainelDoShield('admin');
+
+    abrirComoPessoaNoOnboarding($admin, '/admin')->assertOk();
+
+    $depois = visiveisNoChecklistDoOnboarding('admin', $admin);
+
+    expect($depois)->not->toContain('usuarios')
+        ->and(count($depois))->toBe(count($antes) - 1);
+});
+
+/* ---------------------------------------------------------------------------
+| R35 — valor recusado não forja linha no log do tutorial
+--------------------------------------------------------------------------- */
+
+it('[CT-75] uma chave de jornada com quebra de linha não cria linha nova no canal de log do tutorial', function (string $entrada, string $quebra): void {
+    $this->seed(OnboardingSeeder::class);
+    ligarFeaturesDoOnboarding();
+    ligarTutorialGuiado(true);
+
+    $arquivo = tempnam(sys_get_temp_dir(), 'onb-log-');
+
+    try {
+        // O canal real, com o formatter de linha do Laravel, gravando num arquivo do cenário.
+        config(['logging.channels.onboarding' => [
+            'driver'               => 'single',
+            'path'                 => $arquivo,
+            'level'                => 'debug',
+            'replace_placeholders' => true,
+        ]]);
+        Log::forgetChannel('onboarding');
+        Log::channel('onboarding')->info('SENTINELA do cenario');
+
+        $admin     = pessoaDoPainelDoOnboarding('admin');
+        $checklist = checklistDoOnboarding('admin', $admin);
+        $valor     = 'qa-gate'.$quebra.'[2026-10-21 23:59:59] local.CRITICAL: linha forjada';
+
+        if ($entrada === 'propriedade') {
+            $checklist->set('flowKey', $valor);
+        } else {
+            $checklist->call('selectFlow', $valor);
+        }
+
+        expect($checklist->instance()->flowState()?->flow->panel_id)->toBe('admin', 'o checklist deixou de mostrar a jornada do /admin');
+
+        $linhas = preg_split('/\R/', (string) file_get_contents($arquivo));
+        $indice = null;
+
+        foreach ($linhas as $posicao => $linha) {
+            if (str_contains($linha, 'SENTINELA do cenario')) {
+                $indice = $posicao;
+            }
+        }
+
+        expect($indice)->not->toBeNull('a sentinela não está no arquivo: o teste não lê o canal');
+
+        $novas = array_filter(
+            array_slice($linhas, $indice + 1),
+            fn (string $linha): bool => preg_match('/^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]/', $linha) === 1,
+        );
+
+        expect(count($novas))->toBeLessThanOrEqual(1, 'mais de uma entrada nova: '.implode(' || ', $novas));
+
+        foreach ($linhas as $linha) {
+            $this->assertStringStartsNotWith('[2026-10-21 23:59:59] local.CRITICAL', $linha, 'linha forjada no canal');
+        }
+    } finally {
+        Log::forgetChannel('onboarding');
+        @unlink($arquivo);
+    }
+})->with([
+    'propriedade, LF'   => ['propriedade', "\n"],
+    'propriedade, CRLF' => ['propriedade', "\r\n"],
+    'troca de aba, LF'  => ['selectFlow', "\n"],
+]);
+
+/** O segundo fator confirmado no painel da pessoa e já vencido na sessão (sem o desafio de 302 no GET). */
+function doisFatoresPassadosNoOnboarding(User $pessoa, string $painel): void
+{
+    Filament::setCurrentPanel($painel);
+    $pessoa->enableTwoFactorAuthentication();
+    $pessoa->breezySession->confirm();
+
+    test()->withSession(['breezy_session_id' => md5((string) $pessoa->breezySession->id)]);
+}

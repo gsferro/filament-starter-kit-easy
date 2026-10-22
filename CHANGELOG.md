@@ -24,13 +24,18 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   `.ai/rules/onboarding.md` e o `tests/Kit/InventarioDeOnboardingTest.php` exigem um seeder filho (ou
   uma isenção declarada) para toda tela de painel nova. Revisão do diff em duas rodadas (`/code-review
   high` e passe de eixos): 5 achados viraram premissa, caso de teste e correção (P-20 a P-24), e os
-  demais foram corrigidos direto ou rejeitados com motivo.
+  demais foram corrigidos direto ou rejeitados com motivo. O quality gate, com o kit servido, pegou mais três
+  (P-25, P-26 e a página "Primeiros passos" que dava 500 depois do primeiro passo concluído, porque o
+  `Date::use(CarbonImmutable)` do kit quebrava o retorno tipado do pacote): a view publicada da página passou a
+  ser do kit, e o acesso a cada tela do checklist é decidido uma vez por request.
 
 ### Atualizando
 
 - Rode `php artisan migrate` (settings `onboarding_habilitado`). O `kit:update` **não** entrega o
   `config/logging.php`, que é seu: o canal de log `onboarding` é declarado pelo `KitServiceProvider`,
-  no molde do seu canal `ai`, quando o seu arquivo não o tem. Para semear o conteúdo: `php artisan db:seed --class=OnboardingSeeder`.
+  no molde do seu canal `ai`, quando o seu arquivo não o tem. O `kit:update` passa a trazer
+  `resources/views/vendor/filament-onboarding` (a página "Primeiros passos" corrigida): quem customizou essas views
+  revisa o diff. Para semear o conteúdo: `php artisan db:seed --class=OnboardingSeeder`.
 
 ## [0.51.2] - 2026-10-20
 

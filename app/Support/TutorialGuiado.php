@@ -10,8 +10,10 @@ use Database\Seeders\Onboarding\DashboardDinamicoSeeder;
 use Database\Seeders\OnboardingSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Wallacemartinss\FilamentOnboarding\FilamentOnboardingPlugin;
+use WeakMap;
 
 /**
  * O decisor do tutorial guiado — a ÚNICA leitura de `kit.onboarding.habilitado`.
@@ -33,6 +35,9 @@ use Wallacemartinss\FilamentOnboarding\FilamentOnboardingPlugin;
  */
 final class TutorialGuiado
 {
+    /** @var WeakMap<Request, array<string, bool>>|null */
+    private static ?WeakMap $acessoPorRequest = null;
+
     /** O tutorial guiado está ligado na instalação? */
     public static function habilitado(): bool
     {
@@ -150,11 +155,33 @@ final class TutorialGuiado
         }
 
         foreach (array_keys(OnboardingSeeder::TELAS[$painel] ?? [], $filho, true) as $tela) {
-            if ($tela::canAccess() && ($alemDeAbrir === null || $alemDeAbrir($tela))) {
+            if (self::abre($tela, $painel) && ($alemDeAbrir === null || $alemDeAbrir($tela))) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * O `canAccess()` da tela, uma vez por request (P-25 da wiki `onboarding-guiado`): todo passo
+     * que cita a tela perguntaria de novo, e cada pergunta custa as consultas de papel do
+     * `Gate::before`. A memória é presa ao objeto do request (`WeakMap`) e morre com ele — permissão
+     * retirada vale no request seguinte (CT-74).
+     */
+    private static function abre(string $tela, string $painel): bool
+    {
+        self::$acessoPorRequest ??= new WeakMap;
+
+        $request = request();
+        $chave   = $painel.'|'.$tela.'|'.auth()->id();
+        $memoria = self::$acessoPorRequest[$request] ?? [];
+
+        if (! array_key_exists($chave, $memoria)) {
+            $memoria[$chave]                    = $tela::canAccess();
+            self::$acessoPorRequest[$request]   = $memoria;
+        }
+
+        return $memoria[$chave];
     }
 }
