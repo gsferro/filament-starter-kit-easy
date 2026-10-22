@@ -40,6 +40,7 @@
 | `feat/logo-dark-mode` | `logo-dark-mode` | 40/42 itens · em implementação — código e testes verdes, faltam steps 9–12 | não fatiada | `[█████████░] 95 %` do 03 | — | APROVADO COM DÉBITO (ciclo 1) | [03](feat/logo-dark-mode/logo-dark-mode/03-progresso.md) |
 | `feat/mais-provedores-sociais` | `mais-provedores-sociais` | 58/58 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/mais-provedores-sociais/mais-provedores-sociais/03-progresso.md) |
 | `feat/mysql-no-docker` | `mysql-no-docker` | 54/57 itens | não fatiada | `[█████████░] 94 %` do 03 | — | — | [03](feat/mysql-no-docker/mysql-no-docker/03-progresso.md) |
+| `feat/onboarding-guiado` | `onboarding-guiado` | 36/38 itens · concluída — 2026-10-22 | não fatiada | `[█████████░] 94 %` do 03 | — | APROVADO COM DÉBITO (ciclo 4) | [03](feat/onboarding-guiado/onboarding-guiado/03-progresso.md) |
 | `feat/pacotes-laravel-ia` | `pacotes-laravel-ia` | 22/24 itens | não fatiada | `[█████████░] 91 %` do 03 | — | — | [03](feat/pacotes-laravel-ia/pacotes-laravel-ia/03-progresso.md) |
 | `feat/page-header-nas-telas-de-registro` | `page-header-nas-telas-de-registro` | 0/0 itens | não fatiada | — | — | — | [03](feat/page-header-nas-telas-de-registro/page-header-nas-telas-de-registro/03-progresso.md) |
 | `feat/pagina-boas-vindas` | `pagina-boas-vindas` | 34/34 itens | não fatiada | `[██████████] 100 %` do 03 | — | APROVADO COM DÉBITO (ciclo 1) | [03](feat/pagina-boas-vindas/pagina-boas-vindas/03-progresso.md) |

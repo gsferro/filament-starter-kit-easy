@@ -1,6 +1,6 @@
 # Progresso — Onboarding guiado
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-10-22
 
 **Base do PR**: `main`
 
