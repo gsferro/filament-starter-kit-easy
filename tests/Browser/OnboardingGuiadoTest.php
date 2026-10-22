@@ -95,33 +95,62 @@ function linhasDoTutorialDa(object $pessoa): array
 }
 
 dataset('onboarding-contraste', [
-    '/admin claro'  => ['admin', 'admin', false],
-    '/admin escuro' => ['admin', 'admin', true],
-    '/infra claro'  => ['infra', 'infra', false],
-    '/infra escuro' => ['infra', 'infra', true],
+    '/admin claro, sem passo concluído'                         => ['admin', 'admin', false, null],
+    '/admin escuro, sem passo concluído'                        => ['admin', 'admin', true, null],
+    '/infra claro, sem passo concluído'                         => ['infra', 'infra', false, null],
+    '/infra escuro, sem passo concluído'                        => ['infra', 'infra', true, null],
+    '/admin claro, com "Configurações da aplicação" concluído'  => ['admin', 'admin', false, 'configuracoes-da-aplicacao'],
+    '/admin escuro, com "Configurações da aplicação" concluído' => ['admin', 'admin', true, 'configuracoes-da-aplicacao'],
+    '/infra claro, com "Perfil e 2FA" concluído'                => ['infra', 'infra', false, 'perfil-e-dois-fatores'],
+    '/infra escuro, com "Perfil e 2FA" concluído'               => ['infra', 'infra', true, 'perfil-e-dois-fatores'],
 ]);
 
-it('[CT-B03] a página "Primeiros passos" com o checklist aberto não tem problema sério de acessibilidade', function (string $painel, string $persona, bool $escuro): void {
+it('[CT-B03] a página "Primeiros passos" com o checklist aberto não tem problema sério de acessibilidade', function (string $painel, string $persona, bool $escuro, ?string $passoConcluido): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, OnboardingSeeder::class]);
     ligarTutorialGuiado();
     $pessoa  = pessoaDoPainelDoOnboarding($persona);
     $titulos = titulosDoTourSemeado($painel, $painel === 'admin' ? 'usuarios' : 'pulse');
+    $rotulo  = '.fi-main .fio-tile--done .fio-tile-status';
 
     $this->actingAs($pessoa);
     $this->get("/{$painel}/onboarding");
+
+    if ($passoConcluido === 'configuracoes-da-aplicacao') {
+        $this->get('/admin/configuracoes-da-aplicacao')->assertOk();
+    }
+
+    if ($passoConcluido === 'perfil-e-dois-fatores') {
+        ativarDoisFatoresDaPessoa($pessoa);
+        $this->withSession(['breezy_session_id' => md5((string) $pessoa->breezySession->id)]);
+    }
+
+    if ($passoConcluido !== null) {
+        fronteiraDeRequest();
+    }
 
     $pagina = visit("/{$painel}/onboarding")->on()->desktop();
     $pagina = $escuro ? $pagina->inDarkMode() : $pagina->inLightMode();
 
     $pagina->assertPathIs("/{$painel}/onboarding")
         ->assertScript("document.documentElement.classList.contains('dark')", $escuro)
-        ->assertSeeIn('.fi-main .fi-header-heading', $titulos['jornada'])
-        ->click('button[aria-label="'.$titulos['jornada'].'"]')
-        ->assertVisible('[role="dialog"][aria-label="'.$titulos['jornada'].'"]')
-        ->assertNoAccessibilityIssues();
+        ->assertSeeIn('.fi-main .fi-header-heading', $titulos['jornada']);
+
+    if ($passoConcluido === null) {
+        $pagina->assertNotPresent('.fi-main .fio-tile--done');
+    }
+
+    $pagina->click('button[aria-label="'.$titulos['jornada'].'"]')
+        ->assertVisible('[role="dialog"][aria-label="'.$titulos['jornada'].'"]');
+
+    if ($passoConcluido !== null) {
+        $pagina->assertVisible($rotulo)
+            ->assertScript("(() => { const r = document.querySelector('{$rotulo}'); r.scrollIntoView({block: 'center'}); const c = r.getBoundingClientRect(); return r.contains(document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2)); })()", true);
+    }
+
+    $pagina->assertNoAccessibilityIssues();
 })->with('onboarding-contraste');
 
-it('[CT-B04] a tecla Esc fecha o checklist aberto, sem concluir nem dispensar nada', function (string $foco): void {
+it('[CT-B04] a tecla Esc fecha o checklist aberto, sem concluir nem dispensar nada', function (string $foco, int $teclas): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class, OnboardingSeeder::class]);
     ligarTutorialGuiado();
     $administradora = pessoaDoPainelDoOnboarding('admin');
@@ -141,7 +170,30 @@ it('[CT-B04] a tecla Esc fecha o checklist aberto, sem concluir nem dispensar na
 
     $antes = linhasDoTutorialDa($administradora);
 
-    $pagina->keys($seletorDoFoco, 'Escape')
+    if ($teclas === 1) {
+        $pagina->keys($seletorDoFoco, 'Escape');
+    } else {
+        // O segundo Esc 5 ms depois do primeiro, com a chamada Livewire ainda em voo (QA-20: reabre com a resposta ainda
+        // por voltar). `keys()` espera a resposta entre as teclas, as duas no mesmo tick o Livewire coalesce e o
+        // `networkidle` não espera nada numa página já carregada: o script só devolve depois de 1,5 s sem
+        // chamada nova a `/livewire` (espera por estado, não por tempo).
+        $pagina->script('(async () => {
+            const esc = () => window.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", bubbles: true}));
+            const chamadas = () => performance.getEntriesByType("resource").filter((e) => e.name.includes("/livewire")).length;
+            document.querySelector('.json_encode($seletorDoFoco).').focus();
+            esc();
+            await new Promise((r) => setTimeout(r, 5));
+            esc();
+            let ultima = chamadas(), desde = Date.now();
+            while (Date.now() - desde < 1500) {
+                await new Promise((r) => setTimeout(r, 50));
+                if (chamadas() !== ultima) { ultima = chamadas(); desde = Date.now(); }
+            }
+            return true;
+        })()');
+    }
+
+    $pagina->waitForEvent('networkidle')
         ->assertMissing($painel)
         ->assertVisible($botao)
         ->assertMissing('[x-data^="onboardingTour"] [role="dialog"][aria-modal="true"]')
@@ -154,6 +206,7 @@ it('[CT-B04] a tecla Esc fecha o checklist aberto, sem concluir nem dispensar na
         ->assertPathIs('/admin')
         ->assertVisible($botao);
 })->with([
-    'foco no botão do checklist'                  => ['botao'],
-    'foco dentro do painel, no botão do tour'     => ['painel'],
+    'foco no botão do checklist'              => ['botao', 1],
+    'foco dentro do painel, no botão do tour' => ['painel', 1],
+    'foco no botão, Esc duas vezes seguidas'  => ['botao', 2],
 ]);

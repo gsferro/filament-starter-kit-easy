@@ -410,11 +410,14 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 | cor primária que a instalação escolher (`CorPrimaria::paleta()`).
 |
 | O texto secundário do tema claro (`gray-500`) fica no limite de 4,5:1 sobre o gradiente do
-| destaque no topo da página; o `gray-600` sai do limite. O escuro já usa `gray-400`.
+| destaque no topo da página; o `gray-600` sai do limite. O escuro já usa `gray-400`. O rótulo
+| "Concluída" usa `--fio-success` (`success-600`, 3,2:1 no claro): vai ao 700. O escuro lê a
+| variante `-dark` (`success-400`) e não muda.
 */
 :root {
     --fio-theme-accent: var(--primary-700);
     --fio-theme-text-muted: var(--gray-600);
+    --fio-theme-success: var(--success-700);
 }
 
 :root .fio-button--primary {

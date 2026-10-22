@@ -23,10 +23,11 @@
 - Técnica escalada: R16 (área D) usa **2-switch** além de EP, porque o defeito plausível é o progresso do passo escondido sumir ou contar no numerador, que só aparece ao religar a feature; e **BVA** na borda de 100 % (CT-56, ADV-07)
 - Quality gate, ciclo 2 (2026-10-21): QA-08 → R33/CT-72; QA-09 → R34/CT-73, CT-74 (P-25); QA-11 → R35/CT-75 (P-26); QA-12 → CT-16 re-derivado (linha `/app` com 5 passos, P-22; oráculo pela chave da jornada). Ver `## Fechamento do quality gate, ciclo 2`
 - Quality gate, ciclo 3 (2026-10-22): QA-15 → P-27 → R36/CT-B03 (`05`); QA-16 → P-28 → R37/CT-B04 (`05`); QA-17 → CT-75 reescrito (mesmo ID: linhas físicas depois da sentinela; linha CR; M208–M210). Ver `## Fechamento do quality gate, ciclo 3`
+- Quality gate, ciclo 4 (2026-10-22): QA-19 → R36/CT-B03 linhas 5–8 (`05`: partição do estado do rótulo de status — persona com passo concluído, `/admin` e `/infra` × claro e escuro; MB17–MB19); QA-20 → R37/CT-B04 linha 3 (`05`: duas teclas Esc seguidas, painel ausente depois de assentar; MB20–MB21). Ver `## Fechamento do quality gate, ciclo 4` *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)*
 - `Quando` com sequência (CT-04, CT-12, CT-28, CT-51, CT-58, CT-61, CT-65, CT-74): evento único declarado — é o **2-switch** (o oráculo é o destino do segundo evento, que não existe sem o primeiro); ADV-27..29
 - Cenários: 75 · Regras: 37 · Mutantes previstos: 207 · Sem matador: 0
-- No `05` (mesmos `grep -c`, com `CT-B` e `MB`): CT-B: 4 · Mutantes MB: 16 · Sem matador: 0
-<!-- derivado por grep -c (template-04 §Contagem do cabeçalho), recalculado em 2026-10-22 (quality gate, ciclo 3). Os CT-B01..CT-B04 e seus mutantes (MB1–MB16) estão no 05; as regras R36 e R37 têm seção no 04 e cenário no 05. IDs M22 e M69 fundidos em M20 e M56 (teto de 6 por regra no perfil completo); M109 acrescentado à R14. -->
+- No `05` (mesmos `grep -c`, com `CT-B` e `MB`): CT-B: 4 · Mutantes MB: 21 · Sem matador: 0 *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)*
+<!-- derivado por grep -c (template-04 §Contagem do cabeçalho), recalculado em 2026-10-22 (quality gate, ciclo 4). Os CT-B01..CT-B04 e seus mutantes (MB1–MB21) estão no 05; as regras R36 e R37 têm seção no 04 e cenário no 05. IDs M22 e M69 fundidos em M20 e M56 (teto de 6 por regra no perfil completo); M109 acrescentado à R14. -->
 - Lacunas declaradas (não são mutantes sem matador): o recorte de RQ-13 "alterar tela existente" e as linhas da taxonomia marcadas "lacuna declarada"
 
 ## Varredura SFDIPOT
@@ -80,8 +81,8 @@
 | R33 — Ligado, a página "Primeiros passos" abre com passo concluído e o mostra concluído, nos três painéis e nos três modos de conclusão | C (padrão) | RQ-28, P-06, P-22 | EP modo de conclusão × painel (each choice; visita só existe no `/admin`) | CT-72 |
 | R34 — Ligado, o custo de abrir uma tela não cresce com os passos que ensinam a mesma tela, e a decisão de acesso vale só para o request | C (padrão) | P-25, P-11 | cardinalidade com controle (mesmos passos extras, com e sem a condição), 2-switch | CT-73, CT-74 |
 | R35 — Um valor recusado vindo do navegador não forja linha no log do tutorial | C (padrão) | P-26, P-20 | EP forma da quebra (LF, CRLF, CR) × ponto de entrada, rastreio de efeito (linhas físicas: "exatamente uma" / "no máximo uma") | CT-75 |
-| R36 — Os botões e os rótulos de status do checklist aberto e da página "Primeiros passos" passam o axe no nível serious, nos temas claro e escuro | C (padrão) | P-27, RQ-28 | EP painel (tema do kit × tema próprio) × tema, controle positivo (checklist visível, tema efetivo) | CT-B03 (05) |
-| R37 — O checklist aberto fecha com a tecla Esc, sem gravar nada | C (padrão) | P-28, RQ-28 | EP por foco (botão que abriu × dentro do painel), rastreio de efeito ("não aconteceu", com destinatário) | CT-B04 (05) |
+| R36 — Os botões e os rótulos de status do checklist aberto e da página "Primeiros passos" passam o axe no nível serious, nos temas claro e escuro | C (padrão) | P-27, RQ-28 | EP painel (tema do kit × tema próprio) × tema × estado do rótulo de status (sem passo concluído × com passo concluído), controle positivo (checklist visível, tema efetivo, rótulo "Concluída" visível e não coberto) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | CT-B03 (05) |
+| R37 — O checklist aberto fecha com a tecla Esc, sem gravar nada | C (padrão) | P-28, RQ-28 | EP por foco (botão que abriu × dentro do painel) e por repetição (uma tecla × duas seguidas, sem esperar a resposta), rastreio de efeito ("não aconteceu", com destinatário) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | CT-B04 (05) |
 
 Cobertura por cláusula (toda `RQ` e toda `P-nn` vigente):
 
@@ -101,7 +102,7 @@ Cobertura por cláusula (toda `RQ` e toda `P-nn` vigente):
 - P-04 — CT-45 · P-05 — CT-46 · P-06 — CT-15, CT-47, CT-37 (linha `admin_app`) · P-07 — CT-26 (linha desligado) · P-08 — CT-34, CT-49 · P-09 — CT-50 · P-10 — CT-38 (linha `--no-seed`)
 - P-11 — CT-53, CT-54, CT-65 · P-12 — CT-51, CT-64 · P-13 — CT-27 (linha "Execuções de IA") · P-14 — CT-48 · P-15 — CT-39 · P-16 — CT-42 · P-17 — CT-52 · P-18 — CT-62 · P-19 — CT-61 · P-20 — CT-66 · P-21 — CT-67 · P-22 — CT-68, CT-16 (linha `/app`: 5 passos) · P-23 — CT-69 · P-24 — CT-70, CT-71
 - P-25 — CT-73 (consultas não crescem com passos da mesma tela), CT-74 (a decisão não atravessa o request) · P-26 — CT-75
-- P-27 — CT-B03 (`05`: página e checklist aberto, `/admin` e `/infra` × claro e escuro) · P-28 — CT-B04 (`05`: foco no botão que abriu e dentro do painel)
+- P-27 — CT-B03 (`05`: página e checklist aberto, `/admin` e `/infra` × claro e escuro × sem e com passo concluído — os três estados do rótulo de status) · P-28 — CT-B04 (`05`: foco no botão que abriu e dentro do painel; uma tecla e duas seguidas) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)*
 - Nenhuma `RQ` está com Estado `aberta` no `00`; Q1–Q8 e Q10 estão respondidas; Q11–Q17 e Q21–Q28 estão abertas **com premissa vigente** (P-04..P-16, P-18, P-19), tratada como decidida pela sessão. A `P-04` citada no `02` (linha `completeStep`) é anterior à numeração atual: o comportamento dela é a RQ-30 (Adendo 3), não a P-04 de hoje (página com 404)
 
 ### Matriz estado × operação (única, área B)
@@ -2051,9 +2052,11 @@ Estouro do teto de mutantes da regra (perfil padrão, 2 a 5): M208–M210 nascem
 
 *(nova em 2026-10-22: QA-15 do quality gate, ciclo 3)*
 
-> `P-27` ("os botões e os rótulos de status que o tutorial guiado mostra (checklist e página "Primeiros passos") têm contraste suficiente para leitura (WCAG AA), nos temas claro e escuro, como o resto das telas do kit"), `RQ-28` · perfil **padrão** (área C) · técnica: **EP** painel (tema do kit × tema próprio) × tema (claro × escuro), com três controles positivos (checklist visível quando o axe roda, conteúdo da página presente, tema efetivo no documento) · grupo **G14** (`browser`)
+> `P-27` ("os botões e os rótulos de status que o tutorial guiado mostra (checklist e página "Primeiros passos") têm contraste suficiente para leitura (WCAG AA), nos temas claro e escuro, como o resto das telas do kit"), `RQ-28` · perfil **padrão** (área C) · técnica: **EP** painel (tema do kit × tema próprio) × tema (claro × escuro) × estado do rótulo de status (sem passo concluído: a seguir e a fazer × com passo concluído: os três), com quatro controles positivos (checklist visível quando o axe roda, conteúdo da página presente, tema efetivo no documento, estado da linha na tela — o rótulo "Concluída" visível e não coberto pelo checklist) · grupo **G14** (`browser`)
 
-Cenário e mutantes no `05`: **CT-B03** (MB7–MB11). Só o navegador computa contraste (princípio 3: pixel/acessibilidade). Escolha dos painéis (`/admin` e `/infra`) justificada no próprio CT-B03; o `/app` é a Q?2.
+*(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* — o QA-19 mediu o rótulo "Concluída" a 3,24:1 no tema claro, no `/admin` e no `/infra`; as quatro linhas do CT-B03 usavam persona sem passo concluído, e o MB10 o declarava. O estado exibido é partição obrigatória (passo 3, "Estado exibido"): o CT-B03 ganha as linhas 5–8, com passo concluído pela ação real, e MB17–MB19. Estouro do teto de mutantes (8) declarado no `05`.
+
+Cenário e mutantes no `05`: **CT-B03** (MB7–MB11, MB17–MB19). Só o navegador computa contraste (princípio 3: pixel/acessibilidade). Escolha dos painéis (`/admin` e `/infra`) justificada no próprio CT-B03; o `/app` é a Q?2.
 
 ---
 
@@ -2061,9 +2064,11 @@ Cenário e mutantes no `05`: **CT-B03** (MB7–MB11). Só o navegador computa co
 
 *(nova em 2026-10-22: QA-16 do quality gate, ciclo 3)*
 
-> `P-28` ("o checklist flutuante aberto fecha com a tecla Esc"), `RQ-28` · perfil **padrão** (área C) · técnica: **EP** por foco (no botão que abriu × dentro do painel) com **rastreio de efeito** na direção "não aconteceu" — concluir, pular, dispensar, "lembrar depois" e "não mostrar mais", com destinatário (passos pendentes, jornada não dispensada) · grupo **G14** (`browser`)
+> `P-28` ("o checklist flutuante aberto fecha com a tecla Esc"), `RQ-28` · perfil **padrão** (área C) · técnica: **EP** por foco (no botão que abriu × dentro do painel) e por repetição (uma tecla × duas seguidas, sem esperar a resposta entre elas) com **rastreio de efeito** na direção "não aconteceu" — concluir, pular, dispensar, "lembrar depois" e "não mostrar mais", com destinatário (passos pendentes, jornada não dispensada) · grupo **G14** (`browser`)
 
-Cenário e mutantes no `05`: **CT-B04** (MB12–MB16). "Fecha" é o observável de P-28; "sem gravar nada" é o invariante de quem fecha um diálogo (o `00` não dá ao Esc nenhum efeito além de fechar), e o rastreio de efeito o guarda contra o mutante que liga o Esc a um verbo do pacote que grava (MB15, MB16).
+*(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* — o QA-20 mediu que o tratador inverte o estado do painel (toggle): com uma tecla isso é indistinguível de fechar, e duas teclas seguidas reabrem. "Fecha" (P-28) é idempotente; o CT-B04 ganha a linha 3 (dois Esc seguidos, painel ausente depois de a página assentar) e MB20–MB21. Estouro do teto de mutantes (7) declarado no `05`.
+
+Cenário e mutantes no `05`: **CT-B04** (MB12–MB16, MB20, MB21). "Fecha" é o observável de P-28; "sem gravar nada" é o invariante de quem fecha um diálogo (o `00` não dá ao Esc nenhum efeito além de fechar), e o rastreio de efeito o guarda contra o mutante que liga o Esc a um verbo do pacote que grava (MB15, MB16).
 
 ---
 
@@ -2093,7 +2098,7 @@ Cenário e mutantes no `05`: **CT-B04** (MB12–MB16). "Fecha" é o observável 
 | **Estado do framework usado sem validar** | não se aplica: a feature não consome `$filters`, `$tableFilters`, `$tableSearch` nem `$tableSortColumn` (`02`, "Valores do cliente que viram índice"); a ordenação do CT-46 é só o gatilho do update | — |
 | **IDOR por entidade** (por tabela persistida) | `settings`: não se aplica — configuração da instalação, sem dono; `onboarding_flows`, `onboarding_steps`, `onboarding_conditions`: CT-08, CT-09, CT-46; `onboarding_step_progress`, `onboarding_flow_progress`: CT-19, CT-48, CT-50, CT-18, CT-13; `onboarding_preferences`: CT-13 (desligado), ligado: lacuna declarada — preferência só do sujeito resolvido no servidor (`02`, linha `completeStep`), sem cenário de segunda pessoa | G3, G6, G10 |
 | **Escopo com discriminante nulo** (fecha ou abre?) | `panel_id` nulo abriria a jornada em todos os painéis — fecha: CT-15 (inclusive para `master_global`), CT-16; organização: progresso e convite por organização aberta (CT-49, CT-50); `master_global` sem painel no papel vê só a jornada do painel corrente (CT-15) | G5, G10 |
-| **Acessibilidade** (contraste e teclado) *(novo em 2026-10-22: QA-15, QA-16)* | contraste no nível serious do axe, nos dois temas: CT-B03 (página e checklist aberto, `/admin` e `/infra`); fechar o diálogo pelo teclado: CT-B04 (Esc, foco no botão e dentro do painel); ordem de Tab e foco devolvido ao botão depois do Esc: lacuna declarada — nem o `00` nem P-28 os pedem (QA-16 mediu que o Tab já alcança o botão) | G14 |
+| **Acessibilidade** (contraste e teclado) *(novo em 2026-10-22: QA-15, QA-16)* | contraste no nível serious do axe, nos dois temas: CT-B03 (página e checklist aberto, `/admin` e `/infra`); estado do rótulo de status (a seguir, a fazer, concluído): CT-B03 (linhas 1–4 e 5–8) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)*; fechar o diálogo pelo teclado: CT-B04 (Esc, foco no botão e dentro do painel); repetição da tecla antes da resposta (fechar idempotente): CT-B04 (linha 3) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)*; ordem de Tab e foco devolvido ao botão depois do Esc: lacuna declarada — nem o `00` nem P-28 os pedem (QA-16 mediu que o Tab já alcança o botão) | G14 |
 | **Saída do estado de erro** (4xx tem destino) | 404 da autoria → o `/admin` abre: CT-10; 404 da página "Primeiros passos" (CT-45) → o dashboard do mesmo painel abre sem o checklist (CT-11, linhas desligado); 404 da ação do checklist → próximo carregamento sem checklist e painel abrindo: CT-04, CT-58 | G3, G5, G1, G2 |
 
 ## Índice de Cenários
@@ -2177,8 +2182,8 @@ Cenário e mutantes no `05`: **CT-B04** (MB12–MB16). "Fecha" é o observável 
 | CT-75 | uma chave de jornada com quebra de linha não cria linha nova no canal de log do tutorial *(alterado em 2026-10-22: QA-17 do quality gate, ciclo 3)* | R35 | EP, rastreio de efeito | G6 | componente Livewire/Filament | `tests/Kit/OnboardingGuiadoConsumoTest.php` | M204, M205, M206, M207, M208, M209, M210 |
 | CT-B01 | o tour do passo de Usuários abre no navegador a partir do checklist do /admin (`05`) | R9 | EP por painel | G13 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB1, MB2, MB3, MB4 |
 | CT-B02 | o tour do passo de Pulse abre no navegador a partir do checklist do /infra (`05`) | R9 | EP por painel | G13 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB5, MB6 |
-| CT-B03 | a página "Primeiros passos" com o checklist aberto não tem problema sério de acessibilidade, no /admin e no /infra, claro e escuro (`05`) | R36 | EP painel × tema, controle positivo | G14 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB7, MB8, MB9, MB10, MB11 |
-| CT-B04 | a tecla Esc fecha o checklist aberto, sem concluir nem dispensar nada (`05`) | R37 | EP por foco, rastreio de efeito | G14 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB12, MB13, MB14, MB15, MB16 |
+| CT-B03 | a página "Primeiros passos" com o checklist aberto não tem problema sério de acessibilidade, no /admin e no /infra, claro e escuro, sem e com passo concluído (`05`) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | R36 | EP painel × tema × estado do rótulo, controle positivo | G14 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB7, MB8, MB9, MB10, MB11, MB17, MB18, MB19 |
+| CT-B04 | a tecla Esc fecha o checklist aberto, sem concluir nem dispensar nada, com uma tecla e com duas seguidas (`05`) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | R37 | EP por foco e por repetição, rastreio de efeito | G14 | browser | `tests/Browser/OnboardingGuiadoTest.php` | MB12, MB13, MB14, MB15, MB16, MB20, MB21 |
 
 ## Tabela de cogitado e cortado
 
@@ -2203,6 +2208,12 @@ Cenário e mutantes no `05`: **CT-B04** (MB12–MB16). "Fecha" é o observável 
 | CT-B04 no `/infra` e no `/app` | mesmo componente e mesma view nos três painéis; nenhum mutante plausível do Esc depende do painel (QA-16: igual nas seis combinações) |
 | CT-B04 com a abertura por clique, além do Enter | a abertura não é a regra; o que muda o resultado do Esc é o foco, e a linha 2 já move o foco para dentro do painel |
 | CT-B04 afirmando o foco devolvido ao botão depois do Esc | nem o `00` nem a P-28 pedem; registrado como lacuna declarada na taxonomia (Acessibilidade) |
+| CT-B03 linhas 5–8 sem as linhas 1–4 (a página com um passo concluído também mostra os rótulos a seguir e a fazer) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | não cortado: a derivação não confirma pelo `00` que a página com passo concluído mostra os outros dois estados; Q?1 do ciclo 4 |
+| CT-B03 com `getComputedStyle` do verde do rótulo "Concluída" *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | mesmo motivo da linha do botão: a P-27 diz "contraste AA", não qual verde; o axe mede a razão |
+| CT-B03 com passo concluído no `/app` *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | Q33: os três painéis usam a mesma paleta; o `/app` não mata mutante que o `/admin` não mate |
+| CT-B04 com duas teclas Esc e o foco dentro do painel *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | o MB20 e o MB21 não dependem do foco (o tratador é o mesmo); a linha 2 já cobre o foco interno com uma tecla |
+| CT-B04 com três teclas Esc *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | número ímpar: o toggle termina fechado e passa; não mata o MB20. Duas é o menor número que discrimina |
+| CT-B04 linha 3 com espera explícita entre as teclas (20, 150, 400 ms) *(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)* | `wait($segundos)` é proibido (fato 3) e o QA-20 já mediu a faixa; o `keys()` com as duas teclas cai dentro dela |
 | CT-75 com U+2028 e U+0085 (NEL) | o formatter não os transforma em `\r`/`\n`; não abrem linha física para quem lê o arquivo por `\r\n`, `\n` ou `\r`, e o QA-11 (ciclo 3, dimensão B) mediu 1 linha pelo app. Sem mutante plausível que só eles matem |
 
 ## Fechamento da revisão adversarial
@@ -2352,3 +2363,28 @@ O `/app` carrega o mesmo CSS de tema que o `/admin`? O CT-B03 cobre o `/admin` (
 ❓ Q34 (era Q?3; decidida pela sessão em 2026-10-22: o `selectFlow` não registra recusa, a linha 4 fica "no máximo 1") · raia: desenho · afeta: CT-75 (linha 4) · depende de: —
 A troca de aba (`selectFlow`) com chave recusada registra a recusa no canal do tutorial? Se registra, a linha 4 pode passar de "no máximo 1" a "exatamente 1" e ganhar o mesmo controle positivo das linhas 1–3 (o M210 pela troca de aba).
 ➡️ Recomendação: conferir no primeiro verde da linha 4 a contagem real (0 ou 1). Se for 1, apertar para "exatamente 1"; se for 0, manter "no máximo 1" — o log não é cláusula, e a linha segue como guarda do M206.
+
+## Fechamento do quality gate, ciclo 4
+
+*(alterado em 2026-10-22: QA-19/QA-20 do quality gate, ciclo 4)*
+
+Achados de destino 3 do `06-relatorio-qa.md` (ciclo 4), derivados em 2026-10-22 a partir do `00` (P-27, P-28, RQ-28) e só das seções QA-19 e QA-20 do `06`. Nenhum ID foi renumerado nem criado: os cenários são os mesmos (CT-B03, CT-B04), com linhas novas no `Esquema`; os mutantes continuam a série do `05` (MB17–MB21). **Revisão adversarial: não rodada** — o teto de 2 rodadas foi atingido (`## Fechamento da 2ª rodada adversarial`); as linhas novas ficam sem re-revisão independente, registrado aqui como débito para o quality gate (o mesmo do ciclo 3).
+
+| Achado | Destino |
+|---|---|
+| QA-19 | P-27 → R36, CT-B03 linhas 5–8 (`05`: persona com um passo concluído pela ação real — `/admin` "Configurações da aplicação" por visita, `/infra` "Perfil e 2FA" por condição —, `/admin` e `/infra` × claro e escuro); controle 4 novo (linhas 1–4: nenhum rótulo de concluído; linhas 5–8: o rótulo "Concluída" visível **e não coberto** pelo checklist antes do axe, porque o axe classifica texto coberto como `incomplete`, não violação); MB17 (verde 600 do pacote sobre branco, 3,24:1 — o estado atual), MB18 (correção só no tema do `/admin`), MB19 (verde escurecido sem escopo de tema) |
+| QA-20 | P-28 → R37, CT-B04 linha 3 (`05`: foco no botão, `keys(…, ['Escape', 'Escape'])` sem esperar a resposta, painel ausente depois de `waitForEvent('networkidle')`); assentamento estendido às linhas 1 e 2; MB20 (o tratador inverte em vez de fechar — o estado atual), MB21 (guarda no cliente que lê o estado antes de a resposta voltar) |
+
+Correção de afirmação do `05` feita junto: o `assertMissing` do plugin **não** reexecuta até o `timeout()` — lê `isVisible()` uma vez (`vendor/pestphp/pest-plugin-browser/src/Api/Concerns/MakesElementAssertions.php:assertMissing:532`). Sem o assentamento, a linha 3 do CT-B04 seria verde com o MB20 vivo, ou vermelha com uma correção certa feita no servidor, conforme a corrida.
+
+### Para materializar só a diferença
+
+- CT-B03 **linhas novas** (`tests/Browser/OnboardingGuiadoTest.php`): o dataset `onboarding-contraste` ganha a coluna do estado (`bool $comPassoConcluido`) e as linhas 5–8; nas linhas com passo concluído, a ação real antes do `visit()` (GET de `/admin/configuracoes-da-aplicacao`; `breezySession` confirmada da Íris), depois `fronteiraDeRequest()`; o controle 4 (`assertNotPresent` nas linhas 1–4; `assertVisible` + `assertScript` com `elementFromPoint` nas 5–8) entra depois de abrir o checklist e antes do `assertNoAccessibilityIssues()`. Tem de falhar antes da correção: linhas 5 e 7 vermelhas com `color-contrast` em `.fio-tile--done .fio-tile-status`; as linhas 1–4 seguem verdes; as 6 e 8 podem estar verdes já (QA-19: escuro dá 0)
+- CT-B04 **linha nova e passo novo**: o dataset ganha a coluna das teclas (`array $teclas`) e a linha 3 (`'botao'`, `['Escape', 'Escape']`); `keys($seletorDoFoco, $teclas)` e `waitForEvent('networkidle')` antes do `assertMissing($painel)`, nas três linhas. Tem de falhar antes da correção: a linha 3 vermelha (painel visível depois de assentar); as linhas 1 e 2 seguem verdes
+- Contagens: o `04` não muda (75 cenários, 37 regras, 207 mutantes, 0 sem matador); o `05` passa a 21 mutantes MB, com os mesmos 4 CT-B
+
+Perguntas do ciclo 4 (numeração provisória; a sessão renumera):
+
+❓ Q35 (era Q?1; decidida pela sessão em 2026-10-22: manter as oito linhas, conferir no primeiro verde) · raia: desenho · afeta: CT-B03 (linhas 1–4) · depende de: —
+Com um passo concluído e os demais pendentes, a página "Primeiros passos" mostra ao mesmo tempo os três estados do rótulo (concluído, a seguir, a fazer)? Se mostra, as linhas 5–8 matam tudo o que as linhas 1–4 matam (MB7–MB11), e as 1–4 viram redundantes pela poda (passo 7: "dois cenários que matam o mesmo conjunto → manter um"). A derivação não pode confirmar pelo `00`, e o `app/` está fora da leitura.
+➡️ Recomendação: manter as oito linhas até o primeiro verde das linhas 5–8. Se, nele, a página com passo concluído mostrar também os rótulos a seguir e a fazer (conferir no relatório do axe ou com `assertVisible` dos dois na mesma linha), a sessão pode podar as linhas 1–4 — registrando a poda nesta tabela de cogitado e cortado; se não mostrar, as oito ficam.

@@ -27,9 +27,10 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   demais foram corrigidos direto ou rejeitados com motivo. O quality gate, com o kit servido, pegou mais três
   (P-25, P-26 e a página "Primeiros passos" que dava 500 depois do primeiro passo concluído, porque o
   `Date::use(CarbonImmutable)` do kit quebrava o retorno tipado do pacote): a view publicada da página passou a
-  ser do kit, e o acesso a cada tela do checklist é decidido uma vez por request. No ciclo 3, o contraste do
-  botão primário e do texto do tutorial passou ao AA nos dois temas (variáveis `--fio-theme-*` do pacote no
-  CSS do kit) e o checklist aberto passou a fechar com Esc.
+  ser do kit, e o acesso a cada tela do checklist é decidido uma vez por request. Nos ciclos 3 e 4, o contraste do
+  botão primário, do texto secundário e do rótulo "Concluída" passou ao AA nos dois temas (variáveis
+  `--fio-theme-*` do pacote no CSS do kit) e o checklist aberto passou a fechar com Esc, mesmo com a tecla
+  repetida.
 
 ### Atualizando
 
