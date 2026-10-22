@@ -144,7 +144,12 @@ Rodada 2 encerra o teto de 2 do step 9: nenhum achado estrutural; os dois de fro
 
 ## Candidatos a Rule
 
-<!-- Step 12. -->
+apresentados 3 · gravados 3 · recusados 0 · descartados no gate 3 · poda 0 — 2026-10-22, sessão principal (com MCP: `search-docs` no gate 4, `record-rule`)
+
+- Gravados: `config.md` "Canal de log novo do kit também é garantido no KitServiceProvider" (glob `config/logging.php`, `record-rule`); `livewire.md` (novo) "Valor vindo do navegador nunca entra na mensagem de log" (glob `app/Livewire/**`, `record-rule`); `testes.md` "Segunda pessoa no mesmo teste começa com sessão nova" (seção nova escrita na rule existente, `paths:` inalterado, índice sem mudança). Sem enforcement `arch()`: nenhuma das três é restrição estrutural de classe.
+- Descartados: `Date::use(CarbonImmutable)` × retorno tipado de pacote (QA-08) — sem recorrência declarada; contraste por `--fio-theme-*` (QA-15/19) — específico do pacote, já no comentário do `kit.css`; memória de acesso por request (QA-09) — decisão da feature (gate 1).
+- Poda: gatilho de 3 features seguidas não conferível só com esta wiki; nenhuma proposta.
+- Achados fora do escopo, registrados: o canal `dock-de-acoes-rapidas` (#160) não chega a quem atualiza; o `AssistenteChatWidget` interpola o `$conversaId` público no log.
 
 ## Auditoria Pré-Implementação
 
