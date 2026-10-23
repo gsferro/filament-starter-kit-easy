@@ -320,8 +320,8 @@ accDescr: Composer's post-create-project-cmd triggers kit:install, which asks th
     kit_install->>banco: migrate --graceful --force
     kit_install->>kit_install: password generated (or the one set in KIT_ADMIN_PASSWORD)
     kit_install->>seeders: db:seed --force (ShieldPermissionsSeeder, PapeisSeeder, UsuarioAdminSeeder, AssistenteSeeder, GuardaPromptSeeder)
-    opt without --no-seed and with "yes" to "Popular os tutoriais guiados?" or --onboarding
-      kit_install->>seeders: db:seed --class=OnboardingSeeder --force (outside DatabaseSeeder; does not enable usage)
+    opt without --no-seed and with yes to Popular os tutoriais guiados, or --onboarding
+      kit_install->>seeders: db:seed --class=OnboardingSeeder --force (outside DatabaseSeeder, does not enable usage)
     end
   else database unreachable
     kit_install-->>composer: warning - run migrate --seed later

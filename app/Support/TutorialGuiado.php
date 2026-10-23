@@ -178,7 +178,7 @@ final class TutorialGuiado
         $memoria = self::$acessoPorRequest[$request] ?? [];
 
         if (! array_key_exists($chave, $memoria)) {
-            $memoria[$chave]                    = $tela::canAccess();
+            $memoria[$chave]                    = (bool) $tela::canAccess();
             self::$acessoPorRequest[$request]   = $memoria;
         }
 

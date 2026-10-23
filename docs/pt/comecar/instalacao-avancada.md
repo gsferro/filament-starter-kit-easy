@@ -321,8 +321,8 @@ accDescr: O post-create-project-cmd do Composer aciona o kit:install, que pergun
     kit_install->>banco: migrate --graceful --force
     kit_install->>kit_install: senha gerada (ou a definida em KIT_ADMIN_PASSWORD)
     kit_install->>seeders: db:seed --force (ShieldPermissionsSeeder, PapeisSeeder, UsuarioAdminSeeder, AssistenteSeeder, GuardaPromptSeeder)
-    opt sem --no-seed e com "sim" a "Popular os tutoriais guiados?" ou --onboarding
-      kit_install->>seeders: db:seed --class=OnboardingSeeder --force (fora do DatabaseSeeder; não liga o uso)
+    opt sem --no-seed e com sim em Popular os tutoriais guiados, ou --onboarding
+      kit_install->>seeders: db:seed --class=OnboardingSeeder --force (fora do DatabaseSeeder, não liga o uso)
     end
   else banco inacessível
     kit_install-->>composer: aviso - rode migrate --seed depois
