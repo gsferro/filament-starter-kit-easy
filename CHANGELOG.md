@@ -5,6 +5,23 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- Roteiro de atualização por agente (`wikis/specs/feat/roteiro-de-atualizacao/`): toda publicação, release ou
+  hotfix, passa a ter um prompt em `wikis/atualizacoes/vX.Y.Z.md` que um agente segue para levar um projeto da
+  versão anterior para a nova usando o `kit:update` como ferramenta — o que muda, os cuidados, as decisões que são
+  do dono do projeto (cada default mudado vira pergunta, com a recomendação da release e o default seguro sem
+  resposta), os passos com evidência, a conferência e as paradas. O contrato das nove seções está em
+  `wikis/atualizacoes/README.md`; o primeiro roteiro é o `v0.52.0.md` (origem `v0.51.2`, link na `main`, porque nasceu
+  depois da tag). O agente lê o roteiro pela URL raw
+  `https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md`,
+  confere também o arquivo na `main` e, na dúvida, para; uma cópia do roteiro da versão instalada viaja em
+  `wikis/agentes-e-skills.md` ("Atualizar o projeto pelo agente"). A guarda `tests/Kit/RoteiroDeAtualizacaoTest.php`
+  reprova no CI da `main` o commit de versão sem roteiro válido, o workflow de release reprova a tag sem o roteiro
+  ou sem as nove seções, e o `wikis/checklist-de-release.md` ganha a etapa pré-release obrigatória (com a lista
+  `### Defaults mudados` da seção da versão neste arquivo) e o cenário pós-release com agente em sessão nova.
+  Nada muda no código da aplicação nem no `kit:update`.
+
 ## [0.52.0] - 2026-10-23
 
 ### Adicionado
@@ -41,6 +58,12 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   no molde do seu canal `ai`, quando o seu arquivo não o tem. O `kit:update` passa a trazer
   `resources/views/vendor/filament-onboarding` (a página "Primeiros passos" corrigida): quem customizou essas views
   revisa o diff. Para semear o conteúdo: `php artisan db:seed --class=OnboardingSeeder`.
+
+### Defaults mudados
+
+- tutorial guiado desligado
+- jornadas do tutorial não semeadas
+- idiomas da autoria pt_BR e en
 
 ### Pré-validação do candidato, antes da tag (2026-10-23)
 

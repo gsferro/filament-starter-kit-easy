@@ -321,3 +321,119 @@ O que fica registrado, no `CHANGELOG` ou na própria release do GitHub:
 - Se **algo quebrou**: corrigir e lançar **versão de correção**, depois **reexecutar os quatro**
   contra ela — e registrar de novo, com a mesma exigência, antes da tag nova. Suíte verde na
   árvore do kit não fecha o caso: o defeito que originou este documento era invisível ali
+
+---
+
+## Etapa pré-release obrigatória: o roteiro de atualização
+
+**Toda publicação tem o seu roteiro de atualização, escrito antes da tag**: vale para release nova e
+para hotfix, sem exceção. É o prompt que um agente segue para levar um projeto da versão anterior para
+a nova (o contrato das nove seções está em `wikis/atualizacoes/README.md`). A guarda
+`tests/Kit/RoteiroDeAtualizacaoTest.php` deixa vermelho, no CI da `main`, o commit de versão sem
+roteiro válido; o workflow de release confere de novo no push da tag, mas aí a tag já saiu. Quem age
+antes da tag é esta etapa.
+
+1. **Fontes.** Leia a seção da versão no `CHANGELOG.md` da publicação e a wiki da feature (premissas,
+   ADR, notas de implementação), e reconcilie as duas com o que foi entregue: o diff entre a tag
+   anterior e o commit da versão. O que só uma das fontes diz, ou o que o diff mostra e nenhuma diz,
+   se resolve aqui, antes de escrever.
+2. **A lista de defaults mudados.** Na reconciliação, liste todo default que a versão mudou
+   (interruptor que nasce desligado, valor de config, conteúdo que deixou de ser semeado, idioma, painel)
+   na subseção `### Defaults mudados` da seção da versão no `CHANGELOG.md`, um item por linha; versão sem
+   default mudado traz o item `- nenhum`. Lista ausente reprova a etapa. Cada item da lista vira
+   pergunta no roteiro, numa linha `Pergunta:` de `## Decisões do dono do projeto`, ao lado da decisão
+   de conflito em arquivo do kit editado pelo dono, que todo roteiro tem.
+3. **O roteiro.** Escreva `wikis/atualizacoes/vX.Y.Z.md` pelo contrato, com a origem na versão anterior
+   publicada e o link raw na tag nova.
+4. **A cópia local.** Atualize a cópia em `wikis/agentes-e-skills.md`, entre os marcadores
+   `<!-- roteiro-de-atualizacao:inicio -->` e `<!-- roteiro-de-atualizacao:fim -->`, com o roteiro
+   novo inteiro.
+5. **A guarda.** `php artisan test --compact tests/Kit/RoteiroDeAtualizacaoTest.php` verde, antes da tag.
+
+---
+
+## Cenário pós-release com agente
+
+**Obrigatório em toda publicação**, depois dos quatro cenários e sobre a tag publicada. Ele fica fora
+da tabela dos quatro porque mede outra coisa: não a entrega do kit, mas se o roteiro, sozinho, leva um
+agente até o mesmo estado.
+
+**O agente.** Um agente em **sessão nova**, sem o contexto de quem escreveu o roteiro: nada da conversa
+de quem implementou nem de quem escreveu. O registro declara o ambiente do agente: **sem memória de
+usuário nem skills globais do mantenedor** carregadas (a memória e as skills de usuário trariam de
+volta o contexto por outro caminho), além do agente, do modelo e do host. O agente recebe **só o pedido
+com o link do roteiro**:
+
+```text
+Atualize este projeto seguindo o roteiro em <link raw do roteiro da versão nova>
+```
+
+**Os dois projetos.** Dois projetos novos da versão anterior, criados para isto: `agente-sem-tenant`,
+sem multi-organização, e `agente-com-tenant`, com multi-organização. Os `velho-*` dos cenários 3 e 4 não
+servem, porque já estão na versão nova. Crie cada um com o mesmo comando de criação dos cenários 3 e 4
+(a tag anterior, com a versão pinada), e no `agente-com-tenant` ligue a tenancy com os mesmos passos do
+cenário 4 (o `git init`, o commit e o `kit:tenancy`), tudo **antes** do pedido.
+
+**Os canários do dono**, preparados antes do pedido e commitados em cada projeto:
+
+- um canal de log próprio no `config/logging.php`;
+- uma linha própria no `.env`;
+- uma edição do dono num arquivo da lista `CAMINHOS_DO_KIT` que a versão nova também muda;
+- um registro do dono no banco (um usuário a mais, por exemplo);
+- um valor que o dono mudou nas Configurações da aplicação (`/admin/configuracoes-da-aplicacao`);
+- uma jornada do tutorial guiado editada pelo dono.
+
+### Critério
+
+O cenário passa quando, nos dois projetos:
+
+- o projeto chega ao **mesmo estado dos cenários 3 e 4**, pela tabela "Conferir, em cada um dos
+  quatro": zero erro e zero falha, pulados dentro do teto, versão nova, tenancy `SIM` no
+  `agente-com-tenant`, arquivo novo presente, migration nova executada;
+- os **canais e as customizações do projeto ficam preservados**: o canal próprio, a linha do `.env` e
+  o arquivo do kit editado pelo dono intactos (sem resposta do dono, fica a versão do dono);
+- os **dados do dono no banco ficam preservados**: o registro do dono, o valor das Configurações e a
+  jornada editada intactos;
+- **cada item da lista de defaults mudados virou pergunta no roteiro**, e o valor efetivo no projeto é
+  o default seguro quando o dono não respondeu;
+- o relatório final do agente registra cada decisão e o default aplicado.
+
+**Sem a lista de defaults mudados, o cenário reprova** antes de o agente rodar. E, antes do pedido, o
+registro **confronta a lista com o diff de `config/`, das migrations de settings e dos seeders entre a
+tag de origem e a de destino**: default que mudou no diff e falta na lista reprova o cenário.
+
+O oráculo é o estado do projeto, não o relatório: um relatório que diz "mantive o arquivo" com o arquivo
+sobrescrito reprova.
+
+**O registro**, junto do registro dos quatro cenários: o agente, o modelo e o host; o ambiente
+declarado; o commit do roteiro executado; a transcrição; as intervenções feitas durante a execução; e
+o resultado de cada projeto, com a saída da suíte colada.
+
+**As variações**, registradas na mesma execução quando se aplicam:
+
+- o dono responde a cada pergunta o oposto do default seguro (e, quando a recomendação difere do
+  default, o oposto da recomendação), e o valor efetivo segue a resposta, perguntada antes do passo;
+- um projeto fora da versão de origem (anterior à origem, igual ao destino, posterior ao destino): o
+  agente para antes de alterar o projeto e diz a versão instalada e a origem do roteiro;
+- um pedido sem link: o agente monta a URL pelo padrão da cópia local e confere o arquivo na `main`.
+  Vale a partir da v0.53.0, a primeira cuja versão anterior tem cópia local.
+
+### Cadência de outros agentes
+
+O cenário roda **a cada publicação com um agente**. A **cada release menor** (`x.Y.0`), roda também
+com **um segundo agente**, de outro fornecedor ou de outro host, e o registro nomeia os dois. Os demais
+agentes e hosts não são prometidos: o roteiro vale para os que foram exercitados e registrados.
+
+### Quando o cenário reprova
+
+- **A tag não é reescrita.** Ela já foi indexada e alguém já pode ter atualizado por ela.
+- **O roteiro é corrigido na `main`, com evidência nova**: o cenário roda de novo sobre o roteiro
+  corrigido, e o registro guarda as duas execuções.
+- **O link do roteiro passa a apontar para a correção**: a `main` ou o commit da correção, pelo SHA
+  completo. O roteiro corrigido traz em `## Identificação` a linha `Roteiro revisado em {data}: {motivo}`.
+- **A seção da versão no `CHANGELOG.md` registra que o roteiro foi revisado**, numa linha que começa por
+  `Roteiro de atualização revisado`, com a data e o motivo. A cópia local em
+  `wikis/agentes-e-skills.md` acompanha a correção.
+- **Falha do código vira hotfix**, e não revisão de roteiro: se o agente seguiu o roteiro certo e o
+  kit quebrou, corrige-se o código numa versão de correção, que tem roteiro próprio e passa de novo
+  pelos quatro cenários e por este.

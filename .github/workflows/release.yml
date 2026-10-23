@@ -26,3 +26,19 @@ jobs:
           [ "$marcada" = "$tag" ] || { echo "::error::a tag $tag saiu sem o bump em config/kit.php"; exit 1; }
 
           grep -q "^## \[$tag\]" CHANGELOG.md || { echo "::error::a tag $tag saiu sem seção no CHANGELOG"; exit 1; }
+
+          # Roteiro de atualização por agente (wikis/atualizacoes/README.md): toda tag tem o seu,
+          # com as nove seções do contrato, cada título ancorado no início da linha. A guarda do CI
+          # na main confere o resto antes da tag; aqui falha fechado se a tag saiu sem ele.
+          roteiro="wikis/atualizacoes/v$tag.md"
+          [ -s "$roteiro" ] || { echo "::error::a tag $tag saiu sem o roteiro de atualização $roteiro"; exit 1; }
+
+          faltam=0
+          for secao in "## Identificação" "## Antes de começar" "## O que muda nesta versão" "## Cuidados" \
+            "## Decisões do dono do projeto" "## Passos" "## Como conferir" "## Quando parar" "## Relatório final"; do
+            if ! grep -qE "^${secao}[[:space:]]*\$" "$roteiro"; then
+              echo "::error::o roteiro $roteiro não tem a seção \"$secao\""
+              faltam=1
+            fi
+          done
+          [ "$faltam" = 0 ] || exit 1
