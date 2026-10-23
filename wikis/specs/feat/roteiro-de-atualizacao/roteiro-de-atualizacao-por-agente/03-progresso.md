@@ -1,6 +1,6 @@
 # Progresso — Roteiro de atualização por prompt para agentes
 
-**Estado**: implementada — reconciliada no step 10; quality gate (step 11) pendente
+**Estado**: quality gate APROVADO COM DÉBITO (ciclo 2, QA-07 corrigido); step 12 sem rule; PR pendente — o cenário com agente roda depois do merge (`## Processo do pedido`)
 
 **Base do PR**: `main`
 
@@ -84,10 +84,17 @@
 | Ciclo | Veredito | Achados | Destino | Relatório |
 |---|---|---|---|---|
 | 1 | REPROVADO → especificação | 0 Blocker · 1 Major (QA-01) · 4 Minor (QA-02…05) · 1 Cosmético (QA-06); 1 suspeita (passo 8 gera policies do dono) | todos corrigidos: QA-01 `01`/`02` alinhados ao entregue; QA-02 `--name-only`; QA-03 agendado em `## Processo do pedido`; QA-04 arnês com `bash -e`; QA-05 entrada no `wikis/glossario.md`; QA-06 cerca removida; suspeita confirmada no código e corrigida (passo 8 só gera a permissão da página) | `06-relatorio-qa.md` |
+| 2 | APROVADO COM DÉBITO | 0 Blocker · 0 Major · 1 Minor (QA-07: a suíte do passo 9 semeia o seeder que grava policy do dono) | QA-07 corrigido: o passo 9 confere `app/Policies` e remove os não rastreados com `git clean -f -- app/Policies`, no roteiro, na cópia e no contrato; K não verificada (K2 fora do perfil) | `06-relatorio-qa.md` |
 
 ## Candidatos a Rule
 
-<!-- Step 12. -->
+`apresentados 0 · gravados 0 · recusados 0 · descartados no gate 3 · poda 0`
+
+| Candidato | Gate que falhou | Motivo |
+|---|---|---|
+| a cópia local do roteiro acompanha cada edição do roteiro | 4 (não-redundante) | enforçado pelo `'[CT-13]'` da guarda |
+| arnês que executa bloco `run` de workflow usa `bash -e` | recorrência | um só arnês no projeto (QA-04); sem outro lugar previsto |
+| a suíte de um projeto derivado grava policy do Shield em `app/Policies` | 4 (não-redundante) | quem escreve roteiro lê o contrato `wikis/atualizacoes/README.md`, que já traz a regra (ciclo 2 do gate) |
 
 ## Auditoria Pré-Implementação
 
@@ -137,6 +144,9 @@ Roteiro manual: não — 2026-10-23 — resposta a Q11 — o cenário 5 pós-rel
 | C11 | 7 | derivação (retomada) — Adendo 3, D7–D14, 18 achados | herdado (opus) | conversa, código | `04` com 24 CT, 94 M; Q19 ao solicitante, 3 de desenho (D15–D17) | 264.514 tokens · 457 s | 24 CT por grep; Q?8 retirada pelo fato `app/Console/Commands/KitUpdate.php:'wikis/agentes-e-skills.md':330` |
 | C10 | 7 | `fw-adversario-ct` — rodada 1 | herdado | `01`, `02`, `03`, código, raciocínio do derivador | 18 achados (5 altos); veredito "não mata" Impacto 3; Q16–Q18 ao solicitante | 103.858 tokens · 218 s | leu só `00`, `04`, glossário e o SKILL da `feature-test-design` (declarado); nada gravado |
 | C9 | 7 | `general-purpose` seguindo `feature-test-design` — derivação do `04` | opus | conversa, código, plano além de paths/contrato/UI | `04` com 19 CT, 58 M, 5 sem matador; 10 perguntas (Q12–Q15 ao solicitante, 5 de desenho D7–D11, 1 resolvida por fato) | 199.874 tokens · 667 s | 19 CT e 14 regras por grep; árvore: só o `04`; amostra CT-15, CP-01, M48 |
+| C25 | 11 | construtor (retomado) — suspeita do ciclo 1: passo 8 sem gerar policy | opus | conversa | `shield:generate --panel=admin --page=PrimeirosPassos --option=permissions`, fatos do vendor por símbolo | 395.135 tokens · 120 s | `handle` do `GenerateCommand` conferido (sem `--all`/`--resource`, nenhum Resource); 215 verdes |
+| C24 | 11 | `fw-qa-gate` — ciclo 2 | herdado | conversa | APROVADO COM DÉBITO, QA-07 (Minor) | 165.729 tokens · 958 s | `git status` vazio antes e depois; QA-07 corrigido na sessão |
+| C23 | 11 | `fw-qa-gate` — ciclo 1 | herdado | conversa | REPROVADO → especificação: QA-01 (Major) a QA-06, 1 suspeita | 220.043 tokens · 815 s | `git status` vazio antes e depois; suspeita conferida no `ShieldPermissionsSeeder` e no `GenerateCommand` |
 | C22 | 10 | `general-purpose` seguindo `ponytail-review` — excesso de complexidade do diff | sonnet | conversa, wiki | 26 cortes propostos (net -200); aplicados os de baixo risco: guarda 1841 → 1795 linhas (212 casos e 339 asserções iguais), roteiro 518 → 475, workflow 66 → 63; recusados os que reabririam E-01/E-02, o CT-27, o awk, a frase do RQ-13 e o enxugamento de Como conferir/Quando parar | 120.654 tokens · 121 s | testes dos docs e guarda: 373 verdes, 3 pulados |
 | C21 | 9 | construtor (retomado) — achados do step 9 no roteiro, contrato, workflow, checklist e docs | opus | conversa | 8 pontos; workflow testado em 6 situações | 358.780 tokens · 532 s | testes dos docs verdes; guarda 212/212 contra os arquivos dele |
 | C20 | 9 | `fw-executor-ct` (retomado) — 12 achados do step 9 na guarda | herdado | conversa, plano | 212 casos verdes; cada achado com linha de dataset | 300.022 tokens · 420 s | não provou por execução que as linhas novas falhariam nos detectores antigos — limite declarado |

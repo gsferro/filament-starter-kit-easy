@@ -78,6 +78,11 @@ versão:
 - **A suíte roda com o banco descartável forçado no próprio comando** (`DB_CONNECTION=sqlite`,
   `DB_DATABASE=:memory:`, `DB_URL=sqlite:///:memory:`, depois de `php artisan config:clear`): o `phpunit.xml` não
   força o banco, e uma variável de ambiente do dono venceria.
+- **Permissões do Shield só da tela nova, e `app/Policies` conferido depois da suíte.** O `shield:generate
+  --all` (e o `ShieldPermissionsSeeder`, que o chama) grava policy para todo Resource do dono sem uma; o
+  roteiro gera só a permissão da tela nova (`--page=… --option=permissions`). A suíte semeia esse
+  seeder, então depois dela os arquivos não rastreados em `app/Policies` saem com
+  `git clean -f -- app/Policies` e vão para o relatório final.
 - **O pré-voo confere os nomes que o comando reserva** (o remote `kit`, as tags `kit-*` e o branch
   `kit-update/vX.Y.Z`) e para se algum já existir: o comando apaga o remote e as tags com esses nomes.
 - **Sem promessa de funcionar em todo agente ou host.** O roteiro é conferido por um agente em sessão

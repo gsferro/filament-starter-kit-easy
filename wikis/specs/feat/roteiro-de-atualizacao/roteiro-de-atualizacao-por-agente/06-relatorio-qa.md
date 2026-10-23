@@ -15,6 +15,22 @@
 - `RQ` abertas: nenhuma
 - Ambiente: sem app servido (a feature não tem UI nem runtime) · Pest 5.0.5 · MCP: não usado (não se aplica)
 
+## Veredito — Ciclo 2
+
+**APROVADO COM DÉBITO**
+
+- Blocker: 0 · Major: 0 · Minor: 1 (QA-07, novo) · Cosmético: 0
+- Não verificadas: K (só o passo estático; K2 fora do perfil padrão, sem classe de `app/`)
+- Ciclo 1 fechado: QA-01 a QA-06 conferidos por comando; a suspeita do passo 8 fechada (o comando novo, executado em sqlite `:memory:`, gera 0 policies e cria `View:PrimeirosPassos`)
+- Regressão: suíte `Kit` com 4 processos, 4883 testes, 4880 passaram, 3 pulados, 2 risky; `git status` vazio depois
+
+### QA-07 — O passo 9 do roteiro roda o `ShieldPermissionsSeeder` que o passo 8 proíbe · Minor · destino 2
+
+- **Dimensão**: A (RQ-12) e L (o roteiro se contradiz)
+- **Observado**: a suíte do passo 9 semeia `ShieldPermissionsSeeder` (`tests/Pest.php` e 133 arquivos de `tests/Kit`/`tests/Tenancy`), que roda `shield:generate --all --ignore-existing-policies` e grava no disco do projeto a policy de todo Resource do dono sem policy; nenhum passo confere `app/Policies` depois da suíte.
+- **Atenuante**: os três painéis usam `->strictAuthorization()` desde a v0.51.2; o caso afetado é Resource que sobrescreve os `can*` sem policy.
+- **Ação exigida**: conferir `git status --porcelain app/Policies` depois da suíte, no roteiro e na cópia local.
+
 ## Achados
 
 ### QA-01 — O plano e a ADR descrevem a entrega de antes dos Adendos 3 e 4 e dos steps 9 e 10 · Major · destino 1
@@ -86,7 +102,7 @@ As demais RQ e a P-01 estão sem lacuna: `rastreabilidade.sh` só acusou a RQ-16
 
 ## Débitos Aceitos
 
-- Nenhum: QA-01 a QA-06 corrigidos no ciclo 1 (ver `03-progresso.md`, `## Quality Gate`).
+- Nenhum: QA-01 a QA-06 corrigidos depois do ciclo 1 e QA-07 depois do ciclo 2 (ver `03-progresso.md`, `## Quality Gate`).
 
 ## Suspeitas Não Confirmadas
 

@@ -578,6 +578,13 @@ Evidência: zero erro, zero falha e **no máximo 942 pulados**. Os 942 são os c
 do repositório do kit (leem arquivos que não viajam para o projeto). Mais que isso: pare e liste os
 casos pulados a mais.
 
+Depois da suíte, rode `git status --porcelain app/Policies`. Os testes semeiam as permissões com o
+`shield:generate --all`, que grava no disco uma policy para cada Resource seu que ainda não tem uma.
+Linha com `??` é um desses arquivos: ele não existia antes da atualização (o pré-voo exigiu a árvore
+limpa), então remova-os com `git clean -f -- app/Policies` e liste no relatório final cada arquivo
+removido. Esse comando só apaga arquivo não rastreado; os arquivos que o `kit:update` trouxe estão no
+índice e ficam.
+
 ### 10. Remover o remote e as tags do kit
 
 Condição: ao terminar, ou ao parar depois do passo 5 de `## Antes de começar`.
