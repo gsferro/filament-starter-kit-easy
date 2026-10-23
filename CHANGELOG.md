@@ -65,6 +65,29 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   `naArvoreDoKit()`: `[CT-39]` lê `.ai/rules/` (1) e `[CT-42]` lê `docs/pt` e `docs/en` (2) — diretórios que não viajam
   no `create-project`.
 
+### Validação local dos quatro cenários (2026-10-23)
+
+- **Os quatro cenários de `wikis/checklist-de-release.md`** rodaram em 2026-10-23 **sobre a tag publicada** `v0.52.0`
+  (anterior `v0.51.2`), em `validacao-v0.52.0/` fora da árvore do kit. O `kit:update --all` dos cenários 3 e 4 aplicou
+  **161 arquivos (56 novos no kit e 105 modificados)**, entre eles a view autoral
+  `resources/views/vendor/filament-onboarding/pages/progress.blade.php` e o `database/seeders/OnboardingSeeder.php`,
+  presentes nos quatro. Migration de settings `2026_10_21_100000_add_onboarding_to_kit_settings`: `DONE` no
+  `migrate --force` dos cenários 3 e 4.
+
+  | Cenário | Saída de `php artisan test --testsuite=Kit,Tenancy --parallel --processes=4 --compact` | `kit.version` | tenancy |
+  |---|---|---|---|
+  | 1 `novo-sem-tenant` — `create-project` `v0.52.0` | `{"tool":"pest","result":"passed","tests":5331,"passed":4389,"assertions":22080,"duration_ms":759195,"skipped":942,"risky":2}` | `0.52.0` | `NAO` |
+  | 2 `novo-com-tenant` — `create-project` `v0.52.0` + `kit:tenancy --force` | `{"tool":"pest","result":"passed","tests":5331,"passed":4389,"assertions":22080,"duration_ms":871895,"skipped":942,"risky":2}` | `0.52.0` | `SIM` |
+  | 3 `velho-sem-tenant` — `create-project` `v0.51.2` + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":5331,"passed":4389,"assertions":22080,"duration_ms":739258,"skipped":942,"risky":2}` | `0.52.0` | `NAO` |
+  | 4 `velho-com-tenant` — `create-project` `v0.51.2` + `kit:tenancy --force` + commit + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":5331,"passed":4389,"assertions":22080,"duration_ms":772071,"skipped":942,"risky":2}` | `0.52.0` | `SIM` |
+
+  **A primeira suíte do cenário 4 teve 1 erro de ambiente, não do kit:** `[CT-01]` de
+  `tests/Kit/QualidadeDeCodigoTest.php` estourou o limite de 60 s do `phpstan dump-parameters --json` com a máquina
+  carregada pelos quatro processos (`4388` passaram). Isolado, o arquivo passou (`29` passaram, `14118` ms); a suíte
+  inteira rodada de novo é a linha da tabela.
+
+  **Teto de pulados confirmado: 942**, igual ao da pré-validação: +3 sobre o 939 da `v0.51.2`, justificados acima.
+
 ## [0.51.2] - 2026-10-20
 
 ### Corrigido

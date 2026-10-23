@@ -4,6 +4,10 @@
 
 **Base do PR**: `main`
 
+## Processo do pedido
+
+- [x] Tag + release criadas — tag `v0.52.0`, release https://github.com/gsferro/filament-starter-kit-easy/releases/tag/v0.52.0; quatro cenários de `wikis/checklist-de-release.md` aprovados sobre a tag publicada (CHANGELOG `[0.52.0]` › Validação local dos quatro cenários), 2026-10-23
+
 ## 1. Config, env e channel
 - [x] Bloco `kit.onboarding` em `config/kit.php` e `KIT_ONBOARDING=false` no `.env.example` — `config/kit.php:'onboarding':650`, `.env.example:KIT_ONBOARDING:238`, 2026-10-21
 - [x] Channel `onboarding` em `config/logging.php` — `config/logging.php:'onboarding':183`; projeto atualizado: `KitServiceProvider::garantirCanalDoTutorialGuiado()` (CT-70 3/3), 2026-10-21
