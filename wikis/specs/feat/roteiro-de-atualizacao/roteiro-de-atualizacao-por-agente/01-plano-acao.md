@@ -11,25 +11,40 @@ nova — sem wiki ancestral. Toca o processo de release (`wikis/checklist-de-rel
 | RQ | Passo(s) | Observação |
 |----|----------|------------|
 | RQ-01 | 1, 2 | o roteiro e o pedido-modelo que o agente recebe |
-| RQ-02, RQ-03, RQ-04 | 1 | seções obrigatórias do contrato: o que mudou, cuidados, processo |
+| RQ-02 | 1 | seções obrigatórias do contrato: o que mudou, cuidados, processo |
+| RQ-03 | 1 | seções obrigatórias do contrato: o que mudou, cuidados, processo |
+| RQ-04 | 1 | seções obrigatórias do contrato: o que mudou, cuidados, processo |
 | RQ-05 | 1, 3 | um arquivo por versão; a guarda exige o da versão marcada |
 | RQ-06 | 1 | contrato em passos observáveis (condição → ação → evidência → parada) |
 | RQ-07 | — | substituída (parcial) por RQ-16 |
 | RQ-08 | — | substituída por RQ-11 |
 | RQ-09 | — | substituída por RQ-14 |
 | RQ-10 | 3, 4, 5 | guarda no CI, workflow de release e linha obrigatória do checklist |
-| RQ-11, RQ-12, RQ-13 | 5 | cenário 5 do checklist (pós-release, agente em sessão nova) |
+| RQ-11 | 5 | cenário 5 do checklist (pós-release, agente em sessão nova) |
+| RQ-12 | 5 | cenário 5 do checklist (pós-release, agente em sessão nova) |
+| RQ-13 | 5 | cenário 5 do checklist (pós-release, agente em sessão nova) |
 | RQ-14 | 5 | etapa pré-release: fontes CHANGELOG + wiki, reconciliadas |
 | RQ-15 | 1 | o roteiro não remete o agente a CHANGELOG, `docs/` nem wiki de spec |
 | RQ-16 | 1–6 | nenhum passo toca `app/`, `config/` ou o comando |
 | RQ-17 | 1 | os passos chamam o `kit:update` |
 | RQ-18 | 1 | cada roteiro declara origem = versão anterior; salto longo encadeia |
-| RQ-19, RQ-20 | 1, 2, 6 | padrão do link raw no contrato, na cópia local e na doc de atualização |
+| RQ-19 | 1, 2, 6 | padrão do link raw no contrato, na cópia local e na doc de atualização |
+| RQ-20 | 1, 2, 6 | padrão do link raw no contrato, na cópia local e na doc de atualização |
 | RQ-21 | 2 | cópia do roteiro da versão instalada em `wikis/agentes-e-skills.md` |
 | RQ-22 | 3 | `tests/Kit/RoteiroDeAtualizacaoTest.php` |
 | RQ-23 | 4, 5 | `release.yml` e checklist |
 | RQ-24 | 5 | política de reprovação no checklist |
-| RQ-25, RQ-26 | 1 | seção "Decisões do dono do projeto" do contrato |
+| RQ-25 | 1 | seção "Decisões do dono do projeto" do contrato |
+| RQ-26 | 1 | seção "Decisões do dono do projeto" do contrato |
+| RQ-27 | 4 | o passo do `release.yml` confere existência e as nove seções (Adendo 3) |
+| RQ-28 | 1, 3 | link fora da v0.52.0 na `main` só com o registro da revisão no CHANGELOG (D17) |
+| RQ-29 | 3 | marcador sem seção no CHANGELOG reprova a guarda |
+| RQ-30 | 1, 3, 5 | `### Defaults mudados` no CHANGELOG (D15); cada item vira `Pergunta:`; etapa pré-release do checklist |
+| RQ-31 | 1, 3, 5 | canário de registro no cenário com agente; guarda de comando destrutivo |
+| RQ-32 | 1, 2, 6 | o padrão do link manda conferir a `main` e preferir a revisão marcada (D19) |
+| RQ-33 | 3 | `migrate:rollback` na lista da guarda (D18) |
+| RQ-34 | 3 | guarda no texto bruto, com comentários e prefixo, em toda seção fora de `## Cuidados` (D18) |
+| RQ-35 | 1, 5 | decisão de conflito em todo roteiro (D20); o cenário com agente confere o arquivo do dono intacto |
 | P-01 | 1, 2 | roteiro da v0.52.0 nasce depois da tag: o link dele aponta para a `main` |
 
 ## Objetivo
@@ -75,6 +90,21 @@ Molde das guardas de redação de roteiro (`skip(! naArvoreDoKit())`) e do helpe
 | D4 | Contrato do roteiro em `wikis/atualizacoes/README.md`: seções obrigatórias com os títulos exatos que a guarda procura | RQ-02..04, RQ-25 | surpreendente | sessão, 2026-10-23 |
 | D5 | Guarda só na árvore do kit (`skip(! naArvoreDoKit())`): `wikis/atualizacoes/` não está em `CAMINHOS_DO_KIT`, e projeto atualizado não tem os arquivos | RQ-22, RQ-16 | surpreendente | sessão, 2026-10-23 |
 | D6 | Link raw: `https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/vX.Y.Z/wikis/atualizacoes/vX.Y.Z.md`; quando o roteiro é corrigido depois da tag (RQ-24) ou nasceu depois dela (P-01), `main` no lugar da tag | RQ-19, RQ-24 | trade-off | sessão, 2026-10-23 |
+| D7 | Detectores da guarda como funções puras sobre o conteúdo, no próprio arquivo de teste; só os casos de presença leem os arquivos reais | 04 Q?3 | trade-off | sessão, 2026-10-23 |
+| D8 | O caso do workflow roda com `bash` o bloco `run` do `release.yml` numa árvore temporária; sem `bash`, o caso falha em vez de pular | 04 Q?4 | surpreendente | sessão, 2026-10-23 |
+| D9 | Linhas `Origem:`, `Destino:` e `Link:` com o `v` da tag; a comparação de versão ignora o prefixo, mas a ref do link exige o `v` (a tag é `vX.Y.Z`) | 04 Q?5, ADV-09 | surpreendente | sessão, 2026-10-23 |
+| D10 | Cada decisão é um `###` com `Pergunta:` (termina em `?`), `Recomendação da release:` e `Sem resposta:`, todos com valor; versão sem decisão traz "Nenhuma decisão do dono nesta versão." | 04 Q?6, ADV-15, RQ-30 | surpreendente | sessão, 2026-10-23 |
+| D11 | A cópia local "idêntica" normaliza só o fim de linha (CRLF/LF) e as quebras nas bordas do bloco | 04 Q?7 | surpreendente | sessão, 2026-10-23 |
+| D12 | O cenário com agente no checklist fica em seção própria, fora da tabela, e remete aos comandos dos cenários 3 e 4 sem repetir a linha `create-project` literal | Q15 | trade-off | gsferro, 2026-10-23 |
+| D13 | A guarda reprova `## O que muda nesta versão` ou `## Cuidados` com corpo igual ao do roteiro da versão anterior | ADV-05 | surpreendente | sessão, 2026-10-23 |
+| D14 | O cenário com agente ganha um terceiro canário, num arquivo de `CAMINHOS_DO_KIT` editado pelo dono, e um quarto, um registro do dono no banco (RQ-31); o relatório do agente lista conflito e escolha | ADV-03, RQ-31 | surpreendente | sessão, 2026-10-23 |
+| D15 | A lista de defaults mudados fica numa subseção `### Defaults mudados` da seção da versão no CHANGELOG; a guarda confere que cada item aparece numa `Pergunta:` do roteiro | 04 Q?1 (rodada 1), RQ-30 | surpreendente | sessão, 2026-10-23 |
+| D16 | Invocação do `kit:update` conta só em linha de bloco de código que começa por `php artisan kit:update`; menção em prosa, inclusive em proibição, não conta | 04 Q?2 (rodada 1), RQ-17 | surpreendente | sessão, 2026-10-23 |
+| D17 | Registro de revisão no CHANGELOG: linha que começa por `Roteiro de atualização revisado`, dentro de `## [x.y.z]` da própria versão; commit no link só como SHA completo de 40 hexadecimais, com host, repositório e caminho conferidos | 04 Q?3 (rodada 1), ADV-21, RQ-28 | surpreendente | sessão, 2026-10-23 |
+| D18 | A guarda de comando destrutivo casa `artisan` seguido de `migrate:fresh`, `db:wipe`, `migrate:refresh`, `migrate:reset` ou `migrate:rollback` em qualquer ponto da linha, no texto bruto com comentários, fora de `## Cuidados`; aqui a regra de remover `<!-- -->` cede, porque o agente lê o raw | ADV-22..24, Q20, RQ-34 | surpreendente | sessão, 2026-10-23 |
+| D19 | Marca de revisão dentro do roteiro corrigido: linha `Roteiro revisado em {data}: {motivo}` em `## Identificação`; a guarda exige a linha quando o CHANGELOG registra a revisão, e reprova a linha sem o registro | 04 Q?8 (rodada 2), ADV-20, RQ-32 | surpreendente | sessão, 2026-10-23 |
+| D20 | Com a RQ-35 todo roteiro tem ao menos a decisão de conflito: a versão sem outra decisão traz "Nenhuma outra decisão do dono nesta versão." ao lado dela (corrige D10) | 04 Q?11 (fechamento da rodada 2) | surpreendente | sessão, 2026-10-23 |
+| D21 | O caso que prova "nenhum caso pula na árvore do kit" inspeciona a fonte: todo `->skip(` do arquivo é exatamente `fn (): bool => ! naArvoreDoKit()`, apoiado no caso do `ChecklistDeReleaseTest` que prova a sentinela verdadeira; sem subprocesso do Pest (recursão, e resultado falso já visto no Windows) | 04 Q?12 (fechamento da rodada 2) | surpreendente | sessão, 2026-10-23 |
 
 ## Autorização
 

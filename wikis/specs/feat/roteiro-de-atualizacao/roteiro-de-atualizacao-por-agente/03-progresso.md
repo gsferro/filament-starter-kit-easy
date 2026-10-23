@@ -24,7 +24,9 @@
 - [ ] `docs/{pt,en}/comecar/atualizando-o-projeto.md` e `CHANGELOG.md` `[Unreleased]`
 
 ## Testes
-<!-- Preenchida no step 7. -->
+- `04-casos-de-teste.md`: 29 CT em 19 regras, 122 mutantes previstos, 13 sem matador automatizado (só os cenários de processo CP-01…CP-04, manuais, os matam); sem `05` (nenhuma superfície de browser)
+- Revisão adversarial: 2 rodadas (teto), 37 achados (rodada 1: 18, 5 altos; rodada 2: 19, 7 altos), todos com destino em `## Fechamento da Revisão Adversarial` do `04`; o que o fechamento da rodada 2 criou (CT-25…CT-29, M95…M122) ficou sem revisão independente — débito declarado
+- Respostas do solicitante: Adendo 3 (Q12–Q14, Q16–Q18) e Adendo 4 (Q19–Q21) no `00`; Q15 e as recomendações de desenho como D7–D21 no `01`
 
 ## Tickets
 <!-- Step 8. -->
@@ -100,6 +102,11 @@ Roteiro manual: não — 2026-10-23 — resposta a Q11 — o cenário 5 pós-rel
 
 | # | Step | Agente / tarefa | Modelo | Não recebeu | Resultado | Custo | Auditoria do retorno |
 |---|---|---|---|---|---|---|---|
+| C13 | 7 | derivação (retomada) — fechamento da rodada 2: 19 achados, Adendo 4, D15–D19 | herdado (opus) | conversa, código | `04` com 29 CT, 122 M, 13 sem matador; 2 perguntas de desenho (D20, D21) | 346.348 tokens · 525 s | contagens por grep conferidas (29 CT); árvore: só o `04` |
+| C12 | 7 | `fw-adversario-ct` — rodada 2 (última) | herdado | `01`, `02`, `03`, código, raciocínio do derivador | 19 achados (7 altos); 11 da rodada 1 mal fechados; Q20, Q21 ao solicitante | 94.970 tokens · 226 s | leu só `00`, `04` e glossário (declarado); nada gravado |
+| C11 | 7 | derivação (retomada) — Adendo 3, D7–D14, 18 achados | herdado (opus) | conversa, código | `04` com 24 CT, 94 M; Q19 ao solicitante, 3 de desenho (D15–D17) | 264.514 tokens · 457 s | 24 CT por grep; Q?8 retirada pelo fato `app/Console/Commands/KitUpdate.php:'wikis/agentes-e-skills.md':330` |
+| C10 | 7 | `fw-adversario-ct` — rodada 1 | herdado | `01`, `02`, `03`, código, raciocínio do derivador | 18 achados (5 altos); veredito "não mata" Impacto 3; Q16–Q18 ao solicitante | 103.858 tokens · 218 s | leu só `00`, `04`, glossário e o SKILL da `feature-test-design` (declarado); nada gravado |
+| C9 | 7 | `general-purpose` seguindo `feature-test-design` — derivação do `04` | opus | conversa, código, plano além de paths/contrato/UI | `04` com 19 CT, 58 M, 5 sem matador; 10 perguntas (Q12–Q15 ao solicitante, 5 de desenho D7–D11, 1 resolvida por fato) | 199.874 tokens · 667 s | 19 CT e 14 regras por grep; árvore: só o `04`; amostra CT-15, CP-01, M48 |
 | C8 | 5 | `codex exec --yolo` — revisão profunda do `01` contra o código (só leitura) | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/revisao-profunda.md` (8 premissas a corrigir, 14 listas paralelas) | — | árvore intacta; amostra: `ChecklistDeReleaseTest` (4 linhas), `PageHeaderTest` [CT-36] (paridade), 89 `00-requisito.md` conferidos |
 | C7 | 3 | `codex exec --yolo` — parceiro de desenho (só leitura): fatos da atualização, o que viaja, cuidados, 3 desenhos, perguntas | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/desenho-roteiro.md` (3 desenhos, recomendação A, 16 perguntas) | — | árvore intacta; amostra: `.gitattributes:21,40`, `app/Console/Commands/KitUpdate.php:preVoo:409` (pré-voo `FAILURE`) e `app/Console/Commands/KitUpdate.php:marcarVersao:1140` conferidos |
 
@@ -111,6 +118,7 @@ Roteiro manual: não — 2026-10-23 — resposta a Q11 — o cenário 5 pós-rel
 
 ## Notas de Implementação
 
+- `rastreabilidade.sh` acusa `RQ-16 sem CT` de propósito: "nada muda na aplicação nem no `kit:update`" é afirmação sobre o diff desta entrega, não comportamento que dura (`04`, `## Cogitado e cortado`); quem confere é o quality gate, pelo `git diff --stat` contra a `main`. Achado esperado do script até o step 11, 2026-10-23.
 - Do parecer C7: o pré-voo do `kit:update` atual sai com `FAILURE` (`app/Console/Commands/KitUpdate.php:preVoo:409`), mas a primeira rodada usa a classe antiga, que pode sair com 0; e a versão é marcada com qualquer arquivo aplicado (`app/Console/Commands/KitUpdate.php:marcarVersao:1140`). O roteiro confere versão **e** arquivos.
 
 ## Referências Abertas

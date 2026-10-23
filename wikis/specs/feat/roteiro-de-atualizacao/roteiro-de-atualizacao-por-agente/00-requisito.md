@@ -48,6 +48,15 @@
 | Q6 | Como a obrigatoriedade é garantida, se o workflow de release só roda depois do push da tag? | RQ-10, RQ-16 | guarda no CI da main | respondida no Adendo 2 |
 | Q7 | Se o cenário pós-release reprovar o roteiro, o que acontece com a publicação? | RQ-11 | corrige o roteiro na main | respondida no Adendo 2 |
 | Q8 | Quando a versão muda um default, o roteiro manda o agente decidir sozinho ou parar e perguntar ao dono do projeto? | RQ-03, RQ-04 | para e pergunta | respondida no Adendo 2 |
+| Q12 | O workflow de release confere só que o roteiro existe, ou também as nove seções do contrato? | RQ-23 | existe + nove seções | respondida no Adendo 3 |
+| Q13 | Depois de uma revisão na main, o link de uma versão que não é a v0.52.0 pode apontar para a main ou para um commit? | RQ-19, RQ-24 | só com o registro da revisão no CHANGELOG | respondida no Adendo 3 |
+| Q14 | Marcador de versão sem seção correspondente no CHANGELOG: a guarda reprova? | RQ-22 | reprova | respondida no Adendo 3 |
+| Q16 | Quem fixa a lista de pontos de decisão da versão, contra a qual o roteiro é conferido? | RQ-25, RQ-14 | o checklist exige a lista | respondida no Adendo 3 |
+| Q17 | "Customizações do projeto preservadas" inclui os dados do banco? | RQ-12 | sim | respondida no Adendo 3 |
+| Q18 | Depois de uma revisão na main, como quem monta o link pelo padrão chega à correção? | RQ-20, RQ-24 | o padrão manda conferir a main | respondida no Adendo 3 |
+| Q19 | O `migrate:rollback` entra nos "afins" dos comandos destrutivos do banco? | RQ-31 | sim | respondida no Adendo 4 |
+| Q20 | A guarda de comando destrutivo vale só em `## Passos` ou em toda seção que o agente executa? | RQ-31 | toda seção | respondida no Adendo 4 |
+| Q21 | Conflito do `kit:update` num arquivo do kit que o dono editou é ponto de decisão do dono? | RQ-12, RQ-25 | é decisão | respondida no Adendo 4 |
 
 ## Premissas
 
@@ -121,3 +130,59 @@
 | RQ-25 | Todo ponto de decisão do dono do projeto vira uma pergunta explícita antes do passo, com a recomendação da release | "todo ponto de decisão do dono (manter IA ligada, semear o tutorial, ligar o interruptor) vira uma pergunta explícita antes do passo, com a recomendação da release" | funcional | — |
 | RQ-26 | Sem resposta do dono, o agente segue o default seguro e registra a escolha | "Sem resposta, segue o default seguro e registra." | funcional | — |
 
+## Adendo 3 — 2026-10-23
+
+- **Fonte**: respostas do solicitante (gsferro) às perguntas do step 7 (derivação dos casos de teste e revisão adversarial), escolhidas entre opções apresentadas no chat
+- **Fidelidade**: alta (escolha registrada pelo próprio solicitante)
+- **Responde a**: Q12, Q13, Q14, Q16, Q17, Q18 (Q15 é de desenho: D12 do `01`)
+
+### Texto Original
+
+<!-- IMUTÁVEL. As escolhas como o solicitante as selecionou. -->
+
+> Q12 — o passo novo no workflow de release (depois do push da tag) confere só que o roteiro existe, ou também as nove seções do contrato? = "Existe + 9 seções": Falha fechado na tag também; a guarda do CI na main já confere o resto.
+>
+> Q13 — depois de corrigir o roteiro na main (RQ-24), o link raw de uma versão que não é a v0.52.0 pode apontar para main/commit em vez da tag? = "Só com registro": Aceita main só se a seção da versão no CHANGELOG registrar a revisão; senão exige a tag.
+>
+> Q14 — se o marcador de versão não tiver seção correspondente no CHANGELOG, a guarda do CI reprova? = "Reprova": Falha fechado, nomeando a seção que falta.
+>
+> Q16 — quem fixa a lista de pontos de decisão da versão (todo default que mudou), contra a qual o roteiro é conferido? = "Checklist exige lista": Na etapa pré-release o mantenedor lista todo default mudado na reconciliação; o CP-01 confere que cada item virou pergunta. Lista ausente reprova.
+>
+> Q17 — 'customizações do projeto preservadas' (RQ-12) inclui os dados do banco? = "Sim, inclui dados": Canário de registro no banco no CP-01 + guarda na suíte que reprova migrate:fresh, db:wipe e afins em '## Passos'.
+>
+> Q18 — depois de uma revisão do roteiro na main (RQ-24), quem monta o link pelo padrão chega na tag, ou seja, ao roteiro reprovado. Como chegar à correção? = "Conferir a main": O padrão manda ler também o arquivo na main e preferi-lo quando ele registrar a revisão; na dúvida, parar.
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-27 | O workflow de release confere que o roteiro da tag existe e traz as nove seções do contrato; falha fechado | "Falha fechado na tag também" | funcional | — |
+| RQ-28 | O link de uma versão que não é a v0.52.0 aponta para a main (ou um commit) só quando a seção da versão no CHANGELOG registra a revisão; sem o registro, exige a tag | "Aceita main só se a seção da versão no CHANGELOG registrar a revisão; senão exige a tag." | funcional | — |
+| RQ-29 | Marcador de versão sem seção correspondente no CHANGELOG reprova a guarda, nomeando a seção que falta | "Falha fechado, nomeando a seção que falta." | funcional | — |
+| RQ-30 | Na etapa pré-release o mantenedor lista todo default que a versão mudou; cada item da lista vira pergunta no roteiro; o cenário pós-release confere; lista ausente reprova | "o mantenedor lista todo default mudado na reconciliação; o CP-01 confere que cada item virou pergunta. Lista ausente reprova." | funcional | — |
+| RQ-31 | As customizações preservadas incluem os dados do banco: o cenário pós-release confere um registro do dono, e a guarda reprova comando destrutivo do banco (`migrate:fresh`, `db:wipe` e afins) nos passos | "Canário de registro no banco no CP-01 + guarda na suíte que reprova migrate:fresh, db:wipe e afins" | funcional | — |
+| RQ-32 | O padrão do link manda ler também o arquivo do roteiro na main e preferi-lo quando ele registrar a revisão; na dúvida, o agente para | "O padrão manda ler também o arquivo na main e preferi-lo quando ele registrar a revisão; na dúvida, parar." | funcional | — |
+
+## Adendo 4 — 2026-10-23
+
+- **Fonte**: respostas do solicitante (gsferro) às perguntas da revisão adversarial do step 7 (rodadas 1 e 2), escolhidas entre opções apresentadas no chat
+- **Fidelidade**: alta (escolha registrada pelo próprio solicitante)
+- **Responde a**: Q19, Q20, Q21
+
+### Texto Original
+
+<!-- IMUTÁVEL. As escolhas como o solicitante as selecionou. -->
+
+> Q19 — a guarda reprova comando destrutivo do banco nos passos do roteiro (migrate:fresh, db:wipe, migrate:refresh, migrate:reset). O migrate:rollback entra nos 'afins'? = "Sim, reprova": Falha fechado: rollback pode apagar tabelas com dados do dono.
+>
+> Q20 — a guarda de comando destrutivo do banco vale só em '## Passos' ou em toda seção que o agente executa ('Antes de começar', 'Como conferir', 'Quando parar')? = "Toda seção": Busca no texto bruto, com comentários e qualquer prefixo (docker, sail). Só '## Cuidados' pode citar o comando, como proibição.
+>
+> Q21 — um conflito do kit:update num arquivo do kit que o dono editou é ponto de decisão do dono? Hoje o cenário com agente passa se o agente sobrescreve e só relata. = "É decisão": Vira pergunta antes do passo; sem resposta, mantém a versão do dono e registra. O CP confere o arquivo intacto, não o relatório.
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-33 | O `migrate:rollback` é comando destrutivo do banco, reprovado como os outros da RQ-31 | "rollback pode apagar tabelas com dados do dono" | funcional | — |
+| RQ-34 | A guarda de comando destrutivo do banco confere o texto bruto do roteiro, com comentários e qualquer prefixo de invocação, em toda seção; só `## Cuidados` pode citar o comando, como proibição | "Busca no texto bruto, com comentários e qualquer prefixo (docker, sail). Só '## Cuidados' pode citar o comando, como proibição." | funcional | RQ-31 (recorte "nos passos") |
+| RQ-35 | Conflito do `kit:update` num arquivo do kit que o dono editou é ponto de decisão do dono: pergunta antes do passo; sem resposta, mantém a versão do dono e registra; o cenário pós-release confere o arquivo intacto | "Vira pergunta antes do passo; sem resposta, mantém a versão do dono e registra. O CP confere o arquivo intacto, não o relatório." | funcional | — |
