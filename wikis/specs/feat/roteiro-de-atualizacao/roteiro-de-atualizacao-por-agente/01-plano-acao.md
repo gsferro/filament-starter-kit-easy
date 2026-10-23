@@ -107,7 +107,9 @@ Sem execução em runtime: documentos, um teste de CI e um passo de workflow.
 ## Impacto em Features Existentes
 
 - `wikis/agentes-e-skills.md` muda a cada release (a cópia do roteiro): o `kit:update` passa a oferecer esse arquivo a cada versão — esperado.
-- `tests/Kit/ChecklistDeReleaseTest.php` e `tests/Kit/SiteDeDocumentacaoTest.php` leem o checklist e os READMEs: as contagens do README (arquivos de teste, casos) mudam com o teste novo.
+- `tests/Kit/ChecklistDeReleaseTest.php` exige a matriz de exatamente quatro cenários: o cenário com agente fica em seção própria. `tests/Kit/SiteDeDocumentacaoTest.php` confere os READMEs: arquivos de teste 207/244 → 208/245, badge de casos +B (blocos `it()` novos), e specs 88 → 89 (esta wiki já conta) *(alterado em 2026-10-23: revisão profunda, step 5)*.
+- Pulados nos cenários do checklist: o teste novo viaja (`tests/Kit` está em `CAMINHOS_DO_KIT`) e pula fora da árvore do kit — o teto sobe de 942 para 942 + N (N = casos do teste novo), medido e justificado na próxima validação *(alterado em 2026-10-23: revisão profunda, step 5)*.
+- `tests/Kit/PageHeaderTest.php` e `SiteDeDocumentacaoTest.php` exigem paridade de seções pt/en em `atualizando-o-projeto.md`: o parágrafo entra numa seção existente, nas duas línguas *(alterado em 2026-10-23: revisão profunda, step 5)*.
 - `docs/{pt,en}/comecar/atualizando-o-projeto.md` ganha a seção do agente (guardas de documentação do site).
 
 ## Rollback
@@ -122,6 +124,7 @@ Nenhuma.
 
 - Roteiro que envelhece em relação ao que a release entrega: mitigado pelo cenário 5 (RQ-11) e pela reconciliação pré-release (RQ-14).
 - Link raw indisponível (rede, fork): o contrato manda parar e pedir o texto colado (RQ-15, parada).
+- Roteiro corrigido na `main` depois da tag (RQ-24) diverge da cópia que a tag entregou: o registro do cenário identifica o commit executado; o `kit:update` não corrige a cópia de uma tag já publicada *(alterado em 2026-10-23: revisão profunda, step 5)*.
 
 ## Channel de Log da Feature
 
@@ -139,7 +142,7 @@ Sem channel de log: nada roda em runtime.
 
 - **Paths**: `wikis/atualizacoes/README.md` (contrato), `wikis/atualizacoes/v0.52.0.md` (primeiro roteiro, origem `v0.51.2`).
 - Contrato — seções obrigatórias de todo roteiro, com estes títulos: `## Identificação` (origem, destino, data, link raw), `## Antes de começar` (como pedir, pré-voo: git limpo, versão instalada = origem, banco acessível), `## O que muda nesta versão`, `## Cuidados`, `## Decisões do dono do projeto` (cada uma: pergunta, recomendação da release, default seguro sem resposta — RQ-25, RQ-26), `## Passos` (numerados, cada um com condição → ação → evidência), `## Como conferir` (estado esperado, o mesmo dos cenários 3/4 do checklist: `kit.version`, migrations, arquivos novos, canais e customizações preservados), `## Quando parar` (condições de parada com diagnóstico), `## Relatório final` (o que o agente entrega).
-- Regras de escrita do contrato: sem "idem", sem remeter a CHANGELOG, `docs/` ou wiki de spec (RQ-15); comandos para Git Bash e PowerShell quando diferem; o `kit:update` é chamado com `--from vORIGEM` e conferido pela versão **e** pelos arquivos (versão sozinha não prova atualização completa).
+- Regras de escrita do contrato: sem "idem", sem remeter a CHANGELOG, `docs/` ou wiki de spec (RQ-15); sem citação `arquivo:símbolo:linha` (a cópia local em `wikis/agentes-e-skills.md` é conferida pelo `tests/Kit/CitacoesDeCodigoTest.php`, e a linha envelhece) *(alterado em 2026-10-23: revisão profunda, step 5)*; comandos para Git Bash e PowerShell quando diferem; o `kit:update` é chamado com `--from vORIGEM` e conferido pela versão **e** pelos arquivos (versão sozinha não prova atualização completa).
 - Encadeamento (RQ-18): roteiro cobre só anterior → nova; salto longo = os roteiros em ordem, conferindo a versão entre cada um.
 - Primeiro roteiro `v0.52.0`: fontes `CHANGELOG.md` `[0.52.0]` e a wiki `wikis/specs/feat/onboarding-guiado/` (P-24, D7b, a view publicada, migration de settings, decisões: semear o tutorial, ligar o interruptor). Link com `main` (P-01).
 - **Atende**: RQ-01..06, RQ-15, RQ-17..20, RQ-25, RQ-26, P-01
@@ -154,26 +157,27 @@ Sem channel de log: nada roda em runtime.
 > Skills: `pest-testing`, `testing-best-practices`
 
 - **Path**: `tests/Kit/RoteiroDeAtualizacaoTest.php` (todo caso com `skip(! naArvoreDoKit())`, D5).
-- Afirma: (a) existe `wikis/atualizacoes/v{kit.version}.md` não vazio; (b) ele tem as seções obrigatórias do contrato; (c) a origem declarada é a versão anterior publicada (a seção seguinte do `CHANGELOG.md` depois da do marcador) e o destino é o marcador; (d) a cópia em `wikis/agentes-e-skills.md` entre os marcadores é idêntica ao arquivo; (e) o link raw do roteiro aponta para o próprio arquivo, na tag do destino ou na `main`. Controle positivo de cada detector contra texto corrompido.
+- Toda leitura de arquivo dentro do corpo do caso, nunca no escopo global nem no dataset (o skip roda depois da coleta) *(alterado em 2026-10-23: revisão profunda, step 5)*.
+- Afirma: (a) existe `wikis/atualizacoes/v{kit.version}.md` não vazio; (b) ele tem as seções obrigatórias do contrato; (c) a origem declarada é a versão anterior publicada (a seção seguinte do `CHANGELOG.md` depois da do marcador) e o destino é o marcador; (d) a cópia em `wikis/agentes-e-skills.md` entre os marcadores é idêntica ao arquivo. O link raw entra como linha obrigatória do `## Identificação` (item b), não como detector à parte *(alterado em 2026-10-23: Ponytail, step 6)*. Controle positivo de cada detector contra texto corrompido.
 - **Atende**: RQ-05, RQ-10, RQ-22
 
 ### 4. Workflow de release
 
-- **Path**: `.github/workflows/release.yml` — passo novo no job existente: falha se `wikis/atualizacoes/v$tag.md` não existe na tag.
+- **Path**: `.github/workflows/release.yml` — passo novo no mesmo job e no mesmo `run` que define `tag`: falha se `wikis/atualizacoes/v$tag.md` não existe no checkout da tag. Detecta **depois** do push da tag; quem age antes é a guarda do CI na `main` (passo 3) *(alterado em 2026-10-23: revisão profunda, step 5)*.
 - **Atende**: RQ-10, RQ-23
 
 ### 5. Checklist de release
 
 - **Path**: `wikis/checklist-de-release.md`.
 - Etapa pré-release obrigatória (release e hotfix): escrever o roteiro pelo contrato, a partir do CHANGELOG da versão e da wiki da feature, reconciliado com o diff entregue (RQ-14); atualizar a cópia local.
-- Cenário 5 pós-release (RQ-11, RQ-12): agente em sessão nova, sem o contexto de quem escreveu, recebe só o pedido-modelo e o link; atualiza `velho-sem-tenant` e `velho-com-tenant` da versão anterior; passa com o mesmo estado dos cenários 3/4 e com um canário de customização preservado. Registrar agente/modelo, intervenções e resultado.
+- Cenário pós-release com agente (RQ-11, RQ-12), em **seção própria**, fora da matriz dos quatro (o `tests/Kit/ChecklistDeReleaseTest.php` exige exatamente quatro linhas e quatro `create-project`): agente em sessão nova, sem o contexto de quem escreveu, recebe só o pedido-modelo e o link; atualiza **dois projetos novos** da versão anterior (`agente-sem-tenant`, `agente-com-tenant`, criados para isso — os `velho-*` dos cenários 3/4 já estão na versão nova); passa com o mesmo estado dos cenários 3/4 (versão, tenancy, arquivo novo, migration, suíte com zero falha) **e** com dois canários preservados, preparados antes: um canal próprio no `config/logging.php` e uma linha própria no `.env`. Registrar agente/modelo, o commit do roteiro executado, intervenções e resultado *(alterado em 2026-10-23: revisão profunda, step 5)*.
 - Cadência de outros agentes (RQ-13): a cada release menor, um segundo agente; sem prometer todos.
 - Reprovação (RQ-24): a tag não é reescrita; roteiro corrigido na `main` com nova evidência e link para a `main`; CHANGELOG registra a revisão; falha do código vira hotfix.
 - **Atende**: RQ-10, RQ-11..14, RQ-23, RQ-24
 
 ### 6. Documentação de usuário e CHANGELOG
 
-- **Paths**: `docs/pt/comecar/atualizando-o-projeto.md` e `docs/en/comecar/atualizando-o-projeto.md` — seção "Atualizar pelo agente" com o padrão do link e o pedido-modelo; `CHANGELOG.md` `[Unreleased]`.
+- **Paths**: `docs/pt/comecar/atualizando-o-projeto.md` e `docs/en/comecar/atualizando-o-projeto.md` — um parágrafo com o padrão do link e o pedido-modelo, sem repetir o contrato *(alterado em 2026-10-23: Ponytail, step 6)*; `CHANGELOG.md` `[Unreleased]`.
 - **Atende**: RQ-19, RQ-20
 
 ## Filosofia de Implementação

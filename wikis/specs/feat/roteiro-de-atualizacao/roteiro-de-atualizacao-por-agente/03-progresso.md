@@ -70,16 +70,40 @@ Roteiro manual: não — 2026-10-23 — resposta a Q11 — o cenário 5 pós-rel
 ### Revisão profunda (step 5) — premissas do plano contra o código real
 | Premissa do plano | O código real diz | Correção aplicada na wiki |
 |---|---|---|
+| um quinto cenário entra na matriz do checklist | `tests/Kit/ChecklistDeReleaseTest.php` exige exatamente quatro linhas e quatro `create-project` | cenário com agente em seção própria (`01`, passo 5) |
+| o cenário reusa `velho-sem-tenant`/`velho-com-tenant` | os cenários 3/4 já os atualizaram para a versão nova | dois projetos novos da versão anterior (`agente-*`) |
+| "mesmo estado dos cenários 3/4" mede canais e customizações | o checklist não define canário | dois canários preparados antes: canal próprio no `logging.php` e linha própria no `.env` |
+| o teste novo não mexe no teto de pulados | `tests/Kit` viaja e o teste pula fora da árvore | teto 942 + N, medido e justificado na próxima validação |
+| o workflow de release garante a obrigação | roda depois do push da tag | redação: detecta depois; quem age antes é a guarda do CI |
+| a cópia local é texto livre | `tests/Kit/CitacoesDeCodigoTest.php` confere `wikis/*.md` de topo | roteiro sem citação `arquivo:símbolo:linha` |
+| a seção nova nas docs é livre | paridade de seções pt/en (`tests/Kit/PageHeaderTest.php`) | parágrafo dentro de seção existente, nas duas línguas |
+| contagens do README só mudam pelo teste | specs 88 no README, 89 na árvore com esta wiki | reconciliar 88 → 89 |
+
+### Varredura da classe irmã (step 5)
+
+`grep -rnF` pela irmã, conferido no parecer C8.
+
+| Classe/arquivo novo | Irmã escolhida | Ocorrências da irmã | A nova entra? |
+|---|---|---|---|
+| `tests/Kit/RoteiroDeAtualizacaoTest.php` | `tests/Kit/ChecklistDeReleaseTest.php` | só o próprio arquivo, `tests/Pest.php` e `tests/Kit/RedeDeDocumentacaoTest.php` (suíte de documentação por tokens) — sem lista de registro | descoberta por diretório; a `RedeDeDocumentacaoTest` seleciona a suíte nova se ela citar README/docs: conferir no step 10 |
+| `wikis/atualizacoes/` | `wikis/agentes-e-skills.md` | `KitUpdate::CAMINHOS_DO_KIT`, `KitUpdateTest` (glob `wikis/*.md` de topo), `SiteDeDocumentacaoTest` [CT-48] (contagem de topo), `CitacoesDeCodigoTest` (topo) | não: pasta aninhada não entra nos inventários de topo nem no `kit:update` (D5, RQ-16) |
 
 ### Auditoria Ponytail (step 6)
 | # | Sugestão de corte | Aplicada? | Onde |
 |---|---|---|---|
+| 1 | `shrink`: seção das docs repetia cópia local e checklist → um parágrafo | sim | `01`, passo 6 |
+| 2 | `shrink`: detector do link raw à parte → linha obrigatória do `## Identificação` | sim | `01`, passo 3 |
+
+`/ponytail-review` (o comando sem o namespace é o que a instalação expõe) sobre `01` e `02`, 2026-10-23: `net: -10 lines`. Mudança em 1 arquivo: sem re-execução.
 
 ## Despachos
 
 | # | Step | Agente / tarefa | Modelo | Não recebeu | Resultado | Custo | Auditoria do retorno |
 |---|---|---|---|---|---|---|---|
+| C8 | 5 | `codex exec --yolo` — revisão profunda do `01` contra o código (só leitura) | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/revisao-profunda.md` (8 premissas a corrigir, 14 listas paralelas) | — | árvore intacta; amostra: `ChecklistDeReleaseTest` (4 linhas), `PageHeaderTest` [CT-36] (paridade), 89 `00-requisito.md` conferidos |
 | C7 | 3 | `codex exec --yolo` — parceiro de desenho (só leitura): fatos da atualização, o que viaja, cuidados, 3 desenhos, perguntas | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/desenho-roteiro.md` (3 desenhos, recomendação A, 16 perguntas) | — | árvore intacta; amostra: `.gitattributes:21,40`, `app/Console/Commands/KitUpdate.php:preVoo:409` (pré-voo `FAILURE`) e `app/Console/Commands/KitUpdate.php:marcarVersao:1140` conferidos |
+
+
 
 ## Blockers
 
