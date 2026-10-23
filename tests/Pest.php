@@ -1,10 +1,13 @@
 <?php
 
 use App\Console\Commands\KitUpdate;
+use App\Filament\Admin\Pages\HubDeAdministracao;
 use App\Filament\Admin\Resources\Users\UserResource;
+use App\Filament\Admin\Widgets\ProgressoOnboarding;
 use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\DashboardClassico;
+use App\Livewire\ChecklistDoOnboarding;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -34,6 +37,7 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Laravel\Ai\Models\Conversation;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Livewire\Features\SupportTesting\Testable;
@@ -45,6 +49,10 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TenancyTestCase;
 use Tests\TestCase;
+use Wallacemartinss\FilamentOnboarding\Enums\CompletionMode;
+use Wallacemartinss\FilamentOnboarding\Facades\Onboarding;
+use Wallacemartinss\FilamentOnboarding\Models\OnboardingFlow;
+use Wallacemartinss\FilamentOnboarding\Models\OnboardingStep;
 use Wezlo\FilamentSearchSpotlight\Actions\SpotlightActionRegistry;
 
 /*
@@ -255,6 +263,8 @@ function telasDoKit(): array
             '/app/convites',
             '/app/convites/create',
             '/app/convites-recebidos',
+            // O tutorial guiado nasce desligado: o `TelasDoKitTest` o liga (`ligarTutorialGuiado()`).
+            '/app/onboarding',
             '/app/users',
             '/app/users/create',
             /*
@@ -297,11 +307,13 @@ function telasDoKit(): array
             '/admin/onboarding-flows/create',
             '/admin/onboarding-conditions',
             '/admin/onboarding-conditions/create',
+            '/admin/onboarding',
         ],
         // No /infra quase toda tela vem de um pacote de terceiro.
         'infra' => [
             '/infra',
             '/infra/meu-perfil',
+            '/infra/onboarding',
             '/infra/two-factor-authentication',
             '/infra/health-check-results',
             '/infra/backup-runs',
@@ -623,6 +635,19 @@ function ligarAgentesDeIa(bool $ligado = true, array $paineis = []): void
 {
     config()->set('kit.agentes_ia.habilitado', $ligado);
     config()->set('kit.agentes_ia.paineis', $paineis);
+}
+
+/**
+ * Liga (ou desliga) o tutorial guiado. A suíte mede o kit de fábrica — desligado (`phpunit.xml`
+ * fixa `KIT_ONBOARDING=false`) —, então quem abre a autoria do onboarding, a página "Primeiros
+ * passos" ou espera o checklist numa tela liga aqui, no arranjo.
+ *
+ * Aqui e não num arquivo de teste porque o `TelasDoKitTest` e os testes da feature
+ * `onboarding-guiado` (suítes Kit e Tenancy) o usam — `.ai/rules/testes.md`.
+ */
+function ligarTutorialGuiado(bool $ligado = true): void
+{
+    config()->set('kit.onboarding.habilitado', $ligado);
 }
 
 /**
@@ -2955,4 +2980,355 @@ function destinoDoComponente(Testable $componente): string
 function enderecoDe(string $caminho): string
 {
     return urldecode(url($caminho));
+}
+
+/*
+|--------------------------------------------------------------------------
+| Tutorial guiado (wiki `onboarding-guiado`) — helpers dos arquivos
+| `tests/Kit/OnboardingGuiado*Test.php`
+|--------------------------------------------------------------------------
+| Aqui e não em um arquivo de teste porque mais de um arquivo da feature os usa
+| (`.ai/rules/testes.md`).
+*/
+
+/**
+ * Liga as features cujo passo o tutorial esconde quando estão desligadas (P-03), para a
+ * contagem de passos não depender do acaso do ambiente. Cada caso que mede a visibilidade
+ * desliga a sua feature DEPOIS desta chamada.
+ */
+function ligarFeaturesDoOnboarding(): void
+{
+    ligarDock(['admin', 'app', 'infra']);
+    ligarDashboardDinamico(true, []);
+    config([
+        'kit.hub'                => true,
+        'lockscreen.enabled'     => true,
+        'command-center.enabled' => true,
+        'kit.demo'               => true,
+    ]);
+    ligarAgentesDeIa(true, []);
+}
+
+/**
+ * A jornada de teste do painel, criada pelos models do pacote (o `04`: "jornada de teste"), com
+ * seis passos para cada verbo do checklist ter destinatário independente do conteúdo semeado:
+ * `manual-pendente` (tour de 3 paradas), `opcional`, `concluido` (a pessoa o conclui no caso),
+ * `visita`, `com-imagem` e `com-video` (mídia por URL).
+ */
+function jornadaDeTesteDoOnboarding(string $painel = 'admin'): OnboardingFlow
+{
+    $flow = OnboardingFlow::query()->create([
+        'key'            => 'jornada-de-teste',
+        'panel_id'       => $painel,
+        'title'          => ['pt_BR' => 'Jornada de teste', 'en' => 'Test journey'],
+        'description'    => ['pt_BR' => 'Uma jornada de teste.', 'en' => 'A test journey.'],
+        'is_active'      => true,
+        'is_dismissible' => true,
+        'sort_order'     => 1,
+    ]);
+
+    $texto  = static fn (string $pt, string $en): array => ['pt_BR' => $pt, 'en' => $en];
+    $parada = static fn (int $n): array => [
+        'route'     => null,
+        'url'       => "/{$painel}",
+        'target'    => null,
+        'selector'  => null,
+        'placement' => 'auto',
+        'title'     => $texto("Parada {$n}", "Stop {$n}"),
+        'body'      => $texto("Corpo {$n}", "Body {$n}"),
+        'condition' => null,
+        'advance'   => null,
+        'optional'  => false,
+    ];
+
+    $passos = [
+        'manual-pendente' => ['type' => 'tour', 'tour_steps' => [$parada(1), $parada(2), $parada(3)]],
+        'opcional'        => ['is_required' => false],
+        'concluido'       => [],
+        'visita'          => ['completion_mode' => 'visit', 'visit_url' => "*/{$painel}/visita-de-teste*", 'is_required' => false],
+        'com-imagem'      => ['media_type' => 'image', 'media_source' => 'url', 'media_url' => 'https://exemplo.test/imagem.png'],
+        'com-video'       => ['media_type' => 'video', 'media_source' => 'url', 'media_url' => 'https://exemplo.test/video.mp4'],
+    ];
+
+    $ordem = 0;
+
+    foreach ($passos as $chave => $atributos) {
+        OnboardingStep::query()->create([
+            'flow_id'     => $flow->getKey(),
+            'key'         => $chave,
+            'title'       => $texto("Passo {$chave}", "Step {$chave}"),
+            'description' => $texto("Descrição de {$chave}.", "Description of {$chave}."),
+            'sort_order'  => ++$ordem,
+            ...$atributos,
+        ]);
+    }
+
+    return $flow->refresh();
+}
+
+/** A segunda jornada de teste do painel (`jornada-b`): o destino do `selectFlow`. */
+function segundaJornadaDeTesteDoOnboarding(string $painel = 'admin'): OnboardingFlow
+{
+    $flow = OnboardingFlow::query()->create([
+        'key'            => 'jornada-b',
+        'panel_id'       => $painel,
+        'title'          => ['pt_BR' => 'Jornada B', 'en' => 'Journey B'],
+        'is_active'      => true,
+        'is_dismissible' => true,
+        'sort_order'     => 2,
+    ]);
+
+    OnboardingStep::query()->create([
+        'flow_id'    => $flow->getKey(),
+        'key'        => 'passo-b',
+        'title'      => ['pt_BR' => 'Passo B', 'en' => 'Step B'],
+        'sort_order' => 1,
+    ]);
+
+    return $flow->refresh();
+}
+
+/**
+ * Tudo o que o pacote grava por pessoa — linhas (contagem e conteúdo) de progresso de passo, de
+ * jornada e de preferências — mais a marca de sessão "lembrar depois". É a fotografia do
+ * não-efeito: igual antes e depois, nada foi gravado.
+ *
+ * @return array<string, mixed>
+ */
+function fotografiaDoOnboarding(): array
+{
+    $linhas = static fn (string $tabela): array => DB::table($tabela)
+        ->orderBy('id')
+        ->get()
+        ->map(static fn (object $linha): array => (array) $linha)
+        ->all();
+
+    return [
+        'passos'       => $linhas('onboarding_step_progress'),
+        'jornadas'     => $linhas('onboarding_flow_progress'),
+        'preferencias' => $linhas('onboarding_preferences'),
+        'sessao'       => session()->get('filament-onboarding.welcome.later'),
+    ];
+}
+
+/**
+ * O checklist flutuante (`filament-onboarding-launcher`) montado para a pessoa no painel.
+ *
+ * O `/app` só boota por um request real (`.ai/rules/testes.md`), então o GET vem antes do
+ * `Livewire::test()`; `/admin` e `/infra` por `noPainelBootado()`.
+ */
+function checklistDoOnboarding(string $painel, User $pessoa): Testable
+{
+    fronteiraDeRequest();
+    // Uma sessão por pessoa, como no navegador: herdada da anterior, o `AuthenticateSession` do
+    // painel compara o hash da senha guardado com o da nova pessoa e a desloga.
+    test()->flushSession();
+    test()->actingAs($pessoa);
+
+    if ($painel === 'app') {
+        // Só para bootar o painel: com o hub ligado o `/app` pode redirecionar, e o status não importa aqui.
+        test()->get('/app');
+        Filament::setCurrentPanel('app');
+    } else {
+        noPainelBootado($painel);
+    }
+
+    return Livewire::test(ChecklistDoOnboarding::class);
+}
+
+/** A pessoa conclui o passo pelo checklist (a ação do pacote, com o tutorial ligado). */
+function concluirPassoDoOnboarding(User $pessoa, string $painel, string $passo): void
+{
+    $estavaLigado = (bool) config('kit.onboarding.habilitado');
+
+    ligarTutorialGuiado(true);
+    checklistDoOnboarding($painel, $pessoa)->call('completeStep', $passo);
+    ligarTutorialGuiado($estavaLigado);
+}
+
+/** Abre a URL como a pessoa, depois de o request anterior ter terminado. */
+function abrirComoPessoaNoOnboarding(User $pessoa, string $url): TestResponse
+{
+    fronteiraDeRequest();
+
+    return test()->actingAs($pessoa)->get($url);
+}
+
+/** O HTML sem `<script>` nem `<style>`: onde um marcador de interface vale. */
+function htmlDeInterfaceDoOnboarding(TestResponse $resposta): string
+{
+    return (string) preg_replace('~<(script|style)\b[^>]*>.*?</\1>~is', '', $resposta->getContent());
+}
+
+/** O checklist flutuante está (ou não) no corpo: Livewire e o marcador do anel, fora de `<script>`. */
+function afirmarChecklistNaResposta(TestResponse $resposta, bool $presente, string $contexto = ''): void
+{
+    $html = htmlDeInterfaceDoOnboarding($resposta);
+
+    if ($presente) {
+        $resposta->assertSeeLivewire('filament-onboarding-launcher');
+        expect(str_contains($html, 'fio-ring'))->toBeTrue("o checklist deveria estar no corpo: {$contexto}");
+
+        return;
+    }
+
+    $resposta->assertDontSeeLivewire('filament-onboarding-launcher');
+    expect(str_contains($html, 'fio-ring'))->toBeFalse("o checklist apareceu: {$contexto}");
+}
+
+/**
+ * Os links de todos os itens da barra lateral do painel corrente.
+ *
+ * @return list<string>
+ */
+function urlsDaBarraLateralDoOnboarding(): array
+{
+    $urls = [];
+
+    foreach (Filament::getNavigation() as $grupo) {
+        foreach ($grupo->getItems() as $item) {
+            $urls[] = $item->getUrl();
+        }
+    }
+
+    return $urls;
+}
+
+/**
+ * Os links dos cartões do hub de administração.
+ *
+ * @return list<string>
+ */
+function urlsDoHubDeAdministracaoDoOnboarding(): array
+{
+    $metodo = new ReflectionMethod(HubDeAdministracao::class, 'getCards');
+    $metodo->setAccessible(true);
+
+    $urls = [];
+
+    foreach ($metodo->invoke(null) as $grupo) {
+        foreach ($grupo->getItems() as $item) {
+            $urls[] = $item->getUrl();
+        }
+    }
+
+    return $urls;
+}
+
+/** A pessoa ativou o segundo fator (a sessão do Breezy, nunca uma coluna do usuário); `$confirmar` o confirma. */
+function ativarDoisFatoresDaPessoa(User $pessoa, bool $confirmar = true): void
+{
+    noPainelBootado('admin');
+    test()->actingAs($pessoa);
+    $pessoa->enableTwoFactorAuthentication();
+
+    if ($confirmar) {
+        $pessoa->breezySession->confirm();
+    }
+}
+
+/** A persona padrão de cada painel: a administradora, a Ana (`/app`) e a Íris (`/infra`). */
+function pessoaDoPainelDoOnboarding(string $painel): User
+{
+    return match ($painel) {
+        'admin' => usuarioDoKit('admin', 'admin@example.com'),
+        'app'   => usuarioDoKit('panel_user', 'ana@example.com'),
+        'infra' => usuarioDoKit('infra', 'iris@example.com'),
+    };
+}
+
+/** A linha de progresso da pessoa para o passo (pela chave), em qualquer jornada. */
+function progressoDoPassoDaPessoa(User $pessoa, string $passo): ?object
+{
+    return DB::table('onboarding_step_progress as p')
+        ->join('onboarding_steps as s', 's.id', '=', 'p.step_id')
+        ->where('s.key', $passo)
+        ->where('p.subject_id', (string) $pessoa->getKey())
+        ->select('p.*')
+        ->first();
+}
+
+/**
+ * A administradora conclui todos os passos visíveis da jornada do `/admin`, cada um do jeito do
+ * seu modo: o segundo fator confirmado e um convite enviado por ela (condições), a visita à tela
+ * de configurações e a ação do checklist nos manuais.
+ */
+function concluirPassosVisiveisDoAdminNoOnboarding(User $admin): void
+{
+    ligarTutorialGuiado(true);
+    // A visita vem antes do segundo fator: com ele ativo o `/admin` pede o desafio (302).
+    abrirComoPessoaNoOnboarding($admin, '/admin/configuracoes-da-aplicacao')->assertOk();
+    ativarDoisFatoresDaPessoa($admin);
+    ofertaPara('convidado@example.com', null, 'panel_user', ['convidado_por_id' => $admin->getKey()]);
+
+    $checklist = checklistDoOnboarding('admin', $admin);
+
+    foreach ($checklist->instance()->flowState()->steps as $passo) {
+        if ($passo->step->completion_mode === CompletionMode::Manual && ! $passo->isCompleted()) {
+            $checklist->call('completeStep', $passo->key());
+        }
+    }
+
+    // O passo por visita fecha pela API do pacote se a visita não o fechou: quem mede a visita
+    // é o CT-26; estes arranjos medem a borda de 100 % e não podem herdar o defeito dela.
+    $faltam = checklistDoOnboarding('admin', $admin)->instance()->flowState()->steps
+        ->filter(fn ($passo): bool => $passo->step->completion_mode === CompletionMode::Visit && ! $passo->isCompleted());
+
+    foreach ($faltam as $passo) {
+        Onboarding::for($admin)->complete($passo->step);
+    }
+}
+
+/**
+ * O texto do widget de progresso no dashboard do `/admin` aberto pelo administrador geral; `''`
+ * quando o widget não está na resposta. O widget carrega adiado: o texto vem do componente.
+ */
+function textoDoDashboardDoMaster(): string
+{
+    $master = User::query()->where('email', 'master@example.com')->first() ?? usuarioDoKit('master_global', 'master@example.com');
+
+    /*
+     * O widget só é lido se o dashboard CLÁSSICO o montou — renderizar o componente direto pularia o
+     * `canView()`, que é justamente a guarda medida (P-02). Com o dashboard dinâmico ligado, o
+     * `/admin` vai para a grade que cada pessoa monta, onde o widget só está se alguém o pôs: o
+     * dinâmico fica desligado SÓ durante esta leitura, e a contagem do widget não depende dele.
+     */
+    $dinamico = config('kit.dashboard_dinamico.habilitado');
+    config()->set('kit.dashboard_dinamico.habilitado', false);
+
+    // Outra pessoa já usou a sessão do teste: o `AuthenticateSession` compararia o hash de senha
+    // dela com o do master e mandaria para o login (302). Sessão nova, como num navegador novo.
+    test()->flushSession();
+
+    try {
+        $resposta = abrirComoPessoaNoOnboarding($master, '/admin');
+    } finally {
+        config()->set('kit.dashboard_dinamico.habilitado', $dinamico);
+    }
+
+    // Sem o 200, um redirect (login, hub) viraria '' e faria passar todo `not->toContain`.
+    $resposta->assertOk();
+
+    if (preg_match('~progresso-?onboarding~i', $resposta->getContent()) !== 1) {
+        return '';
+    }
+
+    fronteiraDeRequest();
+    noPainelBootado('admin');
+
+    $html = Livewire::test(ProgressoOnboarding::class)->html();
+
+    return (string) preg_replace('~\s+~', ' ', strip_tags($html));
+}
+
+/**
+ * As chaves dos passos visíveis do checklist da pessoa no painel — usada pelos testes de consumo e
+ * de semeadura do onboarding (`.ai/rules/testes.md`: helper de mais de um arquivo vive aqui).
+ *
+ * @return list<string>
+ */
+function visiveisNoChecklistDoOnboarding(string $painel, User $pessoa): array
+{
+    // `master_global` pode não ter jornada alguma num painel: lista vazia, e não erro.
+    return checklistDoOnboarding($painel, $pessoa)->instance()->flowState()?->steps->map(fn ($passo): string => $passo->key())->all() ?? [];
 }

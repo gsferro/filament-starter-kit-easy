@@ -1,4 +1,4 @@
-> Referência da feature-quality-gate 1.7.0. Lida em: passo 6 do fluxo (antes de escrever o `06`). Fonte única de: template do `06-relatorio-qa.md` que o gate escreve. O `06` mínimo com `NÃO APLICÁVEL` não sai daqui: é escrito pela sessão da `feature-wiki`, sem rodar o gate.
+> Referência da feature-quality-gate 1.9.0. Lida em: passo 6 do fluxo (antes de escrever o `06`). Fonte única de: template do `06-relatorio-qa.md` que o gate escreve. O `06` mínimo com `NÃO APLICÁVEL` não sai daqui: é escrito pela sessão da `feature-wiki`, sem rodar o gate.
 
 # Template do `06-relatorio-qa.md`
 
@@ -63,7 +63,7 @@ por cobertura* e passo 6 do *Fluxo de Execução*.
 | A | Cobertura do requisito | ✅ / ⚠️ / ❌ | {n} achados — `rastreabilidade.sh` exit {0 \| 1}; `indice.sh --check` exit {0 \| 1 \| sem `07-tickets/`} |
 | I | Segurança da superfície nova | ✅ / ⚠️ / ❌ | coberto pelo step 9, `## Revisão do Diff (step 9)` do `03` ({n} achados, {m} rejeitados) \| seção ausente: eixo 9 rodado; coberto além: {linhas da I} |
 | K | Adequação da suíte | ✅ / ⚠️ / ❌ / ⏭️ | K1 `k1-oraculo-fraco.sh` exit {…}; K2 {score, duração, processos/cache, sobreviventes e triagem \| não verificada — {causa/prova indispensável pendente}}; revisão adversarial do `04`: feita \| NÃO FEITA — {motivo} (⏭️) |
-| L | Consistência documental | ✅ / ⚠️ / ❌ | {n} achados — L1…L7; L1 `ids-ct.sh` exit {…}, L2 `citacoes.sh` exit {…}, L4 `conformidade-rules.sh` exit {…}, L6 `checkbox-sem-evidencia.sh` exit {…} |
+| L | Consistência documental | ✅ / ⚠️ / ❌ | {n} achados — L1…L8; L1 `ids-ct.sh` exit {…}, L2 `citacoes.sh` exit {…}, L4 `conformidade-rules.sh` exit {…}, L6 `checkbox-sem-evidencia.sh` exit {…}, {L8 `roteiro-manual.sh` exit … \| L8 n/a — sem 08}; RM executados: {IDs elegíveis por via \| Não Verificado — destrutivo/ambiente não confirmado \| não verificado — causa} |
 | B | Fronteiras e dados | ⏭️ não verificada | fora do perfil `mínimo` |
 | G | Tema e cor | n/a | {configuração de tema e estilos que confirmam ausência ou desativação; exit 0 do script, sozinho, não prova n/a} |
 | J | Regressão adjacente | n/a | natureza `nova`, `Toca infra compartilhada?: não` |

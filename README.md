@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Testes](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=testes)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Cobertura](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
-[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-2.309-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
+[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-2.393-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -188,11 +188,11 @@ Não é vitrine: é o inventário de tudo que já existe, e o que você não vai
 
 | | `/app` | `/admin` | `/infra` | **Total** |
 |---|---:|---:|---:|---:|
-| **Telas navegáveis** | 14 | 31 | 28 | **73** |
+| **Telas navegáveis** | 15 | 32 | 29 | **76** |
 | Resources | 4 | 8 | 8 | **20** |
-| Páginas próprias | 5 | 5 | 13 | **23** |
+| Páginas próprias | 6 | 6 | 14 | **26** |
 | Widgets | 1 | 9 | 19 | **29** |
-| Rotas `GET` | 23 | 38 | 34 | **95** |
+| Rotas `GET` | 24 | 39 | 35 | **98** |
 
 O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu projeto entra. Os outros
 dois já vêm completos.
@@ -222,7 +222,7 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-26) | **2.990**, com **12.578 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **201** em `Kit` + `Tenancy` (**237** no total) |
+| Arquivos de teste | **207** em `Kit` + `Tenancy` (**244** no total) |
 | PHPStan | **level 8**, zero erros |
 | Cobertura de testes (`app/`, linha) | **85 %** — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** regras, todas passando |
@@ -230,8 +230,8 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **12** |
-| Features especificadas (`wikis/specs/`) | **87** |
-| Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **25** |
+| Features especificadas (`wikis/specs/`) | **88** |
+| Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **27** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
 
@@ -253,6 +253,7 @@ dois já vêm completos.
 - Panel Switch: troca de painel pelo menu do usuário
 - **DTO com `spatie/laravel-data`**: todo dado estruturado que cruza fronteira de classe é objeto tipado, com guarda automático — credencial não entra em DTO, e consumo/resposta de API exige um ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/dto-com-laravel-data.html))
 - **Dock de atalhos** (desligado por default): botão flutuante com até 10 favoritos por usuário, de qualquer painel, gerenciados num slideover; exige a permissão `Usar:Dock` ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/dock-de-atalhos.html) · [animação](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/dock-de-atalhos.gif))
+- **Tutorial guiado** (desligado por default): jornadas de primeiros passos nos três painéis, com checklist flutuante e tours por feature; semear cria o conteúdo, e o interruptor na tela de configurações liga o uso ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/tutorial-guiado.html))
 - **Proteção anti-robô opcional** (desligada por default): reCAPTCHA v2/v3, Turnstile ou hCaptcha nas telas de login, recuperação de senha e registro, via `ddr/filament-captcha` ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/protecao-anti-robo.html))
 - **Página única de login** (desligada por default): `KIT_LOGIN_UNIFICADO=true` leva `/admin/login`, `/infra/login` e `/app/login` a `/login`; quem acessa um painel entra direto, quem acessa mais de um escolhe numa tela de cartões depois de entrar. **Atenção**: SSO externo (SAML/OIDC corporativo) ainda não é pré-configurado e não passa por essa regra — ver [a página de docs](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/login-unificado.html)
 - **Login social por painel**: cada provedor pode ser liberado separadamente em `/app`, `/admin` e `/infra`; botão, rota e destino respeitam o painel de origem
@@ -309,7 +310,7 @@ navegação: **[https://gsferro.github.io/filament-starter-kit-easy/pt/](https:/
 |---|---|
 | [Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/) | instalação avançada, banco, comandos, personalização, e como atualizar um projeto que já nasceu do kit |
 | [Autenticação](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/) | convites, registro aberto, login social, proteção anti-robô, estados do usuário |
-| [Recursos](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/) | multi-tenancy, anexos e mídia, import/export CSV, trilhas do `/infra`, configurações do kit, hub de cartões, dock de atalhos, visões salvas e carregamento contínuo de tabela, DTO com Laravel Data |
+| [Recursos](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/) | multi-tenancy, anexos e mídia, import/export CSV, trilhas do `/infra`, configurações do kit, hub de cartões, dock de atalhos, visões salvas e carregamento contínuo de tabela, tutorial guiado, DTO com Laravel Data |
 | [Operação](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/) | agentes de IA, roteiro completo de features, convenções, o que fazer depois de criar um Resource |
 | [Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/) | qualidade de código, busca e idioma, os 82 pacotes instalados |
 
@@ -434,6 +435,8 @@ php artisan kit:install --custom   # refaz só nome e cor, sem tocar no banco
 php artisan kit:install --no-custom   # instala sem perguntar nada
 php artisan kit:install --no-npm      # pula a instalação e o build dos assets front-end
 php artisan kit:install --no-seed     # não popula o banco (papéis, usuário inicial, agentes de IA)
+php artisan kit:install --onboarding  # semeia o tutorial guiado sem perguntar; não liga o interruptor
+php artisan db:seed --class=OnboardingSeeder # semeia o tutorial depois; ligue nas configurações
 php artisan kit:install --no-support  # pula o convite para dar uma estrela ao kit no GitHub
 #   --create-project é uso interno do post-create-project-cmd: apaga o que só serve ao repositório do kit
 php artisan kit:admin             # troca e-mail e senha do administrador (pede confirmação)

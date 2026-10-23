@@ -216,8 +216,8 @@ accDescr: Os 12 serviços do docker-compose.yml, agrupados pelos profiles que so
 ```
 
 O `.env.example` que a instalação usa por padrão **não** liga `redis` nem `reverb` de fato — o cache
-continua em `database` e o broadcast em `log` (`.env.example:CACHE_STORE:54`,
-`.env.example:BROADCAST_CONNECTION:50`). Os dois containers só passam a ser lidos com o
+continua em `database` e o broadcast em `log` (`.env.example:CACHE_STORE:59`,
+`.env.example:BROADCAST_CONNECTION:55`). Os dois containers só passam a ser lidos com o
 `.env.docker` (`.env.docker:CACHE_STORE:27`, `.env.docker:BROADCAST_CONNECTION:63`), o arquivo que a
 seção anterior usa para o profile `app`.
 
@@ -238,6 +238,7 @@ php artisan kit:install --custom   # refaz só nome e cor, sem tocar no banco
 php artisan kit:install --no-custom   # instala sem perguntar nada
 php artisan kit:install --no-npm      # pula a instalação e o build dos assets front-end
 php artisan kit:install --no-seed     # não popula o banco (papéis, usuário inicial, agentes de IA)
+php artisan kit:install --onboarding  # semeia o tutorial guiado sem perguntar; não liga o interruptor
 php artisan kit:install --no-support  # pula o convite para dar uma estrela ao kit no GitHub
 #   --create-project é uso interno do post-create-project-cmd: apaga o que só serve ao repositório do kit
 php artisan kit:admin             # troca e-mail e senha do administrador (pede confirmação)
@@ -287,15 +288,20 @@ O `composer create-project` roda dois scripts do próprio kit
 (`composer.json:post-root-package-install:204`, `composer.json:post-create-project-cmd:207`): o
 primeiro só copia `.env.example` para `.env` se ele ainda não existir; o segundo chama
 `php artisan kit:install --create-project`. Dentro de `KitInstall::handle()`
-(`app/Console/Commands/KitInstall.php:handle:92`), a ordem real é: as cinco perguntas de
-customização (`app/Console/Commands/KitInstall.php:customizar():231`) vêm antes de gerar a
+(`app/Console/Commands/KitInstall.php:handle:93`), a ordem real é: as cinco perguntas de
+customização (`app/Console/Commands/KitInstall.php:customizar():236`) vêm antes de gerar a
 `APP_KEY` e preparar o SQLite; migrar e semear só acontecem **se o banco responder**
 (`app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel):124`,
 `app/Console/Commands/KitInstall.php:if ($this->bancoAcessivel && ! $this->option('no-seed')):128`);
 e a senha do administrador é gerada **antes** do `db:seed`
-(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:394`,
+(`app/Console/Commands/KitInstall.php:garantirSenhaDoAdministrador:399`,
 `app/Console/Commands/KitInstall.php:'db:seed':437`) — nunca o contrário, senão o banner imprimiria
 uma senha que o seeder já gravou como outra.
+
+O `OnboardingSeeder` **não faz parte do `DatabaseSeeder`**. Depois do seed padrão, o instalador só
+o executa com a resposta **sim** à pergunta *Popular os tutoriais guiados?* (padrão: **não**) ou com
+`--onboarding`. Sem terminal e sem essa opção, não semeia o tutorial; `--no-seed` pula também essa
+etapa. Semear não liga o interruptor: veja [Tutorial guiado](../../recursos/tutorial-guiado/).
 
 ```mermaid
 sequenceDiagram
@@ -315,6 +321,9 @@ accDescr: O post-create-project-cmd do Composer aciona o kit:install, que pergun
     kit_install->>banco: migrate --graceful --force
     kit_install->>kit_install: senha gerada (ou a definida em KIT_ADMIN_PASSWORD)
     kit_install->>seeders: db:seed --force (ShieldPermissionsSeeder, PapeisSeeder, UsuarioAdminSeeder, AssistenteSeeder, GuardaPromptSeeder)
+    opt sem --no-seed e com sim em Popular os tutoriais guiados, ou --onboarding
+      kit_install->>seeders: db:seed --class=OnboardingSeeder --force (fora do DatabaseSeeder, não liga o uso)
+    end
   else banco inacessível
     kit_install-->>composer: aviso - rode migrate --seed depois
   end

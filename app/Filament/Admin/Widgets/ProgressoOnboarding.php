@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Widgets;
 
 use App\Filament\Concerns\ExigePermissaoDoWidget;
+use App\Support\TutorialGuiado;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use LaBoiteACode\FilamentDashboardWidgets\Data\Goal;
@@ -31,13 +32,14 @@ class ProgressoOnboarding extends GoalProgressWidget
     protected int|string|array $columnSpan = 1;
 
     /**
-     * O onboarding é um plugin opcional (`filament-onboarding.enabled`) e as
-     * tabelas podem simplesmente não existir. Sem elas o widget some em vez de
-     * derrubar o dashboard.
+     * Com o tutorial guiado desligado no settings o widget some (P-02 da wiki `onboarding-guiado`):
+     * mostrar o progresso de um tutorial que a instalação diz não usar confunde, e o widget volta
+     * ao religar, sem perder dado. E as tabelas podem simplesmente não existir: sem elas o widget
+     * some em vez de derrubar o dashboard.
      */
     protected static function fonteDeDadosDisponivel(): bool
     {
-        return (bool) rescue(
+        return TutorialGuiado::habilitado() && (bool) rescue(
             fn (): bool => Schema::hasTable(self::tabelaDeProgresso()),
             false,
             report: false,

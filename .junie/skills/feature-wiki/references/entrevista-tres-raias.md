@@ -1,4 +1,4 @@
-> Referência da feature-wiki 4.0.0. Lida em: step 4 (antes da primeira rodada da entrevista) e sempre que os steps 5, 9 ou 11, ou o quiz da `feature-tickets`, geram pergunta. Fonte única de: formato da pergunta e numeração `Qn`, tabela completa das raias, fronteira e filtro de oráculo com exemplo, premissa de comportamento, perguntas-semente condicionais e formato do confronto código × afirmação.
+> Referência da feature-wiki 4.2.0. Lida em: step 4 (antes da primeira rodada da entrevista) e sempre que os steps 5, 9 ou 11, ou o quiz da `feature-tickets`, geram pergunta. Fonte única de: formato da pergunta e numeração `Qn`, tabela completa das raias, fronteira e filtro de oráculo com exemplo, premissa de comportamento, sementes condicionais de requisito, semente e sinais do roteiro manual e formato do confronto código × afirmação.
 
 # Entrevista em três raias
 
@@ -21,7 +21,7 @@ Numerada, com raia, o que ela afeta, de que pergunta depende e a resposta recome
 
 - A numeração `Qn` é única na feature, para as três raias. A pergunta de requisito leva o mesmo `Qn`
   em `## Perguntas ao Solicitante`; a de desenho, na linha de `## Decisões de Desenho` do `01` ou na
-  ADR do `02`
+  ADR do `02`; exceção explícita: pergunta e decisão do roteiro manual ficam **só no `03`**
 - **Quatro fontes de pergunta nova** depois do step 4, todas na mesma sequência: os steps 5, 9 e 11 e o
   quiz de granularidade da `feature-tickets`. A próxima `Qn` é a maior já usada em `00`–`03`, mais um
 - **Sub-agente não sabe o próximo `Qn`**: a derivação do step 7 (e qualquer sub-agente que devolva
@@ -37,7 +37,7 @@ Numerada, com raia, o que ela afeta, de que pergunta depende e a resposta recome
 | Raia | Pergunta sobre | Quem responde | Onde aterrissa | Bloqueio |
 |---|---|---|---|---|
 | **fato** | código, schema, config, doc do framework | **o agente** (steps 3/5); nunca perguntar ao usuário o que dá para descobrir | `01` (Análise dos Arquivos Existentes) | — |
-| **desenho** | como implementar dado o requisito (costura de teste, cache, evento × observer…) | **a sessão** usa convenções e autorização existentes; **o desenvolvedor** decide quando há escolha material pendente, em rodada com recomendação | `02` se passar os três portões de ADR; senão, uma linha em `## Decisões de Desenho` do `01` | — |
+| **desenho** | como implementar dado o requisito (costura de teste, cache, evento × observer…) | **a sessão** usa convenções e autorização existentes; **o desenvolvedor** decide quando há escolha material pendente, em rodada com recomendação | `02` se passar os três portões de ADR; senão, uma linha em `## Decisões de Desenho` do `01`; roteiro manual: **só `03`** | — |
 | **requisito** | o que o sistema deve fazer quando o texto não diz | **o solicitante** (não o dev). Pergunta registrada em `## Perguntas ao Solicitante` do `00` | resposta entra como **Adendo** com fonte | somente o recorte dependente fica bloqueado; obrigações determinadas seguem. Se toda cláusula depender da resposta, `RQ` fica `aberta — Qn` e seu passo recebe `**Bloqueado por** |
 
 Como separar desenho de requisito: se a resposta muda **o que o usuário do sistema observa**
@@ -47,6 +47,8 @@ ao mesmo comportamento observável, é desenho.
 ## Rodadas pela fronteira
 
 - **Fronteira** = as perguntas cujos pré-requisitos já estão respondidos
+- A pergunta do roteiro manual é **não bloqueante**: não integra a fronteira que segura
+  `Entendimento confirmado` nem o step 5; a resposta pode chegar depois.
 - Cada rodada agrupa a fronteira de **decisões materiais pendentes**. Não repetir confirmação já
   dada nem perguntar escolhas técnicas rotineiras. Pergunta que depende de outra ainda aberta vai
   para a rodada seguinte; executar o trabalho independente enquanto a resposta não chega
@@ -71,6 +73,39 @@ Se o aprovador for substituído no meio da etapa, o substituto herda os pedidos 
 ➡️ Recomendação: sim — senão o pedido fica sem aprovador.
 ```
 
+## Semente da raia desenho — roteiro manual
+
+Na rodada do step 4, perguntar ao desenvolvedor quando não houver instrução explícita nem convenção:
+
+```text
+❓ Qn · raia: desenho · afeta: — · depende de: —
+Quer gerar o roteiro de teste manual (`08`) depois da implementação?
+➡️ Recomendação: {sim | não} — {sinal achado no requisito ou no código, ou "nenhum sinal"}
+```
+
+Recomendar `sim` com UI, homologação/aceite humano, integração externa não automatizável,
+artisan/job/fila operado por pessoa ou deploy manual; sem sinal, `não`. O sinal citado é o
+**desta feature**, com a cláusula ou o arquivo onde aparece; sinal que o requisito não mostra não
+entra na justificativa (rodada 2026-10-20: o exemplo copiado literalmente afirmou "aceite humano"
+num card que não o tinha). Instrução explícita do
+desenvolvedor ou convenção (`AGENTS.md`/`CLAUDE.md`) dispensa pergunta. A pergunta consome um `Qn`
+da sequência única e é **isenta do filtro de oráculo**: meta-processo, sem criar comportamento.
+Sem resposta até o fim do step 4, em qualquer modo, registrar `não — sem resposta a Qn`.
+Não esperar essa resposta para `Entendimento confirmado` ou step 5; o desenvolvedor pode
+responder ou mudar depois, como pedido tardio.
+
+Exceção da raia desenho: pergunta/decisão **só** em `## Auditoria Pré-Implementação` do `03`,
+nunca em `## Decisões de Desenho` do `01`, no `02` ou em qualquer seção do `00` — nem como nota
+de que a decisão está no `03` (o `00` registra o pedido do solicitante, não o processo):
+
+```text
+Roteiro manual: {sim | não} — {YYYY-MM-DD} — {fonte: resposta a Qn | instrução explícita do desenvolvedor | convenção {arquivo} | sem resposta a Qn} — {sinal ou motivo}
+```
+
+Mudança sempre acrescenta nova linha **abaixo**; linhas anteriores ficam riscadas com `~~…~~`.
+Pedido antes do step 10 só atualiza o `03`; geração ocorre na etapa normal. Depois do step 10,
+gerar na hora conforme [`template-08-roteiro-manual.md`](template-08-roteiro-manual.md).
+
 ## Filtro de oráculo
 
 Só entra pergunta que toca um `RQ` ou uma `P-nn`. Ramo que não toca nenhum não é perguntado. É o
@@ -78,7 +113,7 @@ que impede a entrevista de inchar sem limite (estudo §2.4: sem oráculo, a entr
 completar a árvore, não para cobrir o pedido).
 
 Teste rápido: *se a resposta fosse o oposto da recomendação, alguma `RQ` ou `P-nn` mudaria?* Se não,
-a pergunta não entra.
+a pergunta não entra. A semente do roteiro manual é a exceção explícita de meta-processo acima.
 
 ## Premissa de comportamento — falha fechado
 

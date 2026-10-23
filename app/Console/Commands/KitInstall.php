@@ -46,6 +46,7 @@ class KitInstall extends Command
     protected $signature = 'kit:install
         {--no-npm : Pula a instalação e o build dos assets front-end}
         {--no-seed : Não popula o banco (papéis, usuário inicial, agentes de IA)}
+        {--onboarding : Popula as jornadas do tutorial guiado sem perguntar (o interruptor continua desligado)}
         {--force : Recria o banco SQLite do zero (APAGA os dados existentes) e refaz as cinco perguntas}
         {--custom : Refaz só o que não toca o banco — nome e cor — e sai. Não apaga nada}
         {--no-custom : Pula as perguntas de customização e instala com os padrões}
@@ -128,7 +129,11 @@ class KitInstall extends Command
         if ($this->bancoAcessivel && ! $this->option('no-seed')) {
             $this->semeado = true;
             $this->semear();
+            $this->semearTutorialGuiado();
             $this->formatarCodigoGerado();
+        } elseif ($this->option('onboarding')) {
+            // Sem papéis nem usuário não há a quem mostrar o tutorial (P-10 da wiki `onboarding-guiado`).
+            $this->avisos[] = 'As jornadas do tutorial guiado não foram semeadas (o banco não foi populado). Depois de popular, rode: php artisan db:seed --class=OnboardingSeeder';
         }
 
         /*
@@ -438,6 +443,42 @@ class KitInstall extends Command
 
             if ($codigo !== self::SUCCESS) {
                 $this->avisos[] = 'Os seeders não completaram. Rode: php artisan db:seed';
+            }
+
+            return $codigo === self::SUCCESS;
+        });
+    }
+
+    /**
+     * As jornadas do tutorial guiado — escolha de quem instala (RQ-06 da wiki `onboarding-guiado`).
+     *
+     * `--onboarding` semeia sem perguntar (o modo não interativo, RQ-20); sem a opção, quem tem
+     * terminal responde "Popular os tutoriais guiados?", com não como padrão (RQ-19); sem terminal
+     * e sem a opção, não semeia. Semear NÃO liga o interruptor (RQ-21): ele continua desligado
+     * até ser ligado em /admin/configuracoes-da-aplicacao. Mesma condição de `temTerminal()` que
+     * as outras perguntas do comando.
+     */
+    protected function semearTutorialGuiado(): void
+    {
+        if (! $this->option('onboarding')
+            && (! $this->temTerminal() || ! confirm('Popular os tutoriais guiados?', default: false))) {
+            return;
+        }
+
+        $this->components->task('Populando as jornadas do tutorial guiado', function (): bool {
+            /*
+             * `callSilently` LANÇA quando o seeder lança — sem o try, a falha do tutorial (opcional)
+             * abortava a instalação antes do resumo com a senha gerada do administrador (P-21).
+             */
+            try {
+                $codigo = $this->callSilently('db:seed', ['--class' => 'OnboardingSeeder', '--force' => true]);
+            } catch (Throwable $erro) {
+                report($erro);
+                $codigo = self::FAILURE;
+            }
+
+            if ($codigo !== self::SUCCESS) {
+                $this->avisos[] = 'As jornadas do tutorial guiado não foram semeadas, ou ficaram incompletas. Rode: php artisan db:seed --class=OnboardingSeeder';
             }
 
             return $codigo === self::SUCCESS;

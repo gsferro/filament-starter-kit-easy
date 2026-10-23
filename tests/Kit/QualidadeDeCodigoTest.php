@@ -166,7 +166,7 @@ it('não escreve log em disco durante a suíte', function (?string $canal): void
 
     expect($handlers)->toHaveCount(1)
         ->and($handlers[0])->toBeInstanceOf(NullHandler::class);
-})->with(['ai', 'tenancy', 'autenticacao', null])->group('kit');
+})->with(['ai', 'tenancy', 'autenticacao', 'onboarding', null])->group('kit');
 
 /**
  * ===========================================================================

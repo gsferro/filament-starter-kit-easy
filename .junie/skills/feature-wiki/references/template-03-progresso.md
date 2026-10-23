@@ -1,4 +1,4 @@
-> Referência da feature-wiki 4.0.0. Lida em: step 4 (antes de escrever o `03-progresso.md`), step 7 (`## Testes`), step 8 (`## Tickets`), step 9 (`## Revisão do Diff (step 9)`), step 12 (`## Candidatos a Rule`) e ao preencher `**Estado**`, `## Despachos`, `## Conformidade com Rules`, `## Quality Gate` e `## Referências Abertas`. Fonte única de: template do `03-progresso.md` (o formato de `## Tickets` é da `feature-tickets`).
+> Referência da feature-wiki 4.2.0. Lida em: step 4 (antes de escrever o `03-progresso.md`), step 7 (`## Testes`), step 8 (`## Tickets`), step 9 (`## Revisão do Diff (step 9)`), step 12 (`## Candidatos a Rule`) e ao preencher `**Estado**`, `## Despachos`, `## Conformidade com Rules`, `## Quality Gate` e `## Referências Abertas`. Fonte única de: template do `03-progresso.md` (o formato de `## Tickets` é da `feature-tickets`).
 
 # Template do `03-progresso.md`
 
@@ -51,6 +51,7 @@ Não fatiado — {YYYY-MM-DD}: {n} RQ vigentes, {n} CT, compactação: {sim | n�
 - [ ] Citações `arquivo:símbolo:linha` reverificadas: `citacoes.sh {wiki}` silencioso
 - [ ] IDs `[CT-nn]` do teste ⊆ `04`/`05` e vice-versa: `ids-ct.sh {wiki} 'tests/**/{Feature}/*.php'` silencioso
 - [ ] Rules casadas pelo diff com linha em `## Conformidade com Rules`: `conformidade-rules.sh {wiki} {base}` silencioso
+- [ ] `roteiro-manual.sh {wiki}` silencioso <!-- com 08 ou decisão sim; primeira geração na etapa pós-10 -->
 - [ ] Alocação a ticket: `indice.sh --check {wiki}` silencioso <!-- só com 07-tickets/ -->
 - [ ] Falsificabilidade em cópia temporária, revertendo só o patch do fix: quantos falham sem ele; os demais "não falsificável nesta pilha" ou "prova pendente", com motivo
 - [ ] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final
@@ -105,6 +106,14 @@ Não fatiado — {YYYY-MM-DD}: {n} RQ vigentes, {n} CT, compactação: {sim | n�
 
 Entendimento confirmado: {YYYY-MM-DD} — {quem ou autorização existente} — {n} rodadas; perguntas: {n} fato, {n} desenho, {n} requisito
 <!-- Obrigatória antes do step 5. O sinal de escopo do step 4, quando cruzado, também é registrado aqui. -->
+
+<!-- Modelo de LINHA; substituir por decisão concreta, fora do comentário:
+Roteiro manual: {sim | não} — {YYYY-MM-DD} — {fonte: resposta a Qn | instrução explícita do desenvolvedor | convenção {arquivo} | sem resposta a Qn} — {sinal ou motivo}
+     Step 4, raia desenho: só no 03; nunca no 00/01/02. Instrução explícita/convenção dispensa pergunta.
+     Consome Qn, mas não bloqueia Entendimento confirmado/step 5; meta-processo isento do filtro de oráculo.
+     Sem resposta até o fim do step 4, em qualquer modo: não — sem resposta a Qn.
+     Mudança: sempre nova linha abaixo; riscar anteriores com ~~…~~. Antes do step 10, só atualizar
+     a decisão; gerar na etapa normal. Depois do step 10, gerar na hora pelo template-08. -->
 
 ### Confronto código × afirmação (step 5)
 | Pergunta | O `01` dizia | O código faz | Resposta (quem, data) | Onde a wiki mudou |

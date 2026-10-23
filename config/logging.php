@@ -179,6 +179,16 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Tutorial guiado: recusas com o interruptor desligado e a semeadura das jornadas.
+        'onboarding' => [
+            'driver'               => env('LOG_KIT_DRIVER', 'daily'),
+            'handler'              => NullHandler::class,
+            'path'                 => storage_path('logs/onboarding.log'),
+            'level'                => env('LOG_LEVEL', 'debug'),
+            'days'                 => 14,
+            'replace_placeholders' => true,
+        ],
+
         'monthly' => [
             'driver'               => 'monthly',
             'path'                 => storage_path('logs/laravel.log'),

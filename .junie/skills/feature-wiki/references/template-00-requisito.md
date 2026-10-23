@@ -1,4 +1,4 @@
-> Referência da feature-wiki 4.0.0. Lida em: step 4 (antes de escrever o `00-requisito.md`), ao registrar um Adendo (pedido novo do solicitante ou resposta a uma pergunta) e ao registrar uma premissa (achado confirmado dos steps 5, 9 ou 11, ou decisão de desenho que muda o que a feature promete). Fonte única de: tabela de regimes das seções, template do `00-requisito.md`, da `## Premissas` e do `## Adendo N`.
+> Referência da feature-wiki 4.2.0. Lida em: step 4 (antes de escrever o `00-requisito.md`), ao registrar um Adendo (pedido novo do solicitante ou resposta a uma pergunta) e ao registrar uma premissa (achado confirmado dos steps 5, 9 ou 11, ou decisão de desenho que muda o que a feature promete). Fonte única de: tabela de regimes das seções, template do `00-requisito.md`, da `## Premissas` e do `## Adendo N`.
 
 # Template do `00-requisito.md`
 
@@ -58,7 +58,8 @@ reconciliação. A `Origem` aponta o documento de onde o requisito veio, não c�
      preservar obrigações determinadas. Se toda cláusula depender, RQ fica `aberta — Qn` sem passo executado.
      Se precisar separar partes, revisar a decomposição derivada, preservando o requisito bruto.
      A resposta entra como Adendo com fonte.
-     Qn é a sequência única da feature: os números que faltam aqui são perguntas de desenho (01/02). -->
+     Qn é a sequência única da feature: os números que faltam aqui são perguntas de desenho (01/02),
+     com exceção do roteiro manual, registrado só no 03. -->
 
 | ID | Pergunta | Afeta | Recomendação | Estado |
 |----|----------|-------|--------------|--------|

@@ -200,7 +200,7 @@ final class CustomizadorDaInstalacao
      * As perguntas que podem ser refeitas SEM tocar no banco — e por que são só duas.
      *
      * O `--force` do `kit:install` refaz as cinco perguntas, mas apaga o SQLite antes
-     * (`KitInstall.php:recriar:332`). Isso é inócuo no minuto seguinte à instalação e destrutivo
+     * (`KitInstall.php:recriar:355`). Isso é inócuo no minuto seguinte à instalação e destrutivo
      * depois. Este caminho existe para o "depois", e por isso o recorte é conservador:
      *
      * - **nome** e **cor** são reescrita de `.env`, e valem no próximo request. Entram aqui.

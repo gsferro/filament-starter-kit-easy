@@ -21,7 +21,8 @@
     @if ($hasLauncher && $flow && ! $flow->isDismissed())
         <div class="fio-launcher fio-launcher--{{ $position }}">
             @if ($isOpen)
-                <div class="fio-panel fio-animate-in" role="dialog" aria-label="{{ $flow->title() }}">
+                {{-- Kit: Esc fecha o checklist, com o foco no botão que o abriu ou dentro do painel (P-28 da wiki onboarding-guiado). Grava isOpen = false em vez do toggle do pacote: dois Esc antes da resposta reabririam (QA-20). --}}
+                <div class="fio-panel fio-animate-in" role="dialog" aria-label="{{ $flow->title() }}" x-data x-on:keydown.escape.window="$wire.set('isOpen', false)">
                     <div class="fio-panel-header">
                         <div class="fio-panel-title-row">
                             <div>

@@ -66,7 +66,7 @@ accDescr: Cada tela do painel /infra liga-se à tabela ou fonte que mostra e a q
 ```
 
 Cada plugin de tela vem de `Filament::getPanel('infra')->getPlugins()`
-(`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:312` — Health,
+(`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:317` — Health,
 `:FilamentJobsMonitorPlugin:324` — Jobs, `:FilamentLogsExplorerPlugin:337` — Logs,
 `:FilamentExceptionsPlugin:502` — Exceções, `:FilamentMailLogPlugin:547` — Trilha de e-mails,
 `:RevivePlugin:580` — Lixeira, `:FilamentAuditingPlugin:330` — Auditoria,
@@ -129,7 +129,7 @@ cresce sem teto, o que é uma escolha, não um esquecimento.
 
 O `RevivePlugin` recebe uma **lista explícita** de models em
 `app/Providers/Filament/InfraPanelProvider.php` — hoje `App\Models\Projeto` e `App\Models\User`,
-as duas models do kit com `SoftDeletes` (`InfraPanelProvider.php:models:595`):
+as duas models do kit com `SoftDeletes` (`InfraPanelProvider.php:models:620`):
 
 ```php
 RevivePlugin::make()

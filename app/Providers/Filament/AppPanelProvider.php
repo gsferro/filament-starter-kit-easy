@@ -12,10 +12,12 @@ use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaRecuperarSenha;
 use App\Filament\Pages\DashboardClassico;
 use App\Filament\Pages\MyProfilePage;
+use App\Filament\Pages\PrimeirosPassos;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Http\Middleware\DefinirTenantDePermissoes;
+use App\Http\Middleware\ExigeTutorialGuiadoLigado;
 use App\Http\Middleware\ExigirEmailVerificado;
 use App\Livewire\DefinirSenhaPorEmail;
 use App\Models\Tenant;
@@ -25,6 +27,7 @@ use App\Support\CorPrimaria;
 use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
 use App\Support\SeletorDeOrganizacao;
+use App\Support\TutorialGuiado;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
@@ -149,6 +152,8 @@ class AppPanelProvider extends PanelProvider
                 // ->pages() condicional (o banco só é lido no boot).
                 Dashboard::class,
                 DashboardClassico::class,
+                // "Primeiros passos" do tutorial guiado — decisor por request (`TutorialGuiado`).
+                PrimeirosPassos::class,
                 ConvitesRecebidos::class,
             ])
             ->widgets([
@@ -382,6 +387,14 @@ class AppPanelProvider extends PanelProvider
                     ->visible(fn (): bool => ! app()->isProduction()),
 
                 /*
+                 * Tutorial guiado (wiki `onboarding-guiado`) — registrado nos TRÊS painéis, sempre
+                 * (`.ai/rules/providers-filament.md`: a página "Primeiros passos" resolve o plugin
+                 * pelo painel corrente). Quem decide se aparece é `App\Support\TutorialGuiado`,
+                 * por request: interruptor do settings + permissão da página.
+                 */
+                TutorialGuiado::plugin(),
+
+                /*
                  * Dock de atalhos — registrado nos TRÊS painéis, sempre (`.ai/rules/providers-filament.md`):
                  * o componente resolve o plugin pelo painel corrente (`QuickActionDockPlugin::get()`), e
                  * painel sem ele estoura no update Livewire. Quem decide se o dock aparece é o próprio
@@ -591,7 +604,12 @@ class AppPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            // Persistente: reaplicado nos updates Livewire — a tela do onboarding já aberta
+            // recusa a próxima ação quando o tutorial é desligado (wiki `onboarding-guiado`).
+            ->authMiddleware([
+                ExigeTutorialGuiadoLigado::class,
+            ], isPersistent: true);
 
         /*
          * Multi-tenancy (opt-in) — ligue com `php artisan kit:tenancy`.

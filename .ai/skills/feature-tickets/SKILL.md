@@ -6,7 +6,7 @@ license: MIT
 compatibility: >-
   Wiki feature-wiki >=4.1.0 com 04 feature-test-design >=1.17.0. Bash/PHP para índice e espelho; gh somente para --aplicar autorizado. Só usuário invoca: disable-model-invocation no Claude e agents/openai.yaml no Codex. Subagentes opcionais; sem eles, sessão nova por ticket. GitHub Projects opcional.
 metadata:
-  version: "1.1.0"
+  version: "1.1.1"
   requires: "feature-wiki>=4.1.0; feature-test-design>=1.17.0"
 disable-model-invocation: true
 ---

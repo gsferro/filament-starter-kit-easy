@@ -6,8 +6,8 @@ license: MIT
 compatibility: >-
   Laravel com git, Bash e PHP; Boost MCP e Pest conforme versão instalada. Subagentes opcionais em qualquer host; sem contexto novo, independência não verificada. Claude usa Agent/hooks; Codex usa ferramentas expostas e perfis TOML. Ponytail/Caveman opcionais. Leia references/hosts-e-subagentes.md.
 metadata:
-  version: "4.1.1"
-  requires: "feature-test-design>=1.17.0; feature-quality-gate>=1.8.0; laravel/boost>=2.4.12"
+  version: "4.2.1"
+  requires: "feature-test-design>=1.17.0; feature-quality-gate>=1.9.1; laravel/boost>=2.4.12"
 ---
 
 # Feature Wiki — Documentação Antes de Implementar
@@ -43,11 +43,12 @@ Ausência de recurso vira limitação registrada, nunca prova de aprovação.
 |-------|-------------|
 | **RQ** | Cláusula de requisito — unidade numerada da decomposição do `00-requisito.md` |
 | **P-nn** | Premissa — o que a feature passa a assumir sem que o solicitante tenha escrito; seção `## Premissas` do `00` |
-| **Qn** | Pergunta da entrevista — sequência **única** na feature, para as três raias; a de requisito vai para `## Perguntas ao Solicitante` do `00`, a de desenho para `## Decisões de Desenho` do `01` ou a ADR. Sub-agente numera `Q?1, Q?2…` (provisória); a sessão renumera ao gravar |
+| **Qn** | Pergunta da entrevista — sequência **única** na feature, para as três raias; a de requisito vai para `## Perguntas ao Solicitante` do `00`, a de desenho para `## Decisões de Desenho` do `01` ou a ADR; exceção: roteiro manual fica só no `03`. Sub-agente numera `Q?1, Q?2…` (provisória); a sessão renumera ao gravar |
 | **PRD** | Product Requirements Document — plano de ação detalhado |
 | **ADR** | Architecture Decision Record — registro de decisão arquitetural |
 | **CT** | Caso de Teste — especificação de um cenário de teste (backend) |
 | **CT-B** | Caso de Teste de Browser — cenário E2E validado em navegador real |
+| **RM** | Roteiro manual — fluxo de valor reproduzível, com resultado esperado rastreado ao CT/CT-B/RQ/P-nn |
 | **DB** | Database — banco de dados |
 | **FK** | Foreign Key — chave estrangeira |
 | **TIA** | Test Impact Analysis — engine do Pest 5 que roda só os testes afetados |
@@ -58,7 +59,7 @@ Ausência de recurso vira limitação registrada, nunca prova de aprovação.
 ## Índice
 
 - [Quando Invocar](#quando-invocar) · [Execução e Delegação](#execução-e-delegação--capacidades-modelo-e-cegueira)
-- **Fluxo** (uma ordem só): [0. Requisito](#0-capturar-o-requisito--primeiro-ato) · [1. Branch](#1-descobrir-branch-e-estrutura-de-pasta) · [2. Nome](#2-definir-nome-da-feature) · [3. Pesquisa](#3-pesquisa-e-contexto-obrigatório-antes-de-escrever) ([Superfície Livewire](#superfície-livewire-obrigatório-em-toda-feature-que-cria-página-widget-ou-componente), [`search-docs`](#documentation-api-do-boost-search-docs)) · [4. `00`–`03`](#4-criar-os-arquivos) ([entrevista em três raias](#entrevista-em-três-raias-obrigatória-no-step-4), [path por arquivo](#path-e-número-por-arquivo)) · [5. Revisão profunda](#5-revisão-profunda-pós-escrita-obrigatório) ([classe irmã](#varredura-da-classe-irmã-obrigatória-para-toda-classe-nova)) · [6. Ponytail](#6-auditoria-da-wiki-com-ponytail-review-obrigatório) · [7. `04`/`05`](#7-derivar-os-casos-de-teste-obrigatório-depois-do-ponytail) · [8. Tickets (condicional)](#8-fatiar-em-tickets-condicional) · [Implementação](#implementação-sem-número) · [9. Revisão do diff](#9-revisão-de-código-do-diff-obrigatório-logo-após-os-testes-passarem-e-antes-da-reconciliação) · [10. Reconciliação](#10-pós-implementação-e-reconciliação-obrigatório-antes-do-pr) · [11. Quality gate e PR](#11-quality-gate-e-abertura-do-pr-obrigatório-antes-do-pr) · [12. Rules](#12-candidatos-a-rule-de-projeto-obrigatório-depois-do-veredito)
+- **Fluxo** (uma ordem só): [0. Requisito](#0-capturar-o-requisito--primeiro-ato) · [1. Branch](#1-descobrir-branch-e-estrutura-de-pasta) · [2. Nome](#2-definir-nome-da-feature) · [3. Pesquisa](#3-pesquisa-e-contexto-obrigatório-antes-de-escrever) ([Superfície Livewire](#superfície-livewire-obrigatório-em-toda-feature-que-cria-página-widget-ou-componente), [`search-docs`](#documentation-api-do-boost-search-docs)) · [4. `00`–`03`](#4-criar-os-arquivos) ([entrevista em três raias](#entrevista-em-três-raias-obrigatória-no-step-4), [path por arquivo](#path-e-número-por-arquivo)) · [5. Revisão profunda](#5-revisão-profunda-pós-escrita-obrigatório) ([classe irmã](#varredura-da-classe-irmã-obrigatória-para-toda-classe-nova)) · [6. Ponytail](#6-auditoria-da-wiki-com-ponytail-review-obrigatório) · [7. `04`/`05`](#7-derivar-os-casos-de-teste-obrigatório-depois-do-ponytail) · [8. Tickets (condicional)](#8-fatiar-em-tickets-condicional) · [Implementação](#implementação-sem-número) · [9. Revisão do diff](#9-revisão-de-código-do-diff-obrigatório-logo-após-os-testes-passarem-e-antes-da-reconciliação) · [10. Reconciliação](#10-pós-implementação-e-reconciliação-obrigatório-antes-do-pr) · [Roteiro manual (condicional)](#roteiro-de-teste-manual-condicional-sem-número--depois-do-step-10-antes-do-step-11) · [11. Quality gate e PR](#11-quality-gate-e-abertura-do-pr-obrigatório-antes-do-pr) · [12. Rules](#12-candidatos-a-rule-de-projeto-obrigatório-depois-do-veredito)
 - **Arquivos**: [00](#arquivo-00-requisito--fonte-da-verdade) ([Adendo](#adendo-ao-requisito--quando-o-pedido-cresce-durante-a-implementação)) · [01](#arquivo-01-plano-de-ação-prd) · [Padrão de Log](#padrão-de-log--classemétodo-mensagem) · [02](#arquivo-02-decisões-arquiteturais-adr) · [03](#arquivo-03-progresso--tracking) · [Glossário do projeto](#glossário-do-projeto) · [04 e 05](#arquivos-04-e-05-casos-de-teste--delegados-à-feature-test-design) ([Playwright MCP](#playwright-mcp-na-validação-opcional--ferramenta-de-observação))
 - [Pest 5](#execução-de-testes-com-pest-5) · [Citações de código](#citações-de-código--arquivosímbololinha) · [Checklist Final](#checklist-final-da-skill) · [Skills Companheiras](#skills-companheiras)
 
@@ -73,6 +74,7 @@ o checklist final exige declarar quais foram abertas.
 | [`template-01-plano.md`](references/template-01-plano.md) | step 4 | template do `01` e skills citáveis no PRD |
 | [`template-02-adr.md`](references/template-02-adr.md) | step 4 | template do `02`, com a linha dos três portões |
 | [`template-03-progresso.md`](references/template-03-progresso.md) | step 4; steps 7, 8, 9 e 12; `## Despachos` | template do `03` |
+| [`template-08-roteiro-manual.md`](references/template-08-roteiro-manual.md) | roteiro manual (entre os steps 10 e 11); pedido tardio | template, conferência, execução, segurança, tickets e atualização do `08-roteiro-teste-manual.md` |
 | [`padrao-de-log.md`](references/padrao-de-log.md) | step 4 (logs do `01`) | por que o padrão, anatomia, os sete níveis, contexto estruturado, exemplos, trait de logging |
 | [`pesquisa-step-3.md`](references/pesquisa-step-3.md) | step 3; pré-9 | três origens, formato e greps da Superfície Livewire; cobertura e lacunas do `search-docs` |
 | [`roteamento-e-despacho.md`](references/roteamento-e-despacho.md) | todo despacho | tabela de rotas (com o perfil do hook e o `maxTurns`), quadro de despacho, mapa por step |
@@ -427,11 +429,11 @@ depois dos cortes do Ponytail (estudo §7.2). A wiki completa tem os **5 arquivo
 
 **Ordem de criação**:
 1. **`00-requisito.md`** — requisito bruto + `RQ-##` + `## Perguntas ao Solicitante`, `## Premissas` e `## Fora de Escopo (declarado)`; é a linha de base de tudo
-2. **Entrevista em três raias** ([abaixo](#entrevista-em-três-raias-obrigatória-no-step-4)), sobre o `00` e o rascunho do `01`/`02`
+2. **Entrevista em três raias** ([abaixo](#entrevista-em-três-raias-obrigatória-no-step-4)), sobre o `00` e o rascunho do `01`/`02`; na raia desenho, decidir com o desenvolvedor se haverá roteiro manual
 3. **`01-plano-acao.md`** — PRD deriva do `00`; cada passo deve citar quais `RQ` (e `P-nn`) atende;
    passo que depende de `RQ` aberta leva `**Bloqueado por**: RQ-nn (aberta — Qn)` e não é implementado
 4. **`02-decisoes-arquiteturais.md`** — só decisões que passam nos [três portões](#arquivo-02-decisões-arquiteturais-adr), mais a `## Superfície Livewire`
-5. **`03-progresso.md`** — espelha os passos do PRD, com `**Estado**: em planejamento`; os CT/CT-B entram no step 7
+5. **`03-progresso.md`** — espelha os passos do PRD, com `**Estado**: em planejamento`; registrar a decisão do roteiro em `## Auditoria Pré-Implementação` (formato abaixo); os CT/CT-B entram no step 7
 6. **Confirmação registrada** — antes do step 5, `## Auditoria Pré-Implementação` do `03` ganha a linha
    `Entendimento confirmado: {data} — {quem ou autorização existente} — {rodadas, nº de perguntas por raia}` (estudo §2.2).
    Autorização de implementar já presente na conversa dispensa uma nova aprovação do plano; pergunta
@@ -464,6 +466,16 @@ perguntar tudo ao desenvolvedor o faria responder pelo solicitante).
   requisito, com a `➡️` pela opção que **falha fechado** — a mesma regra da derivação no step 7
 - **Perguntas-semente** — candidatas da raia requisito **só** quando o requisito tem papéis,
   visibilidade, notificação ou texto livre (estudo §7.1, T10)
+- **Roteiro manual opcional** — perguntar ao desenvolvedor no step 4, salvo instrução explícita
+  ou convenção do projeto. Consome `Qn` da sequência única; é meta-processo, isento do filtro de
+  oráculo, sem criar comportamento. **Não bloqueante**: não integra a fronteira que segura
+  `Entendimento confirmado` ou o step 5. Sem resposta até o fim do step 4, em qualquer modo,
+  registrar `não — sem resposta a Qn`; resposta ou mudança posterior vale como pedido tardio.
+  Exceção da raia desenho: registrar **só** em `## Auditoria Pré-Implementação` do `03`, nunca em
+  `## Decisões de Desenho` do `01`, no `02` ou em `## Perguntas ao Solicitante` do `00`:
+  `Roteiro manual: {sim | não} — {YYYY-MM-DD} — {fonte: resposta a Qn | instrução explícita do desenvolvedor | convenção {arquivo} | sem resposta a Qn} — {sinal ou motivo}`.
+  Mudança sempre acrescenta linha abaixo; riscar as anteriores com `~~…~~`. Semente e sinais da
+  `➡️`: [`entrevista-tres-raias.md`](references/entrevista-tres-raias.md#semente-da-raia-desenho--roteiro-manual)
 - **Sinal de escopo** (hipótese a calibrar) — mais de 30 perguntas de requisito: registrar em
   `## Auditoria Pré-Implementação` do `03` e propor o step 8 ou dividir a feature
 - **Termo decidido** vai para o [glossário do projeto](#glossário-do-projeto) na hora
@@ -472,7 +484,7 @@ perguntar tudo ao desenvolvedor o faria responder pelo solicitante).
 
 Path de código, `arquivo:linha` e contagem derivada só entram onde a reconciliação do step 10 cobre
 (estudo §3.2): **nunca** no `00` nem na ADR do `02`, que cita módulo ou classe por nome (exceção: a
-`## Superfície Livewire`); `01`, `03`, `04` e `05` podem; o ticket de `07-tickets/` aponta passos do
+`## Superfície Livewire`); `01`, `03`, `04`, `05` e `08` podem; o ticket de `07-tickets/` aponta passos do
 `01` em vez de path. Tabela com o motivo: [`references/citacoes-de-codigo.md`](references/citacoes-de-codigo.md#path-e-número-por-arquivo).
 
 **Wiki já existente**: se `wikis/specs/{branch}/{feature}/` já existe:
@@ -621,11 +633,11 @@ ticket `concluído` — → step 9, uma vez por feature.
 ### 9. Revisão de Código do Diff (OBRIGATÓRIO, logo após os testes passarem e antes da reconciliação)
 
 **Quando**: a suíte da feature está verde e o último passo do PRD foi entregue — **antes** do
-step 10. A ordem é **9 → 10 → 11 → PR**, e o motivo é mecânico: cada achado confirmado aqui vira
+step 10. A ordem é **9 → 10 → roteiro manual (se sim) → 11 → PR**, e o motivo é mecânico: cada achado confirmado aqui vira
 CT no `04` e correção no código (e `P-nn` no `00`, se o solicitante não o escreveu), e isso desloca linha citada, cria ID de CT e muda
 frase de doc e de ADR. Reconciliar (10) antes de revisar é reconciliar duas vezes. E a dimensão L do
-step 11 repete a reconciliação por quem não a fez, então ela precisa ser a **última** coisa antes
-dele. Numeração antiga: README, *Numeração dos steps*. O `03` passa a `**Estado**: em revisão`.
+step 11 repete a reconciliação por quem não a fez; o roteiro opcional nasce entre o 10 e o 11,
+sobre o diff já reconciliado. Numeração antiga: README, *Numeração dos steps*. O `03` passa a `**Estado**: em revisão`.
 
 **Por quem não implementou** — sobre a **árvore final completa** da feature contra a base, incluindo
 commits, staged, unstaged e untracked. Para o `fw-revisor-diff`, sem a wiki (estudo §7.1 T6): ler
@@ -749,7 +761,7 @@ precisa estar escrita:
 ### 10. Pós-Implementação e Reconciliação (OBRIGATÓRIO, antes do PR)
 
 Após a implementação, os testes passarem e o **step 9 ter rodado** — e **antes de abrir o PR e
-antes de escrever "concluída" no `03`**. A ordem é **9 → 10 → 11 → PR**: o diff que se reconcilia
+antes de escrever "concluída" no `03`**. A ordem é **9 → 10 → roteiro manual (se sim) → 11 → PR**: o diff que se reconcilia
 aqui é o diff **pós-revisão**.
 
 Os casos que fixaram essa ordem e os itens 4, 5 e 6 abaixo estão em
@@ -757,7 +769,7 @@ Os casos que fixaram essa ordem e os itens 4, 5 e 6 abaixo estão em
 leia [`references/citacoes-de-codigo.md`](references/citacoes-de-codigo.md).
 
 **Fontes a reconciliar** — a lista é fechada; o que não está nela não é reconciliado por acidente:
-`01`, `02`, `04`, `05`, `03`, docs de usuário (pt **e** en), `CHANGELOG.md`, `README`, e as rules
+`01`, `02`, `04`, `05`, `03`, `08` (se existir), docs de usuário (pt **e** en), `CHANGELOG.md`, `README`, e as rules
 de `.ai/rules/` cujos globs casam com o diff; com `07-tickets/`, também os tickets (CT renumerado ou
 passo novo deixa ticket apontando o que não existe).
 
@@ -771,6 +783,7 @@ bash {skills}/feature-wiki/scripts/checkbox-sem-evidencia.sh {wiki}   # item 1
 bash {skills}/feature-wiki/scripts/citacoes.sh {wiki}                 # item 3
 bash {skills}/feature-wiki/scripts/ids-ct.sh {wiki} 'tests/**/{Feature}/*.php'   # item 4; por pasta: os executores gravam em tests/Feature/{Feature}/ e tests/Browser/{Feature}/
 bash {skills}/feature-wiki/scripts/conformidade-rules.sh {wiki} {base}   # item 6
+bash {skills}/feature-wiki/scripts/roteiro-manual.sh {wiki}           # só com 08 ou decisão sim; na primeira geração, rodar na etapa abaixo
 bash {skills}/feature-tickets/scripts/indice.sh --check {wiki}        # só com 07-tickets/: alocação a ticket (fonte única)
 ```
 
@@ -827,6 +840,27 @@ omissão no plano e volta ao `01`/`04` antes do step 11, que roda o mesmo script
 > escreveu; a `feature-quality-gate` (step 11) os repete como **dimensão L**, por quem não escreveu a
 > wiki. Sem o 10 o gate afoga em defasagem trivial; sem o 11 ninguém confere quem escreveu.
 
+### Roteiro de Teste Manual (CONDICIONAL, sem número — depois do step 10, antes do step 11)
+
+Com decisão `sim`, a sessão escreve em linha o `08-roteiro-teste-manual.md` depois do step 10,
+antes do 11, sobre o diff pós-revisão e reconciliado. Leia
+[`references/template-08-roteiro-manual.md`](references/template-08-roteiro-manual.md): procedimento,
+conferência, segurança, tickets e atualização ficam nessa referência.
+
+**Regra do oráculo**: resultado esperado vem do CT/CT-B/RQ/P-nn citado; código só decide como
+chegar lá. Esperado presente apenas no código é achado: seguir o roteamento do step 9
+(`P-nn` → CT → correção, quando não há RQ) e **repetir o step 10** antes de retomar o `08`.
+Roteiro não substitui Pest, CT-B nem o gate.
+
+Rodar `bash {skills}/feature-wiki/scripts/roteiro-manual.sh {wiki}`; colar saída e exit em
+`## Verificação Final` do `03`. Silêncio + exit 0 permite fechar o item. O step 11 audita na L8.
+Mudança de código após gate exige repetir o step 10 e reconciliar também o `08` antes do próximo ciclo.
+
+**Pedido tardio** — antes do step 10, só atualizar a decisão no `03`; gerar na etapa normal.
+Depois do step 10, gerar na hora sob este contrato. Se o step 11 já rodou, escrever no
+cabeçalho: `Auditoria: não auditado pelo quality gate (gerado depois do ciclo {N})`.
+Não atribuir ao `08` o veredito de um ciclo que não o leu.
+
 ### 11. Quality Gate e abertura do PR (OBRIGATÓRIO, antes do PR)
 
 Após os testes passarem e o step 10 estar concluído, **invocar a skill `feature-quality-gate`**. Este step é função direta da skill — o agente NÃO deve esperar o usuário pedir. **O PR não abre antes do veredito**, e o `03` não diz "concluída" antes de a seção `## Quality Gate` estar preenchida.
@@ -836,7 +870,7 @@ Após os testes passarem e o step 10 estar concluído, **invocar a skill `featur
 **Entrada que a skill espera**:
 
 - `00-requisito.md` com as cláusulas `RQ-##`
-- `01`–`05` da wiki, e `07-tickets/` quando a feature foi fatiada (a Matriz de Rastreabilidade ganha a coluna `Ticket`)
+- `01`–`05` da wiki, `08-roteiro-teste-manual.md` se existir (L8), e `07-tickets/` quando a feature foi fatiada (a Matriz de Rastreabilidade ganha a coluna `Ticket`)
 - app servido e acessível
 - `## Natureza da Wiki` do PRD (decide se roda regressão)
 
@@ -1278,12 +1312,13 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 
 ### Requisito, entrevista e documentação (step 4)
 - [ ] Requisito decomposto em `RQ-##`, cada uma com o trecho literal de origem e `Estado` (`fechada` · `aberta — Qn` · `substituída por RQ-nn (Adendo N)` · `decomposta em RQ-nn, RQ-mm`); `## Premissas` e `## Fora de Escopo (declarado)` presentes; nenhum path de código no `00`
-- [ ] Entrevista em três raias: formato ❓/➡️ com `Qn` numa sequência única, rodadas pela fronteira, só pergunta que toca `RQ`/`P-nn`, nenhuma pergunta de fato feita ao usuário, premissa de comportamento como pergunta de requisito com a `➡️` que falha fechado
+- [ ] Entrevista em três raias: ❓/➡️, `Qn` único, fronteira e filtro de oráculo (roteiro manual isento); nenhuma pergunta de fato ao usuário; premissa de comportamento como requisito com `➡️` que falha fechado
 - [ ] Perguntas-semente consideradas **quando** o requisito tem papéis, visibilidade, notificação ou texto livre: acumulação de papéis **par a par**, participante histórico × recorte de visibilidade, destino do link de toda notificação, teto de todo texto livre
 - [ ] Perguntas da raia requisito em `## Perguntas ao Solicitante`, com recomendação, levadas ao solicitante antes de implementar; `Entendimento confirmado: …` no `03` antes do step 5
 - [ ] PRD com `## Natureza da Wiki` (+ ancestral se não for "nova"), `## Decisões de Desenho` (ou "nenhuma"), `## Modelo de Execução` (ou "um request, sem trabalho adiado"), `## Superfície de UI` (ou "Sem superfície de UI"), Autorização, Rotas, Variáveis de Ambiente, Eventos, Jobs, Impacto, Rollback, Dependências, Riscos e Filosofia de Implementação (Ponytail); passos numerados com skills referenciadas e logs em todas as etapas
 - [ ] `## Cobertura do Requisito` mapeia **toda** `RQ` a passo(s) ou justificativa, e a `P-nn` cuja correção é um passo; passo que depende de `RQ` aberta está `**Bloqueado por**: RQ-nn (aberta — Qn)` e não foi implementado
 - [ ] `02` só com ADR que passa nos três portões, com a linha `**Portões**`, em formato ADR — ou "Nenhuma decisão passou nos três portões"; sem `arquivo:linha` nem contagem fora da `## Superfície Livewire`
+- [ ] Roteiro manual: decisão só no `03`, no formato do step 4; pergunta não bloqueante; sem resposta até o fim do step 4, em qualquer modo, `não — sem resposta a Qn`
 - [ ] `03` com a linha `**Estado**`, checkboxes espelhando **exatamente** os passos do `01` e as seções do template; extras `05-*` criados se necessário
 - [ ] Log: channel da feature referenciado em todos os passos; `[Classe@Método] mensagem` e `$context` estruturado em cada log do PRD; log **não** vira CT no `04` (quem confere é a dimensão D do gate), salvo requisito de trilha de auditoria, que é `RQ`
 
@@ -1308,7 +1343,7 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 - [ ] **Step 9 antes da reconciliação**, por quem não implementou: cada achado confirmado que o solicitante não escreveu virou `P-nn` + CT com `Origem` = `P-nn` (pela `feature-test-design`) + correção, nessa ordem — pergunta ao solicitante quando contradiz ou estende o pedido; ticket novo no fim, com `07-tickets/`; achado que viola ou omite `RQ` existente virou CT com `Origem` = `RQ-nn` + correção, sem `P-nn` (com `07-tickets/`, o CT no ticket da `RQ`); nenhum achado entrou como Adendo; achados e rejeições em `## Revisão do Diff (step 9)` do `03`
 - [ ] No Claude Code: `/code-review high {base}...HEAD`, sem `--fix`; passe de eixos cego ao `01`/`03`, cobrindo committed, staged, unstaged e conteúdo untracked sem `wikis/`; conteúdo/hash antes/depois comparado pela sessão; `## Superfície Livewire` re-varrida sobre o código final **antes**
 - [ ] Falsificabilidade dos CTs novos provada em cópia temporária, revertendo só o patch da correção — cada um falha sem a correção **ou** está declarado "não falsificável nesta pilha" ou "prova pendente", com o motivo
-- [ ] Silenciosos, com a saída colada na Verificação Final: `rastreabilidade.sh`, `checkbox-sem-evidencia.sh`, `citacoes.sh`, `ids-ct.sh`, `conformidade-rules.sh` e, com `07-tickets/`, `indice.sh --check`
+- [ ] Silenciosos, com a saída colada na Verificação Final: `rastreabilidade.sh`, `checkbox-sem-evidencia.sh`, `citacoes.sh`, `ids-ct.sh`, `conformidade-rules.sh`, `roteiro-manual.sh` (só com `08` ou decisão sim) e, com `07-tickets/`, `indice.sh --check`
 - [ ] Todo `[x]` do `03` com evidência inline, nenhum fechado em lote; todo número com o comando que o gerou; toda degradação com a prova negativa (`php -m`, `ls vendor/…`)
 - [ ] Cada desvio do `03` com a edição no `01`/`02`/`04`/`05` de origem, marcada `*(alterado em …)*` — nenhuma afirmação do `01`/`02` contradiz o código
 - [ ] Contagens da wiki inteira derivadas por `grep -c`; todo número **corrigido** procurado na wiki inteira (`grep -rn "{valor antigo}"`)
@@ -1318,6 +1353,10 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 - [ ] Docs de usuário (pt **e** en), CHANGELOG e README reconciliados; nenhuma frase sem `RQ`, `P-nn` ou ADR de origem
 - [ ] CT-B escritos e rodados via sub-agente, divergências classificadas (a/b/c); "Desenhado × Implementado" do `05` preenchido, divergências em "Desvios do Plano" e na fonte; Playwright MCP, se usado, só como observação (`--isolated --headless --caps=testing`, nenhum ref em teste, nenhuma sessão MCP como cobertura)
 - [ ] Notas de implementação e retrospectiva breve escritas
+
+### Roteiro manual (condicional, depois do step 10)
+- [ ] Decisão não bloqueante registrada só no `03`; com `sim`, `08` pós-10 conforme referência e `roteiro-manual.sh` silencioso
+- [ ] Oráculo preservado; retornos ao step 9 repetiram o 10; pedido pós-gate declara `não auditado`; `08` reconciliado no step 10
 
 ### Quality Gate e PR (step 11)
 - [ ] **`feature-quality-gate` invocado** — no Claude Code, via `fw-qa-gate` sem Edit/Write; `06` gravado verbatim com **só** o que está entre `<<<06` e `>>>06`; conteúdo/hash antes/depois dos arquivos relevantes comparado pela sessão, inclusive já dirty e untracked; `Custo` em `## Despachos`; ciclo/veredito/data em `## Quality Gate` do `03`
@@ -1339,7 +1378,7 @@ Antes de encerrar a invocação, na ordem dos steps; Delegação e Referências 
 
 ### Referências (todos os steps)
 - [ ] Referências abertas registradas em `## Referências Abertas` do `03` e declaradas no relatório final da invocação — uma linha *"referências lidas: {arquivo} (step N), …"*, com cada arquivo de `references/` aberto e o step em que foi aberto
-  - A linha cobre o mínimo da tabela do Índice ou diz por que pulou: todo despacho → `roteamento-e-despacho`; step 3 → `pesquisa-step-3`; step 4 → `template-00-requisito` a `template-03-progresso`, `entrevista-tres-raias`, `padrao-de-log`, `estrutura-criada`; termo decidido → `glossario`; step 7 → `delegacao-casos-de-teste`; pré-9 → `pesquisa-step-3`; step 10 → `citacoes-de-codigo`; teste escrito a partir do `04`/`05` → `delegacao-casos-de-teste`. O step 12 não abre reference desta skill: segue o `SKILL.md` da `requirement-to-rule`
+  - A linha cobre o mínimo da tabela do Índice ou diz por que pulou: todo despacho → `roteamento-e-despacho`; step 3 → `pesquisa-step-3`; step 4 → `template-00-requisito` a `template-03-progresso`, `entrevista-tres-raias`, `padrao-de-log`, `estrutura-criada`; termo decidido → `glossario`; step 7 → `delegacao-casos-de-teste`; pré-9 → `pesquisa-step-3`; step 10 → `citacoes-de-codigo`; roteiro → `template-08-roteiro-manual`; teste escrito a partir do `04`/`05` → `delegacao-casos-de-teste`. O step 12 não abre reference desta skill: segue o `SKILL.md` da `requirement-to-rule`
 
 ## Skills Companheiras
 
@@ -1347,7 +1386,7 @@ A feature-wiki é a primeira estação de uma esteira de skills que cobrem o cic
 
 | Camada | Skill | Responsabilidade | Boundary |
 |--------|-------|------------------|----------|
-| **Comunicação** (agent ↔ usuário) | [Caveman](https://github.com/JuliusBrussee/caveman) — modo padrão `ultra` | Prosa terse — corta ~75% dos tokens removendo fluff, artigos, fillers | **NÃO aplica em arquivos wiki** (00-06), código, commits, PRs |
+| **Comunicação** (agent ↔ usuário) | [Caveman](https://github.com/JuliusBrussee/caveman) — modo padrão `ultra` | Prosa terse — corta ~75% dos tokens removendo fluff, artigos, fillers | **NÃO aplica em arquivos wiki** (incluindo `08`), código, commits, PRs |
 | **Planejamento** (estrutura de documentação) | feature-wiki | requisito + PRD + ADR + tracking + padrão de log | não deriva caso de teste — testar o próprio plano confirma o plano |
 | **Especificação de teste** | `feature-test-design` | deriva o `04`/`05` do **`00-requisito.md`**, com técnica formal e gate de mutantes | não escreve código nem corrige implementação |
 | **Fatiamento** (condicional) | `feature-tickets` | fatia a wiki em tickets verticais (`07-tickets/`) quando o plano não cabe numa sessão; gera `wikis/specs/INDEX.md` | só o usuário invoca; não fatia o que cabe numa sessão |

@@ -1,6 +1,7 @@
 ---
 paths:
   - 'config/**'
+  - config/logging.php
 ---
 
 # Config
@@ -33,3 +34,6 @@ Duas lições da mesma rodada, as duas sobre fronteira de configuração.
 Sinal de alerta: `config()->set('chave.que.voce.acha.que.existe')` em teste, sem `grep` no `config/` confirmando que ela existe. E na revisão: duas classes respondendo a mesma pergunta de config por caminhos diferentes.
 
 Vale também o irmão já documentado neste arquivo: o segundo argumento do `env()` só cobre chave AUSENTE, não vazia — use `?:` para texto e `NumeroDoEnv` para inteiro.
+
+## Canal de log novo do kit também é garantido no KitServiceProvider
+Todo canal de log que o kit cria entra no `config/logging.php` E é garantido em tempo de boot pelo `App\Providers\KitServiceProvider`, só quando o projeto não o declara — molde: `garantirCanalDoTutorialGuiado()`. O `config/logging.php` é do esqueleto e fica FORA de `KitUpdate::CAMINHOS_DO_KIT`: entregá-lo inteiro apagaria os canais próprios do projeto, e a primeira rodada do `kit:update` roda a classe antiga. Sem a garantia no provider, o projeto atualizado não tem o canal e cada `Log::channel()` cai no logger de emergência. O canal `dock-de-acoes-rapidas` (#160) já nasceu assim. Origem: P-24 e D7b de `wikis/specs/feat/onboarding-guiado/`; prova: `tests/Kit/OnboardingGuiadoInstalacaoTest.php` [CT-70], [CT-71].

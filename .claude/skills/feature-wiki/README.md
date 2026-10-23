@@ -1,5 +1,122 @@
 # feature-wiki — Documentação Antes de Implementar
 
+## Correção 4.2.1 — esperado completo no roteiro
+
+A [Parte 2 da rodada 2026-10-20](../../../experimentos/2026-10-20-roteiro-manual/RELATORIO-PARTE-2.md) gerou o `08` sobre uma implementação real. Os dois
+roteiros mantiveram o oráculo — nenhum esperado divergente ou sem respaldo, e a divergência do app
+registrada sem rebaixar o CT —, mas 43 de 72 esperados eram **parciais**: preparação citando o CT
+como verificação e pós-condições do `Então` resumidas. A reference do `08` ganhou a seção
+*Esperado completo, preparação separada*:
+
+- o passo que verifica reproduz **todas** as pós-condições observáveis do `Então` (valor exato,
+  estado, contagem, unicidade, ausência de efeito colateral);
+- preparação leva `prep ·` na Origem e descreve só o estado que o `Dado` pede;
+- passo negativo diz o motivo esperado da recusa e, conferido, registra a classe ou mensagem;
+- preparação documentada é a executada: corrigida no meio, reexecutar desde o início.
+
+Numa réplica exploratória (fora do pré-registro, uma geração), o esperado fiel ao CT subiu de 38%
+para 98% das linhas; o roteiro ficou 17% mais longo. A auditoria do log confirmou que todas as
+conferências declaradas pela 4.2.0 rodaram de fato.
+
+## Atualização 4.2.0 — roteiro de teste manual opcional
+
+A wiki pode entregar o **`08-roteiro-teste-manual.md`**, um caminho de execução para quem vai
+conferir a feature: revisor do PR, QA humano, solicitante na homologação ou operador do deploy.
+O arquivo pertence à `feature-wiki`; o `feature-quality-gate` 1.9.0 audita sua consistência no
+item **L8**, dentro das **12 dimensões já existentes**. Não há uma nova skill nem uma décima
+terceira dimensão. O `08` não substitui Pest, CT-B ou o quality gate.
+
+A decisão aparece no **step 4**, numa rodada da entrevista na **raia de desenho**, dirigida ao
+desenvolvedor. A recomendação `➡️` é **sim** quando há UI, aceite humano, integração externa que
+não pode ser automatizada — e-mail, gateway em sandbox, SSO —, comando Artisan ou job de fila
+operado por uma pessoa, ou deploy manual. Para refatoração interna ou job já provado por Pest,
+sem uma dessas necessidades, a recomendação é **não**. Há custo de tokens para escrever, conferir
+e auditar o roteiro e custo de manutenção quando o caminho de execução muda; ele não é entrega
+automática de toda wiki.
+
+Pedidos como **“gere o roteiro manual”** ou **“sem roteiro manual”**, inclusive feitos antes da
+entrevista, resolvem a decisão sem outra pergunta. Uma instrução explícita em `AGENTS.md` ou
+`CLAUDE.md` também a resolve. A decisão e sua fonte ficam no `03`; a sessão não pergunta de novo
+o que já foi autorizado. A pergunta consome um `Qn`, mas é meta-processo isento do filtro de
+oráculo e **não bloqueia** `Entendimento confirmado` nem o step 5. Sem resposta até o fim do
+step 4, em qualquer modo, registra **não — sem resposta a Qn**. A pergunta e a decisão ficam
+**só no `03`**, sem entrada no `00`, nas decisões de desenho do `01` ou no `02`, neste formato:
+
+```text
+Roteiro manual: {sim | não} — {YYYY-MM-DD} — {fonte: resposta a Qn | instrução explícita do desenvolvedor | convenção {arquivo} | sem resposta a Qn} — {sinal ou motivo}
+```
+
+O desenvolvedor pode responder ou mudar depois; sempre se acrescenta linha abaixo e se riscam
+as anteriores com `~~…~~`.
+
+O oráculo já existe: `00-requisito.md`, `04-casos-de-teste.md` e, quando houver, o `05` de browser.
+Depois da implementação e da reconciliação do **step 10**, a sessão usa o produto para descobrir
+**como chegar** ao comportamento especificado: rota, tela, botão, comando, seed ou fixture. A
+geração do `08` é uma etapa **sem número, depois do 10 e antes do 11**; os steps 0–12 mantêm seus
+números. Se o gate mandar corrigir código, o retorno passa pelo step 10 e reconcilia também o
+`08` antes da nova auditoria. A implementação não ganha autoridade para definir o resultado
+esperado.
+
+Também é possível pedir o roteiro **a qualquer momento, inclusive depois de abrir o PR**.
+Antes do step 10, o pedido só atualiza a decisão no `03`; a geração ocorre na etapa normal.
+Depois do step 10, gera o arquivo na hora, com os artefatos e a implementação atuais. Se o quality gate
+já terminou, o cabeçalho declara **`Auditoria: não auditado pelo quality gate (gerado depois do
+ciclo {N})`**. O veredito antigo não é estendido ao arquivo novo. Para feature fatiada, existe
+**um único `08` por feature**, depois do último ticket `concluído`; cada RM identifica o
+**`Ticket`** correspondente. O pedido tardio preserva essa ordem.
+
+### O que uma pessoa recebe no `08`
+
+Cada **`RM-nn`** corresponde a um fluxo de valor, com caminho feliz e variações negativas e de
+permissão pertinentes. Não é uma transcrição de todos os CT. Cada roteiro informa ambiente,
+perfil, dados de exemplo, preparo, ações e resultado esperado observável. A tabela de resultados
+tem a coluna **`Origem`**, com **CT, CT-B, RQ ou P-nn existente** para cada esperado. O código só
+fornece o caminho de acesso e o preparo; um comportamento encontrado sem rastro vira achado do
+step 9, com premissa `P-nn` quando aplicável, CT e correção; repete o step 10 antes de retomar o roteiro.
+
+Estes exemplos são didáticos: supõem que os CT citados já especificam os resultados abaixo;
+os paths e comandos devem corresponder à aplicação real. Eles não relatam execução nesta
+coletânea.
+
+**RM-01 — conferir a aprovação em lote pelo terminal.** Perfil: operador local; ambiente:
+banco descartável, com pedidos elegíveis e não elegíveis preparados por seed/fixture documentado.
+Execução: `php artisan pedidos:aprovar-lote --dry-run`.
+
+| Ação ou variação | Resultado esperado | Origem |
+|---|---|---|
+| Executar o `--dry-run` com pedidos elegíveis | Os elegíveis aparecem na prévia e seus estados permanecem inalterados | CT-01, RQ-01 |
+| Incluir pedido fora da condição de aprovação | O pedido não aparece entre os elegíveis e mantém o estado anterior | CT-02, RQ-02 |
+| Executar com perfil sem permissão, se o comando exigir esse perfil | A operação é recusada sem alterar os pedidos | CT-03, P-01 |
+
+**RM-02 — gestor aprova um pedido pela aplicação.** Perfil: gestor de exemplo autorizado;
+ambiente: aplicação local; URL de exemplo: `http://localhost/admin/pedidos`. Preparar o pedido
+pendente pela fixture indicada, abrir seu detalhe e clicar no botão **Aprovar**.
+
+| Ação ou variação | Resultado esperado | Origem |
+|---|---|---|
+| Gestor autorizado clica em **Aprovar** no pedido pendente | O detalhe passa a exibir o estado Aprovado | CT-B01, RQ-03 |
+| Repetir a tentativa num pedido já decidido | O estado anterior é preservado, sem uma segunda decisão | CT-04, P-02 |
+| Abrir o mesmo detalhe como solicitante sem permissão | A ação **Aprovar** não está disponível para esse perfil | CT-B02, RQ-04 |
+
+Quando o ambiente permite, a sessão confere os RM por terminal não destrutivo e percorre a
+aplicação via **Playwright MCP**, se disponível. Cada RM registra **`conferido pela sessão
+{data}`**, com evidência, ou **`não executado — {motivo}`**; o **cabeçalho do `08`**
+registra a contagem **n/m**. Sem ferramenta, ambiente ou execução, o estado permanece não
+executado. Conferência documental não vira alegação de que cliques ou comandos rodaram.
+Comando destrutivo exige ambiente descartável confirmado e aviso explícito no roteiro;
+credenciais de exemplo não contêm senha real. A L8 **nunca executa RM destrutivo**, nem RM que
+grava estado fora de ambiente descartável confirmado: registra **Não Verificado —
+destrutivo/ambiente não confirmado**. O gate só executa RM não destrutivos contra app local servido.
+
+O procedimento e o formato do arquivo ficam na [referência do roteiro manual](references/template-08-roteiro-manual.md).
+**Parte 1 da [rodada 2026-10-20](../../../experimentos/2026-10-20-roteiro-manual/RELATORIO.md)** (Codex, N = 1): a inclusão do roteiro não alterou a derivação do `04` — mesmos
+defeitos detectados que a 4.1.1 nos dois cenários do protocolo. A pergunta do step 4 foi feita na
+raia de desenho, registrada só no `03` e dispensada diante de instrução explícita, inclusive um
+`não` contra os sinais. Uma célula copiou o exemplo da semente e inventou o sinal; o exemplo virou
+placeholder e a reexecução passou. **Não medidos**: qualidade do `08` gerado, a L8 do gate, uso por
+pessoas, custo de tokens e equivalência com Claude Code. A [Parte 2](../../../experimentos/2026-10-20-roteiro-manual/RELATORIO-PARTE-2.md) mediu o `08`
+gerado e a L8: ver a *Correção 4.2.1* acima.
+
 ## Correção 4.1.1 — controles proporcionais à capacidade do host
 
 A revisão independente da rodada real encontrou obrigações Claude ainda no checklist universal
@@ -21,12 +138,14 @@ Regressões e avaliação antes/depois: [README da coletânea](../../../README.m
 e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
 Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **4.1.1** · referências sob demanda em [`references/`](references/)
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **4.2.1** · referências sob demanda em [`references/`](references/)
 > Este README fala com a **pessoa**: por que a skill existe, quando usar, dependências e limites. O
 > procedimento que o agente segue está no `SKILL.md` e nas `references/`, e não é repetido aqui.
 
 ## Índice
 
+- [Correção 4.2.1 — esperado completo no roteiro](#correção-421--esperado-completo-no-roteiro)
+- [Atualização 4.2.0 — roteiro manual opcional](#atualização-420--roteiro-de-teste-manual-opcional)
 - [Por que a skill existe](#por-que-a-skill-existe)
 - [Os arquivos que ela cria](#os-arquivos-que-ela-cria)
 - [Quando usar — e quando não](#quando-usar--e-quando-não)
@@ -67,6 +186,7 @@ Força o agente a **documentar antes de codar**. Em vez de sair implementando a 
 | **Lista paralela não esquecida** | varredura da classe irmã no step 5: `grep` pelo FQCN de uma irmã acha `config/`, seeders e inventários que nenhuma rule enumera |
 | **Premissa de custo falsificável** | `## Modelo de Execução` no PRD — quantos requests a tela custa, o que é adiado e o que é cacheado |
 | **Wiki que não mente depois do código** | step 10 reconcilia wiki, docs de usuário, CHANGELOG e rules com o código: checkbox só fecha com evidência, desvio corrige o `01`/`02` de origem, citação `arquivo:símbolo:linha` e IDs de CT conferidos por scripts, com saída vazia como critério |
+| **Caminho de conferência humana quando necessário** | `08` opcional, decidido no step 4 e gerado depois do step 10: como acessar o fluxo implementado, com esperado rastreado aos CT/CT-B/RQ/P-nn existentes e auditoria L8 no gate |
 | **Feature grande sem sessão estourada** | step 8 sugere a [`feature-tickets`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-tickets/README.md) quando a wiki chega ao tamanho da maior feature medida; cada ticket vertical roda numa sessão nova, com só a sua fatia. Refatoração larga entra pelo mesmo caminho: expand → migrate em lotes → contract |
 | **Pedido que cresce no meio da implementação** | vira Adendo numerado no `00` — só pedido do solicitante —, com a `feature-test-design` reinvocada só para ele; o teste do pedido novo não nasce do código. Achado de revisão vira premissa `P-nn`, não Adendo |
 
@@ -93,10 +213,11 @@ wikis/specs/{branch}/{feature}/
 ├── 05-casos-de-teste-browser.md  ← delegado (condicional: só com costura browser no 04)
 ├── 05-*.md                       ← extras: api-contract, rollback, security, performance
 ├── 06-relatorio-qa.md            ← saída do feature-quality-gate
-└── 07-tickets/                   ← só se o step 8 fatiou: um ticket vertical por arquivo + README.md gerado (feature-tickets)
+├── 07-tickets/                   ← só se o step 8 fatiou: um ticket vertical por arquivo + README.md gerado (feature-tickets)
+└── 08-roteiro-teste-manual.md     ← opcional: conferência humana após o step 10, auditada em L8 no gate
 ```
 
-Os **cinco primeiros são obrigatórios** (o `05` de browser existe se e só se o `04` declara uma costura `browser`). Os `05-*` extras são criados conforme necessidade; o `06` é blocker do PR; `07-tickets/` só existe quando a feature foi fatiada.
+Os **cinco primeiros são obrigatórios** (o `05` de browser existe se e só se o `04` declara uma costura `browser`). Os `05-*` extras são criados conforme necessidade; o `06` é blocker do PR; `07-tickets/` só existe quando a feature foi fatiada. O `08` só existe com a decisão de gerá-lo; é da feature inteira, inclusive quando há tickets. Seu número não cria um step 13.
 
 > **A partir da v3.0.0 o `04` e o `05` não são escritos por esta skill.** Ela invoca a
 > [`feature-test-design`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-test-design/README.md) no step 7 (step 4 até a 3.x), passando o
@@ -204,6 +325,7 @@ A 4.0.0 renumerou os steps. Wiki, `03` e relatório escritos com a 3.x citam os 
 | — | — | Implementação (sem número): passos do `01`, ou tickets de `07-tickets/` |
 | 6.5 | 9 | Revisão de código do diff |
 | 7 | 10 | Pós-implementação e reconciliação (inclui o loop dos CT-B) |
+| — | — | Gerar e conferir o `08`, se decidido: depois do step 10 e antes do 11, sem renumerar os steps |
 | 8 | 11 | Quality gate e abertura do PR |
 | 9 | 12 | Candidatos a rule |
 
@@ -225,8 +347,8 @@ a `feature-quality-gate` — sem ela o PR não abre.
 
 | Dependência | Versão mínima | O que habilita | Sem ela |
 |---|---|---|---|
-| [`feature-test-design`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-test-design/README.md) | 1.16.0 | step 7: derivação do `04`/`05` a partir do requisito, com técnica formal e gate de mutantes. A 1.16.0 é a que acompanha a numeração 4.0.0 e a entrevista em três raias (`P-nn` como origem de CT, `RQ` aberta sem cenário, Gherkin no vocabulário do glossário); a 1.15.0 trouxe `feature-test-design/references/pest-plugin-browser.md`, a fonte única dos fatos do plugin que esta skill consulta | o `04` é derivado em linha do `00`, declarando a perda da skill especializada e da independência no `03`; o PRD continua sem autoridade sobre o comportamento esperado. Abaixo da 1.15.0 falta o `pest-plugin-browser.md`: o `fw-executor-ctb` para sem escrever CT-B, e no step 3 restam só os dois fatos que o `SKILL.md` guarda (servidor próprio, `npm run build`) |
-| [`feature-quality-gate`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-quality-gate/README.md) | 1.7.0 | step 11: QA confrontando requisito × plano × app, com a checagem L6 (alegações da Verificação Final do `03`). A 1.7.0 é a que acompanha a numeração 4.0.0 e a entrevista em três raias (linhas `P-nn` na Matriz de Rastreabilidade, L7 — vocabulário × glossário) | o PR não abre: o `06-relatorio-qa.md` é blocker |
+| [`feature-test-design`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-test-design/README.md) | 1.17.0 | step 7: derivação do `04`/`05` a partir do requisito, com técnica formal, gate de mutantes e contrato portável. CT/CT-B continuam a fornecer o oráculo; a 1.17.4 esclarece no README que a skill não escreve o `08` | o `04` é derivado em linha do `00`, declarando a perda da skill especializada e da independência no `03`; o PRD continua sem autoridade sobre o comportamento esperado. Abaixo da 1.15.0 falta o `pest-plugin-browser.md`: o `fw-executor-ctb` para sem escrever CT-B, e no step 3 restam só os dois fatos que o `SKILL.md` guarda (servidor próprio, `npm run build`) |
+| [`feature-quality-gate`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-quality-gate/README.md) | 1.9.1 | step 11: QA confrontando requisito × plano × app. Inclui L6 (alegações do `03`), L7 (vocabulário × glossário) e L8 (consistência do `08`, quando decidido), dentro das mesmas 12 dimensões | o PR não abre: o `06-relatorio-qa.md` é blocker |
 | `laravel/boost` (MCP) | 2.4.12 | `search-docs`, `database-schema`, `database-query`, `browser-logs` e `record-rule` — a tool que o step 12 usa nasceu na 2.4.12 | a pesquisa cai para doc oficial e `Grep`; o step 12 não grava rule |
 | [`requirement-to-rule`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/requirement-to-rule/README.md) | 1.4.0 | step 12 inteiro: coleta os candidatos, aplica os 4 gates, faz o único prompt de aprovação, grava pelo `record-rule` e confere o índice. A 1.4.0 é a que assume o step 12 sozinha e traz a definição única de *Vale virar rule*; antes dela a wiki coletava e perguntava, e a skill perguntava de novo. Fica fora de `metadata.requires` porque o step 12 roda depois do veredito e a feature fecha sem ele | o step 12 não roda: o `03` registra a ausência, e a decisão continua na ADR |
 | [`feature-tickets`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-tickets/README.md) | 1.0.0 | step 8: fatiar em tickets verticais a wiki que não cabe numa sessão (só o usuário invoca — ver [Feature fatiada](#feature-fatiada--como-chamar-os-tickets)); step 10: `indice.sh --check`, a fonte única da alocação a ticket; step 11: regenerar `wikis/specs/INDEX.md`. Fora de `metadata.requires`: o step 8 é condicional | a feature roda numa sessão, pelos passos do `01`; o `INDEX.md` não é gerado |
@@ -356,7 +478,7 @@ Controle: `"glob":"*.php"` e `"glob":"!wikis/**"` passam (`exit 0`).
 | Onde | O que tem | Quando o agente lê |
 |---|---|---|
 | `SKILL.md` | gates, obrigações, a sequência de steps 0–12 (o 8 condicional, a implementação sem número) e o checklist final | sempre, ao ativar a skill |
-| `references/` | templates dos arquivos `00`–`03`, entrevista em três raias, template do glossário, padrão de log, tabelas de roteamento, greps e `search-docs` do step 3, contratos dos executores de teste, Playwright MCP, Pest 5, citações de código, Ponytail/Caveman, arquivos extras, casos medidos. O step 12 não tem reference aqui: segue o `SKILL.md` da `requirement-to-rule` | só quando um step manda — "antes de X, leia" o arquivo de `references/` daquele tema |
+| `references/` | templates dos arquivos `00`–`03`, roteiro manual opcional `08`, entrevista em três raias, template do glossário, padrão de log, tabelas de roteamento, greps e `search-docs` do step 3, contratos dos executores de teste, Playwright MCP, Pest 5, citações de código, Ponytail/Caveman, arquivos extras, casos medidos. O step 12 não tem reference aqui: segue o `SKILL.md` da `requirement-to-rule` | só quando um step manda — "antes de X, leia" o arquivo de `references/` daquele tema |
 | `agents/` | `fw-revisor-diff`, `fw-executor-ct`, `fw-executor-ctb` | pelo Claude Code, depois de copiados para `.claude/agents/` |
 | `scripts/` | as conferências do step 10 (`rastreabilidade.sh`, `checkbox-sem-evidencia.sh`, `citacoes.sh`, `ids-ct.sh`, `conformidade-rules.sh`), o hook `guarda-subagente.sh` dos cinco agentes e o lançador `pestw.cmd` do Windows. A alocação a ticket não é deles: tem uma fonte só, o `indice.sh --check` da `feature-tickets` | o agente os **roda** (`bash {skills}/feature-wiki/scripts/<nome>.sh`), não os lê; o cabeçalho de cada um tem uso e exemplo de falha. O quality gate roda os mesmos |
 
@@ -410,6 +532,33 @@ A lista das `references/`, com o step em que cada uma é lida, está no índice 
   na tabela única de [`experimentos/README.md`](https://github.com/gsferro/laravel-ai-skills/blob/main/experimentos/README.md)
 
 ## Por que ela funciona assim
+
+### Por que o roteiro manual é opcional — e por que não é uma skill nova
+
+O `08` atende a uma pessoa que precisa chegar ao fluxo e conferir o resultado: revisão de PR,
+QA humano, homologação pelo solicitante ou operação de deploy. UI, aceite humano e integração
+externa sem automação disponível tornam esse caminho útil. Uma refatoração interna ou job já
+coberto por Pest pode não oferecer nada relevante para uma conferência manual. Tornar o roteiro
+obrigatório adicionaria texto, tokens e manutenção a essas entregas sem demonstrar benefício.
+A pergunta na raia de desenho torna esse custo uma escolha visível do desenvolvedor.
+
+A fronteira de responsabilidade já existe. A `feature-test-design` deriva **antes do código** o
+comportamento verificável a partir do `00`; não pode inventar URL, botão, comando ou seed de uma
+implementação que ainda não existe. Depois do step 10, a `feature-wiki` já conhece os artefatos
+reconciliados e pode explicar **como executar** o que os CT dizem que deve ocorrer. Um `Então`
+bem escrito fornece o resultado esperado; a implementação fornece somente o caminho. Se esse
+esperado falta, a correção volta à especificação de teste, em vez de canonizar o código no `08`.
+
+Uma skill nova precisaria reler `00`, `04`, `05` e a implementação, acrescentaria dependência e
+instalação e dividiria a responsabilidade pela mesma entrega. O procedimento condicional em
+`references/` mantém o dono na wiki e só entra no contexto quando necessário. A revisão continua
+no quality gate: L8 confere a consistência documental do roteiro dentro das 12 dimensões; não
+transforma roteiro conferido em substituto de Pest ou CT-B e não certifica execução não observada.
+
+O custo que permanece é **drift**: rota, botão, comando ou preparo muda e o roteiro envelhece.
+Por isso o retorno ao step 10 também o reconcilia. A [rodada 2026-10-20](../../../experimentos/2026-10-20-roteiro-manual/RELATORIO.md) mediu que a pergunta se comporta como
+descrito e que a derivação do `04` não regrediu; o benefício do roteiro para pessoas, a qualidade
+dos `08` gerados e a equivalência entre Claude Code, Codex ou outro host ainda não foram medidos.
 
 ### Por que despachar sub-agentes no Claude Code
 

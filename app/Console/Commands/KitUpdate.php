@@ -185,6 +185,8 @@ class KitUpdate extends Command
          * seletor de roles.
          */
         'config/filament-dynamic-dashboard.php',
+        // Os locales do tutorial guiado (pt_BR e en): sem eles, o conteúdo semeado não é editável na autoria.
+        'config/filament-onboarding.php',
         // Migrations, seeders e factories do kit. Os SEUS não entram no diff,
         // pela mesma razão dos comandos. Migration nova exige rodar
         // `php artisan migrate` depois de aplicar.
@@ -243,6 +245,7 @@ class KitUpdate extends Command
         'resources/views/vendor/filament-auth-designer',
         'resources/views/vendor/filament-captcha',
         'resources/views/vendor/filament-clear-cache',
+        'resources/views/vendor/filament-onboarding',
         'routes/console.php',
         // Os testes do kit acompanham a atualização: é com eles que você
         // confere se a fundação continua de pé depois de aplicar.

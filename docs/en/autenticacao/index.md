@@ -54,7 +54,7 @@ The kit's login screen intercepts the Filament failure only to explain an unavai
 own (`vendor/filament/filament/src/Auth/Pages/Login.php:rateLimit(5):70`), which also decides with
 `canAccessPanel()` (`vendor/filament/filament/src/Auth/Pages/Login.php:canAccessPanel:188`). The
 login destination is always `app(LoginResponse::class)`, bound to `RespostaDeLogin`
-(`app/Providers/KitServiceProvider.php:LoginResponse:847`). The next request's stack (real order,
+(`app/Providers/KitServiceProvider.php:LoginResponse:884`). The next request's stack (real order,
 checked with `php artisan route:list --json`) is `Authenticate` -> `AuthenticateSession` ->
 `MustTwoFactor` -> `Locker` -> `ExigirEmailVerificado` (mandatory only on `/app`, with the key on).
 
@@ -81,9 +81,9 @@ accDescr: After login, the session moves between authenticated, awaiting 2FA, lo
 The 2FA challenge only exists for whoever already confirmed it before — it is the same
 `MustTwoFactor` from the diagram above. The idle lock uses `config('lockscreen.idle_timeout')` =
 1800 (`config/lockscreen.php:idle_timeout:16`); the three panels share the same attempt limit with
-forced logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:268`,
-`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:375`,
-`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:291`).
+forced logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:272`,
+`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:380`,
+`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:296`).
 
 Unlocking takes the person back to the page the lock intercepted, like Laravel's login *intended*: the
 requested URL (with its query) when idleness locked the session, or the last one they tried to open

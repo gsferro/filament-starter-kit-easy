@@ -628,6 +628,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tutorial guiado (onboarding)
+    |--------------------------------------------------------------------------
+    | O interruptor do tutorial guiado (wallacemartinss/filament-onboarding).
+    | Editável em /admin/configuracoes-da-aplicacao (aba Aplicação, seção
+    | "Tutorial guiado"); o banco vence o .env em execução. Quem decide é
+    | `App\Support\TutorialGuiado`, por request, lendo esta config já sobreposta.
+    |
+    |   'habilitado' — `filter_var`, não `(bool) env()`: desligado, a autoria
+    |   ("Onboarding" e "Condições" no /admin) some do menu e responde 404
+    |   (mesmo com a permissão), e o checklist, os tours e a página "Primeiros
+    |   passos" não aparecem em painel nenhum. Nasce DESLIGADO (falha fechado);
+    |   nada é apagado. Semear as jornadas (`db:seed --class=OnboardingSeeder`)
+    |   NÃO liga o interruptor.
+    |
+    | Sem lista de painéis: cada jornada declara o painel dela.
+    |
+    | Wiki `wikis/specs/feat/onboarding-guiado/`.
+    */
+
+    'onboarding' => [
+        'habilitado' => filter_var(env('KIT_ONBOARDING', false), FILTER_VALIDATE_BOOLEAN),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Observabilidade — retenção
     |--------------------------------------------------------------------------
     | Quanto tempo as trilhas que o kit GRAVA sobrevivem. Não é preferência de

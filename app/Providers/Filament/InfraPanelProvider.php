@@ -10,9 +10,11 @@ use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaRecuperarSenha;
 use App\Filament\Pages\DashboardClassico;
 use App\Filament\Pages\MyProfilePage;
+use App\Filament\Pages\PrimeirosPassos;
 use App\Filament\Spotlight\AcoesDeCriacao;
 use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
+use App\Http\Middleware\ExigeTutorialGuiadoLigado;
 use App\Livewire\DefinirSenhaPorEmail;
 use App\Models\Projeto;
 use App\Models\User;
@@ -23,6 +25,7 @@ use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
 use App\Support\PermissaoDaTela;
 use App\Support\RetencaoDeExcecoes;
+use App\Support\TutorialGuiado;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Bityukov\CommandCenter\Filament\CommandCenterPlugin;
@@ -168,6 +171,8 @@ class InfraPanelProvider extends PanelProvider
                 // Par sempre registrado — o decisor é por request (ver AppPanelProvider).
                 Dashboard::class,
                 DashboardClassico::class,
+                // "Primeiros passos" do tutorial guiado — decisor por request (`TutorialGuiado`).
+                PrimeirosPassos::class,
             ])
             ->widgets([
                 AccountWidget::class,
@@ -349,7 +354,7 @@ class InfraPanelProvider extends PanelProvider
                     /*
                      * As DUAS condições valem, e não é redundância decorativa.
                      *
-                     * `ver-logs` é a barreira do PAINEL: `KitServiceProvider.php:ver-logs:465` o
+                     * `ver-logs` é a barreira do PAINEL: `KitServiceProvider.php:ver-logs:502` o
                      * define como `temPapelDoPainel('infra')`, então ele responde igual para todo papel
                      * que abre o /infra. `View:LogsExplorer` é a barreira da TELA, e é a que o
                      * checkbox de `/admin/shield/roles` promete. O `&&` é a mesma coexistência
@@ -441,7 +446,7 @@ class InfraPanelProvider extends PanelProvider
                  *
                  * Consequência escrita, para ninguém ler o checkbox errado: a barreira das três é
                  * `config('command-center.enabled')` + `command-center:access`, e esse gate é
-                 * `temPapelDoPainel('infra')` (`KitServiceProvider.php:command-center:466`) — barreira de PAINEL,
+                 * `temPapelDoPainel('infra')` (`KitServiceProvider.php:command-center:503`) — barreira de PAINEL,
                  * não permissão por tela. `tests/Kit/PermissoesDeTelasTest.php` tem o caso
                  * que assere a lacuna (`it('deixa só as três telas da Central de comandos…')`); ele fica VERMELHO no dia em que o pacote publicar o setter
                  * por Page, e é o sinal de revisar ADR-05.
@@ -454,6 +459,14 @@ class InfraPanelProvider extends PanelProvider
 
                 EnvironmentIndicatorPlugin::make()
                     ->visible(fn (): bool => ! app()->isProduction()),
+
+                /*
+                 * Tutorial guiado (wiki `onboarding-guiado`) — registrado nos TRÊS painéis, sempre
+                 * (`.ai/rules/providers-filament.md`: a página "Primeiros passos" resolve o plugin
+                 * pelo painel corrente). Quem decide se aparece é `App\Support\TutorialGuiado`,
+                 * por request: interruptor do settings + permissão da página.
+                 */
+                TutorialGuiado::plugin(),
 
                 /*
                  * Dock de atalhos — registrado nos TRÊS painéis, sempre (`.ai/rules/providers-filament.md`):
@@ -702,6 +715,11 @@ class InfraPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            // Persistente: reaplicado nos updates Livewire — a tela do onboarding já aberta
+            // recusa a próxima ação quando o tutorial é desligado (wiki `onboarding-guiado`).
+            ->authMiddleware([
+                ExigeTutorialGuiadoLigado::class,
+            ], isPersistent: true);
     }
 }

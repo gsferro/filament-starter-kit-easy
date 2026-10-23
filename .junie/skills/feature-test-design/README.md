@@ -1,5 +1,19 @@
 # feature-test-design — Casos de Teste que Matam Defeito
 
+## Correção 1.17.4 — oráculo do roteiro manual, sem escrever o `08`
+
+O roteiro opcional `08-roteiro-teste-manual.md` pertence à `feature-wiki` 4.2.0, que o gera após
+a implementação e a reconciliação do step 10. Esta skill continua pré-código: escreve `04` e,
+quando houver costura browser, `05`; **não escreve o `08`** nem antecipa URL, botão, comando ou
+seed que só a implementação poderá confirmar.
+
+Os **CT/CT-B desta skill são a `Origem` obrigatória de cada resultado esperado** do roteiro,
+com a RQ ou P-nn vigente de onde foram derivados. Um **`Então` bem escrito**, com saída
+observável e valor concreto, vira a coluna **Resultado esperado** do `08`; a wiki acrescenta
+somente como chegar lá. Esperado sem origem exige corrigir a especificação de teste, nunca
+inferir promessa do código. Esta versão altera o README e `metadata.version`; o corpo do
+`SKILL.md` permanece igual ao da 1.17.3.
+
 ## Correção 1.17.3 — revisão portável e referências coerentes
 
 A rota adversarial usa o adaptador efetivamente disponível: perfis Claude quando nesse host,
@@ -54,7 +68,7 @@ Regressões e avaliação antes/depois: [README da coletânea](../../../README.m
 e [relatório da rodada](../../../experimentos/2026-10-09-auditoria-portabilidade/RELATORIO.md).
 Os testes mecânicos não substituem a medição DDR num projeto Laravel real.
 
-> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.17.3**
+> **Skill**: [`SKILL.md`](SKILL.md) · versão **1.17.4**
 > Este README fala com a **pessoa**: por que a skill existe, que problema ela resolve, a
 > evidência por trás de cada decisão e o que ela não faz. O procedimento que o agente segue
 > está no `SKILL.md` — e, sob demanda, nos arquivos de [`references/`](references/) que cada passo
@@ -246,6 +260,11 @@ de primeira classe para o critério de aceite — que é exatamente o eixo de co
 O `Esquema do Cenário` é a forma canônica de expressar partição e valor limite, com a coluna do
 rótulo dizendo qual borda cada linha representa.
 
+Esse mesmo `Então` pode fornecer o esperado de uma conferência humana no `08` opcional da
+`feature-wiki`: o roteiro cita o CT/CT-B de origem e obtém da aplicação apenas a navegação ou o
+comando. A clareza do resultado esperado serve às duas execuções; não transforma a derivação
+pré-código em descrição antecipada da interface.
+
 **Por que sem runner**: não existe plugin Gherkin viável para Pest — o único que promete
 ([`cborgas/pickles`](https://github.com/cborgas/pickles)) tem 0 estrelas e parou em 2023, e
 `pest-plugin-gwt` está travado em Pest ^3 enquanto o Pest está na 5. Behat exigiria a
@@ -360,6 +379,8 @@ opinião, são o registro do que já escapou.
 
 ## O que a skill não faz
 
+- **Não escreve o `08-roteiro-teste-manual.md`** — esse artefato opcional é da `feature-wiki`,
+  depois do step 10. CT/CT-B fornecem seu oráculo; a implementação fornece os caminhos de execução.
 - **Não escreve o código de teste** — ela produz a especificação. Quem materializa em `.php` é o
   sub-agente `fw-executor-ct` — por construção quem **não** implementou — ou o `fw-executor-ctb`
   para os CT-B (ver feature-wiki). Cenário descoberto durante a implementação nasce no `04` antes
@@ -390,7 +411,7 @@ um projeto com testes. Degradações declaradas:
 |---|---|---|
 | `pestphp/pest-plugin-mutate` + PCOV/Xdebug | fechamento do ciclo (`pest --mutate`) | o passo 6 fica só como previsão, sem medição — declarar a ausência só com `php -m` / `ls vendor/pestphp/` colados. **Na pilha Windows medida em 2026-09-21, o score foi 100 % falso** sem o lançador `.cmd`; conferir execução real na pilha instalada (`feature-wiki/scripts/pestw.cmd`; explicação em [`feature-wiki/references/pest-5.md`](https://github.com/gsferro/laravel-ai-skills/blob/main/.ai/skills/feature-wiki/references/pest-5.md)) |
 | `pest-plugin-livewire` | camada de componente | cai para `Feature` HTTP, mais cara e mais cega |
-| `pest-plugin-browser` + Playwright | CT-B executáveis | o `05` fica como roteiro manual |
+| `pest-plugin-browser` + Playwright | CT-B executáveis | declarar a execução pendente; `05` continua especificação de CT-B. O `08` opcional é outro artefato e não substitui o teste versionado |
 | Sub-agente disponível | revisão adversarial | perfil completo ou Impacto 3 perde o gate independente |
 | Host com o perfil `fw-adversario-ct` e contexto novo | recebe só `00` + `04`/`05` (+ `wikis/glossario.md`, se existir); Claude usa Markdown/hook e Codex o TOML, com modelo e controles realmente disponíveis. Hook e sandbox de leitura não garantem isolamento de paths | usar outro contexto novo permitido pelo host e declarar os limites; sem subagente, **não** autorrevisa: o `04` declara *"Revisão adversarial: NÃO FEITA — host sem sub-agente"* e o `feature-quality-gate` reporta como débito |
 

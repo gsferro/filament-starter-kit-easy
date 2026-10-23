@@ -5,6 +5,41 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Adicionado
+
+- Tutorial guiado nos três painéis (`wikis/specs/feat/onboarding-guiado/`), sobre o
+  `wallacemartinss/filament-onboarding`: jornadas de primeiros passos com checklist flutuante, tours por
+  feature e a página **Primeiros passos** (`/{painel}/onboarding`). Nasce **desligado**: o interruptor
+  *Usar o tutorial guiado* fica na aba Aplicação de `/admin/configuracoes-da-aplicacao`, semeado por
+  `KIT_ONBOARDING=false`. Desligado, o checklist, os tours, a página e a autoria de jornadas e
+  condições (no `/admin`) somem e respondem **404**, inclusive numa tela já aberta. Ligado, quem vê
+  é quem tem `View:PrimeirosPassos`. O conteúdo vem de `php artisan db:seed --class=OnboardingSeeder`
+  (fora do `DatabaseSeeder`, idempotente): um seeder filho por feature em `database/seeders/Onboarding/`,
+  21 sempre e 6 só com multi-organização. Cada passo aparece só para quem abre a tela dele no painel, e
+  o passo de uma feature desligada (dock, bloqueio de tela, dashboard dinâmico, hub, agentes de IA,
+  central de comandos) sai do checklist e do percentual até ela voltar. O passo do dashboard dinâmico
+  aparece só para quem pode montá-lo (`Manage:Dashboard`). `kit:install --onboarding` (ou o "sim" na
+  pergunta interativa) semeia sem ligar o interruptor; uma falha nessa semeadura não interrompe a
+  instalação, que mostra o resumo com a senha e o comando para semear depois. A rule
+  `.ai/rules/onboarding.md` e o `tests/Kit/InventarioDeOnboardingTest.php` exigem um seeder filho (ou
+  uma isenção declarada) para toda tela de painel nova. Revisão do diff em duas rodadas (`/code-review
+  high` e passe de eixos): 5 achados viraram premissa, caso de teste e correção (P-20 a P-24), e os
+  demais foram corrigidos direto ou rejeitados com motivo. O quality gate, com o kit servido, pegou mais três
+  (P-25, P-26 e a página "Primeiros passos" que dava 500 depois do primeiro passo concluído, porque o
+  `Date::use(CarbonImmutable)` do kit quebrava o retorno tipado do pacote): a view publicada da página passou a
+  ser do kit, e o acesso a cada tela do checklist é decidido uma vez por request. Nos ciclos 3 e 4, o contraste do
+  botão primário, do texto secundário e do rótulo "Concluída" passou ao AA nos dois temas (variáveis
+  `--fio-theme-*` do pacote no CSS do kit) e o checklist aberto passou a fechar com Esc, mesmo com a tecla
+  repetida.
+
+### Atualizando
+
+- Rode `php artisan migrate` (settings `onboarding_habilitado`). O `kit:update` **não** entrega o
+  `config/logging.php`, que é seu: o canal de log `onboarding` é declarado pelo `KitServiceProvider`,
+  no molde do seu canal `ai`, quando o seu arquivo não o tem. O `kit:update` passa a trazer
+  `resources/views/vendor/filament-onboarding` (a página "Primeiros passos" corrigida): quem customizou essas views
+  revisa o diff. Para semear o conteúdo: `php artisan db:seed --class=OnboardingSeeder`.
+
 ## [0.51.2] - 2026-10-20
 
 ### Corrigido

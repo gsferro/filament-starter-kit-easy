@@ -67,7 +67,7 @@ accDescr: Each screen of the /infra panel links to the table or source it shows 
 ```
 
 Each screen's plugin comes from `Filament::getPanel('infra')->getPlugins()`
-(`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:312` — Health,
+(`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:317` — Health,
 `:FilamentJobsMonitorPlugin:324` — Jobs, `:FilamentLogsExplorerPlugin:337` — Logs,
 `:FilamentExceptionsPlugin:502` — Exceptions, `:FilamentMailLogPlugin:547` — Mail trail,
 `:RevivePlugin:580` — Recycle bin, `:FilamentAuditingPlugin:330` — Audit trail,
@@ -129,7 +129,7 @@ and then the table grows with no ceiling, which is a choice, not an oversight.
 
 `RevivePlugin` takes an **explicit list** of models in
 `app/Providers/Filament/InfraPanelProvider.php` — today `App\Models\Projeto` and `App\Models\User`,
-the kit's two models with `SoftDeletes` (`InfraPanelProvider.php:models:595`):
+the kit's two models with `SoftDeletes` (`InfraPanelProvider.php:models:620`):
 
 ```php
 RevivePlugin::make()

@@ -53,7 +53,7 @@ A tela de login do kit intercepta a falha do Filament só para explicar a conta 
 próprio Filament (`vendor/filament/filament/src/Auth/Pages/Login.php:rateLimit(5):70`), que também
 decide com `canAccessPanel()` (`vendor/filament/filament/src/Auth/Pages/Login.php:canAccessPanel:188`).
 O destino do login é sempre `app(LoginResponse::class)`, vinculado a `RespostaDeLogin`
-(`app/Providers/KitServiceProvider.php:LoginResponse:847`). A pilha do próximo request (ordem real,
+(`app/Providers/KitServiceProvider.php:LoginResponse:884`). A pilha do próximo request (ordem real,
 conferida com `php artisan route:list --json`) é `Authenticate` → `AuthenticateSession` →
 `MustTwoFactor` → `Locker` → `ExigirEmailVerificado` (só obrigatório no `/app`, com a chave ligada).
 
@@ -80,9 +80,9 @@ accDescr: Depois do login, a sessão alterna entre autenticada, aguardando 2FA, 
 O desafio de 2FA só existe para quem o confirmou antes — é o `MustTwoFactor` do próprio diagrama de
 cima. O bloqueio por ociosidade usa `config('lockscreen.idle_timeout')` = 1800
 (`config/lockscreen.php:idle_timeout:16`); os três painéis compartilham o mesmo limite de
-tentativas com força de logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:268`,
-`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:375`,
-`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:291`).
+tentativas com força de logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:272`,
+`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:380`,
+`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:296`).
 
 Desbloquear leva de volta à página que a trava interceptou, como o *intended* do login do Laravel: a URL
 pedida (com a query) quando a ociosidade travou a sessão, ou a última que a pessoa tentou abrir com ela

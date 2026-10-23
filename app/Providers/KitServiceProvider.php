@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\EntrarNoPainelController;
 use App\Http\Middleware\RaizDeUrlSemPublic;
 use App\Http\Responses\RespostaDeCadastro;
 use App\Http\Responses\RespostaDeLogin;
+use App\Livewire\ChecklistDoOnboarding;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Observers\TenantObserver;
@@ -50,6 +51,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Ai\Events\AgentPrompted;
 use Laravel\Ai\Events\AgentStreamed;
+use Livewire\Livewire;
 use MDDev\DynamicDashboard\DashboardModelHelper;
 use MDDev\DynamicDashboard\Models\Dashboard;
 use MDDev\DynamicDashboard\Models\DashboardWidget;
@@ -146,6 +148,27 @@ class KitServiceProvider extends ServiceProvider
         $this->app->make(HttpKernel::class)->pushMiddleware(RaizDeUrlSemPublic::class);
     }
 
+    /**
+     * O canal `onboarding` do tutorial guiado, para o projeto cujo `config/logging.php` não o
+     * declara (P-24 da wiki `onboarding-guiado`).
+     *
+     * `config/logging.php` é do esqueleto e quem instala o edita (canais próprios): fica FORA do
+     * `KitUpdate::CAMINHOS_DO_KIT`, porque entregá-lo inteiro apagaria esses canais. Sem o canal, o
+     * `LogManager` cai no logger de emergência a cada recusa do tutorial. O que o projeto declarou
+     * vence: este método só preenche a ausência. O molde é o canal `ai` do mesmo arquivo (mesmo
+     * `LOG_KIT_DRIVER`, presente desde a v0.18.2), com o arquivo trocado; sem ele, um `daily`.
+     */
+    private function garantirCanalDoTutorialGuiado(): void
+    {
+        if (config('logging.channels.onboarding') !== null) {
+            return;
+        }
+
+        $molde = config('logging.channels.ai') ?? ['driver' => 'daily', 'level' => 'debug', 'days' => 14];
+
+        config()->set('logging.channels.onboarding', [...$molde, 'path' => storage_path('logs/onboarding.log')]);
+    }
+
     public function boot(): void
     {
         $this->configureDefaults();
@@ -153,6 +176,8 @@ class KitServiceProvider extends ServiceProvider
         $this->confiarNosProxiesDoEnv();
 
         $this->garantirRaizDeUrlSemPublic();
+
+        $this->garantirCanalDoTutorialGuiado();
 
         /*
          * ANTES de `configuraFilamentGlobal()`, e a ordem é requisito: aquele
@@ -177,6 +202,18 @@ class KitServiceProvider extends ServiceProvider
         $this->configureTelaDeLogin();
         $this->configureLoginUnificado();
         $this->registrarPainelNoLogDeAcesso();
+        $this->configureChecklistDoOnboarding();
+    }
+
+    /**
+     * O checklist flutuante do tutorial guiado passa a ser a subclasse do kit, que recusa a ação
+     * seguinte quando o tutorial foi desligado com a tela aberta (RQ-30 da wiki
+     * `onboarding-guiado`). Mesmo nome do pacote: o render hook do plugin monta por ele. Os
+     * providers de pacote bootam antes dos da aplicação, então este registro vence o do pacote.
+     */
+    private function configureChecklistDoOnboarding(): void
+    {
+        Livewire::component('filament-onboarding-launcher', ChecklistDoOnboarding::class);
     }
 
     /**

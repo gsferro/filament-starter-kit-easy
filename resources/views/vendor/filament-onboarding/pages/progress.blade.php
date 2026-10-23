@@ -227,9 +227,10 @@
                             <footer class="fio-tile-footer">
                                 @if ($step->isResolved())
                                     <span class="fio-tile-meta">
-                                        @if ($step->completedAt())
+                                        {{-- Kit: lê a coluna, não o completedAt() do pacote, tipado com Illuminate\Support\Carbon — o kit usa Date::use(CarbonImmutable) e o método dava 500 (QA-08 da wiki onboarding-guiado). --}}
+                                        @if ($step->progress?->completed_at)
                                             {{ __('filament-onboarding::onboarding.page.completed_at', [
-                                                'time' => $step->completedAt()->diffForHumans(),
+                                                'time' => $step->progress->completed_at->diffForHumans(),
                                             ]) }}
                                         @endif
 
