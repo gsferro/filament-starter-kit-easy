@@ -141,7 +141,12 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto local: 939**, confirmado sem mudança nos quatro cenários da `v0.51.2` e da `v0.51.1` sobre as tags
+> **Teto local: 942**, confirmado nos quatro cenários da `v0.52.0` sobre a tag publicada (2026-10-23, seção
+> `Validação local dos quatro cenários` da versão no `CHANGELOG.md`). O `+3` sobre o 939 vem de
+> `tests/Kit/OnboardingGuiadoInstalacaoTest.php`: `[CT-39]` lê `.ai/rules/` (1) e `[CT-42]` lê `docs/pt` e `docs/en`
+> (2), todos guardados por `naArvoreDoKit()` — diretórios excluídos do `create-project`.
+>
+> **Teto anterior: 939**, confirmado sem mudança nos quatro cenários da `v0.51.2` e da `v0.51.1` sobre as tags
 > publicadas (2026-10-20, seções `Validação local dos quatro cenários` das duas no `CHANGELOG.md`) e medido nos quatro
 > cenários da `v0.51.0` **sobre a tag publicada** (2026-10-20),
 > 33 arquivos, decomposição com `--log-junit` no `CHANGELOG.md`, seção `0.51.0 / Validação`. O `+15`

@@ -164,7 +164,7 @@ Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit n�
 
 ## A cobertura de testes — e o que o número **não** inclui
 
-**85 %** das linhas de `app/` — 8.926 de 10.460 statements (85,33%), medido em 2026-10-10, no job `cobertura` da `main`. O badge do
+**86 %** das linhas de `app/` — 9.866 de 11.366 statements (86,80%), medido em 2026-10-23, no job `cobertura` da `main`. O badge do
 README vem daqui, e o CI reprova quando ele mente.
 
 > **O número varia um pouco com o sistema operacional**, e o badge foi desenhado para absorver
