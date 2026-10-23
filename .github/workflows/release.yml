@@ -26,3 +26,38 @@ jobs:
           [ "$marcada" = "$tag" ] || { echo "::error::a tag $tag saiu sem o bump em config/kit.php"; exit 1; }
 
           grep -q "^## \[$tag\]" CHANGELOG.md || { echo "::error::a tag $tag saiu sem seção no CHANGELOG"; exit 1; }
+
+          # roteiro da tag: nove seções, na ordem, com corpo, fora de cerca.
+          roteiro="wikis/atualizacoes/v$tag.md"
+          [ -s "$roteiro" ] || { echo "::error::a tag $tag saiu sem o roteiro de atualização $roteiro"; exit 1; }
+
+          # Os títulos fora de bloco cercado, cada um com "1" quando tem corpo antes do próximo "## ".
+          secoes=$(awk '
+            /^```/ { cerca = !cerca; if (atual != "") corpo = 1; next }
+            cerca { if (atual != "") corpo = 1; next }
+            /^## / { if (atual != "") print atual "\t" corpo; atual = $0; sub(/[[:space:]]+$/, "", atual); corpo = 0; next }
+            /[^[:space:]]/ { if (atual != "") corpo = 1 }
+            END { if (atual != "") print atual "\t" corpo }
+          ' "$roteiro")
+
+          faltam=0
+          anterior=0
+          for secao in "## Identificação" "## Antes de começar" "## O que muda nesta versão" "## Cuidados" \
+            "## Decisões do dono do projeto" "## Passos" "## Como conferir" "## Quando parar" "## Relatório final"; do
+            pos=$(printf '%s\n' "$secoes" | cut -f1 | grep -nxF -- "$secao" | head -n 1 | cut -d: -f1)
+            if [ -z "$pos" ]; then
+              echo "::error::o roteiro $roteiro não tem a seção \"$secao\""
+              faltam=1
+              continue
+            fi
+            if [ "$(printf '%s\n' "$secoes" | sed -n "${pos}p" | cut -f2)" != 1 ]; then
+              echo "::error::a seção \"$secao\" do roteiro $roteiro está vazia"
+              faltam=1
+            fi
+            if [ "$pos" -le "$anterior" ]; then
+              echo "::error::a seção \"$secao\" do roteiro $roteiro está fora da ordem do contrato"
+              faltam=1
+            fi
+            anterior=$pos
+          done
+          [ "$faltam" = 0 ] || exit 1
