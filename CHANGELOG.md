@@ -42,6 +42,29 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   `resources/views/vendor/filament-onboarding` (a página "Primeiros passos" corrigida): quem customizou essas views
   revisa o diff. Para semear o conteúdo: `php artisan db:seed --class=OnboardingSeeder`.
 
+### Pré-validação do candidato, antes da tag (2026-10-23)
+
+- **Cenários 1 e 2 de `wikis/checklist-de-release.md`** sobre o candidato `a373df4e`, em `validacao-v0.52.0-pre/` fora da
+  árvore do kit, montados por `git archive` (o mesmo `export-ignore` do Packagist) + `composer install` +
+  `post-root-package-install` + `post-create-project-cmd`. Os cenários 3 e 4 dependem do `kit:update` achar a tag no
+  remoto e rodam sobre a tag publicada.
+
+  | Cenário | Saída de `php artisan test --testsuite=Kit,Tenancy --parallel --processes=4 --compact` | `kit.version` | tenancy |
+  |---|---|---|---|
+  | 1 `novo-sem-tenant` | `{"tool":"pest","result":"failed","tests":5331,"passed":4388,"assertions":22077,"duration_ms":873509,"failed":1,"skipped":942,"risky":2}` | `0.52.0` | `NAO` |
+  | 2 `novo-com-tenant` + `kit:tenancy --force` | `{"tool":"pest","result":"failed","tests":5331,"passed":4388,"assertions":22077,"duration_ms":866091,"failed":1,"skipped":942,"risky":2}` | `0.52.0` | `SIM` |
+
+  **A falha (igual nos dois) era do teste, não do kit:** o `[CT-67]` de `tests/Kit/OnboardingGuiadoInstalacaoTest.php`
+  rodava o `kit:install` num diretório novo com a `config('kit.admin.password')` do host. Na árvore do kit ela é a
+  senha padrão publicada, e o comando gera outra; num projeto instalado ela já é forte, nada é gerado e o resumo
+  (corretamente) não imprime senha — o caso esperava o resumo com a senha gerada. Corrigido zerando a config no
+  helper do caso; conferido nos dois lados: `{"result":"passed","tests":7,"passed":7}` na árvore do kit e no
+  `novo-sem-tenant` da pré-validação.
+
+  **Pulados: 942 (teto 939, +3), justificados caso a caso**, todos de `OnboardingGuiadoInstalacaoTest` e guardados por
+  `naArvoreDoKit()`: `[CT-39]` lê `.ai/rules/` (1) e `[CT-42]` lê `docs/pt` e `docs/en` (2) — diretórios que não viajam
+  no `create-project`.
+
 ## [0.51.2] - 2026-10-20
 
 ### Corrigido

@@ -49,7 +49,10 @@ function instalacaoNovaDoOnboarding(): string
     File::put("{$base}/.env", File::get(base_path('.env.example')));
 
     app()->setBasePath($base);
-    config(['app.key' => '']);
+    // O `.env` do diretório novo é o `.env.example` (sem senha); a config, não: ela subiu do `.env` do
+    // host. Num projeto instalado a senha de lá é forte, o `kit:install` não gera outra e o resumo não
+    // a imprime — o caso passaria a depender de onde a suíte roda (pré-validação da v0.52.0).
+    config(['app.key' => '', 'kit.admin.password' => null]);
 
     return $base;
 }
