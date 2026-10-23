@@ -72,20 +72,46 @@ function raUrlRaw(string $ref, string $versaoDoArquivo, string $repo = RA_REPO):
     return "https://raw.githubusercontent.com/{$repo}/{$ref}/wikis/atualizacoes/v{$versaoDoArquivo}.md";
 }
 
-/** @return array<string, string> */
-function raBlocos(string $texto): array
+/**
+ * Os blocos `## ` do documento, na ordem e com repetição; linha dentro de cerca ``` não abre bloco.
+ * O que vem antes do primeiro título é o bloco `__preambulo`.
+ *
+ * @return list<array{titulo: string, bloco: string}>
+ */
+function raBlocosEmOrdem(string $texto): array
 {
-    $partes = preg_split('/^(?=## (?!#))/mu', raNl($texto)) ?: [];
-    $blocos = [];
+    $blocos  = [];
+    $atual   = ['titulo' => '__preambulo', 'bloco' => ''];
+    $emCerca = false;
 
-    foreach ($partes as $i => $parte) {
-        if ($i === 0 && ! str_starts_with($parte, '## ')) {
-            $blocos['__preambulo'] = $parte;
+    foreach (preg_split('/(?<=\n)/u', raNl($texto), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $linha) {
+        if (str_starts_with(ltrim($linha), '```')) {
+            $emCerca = ! $emCerca;
+        } elseif (! $emCerca && preg_match('/^## (?!#)/u', $linha) === 1) {
+            if ($atual['bloco'] !== '') {
+                $blocos[] = $atual;
+            }
 
-            continue;
+            $atual = ['titulo' => rtrim($linha), 'bloco' => ''];
         }
 
-        $blocos[rtrim((string) strtok($parte, "\n"))] = $parte;
+        $atual['bloco'] .= $linha;
+    }
+
+    if ($atual['bloco'] !== '') {
+        $blocos[] = $atual;
+    }
+
+    return $blocos;
+}
+
+/** O primeiro bloco de cada título (um título repetido é achado de raFalhasDeContrato). @return array<string, string> */
+function raBlocos(string $texto): array
+{
+    $blocos = [];
+
+    foreach (raBlocosEmOrdem($texto) as $item) {
+        $blocos[$item['titulo']] ??= $item['bloco'];
     }
 
     return $blocos;
@@ -152,12 +178,6 @@ function raSecao(string $texto, string $titulo): ?string
     return (string) substr($bloco, strlen($titulo));
 }
 
-/** @return array<string, int> posição (índice no documento) do primeiro título de cada seção */
-function raPosicoes(string $texto): array
-{
-    return array_flip(array_keys(array_filter(raBlocos($texto), static fn (string $chave): bool => $chave !== '__preambulo', ARRAY_FILTER_USE_KEY)));
-}
-
 function raDecisao(string $titulo, ?string $pergunta, ?string $recomendacao, ?string $semResposta): string
 {
     $linhas = ["### {$titulo}", ''];
@@ -180,7 +200,7 @@ function raDecisao(string $titulo, ?string $pergunta, ?string $recomendacao, ?st
 function raDecisaoDeConflito(string $semResposta = 'manter a versão do dono do arquivo e registrar o conflito no relatório final.'): string
 {
     return raDecisao(
-        'Arquivo do kit editado por você',
+        'Conflito em arquivo do kit que você editou',
         'O kit:update encontrou conflito num arquivo do kit que você editou. Deseja sobrescrever o arquivo?',
         'manter a versão do dono.',
         $semResposta,
@@ -211,7 +231,7 @@ function raRoteiro(string $versao = '0.53.0', array $o = []): string
     $link   = array_key_exists('link', $o) ? $o['link'] : raUrlRaw($versao === '0.52.0' ? 'main' : "v{$versao}", $versao);
     $padrao = array_key_exists('padrao', $o) ? $o['padrao'] : RA_PADRAO;
     $frases = array_diff_key(
-        ['ler' => RA_FRASE_LER, 'preferir' => RA_FRASE_PREFERIR, 'parar' => RA_FRASE_PARAR],
+        [...['ler' => RA_FRASE_LER, 'preferir' => RA_FRASE_PREFERIR, 'parar' => RA_FRASE_PARAR], ...($o['frases'] ?? [])],
         array_flip($o['semFrases'] ?? []),
     );
 
@@ -237,7 +257,7 @@ function raRoteiro(string $versao = '0.53.0', array $o = []): string
         '## O que muda nesta versão'     => "A v{$versao} traz o tutorial guiado nos três painéis, na passagem de v{$origem} para v{$versao}.",
         '## Cuidados'                    => "Os cuidados da v{$versao}: faça backup antes de começar. Nunca rode `php artisan migrate:fresh` neste projeto.",
         '## Decisões do dono do projeto' => raDecisoesPadrao(),
-        '## Passos'                      => "```bash\nphp artisan kit:update --from v{$origem}\nphp artisan migrate --force\n```",
+        '## Passos'                      => "```bash\nphp artisan kit:update --from={$origem} --tag=v{$versao}\nphp artisan migrate --force\n```",
         '## Como conferir'               => "```bash\nphp artisan kit:info\n```\n\nA versão do kit deve ser v{$versao}.",
         '## Quando parar'                => 'Pare e pergunte ao dono se algum passo falhar, ou se a versão instalada não for a origem.',
         '## Relatório final'             => 'Registre cada decisão do dono e o default aplicado quando ele não respondeu.',
@@ -390,11 +410,23 @@ function raFalhasDeContrato(string $roteiro): array
         }
     }
 
-    $posicoes = raPosicoes($roteiro);
+    $titulos = array_values(array_filter(
+        array_column(raBlocosEmOrdem($roteiro), 'titulo'),
+        static fn (string $titulo): bool => $titulo !== '__preambulo',
+    ));
 
-    foreach (['## Antes de começar', '## Decisões do dono do projeto'] as $antes) {
-        if (isset($posicoes[$antes], $posicoes['## Passos']) && $posicoes[$antes] > $posicoes['## Passos']) {
-            $falhas[] = "{$antes} vem depois de ## Passos";
+    foreach (array_count_values($titulos) as $titulo => $vezes) {
+        if ($vezes > 1) {
+            $falhas[] = "título repetido: {$titulo}";
+        }
+    }
+
+    $presentes = array_values(array_unique(array_filter($titulos, static fn (string $titulo): bool => in_array($titulo, RA_SECOES, true))));
+    $esperada  = array_values(array_intersect(RA_SECOES, $presentes));
+
+    foreach ($presentes as $posicao => $titulo) {
+        if (array_search($titulo, $esperada, true) !== $posicao) {
+            $falhas[] = "{$titulo} está fora da ordem do contrato";
         }
     }
 
@@ -467,11 +499,9 @@ function raLinkDaIdentificacao(string $roteiro): ?string
 
 function raFalhasDoLink(string $roteiro, string $changelog, string $marcador): array
 {
-    $falhas        = [];
-    $revisado      = raRevisaoRegistrada($changelog, $marcador);
-    $link          = raLinkDaIdentificacao($roteiro);
-    $identificacao = raSecao($roteiro, '## Identificação') ?? '';
-    $temMarca      = preg_match('/^[\s>*\-]*Roteiro revisado em [^\s:]+:\s*\S/mu', $identificacao) === 1;
+    $falhas   = [];
+    $revisado = raRevisaoRegistrada($changelog, $marcador);
+    $link     = raLinkDaIdentificacao($roteiro);
 
     if ($link === null) {
         $falhas[] = 'a identificação não traz o link do roteiro';
@@ -498,6 +528,16 @@ function raFalhasDoLink(string $roteiro, string $changelog, string $marcador): a
             $falhas[] = "a ref \"{$ref}\" do link não é permitida para a v{$marcador}";
         }
     }
+
+    return [...$falhas, ...raFalhasDaMarca($roteiro, $changelog, $marcador)];
+}
+
+/** D19: a marca "Roteiro revisado em" no roteiro e o registro no CHANGELOG andam juntos. */
+function raFalhasDaMarca(string $roteiro, string $changelog, string $marcador): array
+{
+    $falhas   = [];
+    $revisado = raRevisaoRegistrada($changelog, $marcador);
+    $temMarca = preg_match('/^[\s>*\-]*Roteiro revisado em [^\s:]+:\s*\S/mu', raSecao($roteiro, '## Identificação') ?? '') === 1;
 
     if ($revisado && ! $temMarca) {
         $falhas[] = 'a revisão está registrada no CHANGELOG e o roteiro não traz a marca "Roteiro revisado em"';
@@ -536,15 +576,21 @@ function raFalhasDasInstrucoesDoPadrao(string $texto): array
     $texto  = raColapsar($texto);
     $falhas = [];
 
-    if (preg_match('/\b(?:ler|leia|lê|confira|conferir|consulte|read|check|open|fetch|compare)\b[^.\n]{0,80}\bmain\b/iu', $texto) !== 1) {
+    // Negação no verbo anula a instrução: "Não leia", "Nunca prefira", "não pare".
+    $semNegacao = '(?<!n[ãa]o )(?<!nunca )(?<!jamais )(?<!sem )(?<!not )(?<!never )(?<!n\'t )';
+    $prefere    = $semNegacao.'(?:prefir\w*|prefer\w*)';
+
+    if (preg_match('/'.$semNegacao.'\b(?:ler|leia|lê|confira|conferir|consulte|read|check|open|fetch|compare)\b[^.\n]{0,80}\bmain\b/iu', $texto) !== 1) {
         $falhas[] = 'falta ler também o arquivo na main';
     }
 
-    if (preg_match('/(?:prefir\w*|prefer\w*)[^.\n]{0,100}\bmain\b|\bmain\b[^.\n]{0,100}(?:prefir\w*|prefer\w*)/iu', $texto) !== 1) {
+    if (preg_match('/'.$prefere.'[^.\n]{0,100}\bmain\b|\bmain\b[^.\n]{0,100}'.$prefere.'/iu', $texto) !== 1) {
         $falhas[] = 'falta preferir o arquivo da main quando ele registrar a revisão';
     }
 
-    if (preg_match('/d[úu]vida[^.\n]{0,60}\bpar\w+|\bpar\w+[^.\n]{0,60}d[úu]vida|(?:doubt|unsure|unclear)[^.\n]{0,80}\bstop\w*|\bstop\w*[^.\n]{0,80}(?:doubt|unsure|unclear)/iu', $texto) !== 1) {
+    $para = $semNegacao.'\b(?:par\w+|stop\w*)';
+
+    if (preg_match('/d[úu]vida[^.\n]{0,60}'.$para.'|'.$para.'[^.\n]{0,60}d[úu]vida|(?:doubt|unsure|unclear)[^.\n]{0,80}'.$para.'|'.$para.'[^.\n]{0,80}(?:doubt|unsure|unclear)/iu', $texto) !== 1) {
         $falhas[] = 'falta parar na dúvida';
     }
 
@@ -620,7 +666,9 @@ function raFalhasDosDefaults(string $roteiro, string $changelog, string $marcado
     $falhas = [];
 
     foreach ($itens as $item) {
-        if (mb_strtolower(trim($item, ' .')) === 'nenhum') {
+        $item = rtrim(trim($item), ' .;');
+
+        if (mb_strtolower($item) === 'nenhum' || $item === '') {
             continue;
         }
 
@@ -638,7 +686,7 @@ function raFalhasDoConflito(string $roteiro): array
 {
     $conflito = array_filter(
         raDecisoes($roteiro),
-        static fn (string $bloco, string $titulo): bool => preg_match('/conflito/iu', $titulo.' '.$bloco) === 1,
+        static fn (string $bloco, string $titulo): bool => preg_match('/conflito/iu', $titulo) === 1,
         ARRAY_FILTER_USE_BOTH,
     );
 
@@ -646,11 +694,13 @@ function raFalhasDoConflito(string $roteiro): array
         return ['falta a decisão de conflito em arquivo do kit editado pelo dono'];
     }
 
-    $semResposta = raRotulo((string) reset($conflito), 'Sem resposta') ?? '';
-    $mantem      = preg_match('/vers[ãa]o do dono/iu', $semResposta) === 1 && preg_match('/mant|fica|preserv/iu', $semResposta) === 1;
-    $sobrescreve = preg_match('/sobrescrev\w*\s+(?:com|pel[ao]|por)\s+(?:a\s+)?vers[ãa]o\s+do\s+kit/iu', $semResposta) === 1;
+    $semResposta = raColapsar(raRotulo((string) reset($conflito), 'Sem resposta') ?? '');
+    $mantem      = preg_match('/vers[ãa]o do dono/iu', $semResposta) === 1
+        && preg_match('/(?<!n[ãa]o )(?<!sem )(?<!nunca )\b(?:mant\w+|preserv\w+|fic\w+)\b/iu', $semResposta) === 1;
+    $negaOMantem = preg_match('/\b(?:n[ãa]o|sem|nunca)\s+(?:\w+\s+){0,2}?(?:mant\w+|preserv\w+|fic\w+)\b/iu', $semResposta) === 1;
+    $aplicaKit   = preg_match('/(?<!n[ãa]o )(?<!sem )(?<!nunca )\b(?:aplic\w+|receb\w+|sobrescrev\w+|substitu\w+|us[ae]\w*)\b[^.;]{0,50}vers[ãa]o do kit/iu', $semResposta) === 1;
 
-    return $mantem && ! $sobrescreve
+    return $mantem && ! $negaOMantem && ! $aplicaKit
         ? []
         : ['o "Sem resposta:" da decisão de conflito não mantém a versão do dono'];
 }
@@ -699,11 +749,26 @@ function raFalhasDeAutossuficiencia(string $roteiro, string $marcador): array
 
     $invoca = false;
     preg_match_all('/^```[^\n]*\n(.*?)^```/msu', raSecao($roteiro, '## Passos') ?? '', $blocos);
+    $origemDeclarada = ltrim(raLinhaDaIdentificacao($roteiro, 'Origem') ?? '', 'v');
 
     foreach ($blocos[1] as $bloco) {
         foreach (explode("\n", $bloco) as $linha) {
-            if (str_starts_with(ltrim($linha, "\$ \t"), 'php artisan kit:update')) {
-                $invoca = true;
+            $linha = ltrim($linha, "\$ \t");
+
+            if (! str_starts_with($linha, 'php artisan kit:update')) {
+                continue;
+            }
+
+            $invoca = true;
+            $de     = preg_match('/--from[= ]\s*v?(\d+\.\d+\.\d+)/', $linha, $m) === 1 ? $m[1] : null;
+            $ate    = preg_match('/--tag[= ]\s*v?(\d+\.\d+\.\d+)/', $linha, $m) === 1 ? $m[1] : null;
+
+            if ($de !== $origemDeclarada) {
+                $falhas[] = '--from do kit:update ('.($de ?? 'ausente').") não é a origem v{$origemDeclarada}";
+            }
+
+            if ($ate !== $marcador) {
+                $falhas[] = '--tag do kit:update ('.($ate ?? 'ausente').") não é o destino v{$marcador}";
             }
         }
     }
@@ -721,15 +786,62 @@ function raFalhasDeAutossuficiencia(string $roteiro, string $marcador): array
     return $falhas;
 }
 
-/** Texto bruto, com comentários (RQ-34): só `## Cuidados` fica de fora. */
+/**
+ * Texto bruto, com comentários (RQ-34). `## Cuidados` só isenta o comando em prosa e negado na
+ * mesma frase; em bloco de código cercado reprova em toda seção. A varredura é por posição no
+ * documento: um título repetido não esconde a seção anterior.
+ */
 function raFalhasDeComandoDestrutivo(string $roteiro): array
 {
-    $falhas = [];
-    $padrao = '/artisan(?:\s+--\S+)*\s+(?:migrate:fresh|db:wipe|migrate:refresh|migrate:reset|migrate:rollback)\b/iu';
+    $falhas   = [];
+    $padrao   = '/\b(?:artisan|art)(?:\s+-{1,2}\S+)*\s+(?:migrate:fresh|db:wipe|migrate:refresh|migrate:reset|migrate:rollback|kit:tenancy|kit:install)\b/iu';
+    $negacao  = '/\b(?:n[ãa]o|nunca|proibid\w*|jamais)\b/iu';
 
-    foreach (raBlocos($roteiro) as $titulo => $bloco) {
-        if ($titulo !== '## Cuidados' && preg_match($padrao, $bloco, $m) === 1) {
-            $falhas[] = "{$titulo} traz comando que destrói dados do banco: {$m[0]}";
+    foreach (raBlocosEmOrdem($roteiro) as $item) {
+        $cuidados   = $item['titulo'] === '## Cuidados';
+        $trechos    = [];
+        $paragrafo  = '';
+        $emCerca    = false;
+
+        foreach (explode("\n", $item['bloco']) as $linha) {
+            if (str_starts_with(ltrim($linha), '```')) {
+                $emCerca = ! $emCerca;
+
+                continue;
+            }
+
+            if ($emCerca) {
+                $trechos[] = [$linha, true];
+
+                continue;
+            }
+
+            if (trim($linha) === '') {
+                $trechos[] = [$paragrafo, false];
+                $paragrafo = '';
+
+                continue;
+            }
+
+            $paragrafo .= ' '.trim($linha);
+        }
+
+        $trechos[] = [$paragrafo, false];
+
+        foreach ($trechos as [$texto, $cercado]) {
+            $unidades = $cercado ? [$texto] : (preg_split('/(?<=[.!?;])\s+/u', $texto) ?: []);
+
+            foreach ($unidades as $unidade) {
+                if (preg_match($padrao, $unidade, $m) !== 1) {
+                    continue;
+                }
+
+                $isento = $cuidados && ! $cercado && preg_match($negacao, $unidade) === 1;
+
+                if (! $isento) {
+                    $falhas[] = "{$item['titulo']} traz comando que destrói dados do banco: {$m[0]}";
+                }
+            }
         }
     }
 
@@ -902,7 +1014,7 @@ it('[CT-01] a árvore do kit passa em cada detector da guarda', function (string
         'origem e destino'                           => raFalhasDeOrigemEDestino($roteiro, $changelog, $marcador),
         'link da identificação'                      => raFalhasDoLink($roteiro, $changelog, $marcador),
         'padrão do link e suas instruções'           => [...raFalhasDoPadrao($roteiro), ...raFalhasDasInstrucoesDoPadrao($roteiro)],
-        'link e marca depois de revisão'             => raFalhasDoLink($roteiro, $changelog, $marcador),
+        'link e marca depois de revisão'             => raFalhasDaMarca($roteiro, $changelog, $marcador),
         'decisões do dono'                           => raFalhasDeDecisoes($roteiro),
         'defaults mudados viraram pergunta'          => raFalhasDosDefaults($roteiro, $changelog, $marcador),
         'relatório final'                            => raFalhasDoRelatorio($roteiro),
@@ -1062,6 +1174,9 @@ it('[CT-03] o roteiro fora do contrato reprova, nomeando a seção', function (s
         'corpo vazio'        => raComCorpo($base, '## Cuidados', ''),
         'ordem das decisões' => raMover($base, '## Decisões do dono do projeto', '## Passos'),
         'ordem do pré-voo'   => raMover($base, '## Antes de começar', '## Passos'),
+        'ordem geral'        => raMover($base, '## Cuidados', '## Como conferir'),
+        'título repetido'    => $base."## Cuidados\n\nOutro corpo.\n\n",
+        'título só em cerca' => raAcrescentar(raSemSecao($base, '## Cuidados'), '## O que muda nesta versão', "```md\n## Cuidados\n\nTexto.\n```"),
     };
 
     expect(raFalhasDeContrato($base))->toBe([]);
@@ -1080,6 +1195,9 @@ it('[CT-03] o roteiro fora do contrato reprova, nomeando a seção', function (s
     'corpo vazio'                                => ['corpo vazio', '## Cuidados'],
     'ordem das decisões'                         => ['ordem das decisões', '## Decisões do dono do projeto'],
     'ordem do pré-voo'                           => ['ordem do pré-voo', '## Antes de começar'],
+    'ordem de outras seções'                     => ['ordem geral', '## Cuidados'],
+    'título repetido'                            => ['título repetido', '## Cuidados'],
+    'título só dentro de cerca'                  => ['título só em cerca', '## Cuidados'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 it('[CT-04] o contrato publicado e a guarda exigem as mesmas seções', function (): void {
@@ -1220,7 +1338,15 @@ it('[CT-09] o padrão do link da próxima versão é conferido como o link', fun
 ])->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 it('[CT-22] o padrão manda conferir a main e parar na dúvida', function (string $falta, string $resultado): void {
-    $roteiro = raRoteiro('0.53.0', ['semFrases' => $falta === 'nenhuma' ? [] : [$falta]]);
+    $negadas = [
+        'ler negado'      => ['ler' => 'Não leia o arquivo na main.'],
+        'preferir negado' => ['preferir' => 'Nunca prefira o da main.'],
+        'parar negado'    => ['parar' => 'Na dúvida, não pare: siga.'],
+    ];
+
+    $roteiro = raRoteiro('0.53.0', isset($negadas[$falta])
+        ? ['frases' => $negadas[$falta]]
+        : ['semFrases' => $falta === 'nenhuma' ? [] : [$falta]]);
 
     $falhas = raFalhasDasInstrucoesDoPadrao($roteiro);
 
@@ -1234,6 +1360,9 @@ it('[CT-22] o padrão manda conferir a main e parar na dúvida', function (strin
     'sem conferir a main'      => ['ler', 'reprova'],
     'sem regra de preferência' => ['preferir', 'reprova'],
     'sem parada'               => ['parar', 'reprova'],
+    'ler negado'               => ['ler negado', 'reprova'],
+    'preferir negado'          => ['preferir negado', 'reprova'],
+    'parar negado'             => ['parar negado', 'reprova'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 it('[CT-21] o link e a marca da revisão andam com o registro no CHANGELOG', function (?string $registro, ?string $marca, string $ref, string $repo, string $resultado): void {
@@ -1341,6 +1470,8 @@ it('[CT-25] cada default que a versão mudou vira uma pergunta do roteiro', func
     'N, um item calado'                => [['chat de IA desligado', 'tutorial guiado ligado'], 'só chat de IA desligado', 'reprova', 'tutorial guiado ligado'],
     'item citado fora de uma pergunta' => [['tutorial guiado ligado'], 'item só em Cuidados', 'reprova', 'tutorial guiado ligado'],
     'lista ausente'                    => [null, 'cada item numa Pergunta', 'reprova', null],
+    'itens com pontuação final'        => [['chat de IA desligado.', 'tutorial guiado ligado;'], 'cada item numa Pergunta', 'aprova', null],
+    'item "nenhum." com ponto'         => [['nenhum.'], 'só a decisão de conflito', 'aprova', null],
 ])->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 it('[CT-26] o roteiro traz a decisão de conflito em arquivo do kit editado pelo dono', function (string $decisao, string $resultado): void {
@@ -1349,6 +1480,10 @@ it('[CT-26] o roteiro traz a decisão de conflito em arquivo do kit editado pelo
         'ausente'        => raDecisao('Chat de IA', 'Deseja manter o chat de IA desligado?', 'desligado.', 'manter desligado.'),
         'default errado' => raDecisao('Chat de IA', 'Deseja manter o chat de IA desligado?', 'desligado.', 'manter desligado.')
             .raDecisaoDeConflito('sobrescrever com a versão do kit.'),
+        'negado: não mantém'                  => raDecisaoDeConflito('não mantém a versão do dono; aplica a versão do kit.'),
+        'sobrescreve pela versão do kit'      => raDecisaoDeConflito('sobrescrever o arquivo pela versão do kit.'),
+        'aplica o kit, sem manter'            => raDecisaoDeConflito('aplicar a versão do kit, sem manter a versão do dono.'),
+        'só citado no corpo de outra decisão' => raDecisao('Ligar o tutorial', 'Deseja ligar o tutorial guiado, sem relação com a decisão de conflito?', 'ligado.', 'manter a versão do dono.'),
     };
 
     $falhas = raFalhasDoConflito(raComCorpo(raRoteiro('0.53.0'), '## Decisões do dono do projeto', $corpo));
@@ -1359,9 +1494,13 @@ it('[CT-26] o roteiro traz a decisão de conflito em arquivo do kit editado pelo
         expect($falhas)->not->toBe([]);
     }
 })->with([
-    'conforme'        => ['conforme', 'aprova'],
-    'decisão ausente' => ['ausente', 'reprova'],
-    'default errado'  => ['default errado', 'reprova'],
+    'conforme'                                     => ['conforme', 'aprova'],
+    'decisão ausente'                              => ['ausente', 'reprova'],
+    'default errado'                               => ['default errado', 'reprova'],
+    'default negado: não mantém, aplica o kit'     => ['negado: não mantém', 'reprova'],
+    'default: sobrescrever pela versão do kit'     => ['sobrescreve pela versão do kit', 'reprova'],
+    'default: aplicar o kit, sem manter o do dono' => ['aplica o kit, sem manter', 'reprova'],
+    'conflito só citado no corpo de outra decisão' => ['só citado no corpo de outra decisão', 'reprova'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 /*
@@ -1388,6 +1527,10 @@ it('[CT-12] o roteiro que depende de outro documento, ou que não invoca o kit:u
         'kit:update só proibição'   => raComCorpo($base, '## Passos', "Não rode php artisan kit:update antes do backup.\n\n```bash\nphp artisan migrate --force\n```"),
         'todo agente'               => raAcrescentar($base, $oQueMuda, 'Este roteiro funciona com qualquer agente.'),
         'sem conferir a origem'     => raComCorpo($base, '## Antes de começar', 'Faça backup do banco antes de começar.'),
+        'from errado'               => raComCorpo($base, '## Passos', "```bash\nphp artisan kit:update --from=0.51.1 --tag=v0.53.0\n```"),
+        'tag errada'                => raComCorpo($base, '## Passos', "```bash\nphp artisan kit:update --from=0.52.0 --tag=v0.54.0\n```"),
+        'sem tag'                   => raComCorpo($base, '## Passos', "```bash\nphp artisan kit:update --from=0.52.0\n```"),
+        'from e tag com e sem v'    => raComCorpo($base, '## Passos', "```bash\nphp artisan kit:update --from=v0.52.0 --tag 0.53.0\n```"),
     };
 
     $falhas = raFalhasDeAutossuficiencia($roteiro, '0.53.0');
@@ -1411,10 +1554,20 @@ it('[CT-12] o roteiro que depende de outro documento, ou que não invoca o kit:u
     'só proibição'                                    => ['kit:update só proibição', 'reprova'],
     'promete todo agente'                             => ['todo agente', 'reprova'],
     'aplicável fora da origem'                        => ['sem conferir a origem', 'reprova'],
+    '--from não é a origem'                           => ['from errado', 'reprova'],
+    '--tag não é o destino'                           => ['tag errada', 'reprova'],
+    'kit:update sem --tag'                            => ['sem tag', 'reprova'],
+    '--from e --tag com ou sem v'                     => ['from e tag com e sem v', 'aprova'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 it('[CT-23] comando destrutivo do banco fora de "## Cuidados" reprova', function (string $secao, string $conteudo, string $resultado): void {
-    $roteiro = raAcrescentar(raRoteiro('0.53.0'), $secao, $conteudo);
+    $repetida = str_ends_with($secao, '+repetida');
+    $secao    = str_replace('+repetida', '', $secao);
+    $roteiro  = raAcrescentar(raRoteiro('0.53.0'), $secao, $conteudo);
+
+    if ($repetida) {
+        $roteiro .= "{$secao}\n\nCorpo limpo.\n\n";
+    }
 
     $falhas = raFalhasDeComandoDestrutivo($roteiro);
 
@@ -1424,22 +1577,32 @@ it('[CT-23] comando destrutivo do banco fora de "## Cuidados" reprova', function
         expect($falhas)->not->toBe([]);
     }
 })->with([
-    'migrate --force'                  => ['## Passos', "```bash\nphp artisan migrate --force\n```", 'aprova'],
-    'migrate:fresh'                    => ['## Passos', "```bash\nphp artisan migrate:fresh --force\n```", 'reprova'],
-    'db:wipe'                          => ['## Passos', "```bash\nphp artisan db:wipe\n```", 'reprova'],
-    'migrate:refresh'                  => ['## Passos', "```bash\nphp artisan migrate:refresh\n```", 'reprova'],
-    'migrate:reset'                    => ['## Passos', "```bash\nphp artisan migrate:reset\n```", 'reprova'],
-    'migrate:rollback'                 => ['## Passos', "```bash\nphp artisan migrate:rollback\n```", 'reprova'],
-    'migrate:fresh --seed'             => ['## Passos', "```bash\nphp artisan migrate:fresh --seed\n```", 'reprova'],
-    'prefixo sail'                     => ['## Passos', "```bash\n./vendor/bin/sail artisan migrate:fresh\n```", 'reprova'],
-    'prefixo docker'                   => ['## Passos', "```bash\ndocker compose exec app php artisan db:wipe\n```", 'reprova'],
-    'opção antes do comando'           => ['## Passos', "```bash\nphp artisan --env=production migrate:fresh\n```", 'reprova'],
-    'inline no meio da linha'          => ['## Passos', 'Se travar, rode `php artisan migrate:reset`.', 'reprova'],
-    'dentro de comentário'             => ['## Passos', '<!-- php artisan db:wipe -->', 'reprova'],
-    'subseção dentro dos passos'       => ['## Passos', "### Se falhar\n\n```bash\nphp artisan migrate:fresh\n```", 'reprova'],
-    'outra seção que o agente executa' => ['## Quando parar', "```bash\nphp artisan migrate:rollback\n```", 'reprova'],
-    'proibição em Cuidados'            => ['## Cuidados', 'Nunca rode php artisan migrate:fresh no projeto.', 'aprova'],
-    'subseção de Cuidados'             => ['## Cuidados', "### Banco\n\nNunca rode php artisan db:wipe.", 'aprova'],
+    'migrate --force'                    => ['## Passos', "```bash\nphp artisan migrate --force\n```", 'aprova'],
+    'migrate:fresh'                      => ['## Passos', "```bash\nphp artisan migrate:fresh --force\n```", 'reprova'],
+    'db:wipe'                            => ['## Passos', "```bash\nphp artisan db:wipe\n```", 'reprova'],
+    'migrate:refresh'                    => ['## Passos', "```bash\nphp artisan migrate:refresh\n```", 'reprova'],
+    'migrate:reset'                      => ['## Passos', "```bash\nphp artisan migrate:reset\n```", 'reprova'],
+    'migrate:rollback'                   => ['## Passos', "```bash\nphp artisan migrate:rollback\n```", 'reprova'],
+    'migrate:fresh --seed'               => ['## Passos', "```bash\nphp artisan migrate:fresh --seed\n```", 'reprova'],
+    'prefixo sail'                       => ['## Passos', "```bash\n./vendor/bin/sail artisan migrate:fresh\n```", 'reprova'],
+    'prefixo docker'                     => ['## Passos', "```bash\ndocker compose exec app php artisan db:wipe\n```", 'reprova'],
+    'opção antes do comando'             => ['## Passos', "```bash\nphp artisan --env=production migrate:fresh\n```", 'reprova'],
+    'inline no meio da linha'            => ['## Passos', 'Se travar, rode `php artisan migrate:reset`.', 'reprova'],
+    'dentro de comentário'               => ['## Passos', '<!-- php artisan db:wipe -->', 'reprova'],
+    'subseção dentro dos passos'         => ['## Passos', "### Se falhar\n\n```bash\nphp artisan migrate:fresh\n```", 'reprova'],
+    'outra seção que o agente executa'   => ['## Quando parar', "```bash\nphp artisan migrate:rollback\n```", 'reprova'],
+    'proibição em Cuidados'              => ['## Cuidados', 'Nunca rode php artisan migrate:fresh no projeto.', 'aprova'],
+    'subseção de Cuidados'               => ['## Cuidados', "### Banco\n\nNunca rode php artisan db:wipe.", 'aprova'],
+    'título repetido esconde o comando'  => ['## Passos+repetida', "```bash\nphp artisan migrate:fresh\n```", 'reprova'],
+    'título dentro de cerca não é seção' => ['## Passos', "```md\n## Cuidados\n```\n\nRode `php artisan migrate:fresh`.", 'reprova'],
+    'opção curta antes do comando'       => ['## Passos', "```bash\nphp artisan -q migrate:fresh\n```", 'reprova'],
+    'alias sail art'                     => ['## Passos', "```bash\n./vendor/bin/sail art migrate:fresh\n```", 'reprova'],
+    'kit:tenancy recria o banco'         => ['## Passos', "```bash\nphp artisan kit:tenancy\n```", 'reprova'],
+    'kit:install recria o banco'         => ['## Passos', "```bash\nphp artisan kit:install\n```", 'reprova'],
+    'Cuidados sem negação'               => ['## Cuidados', 'Rode `php artisan migrate:fresh` se travar.', 'reprova'],
+    'Cuidados, negação em outra frase'   => ['## Cuidados', 'Nunca esqueça o backup. Rode `php artisan migrate:fresh` se travar.', 'reprova'],
+    'Cuidados, em bloco de código'       => ['## Cuidados', "Nunca faça isto:\n\n```bash\nphp artisan migrate:fresh\n```", 'reprova'],
+    'Cuidados proíbe kit:tenancy'        => ['## Cuidados', 'Nunca rode php artisan kit:tenancy sobre um projeto com dados.', 'aprova'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 /*
@@ -1513,10 +1676,13 @@ it('[CT-15] o passo do workflow confere o roteiro da tag', function (string $ver
     $pasta    = ['README.md' => 'contrato'];
 
     match (true) {
-        $roteiro === 'existe'     => $pasta["v{$versao}.md"] = $conforme,
-        $roteiro === 'ausente'    => null,
-        $roteiro === 'sem âncora' => $pasta["v{$versao}.md"] = raAcrescentar(raSemSecao($conforme, '## Cuidados'), '## O que muda nesta versão', 'Veja ## Cuidados abaixo.'),
-        default                   => $pasta["v{$versao}.md"] = raSemSecao($conforme, $roteiro),
+        $roteiro === 'existe'        => $pasta["v{$versao}.md"] = $conforme,
+        $roteiro === 'ausente'       => null,
+        $roteiro === 'sem âncora'    => $pasta["v{$versao}.md"] = raAcrescentar(raSemSecao($conforme, '## Cuidados'), '## O que muda nesta versão', 'Veja ## Cuidados abaixo.'),
+        $roteiro === 'só em cerca'   => $pasta["v{$versao}.md"] = raAcrescentar(raSemSecao($conforme, '## Cuidados'), '## O que muda nesta versão', "```md\n## Cuidados\n\nTexto.\n```"),
+        $roteiro === 'fora de ordem' => $pasta["v{$versao}.md"] = raMover($conforme, '## Decisões do dono do projeto', '## Passos'),
+        $roteiro === 'seção vazia'   => $pasta["v{$versao}.md"] = raComCorpo($conforme, '## Cuidados', ''),
+        default                      => $pasta["v{$versao}.md"] = raSemSecao($conforme, $roteiro),
     };
 
     [$codigo, $texto] = raRodarPasso($run, "v{$versao}", $versao, raChangelog([$versao, '0.52.0']), $pasta);
@@ -1544,6 +1710,9 @@ it('[CT-15] o passo do workflow confere o roteiro da tag', function (string $ver
     'sem Quando parar'                => ['0.53.0', '## Quando parar', 'diferente', '## Quando parar'],
     'sem Relatório final'             => ['0.53.0', '## Relatório final', 'diferente', '## Relatório final'],
     'presença sem âncora'             => ['0.53.0', 'sem âncora', 'diferente', '## Cuidados'],
+    'título só dentro de cerca'       => ['0.53.0', 'só em cerca', 'diferente', '## Cuidados'],
+    'seções fora de ordem'            => ['0.53.0', 'fora de ordem', 'diferente', ''],
+    'seção vazia'                     => ['0.53.0', 'seção vazia', 'diferente', '## Cuidados'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 it('[CT-29] a conferência do roteiro não encerra o passo antes das outras conferências da tag', function (): void {

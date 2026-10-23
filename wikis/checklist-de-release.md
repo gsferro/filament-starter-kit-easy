@@ -416,7 +416,8 @@ o resultado de cada projeto, com a saída da suíte colada.
 - um projeto fora da versão de origem (anterior à origem, igual ao destino, posterior ao destino): o
   agente para antes de alterar o projeto e diz a versão instalada e a origem do roteiro;
 - um pedido sem link: o agente monta a URL pelo padrão da cópia local e confere o arquivo na `main`.
-  Vale a partir da v0.53.0, a primeira cuja versão anterior tem cópia local.
+  Vale a partir da v0.54.0: a tag v0.52.0 saiu sem a cópia local, e o primeiro projeto que a tem é o
+  da v0.53.0.
 
 ### Cadência de outros agentes
 

@@ -247,7 +247,8 @@ PowerShell, exceto onde aparecem as duas formas.
    php artisan tinker --execute "echo json_encode(['usuarios' => array_map('md5', App\Models\User::orderBy('id')->get()->keyBy('id')->map->toJson()->all()), 'jornadas' => array_map('md5', Wallacemartinss\FilamentOnboarding\Models\OnboardingFlow::orderBy('id')->get()->keyBy('id')->map->toJson()->all()), 'passos' => array_map('md5', Wallacemartinss\FilamentOnboarding\Models\OnboardingStep::orderBy('id')->get()->keyBy('id')->map->toJson()->all()), 'configuracoes' => md5(json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->except('onboarding_habilitado')))]);"
    ```
 
-   Esperado: a lista de migrations sai sem erro. Anote se a multi-organização está `SIM` ou `NAO` e
+   Esperado: a lista de migrations sai sem erro e nenhuma aparece como `Pending`. Uma migration
+   pendente é do dono, e o `migrate --force` do passo 6 a rodaria junto: pare e pergunte antes. Anote se a multi-organização está `SIM` ou `NAO` e
    guarde a saída do último comando, a **impressão**: um hash por usuário, por jornada e por passo do
    tutorial, e um das Configurações da aplicação. Ela não expõe dado nem segredo, e no fim tem de bater.
 
@@ -310,10 +311,13 @@ sobre o pacote `wallacemartinss/filament-onboarding`, que o projeto já tem inst
 - na v0.51.2 a autoria de jornadas aparecia no menu do `/admin` sem interruptor. Depois da
   atualização ela só volta com o interruptor ligado, e as jornadas que o dono já criou continuam no
   banco;
-- o tutorial depende de cinco arquivos do kit que a versão muda: o `config/kit.php` (o bloco
-  `onboarding`, que lê `KIT_ONBOARDING`) e os providers `app/Providers/KitServiceProvider.php`,
-  `app/Providers/Filament/AdminPanelProvider.php`, `AppPanelProvider.php` e `InfraPanelProvider.php`,
-  que registram o tutorial nos painéis e o canal de log;
+- o tutorial depende de sete arquivos do kit que a versão muda: o `config/kit.php` (o bloco
+  `onboarding`, que lê `KIT_ONBOARDING`), o `app/Settings/ConfiguracoesDoKit.php` (a propriedade
+  `onboarding_habilitado` e a linha dela no mapa de configuração), o `phpunit.xml` (a linha
+  `<env name="KIT_ONBOARDING" value="false" force="true"/>`, que deixa o tutorial desligado na suíte) e
+  os providers `app/Providers/KitServiceProvider.php`, `app/Providers/Filament/AdminPanelProvider.php`,
+  `AppPanelProvider.php` e `InfraPanelProvider.php`, que registram o tutorial nos painéis e o canal de
+  log;
 - uma migration de settings nova (`database/settings/2026_10_21_100000_add_onboarding_to_kit_settings.php`)
   cria a configuração `onboarding_habilitado` com o valor de `config('kit.onboarding.habilitado')` na
   hora em que roda: `false` sem o bloco `onboarding` no `config/kit.php` ou sem `KIT_ONBOARDING=true`.
@@ -341,8 +345,8 @@ Esta versão não traz pacote novo no `composer.json`.
   `php artisan migrate:rollback`, com ou sem prefixo (`./vendor/bin/sail artisan …`,
   `docker compose exec app php artisan …`). Os dados do banco são do dono, e esses comandos apagam
   tabelas ou desfazem migrations com dados dentro.
-- **Não rode `php artisan kit:tenancy`.** Ele recria o banco. A multi-organização do projeto fica como
-  está.
+- **Não rode `php artisan kit:tenancy` nem `php artisan kit:install`.** Os dois recriam o banco. A
+  multi-organização do projeto fica como está.
 - **A suíte só roda com o banco forçado no próprio comando**, como no passo 9. Sem isso, ela pode usar o
   banco do dono e recriar as tabelas dele.
 - **O `--all` sobrescreve os arquivos `modificado` e os `novo no kit` que já existem.** É por isso que o
@@ -379,11 +383,13 @@ Recomendação da release: receber a do kit com as suas mudanças reaplicadas, d
 
 Sem resposta: mantém a versão do dono e registra no relatório, arquivo a arquivo, o que deixou de chegar.
 
-No `config/kit.php` há uma quarta resposta: manter o seu arquivo e acrescentar só o bloco `onboarding`
-da versão nova. Junto com a pergunta, diga ao dono: se o `config/kit.php` ou um dos quatro providers do
-tutorial ficar com a versão dele inteira, sem o que a v0.52.0 acrescenta, **ligar o tutorial nesta
-atualização não é possível**, porque a migration lê o bloco `onboarding` e os painéis precisam registrar
-o tutorial. Com a lista vazia, não há o que perguntar: registre "nenhum conflito" e siga.
+No `config/kit.php`, no `app/Settings/ConfiguracoesDoKit.php` e no `phpunit.xml` há uma quarta
+resposta: manter o seu arquivo e acrescentar só o que a v0.52.0 traz para o tutorial (o bloco
+`onboarding`; a propriedade `onboarding_habilitado` e a linha dela no mapa; a linha `KIT_ONBOARDING` do
+`phpunit.xml`). Junto com a pergunta, diga ao dono: se um dos sete arquivos do tutorial ficar com a
+versão dele inteira, sem o que a v0.52.0 acrescenta, **ligar o tutorial nesta atualização não é
+possível**, porque a migration lê o bloco `onboarding`, a configuração precisa da propriedade, a suíte
+precisa do tutorial desligado e os painéis precisam registrar o tutorial. Com a lista vazia, não há o que perguntar: registre "nenhum conflito" e siga.
 
 ### Ligar o tutorial guiado
 
@@ -393,7 +399,7 @@ Recomendação da release: sim, ligar, junto com a semeadura das jornadas da dec
 
 Sem resposta: não liga; o tutorial guiado fica desligado, como a release entrega, e a escolha vai para o relatório.
 
-Se a decisão de conflito deixou um dos cinco arquivos do tutorial com a versão inteira do dono, o "sim"
+Se a decisão de conflito deixou um dos sete arquivos do tutorial com a versão inteira do dono, o "sim"
 não pode ser cumprido: registre "ligar não foi possível" com o arquivo que impediu, e siga como "não".
 
 ### Semear as jornadas do tutorial
@@ -436,8 +442,9 @@ Ação:
 php artisan kit:update --from=0.51.2 --tag=v0.52.0 --all --keep-remote --no-interaction
 ```
 
-Evidência: a saída lista os arquivos como `aplicado:` e termina com
-`config/kit.php: versão marcada como 0.52.0`. O `--keep-remote` mantém as tags `kit-*` para o passo 2.
+Evidência: a saída lista os arquivos como `aplicado:` e contém a linha
+`config/kit.php: versão marcada como 0.52.0` (depois dela vêm a nota de que o próprio comando foi
+atualizado e o bloco "Próximos passos"). O `--keep-remote` mantém as tags `kit-*` para o passo 2.
 Se a saída disser "RODE O COMANDO DE NOVO", pare: veja `## Quando parar`.
 
 ### 2. Resolver os arquivos em conflito
@@ -452,15 +459,17 @@ Ação, para cada arquivo, conforme a resposta:
 - **receber a do kit com as mudanças do dono:** veja as mudanças com o `git diff` do passo 6 do
   pré-voo (sem o `--quiet`) e reaplique-as no arquivo com a ferramenta de edição, sem
   tocar no resto. Se elas não couberem na versão nova, pare e mostre ao dono;
-- **`config/kit.php` do dono com o bloco novo:** `git checkout HEAD -- config/kit.php`, depois copie o
-  bloco `'onboarding' => [ ... ],` da saída de `git show kit-v0.52.0:config/kit.php` para o arquivo do
-  dono, no mesmo nível das outras chaves.
+- **arquivo do dono com só o acréscimo do tutorial** (`config/kit.php`, `app/Settings/ConfiguracoesDoKit.php`
+  ou `phpunit.xml`): `git checkout HEAD -- caminho/do/arquivo`, depois veja o acréscimo com
+  `git diff kit-v0.51.2 kit-v0.52.0 -- caminho/do/arquivo` e copie para o arquivo do dono só as linhas
+  do tutorial (o bloco `onboarding`; a propriedade `onboarding_habilitado` e a linha do mapa; a linha
+  `KIT_ONBOARDING`), no mesmo lugar em que a versão nova as põe.
 
 Sempre que o `config/kit.php` voltar a ser o do dono, troque nele só a linha `'version' => '0.51.2',` por
 `'version' => '0.52.0',`, com a ferramenta de edição de arquivo.
 
 Evidência: `git diff HEAD -- caminho/do/arquivo` sai vazio para cada arquivo que ficou com a versão do
-dono (no `config/kit.php`, só a versão e o bloco acrescentado, quando ele foi pedido).
+dono (ou só a versão do `config/kit.php` e as linhas do tutorial acrescentadas, quando foram pedidas).
 
 ### 3. Conferir a versão, o branch e os arquivos
 
@@ -589,20 +598,21 @@ arquivos novos em `app/Policies`, anote-os.
 
 Condição: sempre.
 
-Ação, com o banco descartável forçado no próprio comando:
+Ação, com o banco descartável forçado no próprio comando. O `DB_URL` aponta para o mesmo banco em
+memória: vazio, no PowerShell, ele apagaria a variável e deixaria um `DB_URL` do `.env` decidir.
 
 ```bash
 # Git Bash
 php artisan config:clear
-DB_CONNECTION=sqlite DB_DATABASE=:memory: DB_URL= php artisan test --testsuite=Kit,Tenancy --parallel --compact
+DB_CONNECTION=sqlite DB_DATABASE=:memory: DB_URL=sqlite:///:memory: php artisan test --testsuite=Kit,Tenancy --parallel --compact
 ```
 
 ```powershell
 # PowerShell
 php artisan config:clear
-$env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; $env:DB_URL=''
+$env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; $env:DB_URL='sqlite:///:memory:'
 php artisan test --testsuite=Kit,Tenancy --parallel --compact
-Remove-Item Env:DB_CONNECTION, Env:DB_DATABASE
+Remove-Item Env:DB_CONNECTION, Env:DB_DATABASE, Env:DB_URL
 ```
 
 Evidência: zero erro, zero falha e **no máximo 942 pulados**. Os 942 são os casos que só valem dentro
@@ -639,7 +649,7 @@ O projeto atualizado tem de mostrar tudo isto, conferido com os comandos das se�
 | Multi-organização | o mesmo `SIM` ou `NAO` anotado no pré-voo |
 | Arquivos novos | os quatro do passo 3 presentes |
 | Migration nova | `2026_10_21_100000_add_onboarding_to_kit_settings` executada |
-| Interruptor do tutorial | `SIM` só com o pedido do dono e os cinco arquivos do tutorial; `NAO` nos outros casos |
+| Interruptor do tutorial | `SIM` só com o pedido do dono e os sete arquivos do tutorial; `NAO` nos outros casos |
 | Arquivos que ficaram com a versão do dono | `git diff HEAD -- caminho/do/arquivo` vazio em cada um |
 | `config/logging.php` | `git diff HEAD -- config/logging.php` vazio |
 | `.env` | as linhas do dono intactas; no máximo a linha `KIT_ONBOARDING` do passo 4 |

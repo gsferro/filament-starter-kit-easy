@@ -61,8 +61,10 @@ versão:
 - **Sem "idem" nem "como na versão anterior".** `## O que muda nesta versão` e `## Cuidados` são da
   versão; corpo igual ao do roteiro anterior reprova.
 - **Nenhum comando destrutivo do banco fora de `## Cuidados`.** `artisan` seguido de `migrate:fresh`,
-  `db:wipe`, `migrate:refresh`, `migrate:reset` ou `migrate:rollback` não aparece em nenhuma outra
-  seção, nem em comentário `<!-- -->`, nem com prefixo `sail` ou `docker`: o agente lê o arquivo cru.
+  `db:wipe`, `migrate:refresh`, `migrate:reset`, `migrate:rollback`, `kit:tenancy` ou `kit:install` (os
+  dois últimos recriam o banco) não aparece em nenhuma outra seção, nem em comentário `<!-- -->`, nem
+  com prefixo `sail` ou `docker`: o agente lê o arquivo cru. Em `## Cuidados` o comando só aparece numa
+  frase de proibição, nunca em bloco de código.
 - **Comandos para Git Bash e PowerShell quando diferem.** Quando o comando é o mesmo nos dois, um bloco
   só basta.
 - **Versão confirmada pela versão e pelos arquivos.** O `kit:update` marca a versão nova assim que
@@ -74,7 +76,7 @@ versão:
   as mudanças ficam no índice: revisar é `git status` e `git diff --cached`; desfazer, só com o pedido
   do dono, é `git reset --hard HEAD` mais os arquivos não rastreados um a um, e não desfaz o banco.
 - **A suíte roda com o banco descartável forçado no próprio comando** (`DB_CONNECTION=sqlite`,
-  `DB_DATABASE=:memory:`, `DB_URL` vazio, depois de `php artisan config:clear`): o `phpunit.xml` não
+  `DB_DATABASE=:memory:`, `DB_URL=sqlite:///:memory:`, depois de `php artisan config:clear`): o `phpunit.xml` não
   força o banco, e uma variável de ambiente do dono venceria.
 - **O pré-voo confere os nomes que o comando reserva** (o remote `kit`, as tags `kit-*` e o branch
   `kit-update/vX.Y.Z`) e para se algum já existir: o comando apaga o remote e as tags com esses nomes.
@@ -127,5 +129,7 @@ de roteiro: vira hotfix, com roteiro próprio.
 O roteiro da versão marcada em `config/kit.php` é copiado, inteiro, para `wikis/agentes-e-skills.md`,
 entre os marcadores `<!-- roteiro-de-atualizacao:inicio -->` e `<!-- roteiro-de-atualizacao:fim -->`.
 Esse arquivo viaja pelo `create-project` e pelo `kit:update`, e é por ele que o projeto da versão
-seguinte aprende o padrão do link. A guarda compara a cópia com o arquivo, só normalizando o fim de
+seguinte aprende o padrão do link. A tag v0.52.0 saiu antes deste mecanismo e não tem a cópia: o
+primeiro projeto com cópia local é o da v0.53.0, e o pedido sem link, montado pelo padrão da cópia,
+vale a partir do roteiro da v0.54.0. Até lá, o pedido traz o link. A guarda compara a cópia com o arquivo, só normalizando o fim de
 linha.
