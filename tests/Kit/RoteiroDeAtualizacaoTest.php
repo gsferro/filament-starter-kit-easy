@@ -973,7 +973,7 @@ function raRodarPasso(string $run, string $tag, string $marcador, string $change
 
         file_put_contents("{$raiz}/passo.sh", str_replace("\r\n", "\n", $run)."\n");
 
-        $resultado = Process::path($raiz)->env(['GITHUB_REF_NAME' => $tag])->run(['bash', 'passo.sh']);
+        $resultado = Process::path($raiz)->env(['GITHUB_REF_NAME' => $tag])->run(['bash', '-e', 'passo.sh']);
 
         return [$resultado->exitCode() ?? 1, $resultado->output().$resultado->errorOutput()];
     } finally {

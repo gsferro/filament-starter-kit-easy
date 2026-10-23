@@ -210,7 +210,6 @@ Funcionalidade: Roteiro de atualização por agente
         | conteudo_da_pasta                   | resultado | # partição                                     |
         | "v0.52.0.md" e "v0.53.0.md"         | aprova    | conforme (a v0.51.2 não tem roteiro: anterior ao mecanismo) |
         | só "v0.53.0.md"                     | reprova   | roteiro publicado removido, cujo link aponta para a main (P-01) |
-```
 
     Esquema do Cenário: [CT-02] o commit de versão sem roteiro ou sem seção no CHANGELOG reprova, e diz o que falta
       Dado o marcador de versão "<marcador>"

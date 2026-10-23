@@ -4,6 +4,10 @@
 
 **Base do PR**: `main`
 
+## Processo do pedido
+
+- [ ] Cenário pós-release com agente (CP-01 a CP-03) sobre o roteiro v0.52.0, **depois do merge e antes de divulgar o link**: agente em sessão nova, só com o pedido-modelo e o link da `main` (P-01), nos projetos `agente-sem-tenant` e `agente-com-tenant` criados da v0.51.2, com os canários do checklist; obrigatório pela RQ-11 (QA-03 do ciclo 1 do gate). CP-04 não se aplica à v0.52.0 (sem cópia local na v0.51.2)
+
 ## 1. Contrato e primeiro roteiro
 - [x] `wikis/atualizacoes/README.md` (contrato) — `wikis/atualizacoes/README.md:# Roteiros de atualização — o contrato:1`; `'[CT-04]'`, 2026-10-23
 - [x] `wikis/atualizacoes/v0.52.0.md` (primeiro roteiro, origem v0.51.2) — `wikis/atualizacoes/v0.52.0.md:## Identificação:7`; `'[CT-01]'` com todos os detectores sobre a árvore real; auditado contra o `kit:update` da v0.51.2 e da v0.52.0 (C16, C19), 2026-10-23
@@ -77,7 +81,9 @@
 
 ## Quality Gate
 
-<!-- Preenchido no step 11. -->
+| Ciclo | Veredito | Achados | Destino | Relatório |
+|---|---|---|---|---|
+| 1 | REPROVADO → especificação | 0 Blocker · 1 Major (QA-01) · 4 Minor (QA-02…05) · 1 Cosmético (QA-06); 1 suspeita (passo 8 gera policies do dono) | todos corrigidos: QA-01 `01`/`02` alinhados ao entregue; QA-02 `--name-only`; QA-03 agendado em `## Processo do pedido`; QA-04 arnês com `bash -e`; QA-05 entrada no `wikis/glossario.md`; QA-06 cerca removida; suspeita confirmada no código e corrigida (passo 8 só gera a permissão da página) | `06-relatorio-qa.md` |
 
 ## Candidatos a Rule
 

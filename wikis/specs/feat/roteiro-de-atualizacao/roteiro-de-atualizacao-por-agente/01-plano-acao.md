@@ -1,6 +1,6 @@
 # Plano de Ação — Roteiro de atualização por prompt para agentes
 
-> Requisito: `00-requisito.md` (Texto Original + Adendos 1 e 2) · Decisões: `02-decisoes-arquiteturais.md` · Progresso: `03-progresso.md`
+> Requisito: `00-requisito.md` (Texto Original + Adendos 1 a 4) · Decisões: `02-decisoes-arquiteturais.md` · Progresso: `03-progresso.md`
 
 ## Natureza da Wiki
 
@@ -189,18 +189,19 @@ Sem channel de log: nada roda em runtime.
 - **Path**: `tests/Kit/RoteiroDeAtualizacaoTest.php` (todo caso com `skip(! naArvoreDoKit())`, D5).
 - Toda leitura de arquivo dentro do corpo do caso, nunca no escopo global nem no dataset (o skip roda depois da coleta) *(alterado em 2026-10-23: revisão profunda, step 5)*.
 - Afirma: (a) existe `wikis/atualizacoes/v{kit.version}.md` não vazio; (b) ele tem as seções obrigatórias do contrato; (c) a origem declarada é a versão anterior publicada (a seção seguinte do `CHANGELOG.md` depois da do marcador) e o destino é o marcador; (d) a cópia em `wikis/agentes-e-skills.md` entre os marcadores é idêntica ao arquivo. O link raw entra como linha obrigatória do `## Identificação` (item b), não como detector à parte *(alterado em 2026-10-23: Ponytail, step 6)*. Controle positivo de cada detector contra texto corrompido.
-- **Atende**: RQ-05, RQ-10, RQ-22
+- Depois dos Adendos 3 e 4 e do step 9, a guarda tem 15 detectores ligados à árvore real pelo `'[CT-01]'`: além de (a)–(d), seção do CHANGELOG (RQ-29), ordem, corpo e título único das nove seções, link e marca de revisão (RQ-28, D17, D19), padrão do link com a conferência na `main` (RQ-32), decisões com default seguro e a decisão de conflito (RQ-30, RQ-35), `### Defaults mudados` contra as perguntas (D15), autossuficiência e `--from`/`--tag` do `kit:update`, comando destrutivo do banco fora de `## Cuidados` (RQ-31, RQ-33, RQ-34), roteiros publicados que continuam na pasta e a ausência de pulo na árvore do kit *(alterado em 2026-10-23: quality gate, QA-01)*.
+- **Atende**: RQ-05, RQ-10, RQ-22, RQ-28, RQ-29, RQ-30, RQ-31, RQ-33, RQ-34, RQ-35
 
 ### 4. Workflow de release
 
-- **Path**: `.github/workflows/release.yml` — passo novo no mesmo job e no mesmo `run` que define `tag`: falha se `wikis/atualizacoes/v$tag.md` não existe no checkout da tag. Detecta **depois** do push da tag; quem age antes é a guarda do CI na `main` (passo 3) *(alterado em 2026-10-23: revisão profunda, step 5)*.
-- **Atende**: RQ-10, RQ-23
+- **Path**: `.github/workflows/release.yml` — passo novo no mesmo job e no mesmo `run` que define `tag`: falha se `wikis/atualizacoes/v$tag.md` não existe no checkout da tag, ou se não traz as nove seções com corpo, na ordem do contrato e fora de bloco cercado (RQ-27) *(alterado em 2026-10-23: quality gate, QA-01)*. Detecta **depois** do push da tag; quem age antes é a guarda do CI na `main` (passo 3) *(alterado em 2026-10-23: revisão profunda, step 5)*.
+- **Atende**: RQ-10, RQ-23, RQ-27
 
 ### 5. Checklist de release
 
 - **Path**: `wikis/checklist-de-release.md`.
 - Etapa pré-release obrigatória (release e hotfix): escrever o roteiro pelo contrato, a partir do CHANGELOG da versão e da wiki da feature, reconciliado com o diff entregue (RQ-14); atualizar a cópia local.
-- Cenário pós-release com agente (RQ-11, RQ-12), em **seção própria**, fora da matriz dos quatro (o `tests/Kit/ChecklistDeReleaseTest.php` exige exatamente quatro linhas e quatro `create-project`): agente em sessão nova, sem o contexto de quem escreveu, recebe só o pedido-modelo e o link; atualiza **dois projetos novos** da versão anterior (`agente-sem-tenant`, `agente-com-tenant`, criados para isso — os `velho-*` dos cenários 3/4 já estão na versão nova); passa com o mesmo estado dos cenários 3/4 (versão, tenancy, arquivo novo, migration, suíte com zero falha) **e** com dois canários preservados, preparados antes: um canal próprio no `config/logging.php` e uma linha própria no `.env`. Registrar agente/modelo, o commit do roteiro executado, intervenções e resultado *(alterado em 2026-10-23: revisão profunda, step 5)*.
+- Cenário pós-release com agente (RQ-11, RQ-12), em **seção própria**, fora da matriz dos quatro (o `tests/Kit/ChecklistDeReleaseTest.php` exige exatamente quatro linhas e quatro `create-project`): agente em sessão nova, sem o contexto de quem escreveu, recebe só o pedido-modelo e o link; atualiza **dois projetos novos** da versão anterior (`agente-sem-tenant`, `agente-com-tenant`, criados para isso — os `velho-*` dos cenários 3/4 já estão na versão nova); passa com o mesmo estado dos cenários 3/4 (versão, tenancy, arquivo novo, migration, suíte com zero falha) **e** com os canários do dono preservados, preparados antes: um canal próprio no `config/logging.php`, uma linha própria no `.env`, um arquivo de `CAMINHOS_DO_KIT` editado, um registro no banco, um valor das Configurações e uma jornada editada (D14, RQ-31, RQ-35) *(alterado em 2026-10-23: quality gate, QA-01)*. Registrar agente/modelo, o commit do roteiro executado, intervenções e resultado *(alterado em 2026-10-23: revisão profunda, step 5)*.
 - Cadência de outros agentes (RQ-13): a cada release menor, um segundo agente; sem prometer todos.
 - Reprovação (RQ-24): a tag não é reescrita; roteiro corrigido na `main` com nova evidência e link para a `main`; CHANGELOG registra a revisão; falha do código vira hotfix.
 - **Atende**: RQ-10, RQ-11..14, RQ-23, RQ-24
