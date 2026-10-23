@@ -139,6 +139,13 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
 
+**v0.52.0 adds a settings migration, and the guided tutorial arrives disabled.** Run `php artisan migrate`
+after `kit:update`: the new settings migration adds `onboarding_habilitado`, seeded from
+`KIT_ONBOARDING` (**false** by default). The `wallacemartinss/filament-onboarding` package was
+already a kit dependency. To use it, run `php artisan db:seed --class=OnboardingSeeder` and turn on
+*Usar o tutorial guiado* on the **Aplicação** tab of `/admin/configuracoes-da-aplicacao`. Seeding
+does not turn the switch on. See [Guided tutorial](../../recursos/tutorial-guiado/). `config/logging.php` is yours and `kit:update` does not deliver it: the kit declares the `onboarding` log channel, shaped like your `ai` channel, when your file lacks it. The views in `resources/views/vendor/filament-onboarding` now belong to the kit (the "Primeiros passos" page was fixed): if you customized them, review the diff.
+
 **In v0.51.2 there is nothing to install or migrate**: the dock button no longer slides off screen on
 desktop. `kit:update` brings `public/js/kit/quick-action-dock.js`, a fixed copy of the dock package's script
 served in place of the original — do not edit it: after a `composer update` of
@@ -158,13 +165,6 @@ both on in the Aplicação tab of `/admin/configuracoes-da-aplicacao` (or set `K
 catalog leaves the menu and answers 404, the *Agentes de IA* widget group leaves the `/admin`
 dashboard and the chat appears in no panel; nothing is deleted. See
 [Kit settings](../../recursos/configuracoes-do-kit/).
-
-**The guided tutorial arrives disabled for existing installations.** Run `php artisan migrate`
-after `kit:update`: the new settings migration adds `onboarding_habilitado`, seeded from
-`KIT_ONBOARDING` (**false** by default). The `wallacemartinss/filament-onboarding` package was
-already a kit dependency. To use it, run `php artisan db:seed --class=OnboardingSeeder` and turn on
-*Usar o tutorial guiado* on the **Aplicação** tab of `/admin/configuracoes-da-aplicacao`. Seeding
-does not turn the switch on. See [Guided tutorial](../../recursos/tutorial-guiado/). `config/logging.php` is yours and `kit:update` does not deliver it: the kit declares the `onboarding` log channel, shaped like your `ai` channel, when your file lacks it. The views in `resources/views/vendor/filament-onboarding` now belong to the kit (the "Primeiros passos" page was fixed): if you customized them, review the diff.
 
 ### A new screen: reseed both seeders
 

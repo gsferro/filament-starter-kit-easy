@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.52.0] - 2026-10-23
+
 ### Adicionado
 
 - Tutorial guiado nos três painéis (`wikis/specs/feat/onboarding-guiado/`), sobre o
