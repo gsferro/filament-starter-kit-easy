@@ -28,6 +28,10 @@ use Symfony\Component\Yaml\Yaml;
 
 const RA_REPO = 'gsferro/filament-starter-kit-easy';
 
+const RA_URL_CORPO = '[^\s)`>"\'\]]+';
+
+const RA_URL = '~https?://'.RA_URL_CORPO.'~u';
+
 const RA_PADRAO = 'https://raw.githubusercontent.com/'.RA_REPO.'/v{versão}/wikis/atualizacoes/v{versão}.md';
 
 const RA_INICIO = '<!-- roteiro-de-atualizacao:inicio -->';
@@ -117,18 +121,12 @@ function raBlocos(string $texto): array
     return $blocos;
 }
 
-/** @param  array<string, string>  $blocos */
-function raMontar(array $blocos): string
-{
-    return implode('', $blocos);
-}
-
 function raSemSecao(string $texto, string $titulo): string
 {
     $blocos = raBlocos($texto);
     unset($blocos[$titulo]);
 
-    return raMontar($blocos);
+    return implode('', $blocos);
 }
 
 function raComCorpo(string $texto, string $titulo, string $corpo): string
@@ -136,7 +134,7 @@ function raComCorpo(string $texto, string $titulo, string $corpo): string
     $blocos          = raBlocos($texto);
     $blocos[$titulo] = "{$titulo}\n\n".trim($corpo)."\n\n";
 
-    return raMontar($blocos);
+    return implode('', $blocos);
 }
 
 function raAcrescentar(string $texto, string $titulo, string $extra): string
@@ -144,7 +142,7 @@ function raAcrescentar(string $texto, string $titulo, string $extra): string
     $blocos          = raBlocos($texto);
     $blocos[$titulo] = rtrim($blocos[$titulo])."\n\n".trim($extra)."\n\n";
 
-    return raMontar($blocos);
+    return implode('', $blocos);
 }
 
 function raMover(string $texto, string $titulo, string $depoisDe): string
@@ -163,7 +161,7 @@ function raMover(string $texto, string $titulo, string $depoisDe): string
         }
     }
 
-    return raMontar($novo);
+    return implode('', $novo);
 }
 
 /** O corpo de uma seção `## ` (até o próximo `## `, com os seus `###`); `null` se o título não existe. */
@@ -454,10 +452,9 @@ function raFalhasDeCopia(string $roteiro, ?string $anterior): array
 
 function raLinhaDaIdentificacao(string $roteiro, string $rotulo): ?string
 {
-    $corpo  = raSecao($roteiro, '## Identificação') ?? '';
-    $padrao = '/^[\s>*\-]*'.preg_quote($rotulo, '/').'\**\s*:\**[ \t]*`?(v?\d+\.\d+\.\d+)/miu';
+    $valor = raRotulo(raSecao($roteiro, '## Identificação') ?? '', $rotulo) ?? '';
 
-    return preg_match($padrao, $corpo, $m) === 1 ? $m[1] : null;
+    return preg_match('/^`?(v?\d+\.\d+\.\d+)/', $valor, $m) === 1 ? $m[1] : null;
 }
 
 function raFalhasDeOrigemEDestino(string $roteiro, string $changelog, string $marcador): array
@@ -486,7 +483,7 @@ function raFalhasDeOrigemEDestino(string $roteiro, string $changelog, string $ma
 function raLinkDaIdentificacao(string $roteiro): ?string
 {
     $corpo = raSecao($roteiro, '## Identificação') ?? '';
-    preg_match_all('~https?://[^\s)`>"\'\]]+~u', $corpo, $m);
+    preg_match_all(RA_URL, $corpo, $m);
 
     foreach ($m[0] as $url) {
         if (! str_contains($url, '{vers')) {
@@ -529,7 +526,7 @@ function raFalhasDoLink(string $roteiro, string $changelog, string $marcador): a
         }
     }
 
-    return [...$falhas, ...raFalhasDaMarca($roteiro, $changelog, $marcador)];
+    return $falhas;
 }
 
 /** D19: a marca "Roteiro revisado em" no roteiro e o registro no CHANGELOG andam juntos. */
@@ -552,7 +549,7 @@ function raFalhasDaMarca(string $roteiro, string $changelog, string $marcador): 
 
 function raFalhasDoPadrao(string $roteiro): array
 {
-    preg_match_all('~https?://[^\s)`>"\'\]]+~u', raNl($roteiro), $m);
+    preg_match_all(RA_URL, raNl($roteiro), $m);
     $padroes = array_values(array_filter($m[0], static fn (string $url): bool => str_contains($url, '{versão}')));
 
     if ($padroes === []) {
@@ -736,7 +733,7 @@ function raFalhasDeAutossuficiencia(string $roteiro, string $marcador): array
     }
 
     $proprio = raLinkDaIdentificacao($roteiro);
-    preg_match_all('~https://raw\.githubusercontent\.com/'.preg_quote(RA_REPO, '~').'/[^\s)`>"\'\]]+~u', $semComentario, $urls);
+    preg_match_all('~https://raw\.githubusercontent\.com/'.preg_quote(RA_REPO, '~').'/'.RA_URL_CORPO.'~u', $semComentario, $urls);
 
     foreach ($urls[0] as $url) {
         $url       = rtrim($url, '.,;');
@@ -984,13 +981,10 @@ function raRodarPasso(string $run, string $tag, string $marcador, string $change
     }
 }
 
-/** @return list<string> as linhas `::error::` da saída que contêm a agulha */
-function raErrosQueNomeiam(string $saida, string $agulha): array
+/** "aprova" exige lista de falhas vazia; "reprova", ao menos uma falha. */
+function raVeredito(array $falhas, string $resultado): void
 {
-    return array_values(array_filter(
-        explode("\n", str_replace("\r", '', $saida)),
-        static fn (string $linha): bool => str_contains($linha, '::error::') && str_contains($linha, $agulha),
-    ));
+    $resultado === 'aprova' ? expect($falhas)->toBe([]) : expect($falhas)->not->toBe([]);
 }
 
 /*
@@ -1248,11 +1242,7 @@ it('[CT-05] a origem é exatamente a versão anterior publicada', function (stri
 
     $falhas = raFalhasDeOrigemEDestino($roteiro, $changelog, '0.52.0');
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'a anterior imediata'      => ['v0.51.2', 'aprova'],
     'salto de duas versões'    => ['v0.51.1', 'reprova'],
@@ -1295,11 +1285,7 @@ it('[CT-08] o link da identificação aponta para o arquivo bruto da versão, na
 
     $falhas = raFalhasDoLink($roteiro, raChangelog([$versao, '0.52.0']), $versao);
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'tag destino'                       => ['0.53.0', raUrlRaw('v0.53.0', '0.53.0'), 'identificação', 'aprova'],
     'v0.52.0 na main (P-01)'            => ['0.52.0', raUrlRaw('main', '0.52.0'), 'identificação', 'aprova'],
@@ -1320,11 +1306,7 @@ it('[CT-09] o padrão do link da próxima versão é conferido como o link', fun
 
     $falhas = raFalhasDoPadrao($roteiro);
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'conforme'                                         => [RA_PADRAO, 'aprova'],
     'sem padrão: só o link concreto da própria versão' => ['', 'reprova'],
@@ -1350,11 +1332,7 @@ it('[CT-22] o padrão manda conferir a main e parar na dúvida', function (strin
 
     $falhas = raFalhasDasInstrucoesDoPadrao($roteiro);
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'nenhum defeito'           => ['nenhuma', 'aprova'],
     'sem conferir a main'      => ['ler', 'reprova'],
@@ -1373,13 +1351,9 @@ it('[CT-21] o link e a marca da revisão andam com o registro no CHANGELOG', fun
     ]);
     $changelog = raChangelog(['0.53.0', '0.52.0'], $registro === null ? [] : [$registro]);
 
-    $falhas = raFalhasDoLink($roteiro, $changelog, '0.53.0');
+    $falhas = [...raFalhasDoLink($roteiro, $changelog, '0.53.0'), ...raFalhasDaMarca($roteiro, $changelog, '0.53.0')];
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'revisão registrada, main'     => ['0.53.0', 'com marca', 'main', RA_REPO, 'aprova'],
     'revisão registrada, commit'   => ['0.53.0', 'com marca', '3f1c9e2a7b4d6e8f0a1b2c3d4e5f60718293a4b5', RA_REPO, 'aprova'],
@@ -1413,11 +1387,7 @@ it('[CT-10] cada decisão do dono traz os três elementos, com valor', function 
 
     $falhas = raFalhasDeDecisoes(raComCorpo(raRoteiro('0.53.0'), '## Decisões do dono do projeto', $corpo));
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     '1, completa'                 => ['completa', 'aprova'],
     '0 decisões da versão'        => ['só conflito', 'aprova'],
@@ -1488,11 +1458,7 @@ it('[CT-26] o roteiro traz a decisão de conflito em arquivo do kit editado pelo
 
     $falhas = raFalhasDoConflito(raComCorpo(raRoteiro('0.53.0'), '## Decisões do dono do projeto', $corpo));
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'conforme'                                     => ['conforme', 'aprova'],
     'decisão ausente'                              => ['ausente', 'reprova'],
@@ -1535,11 +1501,7 @@ it('[CT-12] o roteiro que depende de outro documento, ou que não invoca o kit:u
 
     $falhas = raFalhasDeAutossuficiencia($roteiro, '0.53.0');
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'nenhum'                                          => ['nenhum', 'aprova'],
     'remete ao CHANGELOG'                             => ['CHANGELOG sem link', 'reprova'],
@@ -1571,11 +1533,7 @@ it('[CT-23] comando destrutivo do banco fora de "## Cuidados" reprova', function
 
     $falhas = raFalhasDeComandoDestrutivo($roteiro);
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'migrate --force'                    => ['## Passos', "```bash\nphp artisan migrate --force\n```", 'aprova'],
     'migrate:fresh'                      => ['## Passos', "```bash\nphp artisan migrate:fresh --force\n```", 'reprova'],
@@ -1625,11 +1583,7 @@ it('[CT-13] a cópia entre os marcadores é conferida contra o roteiro da versã
 
     $falhas = raFalhasDeCopiaLocal($roteiro, $agentes);
 
-    if ($resultado === 'aprova') {
-        expect($falhas)->toBe([]);
-    } else {
-        expect($falhas)->not->toBe([]);
-    }
+    raVeredito($falhas, $resultado);
 })->with([
     'idêntica'                    => ['idêntica', 'aprova'],
     'só o fim de linha difere'    => ['CRLF', 'aprova'],
@@ -1695,7 +1649,7 @@ it('[CT-15] o passo do workflow confere o roteiro da tag', function (string $ver
     }
 
     expect($codigo)->not->toBe(0, $texto);
-    expect(raErrosQueNomeiam($texto, (string) $agulha))->not->toBeEmpty("nenhuma linha ::error:: nomeia \"{$agulha}\" na saída: {$texto}");
+    expect($texto)->toMatch('/^.*::error::.*'.preg_quote((string) $agulha, '/').'.*$/m');
 })->with([
     'presente'                        => ['0.53.0', 'existe', 'zero', null],
     'ausente, menor'                  => ['0.53.0', 'ausente', 'diferente', 'wikis/atualizacoes/v0.53.0.md'],
@@ -1729,7 +1683,7 @@ it('[CT-29] a conferência do roteiro não encerra o passo antes das outras conf
     );
 
     expect($codigo)->not->toBe(0, $texto);
-    expect(raErrosQueNomeiam($texto, '0.53.0 saiu sem o bump'))->not->toBeEmpty("nenhuma linha ::error:: diz que a tag saiu sem o bump: {$texto}");
+    expect($texto)->toMatch('/^.*::error::.*0\.53\.0 saiu sem o bump.*$/m');
 })->skip(fn (): bool => ! naArvoreDoKit(), RA_PULO_FORA_DA_ARVORE);
 
 /*

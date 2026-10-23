@@ -27,10 +27,7 @@ jobs:
 
           grep -q "^## \[$tag\]" CHANGELOG.md || { echo "::error::a tag $tag saiu sem seção no CHANGELOG"; exit 1; }
 
-          # Roteiro de atualização por agente (wikis/atualizacoes/README.md): toda tag tem o seu,
-          # com as nove seções do contrato, cada título ancorado no início da linha. A guarda do CI
-          # na main confere o resto antes da tag; aqui falha fechado se a tag saiu sem ele, com uma seção
-          # faltando, vazia ou fora da ordem.
+          # roteiro da tag: nove seções, na ordem, com corpo, fora de cerca.
           roteiro="wikis/atualizacoes/v$tag.md"
           [ -s "$roteiro" ] || { echo "::error::a tag $tag saiu sem o roteiro de atualização $roteiro"; exit 1; }
 
