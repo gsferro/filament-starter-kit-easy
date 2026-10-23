@@ -15,7 +15,7 @@
 - [x] `tests/Kit/RoteiroDeAtualizacaoTest.php` — 29 CT, 212 casos: `{"result":"passed","tests":212,"passed":212,"assertions":339}`; `ids-ct.sh` silencioso, 2026-10-23
 
 ## 4. Workflow de release
-- [x] Passo no `.github/workflows/release.yml` — `.github/workflows/release.yml:roteiro:34`; `'[CT-15]'` e `'[CT-29]'` executam o `run` com bash (ausente, fora de ordem, vazia, título em cerca, marcador ≠ tag), 2026-10-23
+- [x] Passo no `.github/workflows/release.yml` — `.github/workflows/release.yml:roteiro:31`; `'[CT-15]'` e `'[CT-29]'` executam o `run` com bash (ausente, fora de ordem, vazia, título em cerca, marcador ≠ tag), 2026-10-23
 
 ## 5. Checklist de release
 - [x] Etapa pré-release, cenário com agente, cadência de outros agentes, política de reprovação — `wikis/checklist-de-release.md:## Etapa pré-release obrigatória: o roteiro de atualização:327`, `:## Cenário pós-release com agente:355`; `'[CT-16]'`, `'[CT-17]'`, `'[CT-18]'`, `'[CT-24]'`; `ChecklistDeReleaseTest` verde (quatro cenários intactos), 2026-10-23
