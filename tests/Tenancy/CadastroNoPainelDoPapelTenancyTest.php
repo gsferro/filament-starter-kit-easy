@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 /**
  * Cadastro no painel do papel com a tenancy LIGADA — wiki `fix/convite-painel-do-papel`.
  *
- * Helpers com sufixo proprio: o arquivo da suite Kit declara os seus e funcao global colide.
+ * Os helpers abaixo servem só a este arquivo; os compartilhados vivem em `tests/Pest.php`.
  */
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);

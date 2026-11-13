@@ -116,11 +116,11 @@ O domínio desta tabela são destinos internos de painéis.
 | Desligado | Não | 0 | Ausente ou inacessível | Inacessível | Login da corrente, autenticação encerrada | CT-10 |
 | Desligado | Não | 1 | Ausente | Qualquer | Único painel acessível | CT-03, CT-06 |
 | Desligado | Não | 1 | Inacessível | Qualquer | Único painel acessível | CT-11 |
-| Desligado | Não | 1 | Acessível | Qualquer | Painel permitido; preservação da URL completa aberta | CT-12 / Q1 |
+| Desligado | Não | 1 | Acessível | Qualquer | Pretendida completa (P-03) | CT-12 |
 | Desligado | Não | >1 | Ausente | Acessível | Default | CT-08 |
 | Desligado | Não | >1 | Ausente | Inacessível | Primeiro acessível registrado | CT-09 |
 | Desligado | Não | >1 | Inacessível | Inacessível | Primeiro acessível registrado | CT-09 |
-| Desligado | Não | >1 | Acessível | Qualquer | Precedência exata aberta | Q1 |
+| Desligado | Não | >1 | Acessível | Qualquer | Pretendida completa (P-03) | CT-75 de `fix/destino-apos-cadastro` (`desligada admin`) |
 | Ligado | Não | 1 | Ausente | Qualquer | Único painel acessível, regressão delimitada | CT-14 |
 
 Corrente acessível com zero painéis acessíveis é uma combinação contraditória. Pretendida de painel acessível com zero painéis acessíveis também é contraditória neste domínio.
@@ -574,7 +574,7 @@ Desvio por somente leitura: a pergunta é devolvida aqui, sem alterar o requisit
 
 Quando a pretendida aponta para uma URL acessível de outro painel, mas a corrente é inacessível, deve-se preservar a pretendida completa, inclusive subpágina e query, ou ir à URL determinada pelo painel único/default/ordem? O Texto Original fala em trocar apenas o fallback; RQ-03/RQ-04 formulam o destino pela URL do painel.
 
-➡️ **Recomendação:** preservar somente a pretendida validada como acessível; caso contrário, usar o painel acessível determinado pelas regras. A recomendação mantém a falha fechada para destinos não autorizados. Até a decisão, CT-12 afirma apenas a invariante permitida.
+➡️ **Recomendação:** preservar somente a pretendida validada como acessível; caso contrário, usar o painel acessível determinado pelas regras. A recomendação mantém a falha fechada para destinos não autorizados. *(alterado em 2026-11-13: respondida como P-03; CT-12 afirma a URL completa)*
 
 Bloco para reconciliação no `00-requisito.md`:
 
@@ -660,7 +660,7 @@ CT-10 ganha, em todos os exemplos:
 | ID | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M-43 | Faz logout sem invalidar a sessão | CT-10 | id da sessão diferente |
-| M-44 | Não regenera o token CSRF | CT-10 | token diferente |
+| M-44 | Não regenera o token CSRF | — (equivalente) | **mutante equivalente, destino 5**: a notificação de P-05, enviada logo depois, passa por `NotificationMailbox::initializeScope()` do `filament/notifications`, que regenera o `_token` ausente; sem a linha, o token continua string não vazia e diferente (medido em 2026-11-13). CT-10 afirma string não vazia e diferente, o que mata a ausência de token por qualquer caminho (QA-04 do ciclo 2) |
 | M-45 | Encerra a sessão em silêncio | CT-10 | notificação enviada |
 
 CT-13 cobre os dois idiomas como dataset (`pt`, `en`) sobre o mesmo Gherkin: Exemplos `| idioma | pt | en |`.

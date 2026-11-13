@@ -18,8 +18,7 @@ use Illuminate\Http\Request;
 /**
  * Cadastro no painel do papel — wiki `fix/convite-painel-do-papel`, 04-casos-de-teste.md.
  *
- * Os helpers abaixo tem prefixo proprio: o mesmo arquivo de tenancy declara os seus, e
- * funcao global colide entre arquivos.
+ * Os helpers abaixo servem só a este arquivo; os compartilhados vivem em `tests/Pest.php`.
  */
 beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
@@ -223,7 +222,7 @@ it('[CT-10] zero paineis encerram a sessao e tornam o login alcancavel', functio
     expect($alvo)->toBe(Filament::getPanel($corrente)->getLoginUrl())
         ->and(Filament::auth()->check())->toBeFalse()
         ->and(session()->getId())->not->toBe($sessaoAntes)
-        ->and(session()->token())->not->toBe($tokenAntes);
+        ->and(session()->token())->toBeString()->not->toBeEmpty()->not->toBe($tokenAntes);
 
     app(NotificationMailbox::class)->flush();
 

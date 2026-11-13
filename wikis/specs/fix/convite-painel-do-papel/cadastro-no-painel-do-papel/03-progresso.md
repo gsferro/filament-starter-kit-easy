@@ -1,6 +1,6 @@
 # Progresso — fix: cadastro por convite cai no painel do papel
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-11-13
 
 `{base}`: `main` · branch `fix/convite-painel-do-papel`
 
@@ -39,6 +39,7 @@
 - [x] Bumps do dependabot e phpstan — `phpstan analyse` 0 erros, 2026-11-13
 - [x] CHANGELOG, `config/kit.php`, roteiro, cópia em `wikis/agentes-e-skills.md` — `RoteiroDeAtualizacaoTest` 212/212, 2026-11-13
 - [x] Pré-validação cenário 1 (`git archive` de d90f380c) — 5583 testes, 0 falhas, 1156 pulados, 2026-11-13
+- [x] Pré-validação cenário 2 (idem + `kit:tenancy --force`) — 5583 testes, 1156 pulados, 1 erro de timeout verde isolado, `kit.version` 0.52.1, tenancy SIM, 2026-11-13
 
 ## Testes
 
@@ -86,7 +87,7 @@ Re-revisão: as correções tocaram fronteira de dado; o quality gate (dimensão
 - [x] `citacoes.sh` — só acusa o `06` do ciclo 1 (texto verbatim do gate, substituído no ciclo 2), 2026-11-13
 - [x] `conformidade-rules.sh` — 8 rules com linha acima, 2026-11-13
 - [x] Falsificabilidade: CT-04/CT-11 tenancy vermelhos antes da correção de organização (executor, ciclo 1); CT-15 falha com a leitura por segmento (cópia temporária do método); CT-10 sessão/token/notificação vieram dos mutantes sobreviventes do gate — 2026-11-13
-- [ ] Regressão Kit + Tenancy no código final
+- [x] Regressão Kit + Tenancy no código final — Kit 4911/4914 (3 pulados), Tenancy 669/669 na árvore do kit; cenário 2 (`git archive` + `kit:tenancy`) 5583 testes, 1 erro de timeout do `QualidadeDeCodigoTest` CT-01 sob carga, verde isolado (29/31, 2 pulados), 2026-11-13
 
 ## Notas de Implementação
 
@@ -103,10 +104,11 @@ Re-revisão: as correções tocaram fronteira de dado; o quality gate (dimensão
 | Ciclo | Veredito | Data |
 |---|---|---|
 | 1 | REPROVADO → especificação (QA-01, QA-02 Major) | 2026-11-13 |
+| 2 | APROVADO COM DÉBITO (0 Blocker/Major; E e K não verificadas; QA-04, QA-10, QA-12 tratados depois do veredito: M-44 equivalente, `04` e docblocks, só teste/wiki) | 2026-11-13 |
 
 ## Candidatos a Rule
 
-(step 12, depois do veredito)
+apresentados 0 · gravados 0 · recusados 0 · descartados no gate 0 · poda 0 — 2026-11-13, sessão principal; o gate não apontou candidato (o padrão `not->toBe($antes)` sobre valor anulável é linha de checklist da `feature-test-design`, não rule). `requirement-to-rule` não invocada: nenhum candidato.
 
 ## Despachos
 
@@ -119,6 +121,7 @@ Re-revisão: as correções tocaram fronteira de dado; o quality gate (dimensão
 | 5 | 9 | `fw-revisor-diff` / opus | diff sem `wikis/`, eixos | RD-01..03 | 84 k tokens · 453 s | RD-01 reproduzido pelo CT-16 |
 | 6 | 11 | `fw-qa-gate` / opus | path da wiki, URL, diff --stat, base | ciclo 1 REPROVADO | 235 k tokens · 2164 s | `git status` vazio antes/depois |
 | 7 | 11 | `fw-executor-ct` / sonnet (SendMessage) | achados QA-02/04, P-05 | 51/51 | 157 k tokens · 301 s | lista de `it()` conferida |
+| 8 | 11 | `fw-qa-gate` / opus | path da wiki, URL, diff --stat, base | ciclo 2 APROVADO COM DÉBITO | 196 k tokens · 1618 s | `git status` vazio antes/depois |
 
 Degradações: revisão adversarial do `04` feita pelo próprio Codex na derivação, não por `fw-adversario-ct`; `/code-review` substituído por Codex (pedido do usuário); Ponytail em passe manual.
 
