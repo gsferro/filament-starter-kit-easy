@@ -3332,3 +3332,47 @@ function visiveisNoChecklistDoOnboarding(string $painel, User $pessoa): array
     // `master_global` pode não ter jornada alguma num painel: lista vazia, e não erro.
     return checklistDoOnboarding($painel, $pessoa)->instance()->flowState()?->steps->map(fn ($passo): string => $passo->key())->all() ?? [];
 }
+
+/**
+ * Registra pela tela de convite — usada por `DestinoAposCadastroTest`, `CadastroNoPainelDoPapelTest` e
+ * `CadastroNoPainelDoPapelTenancyTest` (`.ai/rules/testes.md`: helper de mais de um arquivo vive aqui).
+ *
+ * Quando a página única está ligada, o ponto de entrada é `/cadastro` (CadastroUnificado);
+ * quando desligada, o ponto de entrada é `/app/register` (RegistroPorConvite).
+ */
+function cadastrarPorConvite(string $componente, string $token, string $email = 'novo@example.com', string $nome = 'Fulano')
+{
+    Filament::auth()->logout();
+    Filament::setCurrentPanel('app');
+
+    return Livewire::withQueryParams(['token' => $token])
+        ->test($componente)
+        ->fillForm([
+            'name'                 => $nome,
+            'email'                => $email,
+            'password'             => 'segredo-bem-longo-123',
+            'passwordConfirmation' => 'segredo-bem-longo-123',
+        ])
+        ->call('register');
+}
+
+/**
+ * GET na MESMA sessão do teste: sem nova autenticação e sem desligar middleware.
+ *
+ * Grava a sessão e envia o cookie dela, de modo que o request enxerga o login (ou a ausência dele)
+ * que a resposta deixou.
+ */
+function acessoNaMesmaSessao(string $url): TestResponse
+{
+    session()->save();
+
+    return test()
+        ->withCookie(session()->getName(), session()->getId())
+        ->get($url);
+}
+
+/** Afirma que o acesso na mesma sessão termina em 200 — sem 403 nem redirect. */
+function esperarAcessoLivre(string $url): void
+{
+    expect(acessoNaMesmaSessao($url)->getStatusCode())->toBe(200, "GET {$url} nao terminou em 200");
+}

@@ -18,28 +18,6 @@ beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
-/**
- * Registra pela tela de convite.
- *
- * Quando a página única está ligada, o ponto de entrada é `/cadastro` (CadastroUnificado);
- * quando desligada, o ponto de entrada é `/app/register` (RegistroPorConvite).
- */
-function cadastrarPorConvite(string $componente, string $token, string $email = 'novo@example.com', string $nome = 'Fulano')
-{
-    Filament::auth()->logout();
-    Filament::setCurrentPanel('app');
-
-    return Livewire::withQueryParams(['token' => $token])
-        ->test($componente)
-        ->fillForm([
-            'name'                 => $nome,
-            'email'                => $email,
-            'password'             => 'segredo-bem-longo-123',
-            'passwordConfirmation' => 'segredo-bem-longo-123',
-        ])
-        ->call('register');
-}
-
 /** CT-67 — chave ligada, conta só de /admin cai no /admin. */
 it('com a chave ligada e sem pretendida, conta convidada como admin cai no admin', function (): void {
     ligarLoginUnificado();

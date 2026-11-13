@@ -7,9 +7,13 @@ namespace App\Http\Responses;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\DestinoAposLogin;
+use App\Support\Paineis;
 use Filament\Auth\Http\Responses\RegistrationResponse;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
+use Filament\Panel;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 use Livewire\Features\SupportRedirects\Redirector;
 
 /**
@@ -49,11 +53,49 @@ final class RespostaDeCadastro extends RegistrationResponse
 
         /*
          * Desligada não existe tela de escolha (`EscolhaDePainel::mount()` devolve ao painel
-         * default), então não há para onde mandar quem tem vários painéis: a única coisa errada
-         * aqui é a pretendida, e é ela que sai. O resto continua sendo o Filament.
+         * default). A pretendida inacessível sai; a acessível vence, e o Filament a segue.
          */
         DestinoAposLogin::descartarPretendidaInacessivel($user);
 
-        return parent::toResponse($request);
+        $corrente = Paineis::correnteOuPadrao();
+
+        if (session()->has('url.intended') || $user->canAccessPanel($corrente)) {
+            return parent::toResponse($request);
+        }
+
+        /*
+         * O painel corrente também pode ser inacessível: o link do convite é sempre o registro do
+         * `/app`, qualquer que seja o papel, e um convite `infra` terminava em 403 (issue #191).
+         * Ver `wikis/specs/fix/convite-painel-do-papel/`.
+         */
+        $painel = DestinoAposLogin::painelSemEscolha($user);
+
+        if ($painel instanceof Panel) {
+            Log::channel('autenticacao')->info(
+                "[RespostaDeCadastro@toResponse] Painel corrente inacessivel — destino no painel acessivel | user: {$user->getKey()} - painel: {$painel->getId()}",
+                ['user_id' => $user->getKey(), 'corrente' => $corrente->getId(), 'painel' => $painel->getId()],
+            );
+
+            return redirect()->to(Paineis::url($painel));
+        }
+
+        Log::channel('autenticacao')->warning(
+            "[RespostaDeCadastro@toResponse] Cadastro sem nenhum painel acessivel — sessao encerrada | user: {$user->getKey()}",
+            ['user_id' => $user->getKey(), 'corrente' => $corrente->getId(), 'motivo' => 'sem_painel_acessivel'],
+        );
+
+        Filament::auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        /** Mesma mensagem da irmã do modo ligado, `EscolhaDePainel::encerrarSemPainel()` (P-05). */
+        Notification::make()
+            ->title('Sua conta não tem acesso a nenhum painel.')
+            ->body('Procure quem administra o sistema.')
+            ->warning()
+            ->persistent()
+            ->send();
+
+        return redirect()->to($corrente->getLoginUrl() ?? url('/'));
     }
 }

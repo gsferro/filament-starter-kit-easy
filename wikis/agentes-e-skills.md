@@ -183,487 +183,481 @@ Abaixo, a cópia do roteiro da versão instalada, para consulta depois da atuali
 versão; o roteiro que vale para a próxima atualização é sempre o do link.
 
 <!-- roteiro-de-atualizacao:inicio -->
-# Roteiro de atualização — v0.51.2 → v0.52.0
+
+# Roteiro de atualização — v0.52.0 → v0.52.1
 
 Leia o roteiro inteiro antes de alterar um arquivo do projeto.
 
 ## Identificação
 
-Origem: v0.51.2
+Origem: v0.52.0
 
-Destino: v0.52.0
+Destino: v0.52.1
 
-Data: 2026-10-23
+Data: 2026-11-13
 
-Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/wikis/atualizacoes/v0.52.0.md
+Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.52.1/wikis/atualizacoes/v0.52.1.md
 
 Padrão do link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 
-Este roteiro nasceu depois da tag, por isso o link aponta para a `main`. Na próxima versão, troque
-`{versão}` no padrão pela versão destino do pedido; sem ela, pergunte ao dono. Leia também o mesmo
-arquivo na `main` e prefira o da `main` quando ele trouxer a linha `Roteiro revisado em`. Se as cópias
-divergirem sem essa linha, ou uma delas não abrir, na dúvida, pare e pergunte ao dono.
+Na próxima atualização, substitua `{versão}` pela versão destino do pedido. Sem ela, pergunte ao dono.
+
+Leia também o mesmo arquivo na `main`. Se o arquivo da `main` trouxer a linha `Roteiro revisado em`, prefira o arquivo da `main`. Se as cópias divergirem sem essa marca, ou uma delas não abrir, pare e informe o problema ao dono. Na dúvida, pare e pergunte ao dono.
 
 ## Antes de começar
 
-Rode cada conferência abaixo na raiz do projeto. Os comandos valem para Git Bash e para
-PowerShell, exceto onde aparecem as duas formas.
+O pedido que dispara este roteiro é: “Atualize meu projeto da v0.52.0 para a v0.52.1 seguindo este roteiro”, acompanhado do link da Identificação.
 
-1. **A árvore do git está limpa.** O comando de atualização recusa árvore suja, e é ela que torna tudo
-   reversível.
+Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e PowerShell, exceto onde aparecem as duas formas. Guarde as saídas para o relatório final.
+
+1. **A árvore do git está limpa.**
 
    ```bash
    git status --porcelain
    ```
 
-   Esperado: saída vazia. Com alguma linha, pare e peça ao dono que commite ou guarde o trabalho em
-   andamento. Não commite nem guarde o trabalho do dono por conta própria.
+   Esperado: saída vazia. Com alguma linha, pare e peça ao dono que commite ou guarde o trabalho em andamento. Não faça isso por conta própria.
 
 2. **A versão instalada é a origem deste roteiro.**
 
    ```bash
    php artisan config:clear
-   php artisan tinker --execute "echo config('kit.version');"
+   php artisan tinker --execute 'echo config("kit.version");'
    ```
 
-   Esperado: `0.51.2`. Qualquer outro valor encerra o roteiro aqui, sem alterar nada: `0.52.0` quer
-   dizer que o projeto já está atualizado; uma versão anterior à `0.51.2` pede antes os roteiros das
-   versões intermediárias, um de cada vez e em ordem, conferindo a versão entre um e outro; uma versão
-   posterior à `0.52.0` quer dizer que este roteiro não serve a este projeto.
+   Esperado: `0.52.0`. Outro valor encerra este roteiro sem aplicar arquivos: `0.52.1` indica que o marcador já está no destino; uma versão anterior a `0.52.0` exige primeiro as atualizações intermediárias, em ordem; uma versão posterior a `0.52.1` exige outro roteiro. Informe ao dono o valor encontrado.
 
-3. **O banco está acessível, e você guarda a impressão dos dados do dono.**
+3. **O banco está acessível, e a impressão dos dados foi guardada.**
 
    ```bash
    php artisan migrate:status
-   php artisan tinker --execute "echo config('kit.tenancy.enabled') ? 'SIM' : 'NAO';"
-   php artisan tinker --execute "echo json_encode(['usuarios' => array_map('md5', App\Models\User::orderBy('id')->get()->keyBy('id')->map->toJson()->all()), 'jornadas' => array_map('md5', Wallacemartinss\FilamentOnboarding\Models\OnboardingFlow::orderBy('id')->get()->keyBy('id')->map->toJson()->all()), 'passos' => array_map('md5', Wallacemartinss\FilamentOnboarding\Models\OnboardingStep::orderBy('id')->get()->keyBy('id')->map->toJson()->all()), 'configuracoes' => md5(json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->except('onboarding_habilitado')))]);"
+   php artisan tinker --execute 'echo config("kit.tenancy.enabled") ? "SIM" : "NAO";'
+   php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "configuracoes" => md5(json_encode(app(App\Settings\ConfiguracoesDoKit::class)->toArray()))]);'
    ```
 
-   Esperado: a lista de migrations sai sem erro e nenhuma aparece como `Pending`. Uma migration
-   pendente é do dono, e o `migrate --force` do passo 6 a rodaria junto: pare e pergunte antes. Anote se a multi-organização está `SIM` ou `NAO` e
-   guarde a saída do último comando, a **impressão**: um hash por usuário, por jornada e por passo do
-   tutorial, e um das Configurações da aplicação. Ela não expõe dado nem segredo, e no fim tem de bater.
+   Esperado: migrations consultadas sem erro e nenhuma `Pending`. Se houver pendência, informe ao dono quais são e pare; esta atualização não traz migration nem autoriza executar as dele.
 
-4. **Os nomes que o comando reserva estão livres.** Ele usa o remote `kit`, as tags `kit-*` e o branch
-   `kit-update/v0.52.0`, e apaga o remote e as tags que encontrar com esses nomes.
+   Anote o estado da multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário e um das Configurações da aplicação. Essa é a **impressão dos dados**, que deve ser idêntica ao final. Nenhuma configuração é excluída da comparação nesta versão.
+
+4. **Os nomes reservados pelo comando estão livres.**
 
    ```bash
    git remote
    git tag -l "kit-*"
-   git branch --list kit-update/v0.52.0
+   git branch --list kit-update/v0.52.1
    ```
 
-   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch. Se algum existir, ele é do dono:
-   pare e pergunte, sem apagar nada.
+   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.52.1`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
 
-5. **O que a versão nova traz, sem aplicar arquivo.**
+5. **O dry-run corresponde à release, inclusive nas dependências.**
 
    ```bash
-   php artisan kit:update --from=0.51.2 --tag=v0.52.0 --dry-run --keep-remote --no-interaction
-   git diff kit-v0.51.2 kit-v0.52.0 -- composer.json composer.lock
+   php artisan kit:update --from=0.52.0 --tag=v0.52.1 --dry-run --keep-remote --no-interaction
+   git diff kit-v0.52.0 kit-v0.52.1 -- composer.json
+   git diff kit-v0.52.0 kit-v0.52.1 -- composer.lock
+   git diff kit-v0.52.0 kit-v0.52.1 -- package.json package-lock.json
+   git diff --name-status kit-v0.52.0 kit-v0.52.1 -- database/migrations database/settings tests/Kit tests/Tenancy
    ```
 
-   Esperado: um resumo da `v0.52.0` com os arquivos do kit que mudaram, cada um rotulado `novo no kit`,
-   `modificado` ou `removido do kit`, e a frase de que nenhum arquivo foi tocado; e a saída do `git diff`
-   **vazia**. O dry-run não aplica arquivo, mas cria o remote `kit` e as tags `kit-v0.51.2` e
-   `kit-v0.52.0`, que os passos usam e o passo 10 remove. Pare se o resumo avisar que a tag pedida não
-   existe, se ele falar de outra versão, ou se o `git diff` mostrar alguma linha: esta versão não traz
-   dependência nova.
+   Esperado:
 
-6. **Quais arquivos do kit o dono editou.** Confira cada arquivo do resumo que já existe no projeto. Um
-   `modificado` se compara com a v0.51.2; um `novo no kit` que já existe se compara com a v0.52.0:
+   - resumo entre `kit-v0.52.0` e `kit-v0.52.1`, com os caminhos rotulados `novo no kit`, `modificado` ou `removido do kit`, e a informação de que nenhum arquivo foi tocado;
+   - diff do `composer.json` vazio;
+   - diff do `composer.lock` **não vazio**, com atualizações de versões e seus metadados, sem inclusão de pacote novo;
+   - diff do `package.json` e do `package-lock.json` com bumps de versões, sem dependência nova;
+   - nenhuma migration nova, nem em `database/migrations` nem em `database/settings`;
+   - os arquivos novos `tests/Kit/CadastroNoPainelDoPapelTest.php`, `tests/Tenancy/CadastroNoPainelDoPapelTenancyTest.php` e `tests/Kit/RoteiroDeAtualizacaoTest.php`.
+
+   O dry-run mantém o remote `kit` e as tags com prefixo `kit-`, usados nas comparações seguintes. Ele não aplica os locks: `composer.json`, `composer.lock`, `package.json` e `package-lock.json` ficam fora dos caminhos aplicados pelo comando. O passo 4 de `## Passos` trata as dependências separadamente.
+
+   Se a tag ainda não estiver disponível, pare e informe isso ao dono. Não substitua a tag pela `main`. Se o resumo ou os diffs não corresponderem às evidências acima, pare e mostre a divergência.
+
+6. **As edições do dono foram identificadas antes de qualquer aplicação.**
+
+   Para cada arquivo do resumo que existe no projeto, compare com a origem quando for `modificado`, ou com o destino quando for `novo no kit`:
 
    ```bash
-   git diff --name-only kit-v0.51.2 HEAD -- caminho/do/modificado
-   git diff --name-only kit-v0.52.0 HEAD -- caminho/do/novo
+   git diff --name-only kit-v0.52.0 HEAD -- caminho/do/modificado
+   git diff --name-only kit-v0.52.1 HEAD -- caminho/do/novo
    ```
 
-   Saída vazia: nada do dono no arquivo. O caminho impresso: o arquivo tem edição do dono, e ele entra
-   na lista de conflitos da primeira decisão em `## Decisões do dono do projeto`. Veja a edição com o
-   mesmo `git diff`, sem o `--name-only`, para descrevê-la ao dono. O `config/kit.php` é o candidato mais comum: é ali que ficam as
-   credenciais do seeder.
+   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos. Repita sem `--name-only` para descrever a edição ao dono.
+
+   Confira especialmente:
+
+   - `app/Http/Responses/RespostaDeCadastro.php`;
+   - `app/Support/DestinoAposLogin.php`;
+   - `app/Console/Commands/KitCobertura.php`;
+   - `database/seeders/DashboardPadraoSeeder.php`;
+   - `database/seeders/DemoTenancySeeder.php`;
+   - `database/seeders/ShieldPermissionsSeeder.php`;
+   - `database/seeders/Onboarding/SeederDeOnboardingDeTenancy.php`;
+   - `config/kit.php`, incluindo as credenciais e configurações do dono.
+
+   Confira também o conjunto de dependências:
+
+   ```bash
+   git diff --name-only kit-v0.52.0 HEAD -- composer.json composer.lock package.json package-lock.json
+   ```
+
+   Se qualquer um desses quatro arquivos divergir da origem, trate o conjunto como conflito na decisão abaixo. Não substitua um lock isoladamente quando ele precisa representar dependências próprias do projeto.
 
 ## O que muda nesta versão
 
-A v0.52.0 entrega o **tutorial guiado** nos três painéis (`/admin`, `/app` e `/infra`), construído
-sobre o pacote `wallacemartinss/filament-onboarding`, que o projeto já tem instalado desde antes:
+A v0.52.1 corrige o destino após o cadastro por convite quando o login unificado está desligado. O convite usa o cadastro do `/app`, mas a conta criada pode ter acesso somente a outro painel. Antes, ela podia terminar em 403 ao permanecer no `/app`.
 
-- jornadas de primeiros passos com um checklist flutuante, tours por feature e a página **Primeiros
-  passos**, em `/{painel}/onboarding`;
-- um interruptor novo, *Usar o tutorial guiado*, na aba Aplicação de `/admin/configuracoes-da-aplicacao`.
-  Ele nasce **desligado**. Desligado, o checklist, os tours, a página "Primeiros passos" e a autoria de
-  jornadas e condições no `/admin` somem e respondem 404, inclusive numa tela já aberta. Nada é apagado;
-- na v0.51.2 a autoria de jornadas aparecia no menu do `/admin` sem interruptor. Depois da
-  atualização ela só volta com o interruptor ligado, e as jornadas que o dono já criou continuam no
-  banco;
-- o tutorial depende de sete arquivos do kit que a versão muda: o `config/kit.php` (o bloco
-  `onboarding`, que lê `KIT_ONBOARDING`), o `app/Settings/ConfiguracoesDoKit.php` (a propriedade
-  `onboarding_habilitado` e a linha dela no mapa de configuração), o `phpunit.xml` (a linha
-  `<env name="KIT_ONBOARDING" value="false" force="true"/>`, que deixa o tutorial desligado na suíte) e
-  os providers `app/Providers/KitServiceProvider.php`, `app/Providers/Filament/AdminPanelProvider.php`,
-  `AppPanelProvider.php` e `InfraPanelProvider.php`, que registram o tutorial nos painéis e o canal de
-  log;
-- uma migration de settings nova (`database/settings/2026_10_21_100000_add_onboarding_to_kit_settings.php`)
-  cria a configuração `onboarding_habilitado` com o valor de `config('kit.onboarding.habilitado')` na
-  hora em que roda: `false` sem o bloco `onboarding` no `config/kit.php` ou sem `KIT_ONBOARDING=true`.
-  Depois disso o banco vence o `.env`;
-- o conteúdo do tutorial vem de um seeder próprio, `OnboardingSeeder`, fora do `db:seed` comum: um
-  seeder filho por feature em `database/seeders/Onboarding/` (21 sempre e 6 só com multi-organização).
-  Ele é idempotente e não sobrescreve jornada nem passo que já existe. Semear não liga o interruptor;
-- ligado, o tutorial aparece para quem tem a permissão `View:PrimeirosPassos`; cada passo aparece só
-  para quem abre a tela dele, e o passo de uma feature desligada sai do checklist até ela voltar;
-- o `config/filament-onboarding.php` passa a ter os idiomas `pt_BR` e `en` (antes só `en`): só os
-  idiomas listados ali ficam editáveis na autoria;
-- as views de `resources/views/vendor/filament-onboarding` passam a ser entregues pelo comando de
-  atualização (a página "Primeiros passos" foi corrigida);
-- um canal de log `onboarding` novo. O `config/logging.php` é do dono e não é entregue: o kit declara o
-  canal sozinho quando o arquivo do projeto não o tem;
-- os testes do kit (`tests/Kit`) e o `phpunit.xml` chegam com o tutorial desligado na suíte, e a suíte
-  passa a pular até 942 casos, os que só valem dentro do repositório do kit.
+Depois da correção, uma URL pretendida acessível continua tendo prioridade. Sem ela, se o painel corrente for inacessível, a conta segue para um painel que pode acessar: primeiro o painel padrão, quando acessível; senão, o primeiro acessível na ordem dos painéis registrados. Sem nenhum painel acessível, a sessão é encerrada e a pessoa volta ao login com o aviso "Sua conta não tem acesso a nenhum painel.". O fluxo com painel corrente acessível e o modo de login unificado ligado mantêm seu comportamento.
 
-Esta versão não traz pacote novo no `composer.json`.
+Com a multi-organização ligada, no cadastro, a URL pretendida de uma organização que a conta não acessa (por exemplo `/app/outra` para quem só é da `acme`) passa a ser descartada: antes ela era aceita e a pessoa terminava numa página de erro do painel. As rotas do painel que não são de organização (login, verificação de e-mail) continuam aceitas. O login unificado e o login social não mudam.
+
+A implementação chega em `app/Http/Responses/RespostaDeCadastro.php` e `app/Support/DestinoAposLogin.php`. A regressão é coberta pelos testes novos `tests/Kit/CadastroNoPainelDoPapelTest.php` e `tests/Tenancy/CadastroNoPainelDoPapelTenancyTest.php`, ambos em diretórios entregues pelo `kit:update`.
+
+Quatro seeders passam a aceitar a ausência de um comando de console ao emitir avisos ou mensagens: `DashboardPadraoSeeder`, `DemoTenancySeeder`, `ShieldPermissionsSeeder` e `SeederDeOnboardingDeTenancy`. O `KitCobertura` também recebe ajustes de tipos exigidos pelas dependências atualizadas.
+
+Os locks trazem bumps de dependências, incluindo Laravel 13.42.0, Laravel Settings 3.10.2, Larastan 3.15.0, Rector 2.8.4, Pint 1.32.3, Vite 8.3.8, Laravel Vite Plugin 3.2.1, Tailwind CSS 4.3.5 e Playwright 1.65.0. Não há pacote novo. Os arquivos de dependências exigem o tratamento separado e os installs do passo 4.
+
+A versão também acrescenta a guarda dos roteiros de atualização e passa a entregar ao projeto instruções locais para futuras atualizações. O `config/kit.php` muda somente o marcador da versão para `0.52.1`.
+
+Não há migration nova, jornada nova a semear, permissão nova a gerar ou default de configuração alterado.
 
 ## Cuidados
 
-- **Nenhum comando que apague dados do banco.** Não rode `php artisan migrate:fresh`,
-  `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem
-  `php artisan migrate:rollback`, com ou sem prefixo (`./vendor/bin/sail artisan …`,
-  `docker compose exec app php artisan …`). Os dados do banco são do dono, e esses comandos apagam
-  tabelas ou desfazem migrations com dados dentro.
-- **Não rode `php artisan kit:tenancy` nem `php artisan kit:install`.** Os dois recriam o banco. A
-  multi-organização do projeto fica como está.
-- **A suíte só roda com o banco forçado no próprio comando**, como no passo 9. Sem isso, ela pode usar o
-  banco do dono e recriar as tabelas dele.
-- **O `--all` sobrescreve os arquivos `modificado` e os `novo no kit` que já existem.** É por isso que o
-  pré-voo lista os que o dono editou e a primeira decisão pergunta o que fazer com eles.
-- **O comando de atualização que roda é o da v0.51.2.** Ele mesmo é um dos arquivos que a versão nova
-  atualiza, e a classe antiga continua carregada até o fim da execução: as mensagens que você vê são as
-  da versão anterior. O comportamento novo vale a partir da próxima execução.
-- **A saída do comando não prova a atualização.** Ele marca `0.52.0` no `config/kit.php` assim que
-  aplica um arquivo e anuncia cada `aplicado:` sem conferir o git. Confira o branch, o índice e os
-  arquivos, no passo 3.
-- **O `.env` e o `config/logging.php` são do dono.** Nenhum passo os sobrescreve. O único toque
-  permitido no `.env` é a linha `KIT_ONBOARDING`, do jeito que o passo 4 descreve.
-- **O `PapeisSeeder` redefine as permissões dos papéis do kit para as de fábrica.** Rode só com a
-  resposta do dono à decisão das permissões.
-- **Nada é commitado.** O comando trabalha no branch `kit-update/v0.52.0` e deixa as mudanças no
-  índice: revise com `git status` e `git diff --cached`. Não commite, não faça merge e não apague o
-  branch.
-- **Desfazer é decisão do dono, e só com o pedido dele.** `git reset --hard HEAD` volta o índice e os
-  arquivos ao último commit do dono, inclusive os arquivos novos que o update pôs no índice. Arquivos
-  não rastreados que os comandos criaram aparecem no `git status` e saem um a um, com o ok dele. Nada
-  disso desfaz o banco (migration, jornadas, permissões) nem a linha do `.env`.
+- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker.
+- **Preserve o modo de multi-organização.** Não rode `php artisan kit:tenancy` nem `php artisan kit:install`, pois recriam o banco.
+- **As correções dos seeders não pedem semeadura.** Não execute seeders no banco do dono para aplicar esta release. Isso poderia criar dados de demonstração ou redefinir permissões sem necessidade.
+- **A suíte pode recriar tabelas no banco que receber.** Execute-a somente com as três variáveis de banco forçadas no próprio comando do passo 6, depois de limpar o cache de configuração.
+- **O `--all` substitui arquivos existentes.** Resolva previamente a decisão de conflito e restaure ou reaplique as edições conforme o passo 2 antes de executar os demais passos.
+- **Os dois arquivos do cadastro trabalham juntos.** Se um deles ficar integralmente na versão do dono, registre que a correção pode não ter sido incorporada. Não anuncie o defeito como resolvido apenas porque o marcador mudou.
+- **Os installs usam os locks locais.** Executá-los sem antes tratar os arquivos de dependências não traz automaticamente as versões da release. Não sobrescreva dependências próprias do projeto nem execute atualização geral para contornar incompatibilidade.
+- **O marcador não prova a entrega.** O comando pode marcar `0.52.1` depois de aplicar apenas parte dos arquivos. Confira o branch, os arquivos novos e os diffs.
+- **O `.env` e os canais de log são do dono.** Esta versão não exige alterar o `.env` nem o `config/logging.php`.
+- **As mudanças ficam para revisão.** O comando aplica arquivos no índice. Use `git status` e `git diff --cached`; não commite, não faça merge e não apague o branch por conta própria.
+- **Desfazer exige pedido do dono.** `git reset --hard HEAD` desfaz alterações de arquivos e do índice, incluindo arquivos novos adicionados pelo update. Arquivos não rastreados precisam ser avaliados e removidos um a um. Isso não reverte o banco nem reinstala as dependências anteriores.
 
 ## Decisões do dono do projeto
 
-Faça as cinco perguntas abaixo ao dono **antes** do passo 1 de `## Passos`, de uma vez, com a
-recomendação de cada uma. Espere a resposta. Sem resposta, siga o `Sem resposta:` de cada decisão e
-registre a escolha no relatório final.
+Apresente a lista de conflitos do pré-voo antes do passo 1. Faça a pergunta com os diffs e a recomendação. Sem resposta, aplique o default abaixo e registre as limitações. Com a lista vazia, registre “nenhum conflito” e siga.
+
+Nenhuma outra decisão do dono nesta versão.
 
 ### Conflito em arquivo do kit que você editou
 
-Pergunta: Estes arquivos do kit têm edição sua e a v0.52.0 também os traz (a lista do passo 6 de Antes de começar): para cada um, você quer manter a sua versão, receber a versão do kit, ou receber a do kit com as suas mudanças reaplicadas por cima?
+Pergunta: Estes arquivos do kit têm edição sua e a v0.52.1 também os altera, incluindo o conjunto de dependências quando houver divergência: para cada arquivo ou conjunto, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
 
-Recomendação da release: receber a do kit com as suas mudanças reaplicadas, depois de ver o diff de cada um.
+Recomendação da release: receber a versão do kit com suas mudanças reaplicadas após revisar os diffs; no conjunto de dependências, preservar os pacotes e scripts próprios do projeto e manter manifests e locks compatíveis.
 
-Sem resposta: mantém a versão do dono e registra no relatório, arquivo a arquivo, o que deixou de chegar.
+Sem resposta: mantém a versão do dono e registra no relatório, arquivo a arquivo ou por conjunto de dependências, o que deixou de chegar.
 
-No `config/kit.php`, no `app/Settings/ConfiguracoesDoKit.php` e no `phpunit.xml` há uma quarta
-resposta: manter o seu arquivo e acrescentar só o que a v0.52.0 traz para o tutorial (o bloco
-`onboarding`; a propriedade `onboarding_habilitado` e a linha dela no mapa; a linha `KIT_ONBOARDING` do
-`phpunit.xml`). Junto com a pergunta, diga ao dono: se um dos sete arquivos do tutorial ficar com a
-versão dele inteira, sem o que a v0.52.0 acrescenta, **ligar o tutorial nesta atualização não é
-possível**, porque a migration lê o bloco `onboarding`, a configuração precisa da propriedade, a suíte
-precisa do tutorial desligado e os painéis precisam registrar o tutorial. Nesse caso, registre o "sim"
-da decisão seguinte como "ligar não foi possível", com o arquivo que impediu, e siga como "não". Com a lista vazia, não há o que perguntar: registre "nenhum conflito" e siga.
-
-### Ligar o tutorial guiado
-
-Pergunta: A v0.52.0 chega com o tutorial guiado desligado, e a autoria de jornadas que o /admin mostrava na v0.51.2 some junto com ele: você quer ligar o tutorial guiado neste projeto?
-
-Recomendação da release: sim, ligar, junto com a semeadura das jornadas da decisão seguinte.
-
-Sem resposta: não liga; o tutorial guiado fica desligado, como a release entrega, e a escolha vai para o relatório.
-
-### Semear as jornadas do tutorial
-
-Pergunta: A v0.52.0 chega com as jornadas do tutorial não semeadas, porque o conteúdo fica fora do db:seed comum: você quer que eu semeie as jornadas agora?
-
-Recomendação da release: sim, semear; o seeder não apaga nem sobrescreve jornada que já existe.
-
-Sem resposta: não semeia, e o relatório traz o comando para semear depois.
-
-### Permissão da página Primeiros passos
-
-Pergunta: Para os papéis do kit enxergarem o tutorial, eles precisam da permissão View:PrimeirosPassos, e o PapeisSeeder a entrega redefinindo as permissões desses papéis para as de fábrica: você quer que eu rode o PapeisSeeder?
-
-Recomendação da release: só se as permissões dos papéis do kit são as de fábrica; se você as mudou, responda não e dê a permissão pela tela /admin/shield/roles.
-
-Sem resposta: não roda o PapeisSeeder nem mexe nos papéis, e registra no relatório.
-
-### Idiomas da autoria do tutorial
-
-Pergunta: A v0.52.0 define os idiomas da autoria pt_BR e en no config/filament-onboarding.php, onde a v0.51.2 tinha só en: você aceita a mudança?
-
-Recomendação da release: sim, aceitar; o conteúdo semeado vem nos dois idiomas.
-
-Sem resposta: mantém o arquivo do projeto como está (só en) e registra no relatório.
+Explique junto da pergunta que manter um dos dois arquivos do cadastro sem integrar a correção pode deixar o 403 sem solução. Manter os arquivos de dependências pode deixar os bumps pendentes. No `config/kit.php`, preservar o conteúdo do dono inclui mudar somente o marcador para `0.52.1`, sem substituir suas configurações.
 
 ## Passos
 
-Cada passo diz quando roda (condição), o que fazer (ação) e o que conferir antes de seguir (evidência).
-Passo sem condição sempre roda; passo sem evidência pede só que cada comando termine sem erro. Evidência
-que não aparece é motivo de parada, conforme `## Quando parar`.
+Cada passo tem condição, ação e evidência. Se a evidência não aparecer, pare e informe ao dono conforme `## Quando parar`.
 
-### 1. Aplicar a versão do kit
+### 1. Aplicar os arquivos entregues pelo comando
 
-Condição: as seis conferências de `## Antes de começar` passaram, e as decisões foram respondidas ou
-registradas como sem resposta.
+Condição: as seis conferências do pré-voo passaram, e a decisão de conflito foi respondida ou registrada com o default seguro.
 
 Ação:
 
 ```bash
-php artisan kit:update --from=0.51.2 --tag=v0.52.0 --all --keep-remote --no-interaction
+php artisan kit:update --from=0.52.0 --tag=v0.52.1 --all --keep-remote --no-interaction
 ```
 
-Evidência: a saída lista os arquivos como `aplicado:` e contém a linha
-`config/kit.php: versão marcada como 0.52.0` (depois dela vêm a nota de que o próprio comando foi
-atualizado e o bloco "Próximos passos"). O `--keep-remote` mantém as tags `kit-*` para o passo 2.
-Se a saída disser "RODE O COMANDO DE NOVO", pare: veja `## Quando parar`.
+Evidência: os arquivos aparecem como `aplicado:`, a saída contém `config/kit.php: versão marcada como 0.52.1` e o branch criado é `kit-update/v0.52.1`. As tags ficam disponíveis para resolver conflitos e tratar as dependências.
 
-### 2. Resolver os arquivos em conflito
+Se o comando recusar a árvore, pedir nova execução ou anunciar outra versão, pare. Não faça commit para tentar uma segunda rodada.
 
-Condição: a lista de conflitos não está vazia, ou a decisão dos idiomas não aceitou a mudança (aí o
-`config/filament-onboarding.php` volta a ser o do projeto).
+### 2. Resolver os conflitos conforme a decisão
 
-Ação, para cada arquivo, conforme a resposta:
+Condição: existem arquivos em conflito. Sem conflitos, siga para o passo 3.
 
-- **manter a versão do dono:** `git checkout HEAD -- caminho/do/arquivo`;
-- **receber a do kit:** nada a fazer, o passo 1 já aplicou;
-- **receber a do kit com as mudanças do dono:** veja as mudanças com o `git diff` do passo 6 do
-  pré-voo (sem o `--name-only`) e reaplique-as no arquivo com a ferramenta de edição, sem
-  tocar no resto. Se elas não couberem na versão nova, pare e mostre ao dono;
-- **arquivo do dono com só o acréscimo do tutorial** (`config/kit.php`, `app/Settings/ConfiguracoesDoKit.php`
-  ou `phpunit.xml`): `git checkout HEAD -- caminho/do/arquivo`, depois veja o acréscimo com
-  `git diff kit-v0.51.2 kit-v0.52.0 -- caminho/do/arquivo` e copie para o arquivo do dono só as linhas
-  do tutorial (o bloco `onboarding`; a propriedade `onboarding_habilitado` e a linha do mapa; a linha
-  `KIT_ONBOARDING`), no mesmo lugar em que a versão nova as põe.
+Ação, arquivo a arquivo:
 
-Sempre que o `config/kit.php` voltar a ser o do dono, troque nele só a linha `'version' => '0.51.2',` por
-`'version' => '0.52.0',`, com a ferramenta de edição de arquivo.
+- **Manter a versão do dono:** restaure com `git checkout HEAD -- caminho/do/arquivo`.
+- **Receber a versão do kit:** mantenha o que o passo 1 aplicou.
+- **Receber a versão do kit com as mudanças do dono:** consulte o diff guardado no pré-voo e reaplique somente as mudanças do dono com a ferramenta de edição. Se a integração não for clara, pare e mostre o ponto ao dono.
 
-Evidência: `git diff HEAD -- caminho/do/arquivo` sai vazio para cada arquivo que ficou com a versão do
-dono (ou só a versão do `config/kit.php` e as linhas do tutorial acrescentadas, quando foram pedidas).
+Quando preservar o `config/kit.php`, troque somente `'version' => '0.52.0',` por `'version' => '0.52.1',`.
 
-### 3. Conferir a versão, o branch e os arquivos
+Revise e adicione ao índice cada arquivo integrado:
+
+```bash
+git diff HEAD -- caminho/do/arquivo
+git add -- caminho/do/arquivo
+```
+
+Inclua o marcador no índice depois de conferir que as demais configurações foram preservadas:
+
+```bash
+git diff HEAD -- config/kit.php
+git add -- config/kit.php
+```
+
+O conjunto de dependências será tratado no passo 4, conforme a mesma decisão.
+
+Evidência: arquivos mantidos integralmente têm `git diff HEAD -- caminho/do/arquivo` vazio. No `config/kit.php` preservado, a única diferença é a versão. Arquivos integrados contêm a correção aceita e as customizações do dono, com o resultado revisado no índice. Registre qualquer correção que ficou pendente.
+
+### 3. Conferir o branch, o marcador e os arquivos novos
+
+Condição: aplicação e resolução dos conflitos de código concluídas.
 
 Ação:
 
 ```bash
 php artisan config:clear
-php artisan tinker --execute "echo config('kit.version');"
+php artisan tinker --execute 'echo config("kit.version");'
 git branch --show-current
+git status --short
 git diff --cached --name-status
-git ls-files database/seeders/OnboardingSeeder.php app/Support/TutorialGuiado.php app/Filament/Pages/PrimeirosPassos.php database/settings/2026_10_21_100000_add_onboarding_to_kit_settings.php
+git ls-files --error-unmatch tests/Kit/RoteiroDeAtualizacaoTest.php tests/Kit/CadastroNoPainelDoPapelTest.php tests/Tenancy/CadastroNoPainelDoPapelTenancyTest.php
 ```
 
-Evidência: a versão responde `0.52.0`; o branch é `kit-update/v0.52.0`; o índice tem os arquivos do
-resumo do dry-run, menos os `removido do kit` e os que ficaram com a versão do dono; e o `git ls-files`
-imprime os quatro arquivos novos. Algo diferente: pare.
+Evidência: versão `0.52.1`, branch `kit-update/v0.52.1` e os três caminhos novos impressos pelo `git ls-files`. O índice corresponde ao resumo do dry-run, consideradas as escolhas de conflito. Os arquivos que o dono manteve aparecem no relatório como exceções.
 
-### 4. Acertar o interruptor antes da migration
+A ausência de arquivo novo só pode corresponder a uma escolha explícita de conflito, que deixa a entrega incompleta e deve ser registrada. Ausência sem essa explicação exige parada.
 
-A migration do passo 6 grava o valor que a configuração tiver na hora em que roda.
+### 4. Trazer as versões das dependências e instalar
 
-Ação: veja as linhas que o `.env` já tem com a chave.
+Condição: os diffs de dependências do pré-voo foram conferidos, e qualquer conflito nesse conjunto já tem resposta ou default registrado.
+
+Ação:
+
+Se os quatro arquivos locais eram iguais aos da origem, traga os três arquivos alterados pela release:
 
 ```bash
-git grep --no-index -n KIT_ONBOARDING .env
+git checkout kit-v0.52.1 -- composer.lock package.json package-lock.json
 ```
 
-- Tutorial a ligar (decisão "sim", e possível) e nenhuma linha: acrescente `KIT_ONBOARDING=true` numa
-  linha própria no fim do `.env`, com a ferramenta de edição, sem alterar nenhuma outra linha.
-- Uma linha ativa com o valor contrário à escolha, ou mais de uma linha ativa: mostre ao dono e só
-  troque com o ok dele. Sem o ok, pare.
-- Nos outros casos, não mexa no `.env`.
+O `composer.json` não mudou entre as tags e não precisa ser substituído.
 
-Depois:
+Se o conjunto tinha customizações, siga a decisão:
+
+- **Manter a versão do dono ou sem resposta:** preserve os quatro arquivos locais e registre os bumps que ficaram pendentes.
+- **Receber a versão do kit:** substitua o conjunto somente quando essa substituição tiver sido aceita expressamente na decisão.
+- **Receber a versão do kit com mudanças reaplicadas:** integre os bumps preservando as dependências e scripts próprios. Se isso exigir resolver novamente dependências ou alterar restrições além dos bumps aceitos, pare e apresente o conflito ao dono; não improvise uma atualização geral.
+
+Revise o resultado:
 
 ```bash
-php artisan config:clear
-php artisan tinker --execute "var_export(config('kit.onboarding.habilitado'));"
+git diff HEAD -- composer.json composer.lock package.json package-lock.json
 ```
 
-Evidência: `true` com o tutorial a ligar; `false` ou `NULL` nos outros casos. Diferente disso, pare:
-uma variável de ambiente fora do `.env` ou o `config/kit.php` sem o bloco estão decidindo no lugar do
-dono.
+Depois, execute:
 
-### 5. Publicar os assets e limpar os caches
+```bash
+composer install
+npm install
+```
+
+Confira novamente e adicione somente os arquivos de dependências cujo resultado foi revisado:
+
+```bash
+git diff HEAD -- composer.json composer.lock package.json package-lock.json
+git add -- composer.json composer.lock package.json package-lock.json
+git diff --cached --stat -- composer.json composer.lock package.json package-lock.json
+```
+
+Evidência: os dois installs terminam com código de saída zero, sem erro de plataforma, lock incompatível ou dependência ausente. No caminho sem customizações, os três arquivos recebidos continuam iguais aos da tag:
+
+```bash
+git diff kit-v0.52.1 -- composer.lock package.json package-lock.json
+```
+
+Esperado nesse caminho: saída vazia. Com integração aprovada, o diff deve conter somente as customizações preservadas e os ajustes necessários já revisados. Qualquer alteração inesperada provocada pelos installs exige parada.
+
+Com o default de manter o conjunto, registre que os installs usaram os locks do dono e que isso não comprova a instalação dos bumps da release.
+
+### 5. Atualizar os assets e limpar os caches
+
+Condição: os installs terminaram sem erro.
 
 Ação:
 
 ```bash
+npm run build
 php artisan filament:assets
 php artisan optimize:clear
 ```
 
-### 6. Rodar a migration da versão
+Evidência: os três comandos terminam sem erro. Confira `git status --short` e revise eventuais arquivos gerados antes de adicioná-los ao índice. Não inclua artefatos inesperados.
 
-Ação:
+Não há migration, semeadura de jornadas ou geração de permissões para executar nesta atualização.
 
-```bash
-php artisan migrate --force
-php artisan tinker --execute "echo app(App\Settings\ConfiguracoesDoKit::class)->onboarding_habilitado ? 'SIM' : 'NAO';"
-```
+### 6. Rodar a suíte Kit,Tenancy com banco descartável
 
-Evidência: a saída do `migrate` lista `2026_10_21_100000_add_onboarding_to_kit_settings` como
-executada, e o interruptor responde `SIM` com o tutorial a ligar e `NAO` nos outros casos.
+Condição: arquivos e dependências foram conferidos e os caches foram limpos.
 
-### 7. Semear as jornadas
-
-Condição: o dono respondeu sim na decisão "Semear as jornadas do tutorial". Sem resposta ou com não,
-pule este passo.
-
-Ação:
+Ação, no Git Bash:
 
 ```bash
-php artisan db:seed --class=OnboardingSeeder --force --no-interaction
-```
-
-### 8. Gerar e entregar a permissão da página
-
-Condição: o tutorial foi ligado no passo 6, ou o dono respondeu sim na decisão "Permissão da página
-Primeiros passos". Nos outros casos, pule este passo.
-
-Ação: crie só a permissão da página nova, sem gerar policy (a permissão é uma só para os três painéis,
-e a página está registrada em todos).
-
-```bash
-php artisan shield:generate --panel=admin --page=PrimeirosPassos --option=permissions --no-interaction
-php artisan tinker --execute "echo app(config('permission.models.permission'))->where('name', 'View:PrimeirosPassos')->count();"
-```
-
-Só com o sim na decisão das permissões:
-
-```bash
-php artisan db:seed --class=PapeisSeeder --force --no-interaction
-php artisan tinker --execute "echo app(config('permission.models.permission'))->where('name', 'View:PrimeirosPassos')->first()?->roles->pluck('name');"
-```
-
-Evidência: a contagem é `1`; com o `PapeisSeeder`, a lista traz os papéis do kit; e `git status`
-não mostra arquivo novo em `app/Policies`. Contagem `0` vira pendência no relatório. Não rode o
-`ShieldPermissionsSeeder` nem o `shield:generate --all`: eles criam policy para os Resources do dono
-que não têm uma, e isso restringe o acesso dos papéis dele.
-
-### 9. Rodar a suíte do kit
-
-Ação, com o banco descartável forçado no próprio comando. O `DB_URL` aponta para o mesmo banco em
-memória: vazio, no PowerShell, ele apagaria a variável e deixaria um `DB_URL` do `.env` decidir.
-
-```bash
-# Git Bash
 php artisan config:clear
 DB_CONNECTION=sqlite DB_DATABASE=:memory: DB_URL=sqlite:///:memory: php artisan test --testsuite=Kit,Tenancy --parallel --compact
 ```
 
+Ação equivalente no PowerShell, preservando os valores anteriores das variáveis da sessão:
+
 ```powershell
-# PowerShell
 php artisan config:clear
-$env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; $env:DB_URL='sqlite:///:memory:'
-php artisan test --testsuite=Kit,Tenancy --parallel --compact
-Remove-Item Env:DB_CONNECTION, Env:DB_DATABASE, Env:DB_URL
+$bancoAnteriorConnection = $env:DB_CONNECTION
+$bancoAnteriorDatabase = $env:DB_DATABASE
+$bancoAnteriorUrl = $env:DB_URL
+
+try {
+    $env:DB_CONNECTION = 'sqlite'
+    $env:DB_DATABASE = ':memory:'
+    $env:DB_URL = 'sqlite:///:memory:'
+    php artisan test --testsuite=Kit,Tenancy --parallel --compact
+    $codigoDaSuite = $LASTEXITCODE
+}
+finally {
+    $env:DB_CONNECTION = $bancoAnteriorConnection
+    $env:DB_DATABASE = $bancoAnteriorDatabase
+    $env:DB_URL = $bancoAnteriorUrl
+}
+
+$codigoDaSuite
 ```
 
-Evidência: zero erro, zero falha e **no máximo 942 pulados**. Os 942 são os casos que só valem dentro
-do repositório do kit (leem arquivos que não viajam para o projeto). Mais que isso: pare e liste os
-casos pulados a mais.
+O `DB_URL` também precisa apontar para o banco em memória. Deixá-lo vazio pode permitir que o valor do `.env` decida o banco usado pela suíte.
 
-Depois da suíte, rode `git status --porcelain app/Policies`. Os testes semeiam as permissões com o
-`shield:generate --all`, que grava no disco uma policy para cada Resource seu que ainda não tem uma.
-Linha com `??` é um desses arquivos: ele não existia antes da atualização (o pré-voo exigiu a árvore
-limpa), então remova-os com `git clean -f -- app/Policies` e liste no relatório final cada arquivo
-removido. Esse comando só apaga arquivo não rastreado; os arquivos que o `kit:update` trouxe estão no
-índice e ficam.
+Evidência: código de saída zero, zero erro, zero falha e **no máximo 1156 pulados** fora da árvore do kit. Os pulados permitidos são os casos que leem arquivos exclusivos do repositório do kit. Se houver mais, liste os casos adicionais e pare sem modificar os testes.
 
-### 10. Remover o remote e as tags do kit
-
-Condição: ao terminar, ou ao parar depois do passo 5 de `## Antes de começar`.
-
-Ação (o `kit:update` traz todas as tags do kit com o prefixo `kit-`, e só o laço de cada shell as apaga):
+Depois da suíte:
 
 ```bash
-# Git Bash
+git status --porcelain app/Policies
+```
+
+Os testes semeiam permissões no banco descartável e podem gerar policies no disco para Resources do dono. Registre cada caminho com `??` e remova esses arquivos não rastreados:
+
+```bash
+git clean -f -- app/Policies
+git status --porcelain app/Policies
+```
+
+Evidência: nenhum arquivo não rastreado gerado pela suíte permanece em `app/Policies`. Os arquivos rastreados, inclusive os recebidos pelo update, continuam preservados. Alteração em policy rastreada exige parada e análise.
+
+Depois dessa validação, peça ao dono que rode a suíte completa com `php artisan test --compact` em ambiente de testes com banco descartável.
+
+### 7. Conferir os dados e a preservação do projeto
+
+Condição: a suíte terminou e as variáveis da sessão PowerShell foram restauradas, quando aplicável.
+
+Ação:
+
+```bash
+php artisan config:clear
+php artisan tinker --execute 'echo config("kit.version");'
+php artisan tinker --execute 'echo config("kit.tenancy.enabled") ? "SIM" : "NAO";'
+php artisan migrate:status
+php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "configuracoes" => md5(json_encode(app(App\Settings\ConfiguracoesDoKit::class)->toArray()))]);'
+git diff HEAD -- .env config/logging.php
+git status --short
+git diff --cached --stat
+```
+
+Evidência: `kit.version` responde `0.52.1`; a multi-organização tem o mesmo valor do pré-voo; as migrations têm o mesmo estado, sem pendências novas; a impressão dos usuários e das Configurações é exatamente igual à inicial; o diff de `.env` e `config/logging.php` é vazio.
+
+Confira também cada arquivo que ficou com a versão do dono e cada integração aprovada. Qualquer diferença de dados ou customização não explicada exige parada.
+
+### 8. Remover o remote e as tags temporários
+
+Condição: ao terminar ou ao parar depois que o dry-run tiver criado o remote e as tags. Este passo não autoriza apagar nomes que já existiam no pré-voo.
+
+Ação, no Git Bash:
+
+```bash
 git tag -l "kit-*" | xargs -r git tag -d
 git remote remove kit
 ```
 
+Ação equivalente no PowerShell:
+
 ```powershell
-# PowerShell
 git tag -l "kit-*" | ForEach-Object { git tag -d $_ }
 git remote remove kit
 ```
 
-Evidência: `git remote` não lista `kit` e `git tag -l "kit-*"` sai vazio.
+Se uma tentativa anterior já removeu algum desses nomes, confira o estado e remova somente o que ainda existir.
+
+Evidência:
+
+```bash
+git remote
+git tag -l "kit-*"
+```
+
+Nenhum remote `kit` e nenhuma tag `kit-*`. O branch `kit-update/v0.52.1` permanece com as mudanças para revisão, sem commit.
 
 ## Como conferir
 
-O projeto atualizado tem de mostrar tudo isto, conferido com os comandos das seções de pré-voo e de passos:
+O estado esperado é o mesmo dos cenários 3 e 4 de atualização: versão e arquivos conferidos, com ou sem multi-organização, preservando as customizações e os dados do dono.
 
 | O que | Esperado |
 |---|---|
-| Versão do kit | `0.52.0`, depois de `php artisan config:clear` |
-| Multi-organização | o mesmo `SIM` ou `NAO` anotado no pré-voo |
-| Arquivos novos | os quatro do passo 3 presentes |
-| Migration nova | `2026_10_21_100000_add_onboarding_to_kit_settings` executada |
-| Interruptor do tutorial | `SIM` só com o pedido do dono e os sete arquivos do tutorial; `NAO` nos outros casos |
-| Arquivos que ficaram com a versão do dono | `git diff HEAD -- caminho/do/arquivo` vazio em cada um |
-| `config/logging.php` | `git diff HEAD -- config/logging.php` vazio |
-| `.env` | as linhas do dono intactas; no máximo a linha `KIT_ONBOARDING` do passo 4 |
-| Dados do banco | a impressão do pré-voo, rodada de novo: cada usuário e as Configurações com o mesmo hash; cada jornada e passo de antes com o mesmo hash (a semeadura só acrescenta ids novos) |
-| Suíte do kit | zero erro, zero falha, no máximo 942 pulados |
-| Branch | `kit-update/v0.52.0`, com as mudanças no índice e sem commit |
-| Remote e tags do kit | removidos no passo 10 |
+| Versão do kit | `0.52.1`, depois de limpar o cache de configuração |
+| Arquivo novo que prova a entrega | `tests/Kit/RoteiroDeAtualizacaoTest.php` presente e rastreado |
+| Testes novos do cadastro | `tests/Kit/CadastroNoPainelDoPapelTest.php` e `tests/Tenancy/CadastroNoPainelDoPapelTenancyTest.php` presentes e rastreados |
+| Correção do cadastro | Os dois arquivos do cadastro receberam a correção ou têm a limitação da decisão registrada |
+| Multi-organização | O mesmo `SIM` ou `NAO` do pré-voo |
+| Migrations | Nenhuma nova nesta release; estado igual ao pré-voo |
+| Jornadas e permissões | Nenhuma semeadura ou geração executada no banco do dono |
+| Dependências | Installs concluídos; bumps incorporados ou pendências da decisão explicitadas |
+| Suíte Kit,Tenancy | Zero erro, zero falha, no máximo 1156 pulados |
+| Policies geradas pelos testes | Não rastreadas removidas e listadas no relatório; rastreadas preservadas |
+| Arquivos do dono | Mantidos ou integrados conforme a decisão, sem mudanças inesperadas |
+| `.env` | Intacto |
+| Canais de log | `config/logging.php` intacto, incluindo os canais próprios do projeto |
+| Dados do banco | Impressão final idêntica à inicial: mesmos usuários e mesmos hashes, mesmas Configurações |
+| Branch e índice | `kit-update/v0.52.1`, mudanças revisáveis e sem commit |
+| Remote e tags temporários | Remote `kit` e tags `kit-*` removidos |
+
+Uma escolha de manter código antigo ou dependências antigas deve aparecer como entrega parcial. O marcador `0.52.1` sozinho não permite declarar que todas as correções e bumps chegaram.
 
 ## Quando parar
 
-Pare, não tente contornar e diga ao dono o que viu, com a saída do comando, quando:
+Pare sem tentar contornar e informe ao dono a condição encontrada, a saída relevante e o que falta para continuar:
 
-- a árvore do git não está limpa no começo: o trabalho em andamento é do dono;
-- a versão instalada não é `0.51.2`: diga a versão instalada, a origem deste roteiro (`v0.51.2`) e,
-  se o projeto estiver atrás, que faltam os roteiros das versões entre as duas;
-- já existe remote `kit`, tag `kit-*` ou branch `kit-update/v0.52.0` no projeto;
-- você não conseguiu ler o roteiro pelo link, ou a cópia da tag e a da `main` divergem sem a linha
-  `Roteiro revisado em`;
-- o dry-run fala de outra versão, ou o `git diff` do `composer.json` e do `composer.lock` não sai vazio;
-- o comando de atualização sai sem a linha `config/kit.php: versão marcada como 0.52.0`, recusa a árvore
-  ou pede para rodar de novo: o projeto pode ter ficado entre as duas versões, e a segunda rodada exige
-  commit, que é decisão do dono;
-- a conferência do passo 3 ou do passo 4 dá outro resultado;
-- a migration do passo 6 falha: não tente desfazer migrations, mostre o erro ao dono;
-- a suíte do kit termina com erro, falha ou mais de 942 pulados: liste os casos e não mexa nos testes;
-- a impressão dos dados do banco mudou;
-- um passo pediria um comando que `## Cuidados` proíbe.
+- **Roteiro indisponível ou cópias divergentes sem marca de revisão:** diga qual leitura falhou ou qual divergência encontrou.
+- **Árvore suja no início:** liste os caminhos e peça que o dono resolva o trabalho em andamento.
+- **Versão instalada diferente de `0.52.0`:** informe o valor encontrado e a origem exigida.
+- **Nomes reservados já existentes:** informe o remote, as tags ou o branch encontrados; não os remova.
+- **Banco inacessível ou migrations pendentes:** mostre o erro ou os nomes pendentes; esta release não exige executar migrations.
+- **Tag destino indisponível:** informe que a atualização depende da publicação de `v0.52.1`.
+- **Dry-run ou dependências diferentes do previsto:** mostre os arquivos divergentes. Diff do `composer.lock` é esperado; pacote novo ou mudança no `composer.json` entre as tags não é.
+- **Arquivo novo esperado ausente na tag:** informe o caminho; não substitua a tag por outra referência.
+- **Aplicação incompleta, árvore recusada ou pedido de segunda execução:** informe que o projeto pode estar entre versões e que nenhuma nova rodada ou commit foi feito.
+- **Integração de conflito inviável:** mostre o trecho e preserve a decisão segura, sem inventar uma solução.
+- **Install ou build com erro, lock incompatível ou alteração inesperada de dependências:** informe o erro e os diffs; não execute atualização geral para resolver.
+- **Branch, marcador ou arquivos fora do esperado:** informe os valores e caminhos encontrados.
+- **Suíte com erro, falha ou mais de 1156 pulados:** entregue a saída e os casos envolvidos, sem alterar os testes.
+- **Policy rastreada alterada pela suíte:** informe o caminho e o diff antes de qualquer restauração.
+- **Impressão dos dados diferente, mudança na multi-organização, no `.env` ou nos canais de log:** informe exatamente qual conferência divergiu.
+- **Um passo exigiria ação proibida em `## Cuidados`:** informe a necessidade encontrada e aguarde orientação.
 
-Ao parar depois do passo 5 de `## Antes de começar`, rode ainda o passo 10. Neste roteiro não há
-promessa de funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida sobre um passo,
-pare e pergunte ao dono.
+Ao parar depois da criação dos nomes temporários, execute ainda o passo 8 para remover somente o remote e as tags criados por este roteiro. Preserve o branch e as mudanças para revisão.
+
+Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
 
 ## Relatório final
 
 Entregue ao dono, ao terminar ou ao parar:
 
-- a versão de partida e a de chegada (`config('kit.version')` antes e depois);
-- o branch em que as mudanças ficaram e o lembrete de que nada foi commitado;
-- os arquivos aplicados e os que ficaram com a versão do dono, com o que deixou de chegar em cada um;
-- cada decisão do dono: a pergunta, a resposta, ou "sem resposta" com o default aplicado; e "ligar não
-  foi possível", com o arquivo que impediu, quando for o caso;
-- o estado do interruptor do tutorial guiado e se as jornadas foram semeadas; sem a semeadura, o
-  comando para semear depois: `php artisan db:seed --class=OnboardingSeeder`;
-- a permissão `View:PrimeirosPassos`: se existe e com quais papéis, e as pendências do passo 8;
-- a saída da suíte do kit, com o número de pulados;
-- a impressão dos dados antes e depois, e o estado da multi-organização;
-- se parou: em que passo, a saída do comando e o que falta para continuar;
-- como revisar: `git status` e `git diff --cached`; e como desfazer, só com o pedido do dono:
-  `git reset --hard HEAD`, os arquivos não rastreados um a um, e a lembrança de que o banco e o `.env`
-  não voltam com isso.
+- versões de partida e chegada, com a saída de `config('kit.version')`;
+- branch atual e confirmação de que nada foi commitado nem integrado por merge;
+- arquivos aplicados, arquivos novos conferidos e integrações realizadas;
+- cada decisão de conflito, com a pergunta, a resposta ou “sem resposta” e o default aplicado; sem conflitos, registre isso;
+- arquivos mantidos na versão do dono e o que deixou de chegar em cada um, incluindo a situação da correção do cadastro;
+- tratamento dos manifests e locks, resultados de `composer install`, `npm install` e build, com os bumps incorporados ou pendentes;
+- confirmação de que não havia migration nova nem necessidade de semear jornadas ou gerar permissões;
+- saída da suíte Kit,Tenancy, quantidade efetiva de pulados e pedido para o dono rodar a suíte completa em ambiente de testes;
+- cada policy não rastreada removida depois da suíte;
+- impressões dos dados antes e depois, resultado da comparação e estado da multi-organização;
+- confirmação de preservação do `.env`, dos canais de log e das customizações;
+- confirmação de remoção do remote `kit` e das tags `kit-*`;
+- se houve parada: passo, saída relevante, estado parcial e condição necessária para continuar.
+
+Explique como revisar: `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Lembre que isso não reverte o banco nem reinstala as versões anteriores das dependências.
+
 <!-- roteiro-de-atualizacao:fim -->

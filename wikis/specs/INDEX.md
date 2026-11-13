@@ -40,7 +40,7 @@
 | `feat/logo-dark-mode` | `logo-dark-mode` | 40/42 itens · em implementação — código e testes verdes, faltam steps 9–12 | não fatiada | `[█████████░] 95 %` do 03 | — | APROVADO COM DÉBITO (ciclo 1) | [03](feat/logo-dark-mode/logo-dark-mode/03-progresso.md) |
 | `feat/mais-provedores-sociais` | `mais-provedores-sociais` | 58/58 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/mais-provedores-sociais/mais-provedores-sociais/03-progresso.md) |
 | `feat/mysql-no-docker` | `mysql-no-docker` | 54/57 itens | não fatiada | `[█████████░] 94 %` do 03 | — | — | [03](feat/mysql-no-docker/mysql-no-docker/03-progresso.md) |
-| `feat/onboarding-guiado` | `onboarding-guiado` | 36/38 itens · concluída — 2026-10-22 | não fatiada | `[█████████░] 94 %` do 03 | — | APROVADO COM DÉBITO (ciclo 4) | [03](feat/onboarding-guiado/onboarding-guiado/03-progresso.md) |
+| `feat/onboarding-guiado` | `onboarding-guiado` | 37/39 itens · concluída — 2026-10-22 | não fatiada | `[█████████░] 94 %` do 03 | — | APROVADO COM DÉBITO (ciclo 4) | [03](feat/onboarding-guiado/onboarding-guiado/03-progresso.md) |
 | `feat/pacotes-laravel-ia` | `pacotes-laravel-ia` | 22/24 itens | não fatiada | `[█████████░] 91 %` do 03 | — | — | [03](feat/pacotes-laravel-ia/pacotes-laravel-ia/03-progresso.md) |
 | `feat/page-header-nas-telas-de-registro` | `page-header-nas-telas-de-registro` | 0/0 itens | não fatiada | — | — | — | [03](feat/page-header-nas-telas-de-registro/page-header-nas-telas-de-registro/03-progresso.md) |
 | `feat/pagina-boas-vindas` | `pagina-boas-vindas` | 34/34 itens | não fatiada | `[██████████] 100 %` do 03 | — | APROVADO COM DÉBITO (ciclo 1) | [03](feat/pagina-boas-vindas/pagina-boas-vindas/03-progresso.md) |
@@ -53,6 +53,7 @@
 | `feat/recaptcha-nas-telas-publicas` | `recaptcha-nas-telas-publicas` | 28/28 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/recaptcha-nas-telas-publicas/recaptcha-nas-telas-publicas/03-progresso.md) |
 | `feat/registro-e-aprovacao` | `registro-e-aprovacao` | 61/61 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/registro-e-aprovacao/registro-e-aprovacao/03-progresso.md) |
 | `feat/rodape-coerente` | `rodape-coerente` | 42/44 itens | não fatiada | `[█████████░] 95 %` do 03 | — | — | [03](feat/rodape-coerente/rodape-coerente/03-progresso.md) |
+| `feat/roteiro-de-atualizacao` | `roteiro-de-atualizacao-por-agente` | 12/16 itens · quality gate APROVADO COM DÉBITO (ciclo 2, QA-07 corrigido); step 12 sem rule; PR pendente — o cenário com agente roda depois do merge (`## Processo do pedido`) | não fatiada | `[███████░░░] 75 %` do 03 | — | APROVADO COM DÉBITO (ciclo 2) | [03](feat/roteiro-de-atualizacao/roteiro-de-atualizacao-por-agente/03-progresso.md) |
 | `feat/settings-do-kit` | `settings-do-kit` | 49/49 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/settings-do-kit/settings-do-kit/03-progresso.md) |
 | `feat/site-de-documentacao` | `site-de-documentacao` | 24/24 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/site-de-documentacao/site-de-documentacao/03-progresso.md) |
 | `feat/site-starlight` | `site-starlight` | 37/39 itens | não fatiada | `[█████████░] 94 %` do 03 | — | APROVADO (ciclo 2) | [03](feat/site-starlight/site-starlight/03-progresso.md) |
@@ -74,6 +75,7 @@
 | `fix/auth-designer-telas` | `auth-designer-telas` | 21/21 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](fix/auth-designer-telas/auth-designer-telas/03-progresso.md) |
 | `fix/badge-de-papel-por-organizacao` | `badge-de-papel-por-organizacao` | 15/19 itens | não fatiada | `[███████░░░] 78 %` do 03 | — | — | [03](fix/badge-de-papel-por-organizacao/badge-de-papel-por-organizacao/03-progresso.md) |
 | `fix/convite-carimba-organizacao-corrente` | `carimbo-de-organizacao-em-fixture` | 14/14 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](fix/convite-carimba-organizacao-corrente/carimbo-de-organizacao-em-fixture/03-progresso.md) |
+| `fix/convite-painel-do-papel` | `cadastro-no-painel-do-papel` | 18/18 itens · concluída — 2026-11-13 | não fatiada | `[██████████] 100 %` do 03 | — | APROVADO COM DÉBITO (ciclo 2) | [03](fix/convite-painel-do-papel/cadastro-no-painel-do-papel/03-progresso.md) |
 | `fix/css-quebrado-com-tenant` | `css-compact-vazando` | 18/18 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](fix/css-quebrado-com-tenant/css-compact-vazando/03-progresso.md) |
 | `fix/destino-apos-cadastro` | `destino-apos-cadastro` | 25/36 itens | não fatiada | `[██████░░░░] 69 %` do 03 | — | APROVADO (no 03; sem 06) | [03](fix/destino-apos-cadastro/destino-apos-cadastro/03-progresso.md) |
 | `fix` | `dock-altura-do-viewport` | 9/9 itens · concluída — 2026-10-20 | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](fix/dock-altura-do-viewport/03-progresso.md) |

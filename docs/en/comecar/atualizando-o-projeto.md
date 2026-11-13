@@ -139,6 +139,11 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
 
+**v0.52.1 has nothing to install or migrate**: invitation sign-up with the unified login disabled now
+lands on the invitation role's panel instead of a 403 (see [Unified login](../../autenticacao/login-unificado/)).
+If you hand-edited `app/Http/Responses/RespostaDeCadastro.php` or `app/Support/DestinoAposLogin.php`, review the diff.
+Run `composer install` and `npm install` for the new lockfile versions.
+
 **v0.52.0 adds a settings migration, and the guided tutorial arrives disabled.** Run `php artisan migrate`
 after `kit:update`: the new settings migration adds `onboarding_habilitado`, seeded from
 `KIT_ONBOARDING` (**false** by default). The `wallacemartinss/filament-onboarding` package was
@@ -221,7 +226,7 @@ The distinction is the point: **a new file has nothing to overwrite**, so applyi
 
 With no terminal (CI, `--no-interaction`) the command becomes a report and changes nothing — unless you pass `--only-new` or `--all`, which **are** the approval, given on the command line.
 
-**Updating by asking an agent.** From v0.52.0 on, every kit version has an update script (in Portuguese) that an agent follows on its own, using `kit:update` as its tool and asking you before every decision that is yours. The link follows the pattern `https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md`, with the target version and the tag's `v` in both places (v0.52.0 is the exception: its link points to `main`). The agent also reads the same file on `main` and prefers the `main` copy when it carries the `Roteiro revisado em` line, the mark of a fix published after the tag; when in doubt, it stops and asks. The template request, in a fresh agent session: "Atualize este projeto seguindo o roteiro em" followed by the link. The "Atualizar o projeto pelo agente" section of `wikis/agentes-e-skills.md` carries the same pattern and a copy of the installed version's script, from projects on v0.53.0 on: projects on v0.52.0 or earlier don't have the copy yet, so the request must carry the link.
+**Updating by asking an agent.** From v0.52.0 on, every kit version has an update script (in Portuguese) that an agent follows on its own, using `kit:update` as its tool and asking you before every decision that is yours. The link follows the pattern `https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md`, with the target version and the tag's `v` in both places (v0.52.0 is the exception: its link points to `main`). The agent also reads the same file on `main` and prefers the `main` copy when it carries the `Roteiro revisado em` line, the mark of a fix published after the tag; when in doubt, it stops and asks. The template request, in a fresh agent session: "Atualize este projeto seguindo o roteiro em" followed by the link. The "Atualizar o projeto pelo agente" section of `wikis/agentes-e-skills.md` carries the same pattern and a copy of the installed version's script, from projects on v0.52.1 on: projects on v0.52.0 or earlier don't have the copy yet, so the request must carry the link.
 
 ## The two delivery routes
 

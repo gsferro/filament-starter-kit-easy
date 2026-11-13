@@ -138,6 +138,11 @@ que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
 
+**Na v0.52.1 não há nada a instalar nem migrar**: o cadastro por convite com o login unificado desligado
+passa a cair no painel do papel do convite em vez de 403 (ver [Login unificado](../../autenticacao/login-unificado/)).
+Quem mudou à mão o `app/Http/Responses/RespostaDeCadastro.php` ou o `app/Support/DestinoAposLogin.php` revisa o diff.
+Rode `composer install` e `npm install` para as versões novas dos lockfiles.
+
 **Na v0.52.0 há uma migration de settings e o tutorial guiado chega desligado.** Rode `php artisan migrate` depois do
 `kit:update`: a nova migration de settings acrescenta `onboarding_habilitado`, com o valor de
 `KIT_ONBOARDING` (**false** por padrão). O pacote `wallacemartinss/filament-onboarding` já era
@@ -220,7 +225,7 @@ A distinção é o ponto: **arquivo novo não tem o que sobrescrever**, então a
 
 Sem terminal (CI, `--no-interaction`) o comando vira relatório e não altera nada — a menos que você passe `--only-new` ou `--all`, que **são** a aprovação, dada na linha de comando.
 
-**Atualizar pedindo a um agente.** Toda versão do kit, a partir da v0.52.0, tem um roteiro de atualização que um agente segue sozinho, usando o `kit:update` como ferramenta e perguntando a você antes de cada decisão que é sua. O link segue o padrão `https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md`, com a versão destino e o `v` da tag nas duas posições (a v0.52.0 é a exceção: o link dela aponta para a `main`). O agente lê também o mesmo arquivo na `main` e prefere o da `main` quando ele trouxer a linha `Roteiro revisado em`, a marca de uma correção publicada depois da tag; na dúvida, ele para e pergunta. O pedido-modelo, num agente em sessão nova: "Atualize este projeto seguindo o roteiro em" seguido do link. A seção "Atualizar o projeto pelo agente" de `wikis/agentes-e-skills.md` traz o mesmo padrão e a cópia do roteiro da versão instalada, a partir de projetos na v0.53.0: os que estão na v0.52.0 ou antes ainda não têm a cópia, e o pedido precisa trazer o link.
+**Atualizar pedindo a um agente.** Toda versão do kit, a partir da v0.52.0, tem um roteiro de atualização que um agente segue sozinho, usando o `kit:update` como ferramenta e perguntando a você antes de cada decisão que é sua. O link segue o padrão `https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md`, com a versão destino e o `v` da tag nas duas posições (a v0.52.0 é a exceção: o link dela aponta para a `main`). O agente lê também o mesmo arquivo na `main` e prefere o da `main` quando ele trouxer a linha `Roteiro revisado em`, a marca de uma correção publicada depois da tag; na dúvida, ele para e pergunta. O pedido-modelo, num agente em sessão nova: "Atualize este projeto seguindo o roteiro em" seguido do link. A seção "Atualizar o projeto pelo agente" de `wikis/agentes-e-skills.md` traz o mesmo padrão e a cópia do roteiro da versão instalada, a partir de projetos na v0.52.1: os que estão na v0.52.0 ou antes ainda não têm a cópia, e o pedido precisa trazer o link.
 
 ## As duas rotas de entrega
 

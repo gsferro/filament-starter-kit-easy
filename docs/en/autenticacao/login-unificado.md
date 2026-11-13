@@ -67,13 +67,13 @@ accDescr: The single login page (KIT_LOGIN_UNIFICADO) decides between going back
 
 `DestinoAposLogin::urlPara()` decides: an intended URL from an accessible panel wins; exactly 1
 accessible panel enters it directly; otherwise (0 or N panels), it goes to the choice
-(`app/Support/DestinoAposLogin.php:urlPara:85`, `app/Support/DestinoAposLogin.php:painelDaPretendida:93`,
-`app/Support/DestinoAposLogin.php:count($paineis) === 1:97`, `:route('login.painel'):98`).
+(`app/Support/DestinoAposLogin.php:urlPara:88`, `app/Support/DestinoAposLogin.php:painelDaPretendida:96`,
+`app/Support/DestinoAposLogin.php:count($paineis) === 1:100`, `:route('login.painel'):101`).
 `EscolhaDePainel::mount()` handles the three cases, with the 0-panel one ending the session
 (`app/Filament/Pages/Auth/EscolhaDePainel.php:mount:62`, `:encerrarSemPainel:109`);
 `EntrarNoPainelController::__invoke()` delegates to `DestinoAposLogin::entrarEm()`
 (`app/Http/Controllers/Auth/EntrarNoPainelController.php:__invoke:27`,
-`app/Support/DestinoAposLogin.php:entrarEm:173`).
+`app/Support/DestinoAposLogin.php:entrarEm:196`).
 
 ## What changes for whoever signs in
 
@@ -97,7 +97,11 @@ never delivered to the address of a panel it cannot access — the real case is 
 opens `/admin`, is sent to the login screen, and only then clicks the invitation link they got.
 Without this check the registration worked and the first screen of the system was a permission
 error. With the switch **off** the check still applies: the inaccessible address is discarded and
-the panel's default destination wins.
+the panel's default destination wins — if the account can access it. When it cannot (the invitation
+link is always the `/app` registration, and the invitation may be for an `/infra` or `/admin` role),
+the account goes to a panel it can access: the default one if it is among them, otherwise the first
+in panel order. With no accessible panel at all, the session is ended and the person is sent back to
+the login screen with a notice that the account has no panel access.
 
 ## A panel added after installation
 

@@ -5,6 +5,46 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.52.1] - 2026-11-13
+
+A v0.52.1 corrige o cadastro por convite que terminava em **403** com o login unificado desligado quando o
+papel do convite é de outro painel que não o `/app` (#191), fecha os bumps de dependência abertos pelo
+dependabot (#177, #180 a #190) com os ajustes de análise estática que eles exigiram, e publica o primeiro
+roteiro de atualização escrito antes da tag. Nada a instalar nem migrar. Wiki:
+`wikis/specs/fix/convite-painel-do-papel/`.
+
+### Corrigido
+
+- Cadastro por convite com o login unificado **desligado** não termina mais em 403 quando o papel do convite
+  é de outro painel (#191, `wikis/specs/fix/convite-painel-do-papel/`). O link do convite é sempre o cadastro
+  do `/app`, e o `RespostaDeCadastro` caía no painel corrente depois de descartar a URL pretendida
+  inacessível: um convite `infra` (ou `admin` sem organização) terminava no `/app`, que a conta não acessa.
+  Agora, quando o painel corrente é inacessível e não sobra pretendida acessível, a conta vai ao painel que
+  acessa (o default, se for um deles, senão o primeiro na ordem dos painéis — `DestinoAposLogin::painelSemEscolha()`);
+  sem nenhum painel acessível, a sessão é encerrada e a pessoa volta ao login com o aviso "Sua conta não tem
+  acesso a nenhum painel.", o mesmo da escolha de painel do modo ligado. Com o painel corrente
+  acessível, nada muda. O modo ligado já não tinha o defeito.
+- No cadastro, a URL pretendida de um painel com organização só vale se a conta acessa a organização da URL:
+  `/app/outra` para quem só é da `acme` era aceita e terminava em 404 do Filament. Rotas do painel fora da
+  organização (verificação de e-mail, login) continuam aceitas. O login unificado e o social não mudam.
+- `larastan/larastan` 3.15 e `laravel/framework` 13.42 passaram a anotar `Seeder::$command` como anulável: os
+  seeders do kit (`DashboardPadraoSeeder`, `DemoTenancySeeder`, `ShieldPermissionsSeeder` e
+  `SeederDeOnboardingDeTenancy`) usam `$this->command?->`, e um seeder chamado sem comando (por exemplo,
+  `app(Seeder::class)->run()`) não estoura mais ao avisar. O `kit:cobertura` perdeu duas checagens
+  `is_string()` que o tipo novo do `argument()`/`option()` tornou redundantes.
+
+### Alterado
+
+- Nota de deploy em *Configuração global do Filament* (pt/en): com o `DocumentRoot` na raiz do projeto, o
+  Apache aplica `DirectorySlash` em `/app` (um diretório do Laravel) e a regra de barra final do
+  `public/.htaccess` monta `/public/app`. O conserto é apontar o `DocumentRoot` para `public/`, ou
+  `DirectorySlash Off` no `.htaccess` da raiz.
+- Dependências (dependabot): `laravel/framework` 13.36.0 → 13.42.0 (#184), `spatie/laravel-settings` 3.9.0 →
+  3.10.2 (#177), `larastan/larastan` 3.13.0 → 3.15.0 (#185), `rector/rector` 2.7.0 → 2.8.4 (#183),
+  `laravel/pint` 1.30.5 → 1.32.3 (#182), `vite` 8.3.4 → 8.3.8 (#187), `laravel-vite-plugin` 3.2.0 → 3.2.1
+  (#186), `tailwindcss` e `@tailwindcss/vite` 4.3.3 → 4.3.5 (#188, #190), `playwright` 1.64.1 → 1.65.0
+  (#189), `actions/setup-node` 7.0.0 → 7.1.0 (#181) e `shivammathur/setup-php` 2.37.2 → 2.40.0 (#180).
+
 ### Adicionado
 
 - Roteiro de atualização por agente (`wikis/specs/feat/roteiro-de-atualizacao/`): toda publicação, release ou
@@ -21,6 +61,16 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
   ou sem as nove seções, e o `wikis/checklist-de-release.md` ganha a etapa pré-release obrigatória (com a lista
   `### Defaults mudados` da seção da versão neste arquivo) e o cenário pós-release com agente em sessão nova.
   Nada muda no código da aplicação nem no `kit:update`.
+
+### Atualizando
+
+- Nada a instalar nem migrar. Rode `composer install` e `npm install` para trazer as versões novas do
+  `composer.lock` e do `package-lock.json`. Quem mudou à mão o `app/Http/Responses/RespostaDeCadastro.php`
+  ou o `app/Support/DestinoAposLogin.php` revisa o diff.
+
+### Defaults mudados
+
+- nenhum
 
 ## [0.52.0] - 2026-10-23
 

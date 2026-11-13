@@ -7,6 +7,9 @@ namespace App\Support;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Rappasoft\LaravelAuthenticationLog\Models\AuthenticationLog;
@@ -131,9 +134,9 @@ final class DestinoAposLogin
      * Esquece a URL pretendida quando ela não é de um painel que a pessoa acessa.
      *
      * Serve ao CADASTRO com a página única desligada, onde a escolha de painel não existe e o
-     * destino continua sendo o do Filament (`redirect()->intended(Filament::getUrl())`): a única
-     * coisa errada ali é a pretendida, então é ela que sai. Ver `RespostaDeCadastro` e
-     * `wikis/specs/fix/destino-apos-cadastro/` (ADR-04).
+     * destino é o do Filament (`redirect()->intended(Filament::getUrl())`) quando o painel corrente
+     * é acessível, senão `painelSemEscolha()`. Ver `RespostaDeCadastro`,
+     * `wikis/specs/fix/destino-apos-cadastro/` (ADR-04) e `wikis/specs/fix/convite-painel-do-papel/`.
      *
      * Mora aqui, e não na resposta, porque a pergunta "esta URL é de painel acessível?" é de
      * `painelDe()` — privada de propósito: é nela que vivem as duas defesas de URL da auditoria
@@ -149,7 +152,7 @@ final class DestinoAposLogin
 
         $paineis = self::paineisDe($user);
 
-        if (self::painelDe($pretendida, $paineis) instanceof Panel) {
+        if (self::painelDe($pretendida, $paineis, $user) instanceof Panel) {
             return;
         }
 
@@ -164,6 +167,26 @@ final class DestinoAposLogin
                 'motivo'     => 'pretendida_inacessivel',
             ],
         );
+    }
+
+    /**
+     * O painel de entrada quando não existe tela de escolha (página única desligada): o default
+     * do Filament se a pessoa o acessa, senão o primeiro acessível na ordem de
+     * `Filament::getPanels()`; `null` sem nenhum. Ver `RespostaDeCadastro` e
+     * `wikis/specs/fix/convite-painel-do-papel/`.
+     */
+    public static function painelSemEscolha(User $user): ?Panel
+    {
+        $paineis = self::paineisDe($user);
+        $default = Filament::getDefaultPanel();
+
+        foreach ($paineis as $painel) {
+            if ($painel->getId() === $default->getId()) {
+                return $painel;
+            }
+        }
+
+        return $paineis[0] ?? null;
     }
 
     /**
@@ -229,9 +252,14 @@ final class DestinoAposLogin
      * auditoria Blueprint). E o path precisa ser a raiz do painel ou começar por ela COM a barra:
      * `/administracao/x` não é `/admin`.
      *
+     * Com `$conferirOrganizacaoDe`, em painel com organização a URL só é acessível se a pessoa
+     * acessa a organização da rota: `/app/outra` para quem só é da `acme` terminava o cadastro em
+     * 404 do Filament (`wikis/specs/fix/convite-painel-do-papel/`, P-04). Só o cadastro passa a
+     * conta: o login (`urlPara()`) continua sem a conferência, fora do escopo daquela correção.
+     *
      * @param  list<Panel>  $paineis
      */
-    private static function painelDe(string $url, array $paineis): ?Panel
+    private static function painelDe(string $url, array $paineis, ?User $conferirOrganizacaoDe = null): ?Panel
     {
         $raizDoApp = rtrim(url('/'), '/').'/';
 
@@ -250,10 +278,39 @@ final class DestinoAposLogin
             $raiz = '/'.trim($painel->getPath(), '/');
 
             if ($path === $raiz || str_starts_with($path, $raiz.'/')) {
-                return $painel;
+                return $conferirOrganizacaoDe === null || self::organizacaoDaUrlAcessivel($painel, $path, $conferirOrganizacaoDe) ? $painel : null;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Só a rota com `{tenant}` carrega organização: login, verificação de e-mail e as demais rotas
+     * do painel fora do grupo da organização não têm o que conferir. Com `{tenant}`, a organização
+     * precisa existir e ser acessível; slug desconhecido falha fechado, e URL que não casa rota
+     * nenhuma também (daria 404 de qualquer jeito).
+     */
+    private static function organizacaoDaUrlAcessivel(Panel $painel, string $path, User $user): bool
+    {
+        if (! $painel->hasTenancy()) {
+            return true;
+        }
+
+        $rota = rescue(fn (): Route => app('router')->getRoutes()->match(Request::create($path)), null, report: false);
+
+        if (! $rota instanceof Route) {
+            return false;
+        }
+
+        $slug = $rota->parameter('tenant');
+
+        if (! is_string($slug) || $slug === '') {
+            return true;
+        }
+
+        $organizacao = rescue(fn (): Model => $painel->getTenant($slug), null, report: false);
+
+        return $organizacao instanceof Model && $user->canAccessTenant($organizacao);
     }
 }
