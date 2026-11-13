@@ -67,13 +67,13 @@ accDescr: A página única de login (KIT_LOGIN_UNIFICADO) decide entre voltar ao
 
 `DestinoAposLogin::urlPara()` decide: com a URL pretendida de um painel acessível, ela vence; com
 exatamente 1 painel acessível, entra direto; no resto (0 ou N painéis), vai à escolha
-(`app/Support/DestinoAposLogin.php:urlPara:85`, `app/Support/DestinoAposLogin.php:painelDaPretendida:93`,
-`app/Support/DestinoAposLogin.php:count($paineis) === 1:97`, `:route('login.painel'):98`).
+(`app/Support/DestinoAposLogin.php:urlPara:88`, `app/Support/DestinoAposLogin.php:painelDaPretendida:96`,
+`app/Support/DestinoAposLogin.php:count($paineis) === 1:100`, `:route('login.painel'):101`).
 `EscolhaDePainel::mount()` trata os três casos, com o de 0 painéis encerrando a sessão
 (`app/Filament/Pages/Auth/EscolhaDePainel.php:mount:62`, `:encerrarSemPainel:109`);
 `EntrarNoPainelController::__invoke()` delega em `DestinoAposLogin::entrarEm()`
 (`app/Http/Controllers/Auth/EntrarNoPainelController.php:__invoke:27`,
-`app/Support/DestinoAposLogin.php:entrarEm:193`).
+`app/Support/DestinoAposLogin.php:entrarEm:196`).
 
 ## O que muda para quem entra
 

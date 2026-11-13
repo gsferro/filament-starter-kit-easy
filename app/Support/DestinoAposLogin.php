@@ -7,6 +7,9 @@ namespace App\Support;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Rappasoft\LaravelAuthenticationLog\Models\AuthenticationLog;
@@ -90,7 +93,7 @@ final class DestinoAposLogin
         // Zero painéis com sessão viva (o login social não pergunta por painel) também vai para
         // a escolha: é ela quem encerra a sessão e volta ao login. Mandar ao login direto faria
         // laço — a página única redireciona autenticado para cá.
-        $painelDaPretendida = $pretendida !== '' ? self::painelDe($pretendida, $paineis) : null;
+        $painelDaPretendida = $pretendida !== '' ? self::painelDe($pretendida, $paineis, $user) : null;
 
         $destino = match (true) {
             $painelDaPretendida instanceof Panel => $pretendida,
@@ -149,7 +152,7 @@ final class DestinoAposLogin
 
         $paineis = self::paineisDe($user);
 
-        if (self::painelDe($pretendida, $paineis) instanceof Panel) {
+        if (self::painelDe($pretendida, $paineis, $user) instanceof Panel) {
             return;
         }
 
@@ -249,9 +252,13 @@ final class DestinoAposLogin
      * auditoria Blueprint). E o path precisa ser a raiz do painel ou começar por ela COM a barra:
      * `/administracao/x` não é `/admin`.
      *
+     * Em painel com organização, o primeiro segmento depois da raiz é a organização: a URL só é
+     * acessível se a pessoa acessa ESSA organização. `/app/outra` para quem só é da `acme` dava 404
+     * do Filament depois do login ou do cadastro (`wikis/specs/fix/convite-painel-do-papel/`, CT-11).
+     *
      * @param  list<Panel>  $paineis
      */
-    private static function painelDe(string $url, array $paineis): ?Panel
+    private static function painelDe(string $url, array $paineis, User $user): ?Panel
     {
         $raizDoApp = rtrim(url('/'), '/').'/';
 
@@ -270,10 +277,39 @@ final class DestinoAposLogin
             $raiz = '/'.trim($painel->getPath(), '/');
 
             if ($path === $raiz || str_starts_with($path, $raiz.'/')) {
-                return $painel;
+                return self::organizacaoDaUrlAcessivel($painel, $path, $user) ? $painel : null;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Só a rota com `{tenant}` carrega organização: login, verificação de e-mail e as demais rotas
+     * do painel fora do grupo da organização não têm o que conferir. Com `{tenant}`, a organização
+     * precisa existir e ser acessível; slug desconhecido falha fechado, e URL que não casa rota
+     * nenhuma também (daria 404 de qualquer jeito).
+     */
+    private static function organizacaoDaUrlAcessivel(Panel $painel, string $path, User $user): bool
+    {
+        if (! $painel->hasTenancy()) {
+            return true;
+        }
+
+        $rota = rescue(fn (): Route => app('router')->getRoutes()->match(Request::create($path)), null, report: false);
+
+        if (! $rota instanceof Route) {
+            return false;
+        }
+
+        $slug = $rota->parameter('tenant');
+
+        if (! is_string($slug) || $slug === '') {
+            return true;
+        }
+
+        $organizacao = rescue(fn (): Model => $painel->getTenant($slug), null, report: false);
+
+        return $organizacao instanceof Model && $user->canAccessTenant($organizacao);
     }
 }

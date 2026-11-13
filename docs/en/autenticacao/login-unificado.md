@@ -67,13 +67,13 @@ accDescr: The single login page (KIT_LOGIN_UNIFICADO) decides between going back
 
 `DestinoAposLogin::urlPara()` decides: an intended URL from an accessible panel wins; exactly 1
 accessible panel enters it directly; otherwise (0 or N panels), it goes to the choice
-(`app/Support/DestinoAposLogin.php:urlPara:85`, `app/Support/DestinoAposLogin.php:painelDaPretendida:93`,
-`app/Support/DestinoAposLogin.php:count($paineis) === 1:97`, `:route('login.painel'):98`).
+(`app/Support/DestinoAposLogin.php:urlPara:88`, `app/Support/DestinoAposLogin.php:painelDaPretendida:96`,
+`app/Support/DestinoAposLogin.php:count($paineis) === 1:100`, `:route('login.painel'):101`).
 `EscolhaDePainel::mount()` handles the three cases, with the 0-panel one ending the session
 (`app/Filament/Pages/Auth/EscolhaDePainel.php:mount:62`, `:encerrarSemPainel:109`);
 `EntrarNoPainelController::__invoke()` delegates to `DestinoAposLogin::entrarEm()`
 (`app/Http/Controllers/Auth/EntrarNoPainelController.php:__invoke:27`,
-`app/Support/DestinoAposLogin.php:entrarEm:193`).
+`app/Support/DestinoAposLogin.php:entrarEm:196`).
 
 ## What changes for whoever signs in
 

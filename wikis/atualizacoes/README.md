@@ -135,6 +135,6 @@ O roteiro da versão marcada em `config/kit.php` é copiado, inteiro, para `wiki
 entre os marcadores `<!-- roteiro-de-atualizacao:inicio -->` e `<!-- roteiro-de-atualizacao:fim -->`.
 Esse arquivo viaja pelo `create-project` e pelo `kit:update`, e é por ele que o projeto da versão
 seguinte aprende o padrão do link. A tag v0.52.0 saiu antes deste mecanismo e não tem a cópia: o
-primeiro projeto com cópia local é o da v0.53.0, e o pedido sem link, montado pelo padrão da cópia,
-vale a partir do roteiro da v0.54.0. Até lá, o pedido traz o link. A guarda compara a cópia com o arquivo, só normalizando o fim de
+primeiro projeto com cópia local é o da v0.52.1, e o pedido sem link, montado pelo padrão da cópia,
+vale a partir do roteiro da versão seguinte à v0.52.1. Até lá, o pedido traz o link. A guarda compara a cópia com o arquivo, só normalizando o fim de
 linha.

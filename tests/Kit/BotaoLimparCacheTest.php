@@ -72,8 +72,9 @@ it('serve o botão de limpar cache com nome acessível no painel infra', functio
  * chamado em `vendor/spatie/laravel-package-tools/src/Concerns/PackageServiceProvider/ProcessViews.php:18`).
  */
 it('resolve a view do pacote para a cópia do kit', function (): void {
-    expect(View::getFinder()->find('filament-clear-cache::livewire.clear-cache-button'))
-        ->toBe(bladeDoKitDoLimparCache());
+    // `realpath()` dos dois lados: no Windows o framework 13.42 monta o caminho com `\`.
+    expect(realpath(View::getFinder()->find('filament-clear-cache::livewire.clear-cache-button')))
+        ->toBe(realpath(bladeDoKitDoLimparCache()));
 });
 
 /**

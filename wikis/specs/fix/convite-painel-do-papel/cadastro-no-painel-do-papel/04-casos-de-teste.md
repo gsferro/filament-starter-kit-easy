@@ -119,6 +119,8 @@ O domínio desta tabela são destinos internos de painéis.
 | Desligado | Não | >1 | Inacessível | Inacessível | Primeiro acessível registrado | CT-09 |
 | Desligado | Não | >1 | Acessível | Qualquer | Precedência exata aberta | Q1 |
 | Ligado | Não | 1 | Ausente | Qualquer | Único painel acessível, regressão delimitada | CT-14 |
+| CT-15 | Pretendida em rota sem `{tenant}` ou da própria organização não é descartada | P-04 | R6 | G2 | Pest feature HTTP | Adaptação tenancy |
+| CT-16 | Pretendida de organização sem vínculo em rota inexistente é descartada | P-04 | R6 | G2 | Pest feature HTTP | Adaptação tenancy |
 
 Corrente acessível com zero painéis acessíveis é uma combinação contraditória. Pretendida de painel acessível com zero painéis acessíveis também é contraditória neste domínio.
 
@@ -606,3 +608,39 @@ Na skill `.claude/skills/feature-test-design/`:
 - `../feature-wiki/references/hosts-e-subagentes.md` — contexto novo e limites dos controles.
 
 Também foi lida `.agents/skills/testing-best-practices/SKILL.md` para orientação metodológica de observáveis e cobertura. A instrução de ler a implementação não foi aplicada, conforme a proibição expressa desta tarefa.
+## Adendo de achado — CT-15 (step 9, 2026-11-13)
+
+> Origem: P-04. Escrito pela sessão (degradação: `feature-test-design` não reinvocada para um cenário).
+
+```gherkin
+# language: pt
+  Esquema do Cenário: [CT-15] pretendida em rota sem organização ou da própria organização não é descartada
+    Dado o login unificado desligado, a tenancy ligada e uma conta "panel_user" somente da organização "acme"
+    E a corrente "app" é acessível e a pretendida é "<pretendida>"
+    Quando a resposta de cadastro é solicitada diretamente
+    Então o destino é "<pretendida>"
+
+    Exemplos:
+      | pretendida                     | partição                       |
+      | /app/email-verification/prompt | rota fora do grupo {tenant}    |
+      | /app/acme                      | organização da própria conta   |
+```
+
+| ID | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M-40 | Lê o primeiro segmento depois do painel como organização | CT-15 — verificação de e-mail | destino `/app/email-verification/prompt`, não `/app/acme` (falha medida sem a correção) |
+| M-41 | Recusa toda pretendida com organização | CT-15 — própria organização | destino `/app/acme` preservado |
+
+## Adendo de achado — CT-16 (step 9, RD-01, 2026-11-13)
+
+```gherkin
+  Cenário: [CT-16] pretendida de organização sem vínculo em rota inexistente é descartada
+    Dado o login unificado desligado, a tenancy ligada e uma conta "panel_user" somente da organização "acme"
+    E a corrente "app" é acessível e a pretendida é "/app/outra/rota-que-nao-existe"
+    Quando a resposta de cadastro é solicitada diretamente
+    Então o destino é "/app/acme" e a pretendida não fica na sessão
+```
+
+| ID | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M-42 | URL que não casa rota libera em vez de barrar | CT-16 | destino `/app/acme`, não a pretendida |
