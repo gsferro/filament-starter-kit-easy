@@ -129,4 +129,10 @@ Without the key, the kit detects on its own.
 > login from `/public/app` returns to `/public/app` after authenticating. One more reason to fix
 > `DocumentRoot`.
 
+> **`/app` turning into `/public/app` on Apache.** With `DocumentRoot` at the project root, the
+> exact path `/app` (and `/config`, `/database`...) matches a Laravel **directory**. Apache applies
+> `DirectorySlash` before the rewrite (`/app` → `/app/`), and the trailing-slash rule in
+> `public/.htaccess` then builds `/public/app`. The fix is the usual one: point `DocumentRoot` at
+> `public/`. If you cannot, put `DirectorySlash Off` in the root `.htaccess`.
+
 > Guard: `tests/Kit/UrlSemPrefixoPublicTest.php`.

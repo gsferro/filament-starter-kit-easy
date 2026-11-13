@@ -131,9 +131,9 @@ final class DestinoAposLogin
      * Esquece a URL pretendida quando ela não é de um painel que a pessoa acessa.
      *
      * Serve ao CADASTRO com a página única desligada, onde a escolha de painel não existe e o
-     * destino continua sendo o do Filament (`redirect()->intended(Filament::getUrl())`): a única
-     * coisa errada ali é a pretendida, então é ela que sai. Ver `RespostaDeCadastro` e
-     * `wikis/specs/fix/destino-apos-cadastro/` (ADR-04).
+     * destino é o do Filament (`redirect()->intended(Filament::getUrl())`) quando o painel corrente
+     * é acessível, senão `painelSemEscolha()`. Ver `RespostaDeCadastro`,
+     * `wikis/specs/fix/destino-apos-cadastro/` (ADR-04) e `wikis/specs/fix/convite-painel-do-papel/`.
      *
      * Mora aqui, e não na resposta, porque a pergunta "esta URL é de painel acessível?" é de
      * `painelDe()` — privada de propósito: é nela que vivem as duas defesas de URL da auditoria
@@ -164,6 +164,26 @@ final class DestinoAposLogin
                 'motivo'     => 'pretendida_inacessivel',
             ],
         );
+    }
+
+    /**
+     * O painel de entrada quando não existe tela de escolha (página única desligada): o default
+     * do Filament se a pessoa o acessa, senão o primeiro acessível na ordem de
+     * `Filament::getPanels()`; `null` sem nenhum. Ver `RespostaDeCadastro` e
+     * `wikis/specs/fix/convite-painel-do-papel/`.
+     */
+    public static function painelSemEscolha(User $user): ?Panel
+    {
+        $paineis = self::paineisDe($user);
+        $default = Filament::getDefaultPanel();
+
+        foreach ($paineis as $painel) {
+            if ($painel->getId() === $default->getId()) {
+                return $painel;
+            }
+        }
+
+        return $paineis[0] ?? null;
     }
 
     /**

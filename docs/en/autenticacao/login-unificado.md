@@ -73,7 +73,7 @@ accessible panel enters it directly; otherwise (0 or N panels), it goes to the c
 (`app/Filament/Pages/Auth/EscolhaDePainel.php:mount:62`, `:encerrarSemPainel:109`);
 `EntrarNoPainelController::__invoke()` delegates to `DestinoAposLogin::entrarEm()`
 (`app/Http/Controllers/Auth/EntrarNoPainelController.php:__invoke:27`,
-`app/Support/DestinoAposLogin.php:entrarEm:173`).
+`app/Support/DestinoAposLogin.php:entrarEm:193`).
 
 ## What changes for whoever signs in
 
@@ -97,7 +97,11 @@ never delivered to the address of a panel it cannot access — the real case is 
 opens `/admin`, is sent to the login screen, and only then clicks the invitation link they got.
 Without this check the registration worked and the first screen of the system was a permission
 error. With the switch **off** the check still applies: the inaccessible address is discarded and
-the panel's default destination wins.
+the panel's default destination wins — if the account can access it. When it cannot (the invitation
+link is always the `/app` registration, and the invitation may be for an `/infra` or `/admin` role),
+the account goes to a panel it can access: the default one if it is among them, otherwise the first
+in panel order. With no accessible panel at all, the session is ended and the person is sent back to
+the login screen.
 
 ## A panel added after installation
 

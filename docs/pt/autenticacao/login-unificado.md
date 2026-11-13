@@ -73,7 +73,7 @@ exatamente 1 painel acessível, entra direto; no resto (0 ou N painéis), vai à
 (`app/Filament/Pages/Auth/EscolhaDePainel.php:mount:62`, `:encerrarSemPainel:109`);
 `EntrarNoPainelController::__invoke()` delega em `DestinoAposLogin::entrarEm()`
 (`app/Http/Controllers/Auth/EntrarNoPainelController.php:__invoke:27`,
-`app/Support/DestinoAposLogin.php:entrarEm:173`).
+`app/Support/DestinoAposLogin.php:entrarEm:193`).
 
 ## O que muda para quem entra
 
@@ -97,7 +97,10 @@ A mesma regra vale depois do **cadastro**, e não só depois do login. Uma conta
 é mandado ao login, e só então clica no link do convite que recebeu. Sem essa verificação o
 cadastro funcionava e a primeira tela do sistema era um erro de permissão. Com a chave
 **desligada** a verificação continua valendo: o endereço inacessível é descartado e vale o destino
-padrão do painel.
+padrão do painel — se a conta o acessa. Quando não acessa (o link do convite é sempre o cadastro do
+`/app`, e o convite pode ser de um papel do `/infra` ou do `/admin`), a conta vai ao painel que ela
+acessa: o default, se for um deles, senão o primeiro na ordem dos painéis. Sem nenhum painel
+acessível, a sessão é encerrada e a pessoa volta à tela de login.
 
 ## Painel novo depois da instalação
 
