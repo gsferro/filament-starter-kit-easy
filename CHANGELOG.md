@@ -21,12 +21,12 @@ roteiro de atualização escrito antes da tag. Nada a instalar nem migrar. Wiki:
   inacessível: um convite `infra` (ou `admin` sem organização) terminava no `/app`, que a conta não acessa.
   Agora, quando o painel corrente é inacessível e não sobra pretendida acessível, a conta vai ao painel que
   acessa (o default, se for um deles, senão o primeiro na ordem dos painéis — `DestinoAposLogin::painelSemEscolha()`);
-  sem nenhum painel acessível, a sessão é encerrada e a pessoa volta ao login. Com o painel corrente
+  sem nenhum painel acessível, a sessão é encerrada e a pessoa volta ao login com o aviso "Sua conta não tem
+  acesso a nenhum painel.", o mesmo da escolha de painel do modo ligado. Com o painel corrente
   acessível, nada muda. O modo ligado já não tinha o defeito.
-- A URL pretendida de um painel com organização só vale se a conta acessa a organização da URL: `/app/outra`
-  para quem só é da `acme` era aceita e terminava em 404 do Filament. Vale para o cadastro e também para o
-  **login** unificado e social (o mesmo `DestinoAposLogin`), que passam a descartar essa pretendida e decidir
-  como sem ela. Rotas do painel fora da organização (verificação de e-mail, login) continuam aceitas.
+- No cadastro, a URL pretendida de um painel com organização só vale se a conta acessa a organização da URL:
+  `/app/outra` para quem só é da `acme` era aceita e terminava em 404 do Filament. Rotas do painel fora da
+  organização (verificação de e-mail, login) continuam aceitas. O login unificado e o social não mudam.
 - `larastan/larastan` 3.15 e `laravel/framework` 13.42 passaram a anotar `Seeder::$command` como anulável: os
   seeders do kit (`DashboardPadraoSeeder`, `DemoTenancySeeder`, `ShieldPermissionsSeeder` e
   `SeederDeOnboardingDeTenancy`) usam `$this->command?->`, e um seeder chamado sem comando (por exemplo,

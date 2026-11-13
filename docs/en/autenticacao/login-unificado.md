@@ -101,7 +101,7 @@ the panel's default destination wins — if the account can access it. When it c
 link is always the `/app` registration, and the invitation may be for an `/infra` or `/admin` role),
 the account goes to a panel it can access: the default one if it is among them, otherwise the first
 in panel order. With no accessible panel at all, the session is ended and the person is sent back to
-the login screen.
+the login screen with a notice that the account has no panel access.
 
 ## A panel added after installation
 

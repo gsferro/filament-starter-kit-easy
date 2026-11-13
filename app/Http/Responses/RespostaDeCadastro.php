@@ -10,6 +10,7 @@ use App\Support\DestinoAposLogin;
 use App\Support\Paineis;
 use Filament\Auth\Http\Responses\RegistrationResponse;
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Panel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
@@ -86,6 +87,14 @@ final class RespostaDeCadastro extends RegistrationResponse
         Filament::auth()->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        /** Mesma mensagem da irmã do modo ligado, `EscolhaDePainel::encerrarSemPainel()` (P-05). */
+        Notification::make()
+            ->title('Sua conta não tem acesso a nenhum painel.')
+            ->body('Procure quem administra o sistema.')
+            ->warning()
+            ->persistent()
+            ->send();
 
         return redirect()->to($corrente->getLoginUrl() ?? url('/'));
     }

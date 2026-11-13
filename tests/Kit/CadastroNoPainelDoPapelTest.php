@@ -9,10 +9,11 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
 use Filament\Facades\Filament;
+use Filament\Notifications\Livewire\Notifications;
+use Filament\Notifications\Notification;
+use Filament\Notifications\NotificationMailbox;
 use Filament\PanelRegistry;
 use Illuminate\Http\Request;
-use Illuminate\Testing\TestResponse;
-use Livewire\Livewire;
 
 /**
  * Cadastro no painel do papel — wiki `fix/convite-painel-do-papel`, 04-casos-de-teste.md.
@@ -28,44 +29,6 @@ beforeEach(function (): void {
 
 /** Papel que abre cada painel do kit. */
 const PAPEL_DO_PAINEL_NO_CADASTRO = ['admin' => 'admin', 'app' => 'panel_user', 'infra' => 'infra'];
-
-/**
- * Cadastro real pelo componente, a partir de um convite.
- */
-function cadastroDoPapelPorConvite(string $componente, string $token, string $email = 'novo@example.com')
-{
-    Filament::auth()->logout();
-    Filament::setCurrentPanel('app');
-
-    return Livewire::withQueryParams(['token' => $token])
-        ->test($componente)
-        ->fillForm([
-            'name'                 => 'Fulano',
-            'email'                => $email,
-            'password'             => 'segredo-bem-longo-123',
-            'passwordConfirmation' => 'segredo-bem-longo-123',
-        ])
-        ->call('register');
-}
-
-/**
- * GET na MESMA sessão do teste: sem nova autenticação e sem desligar middleware.
- */
-function acessoDoPapelNaMesmaSessao(string $url): TestResponse
-{
-    session()->save();
-
-    return test()
-        ->withCookie(session()->getName(), session()->getId())
-        ->get($url);
-}
-
-function esperarAcessoLivreNoCadastro(string $url): void
-{
-    $resposta = acessoDoPapelNaMesmaSessao($url);
-
-    expect($resposta->getStatusCode())->toBe(200, "GET {$url} nao terminou em 200");
-}
 
 /** Conta ativa cujos painéis acessíveis são exatamente os pedidos. */
 function contaComPaineisNoCadastro(array $paineis): User
@@ -125,19 +88,19 @@ function respostaDeCadastroNoCadastro(User $user, ?string $pretendida): string
 it('[CT-01] convite infra sem organizacao chega ao infra', function (): void {
     $convite = ofertaPara('novo@example.com', null, 'infra');
 
-    cadastroDoPapelPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/infra');
+    cadastrarPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/infra');
 
     expect(Filament::auth()->check())->toBeTrue();
-    esperarAcessoLivreNoCadastro('/infra');
+    esperarAcessoLivre('/infra');
 });
 
 it('[CT-02] convite admin sem organizacao chega ao admin', function (): void {
     $convite = ofertaPara('novo@example.com', null, 'admin');
 
-    cadastroDoPapelPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/admin');
+    cadastrarPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/admin');
 
     expect(Filament::auth()->check())->toBeTrue();
-    esperarAcessoLivreNoCadastro('/admin');
+    esperarAcessoLivre('/admin');
 });
 
 it('[CT-03] a resposta aplica o destino fora do componente', function (string $painel): void {
@@ -150,7 +113,7 @@ it('[CT-03] a resposta aplica o destino fora do componente', function (string $p
     expect($destino)->toBe(url("/{$painel}"))
         ->and(Filament::auth()->check())->toBeTrue();
 
-    esperarAcessoLivreNoCadastro($destino);
+    esperarAcessoLivre($destino);
 })->with(['infra', 'admin']);
 
 it('[CT-04] a resposta preserva a pretendida autorizada ou usa a corrente', function (
@@ -169,7 +132,7 @@ it('[CT-04] a resposta preserva a pretendida autorizada ou usa a corrente', func
     expect($alvo)->toBe(url($destino))
         ->and(Filament::auth()->check())->toBeTrue();
 
-    esperarAcessoLivreNoCadastro($alvo);
+    esperarAcessoLivre($alvo);
 })->with([
     'sem pretendida'             => [['app', 'infra'], 'app', 'infra', null, '/app'],
     'painel pretendido proibido' => [['app', 'infra'], 'app', 'infra', '/admin', '/app'],
@@ -183,10 +146,10 @@ it('[CT-04] a resposta preserva a pretendida autorizada ou usa a corrente', func
 it('[CT-05] panel_user sem organizacao permanece no app sem tenancy', function (): void {
     $convite = ofertaPara('novo@example.com', null, 'panel_user');
 
-    cadastroDoPapelPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/app');
+    cadastrarPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/app');
 
     expect(Filament::auth()->check())->toBeTrue();
-    esperarAcessoLivreNoCadastro('/app');
+    esperarAcessoLivre('/app');
 });
 
 it('[CT-08] default acessivel prevalece sobre o primeiro acessivel', function (
@@ -205,7 +168,7 @@ it('[CT-08] default acessivel prevalece sobre o primeiro acessivel', function (
     expect($alvo)->toBe(url($destino))
         ->and(Filament::auth()->check())->toBeTrue();
 
-    esperarAcessoLivreNoCadastro($alvo);
+    esperarAcessoLivre($alvo);
 })->with([
     'admin e infra'   => [['admin', 'infra'], 'app', 'infra', ['admin', 'app', 'infra'], '/infra'],
     'admin e app'     => [['admin', 'app'], 'infra', 'app', ['admin', 'app', 'infra'], '/app'],
@@ -228,7 +191,7 @@ it('[CT-09] default inacessivel usa o primeiro acessivel na ordem registrada', f
         ->and(Filament::auth()->check())->toBeTrue()
         ->and(session()->has('url.intended'))->toBeFalse();
 
-    esperarAcessoLivreNoCadastro($alvo);
+    esperarAcessoLivre($alvo);
 })->with([
     'primeiro registrado'             => [['infra', 'app', 'admin'], null, '/infra'],
     'ordem inversa'                   => [['admin', 'app', 'infra'], null, '/admin'],
@@ -243,12 +206,40 @@ it('[CT-10] zero paineis encerram a sessao e tornam o login alcancavel', functio
 
     paineisNoCadastro($corrente, 'admin');
 
-    $alvo = respostaDeCadastroNoCadastro($user, $pretendida);
+    if ($pretendida !== null) {
+        session()->put('url.intended', url($pretendida));
+    }
+
+    Filament::auth()->login($user);
+
+    $sessaoAntes = session()->getId();
+    $tokenAntes  = session()->token();
+
+    $requisicao = Request::capture();
+    $requisicao->setLaravelSession(app('session.store'));
+
+    $alvo = app(RegistrationResponse::class)->toResponse($requisicao)->getTargetUrl();
 
     expect($alvo)->toBe(Filament::getPanel($corrente)->getLoginUrl())
-        ->and(Filament::auth()->check())->toBeFalse();
+        ->and(Filament::auth()->check())->toBeFalse()
+        ->and(session()->getId())->not->toBe($sessaoAntes)
+        ->and(session()->token())->not->toBe($tokenAntes);
 
-    esperarAcessoLivreNoCadastro($alvo);
+    app(NotificationMailbox::class)->flush();
+
+    $painelDeAvisos = new Notifications;
+    $painelDeAvisos->mount();
+    $painelDeAvisos->pullNotificationsFromSession();
+
+    $aviso = $painelDeAvisos->notifications->first(
+        fn (Notification $enviada): bool => $enviada->getTitle() === 'Sua conta não tem acesso a nenhum painel.',
+    );
+
+    expect($aviso)->not->toBeNull()
+        ->and($aviso->getBody())->toBe('Procure quem administra o sistema.')
+        ->and($aviso->getStatus())->toBe('warning');
+
+    esperarAcessoLivre($alvo);
 })->with([
     'app sem pretendida'    => ['app', null],
     'app com pretendida'    => ['app', '/admin'],
@@ -267,7 +258,7 @@ it('[CT-11] a resposta descarta a pretendida e entrega um destino permitido', fu
         ->and(Filament::auth()->check())->toBeTrue()
         ->and(session()->has('url.intended'))->toBeFalse();
 
-    esperarAcessoLivreNoCadastro($alvo);
+    esperarAcessoLivre($alvo);
 });
 
 it('[CT-12] pretendida acessivel de outro painel mantem o destino dentro do painel permitido', function (): void {
@@ -281,7 +272,7 @@ it('[CT-12] pretendida acessivel de outro painel mantem o destino dentro do pain
         ->and($alvo)->toBe(url('/infra?origem=convite'))
         ->and(Filament::auth()->check())->toBeTrue();
 
-    esperarAcessoLivreNoCadastro($alvo);
+    esperarAcessoLivre($alvo);
 });
 
 it('[CT-13] a nota de deploy explica public app e a alternativa de configuracao', function (string $idioma, string $raiz): void {
@@ -307,8 +298,8 @@ it('[CT-14] modo ligado preserva o destino de um unico painel acessivel', functi
 
     $convite = ofertaPara('novo@example.com', null, 'infra');
 
-    cadastroDoPapelPorConvite(CadastroUnificado::class, $convite->enviar())->assertRedirect('/infra');
+    cadastrarPorConvite(CadastroUnificado::class, $convite->enviar())->assertRedirect('/infra');
 
     expect(Filament::auth()->check())->toBeTrue();
-    esperarAcessoLivreNoCadastro('/infra');
+    esperarAcessoLivre('/infra');
 });

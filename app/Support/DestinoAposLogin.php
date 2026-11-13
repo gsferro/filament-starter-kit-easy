@@ -93,7 +93,7 @@ final class DestinoAposLogin
         // Zero painéis com sessão viva (o login social não pergunta por painel) também vai para
         // a escolha: é ela quem encerra a sessão e volta ao login. Mandar ao login direto faria
         // laço — a página única redireciona autenticado para cá.
-        $painelDaPretendida = $pretendida !== '' ? self::painelDe($pretendida, $paineis, $user) : null;
+        $painelDaPretendida = $pretendida !== '' ? self::painelDe($pretendida, $paineis) : null;
 
         $destino = match (true) {
             $painelDaPretendida instanceof Panel => $pretendida,
@@ -252,13 +252,14 @@ final class DestinoAposLogin
      * auditoria Blueprint). E o path precisa ser a raiz do painel ou começar por ela COM a barra:
      * `/administracao/x` não é `/admin`.
      *
-     * Em painel com organização, o primeiro segmento depois da raiz é a organização: a URL só é
-     * acessível se a pessoa acessa ESSA organização. `/app/outra` para quem só é da `acme` dava 404
-     * do Filament depois do login ou do cadastro (`wikis/specs/fix/convite-painel-do-papel/`, CT-11).
+     * Com `$conferirOrganizacaoDe`, em painel com organização a URL só é acessível se a pessoa
+     * acessa a organização da rota: `/app/outra` para quem só é da `acme` terminava o cadastro em
+     * 404 do Filament (`wikis/specs/fix/convite-painel-do-papel/`, P-04). Só o cadastro passa a
+     * conta: o login (`urlPara()`) continua sem a conferência, fora do escopo daquela correção.
      *
      * @param  list<Panel>  $paineis
      */
-    private static function painelDe(string $url, array $paineis, User $user): ?Panel
+    private static function painelDe(string $url, array $paineis, ?User $conferirOrganizacaoDe = null): ?Panel
     {
         $raizDoApp = rtrim(url('/'), '/').'/';
 
@@ -277,7 +278,7 @@ final class DestinoAposLogin
             $raiz = '/'.trim($painel->getPath(), '/');
 
             if ($path === $raiz || str_starts_with($path, $raiz.'/')) {
-                return self::organizacaoDaUrlAcessivel($painel, $path, $user) ? $painel : null;
+                return $conferirOrganizacaoDe === null || self::organizacaoDaUrlAcessivel($painel, $path, $conferirOrganizacaoDe) ? $painel : null;
             }
         }
 

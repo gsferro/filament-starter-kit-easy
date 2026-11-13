@@ -72,7 +72,7 @@
 
 | Qn | Pergunta | Recomendação | Estado |
 |----|----------|--------------|--------|
-| — | nenhuma | — | — |
+| Q2 | O login unificado e o login social também devem descartar a URL pretendida de uma organização que a conta não acessa (hoje a pessoa cai no 404 do Filament)? | Sim, em correção própria com wiki e testes do login; nesta entrega, não | aberta — não bloqueia nada desta entrega (o login fica como está) |
 
 ## Premissas
 
@@ -81,7 +81,8 @@
 | P-01 | "O login" do RQ-05 é a tela de login do painel corrente **com a sessão encerrada**: entregar o login a uma sessão autenticada faz a tela de login do Filament redirecionar de volta ao painel corrente, que é o 403 que a issue quer evitar. "Como hoje" lido como "o destino de quem não entra em painel nenhum", não como o comportamento medido hoje (que é o 403) | decisão de desenho do step 4, falha fechado | vigente |
 | P-02 | "Painel default dentre os acessíveis" (RQ-04): o painel default do Filament quando ele é acessível; senão o primeiro acessível na ordem de `Filament::getPanels()` | leitura do RQ-04, step 4 | vigente |
 | P-03 | Com o painel corrente inacessível e uma pretendida **acessível** (de outro painel), a pretendida vence: a conta vai à URL completa dela. Responde a Q1 do `04` | o CT-75 de `wikis/specs/fix/destino-apos-cadastro/` já trava esse comportamento (`desligada admin` → `/admin/users`); a issue pede descartar só a pretendida inacessível | vigente |
-| P-04 | Em painel com organização, a URL pretendida só é acessível se a rota tem `{tenant}` de uma organização que a conta acessa; rota do painel fora do grupo `{tenant}` (login, verificação de e-mail) não tem organização a conferir e continua aceita; URL que não casa rota nenhuma é recusada (RD-01). Vale para o login e o cadastro (mesmo `DestinoAposLogin::painelDe()`) | achados do step 9: CT-04/CT-11 vermelhos pelo executor (organização sem vínculo aceita) e revisão Codex (primeiro segmento lido como organização recusava `/app/email-verification/...`) | vigente |
+| P-04 | Em painel com organização, a URL pretendida só é acessível se a rota tem `{tenant}` de uma organização que a conta acessa; rota do painel fora do grupo `{tenant}` (login, verificação de e-mail) não tem organização a conferir e continua aceita; URL que não casa rota nenhuma é recusada (RD-01). *(alterado em 2026-11-13, QA-01 do gate: vale **só para o cadastro**; o login unificado/social não muda, fora de escopo — ver Q2)* | achados do step 9: CT-04/CT-11 vermelhos pelo executor (organização sem vínculo aceita) e revisão Codex (primeiro segmento lido como organização recusava `/app/email-verification/...`) | vigente |
+| P-05 | Zero painéis: antes de mandar ao login, a resposta avisa o motivo com a mesma notificação da `EscolhaDePainel` do modo ligado ("Sua conta não tem acesso a nenhum painel." / "Procure quem administra o sistema.") | QA-05 do quality gate ciclo 1 (dimensão F) | vigente |
 
 ## Fora de Escopo (declarado)
 

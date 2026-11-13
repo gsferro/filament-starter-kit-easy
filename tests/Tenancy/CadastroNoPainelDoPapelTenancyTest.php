@@ -10,8 +10,6 @@ use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
 use Filament\Facades\Filament;
 use Filament\PanelRegistry;
 use Illuminate\Http\Request;
-use Illuminate\Testing\TestResponse;
-use Livewire\Livewire;
 
 /**
  * Cadastro no painel do papel com a tenancy LIGADA — wiki `fix/convite-painel-do-papel`.
@@ -23,36 +21,6 @@ beforeEach(function (): void {
 
     ligarLoginUnificado(false);
 });
-
-function cadastroDoPapelPorConviteTenancy(string $token, string $email = 'novo@example.com')
-{
-    Filament::auth()->logout();
-    Filament::setCurrentPanel('app');
-
-    return Livewire::withQueryParams(['token' => $token])
-        ->test(RegistroPorConvite::class)
-        ->fillForm([
-            'name'                 => 'Fulano',
-            'email'                => $email,
-            'password'             => 'segredo-bem-longo-123',
-            'passwordConfirmation' => 'segredo-bem-longo-123',
-        ])
-        ->call('register');
-}
-
-function acessoNaMesmaSessaoTenancy(string $url): TestResponse
-{
-    session()->save();
-
-    return test()
-        ->withCookie(session()->getName(), session()->getId())
-        ->get($url);
-}
-
-function esperarAcessoLivreTenancy(string $url): void
-{
-    expect(acessoNaMesmaSessaoTenancy($url)->getStatusCode())->toBe(200, "GET {$url} nao terminou em 200");
-}
 
 /** panel_user somente da organização `acme`; `outra` existe sem vínculo. */
 function contaSomenteAcmeTenancy(): User
@@ -89,19 +57,19 @@ function respostaDeCadastroTenancy(User $user, string $corrente, string $default
 it('[CT-01] convite infra sem organizacao chega ao infra com tenancy ligada', function (): void {
     $convite = ofertaPara('novo@example.com', null, 'infra');
 
-    cadastroDoPapelPorConviteTenancy($convite->enviar())->assertRedirect('/infra');
+    cadastrarPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/infra');
 
     expect(Filament::auth()->check())->toBeTrue();
-    esperarAcessoLivreTenancy('/infra');
+    esperarAcessoLivre('/infra');
 });
 
 it('[CT-02] convite admin sem organizacao chega ao admin com tenancy ligada', function (): void {
     $convite = ofertaPara('novo@example.com', null, 'admin');
 
-    cadastroDoPapelPorConviteTenancy($convite->enviar())->assertRedirect('/admin');
+    cadastrarPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/admin');
 
     expect(Filament::auth()->check())->toBeTrue();
-    esperarAcessoLivreTenancy('/admin');
+    esperarAcessoLivre('/admin');
 });
 
 it('[CT-04] organizacao sem vinculo na pretendida cai na organizacao da conta', function (): void {
@@ -112,7 +80,7 @@ it('[CT-04] organizacao sem vinculo na pretendida cai na organizacao da conta', 
     expect($alvo)->toBe(url('/app/acme'))
         ->and(Filament::auth()->check())->toBeTrue();
 
-    esperarAcessoLivreTenancy($alvo);
+    esperarAcessoLivre($alvo);
 });
 
 it('[CT-06] o unico painel app inclui a organizacao', function (): void {
@@ -123,7 +91,7 @@ it('[CT-06] o unico painel app inclui a organizacao', function (): void {
     expect($alvo)->toBe(url('/app/acme'))
         ->and(Filament::auth()->check())->toBeTrue();
 
-    esperarAcessoLivreTenancy($alvo);
+    esperarAcessoLivre($alvo);
 });
 
 it('[CT-07] convite panel_user da organizacao chega ao app da organizacao', function (): void {
@@ -132,10 +100,10 @@ it('[CT-07] convite panel_user da organizacao chega ao app da organizacao', func
 
     $convite = ofertaPara('novo@example.com', $acme, 'panel_user');
 
-    cadastroDoPapelPorConviteTenancy($convite->enviar())->assertRedirect('/app/acme');
+    cadastrarPorConvite(RegistroPorConvite::class, $convite->enviar())->assertRedirect('/app/acme');
 
     expect(Filament::auth()->check())->toBeTrue();
-    esperarAcessoLivreTenancy('/app/acme');
+    esperarAcessoLivre('/app/acme');
 });
 
 it('[CT-11] pretendida de organizacao sem vinculo e corrente inacessivel terminam na organizacao da conta', function (): void {
@@ -147,7 +115,7 @@ it('[CT-11] pretendida de organizacao sem vinculo e corrente inacessivel termina
         ->and(Filament::auth()->check())->toBeTrue()
         ->and(session()->has('url.intended'))->toBeFalse();
 
-    esperarAcessoLivreTenancy($alvo);
+    esperarAcessoLivre($alvo);
 });
 
 it('[CT-15] pretendida em rota do painel sem organizacao ou da propria organizacao nao e descartada', function (string $pretendida): void {

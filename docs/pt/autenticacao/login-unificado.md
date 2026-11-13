@@ -100,7 +100,8 @@ cadastro funcionava e a primeira tela do sistema era um erro de permissão. Com 
 padrão do painel — se a conta o acessa. Quando não acessa (o link do convite é sempre o cadastro do
 `/app`, e o convite pode ser de um papel do `/infra` ou do `/admin`), a conta vai ao painel que ela
 acessa: o default, se for um deles, senão o primeiro na ordem dos painéis. Sem nenhum painel
-acessível, a sessão é encerrada e a pessoa volta à tela de login.
+acessível, a sessão é encerrada e a pessoa volta à tela de login com o aviso de que a conta não
+tem acesso a nenhum painel.
 
 ## Painel novo depois da instalação
 

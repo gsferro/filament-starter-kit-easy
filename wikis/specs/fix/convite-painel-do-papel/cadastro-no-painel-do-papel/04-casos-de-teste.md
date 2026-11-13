@@ -4,9 +4,9 @@
 >
 > Derivação independente, sem leitura da implementação. Os arquivos de teste e o seeder autorizados forneceram somente nomes e convenções.
 >
-> Documento proposto, entregue integralmente nesta resposta. Nenhum arquivo foi editado e nenhum teste foi executado.
+> Derivado em 2026-11-13; testes escritos e verdes depois (ver `03`, `## Testes`).
 >
-> Revisão adversarial: duas rodadas independentes; oito achados da primeira rodada incorporados; nenhum novo achado demonstrado na segunda. Q1 permanece aberta somente no recorte indicado.
+> Revisão adversarial: duas rodadas internas da própria derivação (Codex), **não** por revisor independente (`fw-adversario-ct`) — degradação declarada no `03`. Q1 respondida como P-03.
 
 ## Perfil de Derivação
 
@@ -19,7 +19,7 @@ O risco principal é concluir o cadastro com uma sessão autenticada cujo destin
 
 Técnicas: particionamento de equivalência, tabela de decisão, matriz de acesso por papel e painel, cardinalidade de painéis acessíveis em 0/1/2/3 e observação da sessão e do destino HTTP.
 
-As contagens automáticas por arquivo e a correspondência com testes implementados ficam pendentes da materialização deste documento.
+*(alterado em 2026-11-13: correspondência com os testes conferida pelo `ids-ct.sh`)*
 
 ## Varredura SFDIPOT
 
@@ -49,8 +49,11 @@ Uma linha por cláusula ou premissa vigente.
 | R8 | RQ-08 | Documentação explica `/public/app` e orienta a configuração de deploy | Mínimo / verificação documental | CT-13 |
 | R9 | P-01 | Zero painéis encerram a autenticação e entregam o login da corrente | Completo / efeito sobre sessão e saída alcançável | CT-10 |
 | R10 | P-02 | Default acessível prevalece; senão, vale o primeiro acessível na ordem registrada | Completo / tabela de decisão e ordenação | CT-08, CT-09 |
+| R11 | P-03 | Pretendida acessível de outro painel vence com a corrente inacessível | Completo / tabela de decisão | CT-12 |
+| R12 | P-04 | No cadastro, pretendida de painel com organização só vale com a organização da rota `{tenant}` acessível; rota sem `{tenant}` é aceita; rota inexistente é recusada | Completo / EP de rota e organização | CT-04 e CT-11 (exemplos tenancy), CT-15, CT-16 |
+| R13 | P-05 | Zero painéis notificam o motivo antes do login | Completo / efeito observável | CT-10 |
 
-**Cobertura parcial de RQ-03/RQ-04:** a precedência da pretendida acessível quando a corrente é inacessível depende de Q1. Os casos sem pretendida ou com pretendida inacessível continuam determinados e cobertos.
+*(alterado em 2026-11-13: Q1 respondida como P-03, regra R11)* **Cobertura parcial de RQ-03/RQ-04 (original):** a precedência da pretendida acessível quando a corrente é inacessível dependia de Q1. Os casos sem pretendida ou com pretendida inacessível continuam determinados e cobertos.
 
 ## Costuras de Teste
 
@@ -119,8 +122,6 @@ O domínio desta tabela são destinos internos de painéis.
 | Desligado | Não | >1 | Inacessível | Inacessível | Primeiro acessível registrado | CT-09 |
 | Desligado | Não | >1 | Acessível | Qualquer | Precedência exata aberta | Q1 |
 | Ligado | Não | 1 | Ausente | Qualquer | Único painel acessível, regressão delimitada | CT-14 |
-| CT-15 | Pretendida em rota sem `{tenant}` ou da própria organização não é descartada | P-04 | R6 | G2 | Pest feature HTTP | Adaptação tenancy |
-| CT-16 | Pretendida de organização sem vínculo em rota inexistente é descartada | P-04 | R6 | G2 | Pest feature HTTP | Adaptação tenancy |
 
 Corrente acessível com zero painéis acessíveis é uma combinação contraditória. Pretendida de painel acessível com zero painéis acessíveis também é contraditória neste domínio.
 
@@ -128,7 +129,7 @@ A cardinalidade usa 0/1/2 na fronteira entre os ramos e 3 como representante adi
 
 ## Índice de Cenários
 
-Os destinos de implementação abaixo são propostas; não representam testes já escritos.
+*(alterado em 2026-11-13: testes escritos — `tests/Kit/CadastroNoPainelDoPapelTest.php` e `tests/Tenancy/CadastroNoPainelDoPapelTenancyTest.php`)*
 
 | ID | Cenário | Origem | Regra | Grupo | Costura | Destino de implementação |
 |---|---|---|---|---|---|---|
@@ -141,11 +142,13 @@ Os destinos de implementação abaixo são propostas; não representam testes j�
 | CT-07 | Convite `panel_user` da organização | RQ-07 | R7 | G1 | componente Livewire/Filament | Adaptação tenancy |
 | CT-08 | Default acessível prevalece | RQ-04, P-02 | R4, R10 | G2 | Pest feature HTTP | Teste da resposta |
 | CT-09 | Default inacessível usa ordem filtrada | RQ-04, RQ-06, P-02 | R4, R6, R10 | G2 | Pest feature HTTP | Teste da resposta |
-| CT-10 | Zero painéis encerram sessão e entregam login | RQ-05, P-01 | R5, R9 | G2 | Pest feature HTTP | Teste da resposta e GET do login |
+| CT-10 | Zero painéis encerram sessão e entregam login | RQ-05, P-01, P-05 | R5, R9, R13 | G2 | Pest feature HTTP | Teste da resposta e GET do login |
 | CT-11 | Pretendida e corrente inacessíveis | RQ-06 | R6 | G2 | Pest feature HTTP | Kit e adaptação tenancy |
-| CT-12 | Invariante com pretendida acessível de outro painel | RQ-03, P-03 | R3, recorte Q1 | G2 | Pest feature HTTP | Teste da resposta |
+| CT-12 | Invariante com pretendida acessível de outro painel | RQ-03, P-03 | R3, R11 | G2 | Pest feature HTTP | Teste da resposta |
 | CT-13 | Nota de deploy orienta configuração | RQ-08 | R8 | G3 | unit de regra | Verificação documental proposta |
 | CT-14 | Modo ligado preserva destino permitido | RQ-01 — Texto Original e limite de escopo | R1 | G1 | componente Livewire/Filament | Kit |
+| CT-15 | Pretendida em rota sem `{tenant}` ou da própria organização não é descartada | P-04 | R12 | G2 | Pest feature HTTP | Tenancy |
+| CT-16 | Pretendida de organização sem vínculo em rota inexistente é descartada | P-04 | R12 | G2 | Pest feature HTTP | Tenancy |
 
 ## Regra R1 — Convite de outro painel conclui no painel permitido
 
@@ -644,3 +647,20 @@ Também foi lida `.agents/skills/testing-best-practices/SKILL.md` para orientaç
 | ID | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M-42 | URL que não casa rota libera em vez de barrar | CT-16 | destino `/app/acme`, não a pretendida |
+
+## Adendo de achado — P-05 e QA-04 (quality gate ciclo 1, 2026-11-13)
+
+CT-10 ganha, em todos os exemplos:
+
+```gherkin
+      E o id da sessão e o token CSRF mudaram em relação aos de antes da resposta
+      E uma notificação de aviso "Sua conta não tem acesso a nenhum painel." foi enviada
+```
+
+| ID | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M-43 | Faz logout sem invalidar a sessão | CT-10 | id da sessão diferente |
+| M-44 | Não regenera o token CSRF | CT-10 | token diferente |
+| M-45 | Encerra a sessão em silêncio | CT-10 | notificação enviada |
+
+CT-13 cobre os dois idiomas como dataset (`pt`, `en`) sobre o mesmo Gherkin: Exemplos `| idioma | pt | en |`.
