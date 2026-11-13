@@ -70,7 +70,7 @@ class DemoTenancySeeder extends Seeder
         $this->projeto($globex, 'App de vendas');
         $this->projeto($globex, 'Integração fiscal');
 
-        $this->command->info('Demo criada: /app/acme e /app/globex — entre como carla@example.com (senha: password).');
+        $this->command?->info('Demo criada: /app/acme e /app/globex — entre como carla@example.com (senha: password).');
     }
 
     /** Papel do /app atribuído dentro do contexto da organização. */

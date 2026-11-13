@@ -36,7 +36,7 @@ class ShieldPermissionsSeeder extends Seeder
     public function run(): void
     {
         if (! Schema::hasTable('permissions')) {
-            $this->command->warn('Tabela `permissions` ausente — rode as migrations antes.');
+            $this->command?->warn('Tabela `permissions` ausente — rode as migrations antes.');
 
             return;
         }
@@ -84,7 +84,7 @@ class ShieldPermissionsSeeder extends Seeder
                 '--no-interaction' => true,
             ]);
         } catch (\Throwable $e) {
-            $this->command->warn(
+            $this->command?->warn(
                 "shield:generate não pôde rodar no painel {$painel} (".$e->getMessage().'). '
                 ."Gere as permissions depois com: php artisan shield:generate --all --panel={$painel}"
             );

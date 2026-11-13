@@ -50,8 +50,7 @@ class KitCobertura extends Command
      */
     public function handle(): int
     {
-        $argumento = $this->argument('clover');
-        $clover    = is_string($argumento) ? $argumento : '';
+        $clover = $this->argument('clover');
 
         if (! is_file($clover)) {
             $this->components->error("Relatório Clover não encontrado: {$clover}");
@@ -144,7 +143,7 @@ class KitCobertura extends Command
         }
 
         if (! is_numeric($bruto)) {
-            $this->components->error('`--min` precisa ser um número, e veio "'.(is_string($bruto) ? $bruto : get_debug_type($bruto)).'".');
+            $this->components->error('`--min` precisa ser um número, e veio "'.$bruto.'".');
 
             return false;
         }
