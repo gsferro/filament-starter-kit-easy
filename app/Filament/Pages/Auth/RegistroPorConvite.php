@@ -2,12 +2,14 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Filament\Concerns\VesteAparenciaDasTelas;
 use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Models\Convite;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\RegistroAberto;
+use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Register;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Actions\Action;
@@ -74,6 +76,8 @@ use SensitiveParameter;
  */
 class RegistroPorConvite extends Register
 {
+    use VesteAparenciaDasTelas;
+
     /**
      * A classe pai já declara a propriedade
      * (`vendor/caresome/filament-auth-designer/src/Pages/Auth/Register.php:14`), então o
@@ -87,6 +91,20 @@ class RegistroPorConvite extends Register
 
     /** A organização de destino no modo aberto com tenancy. Nula no modo convite. */
     public ?Tenant $organizacao = null;
+
+    public function getAuthDesignerConfig(): AuthDesignerConfig
+    {
+        return $this->aplicarAparencia(parent::getAuthDesignerConfig());
+    }
+
+    /**
+     * A organização que esta tela já resolveu no `mount()`: a do cadastro aberto (`?org=`) ou a
+     * do convite. As duas vivem em propriedades, então sobrevivem ao envio com erro (P-06).
+     */
+    protected function organizacaoDaAparencia(): ?Tenant
+    {
+        return $this->organizacaoParaAparencia($this->organizacao ?? $this->convite?->tenant);
+    }
 
     /**
      * Os quatro campos do Filament mais o desafio anti-robô, nos dois modos.

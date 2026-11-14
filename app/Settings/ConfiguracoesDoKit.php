@@ -112,6 +112,20 @@ final class ConfiguracoesDoKit extends Settings
 
     public ?string $arte_do_login;
 
+    /**
+     * Aparência das telas de autenticação. `null` = layout clássico, o de sempre — o default de
+     * toda instalação, nova ou atualizada (P-01 da wiki `feat/aparencia-das-telas-de-acesso`).
+     * Lida por request em `App\Support\AparenciaDasTelasDeAcesso::global()`, que reduz o valor
+     * ao vocabulário a cada leitura.
+     *
+     * `@phpstan-var`, e não `@var`: o spatie lê o `@var` para decidir o cast de cada item e só aceita
+     * um tipo primitivo (`vendor/spatie/laravel-settings/src/Support/PropertyReflector.php:reflectDocblock():68`);
+     * `mixed` derrubava o boot com `CouldNotResolveDocblockType`. Sem `@var`, ele não converte nada.
+     *
+     * @phpstan-var array<string, mixed>|null
+     */
+    public ?array $aparencia_das_telas;
+
     /*
      * Cabeçalho dos painéis (feat/cabecalho-do-painel). Tudo nasce desligado e o detalhe
      * em `perfil`: com os cinco no default, a marca do topo e o menu do usuário são
@@ -478,6 +492,7 @@ final class ConfiguracoesDoKit extends Settings
             'unifica_logo_marca'           => 'kit.identidade.unifica_logo_marca',
             'favicon'                      => 'kit.identidade.favicon',
             'arte_do_login'                => 'kit.identidade.arte_do_login',
+            'aparencia_das_telas'          => 'kit.identidade.aparencia_das_telas',
             'cabecalho_nome_do_projeto'    => 'kit.cabecalho.nome_do_projeto',
             'cabecalho_nome_do_painel'     => 'kit.cabecalho.nome_do_painel',
             'cabecalho_logo_da_marca'      => 'kit.cabecalho.logo_da_marca',

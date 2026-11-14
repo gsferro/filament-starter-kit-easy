@@ -2,7 +2,9 @@
 
 namespace App\Filament\Admin\Resources\Tenants\Schemas;
 
+use App\Filament\Admin\Schemas\EditorDeAparenciaDasTelas;
 use App\Models\Tenant;
+use App\Support\AparenciaDasTelasDeAcesso;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\RegistroAberto;
 use App\Support\TetoDeUpload;
@@ -16,6 +18,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
@@ -254,6 +257,42 @@ class TenantForm
                             ->visible(fn (Get $get): bool => ! config('kit.identidade.unifica_logo_marca', true)
                                 && ! (bool) $get('unifica_logo'))
                             ->columnSpanFull(),
+                    ]),
+
+                /*
+                 * A aparência das telas de autenticação DESTA organização (wiki
+                 * `feat/aparencia-das-telas-de-acesso`). Ligado = usa a padrão da instalação, e a
+                 * coluna grava `null`; desligado = a própria, INTEIRA (ADR-02), que nasce como cópia
+                 * da padrão e deixa de acompanhá-la (P-07). Quem traduz o toggle para a coluna são
+                 * `EditTenant`/`CreateTenant`; o toggle não é coluna.
+                 */
+                Section::make('Telas de acesso')
+                    ->description('A aparência do login, do cadastro e do bloqueio de sessão desta organização.')
+                    ->collapsible()
+                    ->components([
+                        Toggle::make('usar_aparencia_padrao')
+                            ->label('Usar a aparência padrão')
+                            ->default(true)
+                            ->live()
+                            ->dehydrated(false)
+                            /*
+                             * Desligar começa SEMPRE de uma cópia nova da padrão vigente (P-12): sem
+                             * isto, ligar, salvar e desligar sem sair da página devolvia a própria
+                             * antiga, que ficou no estado do editor (CX-03 do step 9).
+                             */
+                            ->afterStateUpdated(function (?bool $state, Set $set): void {
+                                if ($state === false) {
+                                    $set('aparencia_das_telas', EditorDeAparenciaDasTelas::paraOFormulario(AparenciaDasTelasDeAcesso::global()));
+                                }
+                            })
+                            ->helperText('Ligado, a organização acompanha a aparência definida em Configurações da aplicação › Telas de acesso. Desligado, ela passa a ter a sua: começa como cópia da padrão e não acompanha mudanças futuras dela.'),
+
+                        EditorDeAparenciaDasTelas::campos()
+                            ->visible(fn (Get $get): bool => $get('usar_aparencia_padrao') === false),
+
+                        ...EditorDeAparenciaDasTelas::preview(
+                            static fn (?Model $record): string => $record instanceof Tenant ? 'tenant:'.$record->getKey() : 'tenant:novo',
+                        ),
                     ]),
             ]);
     }

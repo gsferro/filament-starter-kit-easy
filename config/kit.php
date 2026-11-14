@@ -146,6 +146,10 @@ return [
         'unifica_logo_marca' => BooleanoDoEnv::comPadrao(env('KIT_UNIFICA_LOGO_MARCA'), true),
         'favicon'            => null,
         'arte_do_login'      => null,
+        // Aparência das telas de autenticação (layout `classico` ou `painel`). `null` = o
+        // clássico, idêntico ao de sempre. Sem `env()`: é uma estrutura, governada pela aba
+        // "Telas de acesso" das configurações. Ver `App\Support\AparenciaDasTelasDeAcesso`.
+        'aparencia_das_telas' => null,
     ],
 
     /*

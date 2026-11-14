@@ -5,12 +5,12 @@ sidebar:
   label: "Configurações do kit em /admin"
   order: 6
 ---
-O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-da-aplicacao`** — no menu do painel a tela se chama **Configurações da aplicação**, porque depois de instalado o kit é a procedência, não o produto —, em seis abas. Nada de `.env`, nada de deploy.
+O que a instalação perguntou — e mais um punhado de coisas que antes só se mudava editando arquivo — vive em **`/admin/configuracoes-da-aplicacao`** — no menu do painel a tela se chama **Configurações da aplicação**, porque depois de instalado o kit é a procedência, não o produto —, em sete abas. Nada de `.env`, nada de deploy.
 
 Todo campo fica numa seção com ícone, colapsável pelo cabeçalho; o navegador lembra o estado de cada seção (fechada ou aberta, inclusive as que nascem fechadas) em `localStorage`, por navegador. Cada aba carrega seu conteúdo só quando é aberta, e uma aba com erro de validação abre sozinha.
 
 Cada aba tem chave fixa na URL — `?tab=identidade`, `?tab=email`, `?tab=tabelas`, `?tab=registro`,
-`?tab=login`, `?tab=aplicacao` —, estável para link e favorito. Até a v0.49 a chave era gerada pelo
+`?tab=login`, `?tab=telas-de-acesso`, `?tab=aplicacao` —, estável para link e favorito. Até a v0.49 a chave era gerada pelo
 Filament (`?tab=…::data::tab`); um link antigo nesse formato não quebra, só abre na primeira aba.
 
 | Aba | O que você troca | Seções |
@@ -20,6 +20,7 @@ Filament (`?tab=…::data::tab`); um link antigo nesse formato não quebra, só 
 | **Tabelas** | linhas por página, linhas listradas, persistência do recorte do usuário, colunas arrastáveis, **carregamento da tabela** (paginação, rolagem infinita ou botão "Carregar mais"), **visões salvas** e o compartilhamento delas — os defaults de **toda** tabela dos três painéis ([detalhes](../visoes-de-tabela-e-carregamento/)) | Paginação e aparência; Carregamento e visões |
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) | Cadastro sem convite (cadastro e aprovação); E-mail verificado (validação de e-mail) |
 | **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) | Página única de login; Login social (com uma seção por provedor); Proteção anti-robô; Rodapé da tela de login |
+| **Telas de acesso** | o **layout** das telas de autenticação — o clássico de sempre ou o painel de marca (lado do formulário, fundo de cor ou arte, cor, frase de destaque, texto de apoio, logo e alternador de tema) —, com um **preview** das alterações ainda não salvas ([detalhes](../../autenticacao/aparencia-das-telas/)) | Aparência; Pré-visualização |
 | **Aplicação** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), os **agentes de IA** (o interruptor do uso e os painéis do chat do Assistente), o **tutorial guiado** (checklist, tours e autoria), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível | Comportamento dos painéis; Dashboard dinâmico; Dock de atalhos; Agentes de IA; Tutorial guiado; Organizações |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
@@ -280,12 +281,12 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:640`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:655`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:467`); as chaves sobrepostas são
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:469`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:469`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:414`) não está nesse mapa, então o banco nunca a sobrescreve.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:483`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:418`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:
 

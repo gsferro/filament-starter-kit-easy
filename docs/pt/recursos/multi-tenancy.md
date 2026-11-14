@@ -85,6 +85,14 @@ A contagem é a mesma do próprio seletor: organizações **ativas** acessíveis
 
 ![O seletor visível e oculto, na mesma tela](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/seletor-organizacao.gif)
 
+## Cada organização com a sua tela de login
+
+O formulário da organização no `/admin` tem a seção **Telas de acesso**: com *Usar a aparência
+padrão* ligado, a organização acompanha a aparência das telas de autenticação definida nas
+configurações; desligado, ela ganha a sua — o layout clássico ou o painel de marca, com a cor e a
+logo dela —, que vale no login com `?org={slug}`, no cadastro e no bloqueio de sessão dela
+([detalhes](../../autenticacao/aparencia-das-telas/)).
+
 ## Insights das organizações no `/admin`
 
 A listagem de organizações traz quatro widgets para operação global — a visão geral acima da tabela e os três de detalhe abaixo dela:
@@ -152,7 +160,7 @@ chegar à tela: `IdentifyTenant` resolve o tenant da rota e já decide o 404 cha
 `canAccessTenant()` (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
 `app/Models/User.php:canAccessTenant:838`); só depois disso o `DefinirTenantDePermissoes` — o
 `tenantMiddleware` do kit — fixa o contexto de papéis por tenant
-(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:622`,
+(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:626`,
 `app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`).
 
 ```mermaid

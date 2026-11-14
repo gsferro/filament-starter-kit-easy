@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Filament\Concerns\VesteAparenciaDasTelas;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\IdentidadeDoKit;
@@ -43,8 +44,9 @@ class TelaBloqueio extends LockerScreen
      * inalcançável. `parent::` NÃO serve aqui: o método é da trait, não de `LockerScreen`.
      */
     use HasAuthDesignerLayout {
-        getAuthDesignerConfig as configBaseDoAuthDesigner;
+        getAuthDesignerConfig as protected configBaseDoAuthDesigner;
     }
+    use VesteAparenciaDasTelas;
 
     /**
      * **Não remover por parecer redundante com a trait.** `$layout` é estático e a trait faz
@@ -124,7 +126,22 @@ class TelaBloqueio extends LockerScreen
         return once(fn (): array => IdentidadeDoKit::logosPara($this->organizacaoResolvida()));
     }
 
+    /**
+     * A logo da organização (abaixo) e, por cima, a aparência das telas de acesso — a da
+     * organização da sessão, com as condições de P-06, ou a da instalação. No `painel`, a mídia
+     * volta a ser a arte da identidade (`AparenciaDasTelasDeAcesso::aplicar()`): a logo vai no selo (P-15).
+     */
     public function getAuthDesignerConfig(): AuthDesignerConfig
+    {
+        return $this->aplicarAparencia($this->configComLogoDaOrganizacao());
+    }
+
+    protected function organizacaoDaAparencia(): ?Tenant
+    {
+        return $this->organizacaoParaAparencia($this->organizacaoResolvida());
+    }
+
+    private function configComLogoDaOrganizacao(): AuthDesignerConfig
     {
         $config = $this->configBaseDoAuthDesigner();
         $painel = Paineis::correnteOuPadrao()->getId();
