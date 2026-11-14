@@ -2,9 +2,11 @@
 
 > Derivado do **requisito**, não do plano. Nenhuma implementação foi consultada.
 >
-> Oráculo atual: `00-requisito.md`, RQ-01..RQ-16, P-01..P-14 e decisões de Q3..Q11. Os recortes 01/02 fornecem somente localização e superfície.
+> Cenários: 42 (CT-01..CT-42; CT-21 e CT-27 `@obsoleto`, execução pela sessão) · Regras: 17 *(contado por `grep -oE "\[CT-[0-9]+\]" 04 | sort -u | wc -l`, 2026-11-13)*
 >
-> Especificação proposta: nenhum teste, build, cenário de atualização ou mutation testing foi executado nesta derivação. **Confirmada** permanece vazia.
+> Oráculo atual: `00-requisito.md`, RQ-01..RQ-16, P-01..P-18 e decisões de Q2..Q11. CT-36..CT-41 vieram do step 9; CT-42 e as linhas de fronteira do CT-40 do quality gate (ciclo 1). Os recortes 01/02 fornecem somente localização e superfície.
+>
+> Derivação sem execução; os testes foram escritos depois pelos executores (ver `03` › Testes). **Confirmada** preenchida pela sessão.
 >
 > Fechamento dos **23 achados ADV-01..ADV-23 de `adversario.md`**. Os achados históricos da derivação anterior não são renumerados nem confundidos com essa rodada.
 
@@ -56,7 +58,7 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R11 — Composição de celular | apresentação/padrão | RQ-01, P-09, **P-14** | EP, geometria | CT-B02 |
 | R12 — Interação acessível | apresentação/padrão | RQ-01 | EP, teclado | CT-B03 |
 | R13 — Opções visuais efetivas | apresentação/padrão | P-03, **P-11**, Q11 | EP, estilo e identidade de recurso | CT-B04 |
-| R17 — Achados do step 9 | segurança/apresentação | **P-15, P-16, P-17, P-18**, P-12 | estado × evento, papel × ação, EP | CT-36–41 |
+| R17 — Achados do step 9 e do gate | segurança/apresentação | **P-15, P-16, P-17, P-18**, P-12, P-07 | estado × evento, papel × ação, EP, BVA | CT-36–42 |
 | R14 — Preview interativo | apresentação/padrão | RQ-10, P-08, **P-14** | JavaScript e iframe | CT-B05 |
 | R15 — Clássico idêntico | compatibilidade/padrão | RQ-01, RQ-07, RQ-11, P-03, **P-14** | igualdade de configuração e regressão | CT-33, CT-B06 |
 | R16 — Referências externas restritas | documentação/mínimo | RQ-12, Q9 | inspeção genérica de links | CT-24 |
@@ -1013,7 +1015,7 @@ Não se presume tabela física nova para rascunhos nem mecanismo de cache. A cor
 
 ## Índice de Cenários
 
-Destinos automatizados **propostos**, ainda não implementados:
+Destinos automatizados (implementados):
 
 - **K:** `tests/Kit/AparenciaDasTelasDeAcessoTest.php`
 - **T:** `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php`
@@ -1063,6 +1065,7 @@ Destinos automatizados **propostos**, ainda não implementados:
 | CT-39 | Reautorização no update | R17 | papel × ação | G2 | componente Livewire/Filament | T | — |
 | CT-40 | Texto escuro sobre cor clara | R17 | BVA | G2 | Pest feature HTTP | K | — |
 | CT-41 | Toggle sem recarregar | R17 | estado × evento | G1 | componente Livewire/Filament | T | — |
+| CT-42 | Clássico próprio × padrão em painel | R17 | estado × evento | G2 | Pest feature HTTP | T | — |
 | CT-B01 | Computador com textos no teto | R10 | geometria | G4 | browser | B | M35–36, M65 |
 | CT-B02 | Celular e dobra | R11 | geometria | G4 | browser | B | M37–38 |
 | CT-B03 | Teclado e foco | R12 | teclado | G4 | browser | B | M39–40 |
@@ -1132,7 +1135,11 @@ Funcionalidade: Achados da revisão do diff
         | #f5f5dc | tem |
         | #123456 | não tem |
         | #000000 | não tem |
-      # Origem: P-18 · Mata: limiar invertido, cor clara com texto branco
+        | #00aaff | tem |
+        | #d97706 | tem |
+        | #1d4ed8 | não tem |
+        | (vazia: primária default, âmbar 600) | tem |
+      # Origem: P-18 · Mata: limiar invertido, cor clara com texto branco, corte fixo em cor média (QA-04)
 
   Regra: Voltar à padrão e sair dela sem recarregar a página
 
@@ -1141,6 +1148,14 @@ Funcionalidade: Achados da revisão do diff
       Quando a editora liga "usar a padrão", salva e, na mesma página, desliga e salva
       Então a aparência de A é igual a P
       # Origem: P-12 (CX-03)
+
+  Regra: O clássico próprio não é "usa a padrão"
+
+    Cenário: [CT-42] Organização com o clássico próprio não herda o painel da padrão
+      Dado a aparência padrão em painel e a organização A ativa com aparência própria no clássico
+      Quando o login é aberto sem organização e com ?org=A
+      Então sem organização o painel aparece e com ?org=A não aparece
+      # Origem: P-07 (QA-08 do gate) · Mata: `['layout' => 'classico']` da organização tratado como nulo
 ```
 
 ## Revisão adversarial e limites

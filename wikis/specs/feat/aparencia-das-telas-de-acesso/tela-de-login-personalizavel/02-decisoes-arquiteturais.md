@@ -72,7 +72,8 @@ já sobrescreve. O layout `auth.blade.php` do pacote continua sendo o do vendor.
 para a varredura de views de vendor do `kit:update` e para cada atualização do pacote.
 
 **Consequência**: o partial só é incluído com mídia; por isso o layout `painel` sempre leva uma mídia
-(a da base, ou a arte), mesmo quando o fundo é cor — o partial ignora a imagem nesse caso.
+(a arte da identidade, P-15), mesmo quando o fundo é cor — o partial ignora a imagem nesse caso.
+*(alterado em 2026-11-13: QA-05)*
 
 ## ADR-04 — Preview: página do painel admin, rascunho em cache por usuário e instância de edição
 
@@ -82,7 +83,7 @@ para a varredura de views de vendor do `kit:update` e para cada atualização do
 abre a tela de login real) · trade-off ✅ (fidelidade × efeitos colaterais)
 
 **Decisão**: o editor grava o rascunho normalizado no cache, com chave
-`aparencia-preview:{usuário}:{uuid da instância}` e o escopo dentro do valor; um iframe abre uma
+`aparencia-preview:{usuário}:{id do componente Livewire do editor}` e o escopo dentro do valor; um iframe abre uma
 página do painel `admin`, fora da navegação, que usa o MESMO layout das telas de autenticação, com
 formulários demonstrativos desabilitados. A página só lê rascunho do próprio usuário, exige acesso ao
 painel admin e autoriza o escopo a cada request. O iframe recarrega quando o rascunho muda e pelo botão
@@ -90,8 +91,8 @@ painel admin e autoriza o escopo a cada request. O iframe recarrega quando o ras
 
 **Por quê**: abrir a rota real de login no iframe dispara redirect de autenticado, escrita de sessão e
 rate limit; e a tela não renderiza valores ainda não salvos. A chave por usuário dispensa assinatura
-de URL: outra pessoa não alcança o rascunho, e o uuid separa duas abas do mesmo usuário (juiz cego,
-item 5).
+de URL: outra pessoa não alcança o rascunho, e o id do componente (um por carregamento da página)
+separa duas abas do mesmo usuário (juiz cego, item 5). *(alterado em 2026-11-13: QA-05)*
 
 **Limites aceitos**: o documento do preview roda no contexto do painel `admin` — botões com a cor do
 admin, sem os botões sociais e sem o anti-robô. O alternador de tema fica desligado no preview para
@@ -108,6 +109,6 @@ Greps (`grep -n "public function\|public ?\|public [a-z]" …`) a refazer sobre 
 | `PreviewDasTelasDeAcesso::$rascunho`, `$tela` | código (novo) | `mount()` pela query | `#[Locked]`; `tela` em lista fechada; rascunho só do usuário autenticado |
 | `PreviewDasTelasDeAcesso::$data` (formulário demonstrativo) | framework | cliente | campos desabilitados, nenhuma ação; nada é gravado |
 | `ConfiguracoesDoKit::$data` — chaves da aba nova | framework | cliente | validação por campo (`in`, `regex`, `maxLength`) no save + `normalizar()` na leitura |
-| `ConfiguracoesDoKit` — ação **Atualizar preview** | código (novo, Action de schema) | cliente aciona | autorização da página; grava só no cache, na chave do próprio usuário |
+| botão **Atualizar preview** (view do editor) | código (novo, Alpine `$wire.$refresh()`, sem Action) | cliente aciona | só re-renderiza; o render grava no cache, na chave do próprio usuário *(alterado em 2026-11-13: QA-05)* |
 | `EditTenant`/`CreateTenant::$data` — chaves novas | framework | cliente | `TenantPolicy`; mesma validação; toggle não desidratado |
-| uuid do rascunho no formulário | código (novo) | cliente pode trocar | chave inclui o id do usuário: trocar o uuid só alcança rascunho próprio |
+| id do rascunho (`?rascunho=` do iframe = id do componente Livewire) | código (novo) | cliente pode trocar na URL | chave inclui o id do usuário: trocar o id só alcança rascunho próprio *(alterado em 2026-11-13: QA-05)* |

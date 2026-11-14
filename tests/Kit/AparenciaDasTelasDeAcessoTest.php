@@ -843,13 +843,17 @@ it('[CT-38] conta sem acesso ao admin não abre o preview', function (): void {
     $this->actingAs($conta);
     $id = rascunhoDe('global', ['frase' => 'SEGREDO DO RASCUNHO'] + aparenciaDeTeste('A'));
 
+    // O `beforeEach` fixa o painel admin no processo; um request real chega sem painel corrente
+    // (QA-01 do gate: com o painel vazado, o caso passava pelo motivo errado).
+    Filament::setCurrentPanel(null);
+
     $resposta = $this->get(urlDoPreviewDe($id));
 
     expect($resposta->getStatusCode())->toBeIn([302, 403])
         ->and($resposta->getContent())->not->toContain('SEGREDO DO RASCUNHO');
 })->group('kit');
 
-it('[CT-40] cor clara deixa o texto do painel escuro', function (string $cor, bool $tem): void {
+it('[CT-40] cor clara deixa o texto do painel escuro', function (?string $cor, bool $tem): void {
     definirAparenciaGlobal(['cor' => $cor, 'fundo' => 'cor'] + aparenciaDeTeste('P'));
 
     $html   = $this->get('/admin/login')->assertOk()->getContent();
@@ -862,4 +866,10 @@ it('[CT-40] cor clara deixa o texto do painel escuro', function (string $cor, bo
     'bege'   => ['#f5f5dc', true],
     'azul'   => ['#123456', false],
     'preto'  => ['#000000', false],
+    // Fronteira (QA-04 do gate): cores médias em que o branco fica abaixo de 3:1.
+    'ciano médio'    => ['#00aaff', true],
+    'âmbar 600'      => ['#d97706', true],
+    'azul 700'       => ['#1d4ed8', false],
+    // Sem cor: a primária default (âmbar 600 da paleta, em oklch) também pede texto escuro.
+    'primária default' => [null, true],
 ])->group('kit');

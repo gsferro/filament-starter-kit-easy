@@ -194,8 +194,8 @@ Nenhuma nova.
 - `padraoDoPainel(): array` — o objeto inicial (layout `painel`, formulário à direita, fundo cor,
   logo ligada, alternador ligado)
 - `aplicar(AuthDesignerConfig $base, ?array $aparencia): AuthDesignerConfig` — `null`/clássico devolve
-  `$base` (o mesmo objeto); `painel` reconstrói com `mediaSize 50%`, posição pelo lado, mídia da base
-  (ou a arte, se a base não tiver), blur 0, alternador conforme a opção, hooks preservados
+  `$base` (o mesmo objeto); `painel` reconstrói com `mediaSize 50%`, posição pelo lado, mídia = a arte
+  da identidade, lida no request (P-15), blur 0, alternador conforme a opção, hooks preservados *(alterado em 2026-11-13: P-15, QA-05)*
 - `corDoPainel(?array, ?Tenant): string` — hex validado: o da aparência, senão a primária da
   organização, senão a da instalação
 - Settings: propriedade `aparencia_das_telas` (`?array`), linha no mapa
@@ -238,7 +238,7 @@ Nenhuma nova.
   maior que o título do formulário), `apoio`; tudo escapado
 - CSS: moldura de 8px, raio 16px, overlay só sobre arte, contraste do texto garantido por fundo
   sólido ou overlay; abaixo de 1024px o painel vira faixa de até 112px acima do formulário
-  (logo + frase; o apoio some), reservando à direita o espaço do alternador de tema; cor clara (luminância > 0,4)
+  (logo + frase; o apoio some), reservando à direita o espaço do alternador de tema; cor em que o texto escuro tem mais contraste que o branco (inclusive a primária default)
   passa o texto a escuro (P-18) *(alterado em 2026-11-13: BP-23)*
 - **Atende**: RQ-01, RQ-07
 

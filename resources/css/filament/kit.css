@@ -265,7 +265,7 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 | ficar sempre em cima. O rodapé continua na dobra pela regra `body:has(> .fi-auth-layout)` acima.
 |
 | Cor: `--kit-painel-fundo` vem da view, validada (hex ou constante da paleta); sem ela, a primária
-| do painel. Texto branco sobre véu escuro; com cor clara (`--claro`, luminância > 0,4) o texto
+| do painel. Texto branco sobre véu escuro; quando o texto escuro tem mais contraste com a cor (`--claro`) o texto
 | passa a escuro e o véu sai (P-18).
 */
 .fi-auth-layout:has(.kit-painel-de-marca) .fi-auth-media-section {

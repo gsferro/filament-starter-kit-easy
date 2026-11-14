@@ -7,6 +7,7 @@ namespace App\Support;
 use App\Models\Tenant;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
+use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -212,15 +213,15 @@ final class AparenciaDasTelasDeAcesso
 
     /**
      * A cor de fundo do painel, como valor CSS seguro: o hexadecimal escolhido na aparência, senão
-     * a primária da organização, senão a da instalação; `null` deixa a CSS cair na variável
-     * `--primary-600` do painel.
+     * a primária da organização, senão a da instalação, senão o âmbar 600 que o Filament usa sem
+     * primária configurada — sempre uma cor concreta, para o contraste do texto ser decidido (QA-04).
      *
      * O valor só pode vir de duas fontes, e as duas são fechadas: `#RRGGBB` validado, ou uma
      * constante de `Filament\Support\Colors\Color` (resolvida por `CorPrimaria::resolver()`).
      *
      * @param  array<string, mixed>|null  $aparencia
      */
-    public static function corDoPainel(?array $aparencia, ?Tenant $organizacao): ?string
+    public static function corDoPainel(?array $aparencia, ?Tenant $organizacao): string
     {
         $propria = self::cor($aparencia['cor'] ?? null);
 
@@ -241,29 +242,61 @@ final class AparenciaDasTelasDeAcesso
             return $primaria[600];
         }
 
-        return null;
+        // Sem primária configurada, o Filament usa o âmbar: a cor é dita aqui, e não deixada à
+        // variável `--primary-600`, para o contraste do texto poder ser decidido (QA-04).
+        return Color::Amber[600];
     }
 
     /**
-     * A cor de fundo é clara demais para texto branco? Só para `#RRGGBB` (a cor escolhida na
-     * aparência ou a hexadecimal da organização): luminância relativa (WCAG) acima de 0,4 pede texto
-     * escuro (P-18). As cores da paleta do Filament (`oklch`, tom 600) são escuras e ficam no branco.
+     * O texto do painel deve ser ESCURO sobre esta cor? Escolhe a cor de texto de maior contraste
+     * (WCAG) entre o branco e o escuro do kit (`#111827`) — P-18, com o limiar do QA-04 do gate:
+     * um corte fixo deixava branco em cores médias (`#00aaff`, o âmbar 600 da primária default) com
+     * contraste abaixo de 3:1.
+     *
+     * Entende `#RRGGBB` e o `oklch(...)` das constantes de `Filament\Support\Colors\Color`; o
+     * `L` do OKLab vira luminância por `L³` (exato para cinzas, boa aproximação para as cores da
+     * paleta). Valor que não entende: `false` (texto branco, como sempre foi).
      */
     public static function fundoClaro(?string $cor): bool
     {
-        if ($cor === null || preg_match(self::FORMATO_DA_COR, $cor) !== 1) {
+        $luminancia = self::luminancia($cor);
+
+        if ($luminancia === null) {
             return false;
         }
 
-        $canal = static function (string $hex): float {
-            $c = hexdec($hex) / 255;
+        $contrasteBranco = 1.05 / ($luminancia + 0.05);
+        $contrasteEscuro = ($luminancia + 0.05) / (self::LUMINANCIA_DO_TEXTO_ESCURO + 0.05);
 
-            return $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
-        };
+        return $contrasteEscuro > $contrasteBranco;
+    }
 
-        $luminancia = 0.2126 * $canal(substr($cor, 1, 2)) + 0.7152 * $canal(substr($cor, 3, 2)) + 0.0722 * $canal(substr($cor, 5, 2));
+    /** Luminância relativa de `#111827`, o texto escuro do painel (`kit.css`). */
+    private const LUMINANCIA_DO_TEXTO_ESCURO = 0.0118;
 
-        return $luminancia > 0.4;
+    private static function luminancia(?string $cor): ?float
+    {
+        if ($cor === null) {
+            return null;
+        }
+
+        if (preg_match(self::FORMATO_DA_COR, $cor) === 1) {
+            $canal = static function (string $hex): float {
+                $c = hexdec($hex) / 255;
+
+                return $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+            };
+
+            return 0.2126 * $canal(substr($cor, 1, 2)) + 0.7152 * $canal(substr($cor, 3, 2)) + 0.0722 * $canal(substr($cor, 5, 2));
+        }
+
+        if (preg_match('/^oklch\(\s*([0-9.]+)(%?)/i', $cor, $partes) === 1) {
+            $l = (float) $partes[1] / ($partes[2] === '%' ? 100 : 1);
+
+            return max(0.0, min(1.0, $l)) ** 3;
+        }
+
+        return null;
     }
 
     /**

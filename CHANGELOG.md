@@ -8,7 +8,7 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ### Adicionado
 
 - Aparência das telas de acesso escolhida na tela (`wikis/specs/feat/aparencia-das-telas-de-acesso/`): a aba
-  **Telas de acesso** de *Configurações da aplicação* troca o layout de todas as telas de autenticação dos três
+  **Telas de acesso** de *Configurações da aplicação* troca o layout das telas de autenticação vestidas pelo Auth Designer nos três
   painéis — login, cadastro, recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de
   sessão — entre o **clássico** (o de sempre, o default) e o **painel de marca**: o formulário numa metade e, na
   outra, um painel arredondado com cor ou arte de fundo, a logo num selo claro e duas frases opcionais, que no

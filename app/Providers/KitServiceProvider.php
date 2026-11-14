@@ -34,7 +34,6 @@ use Filament\Actions\Imports\Events\ImportStarted;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
 use Filament\Facades\Filament;
-use Filament\Http\Middleware\Authenticate as FilamentAuthenticate;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
@@ -897,11 +896,12 @@ class KitServiceProvider extends ServiceProvider
         /*
          * O documento do preview de "Telas de acesso" (wiki `feat/aparencia-das-telas-de-acesso`,
          * ADR-04). Rota do kit, e não página descoberta pelo painel, porque a página é uma
-         * `SimplePage` com o layout das telas de autenticação. Sob `panel:admin` + o `Authenticate`
-         * do Filament: só quem entra no `/admin` (`canAccessPanel()`, como as páginas do painel); o
-         * `mount()` da página autoriza o escopo do rascunho (P-17).
+         * `SimplePage` com o layout das telas de autenticação. Sob `panel:admin` + `auth`; quem decide
+         * é a página: acesso ao `/admin` (`canAccessPanel()`) e o escopo do rascunho, a cada request
+         * (P-17). O `Authenticate` do Filament NÃO serve aqui: o Laravel o ordena antes do
+         * `SetUpPanel:admin`, e ele decidiria pelo painel default (QA-01 do quality gate).
          */
-        Route::middleware(['web', 'panel:admin', FilamentAuthenticate::class])->group(function (): void {
+        Route::middleware(['web', 'panel:admin', 'auth'])->group(function (): void {
             Route::get('/admin/preview-das-telas-de-acesso', PreviewDasTelasDeAcesso::class)->name('kit.preview-das-telas-de-acesso');
         });
 

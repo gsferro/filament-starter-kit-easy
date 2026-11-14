@@ -121,6 +121,17 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 
 ## Verificação Final
 
+- [x] `rastreabilidade.sh` — exit 0, 2026-11-13
+- [x] `checkbox-sem-evidencia.sh` — exit 0, 2026-11-13
+- [x] `citacoes.sh` — exit 0, 2026-11-13
+- [x] `ids-ct.sh {wiki} 'tests/**/AparenciaDasTelasDeAcesso*.php'` — exit 0 (CT-21/CT-27 `@obsoleto`: execução pela sessão nos cenários), 2026-11-13
+- [x] `conformidade-rules.sh {wiki} main` — exit 0, 19 rules com linha, 2026-11-13
+- [x] Falsificabilidade: CT-36 (arte no painel), CT-37 (gate do `$wire`) e CT-40 (texto escuro) falham com a correção revertida em cópia de segurança e voltam verdes restaurados; CT-32 e CT-05 nasceram vermelhos (b) pelo executor e ficaram verdes com a correção — 2026-11-13
+- [x] RQ-12: grep pelos identificadores do projeto e da URL de referência (não registrados aqui) em todo arquivo alterado contra `main`, incluindo a wiki — `{ git diff main --name-only; git ls-files --others --exclude-standard; } | sort -u` = 79 arquivos, 0 ocorrências *(alterado em 2026-11-13: QA-06 — o "80" anterior não tinha comando)*, 2026-11-13
+- [x] Regressão Kit 5045 testes, 0 falhas fora das contagens do README (corrigidas: `SiteDeDocumentacaoTest` 68/68); Tenancy 741/741; Browser 171/171 — 2026-11-13
+- [x] `phpstan analyse` 0 erros; `filacheck` 17/17; `pint --dirty` — 2026-11-13
+- [ ] Cenários 1 a 4 (pré-validação por `git archive` e `kit:update` local)
+
 ## Notas de Implementação
 
 - O spatie settings lê o `@var` da propriedade para decidir cast e não aceita `mixed`: a propriedade usa `@phpstan-var`
@@ -132,7 +143,28 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 
 ## Retrospectiva
 
+- Funcionou: ideação e julgamento cego pelo Codex trocaram a proposta de layout por uma mais enxuta antes de uma linha de código; a revisão adversarial dos CT (23 achados) e os quatro revisores do step 9 pegaram defeitos que a suíte verde não via (arte do bloqueio, `$wire` revelando a organização, contraste, preview caindo no layout de celular)
+- Faltou: medir o preview no navegador antes do step 9 — o defeito do iframe abaixo de 1024 px só apareceu na captura; e os helpers de teste do executor mascararam por um ciclo o bug do `rule()` (fallback para o banco)
+
 ## Quality Gate
+
+| Ciclo | Veredito | Data |
+|---|---|---|
+| 1 | REPROVADO → especificação (QA-01, QA-02 Blocker; QA-03..06 Major; E, G, H, K não verificadas) | 2026-11-13 |
+
+Tratamento do ciclo 1:
+
+| QA | Destino | O que foi feito |
+|---|---|---|
+| QA-01 | 3 → 2 | CT-38 limpa o painel corrente antes do request e falha sem a correção; a página exige `canAccessPanel(admin)` em `podeVer()` (a rota volta a `auth`); `03`/docblocks corrigidos |
+| QA-02 | 2 | cenários 1 a 4 em execução sobre o commit; evidência em Verificação Final |
+| QA-03 | 1 | Q2 respondida pelo próprio texto original ("renderiza as telas de auth"), com P-02 (recorte sem a escolha de painel); confirmação explícita pedida ao solicitante no fechamento |
+| QA-04 | 3 → 2 | CT-40 ganhou fronteira (`#00aaff`, `#d97706`, `#1d4ed8`, primária default) e falha com o corte antigo; `fundoClaro()` escolhe o texto de maior contraste, entende `oklch`, e a cor do painel nunca é vazia (âmbar 600 default) |
+| QA-05 | 1 | `01`, `02` (ADR-03, ADR-04, Superfície Livewire) e docs pt/en reconciliados *(alterado)* |
+| QA-06 | 1 | contagem refeita com o comando, na Verificação Final |
+| QA-07 | 1 | "telas vestidas pelo Auth Designer, sem a escolha de painel" na doc e no CHANGELOG; três termos no glossário |
+| QA-08 | 3 | CT-42 (padrão em painel × organização no clássico próprio), com controle positivo |
+| QA-09 | 1 | cabeçalho do `04` com contagem e comando; linha quebrada do `03` corrigida |
 
 ## Candidatos a Rule
 
@@ -144,8 +176,7 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 | 2 | 3 | workflow, 3 leitores + crítico / herdado da sessão | projeto de referência; página de referência; mapa do kit | 3 relatórios + crítica de lacunas | 426 k tokens · 334 s | capturas abertas pela sessão; trechos do partial, layout e `kit.css` relidos |
 | 3 | 3 | Codex `exec --yolo` (juiz cego, sessão nova) / não exposto | propostas X/Y anônimas + repositório | Y com correções; layout `painel` 50/50 | — | `git status` só com a wiki; correções conferidas no código |
 | 4 | 7 | Codex `exec --yolo` (derivação cega) / não exposto | `00`, recortes do `01`/`02`, glossário, `feature-test-design` | `04` 28 CT + `05` 6 CT-B; Q?1..Q?9 | — | `git status` sem mudança fora da sessão; Q?n viraram Q3..Q11/P-10..P-14 |
-| 5 | 7 | `fw-adversario-ct` / herdado | `00`, `04`, `05`, glossário | ADV-01..23 | 81 k tokens · 199 s | ADV-03 reproduzido no código (`$` aceita `
-`) e corrigido |
+| 5 | 7 | `fw-adversario-ct` / herdado | `00`, `04`, `05`, glossário | ADV-01..23 | 81 k tokens · 199 s | ADV-03 reproduzido no código (o `$` aceita quebra de linha no fim) e corrigido |
 | 6 | 7 | Codex `exec --yolo` (re-derivação cega) / não exposto | `00` atual, `04`/`05`, achados | `04` 35 CT + `05` 8 CT-B, 23 ADV fechados | — | índice conferido; nenhum arquivo do repositório alterado |
 | 7 | impl. | `fw-executor-ct` / sonnet | `00`, `04`, nomes | 191 casos; 3 divergências (b): regra do teto, teto cortado, README | 309 k tokens · 1386 s | divergências reproduzidas e corrigidas; CT-03 era teste errado (união de arrays) |
 | 8 | 10 | `fw-executor-ctb` / sonnet | `00`, `05`, nomes | 40 casos; B05 (b) 1440×900; B03/B08 (a) teclado; B04 arte | 231 k tokens · 3876 s | B05 corrigido no código; B03/B04/B08 corrigidos pela sessão |

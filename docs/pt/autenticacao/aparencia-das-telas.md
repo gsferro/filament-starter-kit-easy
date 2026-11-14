@@ -22,7 +22,7 @@ foram — inclusive em projetos que atualizam o kit.
 | **Clássico** (o padrão) | A arte ocupa a maior parte da tela (70%) e o formulário fica ao lado: à direita no login, à esquerda nas demais telas. Abaixo de 1024 px de largura a arte some e o formulário ocupa a tela | Quem já usa o kit e não quer mudança nenhuma; quem prefere a arte grande |
 | **Painel de marca** | A tela se divide ao meio: numa metade o formulário, na outra um painel arredondado com a sua marca — cor ou arte de fundo, a logo num selo claro e duas frases opcionais. No celular o painel **não some**: vira uma faixa curta acima do formulário, com a logo e a frase de destaque | Quem quer uma entrada com identidade, mensagem e a mesma cara no celular |
 
-O layout escolhido vale para **todas** as telas de autenticação dos três painéis (`/admin`, `/app`,
+O layout escolhido vale para as telas de autenticação vestidas pelo Auth Designer nos três painéis — login, cadastro, recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de sessão; a escolha de painel, que aparece depois de entrar, continua como está — (`/admin`, `/app`,
 `/infra`) e para as páginas únicas `/login`, `/cadastro` e `/esqueci-minha-senha`, quando a página
 única de login está ligada.
 
@@ -124,9 +124,9 @@ acesso de cada painel.
 - A troca de layout é sempre uma decisão de quem administra, na tela.
 
 Quem personalizou à mão o bloco `AuthDesignerPlugin` dos providers continua com a sua configuração no
-clássico: o layout clássico usa exatamente o que os providers montam. O painel de marca aproveita a
-arte e o alternador que os providers configuraram, e decide sozinho o resto (metade da tela, lado,
-sem desfoque).
+clássico: o layout clássico usa exatamente o que os providers montam. O painel de marca usa a arte
+da aba Identidade (não a mídia do provider) e o alternador que os providers configuraram, e decide sozinho
+o resto (metade da tela, lado, sem desfoque).
 
 ## Como funciona por dentro
 

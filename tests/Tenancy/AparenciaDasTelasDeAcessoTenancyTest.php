@@ -10,6 +10,7 @@ use App\Filament\Pages\Auth\TelaLogin;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\ContextoDePapeis;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -608,10 +609,12 @@ it('[CT-37] chamada direta ao componente não revela cor nem logo que a tela nã
 
 it('[CT-39] permissão revogada com o preview aberto deixa de mostrar o escopo no próximo update', function (): void {
     [$acme] = organizacoesAB();
-    $papel  = Role::create(['name' => 'editora-de-organizacoes', 'guard_name' => 'web']);
+    // Papel do painel admin, no contexto global: o preview exige entrar no `/admin` (P-17).
+    $papel = Role::create(['name' => 'editora-de-organizacoes', 'guard_name' => 'web', 'painel' => 'admin']);
     $papel->givePermissionTo('Update:Tenant');
     app(PermissionRegistrar::class)->forgetCachedPermissions();
-    $editora = papelNaOrganizacao(usuario('editora@example.com'), 'editora-de-organizacoes');
+    $editora = usuario('editora@example.com');
+    ContextoDePapeis::em(Tenant::CONTEXTO_GLOBAL, $editora, fn () => $editora->assignRole($papel));
 
     $this->actingAs($editora);
     $id = rascunhoDe('tenant:'.$acme->getKey(), ['frase' => 'SEGREDO A'] + aparenciaDeTeste('A'));
@@ -647,4 +650,17 @@ it('[CT-41] desligar o toggle sem recarregar começa de cópia nova da padrão',
     $editor->fillForm(['usar_aparencia_padrao' => false])->call('save')->assertHasNoFormErrors();
 
     expect($acme->fresh()->aparencia_das_telas)->toEqual(aparenciaDeTeste('P'));
+})->group('tenancy');
+
+it('[CT-42] organização com o clássico próprio não herda o painel da padrão', function (): void {
+    [$acme] = organizacoesAB();
+    definirAparenciaGlobal(aparenciaDeTeste('P'));
+    $acme->update(['aparencia_das_telas' => ['layout' => 'classico']]);
+
+    // Controle positivo: sem organização, a padrão (painel) aparece.
+    $semOrganizacao = $this->get('/app/login')->assertOk()->getContent();
+    $daOrganizacao  = $this->get('/app/login?org=acme')->assertOk()->getContent();
+
+    expect($semOrganizacao)->toContain('data-kit-aparencia="painel"');
+    $this->assertStringNotContainsString('data-kit-aparencia="painel"', $daOrganizacao, 'o clássico próprio virou "usa a padrão"');
 })->group('tenancy');

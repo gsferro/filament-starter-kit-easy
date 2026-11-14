@@ -292,7 +292,7 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
 (`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:655`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
-(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:469`); the overridden keys are exactly
+(`app/Providers/KitServiceProvider.php:configureSettingsDoKit:468`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
 (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:483`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:418`) is not in that map, so the database never overrides it.

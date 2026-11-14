@@ -8,9 +8,11 @@ use App\Filament\Admin\Pages\ConfiguracoesDoKit;
 use App\Filament\Admin\Schemas\EditorDeAparenciaDasTelas;
 use App\Filament\Concerns\VesteAparenciaDasTelas;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Support\AparenciaDasTelasDeAcesso;
 use Caresome\FilamentAuthDesigner\Concerns\HasAuthDesignerLayout;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\TextInput;
 use Filament\Pages\SimplePage;
@@ -32,7 +34,8 @@ use Livewire\Attributes\Locked;
  * sessão, conta tentativas e mostra os botões sociais — e não conhece o rascunho. Esta usa o MESMO
  * layout e o MESMO partial do painel de marca, com campos desabilitados e nenhuma ação (P-08).
  *
- * Fronteira: rota do kit sob `panel:admin` + `auth` (`KitServiceProvider`). O `mount()` só aceita
+ * Fronteira: rota do kit sob `panel:admin` + `auth` (`KitServiceProvider`); a página exige acesso ao
+ * `/admin` (`canAccessPanel()`), em todo request. O `mount()` só aceita
  * rascunho gravado pelo PRÓPRIO usuário (a chave do cache leva o id dele) e autoriza o escopo
  * gravado no rascunho: configurações para `global`, `update` da organização para `tenant:{id}`,
  * `create` para `tenant:novo`. Sem rascunho: 404; escopo negado: 403.
@@ -192,6 +195,17 @@ class PreviewDasTelasDeAcesso extends SimplePage
 
     private function podeVer(string $escopo): bool
     {
+        /*
+         * Quem não entra no `/admin` não vê preview nenhum (P-17). Explícito, e não pelo
+         * `Authenticate` do Filament na rota: o Laravel ordena os middlewares por prioridade, o
+         * `Authenticate` roda ANTES do `SetUpPanel:admin` e decide pelo painel default (`app`) —
+         * QA-01 do quality gate, ciclo 1.
+         */
+        $usuario = auth()->user();
+        if (! $usuario instanceof User || ! $usuario->canAccessPanel(Filament::getPanel('admin'))) {
+            return false;
+        }
+
         if ($escopo === 'global') {
             return ConfiguracoesDoKit::canAccess();
         }

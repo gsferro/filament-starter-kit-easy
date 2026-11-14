@@ -22,7 +22,7 @@ always were — including in projects that update the kit.
 | **Classic** (the default) | The artwork takes most of the screen (70%) and the form sits beside it: on the right on the login, on the left on the other screens. Below 1024 px wide the artwork disappears and the form takes the screen | Whoever already uses the kit and wants no change at all; whoever prefers the large artwork |
 | **Brand panel** | The screen splits in half: one half holds the form, the other a rounded panel with your brand — color or artwork background, the logo on a light badge and two optional sentences. On phones the panel **does not disappear**: it becomes a short strip above the form, with the logo and the headline | Whoever wants an entrance with identity, a message and the same look on phones |
 
-The chosen layout applies to **all** authentication screens of the three panels (`/admin`, `/app`,
+The chosen layout applies to the authentication screens dressed by the Auth Designer in the three panels — login, registration, password request and reset, e-mail confirmation, two factors and session lock; the panel choice, shown after signing in, stays as it is — (`/admin`, `/app`,
 `/infra`) and to the single pages `/login`, `/cadastro` and `/esqueci-minha-senha`, when the single
 login page is on.
 
@@ -123,9 +123,9 @@ access rule.
 - Switching layouts is always a decision of whoever administers, on the screen.
 
 Whoever hand-customized the providers' `AuthDesignerPlugin` block keeps that configuration on the
-classic: the classic layout uses exactly what the providers build. The brand panel reuses the
-artwork and switcher the providers configured, and decides the rest by itself (half the screen, side,
-no blur).
+classic: the classic layout uses exactly what the providers build. The brand panel uses the
+Identity tab artwork (not the provider's media) and the switcher the providers configured, and decides the
+rest by itself (half the screen, side, no blur).
 
 ## How it works inside
 
