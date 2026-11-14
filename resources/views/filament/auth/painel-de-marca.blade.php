@@ -4,7 +4,9 @@
     Renderizado pelo partial "media" do auth-designer, que o kit sobrescreve: o pacote só inclui
     esse partial com mídia, então a configuração do layout "painel" sempre leva uma (ADR-03).
 
-    Tudo aqui sai escapado. O que entra num atributo style são cores, e elas já chegam validadas:
+    Tudo aqui sai escapado, menos a frase e o apoio, que chegam como HTML seguro gerado do Markdown
+    (só negrito, itálico, tachado e link — `AparenciaDasTelasDeAcesso::textoComoHtml()`, P-27).
+    O que entra num atributo style são cores, e elas já chegam validadas:
     hexadecimal de seis dígitos ou uma constante da paleta do Filament (P-05).
     As classes são do kit e estão em resources/css/filament/kit.css: utilitária Tailwind emitida
     por blade do kit não existe na página (.ai/rules/css-filament.md).

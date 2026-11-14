@@ -205,12 +205,12 @@ it('[CT-43] o único upload da aparência da organização aceita só PNG, JPEG 
         ->filter(fn ($c): bool => $c instanceof FileUpload && str_contains((string) $c->getStatePath(), 'aparencia_das_telas'))
         ->values();
 
-    // Adendo 2 (P-25): um upload por tela — login, cadastro e "esqueci a senha" —, todos restritos.
-    expect($uploads)->toHaveCount(3)
+    // Adendo 2 (P-25): um upload por tela da organização — login e cadastro; "esqueci a senha"
+    // não existe na organização (P-31) —, todos restritos.
+    expect($uploads)->toHaveCount(2)
         ->and($uploads->map(fn ($u): string => (string) $u->getStatePath())->all())->toBe([
             'data.aparencia_das_telas.imagem_do_destaque',
             'data.aparencia_das_telas.telas.cadastro.imagem_do_destaque',
-            'data.aparencia_das_telas.telas.recuperacao.imagem_do_destaque',
         ]);
 
     foreach ($uploads as $upload) {
@@ -733,3 +733,32 @@ it('[CT-73] a organização com aparência própria por tela: login e cadastro d
         // Sem organização, nada da Acme: nem a tela própria dela se mistura à padrão.
         ->and(textoDoPainelDeMarca($semOrg, 'frase'))->toBe('PADRAO DO LOGIN');
 })->group('tenancy');
+
+it('[CT-79] a organização não tem a tela "esqueci a senha": nem no editor, nem no preview', function (string $tela): void {
+    [$acme] = organizacoesAB();
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'frase' => 'PADRAO DA RECUPERACAO']);
+    $this->actingAs(usuarioComPapel('master_global'));
+
+    $editor = $tela === 'criação' ? criadorDeOrganizacao() : editorDaOrganizacao($acme);
+    $editor->fillForm(['usar_aparencia_padrao' => false]);
+
+    $campos = collect($editor->instance()->form->getFlatComponents(withHidden: true))
+        ->map(fn ($c): string => (string) $c->getStatePath())
+        ->filter(fn (string $caminho): bool => str_contains($caminho, 'telas.recuperacao'));
+
+    expect($campos->all())->toBe([]);
+
+    // O preview da organização, na tela de recuperação, mostra a padrão — como a tela real (P-06).
+    $id = rascunhoDe('tenant:'.$acme->getKey(), [
+        ...aparenciaDeTeste('A'),
+        'frase' => 'RASCUNHO DA ACME',
+        'telas' => ['recuperacao' => ['frase' => 'RECUPERACAO DA ACME'] + aparenciaDeTeste('A')],
+    ]);
+    Filament::setCurrentPanel('admin');
+
+    $html = $this->get(urlDoPreviewDe($id, 'recuperar-senha'))->assertOk()->getContent();
+
+    expect(textoDoPainelDeMarca($html, 'frase'))->toBe('PADRAO DA RECUPERACAO')
+        ->and($html)->not->toContain('RECUPERACAO DA ACME')
+        ->and(textoDoPainelDeMarca($this->get(urlDoPreviewDe($id, 'login'))->getContent(), 'frase'))->toBe('RASCUNHO DA ACME');
+})->with(['criação', 'edição'])->group('tenancy');

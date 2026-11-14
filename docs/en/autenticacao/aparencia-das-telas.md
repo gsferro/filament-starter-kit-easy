@@ -36,13 +36,13 @@ login page is on.
 
 ## One appearance per screen
 
-The editor has three tabs: **Login**, **Cadastro** (sign-up) and **Esqueci a senha** (forgot
+The editor has three collapsible sections: **Login**, **Cadastro** (sign-up) and **Esqueci a senha** (forgot
 password). Each one has the same options, and the last two start with the **Igual ao login** (same as
 login) switch on — the screen follows the login, including future changes. Switched off, the screen
 gets its own appearance, starting as a copy of the login at that moment. That is how you put, for
 example, the login form on the right and the sign-up and forgot-password forms on the left.
 
-| Tab | Applies to |
+| Section | Applies to |
 |---|---|
 | **Login** | login, two-factor challenge, session lock and e-mail confirmation |
 | **Cadastro** | open sign-up and invitation acceptance |
@@ -53,8 +53,9 @@ example, the login form on the right and the sign-up and forgot-password forms o
 | [![Login with a gradient background and formatted text](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente.png) | [![Forgot-password screen with its own appearance](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-a-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-a-senha.png) |
 
 Each screen may even have a different layout: the login on the brand panel and the forgot-password
-screen on the classic, or the other way around. An organization with its own appearance has the same
-three tabs.
+screen on the classic, or the other way around. An organization with its own appearance has the
+**Login** and **Cadastro** sections; the forgot-password screen doesn't know which organization the
+person belongs to and always uses the default appearance.
 
 Social login and the anti-bot challenge stay where they always were, inside the form, in any layout
 and on any screen: with a social provider configured, its button shows; with anti-bot protection on,

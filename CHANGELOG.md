@@ -20,7 +20,7 @@ A v0.53.0 traz a **aparência das telas de acesso** escolhida na tela, com previ
   ilustração de rede de pontos parada ou em movimento (com botão de pausar e respeito a "reduzir movimento"), cor
   própria da ilustração e duas frases opcionais. No celular o painel vira uma faixa curta acima do formulário,
   só com a logo ou o nome da aplicação. **Uma aparência por tela**: login, cadastro e "esqueci a senha" têm
-  abas próprias no editor ("Igual ao login" ou a sua), e cada uma pode ter outro lado, outra largura ou outro
+  seções próprias no editor ("Igual ao login" ou a sua; na organização, login e cadastro), e cada uma pode ter outro lado, outra largura ou outro
   layout. A frase e o apoio aceitam a formatação do rodapé da tela de login (Markdown seguro: negrito,
   itálico, tachado, link). O fundo de cor oferece a cor primária (padrão do Filament) ou uma cor própria, e
   há fundo em gradiente (duas cores e três direções, com os textos numa faixa escura legível). Login social

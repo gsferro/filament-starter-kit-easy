@@ -36,13 +36,13 @@ O layout escolhido vale para as telas de autenticação vestidas pelo Auth Desig
 
 ## Uma aparência para cada tela
 
-O editor tem três abas: **Login**, **Cadastro** e **Esqueci a senha**. Cada uma tem as mesmas
+O editor tem três seções recolhíveis: **Login**, **Cadastro** e **Esqueci a senha**. Cada uma tem as mesmas
 opções, e as duas últimas começam com o interruptor **Igual ao login** ligado — a tela segue o login,
 inclusive nas mudanças futuras. Desligado, a tela passa a ter a sua aparência, que começa como cópia
 do login daquele momento. É assim que se põe, por exemplo, o formulário do login à direita e o do
 cadastro e do "esqueci a senha" à esquerda.
 
-| Aba | Vale para |
+| Seção | Vale para |
 |---|---|
 | **Login** | login, desafio de dois fatores, bloqueio de sessão e confirmação de e-mail |
 | **Cadastro** | cadastro aberto e aceite de convite |
@@ -53,7 +53,8 @@ cadastro e do "esqueci a senha" à esquerda.
 | [![Login com fundo em gradiente e texto formatado](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente.png) | [![Tela de esqueci a senha com aparência própria](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-a-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-a-senha.png) |
 
 Cada tela pode até ter um layout diferente: o login no painel de marca e o "esqueci a senha" no
-clássico, ou o contrário. A organização com aparência própria tem as mesmas três abas.
+clássico, ou o contrário. A organização com aparência própria tem as seções **Login** e **Cadastro**;
+"esqueci a senha" não sabe de qual organização a pessoa é e usa sempre a aparência padrão.
 
 O login social e o desafio anti-robô continuam onde sempre estiveram, dentro do formulário, em
 qualquer layout e em qualquer tela: com um provedor social configurado, o botão aparece; com a

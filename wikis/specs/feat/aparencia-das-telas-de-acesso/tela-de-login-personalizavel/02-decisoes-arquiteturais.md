@@ -111,7 +111,8 @@ com objetos do mesmo vocabulário, sem `telas` dentro. Vazio = segue o login; `{
 
 **Por quê**: mantém ADR-02 (um objeto inteiro na instalação e um opcional na organização), o JSON
 antigo continua válido sem migração (sem `telas` = tudo segue o login), e o editor reaproveita um
-único conjunto de campos por aba. Três propriedades/colunas exigiriam migration nova em settings e
+único conjunto de campos por seção *(alterado em 2026-11-14: QA-31 — seções colapsáveis, não abas)*. Na organização não há a
+seção "esqueci a senha" (P-31). Três propriedades/colunas exigiriam migration nova em settings e
 em `tenants` e triplicariam a regra "usa a padrão".
 
 **Alternativas**: três propriedades em settings e três colunas em `tenants` (descartada pelos
@@ -125,6 +126,7 @@ Greps (`grep -n "public function\|public ?\|public [a-z]" …`) a refazer sobre 
 |---|---|---|---|
 | `TelaLogin::$orgDaAparencia` | código (novo) | `mount()` pela query | `#[Locked]`; resolvido só com tenancy + painel `app` + organização ativa; só decide aparência, nunca acesso |
 | `aparenciaDaTela()`, `corDoPainelDeMarca()`, `logosDoPainelDeMarca()` nas páginas de auth | código (novo, métodos públicos) | cliente chama por `$wire` | cor e logos vazias fora do `painel` (P-16); devolvem só o que a tela mostra |
+| `destaqueDoPainelDeMarca()` (Adendo 1) e `gradienteDoPainelDeMarca()` (Adendo 2) | código (novo, métodos públicos) | cliente chama por `$wire` | vazios fora do `painel`; `aparenciaDaTela()` sai sem imagem fora do destaque "imagem", sem cor da rede fora da rede e sem cores do gradiente fora do gradiente (CT-56, CT-76) *(alterado em 2026-11-14: QA-31)* |
 | `PreviewDasTelasDeAcesso::$rascunho`, `$tela` | código (novo) | `mount()` pela query | `#[Locked]`; `tela` em lista fechada; rascunho só do usuário autenticado |
 | `PreviewDasTelasDeAcesso::$data` (formulário demonstrativo) | framework | cliente | campos desabilitados, nenhuma ação; nada é gravado |
 | `ConfiguracoesDoKit::$data` — chaves da aba nova | framework | cliente | validação por campo (`in`, `regex`, `maxLength`) no save + `normalizar()` na leitura |

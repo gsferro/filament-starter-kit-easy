@@ -364,7 +364,7 @@ Nenhuma nova.
 - **Trait**: `familiaDaAparencia()` (login por padrão; `RegistroPorConvite` = cadastro;
   `TelaRecuperarSenha`/`TelaRedefinirSenha` = recuperação; preview pela tela escolhida);
   `gradienteDoPainelDeMarca()` com o gate P-16
-- **Editor**: abas Login / Cadastro / Esqueci a senha; "Igual ao login" copia o login ao desligar;
+- **Editor**: seções colapsáveis Login / Cadastro / Esqueci a senha (na organização, sem "Esqueci a senha", P-31) *(alterado em 2026-11-14: QA-31 — abas aninhadas violavam a convenção da tela de configurações)*; "Igual ao login" copia o login ao desligar;
   `MarkdownEditor` com a barra do rodapé; `origem_da_cor` (primária × própria); gradiente; o
   `layout` é obrigatório só na raiz (CT-20 × CT-28)
 - **View/CSS**: textos em `div` com o HTML seguro; `--gradiente` com superfície escura; faixa do

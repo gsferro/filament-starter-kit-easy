@@ -290,7 +290,8 @@ class TenantForm
                             })
                             ->helperText('Ligado, a organização acompanha a aparência definida em Configurações da aplicação › Telas de acesso. Desligado, ela passa a ter a sua: começa como cópia da padrão e não acompanha mudanças futuras dela.'),
 
-                        EditorDeAparenciaDasTelas::campos()
+                        // Sem "Esqueci a senha": essa tela usa sempre a padrão (P-06, P-31).
+                        EditorDeAparenciaDasTelas::campos(daOrganizacao: true)
                             ->visible(fn (Get $get): bool => $get('usar_aparencia_padrao') === false),
 
                         ...EditorDeAparenciaDasTelas::preview(

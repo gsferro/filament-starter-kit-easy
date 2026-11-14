@@ -159,10 +159,23 @@ class PreviewDasTelasDeAcesso extends SimplePage
     /** @return array<string, mixed>|null */
     protected function resolverAparencia(): ?array
     {
+        // A recuperação de senha nunca usa a organização (P-06): no escopo de uma organização, o
+        // preview dessa tela mostra a PADRÃO, como a tela real — e não o rascunho dela (P-31, QA-27).
+        if ($this->recuperacaoNaOrganizacao()) {
+            return AparenciaDasTelasDeAcesso::global();
+        }
+
         return AparenciaDasTelasDeAcesso::normalizar(
             $this->rascunhoAutorizado()['aparencia'] ?? null,
             'preview',
         );
+    }
+
+    private function recuperacaoNaOrganizacao(): bool
+    {
+        $escopo = $this->rascunhoAutorizado()['escopo'] ?? null;
+
+        return $this->familiaDaAparencia() === 'recuperacao' && is_string($escopo) && str_starts_with($escopo, 'tenant:');
     }
 
     /**
@@ -192,6 +205,10 @@ class PreviewDasTelasDeAcesso extends SimplePage
      */
     protected function organizacaoDaAparencia(): ?Tenant
     {
+        if ($this->recuperacaoNaOrganizacao()) {
+            return null;
+        }
+
         $escopo = $this->rascunhoAutorizado()['escopo'] ?? null;
 
         if (! is_string($escopo) || ! preg_match('/^tenant:(\d+)$/', $escopo, $partes)) {

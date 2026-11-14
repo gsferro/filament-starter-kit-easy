@@ -54,7 +54,12 @@ final class EditorDeAparenciaDasTelas
     /**
      * Os campos, sob o caminho `aparencia_das_telas`.
      */
-    public static function campos(): Group
+    /**
+     * @param  bool  $daOrganizacao  no formulário da organização não há a seção "Esqueci a senha":
+     *                               a recuperação e a redefinição de senha nunca sabem a organização
+     *                               da pessoa e usam sempre a padrão (P-06, P-31)
+     */
+    public static function campos(bool $daOrganizacao = false): Group
     {
         /*
          * Uma seção colapsável por tela, e não abas: a tela de configurações tem uma regra para as
@@ -73,7 +78,9 @@ final class EditorDeAparenciaDasTelas
                 ->columns(2)
                 ->columnSpanFull(),
             self::secaoDeTelaPropria('cadastro', 'Cadastro', 'heroicon-o-user-plus', 'Vale para o cadastro aberto e para o aceite de convite.'),
-            self::secaoDeTelaPropria('recuperacao', 'Esqueci a senha', 'heroicon-o-key', 'Vale para o pedido de recuperação e para a redefinição de senha.'),
+            ...($daOrganizacao ? [] : [
+                self::secaoDeTelaPropria('recuperacao', 'Esqueci a senha', 'heroicon-o-key', 'Vale para o pedido de recuperação e para a redefinição de senha.'),
+            ]),
         ])
             ->statePath('aparencia_das_telas')
             ->columnSpanFull();
