@@ -159,7 +159,8 @@ final class AparenciaDasTelasDeAcesso
         foreach (self::FAMILIAS_COM_APARENCIA_PROPRIA as $familia) {
             $propria = is_array($bruto) && is_array($bruto['telas'] ?? null) ? ($bruto['telas'][$familia] ?? null) : null;
 
-            if (! is_array($propria) || ($propria['igual_ao_login'] ?? false) === true) {
+            // Ausente, vazia ou "igual ao login": segue o login (P-25; ADV-C8 da revisão adversarial).
+            if (! is_array($propria) || $propria === [] || ($propria['igual_ao_login'] ?? false) === true) {
                 continue;
             }
 

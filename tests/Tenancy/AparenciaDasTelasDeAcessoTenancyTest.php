@@ -762,3 +762,62 @@ it('[CT-79] a organização não tem a tela "esqueci a senha": nem no editor, ne
         ->and($html)->not->toContain('RECUPERACAO DA ACME')
         ->and(textoDoPainelDeMarca($this->get(urlDoPreviewDe($id, 'login'))->getContent(), 'frase'))->toBe('RASCUNHO DA ACME');
 })->with(['criação', 'edição'])->group('tenancy');
+
+/*
+| Revisão adversarial dos Adendos 2 e 3 — organização (ADV-C6, C7, C14, C15, C20)
+*/
+
+it('[CT-93] primeiro o objeto, depois a tela: sem mistura entre a aparência da organização e a padrão', function (string $caso, string $esperada): void {
+    [$acme] = organizacoesAB();
+    config(['kit.registro.habilitado' => true, 'kit.registro.aprovacao_manual' => false, 'kit.registro.verificar_email' => false]);
+    definirAparenciaGlobal([
+        'frase' => 'PADRAO LOGIN', 'lado_do_formulario' => 'direita',
+        'telas' => ['cadastro' => ['frase' => 'PADRAO CADASTRO', 'lado_do_formulario' => 'esquerda'] + aparenciaDeTeste('P')],
+    ] + aparenciaDeTeste('P'));
+
+    if ($caso === 'própria sem cadastro') {
+        $acme->update(['aparencia_das_telas' => ['frase' => 'ACME LOGIN'] + aparenciaDeTeste('A')]);
+    }
+
+    expect(textoDoPainelDeMarca(loginDe('/app/register?org=acme'), 'frase'))->toBe($esperada);
+})->with([
+    // Própria sem tela de cadastro: o cadastro segue o login DA ORGANIZAÇÃO, não o cadastro da padrão.
+    'própria sem cadastro' => ['própria sem cadastro', 'ACME LOGIN'],
+    // Usando a padrão: vale a padrão inteira, com a tela de cadastro dela.
+    'usa a padrão'         => ['usa a padrão', 'PADRAO CADASTRO'],
+])->group('tenancy');
+
+it('[CT-94] a recuperação de senha real ignora a "esqueci a senha" gravada na organização', function (): void {
+    [$acme] = organizacoesAB();
+    definirAparenciaGlobal(['frase' => 'PADRAO'] + aparenciaDeTeste('P'));
+    $acme->update(['aparencia_das_telas' => [
+        'frase' => 'ACME LOGIN',
+        'telas' => ['recuperacao' => ['frase' => 'ACME REC'] + aparenciaDeTeste('A')],
+    ] + aparenciaDeTeste('A')]);
+
+    $html = loginDe('/app/password-reset/request?org=acme');
+
+    expect(textoDoPainelDeMarca($html, 'frase'))->toBe('PADRAO')
+        ->and($html)->not->toContain('ACME REC');
+})->group('tenancy');
+
+it('[CT-95] o editor da organização mantém a seção "Cadastro" com "Igual ao login"', function (): void {
+    [$acme] = organizacoesAB();
+    $this->actingAs(usuarioComPapel('master_global'));
+
+    $editor = editorDaOrganizacao($acme)->fillForm(['usar_aparencia_padrao' => false]);
+
+    $caminhos = collect($editor->instance()->form->getFlatComponents(withHidden: true))->map(fn ($c): string => (string) $c->getStatePath());
+
+    expect($caminhos->contains('data.aparencia_das_telas.telas.cadastro.igual_ao_login'))->toBeTrue()
+        ->and($caminhos->contains('data.aparencia_das_telas.telas.cadastro.frase'))->toBeTrue();
+})->group('tenancy');
+
+it('[CT-96] "cor primária" na aparência da organização usa a primária da organização', function (): void {
+    $acme = organizacaoComLogoPropria();
+    $acme->update(['aparencia_das_telas' => ['fundo' => 'cor', 'cor' => null] + aparenciaDeTeste('A')]);
+
+    $estilo = arvoreDoHtml(loginDe('/app/login?org=acme'))->query('//*[@data-kit-aparencia="painel"]')->item(0)->getAttribute('style');
+
+    expect($estilo)->toContain('--kit-painel-fundo: #7c3aed');
+})->group('tenancy');

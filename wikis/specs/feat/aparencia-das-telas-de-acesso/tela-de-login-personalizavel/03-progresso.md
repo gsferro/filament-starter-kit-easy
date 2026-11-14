@@ -277,7 +277,7 @@ Tratamento do ciclo 1 dos Adendos 2 e 3:
 | QA-27 | 1 → 2 | P-31: a organização não tem "esqueci a senha"; o editor dela não oferece a seção e o preview da organização mostra a padrão nessa tela; CT-79 cai sem a correção; CT-43 da organização conta dois uploads |
 | QA-28 | 2 | rodada `d1`..`d4` registrada; rodada `e1`..`e4` sobre `7ca671df` em execução; linha do QA-18 corrigida |
 | QA-29 | 1 | o trecho da RQ-27 inclui "possibilidade de usar html"; Q12 registrada com a recomendação e o porquê; P-05 marcada |
-| QA-30 | 3 | `feature-test-design` reescrevendo R26–R30 com `Então`, exemplos em tabela e mutantes; depois, `fw-adversario-ct` |
+| QA-30 | 3 | `feature-test-design` reescreveu R26–R30 (Gherkin completo, M73..M108); `fw-adversario-ct` rodou (ADV-C1..C32): CT-80..CT-96 e CT-B18, e o defeito ADV-C8 corrigido |
 | QA-31 | 1 | "abas" → "seções" no PRD, na ADR-05, nas docs pt/en e no CHANGELOG; Superfície Livewire com `destaqueDoPainelDeMarca()` e `gradienteDoPainelDeMarca()`; docblock da view |
 | QA-32 | 1 | despachos 19..25, degradação, Estado |
 | QA-33 | 1 | glossário: "Painel de marca", "Tela própria", "Família de tela" |
@@ -335,7 +335,8 @@ Step 12 (2026-11-14): nenhum candidato passa em *Vale virar rule*. As decisões 
 | 21 | 3 (Adendo 2) | Codex `exec --yolo` (juiz cego) / não exposto | proposta anônima X + repositório | X corrigida (item 1), Y (itens 2 e 3), X (item 4) | — | veredito adotado na íntegra; P-25..P-30 e ADR-05 |
 | 22 | 9 (Adendos 2 e 3) | workflow: Codex `exec --yolo`, `fw-revisor-diff`, `filament-security-audit` (general-purpose), um cético por achado / herdado | diff `fe9ea589..0d9034fa` sem `wikis/`, `art/`, `docs/` | CX-B1..B5, RD-B1..B7, SEC-B1..B2; 14 confirmados | 1023 k tokens · 405 s | CX-B1 reproduzido pela sessão (CT-74 cai sem a correção) |
 | 23 | 11 (Adendos 2 e 3) | `fw-qa-gate` / herdado | path da wiki, URL servida, base; sem suítes inteiras (memória) | ciclo 1: REPROVADO → especificação, QA-27..QA-33 | 255 k tokens · 857 s | QA-27 reproduzido (CT-79 cai sem a correção) |
-| 24 | 7 (Adendos 2 e 3) | `general-purpose` com `feature-test-design` / herdado | `00`, seções dos Adendos 2 e 3 do `04`/`05` | Gherkin completo de R26–R30, mutantes, CT-79 | — | em execução |
+| 24 | 7 (Adendos 2 e 3) | `general-purpose` com `feature-test-design` / herdado | `00`, seções dos Adendos 2 e 3 do `04`/`05` | Gherkin completo de R26–R30, M73..M108, CT-79; 3 divergências apontadas | 160 k tokens · 363 s | 2 lacunas fechadas pela sessão (CT-66 sem gravação; M108 no CT-B16) |
+| 26 | 7 (Adendos 2 e 3) | `fw-adversario-ct` / herdado | `00`, seções dos Adendos 2 e 3 do `04`/`05`, glossário | ADV-C1..C32 (9 altos); 1 defeito real (C8) | 73 k tokens · 207 s | CT-80..CT-96 e CT-B18 escritos e verdes; C8 corrigido |
 | 25 | 11 (Adendos 2 e 3) | `general-purpose` / herdado (cenários) | tags `pre-adendo2-final`/`pre-adendo-base` | `e1`..`e4` | — | em execução |
 
 Degradações: `search-docs` indisponível; Ponytail em passe manual. Adendos 2 e 3: os cenários R26–R30 foram derivados pela sessão; o gate (QA-30) mandou reescrevê-los pela `feature-test-design` e passar pelo `fw-adversario-ct` — feito depois do gate (ver Despachos). Adendo 1: os cenários CT-43..CT-56 e CT-B09..CT-B15 foram derivados pela sessão, não às cegas pela `feature-test-design`; a revisão adversarial independente (`fw-adversario-ct`) rodou sobre o conjunto antes do step 9, e os acrescentados depois dela (CT-53..CT-56, CT-B12..CT-B15) não tiveram re-revisão *(alterado em 2026-11-14: QA-22)*.

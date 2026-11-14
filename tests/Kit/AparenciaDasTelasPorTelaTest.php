@@ -222,7 +222,15 @@ it('[CT-66] o teto mede o texto visível e há um teto bruto de 4 KiB', function
         ->fillForm(['aparencia_das_telas' => ['frase' => $frase] + aparenciaDeTeste('P0')])
         ->call('save');
 
-    $aceita ? $tela->assertHasNoFormErrors() : $tela->assertHasFormErrors(['aparencia_das_telas.frase']);
+    if ($aceita) {
+        $tela->assertHasNoFormErrors();
+
+        return;
+    }
+
+    // Recusa: erro no campo e nada gravado (P-10).
+    $tela->assertHasFormErrors(['aparencia_das_telas.frase']);
+    expect(configuracaoGravada('aparencia_das_telas'))->toBeNull();
 })->with([
     '80 visíveis com negrito'         => ['**'.str_repeat('a', 80).'**', true],
     '81 visíveis'                     => [str_repeat('a', 81), false],
@@ -402,4 +410,210 @@ it('[CT-78] no preview, a tela que segue o login usa a imagem ainda não salva d
     expect($mapa)->toHaveKeys(['login', 'cadastro', 'recuperacao'])
         ->and($mapa['cadastro'])->toBe($mapa['login'])
         ->and($mapa['recuperacao'])->toBe($mapa['login']);
+})->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| Revisão adversarial dos Adendos 2 e 3 (ADV-C1..C32)
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-80] a frase aplica o Markdown, não só o apoio', function (): void {
+    definirAparenciaGlobal(['frase' => 'Uma **forte** frase'] + aparenciaDeTeste('P'));
+
+    $nos = arvoreDoHtml(htmlDe('/admin/login'))->query("//*[contains(@class,'kit-painel-de-marca__frase')]//strong");
+
+    expect($nos->length)->toBe(1)->and($nos->item(0)->textContent)->toBe('forte');
+})->group('kit');
+
+it('[CT-81] frase e apoio hostis saem só com a formatação acordada e links de esquema seguro', function (string $campo, string $texto): void {
+    definirAparenciaGlobal([$campo => $texto] + aparenciaDeTeste('P'));
+
+    $arvore = arvoreDoHtml(htmlDe('/admin/login'));
+    $bloco  = "//*[contains(@class,'kit-painel-de-marca__{$campo}')]";
+
+    $proibidos = $arvore->query("{$bloco}//*[not(self::p or self::br or self::strong or self::em or self::del or self::a)]");
+    expect($proibidos->length)->toBe(0, 'elemento fora da lista acordada');
+
+    foreach ($arvore->query("{$bloco}//a[@href]") as $link) {
+        expect(preg_match('#^(https?://|mailto:|/(?!/))#i', $link->getAttribute('href')))->toBe(1, 'href: '.$link->getAttribute('href'));
+    }
+
+    expect($arvore->query("{$bloco}//*[@onclick or @onerror or @style or @title or @class]")->length)->toBe(0);
+})->with(function (): iterable {
+    $hostis = [
+        'esquema em caixa mista' => '[x](JaVaScRiPt:alert(1))',
+        'espaço antes'           => '[x]( javascript:alert(1))',
+        'data'                   => '[x](data:text/html,<script>alert(1)</script>)',
+        'vbscript'               => '[x](vbscript:msgbox(1))',
+        'formulário cru'         => '<form action="https://x.test"><input name=p></form><b>M</b><div>d</div>',
+        'link cru'               => '<a href="javascript:alert(1)">clique</a>',
+    ];
+
+    foreach (['frase', 'apoio'] as $campo) {
+        foreach ($hostis as $nome => $texto) {
+            yield "{$campo}: {$nome}" => [$campo, $texto];
+        }
+    }
+})->group('kit');
+
+it('[CT-82] a tela própria usa os SEUS fundo, largura, destaque e ilustração, não os do login', function (): void {
+    definirAparenciaGlobal([
+        ...painelComFrase('direita', 'LOGIN', ['fundo' => 'cor', 'cor' => '#112233', 'tamanho_do_painel' => 50]),
+        'telas' => ['recuperacao' => painelComFrase('esquerda', 'REC', [
+            'fundo'    => 'gradiente', 'gradiente_de' => '#445566', 'gradiente_ate' => '#778899', 'tamanho_do_painel' => 30,
+            'destaque' => 'logo', 'ilustracao' => 'rede',
+        ])],
+    ]);
+
+    $login       = htmlDe('/admin/login');
+    $recuperacao = htmlDe('/admin/password-reset/request');
+
+    expect($recuperacao)->toContain('kit-painel-de-marca--gradiente')
+        ->and($recuperacao)->toContain('--media-size: 30%')
+        ->and($recuperacao)->toContain('data-kit-destaque')
+        ->and($recuperacao)->toContain('data-kit-ilustracao')
+        ->and($login)->not->toContain('kit-painel-de-marca--gradiente')
+        ->and($login)->toContain('--media-size: 50%')
+        ->and($login)->not->toContain('data-kit-ilustracao');
+})->group('kit');
+
+it('[CT-83] tela gravada vazia segue o login; tela própria sem frase não herda a do login', function (): void {
+    definirAparenciaGlobal([...painelComFrase('direita', 'FRASE DO LOGIN'), 'telas' => ['recuperacao' => []]]);
+    expect(textoDoPainelDeMarca(htmlDe('/admin/password-reset/request'), 'frase'))->toBe('FRASE DO LOGIN');
+
+    definirAparenciaGlobal([...painelComFrase('direita', 'FRASE DO LOGIN'), 'telas' => ['recuperacao' => ['layout' => 'painel', 'lado_do_formulario' => 'esquerda']]]);
+    expect(textoDoPainelDeMarca(htmlDe('/admin/password-reset/request'), 'frase'))->toBeNull();
+})->group('kit');
+
+it('[CT-84] religar "igual ao login" numa seção não apaga a outra tela própria, e a cópia não leva "telas"', function (): void {
+    definirAparenciaGlobal([
+        ...painelComFrase('direita', 'LOGIN'),
+        'telas' => ['cadastro' => painelComFrase('esquerda', 'CAD'), 'recuperacao' => painelComFrase('esquerda', 'REC')],
+    ]);
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    $tela = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh();
+    $tela->set('data.aparencia_das_telas.telas.recuperacao.igual_ao_login', true)->call('save')->assertHasNoFormErrors();
+
+    $gravada = configuracaoGravada('aparencia_das_telas');
+    expect($gravada['telas'])->toHaveKey('cadastro')->not->toHaveKey('recuperacao')
+        ->and($gravada['telas']['cadastro']['frase'])->toBe('CAD');
+
+    // A seção "Cadastro": desligar e religar trabalha só nela, e a cópia nasce sem "telas" dentro.
+    $tela->set('data.aparencia_das_telas.telas.cadastro.igual_ao_login', true)->call('save');
+    $tela->set('data.aparencia_das_telas.telas.cadastro.igual_ao_login', false);
+
+    expect($tela->get('data.aparencia_das_telas.telas.cadastro.frase'))->toBe('LOGIN')
+        ->and($tela->get('data.aparencia_das_telas.telas.cadastro'))->not->toHaveKey('telas');
+
+    $tela->call('save')->assertHasNoFormErrors();
+    expect(configuracaoGravada('aparencia_das_telas')['telas'])->toHaveKey('cadastro')->not->toHaveKey('recuperacao')
+        ->and(configuracaoGravada('aparencia_das_telas')['telas']['cadastro'])->not->toHaveKey('telas');
+})->group('kit');
+
+it('[CT-85] cadastro por convite e redefinição de senha renderizam a aparência da sua família', function (): void {
+    definirAparenciaGlobal([
+        ...painelComFrase('direita', 'FRASE LOGIN'),
+        'telas' => ['cadastro' => painelComFrase('esquerda', 'FRASE CAD'), 'recuperacao' => painelComFrase('esquerda', 'FRASE REC')],
+    ]);
+
+    expect(textoDoPainelDeMarca(htmlDe('/app/register?token='.conviteDoCadastro()), 'frase'))->toBe('FRASE CAD');
+
+    Filament::setCurrentPanel('admin');
+    $redefinir = Livewire::withQueryParams(['email' => 'x@example.com', 'token' => 'tok'])->test(TelaRedefinirSenha::class)->instance();
+    expect($redefinir->aparenciaDaTela()['frase'])->toBe('FRASE REC');
+})->group('kit');
+
+it('[CT-86] cor de gradiente com CSS anexado ou fora de #RRGGBB não chega ao estilo', function (array $campos, string $esperado): void {
+    definirAparenciaGlobal(['fundo' => 'gradiente'] + $campos + aparenciaDeTeste('P'));
+
+    $estilo = arvoreDoHtml(htmlDe('/admin/login'))->query('//*[@data-kit-aparencia="painel"]')->item(0)->getAttribute('style');
+
+    expect($estilo)->toContain('--kit-painel-gradiente: '.$esperado)->not->toContain('url(');
+})->with([
+    'início com CSS anexado' => [['gradiente_de' => '#112233;background:url(x)', 'gradiente_ate' => '#445566'], 'linear-gradient(135deg, '.Color::Amber[600].', #445566)'],
+    'fim com CSS'            => [['gradiente_de' => '#112233', 'gradiente_ate' => 'red; x:y'], 'linear-gradient(135deg, #112233, '.Color::Amber[900].')'],
+    'oito dígitos'           => [['gradiente_de' => '#11223344', 'gradiente_ate' => '#445566'], 'linear-gradient(135deg, '.Color::Amber[600].', #445566)'],
+])->group('kit');
+
+it('[CT-87] o editor recusa cor de gradiente fora de #RRGGBB e não grava nada', function (string $valor): void {
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh()
+        ->fillForm(['aparencia_das_telas' => ['fundo' => 'gradiente', 'gradiente_de' => $valor] + aparenciaDeTeste('P')])
+        ->call('save')
+        ->assertHasFormErrors(['aparencia_das_telas.gradiente_de']);
+
+    expect(configuracaoGravada('aparencia_das_telas'))->toBeNull();
+})->with(['#abc', 'red', '#11223344'])->group('kit');
+
+it('[CT-88] login social e anti-robô só aparecem quando configurados', function (): void {
+    definirAparenciaGlobal(painelComFrase('direita', 'LOGIN'));
+
+    $html = htmlDe('/admin/login');
+
+    expect($html)->not->toContain('/auth/google/redirect')
+        ->and($html)->not->toContain('Entrar com')
+        ->and($html)->not->toContain('www.google.com/recaptcha/api.js')
+        ->and($html)->not->toContain('data-anti-robo');
+})->group('kit');
+
+it('[CT-89] o anti-robô aparece também no cadastro aberto no painel', function (): void {
+    config()->set('kit.login.anti_robo', [
+        'habilitado'    => true, 'local' => false, 'provedor' => ProvedorAntiRobo::RecaptchaV2->value,
+        'chave_do_site' => 'SITE-42', 'chave_secreta' => 'SEGREDO-42', 'pontuacao_minima' => 0.5,
+    ]);
+    config(['kit.registro.habilitado' => true]);
+    definirAparenciaGlobal([...painelComFrase('direita', 'LOGIN'), 'telas' => ['cadastro' => painelComFrase('esquerda', 'CAD')]]);
+
+    $html = htmlDe('/app/register');
+
+    expect($html)->toContain('data-anti-robo="'.ProvedorAntiRobo::RecaptchaV2->value.'"')
+        ->and(textoDoPainelDeMarca($html, 'frase'))->toBe('CAD');
+})->group('kit');
+
+it('[CT-90] o teto do apoio mede o visível e o bruto em bytes', function (string $apoio, bool $aceita): void {
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    $tela = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh()
+        ->fillForm(['aparencia_das_telas' => ['apoio' => $apoio] + aparenciaDeTeste('P0')])
+        ->call('save');
+
+    if ($aceita) {
+        $tela->assertHasNoFormErrors();
+
+        return;
+    }
+
+    $tela->assertHasFormErrors(['aparencia_das_telas.apoio']);
+    expect(configuracaoGravada('aparencia_das_telas'))->toBeNull();
+})->with([
+    '160 visíveis com negrito' => ['**'.str_repeat('a', 160).'**', true],
+    '161 visíveis'             => [str_repeat('a', 161), false],
+    '4096 bytes'               => ['[a](https://exemplo.test/'.str_repeat('x', 4096 - strlen('[a](https://exemplo.test/)')).')', true],
+    '4097 bytes'               => ['[a](https://exemplo.test/'.str_repeat('x', 4097 - strlen('[a](https://exemplo.test/)')).')', false],
+    'multibyte acima'          => ['[a](https://exemplo.test/'.str_repeat('é', 2100).')', false],
+])->group('kit');
+
+it('[CT-91] texto antigo com metacaracteres continua literal depois de salvo, na frase e no apoio', function (): void {
+    $frase = '# A ~~b~~ _c_ `d`';
+    $apoio = '- item + mais 1. um > citação';
+    definirAparenciaGlobal(['frase' => $frase, 'apoio' => $apoio, 'formato_dos_textos' => null] + aparenciaDeTeste('P'));
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh()->call('save')->assertHasNoFormErrors();
+    auth()->logout();
+    definirAparenciaGlobal(configuracaoGravada('aparencia_das_telas'));
+
+    $html = htmlDe('/admin/login');
+
+    expect(textoDoPainelDeMarca($html, 'frase'))->toBe($frase)
+        ->and(textoDoPainelDeMarca($html, 'apoio'))->toBe($apoio);
+})->group('kit');
+
+it('[CT-92] frase gravada acima do teto visível volta ao padrão na tela', function (): void {
+    definirAparenciaGlobal(['frase' => '**'.str_repeat('a', 81).'**'] + aparenciaDeTeste('P'));
+
+    expect(textoDoPainelDeMarca(htmlDe('/admin/login'), 'frase'))->toBeNull();
 })->group('kit');

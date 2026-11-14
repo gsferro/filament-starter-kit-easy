@@ -1,6 +1,10 @@
 # Casos de Teste de Browser — Aparência das telas de acesso
 
-> Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11. Adendo 1 (seções no fim): RQ-17..RQ-24 e P-19..P-24, derivados pela sessão *(alterado em 2026-11-14: QA-23)*.
+> Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11. Adendo 1 (seções no fim): RQ-17..RQ-24 e P-19..P-24, derivados pela sessão *(alterado em 2026-11-14: QA-23)*. Adendos 2 e 3 (seção no fim): RQ-25..RQ-33 e P-25..P-31, derivados pela sessão. Oráculo atual: RQ-01..RQ-33 e P-01..P-31 *(alterado em 2026-11-14: QA-30)*.
+>
+> Cenários: 17 · Regras: 8 · Mutantes previstos: 22 · Sem matador: 0 *(os `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho aplicados a este arquivo, com `\[CT-B[0-9]+\]` no padrão de cenário, 2026-11-14; as regras dos Adendos estão no `Regra:` do Gherkin, sem `## Regra` próprio; o sem matador é o M108, lacuna declarada do CT-B16)*
+>
+> Revisão adversarial dos Adendos 2 e 3: feita — ver o `04`
 >
 > Runtime proposto: Pest 5 com pest-plugin-browser. Costura **browser**, grupo **G4** do 04.
 >
@@ -430,8 +434,9 @@ O mutante **M72**, registrado em R3 do 04, é morto por CT-B08: interpolação i
 | CT-B13 | R21 | estado × evento | G4 | browser | Browser | — |
 | CT-B14 | R21 | estado × evento | G4 | browser | Browser | — |
 | CT-B15 | R21 | geometria | G4 | browser | Browser | — |
-| CT-B16 | R30 | BVA de largura | G4 | browser | Browser | — |
-| CT-B17 | R29 | geometria | G4 | browser | Browser | — |
+| CT-B16 | R30 | BVA de largura | G4 | browser | Browser | M104–M108 |
+| CT-B18 | R28 | estilo computado | G4 | browser | Browser | — |
+| CT-B17 | R29 | geometria | G4 | browser | Browser | M102–M103 |
 
 CT-B07 acrescenta a prova do limite efetivo do controle do navegador. CT-B08 acrescenta a prova de execução. Essas observações não são duplicadas pelas assertions de persistência de CT-30 ou pela inspeção de resposta de CT-06.
 
@@ -542,26 +547,73 @@ Funcionalidade: Achados da revisão do adendo no navegador
 
 ## Adendos 2 e 3 no navegador
 
+Derivados pela sessão (ver `04` › Adendos 2 e 3). *(alterado em 2026-11-14: QA-30 — Gherkin
+completo, tabelas `Exemplos` e mutantes previstos de R29 e R30)*
+
 ```gherkin
 # language: pt
 Funcionalidade: Adendos 2 e 3 no navegador
 
   Regra: R30 — Faixa do celular com arte
 
-    Esquema do Cenário: [CT-B16] Com fundo de arte, a faixa do celular não mostra a imagem
-      Dado fundo de arte e nenhum destaque
-      Quando o login é aberto em <largura> px
-      Então a imagem da arte <aparece ou não>
+    Esquema do Cenário: [CT-B16] Com fundo de arte, a faixa do celular não mostra a imagem; no computador, mostra
+      Dado a aparência padrão no painel com fundo de arte e destaque "nenhum"
+      Quando o visitante abre o login do admin com largura <largura> px e altura 900 px
+      Então a imagem da arte do painel de marca <arte>
+      E o painel de marca continua exibido
+
       Exemplos:
-        | largura | arte |
-        | 390 | não |
-        | 1023 | não |
-        | 1024 | sim |
+        | caso            | largura | arte                                  |
+        | celular         | 390     | não é exibida (display none)          |
+        | limite          | 1023    | não é exibida (display none)          |
+        | computador      | 1024    | é exibida                             |
+      # Origem: RQ-30, P-30 (no celular a faixa não mostra a imagem da arte), P-22
 
   Regra: R29 — Social e anti-robô no painel
 
-    Esquema do Cenário: [CT-B17] O botão social e o desafio anti-robô ficam visíveis no formulário
-      Dado o Google configurado e o anti-robô ligado, com o painel cheio
-      Quando o login é aberto em <computador | celular>
-      Então o botão do Google está visível dentro do formulário e o desafio não está escondido
+    Esquema do Cenário: [CT-B17] O botão social e o desafio anti-robô ficam visíveis dentro do formulário
+      Dado o provedor Google configurado e o anti-robô ligado (reCAPTCHA v2, modo local)
+      E a aparência padrão no painel com frase, apoio, destaque logo e rede em movimento
+      Quando o visitante abre o login do admin em <tela>
+      Então o botão do Google é exibido e fica entre as bordas esquerda e direita do formulário (±0,5 px)
+      E o desafio anti-robô é exibido — sem ancestral escondido, sem visibility hidden e sem opacidade zero —, dentro do formulário e entre as mesmas bordas
+
+      Exemplos:
+        | tela        | largura × altura |
+        | computador  | 1440 × 900       |
+        | celular     | 390 × 900        |
+      # Origem: RQ-31, RQ-32, RQ-33
+```
+
+#### Mutantes previstos — R30 (faixa do celular com arte)
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M104 | Arte visível na faixa do celular: a correção só tira a logo do topo e deixa a imagem da arte | CT-B16 | linha 390: arte com `display: none`; o mutante a exibe |
+| M105 | Ponto de troca errado: a arte some só até 768 px (ou o limite é `<= 1024`) | CT-B16 | linhas 1023 (não exibida) e 1024 (exibida); o mutante erra uma das duas |
+| M106 | A arte some também no computador (regra sem media query) | CT-B16 | linha 1024: arte exibida; o mutante a esconde |
+| M107 | Ao esconder a arte, a faixa inteira some no celular | CT-B16 | painel de marca com caixa (`getClientRects` > 0) nas três linhas; o mutante o esconde |
+| M108 | Sem a arte, a faixa fica sem a cor do painel (fundo transparente ou outra cor) | CT-B16 — sem a arte, o fundo do painel não é transparente e o véu está à vista *(alterado em 2026-11-14: lacuna fechada pela sessão)* | CT-B16 |
+
+#### Mutantes previstos — R29 (login social e anti-robô no painel, navegador)
+
+Complementam M98..M101 do `04`, que provam a presença no HTML; estes provam a visibilidade.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M102 | O CSS do painel esconde o botão social (ou o empurra para fora do formulário) | CT-B17 | botão do Google com caixa e entre as bordas do formulário, nas duas linhas; o mutante o deixa sem caixa ou fora |
+| M103 | O desafio anti-robô fica no HTML, mas escondido por ancestral, `visibility` ou opacidade, ou fora do formulário | CT-B17 | `checkVisibility` com opacidade e `visibility` verdadeiro e o desafio dentro do formulário, nas duas linhas; o mutante falha uma delas |
+
+### Acréscimo da revisão adversarial (ADV-C19)
+
+```gherkin
+# language: pt
+Funcionalidade: Gradiente claro
+
+  Regra: R28 — Superfície escura sobre o gradiente
+
+    Cenário: [CT-B18] Sobre um gradiente claro, os textos ficam numa superfície escura, em branco, com links sublinhados
+      Dado o fundo em gradiente de #eeeeee a #ffffff, com frase e apoio com link
+      Quando o login é aberto em 1440×900
+      Então o bloco dos textos tem fundo rgba(17, 24, 39, 0.9), texto branco e o link sublinhado
 ```

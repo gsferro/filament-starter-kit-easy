@@ -758,6 +758,14 @@ it('[CT-B16] com fundo de arte, a faixa do celular não mostra a imagem da arte;
 
     expect($pagina->script("getComputedStyle(document.querySelector('.kit-painel-de-marca__arte')).display !== 'none'"))->toBe($arteVisivel)
         ->and($pagina->script("document.querySelector('.kit-painel-de-marca').getClientRects().length > 0"))->toBeTrue();
+
+    // Sem a arte, a faixa fica com a cor do painel sob o véu escuro (P-30): fundo não transparente e véu à vista.
+    if (! $arteVisivel) {
+        // A cor configurada (#123456, da aparência P) e nenhuma imagem de fundo na faixa (ADV-C24, C29).
+        expect($pagina->script("getComputedStyle(document.querySelector('.kit-painel-de-marca')).backgroundColor"))->toBe('rgb(18, 52, 86)')
+            ->and($pagina->script("getComputedStyle(document.querySelector('.kit-painel-de-marca')).backgroundImage"))->toBe('none')
+            ->and($pagina->script("getComputedStyle(document.querySelector('.kit-painel-de-marca__veu')).display !== 'none'"))->toBeTrue();
+    }
 })->with([
     'celular 390'     => [390, false],
     'limite 1023'     => [1023, false],
@@ -811,3 +819,24 @@ function escreverNoEditorDeTexto(mixed $pagina, string $campo, string $texto): v
     $pagina->assertScript("!!document.querySelector('{$seletor}')?.CodeMirror");
     $pagina->script("(() => { const cm = document.querySelector('{$seletor}').CodeMirror; cm.focus(); cm.execCommand('selectAll'); cm.replaceSelection(".json_encode($texto, JSON_UNESCAPED_UNICODE).", null, '+input'); cm.getInputField().blur(); })()");
 }
+
+it('[CT-B18] sobre um gradiente claro, os textos ficam numa superfície escura, em branco, com links sublinhados', function (): void {
+    definirAparenciaGlobal([
+        ...aparenciaDeTeste('P'),
+        'fundo' => 'gradiente', 'gradiente_de' => '#eeeeee', 'gradiente_ate' => '#ffffff',
+        'frase' => 'Frase', 'apoio' => 'Veja a [ajuda](https://exemplo.test/ajuda).',
+    ]);
+
+    $pagina = visit('/admin/login')->resize(1440, 900);
+    $m      = json_decode((string) $pagina->script(<<<'JS'
+        (() => {
+            const textos = getComputedStyle(document.querySelector('.kit-painel-de-marca__textos'));
+            const link = getComputedStyle(document.querySelector('.kit-painel-de-marca__apoio a'));
+            return JSON.stringify({ fundo: textos.backgroundColor, cor: textos.color, sublinhado: link.textDecorationLine });
+        })()
+    JS), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($m['fundo'])->toBe('rgba(17, 24, 39, 0.9)')
+        ->and($m['cor'])->toBe('rgb(255, 255, 255)')
+        ->and($m['sublinhado'])->toContain('underline');
+});

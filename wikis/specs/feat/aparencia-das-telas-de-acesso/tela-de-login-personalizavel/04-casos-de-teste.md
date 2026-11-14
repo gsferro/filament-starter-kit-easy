@@ -2,9 +2,11 @@
 
 > Derivado do **requisito**, não do plano. Nenhuma implementação foi consultada.
 >
-> Cenários: 56 · Regras: 17 · Mutantes previstos: 57 · Sem matador: 0 *(os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois do Adendo 1; CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R25 do Adendo 1 estão na tabela da seção dele, sem `## Regra` próprio)*
+> Cenários: 79 · Regras: 17 · Mutantes previstos: 86 · Sem matador: 0 *(os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
 >
-> Oráculo atual: `00-requisito.md`, RQ-01..RQ-24 (RQ-17..RQ-24 no Adendo 1), P-01..P-24 e decisões de Q2..Q11 *(alterado em 2026-11-14: QA-23)*. CT-36..CT-41 vieram do step 9; CT-42 e as linhas de fronteira do CT-40 do quality gate (ciclo 1). Os recortes 01/02 fornecem somente localização e superfície.
+> Revisão adversarial dos Adendos 2 e 3: feita (`fw-adversario-ct`, ADV-C1..C32) — fechamento na seção "Revisão adversarial dos Adendos 2 e 3"
+>
+> Oráculo atual: `00-requisito.md`, RQ-01..RQ-33 (RQ-17..RQ-24 no Adendo 1, RQ-25..RQ-30 no Adendo 2, RQ-31..RQ-33 no Adendo 3), P-01..P-31 e decisões de Q2..Q11 *(alterado em 2026-11-14: QA-23, QA-30)*. CT-36..CT-41 vieram do step 9; CT-42 e as linhas de fronteira do CT-40 do quality gate (ciclo 1). Os recortes 01/02 fornecem somente localização e superfície.
 >
 > Derivação sem execução; os testes foram escritos depois pelos executores (ver `03` › Testes). **Confirmada** preenchida pela sessão.
 >
@@ -70,7 +72,7 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-20, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
 | R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 |
 | R25 — Processo do Adendo 1 | processo/mínimo | RQ-17, RQ-18 | execução pela sessão | CT-21 (cenários, `03`), CT-23 (docs e capturas) |
-| R26 — Uma aparência por tela | isolamento/completo | RQ-25, RQ-26, P-25, P-26 | estado × evento, decisão | CT-58, CT-59, CT-60, CT-61, CT-62, CT-63, CT-64, CT-73, CT-74, CT-75, CT-78 |
+| R26 — Uma aparência por tela | isolamento/completo | RQ-25, RQ-26, P-25, P-26, P-31 | estado × evento, decisão | CT-58, CT-59, CT-60, CT-61, CT-62, CT-63, CT-64, CT-73, CT-74, CT-75, CT-78, CT-79 |
 | R27 — Textos formatados | segurança/completo | RQ-27, P-27 | EP, BVA, conteúdo hostil | CT-57, CT-65, CT-66, CT-67 |
 | R28 — Cor primária e gradiente | apresentação/padrão | RQ-28, RQ-29, P-28, P-29 | EP, valor hostil | CT-68, CT-69, CT-70, CT-76, CT-77 |
 | R29 — Social e anti-robô no painel | regressão/padrão | RQ-31, RQ-32, RQ-33 | EP por painel e tela | CT-71, CT-72, CT-B17 |
@@ -1109,30 +1111,48 @@ Destinos automatizados (implementados):
 | CT-54 | Campos novos nas outras telas | R19 | EP | G2 | Pest feature HTTP | A | — |
 | CT-55 | Um aviso de imagem ausente por hora | R18 | estado × evento | G2 | Pest feature HTTP | A | — |
 | CT-56 | Saída pública sem imagem/cor fora de uso | R22 | papel × ação | G1 | componente Livewire | A | — |
-| CT-57 | Markdown hostil inerte | R27 | conteúdo hostil | G1 | Pest feature HTTP | P | — |
-| CT-58 | Cada tela com a sua aparência | R26 | decisão | G2 | Pest feature HTTP | P | — |
-| CT-59 | Tela sem própria segue o login | R26 | EP | G2 | Pest feature HTTP | P | — |
-| CT-60 | Clássico explícito por tela | R26 | estado × evento | G2 | Pest feature HTTP | P | — |
-| CT-61 | JSON sem `telas` igual nas três | R26 | regressão | G2 | Pest feature HTTP | P | — |
-| CT-62 | Família pela classe da página | R26 | EP | G1 | Pest unitário | P | — |
-| CT-63 | Editor: cópia do login e descarte | R26 | rastreio de escrita | G1 | componente Livewire | P | — |
-| CT-64 | Preview por tela | R26 | EP | G2 | Pest feature HTTP | P | — |
-| CT-65 | Formatação acordada chega | R27 | EP | G2 | Pest feature HTTP | P | — |
-| CT-66 | Teto visível e bruto | R27 | BVA | G1 | componente Livewire | P | — |
-| CT-67 | Texto legado igual antes e depois | R27 | regressão | G2 | Pest feature HTTP | P | — |
-| CT-68 | Gradiente só com peças fechadas | R28 | valor hostil | G2 | Pest feature HTTP | P | — |
-| CT-69 | Cor primária grava vazio | R28 | rastreio de escrita | G1 | componente Livewire | P | — |
-| CT-70 | Gradiente não sai fora do painel | R28 | papel × ação | G1 | componente Livewire | P | — |
-| CT-71 | Login social no painel | R29 | EP por painel | G2 | Pest feature HTTP | P | — |
-| CT-72 | Anti-robô no painel | R29 | EP por tela | G2 | Pest feature HTTP | P | — |
-| CT-73 | Organização com aparência por tela | R26 | estado × evento | G2 | Pest feature HTTP | T | — |
-| CT-74 | Cópia do login com imagem e cor | R26 | rastreio de escrita | G1 | componente Livewire | P | — |
-| CT-75 | Tela própria com layout inválido = clássico | R26 | EP | G2 | Pest feature HTTP | P | — |
-| CT-76 | Saída pública sem cores do gradiente fora dele | R28 | papel × ação | G1 | componente Livewire | P | — |
-| CT-77 | Gradiente vazio com primária hex | R28 | EP | G2 | Pest feature HTTP | P | — |
-| CT-78 | Preview: imagem não salva herdada do login | R26 | estado × evento | G2 | componente Livewire | P | — |
-| CT-B16 | Arte fora da faixa do celular | R30 | BVA | G4 | browser | B | — |
-| CT-B17 | Social e anti-robô visíveis no painel | R29 | geometria | G4 | browser | B | — |
+| CT-57 | Markdown hostil inerte | R27 | conteúdo hostil | G1 | Pest feature HTTP | P | M86, M87, M88 |
+| CT-58 | Cada tela com a sua aparência | R26 | decisão | G2 | Pest feature HTTP | P | M74 |
+| CT-59 | Tela sem própria segue o login | R26 | EP | G2 | Pest feature HTTP | P | M76 |
+| CT-60 | Clássico explícito por tela | R26 | estado × evento | G2 | Pest feature HTTP | P | M75 |
+| CT-61 | JSON sem `telas` igual nas três | R26 | regressão | G2 | Pest feature HTTP | P | M77 |
+| CT-62 | Família pela classe da página | R26 | EP | G1 | Pest unitário | P | M73 |
+| CT-63 | Editor: cópia do login e descarte | R26 | rastreio de escrita | G1 | componente Livewire | P | M78 |
+| CT-64 | Preview por tela | R26 | EP | G2 | Pest feature HTTP | P | M79 |
+| CT-65 | Formatação acordada chega | R27 | EP | G2 | Pest feature HTTP | P | M89 |
+| CT-66 | Teto visível e bruto | R27 | BVA | G1 | componente Livewire | P | M90, M91 |
+| CT-67 | Texto legado igual antes e depois | R27 | regressão | G2 | Pest feature HTTP | P | M92 |
+| CT-68 | Gradiente só com peças fechadas | R28 | valor hostil | G2 | Pest feature HTTP | P | M93, M94, M95 |
+| CT-69 | Cor primária grava vazio | R28 | rastreio de escrita | G1 | componente Livewire | P | M96 |
+| CT-70 | Gradiente não sai fora do painel | R28 | papel × ação | G1 | componente Livewire | P | M97 |
+| CT-71 | Login social no painel | R29 | EP por painel | G2 | Pest feature HTTP | P | M98, M99 |
+| CT-72 | Anti-robô no painel | R29 | EP por tela | G2 | Pest feature HTTP | P | M100, M101 |
+| CT-73 | Organização com aparência por tela | R26 | estado × evento | G2 | Pest feature HTTP | T | M80 |
+| CT-74 | Cópia do login com imagem e cor | R26 | rastreio de escrita | G1 | componente Livewire | P | M81 |
+| CT-75 | Tela própria com layout inválido = clássico | R26 | EP | G2 | Pest feature HTTP | P | M82 |
+| CT-76 | Saída pública sem cores do gradiente fora dele | R28 | papel × ação | G1 | componente Livewire | P | M97 |
+| CT-77 | Gradiente vazio com primária hex | R28 | EP | G2 | Pest feature HTTP | P | M95 |
+| CT-78 | Preview: imagem não salva herdada do login | R26 | estado × evento | G2 | componente Livewire | P | M83 |
+| CT-79 | Organização sem "esqueci a senha": editor e preview | R26 | EP por formulário | G1 | componente Livewire/Filament | T | M84, M85 |
+| CT-80 | Markdown aplicado na frase | R27 | EP | G2 | Pest feature HTTP | P | M86 |
+| CT-81 | Frase e apoio hostis: só tags acordadas e esquemas seguros | R27 | conteúdo hostil | G1 | Pest feature HTTP | P | M87, M88 |
+| CT-82 | Tela própria com fundo, largura, destaque e rede próprios | R26 | rastreio de efeito | G2 | Pest feature HTTP | P | M74 |
+| CT-83 | Tela vazia segue o login; própria sem frase não herda | R26 | valor limite | G2 | Pest feature HTTP | P | M76 |
+| CT-84 | Religar uma seção preserva a outra; cópia sem "telas" | R26 | rastreio de escrita | G1 | componente Livewire | P | M78 |
+| CT-85 | Convite e redefinição usam a sua família | R26 | rastreio de efeito | G2 | Pest feature HTTP | P | M73 |
+| CT-86 | Cor de gradiente com CSS ou 8 dígitos não chega ao estilo | R28 | valor hostil | G2 | Pest feature HTTP | P | M93 |
+| CT-87 | Editor recusa cor de gradiente fora de #RRGGBB | R28 | valor limite | G1 | componente Livewire | P | M94 |
+| CT-88 | Social e anti-robô ausentes quando não configurados | R29 | partição negativa | G2 | Pest feature HTTP | P | M98 |
+| CT-89 | Anti-robô no cadastro aberto no painel | R29 | partição de página | G2 | Pest feature HTTP | P | M99 |
+| CT-90 | Teto do apoio: visível e bruto em bytes | R27 | valor limite | G1 | componente Livewire | P | M90 |
+| CT-91 | Texto antigo com metacaracteres literal após salvar | R27 | partição de metacaracteres | G2 | Pest feature HTTP | P | M91 |
+| CT-92 | Frase gravada acima do teto volta ao padrão | R27 | valor limite | G2 | Pest feature HTTP | P | M90 |
+| CT-93 | Sem mistura entre objeto da organização e padrão | R26 | tabela de decisão | G2 | Pest feature HTTP | T | M80 |
+| CT-94 | Recuperação real ignora a tela gravada na organização | R26 | rastreio de efeito | G2 | Pest feature HTTP | T | M84 |
+| CT-95 | Editor da organização mantém a seção Cadastro | R26 | partição | G1 | componente Livewire | T | M85 |
+| CT-96 | Cor primária da organização | R28 | partição de escopo | G2 | Pest feature HTTP | T | M95 |
+| CT-B16 | Arte fora da faixa do celular | R30 | BVA | G4 | browser | B | M104..M107 (no `05`; M108 sem matador) |
+| CT-B17 | Social e anti-robô visíveis no painel | R29 | geometria | G4 | browser | B | M102, M103 (no `05`) |
 | CT-B12 | Destaque sem cobrir os textos | R20 | geometria | G4 | browser | B | — |
 | CT-B13 | Reduzir movimento | R21 | estado × evento | G4 | browser | B | — |
 | CT-B14 | Sem animação no celular | R21 | estado × evento | G4 | browser | B | — |
@@ -1440,11 +1460,22 @@ Funcionalidade: Achados da revisão do adendo
 
 ## Adendos 2 e 3 — por tela, textos formatados, cor/gradiente, celular com arte, social e anti-robô
 
-Derivados pela sessão a partir dos Adendos 2 e 3 (RQ-25..RQ-33) e das P-25..P-30; o desenho foi
+Derivados pela sessão a partir dos Adendos 2 e 3 (RQ-25..RQ-33) e das P-25..P-31; o desenho foi
 julgado às cegas pelo Codex antes (ver `03` › Despachos). Mudaram oráculos antigos, cada um pela
 premissa que o substitui: CT-06 passa a fixar o formato `texto` (o legado) e o `markdown` vai para o
 CT-57; CT-30 (colapso) mede o texto visível e grava o Markdown como foi escrito (P-27); CT-43 conta
 um upload por tela (P-25); CT-B05/07/08 escrevem no editor Markdown.
+
+*(alterado em 2026-11-14: QA-30 — cenários reescritos em Gherkin completo, esquemas com tabela
+`Exemplos`, mutantes previstos de R26..R30 acrescentados; CT-79 novo, da P-31 / QA-27)*
+
+R26..R30 seguem o padrão do Adendo 1: regra declarada no `## Mapa de Regras` e no `Regra:` do
+Gherkin, sem `## Regra` próprio. Os cenários de navegador (CT-B16, CT-B17) e os mutantes que só eles
+matam estão no `05` › Adendos 2 e 3 no navegador.
+
+Vocabulário dos exemplos: "login no painel" é a aparência no layout "painel"; "formulário à direita"
+põe o painel de marca à esquerda (e vice-versa); "frase" é o texto de destaque do painel de marca;
+"a primária" é a cor primária efetiva do painel (P-28).
 
 ```gherkin
 # language: pt
@@ -1453,71 +1484,224 @@ Funcionalidade: Adendos 2 e 3
   Regra: R26 — Uma aparência por tela
 
     Cenário: [CT-58] Login, cadastro e esqueci a senha usam cada um a sua aparência
-      Dado login com formulário à direita e cadastro e recuperação próprios à esquerda
-      Quando as três telas são abertas
-      Então cada uma mostra a sua frase e o seu lado
+      Dado a aparência padrão com o login no painel, formulário à direita e frase "FRASE DO LOGIN"
+      E telas próprias de cadastro (frase "FRASE DO CADASTRO") e de recuperação (frase "FRASE DA RECUPERACAO"), ambas com formulário à esquerda
+      Quando o visitante abre as três telas
+      Então cada tela mostra a sua frase e o seu lado:
+        | tela                       | frase                  | formulário |
+        | login do admin             | FRASE DO LOGIN         | à direita  |
+        | recuperar senha do admin   | FRASE DA RECUPERACAO   | à esquerda |
+        | cadastro do app            | FRASE DO CADASTRO      | à esquerda |
+      # Origem: RQ-25, RQ-26, P-25
 
     Esquema do Cenário: [CT-59] Tela sem aparência própria segue o login
-      Dado a recuperação <estado>
-      Quando a tela de recuperação é aberta
-      Então ela mostra a frase e o lado do login
-      Exemplos:
-        | estado |
-        | sem a chave |
-        | nula |
-        | com "igual ao login" |
-        | com valor inválido |
+      Dado a aparência padrão com o login no painel, formulário à direita e frase "FRASE DO LOGIN"
+      E a tela de recuperação gravada como <estado>
+      Quando o visitante abre a recuperação de senha do admin
+      Então a frase é "FRASE DO LOGIN" e o formulário fica à direita
 
-    Cenário: [CT-60] Clássico escolhido numa tela vale com o login em painel, e vice-versa
-      Dado a recuperação no clássico e o login no painel (depois o contrário)
-      Então cada tela segue o seu layout
+      Exemplos:
+        | estado                                                                 |
+        | ausente (sem a chave em telas)                                         |
+        | nula                                                                   |
+        | com "igual ao login" ligado e frase "IGNORADA" à esquerda              |
+        | um texto no lugar do objeto                                            |
+      # Origem: P-25 (ausente ou vazia segue o login), P-04
+
+    Esquema do Cenário: [CT-60] Clássico escolhido numa tela vale com o login em painel, e vice-versa
+      Dado o login gravado com o layout <login>
+      E a tela de recuperação gravada com o layout <recuperação>
+      Quando o visitante abre o login e a recuperação de senha do admin
+      Então o login mostra <no login> e a recuperação mostra <na recuperação>
+
+      Exemplos:
+        | login                                  | recuperação                                 | no login                                 | na recuperação                                    |
+        | painel, frase "FRASE DO LOGIN"         | {"layout":"classico"}                       | o painel com a frase "FRASE DO LOGIN"    | o clássico, sem painel de marca                   |
+        | clássico                               | painel, frase "SO A RECUPERACAO"            | o clássico, sem painel de marca          | o painel com a frase "SO A RECUPERACAO"           |
+      # Origem: P-25 (`{"layout":"classico"}` numa tela é escolha explícita)
 
     Cenário: [CT-61] Aparência gravada sem "telas" vale igual nas três telas
+      Dado a aparência padrão no painel, gravada sem a chave "telas", com frase "UMA SO" e formulário à esquerda
+      Quando o visitante abre o login do admin, a recuperação de senha do admin e o cadastro do app
+      Então as três telas mostram a frase "UMA SO" e o formulário à esquerda
+      # Origem: P-25, RQ-07 (aparência gravada antes do Adendo 2)
 
-    Esquema do Cenário: [CT-62] A família de cada página vem da classe
+    Esquema do Cenário: [CT-62] A família de cada página vem da página
+      Dado a página <página>
+      Quando a família da aparência dela é consultada
+      Então a família é <família>
+
       Exemplos:
-        | página | família |
-        | login, dois fatores, bloqueio, confirmação de e-mail | login |
-        | cadastro (aberto e convite) | cadastro |
-        | recuperar e redefinir senha | recuperacao |
+        | página                   | família     |
+        | login                    | login       |
+        | dois fatores             | login       |
+        | bloqueio de sessão       | login       |
+        | confirmação de e-mail    | login       |
+        | cadastro (por convite)   | cadastro    |
+        | recuperar senha          | recuperacao |
+        | redefinir senha          | recuperacao |
+      # Origem: P-26
 
-    Cenário: [CT-63] O editor grava uma tela própria a partir da cópia do login
-      Quando "Igual ao login" é desligado na aba Esqueci a senha
-      Então os campos mostram a cópia do login; o lado alterado é gravado só na tela própria
-      E religar "Igual ao login" e salvar remove a tela própria
+    Esquema do Cenário: [CT-63] O editor grava uma tela própria a partir da cópia do login, e "igual ao login" a descarta
+      Dado o login gravado no painel com frase "FRASE DO LOGIN" e formulário à direita, e a recuperação <partida>
+      E o master global no editor da instalação, aba telas de acesso
+      Quando ele <ação> e salva
+      Então antes de salvar a seção "Esqueci a senha" mostrava <antes de salvar>
+      E o salvamento não tem erro e a aparência gravada é <gravada>
+
+      Exemplos:
+        | partida               | ação                                                                    | antes de salvar                                            | gravada                                                                          |
+        | seguindo o login      | desliga "Igual ao login" na seção "Esqueci a senha" e muda o lado para esquerda | a cópia do login: frase "FRASE DO LOGIN", formulário à direita | login à direita; telas.recuperacao à esquerda; nenhuma tela de cadastro          |
+        | própria, à esquerda   | religa "Igual ao login" na seção "Esqueci a senha"                      | —                                                          | sem a chave "telas"                                                              |
+      # Origem: P-25 (a tela própria nasce como cópia do login), P-12 por analogia (descartar a própria)
 
     Esquema do Cenário: [CT-64] O preview mostra a aparência da tela escolhida
-      Exemplos: login, cadastro e recuperar senha, cada um com a sua frase do rascunho
+      Dado o master global com um rascunho da instalação: login "RASCUNHO LOGIN" à direita, cadastro "RASCUNHO CADASTRO" e recuperação "RASCUNHO RECUPERACAO" à esquerda
+      Quando ele abre o preview desse rascunho na tela <tela>
+      Então a frase do painel de marca é <frase>
 
-    Cenário: [CT-73] Organização com aparência própria por tela
-      Então login e cadastro dela mostram cada um a sua; sem organização, a padrão sem mistura
+      Exemplos:
+        | tela            | frase                  |
+        | login           | RASCUNHO LOGIN         |
+        | cadastro        | RASCUNHO CADASTRO      |
+        | recuperar-senha | RASCUNHO RECUPERACAO   |
+      # Origem: RQ-10, RQ-25, P-08
+
+    Esquema do Cenário: [CT-73] Organização com aparência própria por tela
+      Dado tenancy ligada e a aparência padrão no painel com frase "PADRAO DO LOGIN"
+      E a organização Acme, ativa, com aparência própria: login "ACME LOGIN" com formulário à direita e tela própria de cadastro "ACME CADASTRO" com formulário à esquerda
+      Quando o visitante abre <tela>
+      Então a frase é <frase> e o formulário fica <lado>
+
+      Exemplos:
+        | tela                           | frase            | lado                 |
+        | o login do app com ?org=acme   | ACME LOGIN       | à direita            |
+        | o cadastro do app com ?org=acme | ACME CADASTRO   | à esquerda           |
+        | o login do app sem organização | PADRAO DO LOGIN  | o da padrão          |
+      # Origem: P-25 (primeiro o objeto inteiro, depois a tela), P-06, P-07
 
   Regra: R27 — Textos formatados (Markdown seguro)
 
     Esquema do Cenário: [CT-57] Markdown hostil não deixa elemento executável, estilo nem imagem
-      Exemplos: HTML cru com evento, imagem Markdown, link `javascript:`, título, `<style>`, `<iframe>`
+      Dado a aparência padrão no painel com a frase <texto>
+      Quando o visitante abre o login do admin
+      Então nenhum elemento da página tem onclick, onerror nem onfocus
+      E dentro da frase não há script, style, img, iframe nem h1
+      E nenhum link da frase tem href começando por "javascript:" ou "//", nem atributo title
+      E não há script com "alert(1)" na página
+
+      Exemplos:
+        | caso               | texto                                                                  |
+        | html cru           | <b onclick="alert(1)">Marca</b><script>alert(1)</script>                 |
+        | imagem markdown    | ![x](https://exemplo.test/x.png)                                       |
+        | link javascript    | [clique](javascript:alert(1))                                          |
+        | título             | # Título                                                               |
+        | estilo             | <style>body{display:none}</style>                                      |
+        | iframe             | <iframe src="https://exemplo.test"></iframe>                           |
+        | título com href    | [a](https://exemplo.test "x href=") [b](javascript:alert(1))            |
+        | sem esquema        | [c](//exemplo.test/x)                                                  |
+      # Origem: P-27 (HTML cru descartado, link só com esquema seguro, imagem e título não aparecem), P-05
 
     Esquema do Cenário: [CT-65] A formatação acordada chega à tela
-      Exemplos: negrito → strong, itálico → em, tachado → del, link → a[href][rel]
+      Dado a aparência padrão no painel com o texto de apoio <markdown>
+      Quando o visitante abre o login do admin
+      Então dentro do texto de apoio há exatamente um <elemento>
+
+      Exemplos:
+        | formato  | markdown                              | elemento                                                          |
+        | negrito  | **forte**                             | strong                                                            |
+        | itálico  | *leve*                                | em                                                                |
+        | tachado  | ~~velho~~                             | del                                                               |
+        | link     | [ajuda](https://exemplo.test/ajuda)   | a com href "https://exemplo.test/ajuda" e rel "noopener noreferrer" |
+      # Origem: RQ-27, P-27
 
     Esquema do Cenário: [CT-66] O teto mede o texto visível e há um teto bruto de 4 KiB
-      Exemplos: 80 visíveis em negrito (aceita), 81 (recusa), link longo com 5 visíveis (aceita), bruto > 4 KiB (recusa)
+      Dado o master global no editor da instalação, aba telas de acesso, com os demais campos válidos
+      Quando ele preenche a frase com <frase> e salva
+      Então <resultado>
 
-    Cenário: [CT-67] Texto gravado antes aparece igual, também depois de salvo pelo editor
+      Exemplos:
+        | caso                     | frase                                                     | resultado                                                    |
+        | 80 visíveis com negrito  | 80 letras "a" entre ** (84 caracteres brutos)             | salva sem erro                                               |
+        | 81 visíveis              | 81 letras "a"                                             | erro no campo frase e a aparência gravada não muda           |
+        | link longo, 5 visíveis   | [ajuda](https://exemplo.test/ + 300 "x" + )               | salva sem erro                                               |
+        | bruto acima de 4 KiB     | [a](https://exemplo.test/ + 4100 "x" + )                  | erro no campo frase e a aparência gravada não muda           |
+      # Origem: P-27 (80/160 no texto visível; 4 KiB no bruto), P-10 (recusa sem salvar), P-11
+
+    Esquema do Cenário: [CT-67] Texto gravado antes do Adendo 2 aparece igual, também depois de salvo pelo editor
+      Dado a frase gravada sem formato de texto (anterior ao Adendo 2): *Oferta* <empresa> [acesse](x) A &copy; B https://exemplo.test/x
+      Quando o visitante abre o login do admin <momento>
+      Então o texto da frase é exatamente o gravado, sem itálico, sem link e com "&copy;" literal
+      E o formato gravado é <formato>
+
+      Exemplos:
+        | momento                                                         | formato               |
+        | antes de qualquer edição                                        | ausente               |
+        | depois de o master global salvar o editor sem alterar nada      | markdown              |
+      # Origem: P-27 (texto gravado antes desta versão continua texto puro, igual a antes), RQ-07
 
   Regra: R28 — Cor primária e gradiente
 
     Esquema do Cenário: [CT-68] O gradiente só usa cores validadas e um ângulo do vocabulário
-      Exemplos: vertical, horizontal, direção inválida (diagonal), cor com CSS (primária), vazias (600 e 900)
+      Dado a primária da instalação no padrão do kit
+      E a aparência padrão no painel com fundo gradiente, de <de>, até <até> e direção <direção>
+      Quando o visitante abre o login do admin
+      Então o painel de marca tem a classe de gradiente e não a de painel claro
+      E o estilo do painel tem "--kit-painel-gradiente: <esperado>"
+
+      Exemplos:
+        | caso                     | de        | até       | direção                     | esperado                                                  |
+        | vertical                 | #112233   | #445566   | vertical                    | linear-gradient(180deg, #112233, #445566)                 |
+        | horizontal               | #112233   | #445566   | horizontal                  | linear-gradient(90deg, #112233, #445566)                  |
+        | direção inválida         | #112233   | #445566   | 45deg); background:url(x    | linear-gradient(135deg, #112233, #445566)                 |
+        | cor com CSS injetado     | red; x:y  | #445566   | diagonal                    | linear-gradient(135deg, {tom 600 da primária}, #445566)   |
+        | cores vazias             | (vazia)   | (vazia)   | (ausente)                   | linear-gradient(135deg, {tom 600 da primária}, {tom 900 da primária}) |
+      # Origem: P-29 (duas cores `#RRGGBB` opcionais, três direções, nenhum CSS livre; vazias: 600 e 900), P-04
 
     Cenário: [CT-69] "Cor primária" grava a cor vazia, e a tela usa a primária
+      Dado o master global no editor da instalação com fundo de cor e cor própria #123456
+      Quando ele escolhe "Cor primária" como origem da cor e salva
+      Então o salvamento não tem erro e a cor gravada é vazia
+      E o login do admin, aberto pelo visitante, tem "--kit-painel-fundo" igual ao tom 600 da primária
+      # Origem: RQ-28, P-28
+
     Cenário: [CT-70] O gradiente não sai pelo componente fora do painel
+      Dado a aparência padrão no clássico, com fundo gradiente e cor inicial #112233 gravados
+      Quando o componente de login é chamado diretamente
+      Então o gradiente devolvido é nulo
+      # Origem: P-16 (não entrega ao navegador o que a tela não mostra), P-29
 
   Regra: R29 — Login social e anti-robô no painel (Adendo 3)
 
     Esquema do Cenário: [CT-71] O login social aparece no layout painel nos três painéis
+      Dado o provedor Google configurado
+      E o login no painel com frase "FRASE DO LOGIN" e uma tela própria de recuperação
+      Quando o visitante abre o login do painel <painel>
+      Então a página tem o painel de marca
+      E o botão "Entrar com Google" vem depois do campo de senha e aponta para "/auth/google/redirect"
+
+      Exemplos:
+        | painel |
+        | app    |
+        | admin  |
+        | infra  |
+      # Origem: RQ-31, RQ-33
+
     Esquema do Cenário: [CT-72] O anti-robô aparece no layout painel em login, cadastro e esqueci a senha
-      E a chave secreta nunca sai
+      Dado o anti-robô ligado com reCAPTCHA v2, chave do site "SITE-42" e chave secreta "SEGREDO-42"
+      E login, cadastro e recuperação no painel, cada um com a sua aparência
+      Quando o visitante abre <tela>
+      Então a página tem o painel de marca
+      E carrega o script do reCAPTCHA e o desafio com data-anti-robo="recaptcha_v2"
+      E "SEGREDO-42" não aparece no HTML
+
+      Exemplos:
+        | tela                                |
+        | o login do app                      |
+        | o login do admin                    |
+        | a recuperação de senha do admin     |
+        | o cadastro do app por convite       |
+      # Origem: RQ-32, RQ-33
 ```
 
 ### Acréscimos da revisão do diff dos Adendos 2 e 3
@@ -1529,12 +1713,166 @@ Funcionalidade: Achados da revisão dos Adendos 2 e 3
   Regra: R26 — Cópia e herança
 
     Cenário: [CT-74] Desligar "igual ao login" com imagem gravada copia a imagem e a cor, e salva
+      Dado o login no painel com destaque imagem "telas-de-acesso/do-login.png" (existente no disco público) e cor própria #336699
+      E a recuperação seguindo o login, com o master global no editor da instalação
+      Quando ele desliga "Igual ao login" na seção "Esqueci a senha" e salva
+      Então antes de salvar a origem da cor da seção é "própria"
+      E o salvamento não tem erro, e a recuperação gravada tem imagem "telas-de-acesso/do-login.png" e cor #336699
+      # Origem: P-25 (a tela própria nasce como cópia do login)
+
     Esquema do Cenário: [CT-75] Tela própria com layout inválido cai no clássico
-      Exemplos: layout desconhecido, layout ausente
+      Dado o login no painel com frase "LOGIN" e formulário à direita
+      E a recuperação própria, no painel à esquerda, com o layout <layout>
+      Quando o visitante abre a recuperação de senha do admin
+      Então a recuperação é o clássico, sem painel de marca e sem a frase "LOGIN"
+
+      Exemplos:
+        | caso         | layout   |
+        | desconhecido | "xyz"    |
+        | ausente      | nulo     |
+      # Origem: P-04 (layout inválido volta ao clássico), P-25 (tela própria presente não segue o login)
+
     Cenário: [CT-78] No preview, a tela que segue o login usa a imagem ainda não salva do login
+      Dado o master global no editor da instalação com o login no painel, destaque imagem e um PNG enviado e não salvo
+      E cadastro e recuperação seguindo o login
+      Quando o preview do editor é gerado
+      Então o rascunho tem imagem temporária para login, cadastro e recuperação
+      E a imagem temporária de cadastro e a de recuperação são a mesma do login
+      # Origem: P-08 (valores ainda não salvos), P-25 (tela ausente segue o login)
 
   Regra: R28 — Saída pública e paleta
 
     Cenário: [CT-76] O componente não devolve as cores do gradiente fora do gradiente
+      Dado a aparência padrão no painel com fundo de cor e as cores de gradiente #112233 e #445566 gravadas
+      Quando o componente de login é chamado diretamente
+      Então a aparência devolvida tem as cores de gradiente vazias
+      # Origem: P-16, P-29
+
     Cenário: [CT-77] Com primária hex, o gradiente vazio vai do tom 600 ao 900 da mesma paleta
+      Dado a primária da instalação #336699
+      E a aparência padrão no painel com fundo gradiente e as duas cores vazias
+      Quando o visitante abre o login do admin
+      Então o estilo do painel tem "linear-gradient(135deg, {tom 600 de #336699}, {tom 900 de #336699})"
+      # Origem: P-29 (vazias: tons 600 e 900 da primária), P-28
 ```
+
+### Acréscimo do quality gate dos Adendos 2 e 3 (P-31)
+
+```gherkin
+# language: pt
+Funcionalidade: A organização não tem a tela "esqueci a senha"
+
+  Regra: R26 — A recuperação da organização é sempre a padrão
+
+    Esquema do Cenário: [CT-79] O editor da organização não oferece "esqueci a senha" e o preview dela mostra a padrão nessa tela
+      Dado tenancy ligada, a aparência padrão no painel com frase "PADRAO DA RECUPERACAO" e a organização Acme
+      E o master global no formulário de <formulário> com "usar a padrão" desligado
+      Quando ele pré-visualiza um rascunho da Acme com frase "RASCUNHO DA ACME" e tela própria de recuperação "RECUPERACAO DA ACME"
+      Então o formulário não tem nenhum campo da tela de recuperação
+      E o preview na tela recuperar-senha mostra a frase "PADRAO DA RECUPERACAO" e não contém "RECUPERACAO DA ACME"
+      E o preview na tela login mostra a frase "RASCUNHO DA ACME"
+
+      Exemplos:
+        | formulário                 |
+        | criação de organização     |
+        | edição da Acme             |
+      # Origem: P-31 (QA-27), P-06, P-25
+```
+
+#### Mutantes previstos — R26 (uma aparência por tela)
+
+Perfil completo (teto 6). Estouro declarado: M73..M80 são oito porque R26 junta a resolução por tela,
+o editor, o preview e a organização — desdobrá-la renumeraria a rastreabilidade inteira por motivo
+cosmético. M81..M83 vêm da revisão do diff dos Adendos 2 e 3 e M84..M85 do quality gate (QA-27);
+achados medidos não contam para o teto.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M73 | Família trocada: redefinir senha (ou recuperar) resolvida como login; bloqueio ou dois fatores como cadastro | CT-62 | linha "redefinir senha": família `recuperacao`; linha "bloqueio de sessão": `login`; o mutante devolve outra |
+| M74 | Tela própria ignorada: toda página lê só a raiz (o login) | CT-58 | recuperação com "FRASE DA RECUPERACAO" e formulário à esquerda; o mutante mostra "FRASE DO LOGIN" à direita |
+| M75 | Clássico explícito perdido: `{"layout":"classico"}` numa tela tratado como ausente e herdando o login em painel | CT-60 | linha 1: recuperação sem painel de marca; o mutante mostra o painel com "FRASE DO LOGIN" |
+| M76 | "Igual ao login" ligado ignorado quando a tela traz campos, ou valor que não é objeto tratado como tela própria | CT-59 | linhas "igual ao login" e "um texto": frase "FRASE DO LOGIN" à direita; o mutante mostra "IGNORADA" à esquerda ou cai no clássico |
+| M77 | Aparência sem a chave "telas" (gravada antes do Adendo 2) faz cadastro e recuperação caírem no clássico ou nos padrões de campo | CT-61 | as três telas com "UMA SO" e formulário à esquerda; o mutante deixa cadastro/recuperação sem a frase ou à direita |
+| M78 | Editor: a tela própria nasce vazia (padrões de campo) em vez de cópia do login, ou religar "igual ao login" grava as duas | CT-63 | linha 1: antes de salvar, "FRASE DO LOGIN" e direita; linha 2: aparência gravada sem a chave "telas"; o mutante deixa frase vazia ou mantém `telas.recuperacao` |
+| M79 | Preview ignora a tela pedida e mostra sempre o login do rascunho | CT-64 | linha "cadastro": "RASCUNHO CADASTRO"; o mutante mostra "RASCUNHO LOGIN" |
+| M80 | Organização: tela resolvida antes do objeto — tela própria da organização vaza para a padrão, ou a tela da padrão se mistura ao objeto da organização | CT-73 | sem organização, "PADRAO DO LOGIN"; com ?org=acme no cadastro, "ACME CADASTRO" à esquerda; o mutante mistura |
+| M81 | Cópia do login leva só os textos e o lado: imagem do destaque e cor própria ficam para trás (revisão do diff) | CT-74 | recuperação gravada com imagem "telas-de-acesso/do-login.png" e cor #336699, origem da cor "própria"; o mutante grava vazias |
+| M82 | Tela própria com layout inválido descartada e herdando o login, em vez de cair no clássico (revisão do diff) | CT-75 | linhas "xyz" e nulo: recuperação sem painel e sem "LOGIN"; o mutante mostra o painel do login |
+| M83 | Preview: a tela que segue o login não recebe a imagem temporária do login (revisão do diff) | CT-78 | imagem temporária de cadastro e de recuperação igual à do login; o mutante deixa as chaves ausentes ou vazias |
+| M84 | Editor da organização oferece a seção "Esqueci a senha", como o da instalação (quality gate, QA-27) | CT-79 | nenhum campo de `telas.recuperacao` no formulário, nas duas linhas; o mutante tem campos |
+| M85 | Preview da organização na recuperação usa a tela própria do rascunho, ao contrário da tela real (quality gate, QA-27) | CT-79 | preview `recuperar-senha` com "PADRAO DA RECUPERACAO" e sem "RECUPERACAO DA ACME"; o mutante mostra a da Acme |
+
+#### Mutantes previstos — R27 (textos formatados)
+
+Perfil completo (teto 6). M87 vem da revisão do diff (SEC-B1) e não conta para o teto.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M86 | Esquema do `href` aceito sem lista: `javascript:` passa, ou link sem esquema (`//host`) é tratado como seguro | CT-57 | linhas "link javascript" e "sem esquema": nenhum `a` da frase com href começando por "javascript:" ou "//"; o mutante deixa o link |
+| M87 | Limpeza dos atributos por expressão regular: o título com `href=` engole o link seguinte ou deixa o `javascript:` passar (revisão do diff, SEC-B1) | CT-57 | linha "título com href": nenhum `a` com `title` nem com href "javascript:"; o mutante deixa um dos dois |
+| M88 | Lista de tags permitidas aberta: HTML cru, imagem, título, `style` ou `iframe` chegam à tela | CT-57 | linhas "html cru", "imagem markdown", "título", "estilo", "iframe": zero script/style/img/iframe/h1 na frase e zero `onclick`; o mutante renderiza o elemento |
+| M89 | Lista de tags permitidas fechada demais: tachado ou link (com `rel`) removidos | CT-65 | linhas "tachado" e "link": exatamente um `del` e um `a` com href e rel "noopener noreferrer"; o mutante devolve zero |
+| M90 | Teto medido no texto bruto, não no visível | CT-66 | linhas "80 visíveis com negrito" (84 brutos) e "link longo, 5 visíveis": salvam sem erro; o mutante recusa |
+| M91 | Sem teto bruto: só o visível é medido | CT-66 | linha "bruto acima de 4 KiB" (1 visível): erro no campo frase; o mutante salva |
+| M92 | Texto legado (sem formato) interpretado como Markdown, ou o editor converte entidade e URL ao regravar | CT-67 | as duas linhas: frase igual ao literal, com `*Oferta*` e "&copy;" sem conversão; o mutante mostra itálico, link ou © |
+
+#### Mutantes previstos — R28 (cor primária e gradiente)
+
+Perfil padrão (teto 5).
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M93 | Direção do gradiente sem validação: o valor gravado vai cru para o `style` | CT-68 | linha "direção inválida": `linear-gradient(135deg, #112233, #445566)`; o mutante escreve `45deg); background:url(x` no estilo |
+| M94 | Cor do gradiente não validada como `#RRGGBB` antes de entrar no `style` | CT-68 | linha "cor com CSS injetado": primeira cor igual ao tom 600 da primária; o mutante escreve `red; x:y` |
+| M95 | Cores vazias sem a paleta da primária efetiva: tons fixos do padrão do kit, ou a primária hex ignorada | CT-68, CT-77 | CT-68 linha "cores vazias" e CT-77: tons 600 e 900 da primária efetiva (#336699 no CT-77); o mutante usa a paleta do padrão do kit |
+| M96 | "Cor primária" só esconde o campo e grava a cor própria anterior | CT-69 | cor gravada vazia e `--kit-painel-fundo` igual ao tom 600 da primária; o mutante grava e mostra #123456 |
+| M97 | Componente devolve gradiente e cores de gradiente fora do layout painel ou fora do fundo gradiente | CT-70, CT-76 | CT-70: gradiente nulo no clássico; CT-76: cores de gradiente vazias com fundo de cor; o mutante devolve o gravado |
+
+#### Mutantes previstos — R29 (login social e anti-robô no painel)
+
+Perfil padrão (teto 5). M102 e M103 (botão ou desafio escondido pelo CSS do painel) estão no `05`,
+mortos pelo CT-B17.
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M98 | O layout painel troca a página e perde o gancho que desenha o botão social | CT-71 | botão "Entrar com Google" depois do campo de senha e link "/auth/google/redirect"; o mutante não tem nenhum dos dois |
+| M99 | Botão social ligado só no painel do app (admin e infra ficam sem) | CT-71 | linhas "admin" e "infra": botão presente com o painel de marca; o mutante só passa na linha "app" |
+| M100 | Anti-robô ligado só no login: recuperação ou cadastro por convite em painel ficam sem o desafio | CT-72 | linhas "recuperação" e "cadastro por convite": script do reCAPTCHA e `data-anti-robo="recaptcha_v2"`; o mutante não tem |
+| M101 | A configuração do anti-robô vai inteira para a página, com a chave secreta | CT-72 | "SEGREDO-42" ausente do HTML nas quatro linhas; o mutante o expõe |
+
+R30 (faixa do celular com arte) só tem cenário de navegador: os mutantes M104..M108 estão no `05` (M108 sem matador, lacuna declarada lá),
+mortos pelo CT-B16.
+
+## Revisão adversarial dos Adendos 2 e 3
+
+`fw-adversario-ct` com só o `00`, as seções dos Adendos 2 e 3 do `04`/`05` e o glossário: 32 achados.
+Cada um virou cenário com teste (todos verdes) ou débito declarado. Um achado revelou defeito real:
+**ADV-C8** — tela gravada como `{}` caía no clássico, e a P-25 diz que vazia segue o login (corrigido
+no normalizador; CT-83).
+
+| Achado | Fechamento |
+|---|---|
+| ADV-C1 | CT-80 (frase com Markdown aplicado) |
+| ADV-C2, C3, C4 | CT-81 (frase e apoio × esquemas em caixa mista, espaço, `data:`, `vbscript:`, formulário e link crus) |
+| ADV-C5 | CT-82 |
+| ADV-C6, C7 | CT-93 |
+| ADV-C8, C9 | CT-83 (C8 era defeito) |
+| ADV-C10, C11, C12 | CT-84 |
+| ADV-C13 | CT-85 |
+| ADV-C14 | CT-94 |
+| ADV-C15 | CT-95 |
+| ADV-C16, C17 | CT-86 |
+| ADV-C18 | CT-87 |
+| ADV-C19 | CT-B18 |
+| ADV-C20 | CT-96 |
+| ADV-C21 | CT-88 |
+| ADV-C22 | CT-88, CT-89 |
+| ADV-C23 | débito: o widget do reCAPTCHA é externo e não carrega no ambiente de teste; a largura mínima do formulário com o desafio não é medida |
+| ADV-C24, C29 | CT-B16 (fundo computado igual à cor configurada, sem `background-image`) |
+| ADV-C25, C26 | CT-90 |
+| ADV-C27 | CT-91 |
+| ADV-C28 | CT-73 já afirma `media-left`/`media-right` no teste; o Gherkin fica como está |
+| ADV-C30 | débito de forma: cenários com dois eventos no "Quando" (CT-63, 67, 69, 74, 79); os testes cobrem cada ramo |
+| ADV-C31 | coberto pelo desenho: o preview da organização na recuperação lê a padrão SALVA (`global()`), nunca rascunho; sem cenário próprio |
+| ADV-C32 | CT-92 (valor gravado acima do teto volta ao padrão) |
+| RQ-27 × Q12 | a RQ-27 depende da Q12 (aberta, com a recomendação implementada); o oráculo "HTML cru descartado" vale enquanto a Q12 não for respondida em contrário |
