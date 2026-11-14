@@ -66,7 +66,9 @@ function soltarDockDaPilha(object $pagina, bool $longe = false): void
     moverDockDaPilha($pagina);
     $alvo = $longe ? medirPilhaFlutuante($pagina)['vh'] / 2 : 48;
     for ($passo = 0; $passo < 100; $passo++) {
-        if (medirPilhaFlutuante($pagina)['gatilho']['inferior'] >= $alvo) {
+        // Meio pixel de folga: o layout pode parar em 47,985 px em vez de 48, e sem a folga o laço
+        // dava um passo a mais do teclado (24 px) e a linha "c" media 71,985 (visto no CI).
+        if (medirPilhaFlutuante($pagina)['gatilho']['inferior'] >= $alvo - 0.5) {
             break;
         }
         // keys() envia cada item isoladamente; Playwright recebe o acorde numa unica string.
