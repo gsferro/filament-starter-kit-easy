@@ -181,7 +181,6 @@
                     class="kit-painel-de-marca__pausa"
                     x-ref="pausa"
                     x-on:click="alternar()"
-                    x-bind:aria-pressed="pausado"
                     data-kit-pausa
                     hidden
                 >

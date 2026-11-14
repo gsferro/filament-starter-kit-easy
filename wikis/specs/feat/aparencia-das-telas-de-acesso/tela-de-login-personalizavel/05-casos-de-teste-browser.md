@@ -1,6 +1,6 @@
 # Casos de Teste de Browser — Aparência das telas de acesso
 
-> Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11.
+> Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11. Adendo 1 (seções no fim): RQ-17..RQ-24 e P-19..P-24, derivados pela sessão *(alterado em 2026-11-14: QA-23)*.
 >
 > Runtime proposto: Pest 5 com pest-plugin-browser. Costura **browser**, grupo **G4** do 04.
 >
@@ -423,6 +423,13 @@ O mutante **M72**, registrado em R3 do 04, é morto por CT-B08: interpolação i
 | CT-B06 | R15 | regressão | G4 | browser | Testes existentes e arquivo da feature | M46–47 |
 | CT-B07 | R1 | BVA Unicode | G4 | browser | Browser e BrowserTenancy | M71 |
 | CT-B08 | R3 | escape contextual | G4 | browser | Browser e BrowserTenancy | M72 |
+| CT-B09 | R24 | visibilidade | G4 | browser | Browser | — |
+| CT-B10 | R21 | estado × evento | G4 | browser | Browser | — |
+| CT-B11 | R19 | geometria | G4 | browser | Browser | — |
+| CT-B12 | R20 | geometria | G4 | browser | Browser | — |
+| CT-B13 | R21 | estado × evento | G4 | browser | Browser | — |
+| CT-B14 | R21 | estado × evento | G4 | browser | Browser | — |
+| CT-B15 | R21 | geometria | G4 | browser | Browser | — |
 
 CT-B07 acrescenta a prova do limite efetivo do controle do navegador. CT-B08 acrescenta a prova de execução. Essas observações não são duplicadas pelas assertions de persistência de CT-30 ou pela inspeção de resposta de CT-06.
 
@@ -479,7 +486,7 @@ Funcionalidade: Adendo 1 no navegador
       Dado a rede em movimento
       Quando o login é aberto em 1440×900
       Então o botão de pausar está visível e um ponto muda de posição
-      E depois de "Pausar o movimento" o ponto fica parado e o botão marca aria-pressed
+      E depois de "Pausar o movimento" o ponto fica parado e o rótulo passa a "Retomar o movimento", sem aria-pressed (QA-25)
       E depois de "Retomar o movimento" o ponto volta a se mover
       # E com movimento desligado, o ponto não muda e não há botão
       # Origem: P-21 (WCAG 2.2.2)
@@ -504,13 +511,13 @@ Funcionalidade: Achados da revisão do adendo no navegador
 
   Regra: R21 — Movimento só quando permitido e visível
 
-    Cenário: [CT-B10] Com "reduzir movimento" no sistema a rede fica parada e sem botão
+    Cenário: [CT-B13] Com "reduzir movimento" no sistema a rede fica parada e sem botão
       Dado a rede em movimento e o navegador emulando prefers-reduced-motion: reduce
       Quando o login é aberto em 1440×900
       Então um ponto não muda de posição e o botão de pausar continua escondido
       # Origem: P-21 (ADV-A1)
 
-    Cenário: [CT-B10] No celular o laço de animação não roda
+    Cenário: [CT-B14] No celular o laço de animação não roda
       Dado a rede em movimento
       Quando o login é aberto em 390×844
       Então um ponto não muda de posição; em 1440×900 volta a mudar
@@ -524,7 +531,7 @@ Funcionalidade: Achados da revisão do adendo no navegador
       Então a imagem termina acima da base com os textos
       # Origem: P-20 (RD-A2, CX-A2)
 
-    Cenário: [CT-B12] Num painel estreito o botão de pausar continua inteiro
+    Cenário: [CT-B15] Num painel estreito o botão de pausar continua inteiro
       Dado largura 30, rede em movimento e textos no teto
       Quando o login é aberto em 1024×768
       Então o botão de pausar está inteiro dentro do painel

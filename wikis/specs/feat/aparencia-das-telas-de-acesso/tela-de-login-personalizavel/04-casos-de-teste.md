@@ -2,9 +2,9 @@
 
 > Derivado do **requisito**, não do plano. Nenhuma implementação foi consultada.
 >
-> Cenários: 42 · Regras: 17 · Mutantes previstos: 57 · Sem matador: 0 *(os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14; CT-21 e CT-27 `@obsoleto`, execução pela sessão)*
+> Cenários: 56 · Regras: 17 · Mutantes previstos: 57 · Sem matador: 0 *(os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois do Adendo 1; CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R25 do Adendo 1 estão na tabela da seção dele, sem `## Regra` próprio)*
 >
-> Oráculo atual: `00-requisito.md`, RQ-01..RQ-16, P-01..P-18 e decisões de Q2..Q11. CT-36..CT-41 vieram do step 9; CT-42 e as linhas de fronteira do CT-40 do quality gate (ciclo 1). Os recortes 01/02 fornecem somente localização e superfície.
+> Oráculo atual: `00-requisito.md`, RQ-01..RQ-24 (RQ-17..RQ-24 no Adendo 1), P-01..P-24 e decisões de Q2..Q11 *(alterado em 2026-11-14: QA-23)*. CT-36..CT-41 vieram do step 9; CT-42 e as linhas de fronteira do CT-40 do quality gate (ciclo 1). Os recortes 01/02 fornecem somente localização e superfície.
 >
 > Derivação sem execução; os testes foram escritos depois pelos executores (ver `03` › Testes). **Confirmada** preenchida pela sessão.
 >
@@ -62,11 +62,11 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R14 — Preview interativo | apresentação/padrão | RQ-10, P-08, **P-14** | JavaScript e iframe | CT-B05 |
 | R15 — Clássico idêntico | compatibilidade/padrão | RQ-01, RQ-07, RQ-11, P-03, **P-14** | igualdade de configuração e regressão | CT-33, CT-B06 |
 | R16 — Referências externas restritas | documentação/mínimo | RQ-12, Q9 | inspeção genérica de links | CT-24 |
-| R18 — Vocabulário dos campos novos | tolerância/padrão | RQ-22, P-19, P-20, P-21, P-23, P-24 | EP, BVA | CT-44, CT-45, CT-46 |
-| R19 — Disposição | apresentação/padrão | RQ-23, P-19 | EP, BVA, geometria | CT-47, CT-B11 |
+| R18 — Vocabulário dos campos novos | tolerância/padrão | RQ-22, P-19, P-20, P-21, P-23, P-24 | EP, BVA | CT-44, CT-45, CT-46, CT-55 |
+| R19 — Disposição | apresentação/padrão | RQ-23, P-19 | EP, BVA, geometria | CT-47, CT-54, CT-B11 |
 | R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso, geometria | CT-48, CT-B12 |
-| R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10 |
-| R22 — Só o que a tela mostra | segurança/completo | P-06, P-16, P-20 | papel × ação | CT-50, CT-53 |
+| R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10, CT-B13, CT-B14, CT-B15 |
+| R22 — Só o que a tela mostra | segurança/completo | P-06, P-16, P-20 | papel × ação | CT-50, CT-53, CT-56 |
 | R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-20, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
 | R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 |
 | R25 — Processo do Adendo 1 | processo/mínimo | RQ-17, RQ-18 | execução pela sessão | CT-21 (cenários, `03`), CT-23 (docs e capturas) |
@@ -314,7 +314,7 @@ CT-30 executa em cada entrada de escrita. As recusas conservam as fotografias e 
 | M58 | Teto é medido antes do trim/colapso | CT-30 | Entrada maior antes da normalização salva o resultado de 80/160 |
 | M59 | Teto conta grafemas | CT-30 | Sequências com 81/161 pontos de código são recusadas |
 | M60 | Defaults usam esquerda, arte, frases ou flags desligadas | CT-31 | Configuração efetiva igual aos defaults de P-11 |
-| M66 | Editor oferece upload novo da aparência | CT-35 | Zero controle de upload nos três editores |
+| M66 | Editor oferece upload novo da aparência — *invertido pelo Adendo 1 (RQ-20): o upload é pedido; o mutante agora é "upload aceita qualquer tipo/diretório", morto por CT-43* | CT-35 `@obsoleto` → CT-43 | Upload único, PNG/JPEG/WebP, `telas-de-acesso/`, teto do kit |
 
 Os mutantes adicionais vêm da revisão adversarial. CT-28 não exige criar uma segunda política de escrita no model.
 
@@ -997,7 +997,7 @@ A verificação analisa URLs, sem procurar nomes privados:
 | IDOR — organização | CT-17/19 | G1/G2 |
 | IDOR — configuração padrão | CT-17/19 | G1/G2 |
 | IDOR — rascunho | CT-18 | G2 |
-| Upload | CT-35 prova ausência de upload novo; CT-B04 prova uso da identidade existente | G1/G4 |
+| Upload | CT-35 `@obsoleto` (Adendo 1); CT-43 restringe o único upload; CT-51/CT-52 gravam e pré-visualizam; CT-B04 prova uso da identidade existente | G1/G4 |
 | Precisão monetária | Não se aplica: nenhum valor monetário | — |
 | Superfície Livewire | CT-20 cobre domínio e tipo nos pontos do 02 | G1 |
 | Estado usado como caminho | CT-15/20 | G1/G2 |
@@ -1070,7 +1070,7 @@ Destinos automatizados (implementados):
 | CT-32 | Nova cópia após descarte | R5 | ciclo de volta | G1 | componente Livewire/Filament | T | M61 |
 | CT-33 | Configuração clássica anterior | R15 | igualdade | G2 | Pest feature HTTP | K/T | M62, M47 |
 | CT-34 | Edição de organização inativa | R5 | estado × evento | G1 | componente Livewire/Filament | T | M70 |
-| CT-35 | Sem upload novo | R1 | EP | G1 | componente Livewire/Filament | K/T | M66 |
+| ~~CT-35~~ | Sem upload novo — `@obsoleto` pelo Adendo 1 (RQ-20), substituído por CT-43 | R1 | EP | G1 | componente Livewire/Filament | — | M66 |
 | CT-36 | Bloqueio usa a arte | R17 | estado × evento | G2 | componente Livewire/Filament | T | — |
 | CT-37 | `$wire` sem cor/logo fora do painel | R17 | EP | G2 | componente Livewire/Filament | T | — |
 | CT-38 | Preview exige o admin | R17 | papel × ação | G2 | Pest feature HTTP | K | — |
@@ -1100,7 +1100,13 @@ Destinos automatizados (implementados):
 | CT-B10 | Movimento com pausa | R21 | estado × evento | G4 | browser | B | — |
 | CT-B11 | Largura na tela | R19 | geometria | G4 | browser | B | — |
 | CT-53 | Campos novos na aparência da organização | R22 | estado × evento | G2 | Pest feature HTTP | T | — |
-| CT-B12 | Destaque e botão de pausar dentro do painel | R20 | geometria | G4 | browser | B | — |
+| CT-54 | Campos novos nas outras telas | R19 | EP | G2 | Pest feature HTTP | A | — |
+| CT-55 | Um aviso de imagem ausente por hora | R18 | estado × evento | G2 | Pest feature HTTP | A | — |
+| CT-56 | Saída pública sem imagem/cor fora de uso | R22 | papel × ação | G1 | componente Livewire | A | — |
+| CT-B12 | Destaque sem cobrir os textos | R20 | geometria | G4 | browser | B | — |
+| CT-B13 | Reduzir movimento | R21 | estado × evento | G4 | browser | B | — |
+| CT-B14 | Sem animação no celular | R21 | estado × evento | G4 | browser | B | — |
+| CT-B15 | Botão de pausar inteiro | R21 | geometria | G4 | browser | B | — |
 
 ## Regra R17 — Achados do step 9 e do quality gate
 
@@ -1238,10 +1244,10 @@ independente (`fw-adversario-ct`) roda sobre eles no step 9 do adendo.
 | Regra | Área/perfil | Origem | Técnica | Cenários |
 |---|---|---|---|---|
 | R18 — Vocabulário dos campos novos | tolerância/padrão | RQ-20..RQ-23, P-19..P-21, P-23, P-24 | EP, BVA | CT-44, CT-45, CT-46 |
-| R19 — Disposição | apresentação/padrão | RQ-23, P-19 | EP, BVA, geometria | CT-47, CT-B11 |
+| R19 — Disposição | apresentação/padrão | RQ-23, P-19 | EP, BVA, geometria | CT-47, CT-54, CT-B11 |
 | R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso, geometria | CT-48, CT-B12 |
-| R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10 |
-| R22 — Só o que a tela mostra | segurança/completo | P-06, P-16, P-20 | papel × ação | CT-50, CT-53 |
+| R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10, CT-B13, CT-B14, CT-B15 |
+| R22 — Só o que a tela mostra | segurança/completo | P-06, P-16, P-20 | papel × ação | CT-50, CT-53, CT-56 |
 | R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
 | R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 (linhas de celular) |
 
@@ -1375,7 +1381,7 @@ Funcionalidade: Achados da revisão do adendo
       Então com ?org=A o mediaSize é 70%, há rede e o destaque mostra a logo de A; sem organização, 60% e sem rede
       # Origem: P-06 × P-19..P-21 (ADV-A4, ADV-A11)
 
-    Cenário: [CT-50] A aparência devolvida pelo componente não traz imagem nem cor que a tela não usa
+    Cenário: [CT-56] A aparência devolvida pelo componente não traz imagem nem cor que a tela não usa
       Dado destaque "nada" com imagem gravada e ilustração "nenhuma" com cor gravada
       Quando o componente de login é chamado diretamente
       Então a imagem e a cor devolvidas são vazias, e o gravado continua inteiro
@@ -1383,7 +1389,7 @@ Funcionalidade: Achados da revisão do adendo
 
   Regra: R19 — As outras telas
 
-    Esquema do Cenário: [CT-47] A largura, o destaque e a rede valem nas outras telas
+    Esquema do Cenário: [CT-54] A largura, o destaque e a rede valem nas outras telas
       Dado largura 70, destaque imagem e rede
       Quando <tela> é aberta
       Então o HTML tem "--media-size: 70%", a imagem e a rede
@@ -1395,7 +1401,7 @@ Funcionalidade: Achados da revisão do adendo
 
   Regra: R18 — Aviso sem volume controlado pelo visitante
 
-    Cenário: [CT-48] Imagem ausente gera um aviso, não um por visita
+    Cenário: [CT-55] Imagem ausente gera um aviso, não um por visita
       Dado destaque imagem com arquivo ausente
       Quando o login é aberto duas vezes
       Então o aviso "Imagem do destaque ausente" é registrado uma vez

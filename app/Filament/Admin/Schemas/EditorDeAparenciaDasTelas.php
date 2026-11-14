@@ -88,7 +88,7 @@ final class EditorDeAparenciaDasTelas
                         ->selectablePlaceholder(false)
                         ->required()
                         ->live()
-                        ->helperText('O formulário fica com o resto da tela (painel em 35 %, formulário em 65 %). No celular o painel vira uma faixa no topo, em qualquer largura.'),
+                        ->helperText('O formulário fica com o resto da tela (por exemplo, painel em 35 % deixa 65 % para o formulário). No celular o painel vira uma faixa no topo, em qualquer largura.'),
                 ])
                 ->columns(2)
                 ->visible($ehPainel),

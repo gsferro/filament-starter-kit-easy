@@ -151,8 +151,9 @@ clássico: o layout clássico usa exatamente o que os providers montam. O painel
 da aba Identidade (não a mídia do provider) e o alternador que os providers configuraram, e decide sozinho
 o resto (a largura e o lado escolhidos na tela, sem desfoque).
 
-Uma aparência de painel salva antes das opções de largura, destaque e ilustração continua igual: o
-que ela não tem vale o padrão — 50%, sem destaque, sem ilustração.
+Uma aparência de painel salva antes das opções de largura, destaque e ilustração continua igual no
+computador: o que ela não tem vale o padrão — 50%, sem destaque, sem ilustração. No celular, como
+toda aparência de painel, a faixa passa a mostrar só a logo ou o nome (a frase sai).
 
 ## Como funciona por dentro
 

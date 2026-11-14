@@ -136,7 +136,7 @@ it('[CT-47] a largura escolhida vira o mediaSize do pacote, dos dois lados', fun
     'meio'                          => [55, 'direita', 'media-left'],
 ])->group('kit');
 
-it('[CT-47] a largura, o destaque e a rede valem nas outras telas de acesso', function (string $caminho): void {
+it('[CT-54] a largura, o destaque e a rede valem nas outras telas de acesso', function (string $caminho): void {
     config(['kit.registro.habilitado' => true]);
     $caminhoDaImagem = imagemDoDestaqueNoDisco();
     definirAparenciaGlobal([
@@ -185,9 +185,16 @@ it('[CT-48] imagem gravada que sumiu do disco some do painel sem derrubar a tela
 
     expect(arvoreDoHtml($html)->query('//*[@data-kit-destaque]')->length)->toBe(0)
         ->and(textoDoPainelDeMarca($html, 'frase'))->toBe('PADRAO');
+    Log::shouldHaveReceived('warning')->withArgs(fn (string $mensagem): bool => str_contains($mensagem, 'Imagem do destaque ausente'));
+})->group('kit');
 
-    // Outra visita à tela pública não repete o aviso (SEC-A1): um por hora por caminho.
+it('[CT-55] imagem ausente gera um aviso, não um por visita à tela pública', function (): void {
+    Log::spy();
+    Log::shouldReceive('channel')->andReturnSelf();
+
+    loginDoAdendo(['destaque' => 'imagem', 'imagem_do_destaque' => 'telas-de-acesso/sumiu.png'] + aparenciaDeTeste('P'));
     $this->get('/admin/login')->assertOk();
+
     Log::shouldHaveReceived('warning')->once()->withArgs(fn (string $mensagem): bool => str_contains($mensagem, 'Imagem do destaque ausente'));
 })->group('kit');
 
@@ -362,7 +369,7 @@ it('[CT-52] rascunho com SVG não salvo não vira imagem temporária', function 
     expect(Cache::get('aparencia-preview:'.auth()->id().':'.$id)['imagem_temporaria'] ?? null)->toBeNull();
 })->group('kit');
 
-it('[CT-50] a aparência que o componente devolve não traz imagem nem cor que a tela não usa', function (): void {
+it('[CT-56] a aparência que o componente devolve não traz imagem nem cor que a tela não usa', function (): void {
     definirAparenciaGlobal([
         'destaque'   => 'nenhum', 'imagem_do_destaque' => imagemDoDestaqueNoDisco(),
         'ilustracao' => 'nenhuma', 'cor_da_ilustracao' => '#00ff88',

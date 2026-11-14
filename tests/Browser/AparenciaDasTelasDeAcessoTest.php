@@ -43,7 +43,7 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    Storage::disk('public')->delete(['kit/ct-b04-logo.png', 'kit/ct-b04-arte.png']);
+    Storage::disk('public')->delete(['kit/ct-b04-logo.png', 'kit/ct-b04-arte.png', 'kit/ct-b09-logo.png']);
 });
 
 /**
@@ -549,8 +549,12 @@ function aparenciaCheiaDoAdendo(array $extra = []): array
 }
 
 it('[CT-B09] no celular a faixa mostra só a logo ou o nome da aplicação', function (bool $comLogo): void {
+    // Logo num arquivo só deste teste: o `afterEach` apaga a do CT-B04, e um nome compartilhado
+    // deixava a faixa às vezes sem a logo (QA-21).
     if ($comLogo) {
-        identidadeComArquivosReais();
+        Storage::disk('public')->put('kit/ct-b09-logo.png', UploadedFile::fake()->image('logo.png', 413, 80)->get());
+        gravarConfiguracao('logo', 'kit/ct-b09-logo.png');
+        alinharConfiguracoesDoKit();
     }
     definirAparenciaGlobal(aparenciaCheiaDoAdendo());
 
@@ -597,8 +601,11 @@ it('[CT-B10] a rede se move, o botão pausa e retoma', function (): void {
     $pagina->click('Pausar o movimento')->wait(0.2);
     $parado = $pagina->script($ponto);
     $pagina->wait(0.6);
+    // O rótulo diz a próxima ação, e o botão não usa `aria-pressed` junto (QA-25: os dois ao mesmo
+    // tempo fazem o leitor de tela anunciar "Retomar o movimento, pressionado").
     expect($pagina->script($ponto))->toBe($parado, 'a rede deveria ter parado')
-        ->and($pagina->script("document.querySelector('[data-kit-pausa]').getAttribute('aria-pressed')"))->toBe('true');
+        ->and($pagina->script("document.querySelector('[data-kit-pausa]').hasAttribute('aria-pressed')"))->toBeFalse()
+        ->and(trim((string) $pagina->script("document.querySelector('[data-kit-pausa]').innerText")))->toBe('Retomar o movimento');
 
     $pagina->click('Retomar o movimento')->wait(0.6);
     expect($pagina->script($ponto))->not->toBe($parado, 'a rede deveria ter voltado a se mover');
@@ -645,7 +652,7 @@ function visitaComMovimentoReduzido(string $url): mixed
     return (fn () => new self($this->browserType, $this->device, $this->url, ['reducedMotion' => 'reduce', ...$this->options]))->call($pendente);
 }
 
-it('[CT-B10] com "reduzir movimento" no sistema a rede fica parada e sem botão', function (): void {
+it('[CT-B13] com "reduzir movimento" no sistema a rede fica parada e sem botão', function (): void {
     definirAparenciaGlobal(aparenciaCheiaDoAdendo());
 
     $pagina = visitaComMovimentoReduzido('/admin/login')->resize(1440, 900);
@@ -659,7 +666,7 @@ it('[CT-B10] com "reduzir movimento" no sistema a rede fica parada e sem botão'
         ->and($pagina->script("document.querySelector('[data-kit-pausa]').hidden"))->toBeTrue();
 });
 
-it('[CT-B10] no celular, onde a rede não aparece, o laço de animação não roda', function (): void {
+it('[CT-B14] no celular, onde a rede não aparece, o laço de animação não roda', function (): void {
     definirAparenciaGlobal(aparenciaCheiaDoAdendo());
 
     $pagina = visit('/admin/login')->resize(390, 844);
@@ -697,7 +704,7 @@ it('[CT-B12] a imagem grande do destaque não cobre os textos numa tela baixa', 
         ->and($m['imagem'])->toBeLessThanOrEqual($m['base'] + 0.5, 'a imagem invadiu a base com os textos');
 });
 
-it('[CT-B12] num painel estreito o botão de pausar continua inteiro dentro do painel', function (): void {
+it('[CT-B15] num painel estreito o botão de pausar continua inteiro dentro do painel', function (): void {
     definirAparenciaGlobal([...aparenciaNosTetos('direita'), 'tamanho_do_painel' => 30, 'ilustracao' => 'rede', 'movimento' => true]);
 
     $pagina = visit('/admin/login')->resize(1024, 768);

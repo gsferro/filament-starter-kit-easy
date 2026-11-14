@@ -108,7 +108,7 @@ própria, no mesmo formulário da organização. Nada muda para quem atualiza o 
 - Dois layouts só (`classico`, `painel`); cartão/cobertura ficam fora até haver pedido (juiz cego,
   item 2)
 - Fundo do painel: cor (primária da instalação/organização, ou hex próprio) ou a arte já
-  configurada em Identidade — **sem upload novo no editor**: não há rascunho de arquivo a limpar
+  configurada em Identidade; a imagem própria do destaque central (Adendo 1) é o único upload do editor, só PNG/JPEG/WebP em `telas-de-acesso/`, e o preview a mostra antes de salvar pela URL temporária do Livewire *(alterado em 2026-11-14: Adendo 1)*
 - Recuperar senha, redefinição, verificação de e-mail e 2FA usam a aparência **global**; só login,
   cadastro e bloqueio conhecem a organização (sem contexto confiável nas demais)
 - Preview sem alternador de tema: trocar o tema no iframe mudaria a preferência do próprio admin
@@ -208,7 +208,7 @@ Nenhuma nova.
 - `padraoDoPainel(): array` — o objeto inicial (layout `painel`, formulário à direita, fundo cor,
   logo ligada, alternador ligado)
 - `aplicar(AuthDesignerConfig $base, ?array $aparencia): AuthDesignerConfig` — `null`/clássico devolve
-  `$base` (o mesmo objeto); `painel` reconstrói com `mediaSize 50%`, posição pelo lado, mídia = a arte
+  `$base` (o mesmo objeto); `painel` reconstrói com `mediaSize` = a largura escolhida (30–70 %, padrão 50 %) *(alterado em 2026-11-14: Adendo 1)*, posição pelo lado, mídia = a arte
   da identidade, lida no request (P-15), blur 0, alternador conforme a opção, hooks preservados *(alterado em 2026-11-13: P-15, QA-05)*
 - `corDoPainel(?array, ?Tenant): string` — sempre uma cor concreta: o `#RRGGBB` da aparência, senão a primária da
   organização, senão a da instalação (hex, com `#rgb` expandido, ou a constante `oklch` da paleta), senão o âmbar 600
@@ -253,7 +253,7 @@ Nenhuma nova.
   maior que o título do formulário), `apoio`; tudo escapado
 - CSS: moldura de 8px, raio 16px, overlay só sobre arte, contraste do texto garantido por fundo
   sólido ou overlay; abaixo de 1024px o painel vira faixa de até 112px acima do formulário
-  (logo + frase; o apoio some), reservando à direita o espaço do alternador de tema; cor em que o texto escuro tem mais contraste que o branco (inclusive a primária default)
+  só com a logo ou o nome (P-22: frase, apoio, destaque e ilustração somem) *(alterado em 2026-11-14: Adendo 1)*, reservando à direita o espaço do alternador de tema; cor em que o texto escuro tem mais contraste que o branco (inclusive a primária default)
   passa o texto a escuro (P-18) *(alterado em 2026-11-13: BP-23)*
 - **Atende**: RQ-01, RQ-07
 

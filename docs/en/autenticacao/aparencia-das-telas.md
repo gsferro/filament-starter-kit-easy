@@ -151,7 +151,9 @@ Identity tab artwork (not the provider's media) and the switcher the providers c
 rest by itself (the width and side chosen on the screen, no blur).
 
 A brand panel appearance saved before the width, centerpiece and illustration options keeps looking
-the same: whatever it lacks takes the default — 50%, no centerpiece, no illustration.
+the same on desktop: whatever it lacks takes the default — 50%, no centerpiece, no illustration. On
+phones, like every brand panel appearance, the strip now shows only the logo or the name (the
+headline goes away).
 
 ## How it works inside
 

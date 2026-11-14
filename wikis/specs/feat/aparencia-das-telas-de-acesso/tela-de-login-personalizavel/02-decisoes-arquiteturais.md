@@ -63,7 +63,7 @@ kit, para sempre) · surpreendente ✅ (o "painel" é renderizado onde o pacote 
 trade-off ✅ (controle total do HTML × compatibilidade com o pacote e com o CSS existente)
 
 **Decisão**: o layout `painel` é o modo lateral do próprio pacote (`media-left`/`media-right`,
-`mediaSize 50%`) com o conteúdo da mídia trocado pelo painel de marca, no partial `media` que o kit
+`mediaSize` com a largura escolhida, 30–70 %, padrão 50 % *(alterado em 2026-11-14: Adendo 1)*) com o conteúdo da mídia trocado pelo painel de marca, no partial `media` que o kit
 já sobrescreve. O layout `auth.blade.php` do pacote continua sendo o do vendor.
 
 **Por quê**: o `.fi-auth-layout`, as classes `media-*`, o hook `FOOTER` e a regra
