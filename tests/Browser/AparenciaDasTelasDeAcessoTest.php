@@ -783,7 +783,10 @@ it('[CT-B17] no painel, o botão de login social e o desafio anti-robô ficam vi
             return JSON.stringify({
                 form: { l: form.left, r: form.right },
                 social: caixa(social), socialVisivel: !!social && social.getClientRects().length > 0,
-                anti: caixa(anti), antiExibido: !!anti && getComputedStyle(anti).display !== 'none',
+                anti: caixa(anti),
+                // Visível de verdade (CX-B4): nenhum ancestral escondido, `visibility` e opacidade.
+                antiExibido: !!anti && anti.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+                    && !!anti.closest('.fi-auth-form-container'),
             });
         })()
     JS), true, flags: JSON_THROW_ON_ERROR);
@@ -791,7 +794,9 @@ it('[CT-B17] no painel, o botão de login social e o desafio anti-robô ficam vi
     expect($m['socialVisivel'])->toBeTrue('o botão de login social sumiu no painel')
         ->and($m['social']['left'])->toBeGreaterThanOrEqual($m['form']['l'] - 0.5)
         ->and($m['social']['right'])->toBeLessThanOrEqual($m['form']['r'] + 0.5)
-        ->and($m['antiExibido'])->toBeTrue('o desafio anti-robô foi escondido no painel');
+        ->and($m['antiExibido'])->toBeTrue('o desafio anti-robô foi escondido no painel')
+        ->and($m['anti']['left'])->toBeGreaterThanOrEqual($m['form']['l'] - 0.5)
+        ->and($m['anti']['right'])->toBeLessThanOrEqual($m['form']['r'] + 0.5);
 })->with(['computador' => 1440, 'celular' => 390]);
 
 /**

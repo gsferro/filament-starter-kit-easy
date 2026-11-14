@@ -163,13 +163,9 @@ final class AparenciaDasTelasDeAcesso
                 continue;
             }
 
-            $telas[$familia] = ($propria['layout'] ?? null) === self::LAYOUT_CLASSICO
-                ? ['layout' => self::LAYOUT_CLASSICO]
-                : self::normalizarTela($propria, $origem.':'.$familia);
-
-            if ($telas[$familia] === null) {
-                unset($telas[$familia]);
-            }
+            // Tela própria com layout ausente ou desconhecido cai no clássico, como qualquer layout
+            // inválido (P-04) — e não no login (RD-B7 da revisão dos Adendos 2 e 3).
+            $telas[$familia] = self::normalizarTela($propria, $origem.':'.$familia) ?? ['layout' => self::LAYOUT_CLASSICO];
         }
 
         if ($telas === []) {
@@ -375,7 +371,9 @@ final class AparenciaDasTelasDeAcesso
             return null;
         }
 
-        $de     = self::cor($aparencia['gradiente_de'] ?? null) ?? self::primariaEm(600, $organizacao);
+        // Tom 600 DA PALETA também com primária hex (RD-B6): o fundo sólido usa o hex cru (QA-10),
+        // mas o gradiente anuncia "tom 600 e tom 900" e os dois saem da mesma paleta.
+        $de     = self::cor($aparencia['gradiente_de'] ?? null) ?? self::primariaEm(600, $organizacao, daPaleta: true);
         $ate    = self::cor($aparencia['gradiente_ate'] ?? null) ?? self::primariaEm(900, $organizacao);
         $angulo = self::DIRECOES_DO_GRADIENTE[$aparencia['gradiente_direcao'] ?? 'diagonal'] ?? self::DIRECOES_DO_GRADIENTE['diagonal'];
 
@@ -386,14 +384,14 @@ final class AparenciaDasTelasDeAcesso
      * Um tom da cor primária — a da organização, senão a da instalação, senão o âmbar que o
      * Filament usa sem primária configurada (P-28: "a cor padrão do Filament").
      */
-    public static function primariaEm(int $tom, ?Tenant $organizacao): string
+    public static function primariaEm(int $tom, ?Tenant $organizacao, bool $daPaleta = false): string
     {
         $resolvida = ($organizacao !== null ? CorPrimaria::resolver($organizacao->cor_primaria, $organizacao->cor_primaria_nome) : [])
             ?: CorPrimaria::paleta();
 
         $primaria = $resolvida['primary'] ?? null;
 
-        if (is_string($primaria) && $tom !== 600) {
+        if (is_string($primaria) && ($tom !== 600 || $daPaleta)) {
             $paleta   = Color::hex(self::hexCompleto($primaria));
             $primaria = $paleta;
         }
@@ -437,11 +435,81 @@ final class AparenciaDasTelasDeAcesso
         }
 
         $html = Str::markdown($texto, ['html_input' => 'strip', 'allow_unsafe_links' => false]);
-        $html = strip_tags($html, '<p><br><strong><em><del><a>');
-        // Do `<a>`, só o `href` (que o CommonMark já filtrou): fora `title` e qualquer outro atributo.
-        $html = (string) preg_replace('/<a\s[^>]*?href="([^"]*)"[^>]*>/i', '<a href="$1" rel="noopener noreferrer">', $html);
 
-        return new HtmlString(trim($html));
+        return new HtmlString(self::soAFormatacaoAcordada($html));
+    }
+
+    /**
+     * O HTML do Markdown reduzido, por um parser de verdade (e não regex — SEC-B1 da revisão dos
+     * Adendos 2 e 3), à formatação acordada: `p`, `br`, `strong`, `em`, `del` e `a`. Todo atributo
+     * sai; o `<a>` fica só com o `href` que o CommonMark já filtrou (`allow_unsafe_links`), e só com
+     * esquema seguro, mais `rel`. Qualquer outro elemento vira o seu texto.
+     */
+    private static function soAFormatacaoAcordada(string $html): string
+    {
+        $documento = new \DOMDocument;
+        $anterior  = libxml_use_internal_errors(true);
+        $documento->loadHTML('<?xml encoding="utf-8"?><div id="raiz">'.$html.'</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        libxml_use_internal_errors($anterior);
+
+        $raiz = $documento->getElementById('raiz');
+
+        if ($raiz === null) {
+            return '';
+        }
+
+        self::limparNo($raiz);
+
+        $saida = '';
+
+        foreach ($raiz->childNodes as $filho) {
+            $saida .= $documento->saveHTML($filho);
+        }
+
+        return trim($saida);
+    }
+
+    private static function limparNo(\DOMNode $no): void
+    {
+        $documento = $no->ownerDocument;
+
+        if ($documento === null) {
+            return;
+        }
+
+        $permitidos = ['p', 'br', 'strong', 'em', 'del', 'a'];
+
+        foreach (iterator_to_array($no->childNodes) as $filho) {
+            if (! $filho instanceof \DOMElement) {
+                if (! $filho instanceof \DOMText) {
+                    $no->removeChild($filho);
+                }
+
+                continue;
+            }
+
+            self::limparNo($filho);
+
+            $tag = strtolower($filho->tagName);
+
+            if (! in_array($tag, $permitidos, true)) {
+                $no->replaceChild($documento->createTextNode($filho->textContent), $filho);
+
+                continue;
+            }
+
+            $href = $tag === 'a' ? $filho->getAttribute('href') : '';
+
+            foreach (iterator_to_array($filho->attributes) as $atributo) {
+                $filho->removeAttribute($atributo->nodeName);
+            }
+
+            if ($tag === 'a' && preg_match('#^(https?://|mailto:|/(?!/))#i', $href) === 1) {
+                $filho->setAttribute('href', $href);
+                $filho->setAttribute('rel', 'noopener noreferrer');
+            }
+        }
     }
 
     /** O texto que a tela mostra, para medir o teto (P-27): sem tags, entidades decodificadas, espaços normalizados. */

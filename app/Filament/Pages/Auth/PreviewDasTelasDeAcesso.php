@@ -173,8 +173,7 @@ class PreviewDasTelasDeAcesso extends SimplePage
     {
         $temporarias = $this->rascunhoAutorizado()['imagem_temporaria'] ?? [];
 
-        return (is_array($temporarias) ? ($temporarias[$this->familiaDaAparencia()] ?? null) : null)
-            ?? AparenciaDasTelasDeAcesso::urlDaImagem($caminho);
+        return $temporarias[$this->familiaDaAparencia()] ?? AparenciaDasTelasDeAcesso::urlDaImagem($caminho);
     }
 
     /** A família da tela escolhida no seletor do preview (P-26). */

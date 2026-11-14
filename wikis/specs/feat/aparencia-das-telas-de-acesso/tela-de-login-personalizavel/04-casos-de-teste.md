@@ -70,9 +70,9 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-20, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
 | R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 |
 | R25 — Processo do Adendo 1 | processo/mínimo | RQ-17, RQ-18 | execução pela sessão | CT-21 (cenários, `03`), CT-23 (docs e capturas) |
-| R26 — Uma aparência por tela | isolamento/completo | RQ-25, RQ-26, P-25, P-26 | estado × evento, decisão | CT-58, CT-59, CT-60, CT-61, CT-62, CT-63, CT-64, CT-73 |
+| R26 — Uma aparência por tela | isolamento/completo | RQ-25, RQ-26, P-25, P-26 | estado × evento, decisão | CT-58, CT-59, CT-60, CT-61, CT-62, CT-63, CT-64, CT-73, CT-74, CT-75, CT-78 |
 | R27 — Textos formatados | segurança/completo | RQ-27, P-27 | EP, BVA, conteúdo hostil | CT-57, CT-65, CT-66, CT-67 |
-| R28 — Cor primária e gradiente | apresentação/padrão | RQ-28, RQ-29, P-28, P-29 | EP, valor hostil | CT-68, CT-69, CT-70 |
+| R28 — Cor primária e gradiente | apresentação/padrão | RQ-28, RQ-29, P-28, P-29 | EP, valor hostil | CT-68, CT-69, CT-70, CT-76, CT-77 |
 | R29 — Social e anti-robô no painel | regressão/padrão | RQ-31, RQ-32, RQ-33 | EP por painel e tela | CT-71, CT-72, CT-B17 |
 | R30 — Faixa do celular com arte | apresentação/padrão | RQ-30, P-30 | BVA de largura | CT-B16 |
 
@@ -1126,6 +1126,11 @@ Destinos automatizados (implementados):
 | CT-71 | Login social no painel | R29 | EP por painel | G2 | Pest feature HTTP | P | — |
 | CT-72 | Anti-robô no painel | R29 | EP por tela | G2 | Pest feature HTTP | P | — |
 | CT-73 | Organização com aparência por tela | R26 | estado × evento | G2 | Pest feature HTTP | T | — |
+| CT-74 | Cópia do login com imagem e cor | R26 | rastreio de escrita | G1 | componente Livewire | P | — |
+| CT-75 | Tela própria com layout inválido = clássico | R26 | EP | G2 | Pest feature HTTP | P | — |
+| CT-76 | Saída pública sem cores do gradiente fora dele | R28 | papel × ação | G1 | componente Livewire | P | — |
+| CT-77 | Gradiente vazio com primária hex | R28 | EP | G2 | Pest feature HTTP | P | — |
+| CT-78 | Preview: imagem não salva herdada do login | R26 | estado × evento | G2 | componente Livewire | P | — |
 | CT-B16 | Arte fora da faixa do celular | R30 | BVA | G4 | browser | B | — |
 | CT-B17 | Social e anti-robô visíveis no painel | R29 | geometria | G4 | browser | B | — |
 | CT-B12 | Destaque sem cobrir os textos | R20 | geometria | G4 | browser | B | — |
@@ -1513,4 +1518,23 @@ Funcionalidade: Adendos 2 e 3
     Esquema do Cenário: [CT-71] O login social aparece no layout painel nos três painéis
     Esquema do Cenário: [CT-72] O anti-robô aparece no layout painel em login, cadastro e esqueci a senha
       E a chave secreta nunca sai
+```
+
+### Acréscimos da revisão do diff dos Adendos 2 e 3
+
+```gherkin
+# language: pt
+Funcionalidade: Achados da revisão dos Adendos 2 e 3
+
+  Regra: R26 — Cópia e herança
+
+    Cenário: [CT-74] Desligar "igual ao login" com imagem gravada copia a imagem e a cor, e salva
+    Esquema do Cenário: [CT-75] Tela própria com layout inválido cai no clássico
+      Exemplos: layout desconhecido, layout ausente
+    Cenário: [CT-78] No preview, a tela que segue o login usa a imagem ainda não salva do login
+
+  Regra: R28 — Saída pública e paleta
+
+    Cenário: [CT-76] O componente não devolve as cores do gradiente fora do gradiente
+    Cenário: [CT-77] Com primária hex, o gradiente vazio vai do tom 600 ao 900 da mesma paleta
 ```

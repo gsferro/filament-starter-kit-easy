@@ -17,14 +17,13 @@ use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Group;
-use Filament\Schemas\Components\Tabs;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Components\Text;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Livewire\Component as Livewire;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -57,38 +56,49 @@ final class EditorDeAparenciaDasTelas
      */
     public static function campos(): Group
     {
+        /*
+         * Uma seção colapsável por tela, e não abas: a tela de configurações tem uma regra para as
+         * suas abas (só as de primeiro nível, adiadas) e para os campos (sempre dentro de uma seção
+         * colapsável com ícone) — `ConfiguracoesSecoesColapsaveisTest`. Seção recolhida continua
+         * montada, então nada se perde ao salvar.
+         */
         return Group::make([
-            Tabs::make('telas_da_aparencia')
-                ->label('Telas')
-                ->tabs([
-                    Tab::make('Login')
-                        ->schema([
-                            Text::make('Vale também para os dois fatores, o bloqueio de sessão e a confirmação de e-mail.')
-                                ->color('gray'),
-                            ...self::camposDaTela(raiz: true),
-                        ]),
-                    self::abaDeTelaPropria('cadastro', 'Cadastro', 'Vale para o cadastro aberto e para o aceite de convite.'),
-                    self::abaDeTelaPropria('recuperacao', 'Esqueci a senha', 'Vale para o pedido de recuperação e para a redefinição de senha.'),
-                ])
+            Section::make('Login')
+                ->description('Vale também para os dois fatores, o bloqueio de sessão e a confirmação de e-mail.')
+                ->icon('heroicon-o-arrow-right-end-on-rectangle')
+                ->collapsible()
+                ->persistCollapsed()
+                ->id('aparencia-das-telas-login')
+                ->schema(self::camposDaTela(raiz: true))
+                ->columns(2)
                 ->columnSpanFull(),
+            self::secaoDeTelaPropria('cadastro', 'Cadastro', 'heroicon-o-user-plus', 'Vale para o cadastro aberto e para o aceite de convite.'),
+            self::secaoDeTelaPropria('recuperacao', 'Esqueci a senha', 'heroicon-o-key', 'Vale para o pedido de recuperação e para a redefinição de senha.'),
         ])
             ->statePath('aparencia_das_telas')
             ->columnSpanFull();
     }
 
     /**
-     * A aba de uma tela com aparência própria (P-25): "Igual ao login" ligado = a tela segue o login;
+     * A seção de uma tela com aparência própria (P-25): "Igual ao login" ligado = a tela segue o login;
      * desligado = a tela tem a sua, que nasce como CÓPIA do login daquele momento.
      */
-    private static function abaDeTelaPropria(string $familia, string $rotulo, string $explicacao): Tab
+    private static function secaoDeTelaPropria(string $familia, string $rotulo, string $icone, string $explicacao): Section
     {
         $caminho = "telas.{$familia}";
 
-        return Tab::make($rotulo)
+        return Section::make($rotulo)
+            ->description($explicacao)
+            ->icon($icone)
+            ->collapsible()
+            ->collapsed()
+            ->persistCollapsed()
+            ->id("aparencia-das-telas-{$familia}")
+            ->columnSpanFull()
             ->schema([
                 Toggle::make("{$caminho}.igual_ao_login")
                     ->label('Igual ao login')
-                    ->helperText($explicacao.' Desligado, esta tela passa a ter a sua aparência, começando como cópia da do login.')
+                    ->helperText('Desligado, esta tela passa a ter a sua aparência, começando como cópia da do login.')
                     ->default(true)
                     ->live()
                     ->afterStateUpdated(function (?bool $state, Get $get, Set $set) use ($caminho): void {
@@ -116,6 +126,16 @@ final class EditorDeAparenciaDasTelas
         foreach (array_keys(AparenciaDasTelasDeAcesso::padraoDoPainel()) as $campo) {
             $estado[$campo] = $get($campo);
         }
+
+        // O `Get` devolve o estado JÁ convertido do upload (o caminho, em string); o campo da cópia
+        // precisa do formato interno do FileUpload, `[uuid => caminho]` — sem isto, salvar a cópia
+        // derrubava a validação com TypeError (CX-B1 da revisão dos Adendos 2 e 3).
+        if (is_string($estado['imagem_do_destaque'] ?? null)) {
+            $estado['imagem_do_destaque'] = [(string) Str::uuid() => $estado['imagem_do_destaque']];
+        }
+
+        // O auxiliar da cor (não gravado) acompanha a cópia, senão a cor copiada some da tela (CX-B5).
+        $estado['origem_da_cor'] = filled($estado['cor'] ?? null) ? 'propria' : 'primaria';
 
         return $estado;
     }
@@ -482,10 +502,14 @@ final class EditorDeAparenciaDasTelas
         return $tela;
     }
 
-    /** Texto puro como Markdown que o mostra literalmente: toda pontuação ASCII escapada. */
+    /**
+     * Texto puro como Markdown que o mostra literalmente: a pontuação ASCII que o Markdown
+     * interpreta escapada — inclusive `&` (entidade) e `:` (autolink de URL), que mudavam a exibição
+     * de um texto antigo salvo pelo editor (CX-B2, RD-B5).
+     */
     private static function escaparMarkdown(?string $texto): ?string
     {
-        return $texto === null ? null : (string) preg_replace('/([\\\\`*_{}\[\]()#+\-.!|<>~])/', '\\\\$1', $texto);
+        return $texto === null ? null : (string) preg_replace('/([\\\\`*_{}\[\]()#+\-.!|<>~&:])/', '\\\\$1', $texto);
     }
 
     /**
@@ -570,7 +594,13 @@ final class EditorDeAparenciaDasTelas
         $estados = [AparenciaDasTelasDeAcesso::FAMILIA_LOGIN => $aparencia['imagem_do_destaque'] ?? null];
 
         foreach (AparenciaDasTelasDeAcesso::FAMILIAS_COM_APARENCIA_PROPRIA as $familia) {
-            $estados[$familia] = $aparencia['telas'][$familia]['imagem_do_destaque'] ?? null;
+            $tela = $aparencia['telas'][$familia] ?? null;
+
+            // A tela que segue o login usa a imagem do login, também no preview (CX-B3): o estado
+            // escondido dela não conta.
+            $estados[$familia] = is_array($tela) && ($tela['igual_ao_login'] ?? true) === false
+                ? ($tela['imagem_do_destaque'] ?? null)
+                : $estados[AparenciaDasTelasDeAcesso::FAMILIA_LOGIN];
         }
 
         return array_filter(array_map(self::imagemTemporaria(...), $estados));

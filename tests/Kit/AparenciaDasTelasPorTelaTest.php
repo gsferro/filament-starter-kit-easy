@@ -16,7 +16,10 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Support\Colors\Color;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 /**
@@ -187,7 +190,7 @@ it('[CT-57] Markdown hostil não deixa elemento executável, estilo nem imagem',
 
     expect($arvore->query('//*[@onerror or @onfocus or @onclick]')->length)->toBe(0)
         ->and($arvore->query("{$frase}//script | {$frase}//style | {$frase}//img | {$frase}//iframe | {$frase}//h1")->length)->toBe(0)
-        ->and($arvore->query("{$frase}//a[starts-with(normalize-space(@href), 'javascript:')]")->length)->toBe(0)
+        ->and($arvore->query("{$frase}//a[starts-with(normalize-space(@href), 'javascript:') or starts-with(normalize-space(@href), '//') or @title or @onclick]")->length)->toBe(0)
         ->and($arvore->query("//script[contains(., 'alert(1)')]")->length)->toBe(0);
 })->with([
     'html cru'          => ['<b onclick="alert(1)">Marca</b><script>alert(1)</script>'],
@@ -196,6 +199,9 @@ it('[CT-57] Markdown hostil não deixa elemento executável, estilo nem imagem',
     'título'            => ['# Título'],
     'estilo'            => ['<style>body{display:none}</style>'],
     'iframe'            => ['<iframe src="https://exemplo.test"></iframe>'],
+    // A limpeza é por DOM, não por regex (SEC-B1): título com `href=` não engole link, nem sobra.
+    'título com href'   => ['[a](https://exemplo.test "x href=") [b](javascript:alert(1))'],
+    'sem esquema'       => ['[c](//exemplo.test/x)'],
 ])->group('kit');
 
 it('[CT-65] a formatação acordada chega à tela', function (string $markdown, string $xpath): void {
@@ -225,7 +231,8 @@ it('[CT-66] o teto mede o texto visível e há um teto bruto de 4 KiB', function
 ])->group('kit');
 
 it('[CT-67] texto gravado antes do Adendo 2 aparece igual, e continua igual depois de salvo no editor', function (): void {
-    $antigo = '*Oferta* <empresa> [acesse](x)';
+    // Com entidade e URL: o editor não pode trocar `&copy;` por © nem criar link (CX-B2, RD-B5).
+    $antigo = '*Oferta* <empresa> [acesse](x) A &copy; B https://exemplo.test/x';
     definirAparenciaGlobal(['frase' => $antigo, 'formato_dos_textos' => null] + aparenciaDeTeste('P'));
 
     expect(textoDoPainelDeMarca(htmlDe('/admin/login'), 'frase'))->toBe($antigo);
@@ -331,3 +338,68 @@ it('[CT-72] o anti-robô aparece no layout painel em login, cadastro e esqueci a
     'esqueci a senha'      => ['/admin/password-reset/request'],
     'cadastro por convite' => ['cadastro'],
 ])->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| Achados da revisão do diff dos Adendos 2 e 3
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-74] desligar "igual ao login" com imagem gravada no login copia a imagem e a cor, e salva', function (): void {
+    Storage::disk('public')->put('telas-de-acesso/do-login.png', 'png');
+    definirAparenciaGlobal(['destaque' => 'imagem', 'imagem_do_destaque' => 'telas-de-acesso/do-login.png', 'cor' => '#336699'] + aparenciaDeTeste('P'));
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    $tela = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh()
+        ->set('data.aparencia_das_telas.telas.recuperacao.igual_ao_login', false);
+
+    // O auxiliar da cor acompanha a cópia (CX-B5): a cor própria continua à vista.
+    expect($tela->get('data.aparencia_das_telas.telas.recuperacao.origem_da_cor'))->toBe('propria');
+
+    $tela->call('save')->assertHasNoFormErrors();
+
+    expect(configuracaoGravada('aparencia_das_telas')['telas']['recuperacao']['imagem_do_destaque'])->toBe('telas-de-acesso/do-login.png')
+        ->and(configuracaoGravada('aparencia_das_telas')['telas']['recuperacao']['cor'])->toBe('#336699');
+})->group('kit');
+
+it('[CT-75] tela própria com layout inválido cai no clássico, e não no login', function (mixed $layout): void {
+    definirAparenciaGlobal([...painelComFrase('direita', 'LOGIN'), 'telas' => ['recuperacao' => ['layout' => $layout] + painelComFrase('esquerda', 'X')]]);
+
+    afirmarAparenciaNoHtml(htmlDe('/admin/password-reset/request'), null);
+})->with(['desconhecido' => 'xyz', 'ausente' => null])->group('kit');
+
+it('[CT-76] a aparência devolvida pelo componente não traz as cores do gradiente fora do gradiente', function (): void {
+    definirAparenciaGlobal(['fundo' => 'cor', 'gradiente_de' => '#112233', 'gradiente_ate' => '#445566'] + aparenciaDeTeste('P'));
+    $this->get('/admin/login')->assertOk();
+
+    $aparencia = Livewire::test(TelaLogin::class)->instance()->aparenciaDaTela();
+
+    expect($aparencia['gradiente_de'])->toBeNull()->and($aparencia['gradiente_ate'])->toBeNull();
+})->group('kit');
+
+it('[CT-77] com primária hex, o gradiente vazio vai do tom 600 ao 900 da mesma paleta', function (): void {
+    config()->set('kit.cor_primaria_hex', '#336699');
+    definirAparenciaGlobal(['fundo' => 'gradiente', 'gradiente_de' => null, 'gradiente_ate' => null] + aparenciaDeTeste('P'));
+
+    $paleta = Color::hex('#336699');
+    $estilo = arvoreDoHtml(htmlDe('/admin/login'))->query('//*[@data-kit-aparencia="painel"]')->item(0)->getAttribute('style');
+
+    expect($estilo)->toContain("linear-gradient(135deg, {$paleta[600]}, {$paleta[900]})");
+})->group('kit');
+
+it('[CT-78] no preview, a tela que segue o login usa a imagem ainda não salva do login', function (): void {
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    $tela = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh()
+        ->fillForm(['aparencia_das_telas' => [
+            'destaque'           => 'imagem',
+            'imagem_do_destaque' => UploadedFile::fake()->image('nova.png', 200, 120),
+        ] + aparenciaDeTeste('P')]);
+
+    $id       = rascunhoDoEditor($tela);
+    $mapa     = Cache::get('aparencia-preview:'.auth()->id().':'.$id)['imagem_temporaria'];
+
+    expect($mapa)->toHaveKeys(['login', 'cadastro', 'recuperacao'])
+        ->and($mapa['cadastro'])->toBe($mapa['login'])
+        ->and($mapa['recuperacao'])->toBe($mapa['login']);
+})->group('kit');

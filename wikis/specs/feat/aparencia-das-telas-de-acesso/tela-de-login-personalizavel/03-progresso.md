@@ -101,6 +101,26 @@ Diff `cbb65fb6..81f62ce6` (sem `wikis/` e `art/`). Workflow de 4 revisores em pa
 - [x] Login social e anti-robô no painel: sem mudança de código; CT-71/72 e CT-B17 provam — 2026-11-14
 - [x] Dois defeitos pegos pelos testes durante a implementação: o `required()` do `layout` disparava em abas ocultas (CT-28) e, retirado da raiz, deixava um estado forjado zerar a aparência (CT-20) — `required` só na raiz — 2026-11-14
 - [x] Falsificabilidade: `daFamilia()` ignorando as telas derruba CT-58/60/64; sem a regra do celular, o CT-B16 cai — 2026-11-14
+- [x] Abas internas do editor trocadas por três seções colapsáveis com id e ícone: a tela de configurações proíbe abas aninhadas e campo fora de seção (`ConfiguracoesSecoesColapsaveisTest` CT-01/03/05/06) — 2026-11-14
+- [x] Revisão do diff dos Adendos 2 e 3 — ver "Revisão do Diff — Adendos 2 e 3" — 2026-11-14
+
+## Revisão do Diff — Adendos 2 e 3
+
+Diff `fe9ea589..0d9034fa` (sem `wikis/`, `art/`, `docs/`). Workflow: Codex (`exec --yolo`, juiz cego), `fw-revisor-diff` e auditoria `filament-security-audit`, um cético por achado. Os 14 achados foram confirmados; todos corrigidos com teste que cai sem a correção.
+
+| Achado | Severidade | O que foi feito |
+|---|---|---|
+| CX-B1 | alta (reproduzido) | a cópia do login levava a imagem como string ao campo de upload, e salvar derrubava a validação com TypeError: a cópia usa o formato interno `[uuid => caminho]`; CT-74 cai sem a correção |
+| CX-B5 / RD-B1 | média | a cópia leva o auxiliar `origem_da_cor`, e a cor própria continua à vista; CT-74 |
+| CX-B2 / RD-B5 | média | texto antigo salvo pelo editor trocava `&copy;` por © e criava link de URL: `&` e `:` também escapados; CT-67 com entidade e URL |
+| CX-B3 / RD-B3 | média | no preview, a tela que segue o login usa a imagem não salva do login, e o estado escondido não conta; CT-78 |
+| CX-B4 | baixa (teste vácuo) | CT-B17 confere o anti-robô com `checkVisibility()` e dentro do formulário |
+| RD-B2 | média | sobre o gradiente, o nome em destaque e o botão de pausar também ganham a superfície escura |
+| SEC-B1 | baixa | a limpeza do HTML do Markdown passa a ser por DOM, não regex: `title` e `href` sem esquema seguro saem; CT-57 com título e `//` |
+| SEC-B2 / RD-B4 | baixa | `aparenciaDaTela()` sem as cores do gradiente fora do gradiente; CT-76 |
+| RD-B6 | baixa | com primária hex, o gradiente vazio usa os tons 600 e 900 da mesma paleta; CT-77 |
+| RD-B7 | baixa | tela própria com layout ausente ou desconhecido cai no clássico (P-04), não no login; CT-75 |
+
 
 ## Testes
 

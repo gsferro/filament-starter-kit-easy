@@ -81,6 +81,11 @@ trait VesteAparenciaDasTelas
             $aparencia['cor_da_ilustracao'] = null;
         }
 
+        if (($aparencia['fundo'] ?? 'cor') !== 'gradiente') {
+            $aparencia['gradiente_de']  = null;
+            $aparencia['gradiente_ate'] = null;
+        }
+
         return $aparencia;
     }
 
