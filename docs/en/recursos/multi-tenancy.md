@@ -85,6 +85,14 @@ The count is the selector's own list: the user's reachable **active** organizati
 
 ![The selector visible and hidden, on the same screen](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/seletor-organizacao.gif)
 
+## Each organization with its own login screen
+
+The organization form in `/admin` has the **Telas de acesso** (sign-in screens) section: with *Usar a
+aparência padrão* (use the default appearance) on, the organization follows the authentication-screen
+appearance set in the settings; off, it gets its own — the classic layout or the brand panel, with its
+color and logo —, which applies to its login with `?org={slug}`, its registration and its session lock
+([details](../../autenticacao/aparencia-das-telas/)).
+
 ## Organization insights under `/admin`
 
 The organization list includes four widgets for global operations — the overview above the table and the three detail widgets below it:
@@ -153,7 +161,7 @@ reaching the screen: `IdentifyTenant` resolves the tenant from the route and alr
 (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:canAccessTenant:40`,
 `app/Models/User.php:canAccessTenant:838`); only after that does `DefinirTenantDePermissoes` — the
 kit's `tenantMiddleware` — fix the per-tenant role context
-(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:622`,
+(`app/Providers/Filament/AppPanelProvider.php:tenantMiddleware:626`,
 `app/Http/Middleware/DefinirTenantDePermissoes.php:setPermissionsTeamId:46`).
 
 ```mermaid

@@ -84,7 +84,7 @@ function gravarSegredosL1(): void
 it('[CT-01] mantém ordem, rótulos e ícone da aba Aplicação', function (): void {
     $abas = componentesConfiguracoesL1(Livewire::test(ConfiguracoesDoKit::class), Tab::class);
 
-    expect($abas->map->getLabel()->all())->toBe(['Identidade', 'E-mail', 'Tabelas', 'Registro', 'Login', 'Aplicação']);
+    expect($abas->map->getLabel()->all())->toBe(['Identidade', 'E-mail', 'Tabelas', 'Registro', 'Login', 'Telas de acesso', 'Aplicação']);
     expect($abas->last()->getIcon())->toBe('heroicon-o-squares-2x2');
 })->group('kit');
 
@@ -140,7 +140,7 @@ it('[CT-06] dá chave própria e conteúdo adiado a cada aba', function (): void
     expect($grupos)->toHaveCount(1);
     expect($grupos->first()->getKey())->not->toBeEmpty();
     $abas = componentesConfiguracoesL1($componente, Tab::class);
-    expect($abas->map->getLabel()->all())->toBe(['Identidade', 'E-mail', 'Tabelas', 'Registro', 'Login', 'Aplicação']);
+    expect($abas->map->getLabel()->all())->toBe(['Identidade', 'E-mail', 'Tabelas', 'Registro', 'Login', 'Telas de acesso', 'Aplicação']);
     expect($abas->map->getKey()->unique()->count())->toBe($abas->count());
     foreach ($abas as $aba) {
         expect($aba->getKey())->not->toBeEmpty();
@@ -151,16 +151,16 @@ it('[CT-06] dá chave própria e conteúdo adiado a cada aba', function (): void
     }
 })->group('kit');
 
-it('[CT-07] renderiza seis marcadores ocupados e nenhum campo inicialmente', function (): void {
+it('[CT-07] renderiza um marcador ocupado por aba e nenhum campo inicialmente', function (): void {
     $componente = Livewire::test(ConfiguracoesDoKit::class);
     expect($componente->get('loadedDeferredSchemas'))->toBe([]);
     $html = $componente->html();
-    expect(substr_count($html, 'fi-sc-loading'))->toBe(6);
-    expect(substr_count($html, 'aria-busy="true"'))->toBe(6);
+    expect(substr_count($html, 'fi-sc-loading'))->toBe(7);
+    expect(substr_count($html, 'aria-busy="true"'))->toBe(7);
     foreach (componentesConfiguracoesL1($componente, Field::class) as $campo) {
         $this->assertStringNotContainsString('id="'.$campo->getId().'"', $html);
     }
-    foreach (['Identidade', 'E-mail', 'Tabelas', 'Registro', 'Login', 'Aplicação'] as $rotulo) {
+    foreach (['Identidade', 'E-mail', 'Tabelas', 'Registro', 'Login', 'Telas de acesso', 'Aplicação'] as $rotulo) {
         $componente->assertSee($rotulo);
     }
 })->group('kit');
@@ -179,12 +179,13 @@ it('[CT-08] carrega somente os campos da aba pedida', function (string $aba, str
         }
     }
 })->with([
-    'Identidade' => ['identidade', 'nome_da_aplicacao'],
-    'E-mail'     => ['email', 'mail_from_address'],
-    'Tabelas'    => ['tabelas', 'paginacao_padrao'],
-    'Registro'   => ['registro', 'registro_habilitado'],
-    'Login'      => ['login', 'login_rodape'],
-    'Aplicação'  => ['aplicacao', 'hub_de_navegacao'],
+    'Identidade'      => ['identidade', 'nome_da_aplicacao'],
+    'E-mail'          => ['email', 'mail_from_address'],
+    'Tabelas'         => ['tabelas', 'paginacao_padrao'],
+    'Registro'        => ['registro', 'registro_habilitado'],
+    'Login'           => ['login', 'login_rodape'],
+    'Telas de acesso' => ['telas-de-acesso', 'layout'],
+    'Aplicação'       => ['aplicacao', 'hub_de_navegacao'],
 ])->group('kit');
 
 it('[CT-09] carrega a aba com erro de mínimo sem gravar a edição válida', function (): void {

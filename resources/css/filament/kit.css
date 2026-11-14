@@ -252,6 +252,199 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 }
 
 /*
+| Layout "painel" das telas de acesso (wiki `feat/aparencia-das-telas-de-acesso`).
+|
+| O painel de marca nasce no partial `media` do auth-designer, que o kit sobrescreve
+| (`resources/views/filament/auth/painel-de-marca.blade.php`); o layout do pacote NÃO é
+| publicado (ADR-03). Toda regra abaixo é escopada por `:has(.kit-painel-de-marca)`: o layout
+| clássico não tem essa classe, então nada aqui o alcança.
+|
+| Desktop (>= 1024px): a seção de mídia do pacote (`mediaSize 50%`) ganha uma moldura de 8px e o
+| painel fica arredondado. Abaixo de 1024px o pacote ESCONDE a mídia lateral; aqui ela volta como
+| uma faixa curta acima do formulário (P-09), e o eixo vira coluna nos dois lados para a faixa
+| ficar sempre em cima. O rodapé continua na dobra pela regra `body:has(> .fi-auth-layout)` acima.
+|
+| Cor: `--kit-painel-fundo` vem da view, validada (hex ou constante da paleta); sem ela, a primária
+| do painel. Texto branco sobre véu escuro; quando o texto escuro tem mais contraste com a cor (`--claro`) o texto
+| passa a escuro e o véu sai (P-18).
+*/
+.fi-auth-layout:has(.kit-painel-de-marca) .fi-auth-media-section {
+    padding: 0.5rem;
+}
+
+.fi-auth-layout .fi-auth-media-wrapper:has(.kit-painel-de-marca) {
+    inset: 0.5rem;
+    border-radius: 1rem;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.fi-auth-media-wrapper .kit-painel-de-marca ~ .fi-auth-media-overlay {
+    display: none;
+}
+
+.kit-painel-de-marca {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    background-color: var(--kit-painel-fundo, var(--primary-600));
+    color: #fff;
+    overflow: hidden;
+}
+
+.kit-painel-de-marca__arte {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.kit-painel-de-marca__veu {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.65), rgb(0 0 0 / 0.15));
+}
+
+.kit-painel-de-marca--cor::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0));
+}
+
+.kit-painel-de-marca--claro {
+    color: #111827;
+}
+
+.kit-painel-de-marca--claro::before {
+    display: none;
+}
+
+.kit-painel-de-marca--claro .kit-painel-de-marca__apoio {
+    color: rgb(17 24 39 / 0.8);
+}
+
+.kit-painel-de-marca--claro .kit-painel-de-marca__selo {
+    box-shadow: 0 0 0 1px rgb(17 24 39 / 0.12);
+}
+
+.kit-painel-de-marca__conteudo {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 3rem;
+    min-width: 0;
+}
+
+.kit-painel-de-marca__selo {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    background-color: #fff;
+}
+
+.kit-painel-de-marca__logo {
+    display: block;
+    height: 2rem;
+    width: auto;
+    max-width: 12rem;
+    object-fit: contain;
+}
+
+.kit-painel-de-marca__nome {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.kit-painel-de-marca__textos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 32rem;
+}
+
+/* Nunca maior que o título do formulário (1.5rem no `fi-simple-header-heading`). */
+.kit-painel-de-marca__frase {
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.kit-painel-de-marca__apoio {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: rgb(255 255 255 / 0.88);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1023.98px) {
+    .fi-auth-layout.media-left:has(.kit-painel-de-marca),
+    .fi-auth-layout.media-right:has(.kit-painel-de-marca) {
+        flex-direction: column;
+    }
+
+    .fi-auth-layout.media-left:has(.kit-painel-de-marca) .fi-auth-media-section,
+    .fi-auth-layout.media-right:has(.kit-painel-de-marca) .fi-auth-media-section {
+        display: block;
+        width: 100%;
+        height: 7rem;
+        flex: 0 0 7rem;
+    }
+
+    /*
+    | O alternador de tema do pacote é fixo no canto superior direito (1.5rem) e cobriria a faixa:
+    | a faixa reserva a largura dele à direita. Sem alternador, sobra espaço — e só isso.
+    */
+    .kit-painel-de-marca__conteudo {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 1rem;
+        padding: 1rem 9rem 1rem 1.25rem;
+    }
+
+    .kit-painel-de-marca__topo {
+        flex-shrink: 0;
+    }
+
+    .kit-painel-de-marca__nome {
+        white-space: nowrap;
+        font-size: 1rem;
+    }
+
+    .kit-painel-de-marca__logo {
+        height: 1.5rem;
+    }
+
+    .kit-painel-de-marca__frase {
+        font-size: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .kit-painel-de-marca__apoio {
+        display: none;
+    }
+
+    .fi-auth-layout.media-left:has(.kit-painel-de-marca) .fi-auth-content-section,
+    .fi-auth-layout.media-right:has(.kit-painel-de-marca) .fi-auth-content-section {
+        padding: 1.5rem 1rem;
+    }
+}
+
+/*
 | Cabeçalho dos painéis (feat/cabecalho-do-painel): a marca composta
 | ("nome do projeto | nome do painel | logo") que `CabecalhoDoPainel::marca()`
 | devolve ao `brandLogo()`, e o bloco do usuário do render hook
@@ -422,4 +615,88 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 
 :root .fio-button--primary {
     background-color: var(--primary-700);
+}
+
+/*
+| Preview do editor de "Telas de acesso" (`resources/views/filament/admin/preview-das-telas-de-acesso.blade.php`).
+| Classes do kit, sem utilitária Tailwind: a blade é do kit e a CSS compilada do Filament não
+| as teria.
+*/
+.kit-preview-das-telas {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.kit-preview-das-telas__controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.kit-preview-das-telas__campo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.kit-preview-das-telas__select {
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    padding: 0.25rem 2rem 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    background-color: transparent;
+}
+
+.kit-preview-das-telas__atualizar {
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.kit-preview-das-telas__larguras {
+    display: inline-flex;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.kit-preview-das-telas__largura {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.kit-preview-das-telas__largura[aria-pressed='true'] {
+    background-color: var(--primary-600);
+    color: #fff;
+}
+
+.kit-preview-das-telas__quadro {
+    display: flex;
+    justify-content: center;
+    border: 1px solid var(--gray-200);
+    border-radius: 0.75rem;
+    background-color: var(--gray-100);
+    overflow: hidden;
+}
+
+.kit-preview-das-telas__palco {
+    position: relative;
+    overflow: hidden;
+}
+
+.kit-preview-das-telas__iframe {
+    display: block;
+    border: 0;
+    background-color: #fff;
+}
+
+.kit-preview-das-telas__nota {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--gray-500);
 }

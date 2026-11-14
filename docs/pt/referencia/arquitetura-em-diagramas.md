@@ -8,7 +8,7 @@ Vinte diagramas Mermaid mostram como o kit funciona hoje: arquitetura, acesso po
 
 ## DG-01 — Arquitetura em camadas
 
-Do navegador aos três painéis Filament (`app/Providers/Filament/AppPanelProvider.php:id:82`, `app/Providers/Filament/AdminPanelProvider.php:id:72`, `app/Providers/Filament/InfraPanelProvider.php:id:94`), pelo acesso por papel, até banco, fila, cache e os serviços opcionais. É o mesmo bloco do README — a fonte é única.
+Do navegador aos três painéis Filament (`app/Providers/Filament/AppPanelProvider.php:id:83`, `app/Providers/Filament/AdminPanelProvider.php:id:73`, `app/Providers/Filament/InfraPanelProvider.php:id:95`), pelo acesso por papel, até banco, fila, cache e os serviços opcionais. É o mesmo bloco do README — a fonte é única.
 
 ```mermaid
 flowchart TD
@@ -151,7 +151,7 @@ accDescr: A ordem de decisão de canAccessPanel, da indisponibilidade da conta a
 
 ## DG-13 — ER do núcleo
 
-As entidades centrais e como se referenciam: a conta (`users`) a uma organização via `tenant_user` (`app/Models/User.php:tenants:797`, `app/Models/Tenant.php:users:118`), a um papel via `model_has_roles` (Shield), o vínculo social (`app/Models/User.php:vinculosSociais:807`), o convite — com `convidado_por_id` anulável (`database/migrations/2026_08_13_000002_create_convites_table.php:convidado_por_id:42`) — via `papel()`, `tenant()` e `convidadoPor()` (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) e o catálogo de agentes de IA — sem relação nenhuma com `projetos`, a tabela de demonstração (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` e `agent_conversations` ficam de fora deste ER: guardam identificadores como texto solto (`subject_type`/`subject_id`, `participant_type`/`participant_id`), sem chave estrangeira de verdade, e desenhar uma relação para eles inventaria uma FK que o schema não tem. `passkeys` fica de fora pelo motivo oposto: a tabela existe (vendor), mas nenhuma feature do kit a usa — as passkeys estão desligadas (`enablePasskeys()` não é chamado).
+As entidades centrais e como se referenciam: a conta (`users`) a uma organização via `tenant_user` (`app/Models/User.php:tenants:797`, `app/Models/Tenant.php:users:123`), a um papel via `model_has_roles` (Shield), o vínculo social (`app/Models/User.php:vinculosSociais:807`), o convite — com `convidado_por_id` anulável (`database/migrations/2026_08_13_000002_create_convites_table.php:convidado_por_id:42`) — via `papel()`, `tenant()` e `convidadoPor()` (`app/Models/Convite.php:papel:116`, `:tenant:122`, `:convidadoPor:128`) e o catálogo de agentes de IA — sem relação nenhuma com `projetos`, a tabela de demonstração (`app/Traits/BelongsToTenant.php:tenant:82`). `ai_runs` e `agent_conversations` ficam de fora deste ER: guardam identificadores como texto solto (`subject_type`/`subject_id`, `participant_type`/`participant_id`), sem chave estrangeira de verdade, e desenhar uma relação para eles inventaria uma FK que o schema não tem. `passkeys` fica de fora pelo motivo oposto: a tabela existe (vendor), mas nenhuma feature do kit a usa — as passkeys estão desligadas (`enablePasskeys()` não é chamado).
 
 ```mermaid
 erDiagram

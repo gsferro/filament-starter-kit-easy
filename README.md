@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Testes](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=testes)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Cobertura](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
-[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-2.442-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
+[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-2.507-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -188,11 +188,11 @@ Não é vitrine: é o inventário de tudo que já existe, e o que você não vai
 
 | | `/app` | `/admin` | `/infra` | **Total** |
 |---|---:|---:|---:|---:|
-| **Telas navegáveis** | 15 | 32 | 29 | **76** |
+| **Telas navegáveis** | 15 | 33 | 29 | **77** |
 | Resources | 4 | 8 | 8 | **20** |
 | Páginas próprias | 6 | 6 | 14 | **26** |
 | Widgets | 1 | 9 | 19 | **29** |
-| Rotas `GET` | 24 | 39 | 35 | **98** |
+| Rotas `GET` | 24 | 40 | 35 | **99** |
 
 O `/app` é o menor de propósito — ele nasce **vazio**, porque é onde o seu projeto entra. Os outros
 dois já vêm completos.
@@ -214,7 +214,7 @@ dois já vêm completos.
 |---|---:|
 | Pacotes de produção | **61** |
 | Pacotes de desenvolvimento | **21** |
-| Migrations | **64** |
+| Migrations | **65** |
 | Policies | **16** |
 | Comandos `kit:*` | **9** |
 
@@ -222,7 +222,7 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-26) | **2.990**, com **12.578 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **210** em `Kit` + `Tenancy` (**247** no total) |
+| Arquivos de teste | **213** em `Kit` + `Tenancy` (**251** no total) |
 | PHPStan | **level 8**, zero erros |
 | Cobertura de testes (`app/`, linha) | **86 %** — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** regras, todas passando |
@@ -230,7 +230,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **12** |
-| Features especificadas (`wikis/specs/`) | **90** |
+| Features especificadas (`wikis/specs/`) | **91** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **27** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -247,6 +247,7 @@ dois já vêm completos.
 - **Ficha de usuário em tela cheia** (`/admin/users/{id}` e `/app/users/{id}`): conta, situação, origem e datas, com o botão de editar no topo. **Só no `/admin`** ela lista as organizações e os papéis da pessoa — no `/app` a omissão é a feature: contá-los ali diria a quem administra uma organização que aquela conta também é de outra ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/operacao/roteiro-de-features.html))
 - **Avatar desenhado aqui dentro**: sem foto, o provider padrão do Filament manda o navegador de cada pessoa pedir `ui-avatars.com` em toda tela — com as iniciais na query string e o `Referer` do painel junto. `App\Support\AvatarDeIniciais` devolve um SVG embutido nos três painéis: mesma aparência, nenhuma requisição externa
 - Auth Designer: tela de login em duas colunas — a arte **mostra o nome da aplicação**, lido de `APP_NAME` a cada carregamento; para usar a sua imagem, envie em `/admin/configuracoes-da-aplicacao`
+- **Aparência das telas de acesso escolhida na tela** (o clássico de sempre por default): em *Configurações da aplicação › Telas de acesso*, troque para o **painel de marca** — formulário numa metade, painel arredondado com cor ou arte, logo e duas frases na outra, faixa de marca no celular —, com **preview** (pré-visualização) das alterações antes de salvar (frase de destaque até 80 caracteres e texto de apoio até 160, texto puro); com organizações, cada uma usa a padrão ou a sua — a própria nasce como **cópia independente** da padrão, e voltar à padrão **descarta** a própria. Instalação existente que atualiza continua com as telas idênticas até alguém escolher ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/aparencia-das-telas.html))
 - **Registro aberto opcional** (desligado por default): cadastro sem convite no `/app`, com papel único, aprovação manual e validação de e-mail — cada um em sua chave ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/registro-aberto.html))
 - Lockscreen: bloqueio de sessão por inatividade (30 min), registrado nos 3 painéis — a tela de bloqueio usa o mesmo layout do login (Auth Designer), não o layout simples do Filament
 - Impersonate, log de autenticação, auditoria de alterações (owen-it)
@@ -457,7 +458,7 @@ php artisan kit:tenancy           # liga o modo multi-tenant (opt-in)
 | 3 | **Credenciais do seeder** | `KIT_ADMIN_EMAIL` / `KIT_ADMIN_PASSWORD` no `.env` | ✅ |
 | 4 | **Cor primária** | `KIT_COR_PRIMARIA` no `.env` (nome de uma cor da paleta do Filament), ou `KIT_COR_PRIMARIA_HEX` com um hexadecimal livre — o hex vence o nome quando os dois estão preenchidos | ✅ |
 | 5 | **[Multi-tenancy](https://gsferro.github.io/filament-starter-kit-easy/pt/recursos/multi-tenancy.html)** | `php artisan kit:tenancy`, e o termo exibido em `config/kit.php` → `tenancy.label` | ✅ |
-| 6 | **Arte do login** | nenhuma: ela **mostra o nome da aplicação** (`APP_NAME`) sozinha. Para trocar por uma imagem sua, envie em `/admin/configuracoes-da-aplicacao` | ✅ (pelo nome) |
+| 6 | **Arte do login** | nenhuma: ela **mostra o nome da aplicação** (`APP_NAME`) sozinha. Para trocar por uma imagem sua, envie em `/admin/configuracoes-da-aplicacao`; para trocar o **layout** das telas de acesso (clássico ou painel de marca, com preview), use a aba *Telas de acesso* da mesma tela | ✅ (pelo nome) |
 | 7 | **Acesso aos painéis** | o papel de cada usuário (`/admin` → Papéis, campo *Painel*); a regra que o lê é `App\Models\User::canAccessPanel()` | — |
 | 8 | **Matriz de permissões** | `database/seeders/PapeisSeeder.php` | — |
 | 9 | **Health checks** | `KitServiceProvider::configureHealthChecks()` | — |

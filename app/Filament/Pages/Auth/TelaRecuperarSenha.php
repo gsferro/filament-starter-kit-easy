@@ -2,8 +2,10 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Filament\Concerns\VesteAparenciaDasTelas;
 use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Support\ConfiguracaoDoLogin;
+use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Pages\Auth\RequestPasswordReset;
 use Filament\Schemas\Schema;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -28,8 +30,16 @@ use Illuminate\Http\RedirectResponse;
  */
 class TelaRecuperarSenha extends RequestPasswordReset
 {
+    use VesteAparenciaDasTelas;
+
     /** Regra do kit: página de auth redeclara o `$layout`. Ver `.ai/rules/auth.md`. */
     protected static string $layout = 'filament-auth-designer::components.layouts.auth';
+
+    /** Aparência da instalação: esta tela não conhece organização (P-06). */
+    public function getAuthDesignerConfig(): AuthDesignerConfig
+    {
+        return $this->aplicarAparencia(parent::getAuthDesignerConfig());
+    }
 
     /**
      * Mesma guarda de `TelaLogin::mount()`: com a chave ligada, a rota do painel devolve para a

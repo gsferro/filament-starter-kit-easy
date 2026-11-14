@@ -1,0 +1,377 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Support;
+
+use App\Models\Tenant;
+use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
+use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
+use Filament\Support\Colors\Color;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * A aparência das telas de autenticação: o que a instalação (e, com tenancy, a organização)
+ * escolheu, lido por request e aplicado sobre a configuração que os providers dão ao
+ * `caresome/filament-auth-designer`.
+ *
+ * ## Dois layouts, e o primeiro é "nada muda"
+ *
+ * - `classico` — a aparência de sempre. É o que vale com o valor gravado `null`, que é o default
+ *   de toda instalação: `aplicar()` devolve o MESMO objeto que recebeu, então a tela sai com o
+ *   HTML de antes (P-01);
+ * - `painel` — formulário numa coluna e, na outra metade, um painel de marca. É o modo lateral do
+ *   próprio pacote (`media-left`/`media-right`, `mediaSize 50%`) com o conteúdo da mídia trocado
+ *   pelo painel no partial `media` que o kit já sobrescreve. O layout do pacote não é publicado
+ *   (ADR-03 da wiki `feat/aparencia-das-telas-de-acesso`).
+ *
+ * ## Vocabulário fechado, lido de novo a cada request
+ *
+ * O valor vem de duas origens que o kit não controla por inteiro — a linha de settings e a coluna
+ * JSON da organização —, e a tela que o consome é a de LOGIN. Então `normalizar()` nunca lança:
+ * campo fora do vocabulário volta ao padrão do campo e layout desconhecido volta ao clássico, com
+ * `warning` (P-04). Nenhum campo aceita HTML ou CSS: cor só `#RRGGBB`, textos com teto e escapados
+ * na view (P-05).
+ *
+ * ## Organização: inteira ou nada
+ *
+ * Coluna nula = usa a da instalação. Não há herança por campo (ADR-02): a organização usa a padrão
+ * inteira ou a sua inteira.
+ */
+final class AparenciaDasTelasDeAcesso
+{
+    public const LAYOUT_CLASSICO = 'classico';
+
+    public const LAYOUT_PAINEL = 'painel';
+
+    public const LAYOUTS = [self::LAYOUT_CLASSICO, self::LAYOUT_PAINEL];
+
+    public const LADOS = ['esquerda', 'direita'];
+
+    public const FUNDOS = ['cor', 'arte'];
+
+    public const LIMITE_DA_FRASE = 80;
+
+    public const LIMITE_DO_APOIO = 160;
+
+    /**
+     * Só `#RRGGBB`: o valor vai para um atributo `style`, e nada além de hexadecimal entra lá.
+     *
+     * `\z`, e não `$`: o `$` do PCRE aceita uma quebra de linha no fim, e `#123456\n` passaria.
+     */
+    public const FORMATO_DA_COR = '/^#[0-9a-fA-F]{6}\z/';
+
+    /**
+     * O objeto com que o layout `painel` nasce — no editor da instalação e na organização que
+     * deixa de usar a padrão quando a padrão ainda é o clássico.
+     *
+     * @return array{layout: string, lado_do_formulario: string, fundo: string, cor: ?string, frase: ?string, apoio: ?string, logo_no_painel: bool, alternador_de_tema: bool}
+     */
+    public static function padraoDoPainel(): array
+    {
+        return [
+            'layout'             => self::LAYOUT_PAINEL,
+            'lado_do_formulario' => 'direita',
+            'fundo'              => 'cor',
+            'cor'                => null,
+            'frase'              => null,
+            'apoio'              => null,
+            'logo_no_painel'     => true,
+            'alternador_de_tema' => true,
+        ];
+    }
+
+    /**
+     * O valor gravado, reduzido ao vocabulário. `null` = clássico.
+     *
+     * @param  string  $origem  `global` ou `tenant:{id}` — só para o log
+     * @return array{layout: string, lado_do_formulario: string, fundo: string, cor: ?string, frase: ?string, apoio: ?string, logo_no_painel: bool, alternador_de_tema: bool}|null
+     */
+    public static function normalizar(mixed $bruto, string $origem): ?array
+    {
+        if ($bruto === null || $bruto === []) {
+            return null;
+        }
+
+        if (! is_array($bruto)) {
+            self::avisarDescarte($origem, 'formato');
+
+            return null;
+        }
+
+        $layout = $bruto['layout'] ?? null;
+
+        if ($layout === self::LAYOUT_CLASSICO) {
+            return null;
+        }
+
+        if ($layout !== self::LAYOUT_PAINEL) {
+            self::avisarDescarte($origem, 'layout');
+
+            return null;
+        }
+
+        $padrao = self::padraoDoPainel();
+
+        return [
+            'layout'             => self::LAYOUT_PAINEL,
+            'lado_do_formulario' => self::umDe($bruto['lado_do_formulario'] ?? null, self::LADOS, $padrao['lado_do_formulario']),
+            'fundo'              => self::umDe($bruto['fundo'] ?? null, self::FUNDOS, $padrao['fundo']),
+            'cor'                => self::cor($bruto['cor'] ?? null),
+            'frase'              => self::texto($bruto['frase'] ?? null, self::LIMITE_DA_FRASE),
+            'apoio'              => self::texto($bruto['apoio'] ?? null, self::LIMITE_DO_APOIO),
+            'logo_no_painel'     => self::booleano($bruto['logo_no_painel'] ?? null, $padrao['logo_no_painel']),
+            'alternador_de_tema' => self::booleano($bruto['alternador_de_tema'] ?? null, $padrao['alternador_de_tema']),
+        ];
+    }
+
+    /**
+     * A da instalação — `config('kit.identidade.aparencia_das_telas')`, já sobreposta pelo banco
+     * no boot (`ConfiguracoesDoKit::aplicarNaConfig()`).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function global(): ?array
+    {
+        return self::normalizar(config('kit.identidade.aparencia_das_telas'), 'global');
+    }
+
+    /**
+     * A que vale para uma organização: a dela, se ela tem uma; senão a da instalação.
+     *
+     * Quem decide SE há organização (tenancy, painel, organização ativa) é quem chama — esta
+     * função só escolhe entre as duas aparências.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function daOrganizacao(?Tenant $organizacao): ?array
+    {
+        $propria = $organizacao?->aparencia_das_telas;
+
+        if ($organizacao === null || $propria === null) {
+            return self::global();
+        }
+
+        return self::normalizar($propria, 'tenant:'.$organizacao->getKey());
+    }
+
+    /**
+     * A configuração do pacote com a aparência aplicada.
+     *
+     * Clássico (`null`) devolve `$base` — o mesmo objeto, então nada do que os providers ou a
+     * página montaram muda. O `painel` reconstrói o objeto (ele é `final readonly`, sem `with()`):
+     * lado oposto ao do formulário, metade da tela, sem blur, e SEMPRE com mídia (a arte), porque o pacote
+     * só inclui o partial `media` — onde o painel nasce — quando há mídia
+     * (`vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php:30`).
+     *
+     * @param  array<string, mixed>|null  $aparencia
+     */
+    public static function aplicar(AuthDesignerConfig $base, ?array $aparencia): AuthDesignerConfig
+    {
+        if ($aparencia === null || ($aparencia['layout'] ?? null) !== self::LAYOUT_PAINEL) {
+            return $base;
+        }
+
+        // A mídia do painel é SEMPRE a arte da identidade, lida agora: é o fundo "arte" que a tela
+        // promete (P-15), em toda tela — inclusive no bloqueio, cuja mídia base pode ser a logo.
+        $media = IdentidadeDoKit::arteDoLogin();
+
+        return new AuthDesignerConfig(
+            position: ($aparencia['lado_do_formulario'] ?? 'direita') === 'esquerda' ? MediaPosition::Right : MediaPosition::Left,
+            media: $media,
+            mediaSize: '50%',
+            blur: 0,
+            mediaAlt: $base->mediaAlt ?? config('app.name'),
+            showThemeSwitcher: $base->showThemeSwitcher && (bool) ($aparencia['alternador_de_tema'] ?? true),
+            themePosition: $base->themePosition,
+            isVideo: false,
+            mediaMimeType: null,
+            renderHooks: $base->renderHooks,
+        );
+    }
+
+    /**
+     * A mesma configuração sem o alternador de tema — para o preview: o alternador grava a
+     * preferência no `localStorage` do navegador, o mesmo do admin que está editando, e clicar nele
+     * dentro do iframe trocaria o tema da própria tela de configurações.
+     */
+    public static function semAlternadorDeTema(AuthDesignerConfig $config): AuthDesignerConfig
+    {
+        return new AuthDesignerConfig(
+            position: $config->position,
+            media: $config->media,
+            mediaSize: $config->mediaSize,
+            blur: $config->blur,
+            mediaAlt: $config->mediaAlt,
+            showThemeSwitcher: false,
+            themePosition: $config->themePosition,
+            isVideo: $config->isVideo,
+            mediaMimeType: $config->mediaMimeType,
+            renderHooks: $config->renderHooks,
+        );
+    }
+
+    /**
+     * A cor de fundo do painel, como valor CSS seguro: o hexadecimal escolhido na aparência, senão
+     * a primária da organização, senão a da instalação, senão o âmbar 600 que o Filament usa sem
+     * primária configurada — sempre uma cor concreta, para o contraste do texto ser decidido (QA-04).
+     *
+     * O valor só pode vir de duas fontes, e as duas são fechadas: `#RRGGBB` validado, ou uma
+     * constante de `Filament\Support\Colors\Color` (resolvida por `CorPrimaria::resolver()`).
+     *
+     * @param  array<string, mixed>|null  $aparencia
+     */
+    public static function corDoPainel(?array $aparencia, ?Tenant $organizacao): string
+    {
+        $propria = self::cor($aparencia['cor'] ?? null);
+
+        if ($propria !== null) {
+            return $propria;
+        }
+
+        $resolvida = ($organizacao !== null ? CorPrimaria::resolver($organizacao->cor_primaria, $organizacao->cor_primaria_nome) : [])
+            ?: CorPrimaria::paleta();
+
+        $primaria = $resolvida['primary'] ?? null;
+
+        if (is_string($primaria)) {
+            // A primária hexadecimal aceita `#rgb` (`CorPrimaria`): expandida, para o contraste do
+            // texto ser decidido sobre ela (QA-10 do gate, ciclo 2).
+            return preg_match('/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/', $primaria, $p) === 1
+                ? strtolower('#'.$p[1].$p[1].$p[2].$p[2].$p[3].$p[3])
+                : $primaria;
+        }
+
+        if (is_array($primaria) && is_string($primaria[600] ?? null)) {
+            return $primaria[600];
+        }
+
+        // Sem primária configurada, o Filament usa o âmbar: a cor é dita aqui, e não deixada à
+        // variável `--primary-600`, para o contraste do texto poder ser decidido (QA-04).
+        return Color::Amber[600];
+    }
+
+    /**
+     * O texto do painel deve ser ESCURO sobre esta cor? Escolhe a cor de texto de maior contraste
+     * (WCAG) entre o branco e o escuro do kit (`#111827`) — P-18, com o limiar do QA-04 do gate:
+     * um corte fixo deixava branco em cores médias (`#00aaff`, o âmbar 600 da primária default) com
+     * contraste abaixo de 3:1.
+     *
+     * Entende `#RRGGBB` e o `oklch(...)` das constantes de `Filament\Support\Colors\Color`
+     * (convertido a sRGB linear de verdade). Valor que não entende: `false` (texto branco).
+     */
+    public static function fundoClaro(?string $cor): bool
+    {
+        $luminancia = self::luminancia($cor);
+
+        if ($luminancia === null) {
+            return false;
+        }
+
+        $contrasteBranco = 1.05 / ($luminancia + 0.05);
+        $contrasteEscuro = ($luminancia + 0.05) / (self::LUMINANCIA_DO_TEXTO_ESCURO + 0.05);
+
+        return $contrasteEscuro > $contrasteBranco;
+    }
+
+    /** Luminância relativa de `#111827`, o texto escuro do painel (`kit.css`). */
+    private const LUMINANCIA_DO_TEXTO_ESCURO = 0.0118;
+
+    private static function luminancia(?string $cor): ?float
+    {
+        if ($cor === null) {
+            return null;
+        }
+
+        if (preg_match(self::FORMATO_DA_COR, $cor) === 1) {
+            $canal = static function (string $hex): float {
+                $c = hexdec($hex) / 255;
+
+                return $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+            };
+
+            return 0.2126 * $canal(substr($cor, 1, 2)) + 0.7152 * $canal(substr($cor, 3, 2)) + 0.0722 * $canal(substr($cor, 5, 2));
+        }
+
+        if (preg_match('/^oklch\(\s*([0-9.]+)(%?)\s+([0-9.]+)\s+([0-9.]+)/i', $cor, $partes) === 1) {
+            return self::luminanciaDoOklch(
+                (float) $partes[1] / ($partes[2] === '%' ? 100 : 1),
+                (float) $partes[3],
+                (float) $partes[4],
+            );
+        }
+
+        return null;
+    }
+
+    /**
+     * Luminância relativa de uma cor OKLCH, pela conversão de verdade OKLab → sRGB linear (Björn
+     * Ottosson). A aproximação `L³` errava a escolha em Fuchsia e Pink 600 (QA-11 do gate, ciclo 2).
+     */
+    private static function luminanciaDoOklch(float $l, float $c, float $h): float
+    {
+        $rad = deg2rad($h);
+        $a   = $c * cos($rad);
+        $b   = $c * sin($rad);
+
+        $l_ = ($l + 0.3963377774 * $a + 0.2158037573 * $b) ** 3;
+        $m_ = ($l - 0.1055613458 * $a - 0.0638541728 * $b) ** 3;
+        $s_ = ($l - 0.0894841775 * $a - 1.2914855480 * $b) ** 3;
+
+        $r = max(0.0, min(1.0, 4.0767416621 * $l_ - 3.3077115913 * $m_ + 0.2309699292 * $s_));
+        $g = max(0.0, min(1.0, -1.2684380046 * $l_ + 2.6097574011 * $m_ - 0.3413193965 * $s_));
+        $z = max(0.0, min(1.0, -0.0041960863 * $l_ - 0.7034186147 * $m_ + 1.7076147010 * $s_));
+
+        return 0.2126 * $r + 0.7152 * $g + 0.0722 * $z;
+    }
+
+    /**
+     * @param  list<string>  $permitidos
+     */
+    private static function umDe(mixed $valor, array $permitidos, string $padrao): string
+    {
+        return is_string($valor) && in_array($valor, $permitidos, true) ? $valor : $padrao;
+    }
+
+    private static function cor(mixed $valor): ?string
+    {
+        return is_string($valor) && preg_match(self::FORMATO_DA_COR, $valor) === 1 ? strtolower($valor) : null;
+    }
+
+    /**
+     * O texto como ele é gravado e medido (P-11): espaços das bordas e repetidos removidos; vazio
+     * ou só espaços é ausente. Público porque a validação da tela mede o teto sobre ESTE valor.
+     */
+    public static function textoLimpo(mixed $valor): ?string
+    {
+        if (! is_string($valor)) {
+            return null;
+        }
+
+        $limpo = trim(preg_replace('/\s+/u', ' ', $valor) ?? '');
+
+        return $limpo === '' ? null : $limpo;
+    }
+
+    private static function texto(mixed $valor, int $limite): ?string
+    {
+        $limpo = self::textoLimpo($valor);
+
+        // Acima do teto é inválido, e campo inválido volta ao padrão dele — ausente (P-04). Cortar
+        // mostraria na tela de login um texto que ninguém escreveu daquele jeito.
+        return $limpo === null || mb_strlen($limpo) > $limite ? null : $limpo;
+    }
+
+    private static function booleano(mixed $valor, bool $padrao): bool
+    {
+        return is_bool($valor) ? $valor : (in_array($valor, [0, 1, '0', '1'], true) ? (bool) $valor : $padrao);
+    }
+
+    private static function avisarDescarte(string $origem, string $motivo): void
+    {
+        Log::channel('autenticacao')->warning(
+            "[AparenciaDasTelasDeAcesso@normalizar] Aparencia invalida descartada | origem: {$origem} - motivo: {$motivo}",
+            ['origem' => $origem, 'motivo' => $motivo],
+        );
+    }
+}

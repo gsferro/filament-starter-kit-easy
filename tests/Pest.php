@@ -3,6 +3,7 @@
 use App\Console\Commands\KitUpdate;
 use App\Filament\Admin\Pages\HubDeAdministracao;
 use App\Filament\Admin\Resources\Users\UserResource;
+use App\Filament\Admin\Schemas\EditorDeAparenciaDasTelas;
 use App\Filament\Admin\Widgets\ProgressoOnboarding;
 use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\Pages\Auth\TelaBloqueio;
@@ -36,6 +37,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Laravel\Ai\Models\Conversation;
@@ -47,6 +49,7 @@ use Sehsah\FilamentRememberTable\Models\TableView;
 use Spatie\LaravelSettings\Models\SettingsProperty;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
+use Tests\Kit\fixtures\ComponenteDeRascunhoDeTeste;
 use Tests\TenancyTestCase;
 use Tests\TestCase;
 use Wallacemartinss\FilamentOnboarding\Enums\CompletionMode;
@@ -3375,4 +3378,141 @@ function acessoNaMesmaSessao(string $url): TestResponse
 function esperarAcessoLivre(string $url): void
 {
     expect(acessoNaMesmaSessao($url)->getStatusCode())->toBe(200, "GET {$url} nao terminou em 200");
+}
+
+/*
+|--------------------------------------------------------------------------
+| Aparência das telas de acesso (wiki `feat/aparencia-das-telas-de-acesso`) — helpers de
+| `tests/Kit/AparenciaDasTelasDeAcesso*Test.php` e `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php`
+|--------------------------------------------------------------------------
+| Aqui e não num arquivo de teste porque mais de um arquivo os usa (`.ai/rules/testes.md`).
+*/
+
+/**
+ * As aparências nomeadas do Setup Global do 04: `P` (padrão), `A` (organização A), `P0` (opcionais
+ * ausentes e flags falsas), `P2` (padrão posterior, diferente das outras), `B` (organização B).
+ *
+ * @return array<string, mixed>
+ */
+function aparenciaDeTeste(string $qual): array
+{
+    return match ($qual) {
+        'P' => [
+            'layout' => 'painel', 'lado_do_formulario' => 'esquerda', 'fundo' => 'cor', 'cor' => '#123456',
+            'frase'  => 'PADRAO', 'apoio' => 'APOIO P', 'logo_no_painel' => true, 'alternador_de_tema' => true,
+        ],
+        'A' => [
+            'layout' => 'painel', 'lado_do_formulario' => 'direita', 'fundo' => 'cor', 'cor' => '#654321',
+            'frase'  => 'ORG A', 'apoio' => 'APOIO A', 'logo_no_painel' => false, 'alternador_de_tema' => false,
+        ],
+        'B' => [
+            'layout' => 'painel', 'lado_do_formulario' => 'esquerda', 'fundo' => 'cor', 'cor' => '#0a0b0c',
+            'frase'  => 'ORG B', 'apoio' => 'APOIO B', 'logo_no_painel' => true, 'alternador_de_tema' => false,
+        ],
+        'P0' => [
+            'layout' => 'painel', 'lado_do_formulario' => 'esquerda', 'fundo' => 'cor', 'cor' => null,
+            'frase'  => null, 'apoio' => null, 'logo_no_painel' => false, 'alternador_de_tema' => false,
+        ],
+        'P2' => [
+            'layout' => 'painel', 'lado_do_formulario' => 'direita', 'fundo' => 'arte', 'cor' => '#abcdef',
+            'frase'  => 'P DOIS', 'apoio' => 'APOIO P2', 'logo_no_painel' => false, 'alternador_de_tema' => true,
+        ],
+        'classico' => ['layout' => 'classico'],
+    };
+}
+
+/** A padrão da instalação, no banco (lida pela tela) e na config (lida pelo request). */
+function definirAparenciaGlobal(?array $valor): void
+{
+    gravarConfiguracao('aparencia_das_telas', $valor);
+    config()->set('kit.identidade.aparencia_das_telas', $valor);
+}
+
+/** Logo da instalação no disco público, para o selo do painel de marca existir. */
+function comLogoNaIdentidade(): void
+{
+    Storage::fake('public');
+    Storage::disk('public')->put('logo-teste.png', 'png');
+    config()->set('kit.identidade.logo', 'logo-teste.png');
+}
+
+/** O HTML como árvore, para asserção contextual (nó, atributo, texto), não por substring. */
+function arvoreDoHtml(string $html): DOMXPath
+{
+    $anterior  = libxml_use_internal_errors(true);
+    $documento = new DOMDocument;
+    $documento->loadHTML('<?xml encoding="utf-8" ?>'.$html);
+    libxml_clear_errors();
+    libxml_use_internal_errors($anterior);
+
+    return new DOMXPath($documento);
+}
+
+/** O texto de um campo do painel de marca (`frase`|`apoio`), ou `null` se o bloco não existe. */
+function textoDoPainelDeMarca(string $html, string $campo): ?string
+{
+    $nos = arvoreDoHtml($html)->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' kit-painel-de-marca__{$campo} ')]");
+
+    return $nos->length === 0 ? null : $nos->item(0)->textContent;
+}
+
+/** Afirma a aparência EFETIVA no HTML do login: painel integral, ou nenhum rastro dele (`null`). */
+function afirmarAparenciaNoHtml(string $html, ?array $esperada): void
+{
+    $arvore = arvoreDoHtml($html);
+    $painel = $arvore->query('//*[@data-kit-aparencia="painel"]');
+
+    if ($esperada === null || ($esperada['layout'] ?? null) !== 'painel') {
+        expect($painel->length)->toBe(0)
+            ->and($html)->not->toContain('kit-painel-de-marca');
+
+        return;
+    }
+
+    expect($painel->length)->toBe(1)
+        ->and(textoDoPainelDeMarca($html, 'frase'))->toBe($esperada['frase'])
+        ->and(textoDoPainelDeMarca($html, 'apoio'))->toBe($esperada['apoio']);
+
+    $estilo = $painel->item(0)->getAttribute('style');
+
+    if (($esperada['cor'] ?? null) !== null && ($esperada['fundo'] ?? 'cor') === 'cor') {
+        expect($estilo)->toContain('--kit-painel-fundo: '.$esperada['cor']);
+    }
+
+    expect($arvore->query('//*[contains(@class,"kit-painel-de-marca__selo")]')->length)
+        ->toBe(($esperada['logo_no_painel'] ?? true) ? 1 : 0)
+        ->and($arvore->query('//*[contains(@class,"fi-auth-theme-switcher-wrapper")]')->length)
+        ->toBe(($esperada['alternador_de_tema'] ?? true) ? 1 : 0)
+        ->and(str_contains($html, ($esperada['lado_do_formulario'] ?? 'direita') === 'esquerda' ? 'media-right' : 'media-left'))->toBeTrue()
+        ->and(str_contains($html, ($esperada['lado_do_formulario'] ?? 'direita') === 'esquerda' ? 'media-left' : 'media-right'))->toBeFalse();
+}
+
+/** O id do rascunho que o editor gravou, lido da URL do iframe que ele renderiza. */
+function rascunhoDoEditor(Testable $componente): string
+{
+    $html = html_entity_decode($componente->refresh()->html());
+
+    preg_match('/rascunho=([A-Za-z0-9-]+)/', $html, $partes);
+    expect($partes[1] ?? null)->not->toBeNull('o editor não renderizou o iframe do preview');
+
+    return $partes[1];
+}
+
+/** Grava um rascunho como a pessoa autenticada (costura pública do editor) e devolve o id. */
+function rascunhoDe(string $escopo, ?array $aparencia, ?string $id = null): string
+{
+    $instancia = Livewire::test(ComponenteDeRascunhoDeTeste::class)->instance();
+
+    if ($id !== null) {
+        $instancia->setId($id);
+    }
+
+    EditorDeAparenciaDasTelas::urlDoPreview($instancia, $escopo, $aparencia);
+
+    return $instancia->getId();
+}
+
+function urlDoPreviewDe(?string $rascunho, string $tela = 'login', array $extra = []): string
+{
+    return route('kit.preview-das-telas-de-acesso', array_filter(['rascunho' => $rascunho, 'tela' => $tela, ...$extra], fn ($v) => $v !== null));
 }
