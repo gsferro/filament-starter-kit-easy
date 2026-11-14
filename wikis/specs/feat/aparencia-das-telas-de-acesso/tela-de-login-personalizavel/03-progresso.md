@@ -53,7 +53,7 @@
 ## 9. Testes e cenários
 
 - [x] CT e CT-B verdes — Kit 125/125, Tenancy 72/72, Entrega 5/5, Browser 40/40, 2026-11-13
-- [ ] Cenários 1 a 4
+- [x] Cenários 1 a 4 — ver Verificação Final, 2026-11-13
 
 ## Testes
 
@@ -77,7 +77,7 @@ Quatro passes independentes, em paralelo, sobre a árvore final contra `main` se
 |---|---|---|---|
 | RD-01 / CX-02 | eixos, Codex | bloqueio com fundo "arte" usava a logo ampliada como arte | P-15 → CT-36 → correção (`aplicar()` usa sempre a arte da identidade); CT-36 falha sem a correção |
 | SEC-01 / RD-02 | security-audit, eixos | `$wire.corDoPainelDeMarca()`/`logosDoPainelDeMarca()` revelavam cor/logo de organização no clássico | P-16 → CT-37 → correção; CT-37 falha sem a correção |
-| SEC-02 / BP-35 | security-audit, blueprint | rota do preview sem o `Authenticate` do painel | P-17 → CT-38 → correção (middleware do Filament) |
+| SEC-02 / BP-35 | security-audit, blueprint | rota do preview sem o `Authenticate` do painel | P-17 → CT-38 → correção: primeiro o middleware do Filament, *substituído* no ciclo 1 do gate (QA-01) por `canAccessPanel(admin)` na página |
 | SEC-03 / CX-01 | security-audit, Codex | escopo autorizado só no `mount()` | P-17 → CT-39 → correção (reautoriza a cada request) |
 | BP-23 | blueprint | texto branco ilegível sobre cor clara | P-18 → CT-40 → correção (`--claro`); CT-40 falha sem a correção |
 | CX-03 | Codex | voltar à padrão e sair sem recarregar restaurava a própria | RQ/P-12 → CT-41 → correção (`afterStateUpdated` do toggle) |
@@ -100,7 +100,7 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 | Rule | Veredito | Evidência |
 |---|---|---|
 | `.ai/rules/app.md` | aplicada | `Paineis::correnteOuPadrao()` em `VesteAparenciaDasTelas`; URLs de logo via `IdentidadeDoKit` (`asset()`); nenhum `Storage::url()` |
-| `.ai/rules/auth.md` | aplicada | toda página nova/alterada redeclara `$layout` (`TelaRedefinirSenha`, `TelaVerificacaoDeEmail`, `PreviewDasTelasDeAcesso`); par de testes: CT-33/CT-B06 + `TelasDeAutenticacaoTest` "página comum sem layout" verdes; guarda de `mount()` sem `routeIs()` |
+| `.ai/rules/auth.md` | aplicada | toda página nova/alterada redeclara `$layout`; par de testes CT-33/CT-B06 + `TelasDeAutenticacaoTest`; operação fora do painel que consulta `canAccessPanel()`: o preview pede `canAccessPanel(Filament::getPanel('admin'))` explicitamente, sem depender do painel corrente (QA-01 do ciclo 1, CT-38) |
 | `.ai/rules/config.md` | aplicada | `config/kit.php` ganha `identidade.aparencia_das_telas = null`, sem `env()` (estrutura governada pelo banco) |
 | `.ai/rules/css-filament.md` | aplicada | blades do kit só usam classes `kit-*` declaradas em `kit.css`; nenhum `display` nas imagens com `fi-logo-light/dark`; `filament:assets` rodado |
 | `.ai/rules/filament-resources.md` | n.a. | `TenantForm`/Edit/Create só ganham seção e mutação; nenhum Resource novo |
@@ -110,7 +110,7 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 | `.ai/rules/onboarding.md` | n.a. | nenhuma tela de onboarding tocada |
 | `.ai/rules/pages.md` | aplicada | campos da aba nova em `Section` pelo helper `secao()`, aba pelo helper `aba()` com `deferLoading`; `ConfiguracoesSecoesColapsaveisTest` 32/32; nenhum segredo |
 | `.ai/rules/providers-filament.md` | n.a. | nenhum plugin novo; só `usingResetPage`/`emailVerification` com classes do kit |
-| `.ai/rules/providers.md` | aplicada | rota do preview no `KitServiceProvider` com `web` explícito + `panel:admin` + `Authenticate` do Filament |
+| `.ai/rules/providers.md` | aplicada | rota do preview no `KitServiceProvider` com `web` explícito + `panel:admin` + `auth`; a autorização é da página *(alterado em 2026-11-14: QA-12)* |
 | `.ai/rules/settings.md` | aplicada | propriedade + linha no mapa + migration nova com limpeza de cache; lida por request (`AparenciaDasTelasDeAcesso::global()` no render); `KitInfoTest` 73 |
 | `.ai/rules/specs.md` | aplicada | citações `arquivo:símbolo:linha` (`citacoes.sh` exit 0; `CitacoesDeCodigoTest` verde) |
 | `.ai/rules/support.md` | n.a. | nenhuma escrita de `.env` |
@@ -130,7 +130,17 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 - [x] RQ-12: grep pelos identificadores do projeto e da URL de referência (não registrados aqui) em todo arquivo alterado contra `main`, incluindo a wiki — `{ git diff main --name-only; git ls-files --others --exclude-standard; } | sort -u` = 79 arquivos, 0 ocorrências *(alterado em 2026-11-13: QA-06 — o "80" anterior não tinha comando)*, 2026-11-13
 - [x] Regressão Kit 5045 testes, 0 falhas fora das contagens do README (corrigidas: `SiteDeDocumentacaoTest` 68/68); Tenancy 741/741; Browser 171/171 — 2026-11-13
 - [x] `phpstan analyse` 0 erros; `filacheck` 17/17; `pint --dirty` — 2026-11-13
-- [ ] Cenários 1 a 4 (pré-validação por `git archive` e `kit:update` local)
+- [x] Cenários 1 a 4 sobre `b28debff` (tag local `pre-aparencia-das-telas`): 1 e 2 por `git archive` + `kit:install --create-project` (2 com `kit:tenancy --force`), 3 e 4 por `create-project` da v0.52.1 + `kit:update --repo={kit} --tag=pre-aparencia-das-telas --all` (4 com `kit:tenancy` antes) — os 4 com todos os arquivos novos, `kit.identidade.aparencia_das_telas` = null e 5786 testes, 0 falhas; erros só em 1 (5) e 2 (4), todos `phpstan dump-parameters` com timeout de 60 s sob carga no `QualidadeDeCodigoTest`, verde isolado (31: 29 passaram, 2 pulados); pulados 1161 nos quatro = teto 1156 + 5 do `AparenciaDasTelasDeAcessoEntregaTest` (CT-23 × 4 e CT-24, guardados por `naArvoreDoKit()`: docs e README não viajam) — 2026-11-13
+- [ ] Cenários 1 a 4 sobre o commit pós-gate (`1b6d3a09`, tag local `pre-aparencia-das-telas-2`)
+
+## Débitos
+
+- **Q1 aberta** (instalação nova nasce no clássico ou no painel?): implementada a premissa estreita P-01 — nada muda sem decisão do admin, nem em instalação nova. Confirmar com o solicitante
+- **Q2 respondida pela leitura do texto original** (QA-03/QA-13): confirmação explícita do solicitante pendente; se a resposta for "só o login", vira Adendo
+- **Alternador de tema fora do teclado** (vendor, `tabindex="-1"` nos botões do `theme-switcher` do Filament), no clássico e no painel — CT-B03 prova o percurso sem armadilha, sem o alternador
+- **Organização no navegador**: as linhas de organização dos CT-B05/CT-B07 (editor da organização) não foram automatizadas em `tests/BrowserTenancy`; o comportamento está coberto por componente (CT-01, CT-10..CT-14, CT-41 em Tenancy)
+- **Positivo do painel em redefinir senha, confirmação de e-mail e 2FA** só por leitura de código e pelo CT-B06 (clássico); BP-51
+- **Preview sem a pilha do painel** (`MustTwoFactor`, `Locker`): sessão bloqueada ainda abriria o próprio rascunho (suspeita do gate, ciclo 2, não reproduzida); o rascunho só existe para quem acabou de editar no `/admin`
 
 ## Notas de Implementação
 

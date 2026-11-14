@@ -853,7 +853,14 @@ it('[CT-38] conta sem acesso ao admin não abre o preview', function (): void {
         ->and($resposta->getContent())->not->toContain('SEGREDO DO RASCUNHO');
 })->group('kit');
 
-it('[CT-40] cor clara deixa o texto do painel escuro', function (?string $cor, bool $tem): void {
+it('[CT-40] cor clara deixa o texto do painel escuro', function (?string $cor, bool $tem, ?string $primaria = null): void {
+    // Linhas com primária da instalação: a cor do painel fica vazia e cai nela (hex ou nome da paleta).
+    if ($primaria !== null) {
+        str_starts_with($primaria, '#')
+            ? config(['kit.cor_primaria_hex' => $primaria, 'kit.cor_primaria' => null])
+            : config(['kit.cor_primaria_hex' => null, 'kit.cor_primaria' => $primaria]);
+    }
+
     definirAparenciaGlobal(['cor' => $cor, 'fundo' => 'cor'] + aparenciaDeTeste('P'));
 
     $html   = $this->get('/admin/login')->assertOk()->getContent();
@@ -872,4 +879,9 @@ it('[CT-40] cor clara deixa o texto do painel escuro', function (?string $cor, b
     'azul 700'       => ['#1d4ed8', false],
     // Sem cor: a primária default (âmbar 600 da paleta, em oklch) também pede texto escuro.
     'primária default' => [null, true],
+    // Ciclo 2 do gate: primária `#rgb` (QA-10) e tons 600 em que o branco contrasta mais (QA-11).
+    'primária #rgb clara'  => [null, true, '#ff0'],
+    'primária Fuchsia 600' => [null, false, 'Fuchsia'],
+    'primária Pink 600'    => [null, false, 'Pink'],
+    'primária Sky 600'     => [null, true, 'Sky'],
 ])->group('kit');

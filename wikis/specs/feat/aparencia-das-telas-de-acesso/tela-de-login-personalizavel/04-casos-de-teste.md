@@ -2,7 +2,7 @@
 
 > Derivado do **requisito**, não do plano. Nenhuma implementação foi consultada.
 >
-> Cenários: 42 (CT-01..CT-42; CT-21 e CT-27 `@obsoleto`, execução pela sessão) · Regras: 17 *(contado por `grep -oE "\[CT-[0-9]+\]" 04 | sort -u | wc -l`, 2026-11-13)*
+> Cenários: 42 · Regras: 17 · Mutantes previstos: 57 · Sem matador: 0 *(os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14; CT-21 e CT-27 `@obsoleto`, execução pela sessão)*
 >
 > Oráculo atual: `00-requisito.md`, RQ-01..RQ-16, P-01..P-18 e decisões de Q2..Q11. CT-36..CT-41 vieram do step 9; CT-42 e as linhas de fronteira do CT-40 do quality gate (ciclo 1). Os recortes 01/02 fornecem somente localização e superfície.
 >
@@ -1075,7 +1075,9 @@ Destinos automatizados (implementados):
 | CT-B07 | Entrada Unicode no navegador | R1 | BVA | G4 | browser | B | M71 |
 | CT-B08 | Aspas sem execução | R3 | escape contextual | G4 | browser | B | M72 |
 
-## Achados do step 9 (revisão do diff)
+## Regra R17 — Achados do step 9 e do quality gate
+
+### Achados do step 9 (revisão do diff) e do gate
 
 Derivados pela sessão a partir das P-15..P-18 registradas no `00` (degradação: a `feature-test-design` não foi reinvocada para quatro cenários pontuais; ver `03`).
 
@@ -1139,7 +1141,11 @@ Funcionalidade: Achados da revisão do diff
         | #d97706 | tem |
         | #1d4ed8 | não tem |
         | (vazia: primária default, âmbar 600) | tem |
-      # Origem: P-18 · Mata: limiar invertido, cor clara com texto branco, corte fixo em cor média (QA-04)
+        | (vazia: primária da instalação `#ff0`) | tem |
+        | (vazia: primária Fuchsia 600) | não tem |
+        | (vazia: primária Pink 600) | não tem |
+        | (vazia: primária Sky 600) | tem |
+      # Origem: P-18 · Mata: limiar invertido, cor clara com texto branco, corte fixo em cor média (QA-04), `#rgb` não entendido (QA-10), aproximação de luminância (QA-11)
 
   Regra: Voltar à padrão e sair dela sem recarregar a página
 

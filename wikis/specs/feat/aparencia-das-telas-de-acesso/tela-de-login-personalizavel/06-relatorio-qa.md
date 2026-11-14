@@ -1,148 +1,118 @@
 # Relatório de QA — feat/aparencia-das-telas-de-acesso: Tela de login personalizável
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
-> Perfil de esforço: completo (UI com JS — iframe de preview, campos `live` — e domínio sensível: autorização do preview e escopo por organização)
+> Perfil de esforço: completo (UI com JS: iframe de preview e campos `live`; domínio sensível: autorização do preview e escopo por organização)
 > Natureza da wiki: evolução · Toca infra compartilhada: sim → todas as telas de autenticação dos três painéis · Regressão: sim
 > Independência: sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa
-> Cobertura: 8 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
+> Cobertura: 9 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
 
-## Veredito — Ciclo 1
+## Veredito — Ciclo 2
 
 **REPROVADO → especificação**
 
-- Blocker: 2 · Major: 4 · Minor: 2 · Cosmético: 1
-- Não verificadas: E, G, H, K. As causas estão em *Não Verificado*
-- `RQ` abertas: nenhuma formalmente. Q1 e Q2 seguem `aberta` no `00` e afetam RQ-01, 07, 09, 10 e 11, que estão marcadas `fechada` (ver QA-03)
-- Ambiente: app em `http://127.0.0.1:8123` (layout global `painel`) · Pest 5.0.5 · Playwright MCP: indisponível · Boost MCP: indisponível (o `laravel-boost` não conectou: CONNECT_TIMEOUT)
+- Blocker: 1 (QA-02, aguardando evidência) · Major: 2 · Minor: 2 · Cosmético: 1
+- Não verificadas: G, H, K. As causas estão em *Não Verificado*
+- `RQ` abertas: nenhuma. Q1 segue `aberta`, mas só a premissa estreita P-01 foi implementada (nada muda sem decisão do admin). Isso não gera achado e entra no débito
+- Ambiente: app em `http://127.0.0.1:8123` (HEAD `1b6d3a09`, aparência global `painel`) · Pest 5.0.5 · Playwright MCP: indisponível · Boost MCP: indisponível (`laravel-boost` CONNECT_TIMEOUT)
+- Ciclo com achados novos (QA-10..QA-14). O loop pode seguir para o ciclo 3, o último
+
+## Situação dos achados do ciclo 1
+
+| QA | Situação no ciclo 2 | Evidência |
+|---|---|---|
+| QA-01 | **fechado no código e no teste**. Ficou resíduo documental, que virou QA-12 | `podeVer()` exige `canAccessPanel(Filament::getPanel('admin'))` antes do escopo. A rota passou para `auth`. Visitante: `curl …/admin/preview-das-telas-de-acesso` → `302 /login`. O CT-38 agora limpa o painel corrente e dá `View:ConfiguracoesDoKit` à conta só do `/app`, de modo que o acesso ao admin é a única variável. Com o código antigo, o `Authenticate` passaria pelo painel `app` e o `canAccess()` daria 200: o caso discrimina |
+| QA-02 | **aberto**: os cenários sobre o commit final não estão registrados | `03` › Verificação Final: cenários 1–4 sobre `b28debff` registrados. A linha sobre `1b6d3a09` ainda está `[ ]`. Segundo o orquestrador, outro processo está rodando agora |
+| QA-03 | **fechado, com resíduo** (QA-13) | Q2 marcada respondida pela leitura do Texto Original ("as telas de auth", no plural), com a confirmação pedida ao solicitante. As Q3..Q11 seguem a mesma convenção da wiki |
+| QA-04 | **fechado para `#RRGGBB` de 6 dígitos e para a primária default**. Ficaram resíduos (QA-10, QA-11) | Ao vivo: `/admin/login` sai com `--kit-painel-fundo: oklch(0.666 0.179 58.318)` e `kit-painel-de-marca--claro`. CT-40 tem 8 linhas, inclusive as de fronteira |
+| QA-05 | **fechado** | `grep -rn "mídia da base\|da base, ou a arte\|uuid"` na wiki (sem o 06) não retorna nada. A docs pt/en fala em "arte da aba Identidade" |
+| QA-06 | **fechado** | `{ git diff main --name-only; git ls-files --others --exclude-standard; } \| sort -u \| wc -l` = 79, o mesmo valor do `03` |
+| QA-07 | **fechado** | doc, CHANGELOG e helperText com o recorte. Glossário com "Telas de acesso", "Painel de marca" e "Aparência padrão" |
+| QA-08 | **fechado** | CT-42, com controle positivo (sem organização, aparece `data-kit-aparencia="painel"`). Tenancy verde |
+| QA-09 | **fechado em parte**. O resto virou QA-14 | Índice e "Acréscimos" atualizados. A contagem do cabeçalho não segue o template |
 
 ## Achados
 
-### QA-01 — Preview checa o painel errado: P-17 não vale em produção e o CT-38 está verde pelo motivo errado · Blocker · destino 3 → 2
-
-- **Dimensão**: I / C / L4 (`.ai/rules/auth.md`)
-- **Relacionado a**: P-17, CT-38, passo 6 do PRD, ADR-04
-- **Esperado**: segundo P-17, *"O preview só abre para quem entra no painel admin"*. O `01` › Autorização diz *"rota sob `panel:admin` + o `Authenticate` do Filament (só quem entra no `/admin`)"*. A rule `auth.md` (§*Página de auth fora do painel…*) manda varrer `getCurrentOrDefaultPanel()` antes de operação que consulta `canAccessPanel()`.
-- **Observado**: o Laravel reordena os middlewares, e o `Authenticate` roda **antes** de `SetUpPanel:admin`. O `Authenticate` do Filament usa `Filament::getCurrentOrDefaultPanel()` (`vendor/filament/filament/src/Http/Middleware/Authenticate.php:28`), que nesse momento é o painel default, o `app`. Assim, uma conta só do `/app` passa pelo middleware, e quem barra é apenas o `podeVer()` do `mount()`. No CT-38, o `beforeEach` faz `Filament::setCurrentPanel('admin')` (`tests/Kit/AparenciaDasTelasDeAcessoTest.php:35`), e esse estado vaza para o `$this->get()` no mesmo processo. Por isso o teste dá 403, o que não acontece num request real. O `03` › Conformidade marca `auth.md` como "aplicada".
-- **Repro**:
-  1. `php artisan tinker --execute '$r = app("router")->getRoutes()->getByName("kit.preview-das-telas-de-acesso"); print_r(app("router")->gatherRouteMiddleware($r));'` → `[5] Filament\Http\Middleware\Authenticate … [8] Filament\Http\Middleware\SetUpPanel:admin`
-  2. Como visitante: `curl -s -o /dev/null -w "%{http_code} %{redirect_url}" http://127.0.0.1:8123/admin/preview-das-telas-de-acesso` → `302 http://127.0.0.1:8123/app/login`. Isso é o `getLoginUrl()` do painel `app`, quando `/admin` redireciona para `/admin/login`.
-  3. (para a sessão, não executado: o gate não grava fixture) Repetir o CT-38 com `Filament::setCurrentPanel(null)` antes do `get`: o esperado é 200 com o rascunho.
-- **Evidência**: as saídas dos passos 1 e 2. Impacto prático baixo: a conta só vê o próprio rascunho, que só existe se ela já teve acesso ao admin nos últimos 30 min. Mas a fronteira declarada não existe, e a severidade segue a tabela da L4 (rule de autenticação violada).
-- **Destino**: 3 (o CT-38 precisa de um request sem painel corrente vazado), depois 2
-- **Ação exigida**: (1) via `feature-test-design`, o CT-38 limpa o painel corrente antes do request e falha; (2) corrigir a fronteira, por exemplo com o `Authenticate` depois de `SetUpPanel` ou com um `canAccessPanel(Filament::getPanel('admin'))` explícito no `mount()`/`rascunhoAutorizado()`; (3) corrigir a linha `auth.md` do `03` e o docblock de `PreviewDasTelasDeAcesso.php:35` ("`panel:admin` + `auth`").
-
-### QA-02 — RQ-08 não entregue: os cenários 1 a 4 não foram executados · Blocker · destino 2
+### QA-02 — RQ-08: cenários 1 a 4 sem evidência sobre o commit final · Blocker · destino 2
 
 - **Dimensão**: A
-- **Relacionado a**: RQ-08, RQ-07, CT-21, CT-27, Q10, passo 9 do PRD
-- **Esperado**: RQ-08, *"rode os cenarios ao finalizar"*. Q10 decidiu que a regressão de RQ-07 se prova também pelos quatro cenários do checklist de release.
-- **Observado**: `03-progresso.md:56` traz `- [ ] Cenários 1 a 4`, e `:133` traz `- [ ] Cenários 1 a 4 (pré-validação…)`. CT-21 e CT-27 são "execução pela sessão" e não têm registro de execução.
+- **Relacionado a**: RQ-08, RQ-07, Q10, CT-21, CT-27
+- **Esperado**: "rode os cenarios ao finalizar". O commit `1b6d3a09` altera código de aplicação (preview, `AparenciaDasTelasDeAcesso`, providers, CSS).
+- **Observado**: `03` › Verificação Final, `- [ ] Cenários 1 a 4 sobre o commit pós-gate (1b6d3a09 …)`.
 - **Repro**: `grep -n "Cenários 1 a 4" wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/03-progresso.md`
-- **Evidência**: as duas linhas sem marcação
 - **Destino**: 2
-- **Ação exigida**: rodar os 4 cenários sobre o commit final antes do PR e registrar a evidência no `03`, com CT-21 e CT-27 fechados.
+- **Ação exigida**: registrar no `03` o resultado dos 4 cenários sobre o commit que vai para o PR. Se houver correção depois dele (este ciclo pede correções), rodar de novo sobre o commit seguinte.
 
-### QA-03 — Q2 aberta com a premissa ampla (P-02) implementada; RQ-09/RQ-10 marcadas `fechada` · Major · destino 1
+### QA-10 — Primária da instalação em `#rgb` deixa texto branco sobre painel claro · Major · destino 3 → 2
 
-- **Dimensão**: A (auditoria do requisito)
-- **Relacionado a**: Q2, P-02, RQ-09, RQ-10, passo 2 do PRD
-- **Esperado**: `feature-wiki` §*Quando o solicitante não responde a tempo*: *"Só a afirmação dependente fica bloqueada… RQ aberta implementada é REPROVADO → especificação"*. Também manda seguir com a premissa **mais estreita**.
-- **Observado**: o `00` mantém Q2 (*"todas as telas ou só o login?"*) como `aberta`, com Afeta = RQ-09 e RQ-10, e essas duas RQs estão `fechada`. O código implementa a opção ampla: `TelaRecuperarSenha`, `TelaRedefinirSenha`, `TelaVerificacaoDeEmail`, `TelaDoisFatores`, `TelaBloqueio` e `RegistroPorConvite` usam `VesteAparenciaDasTelas`. Q1, ao contrário, foi tratada pela opção estreita (P-01, nada muda), e isso não é achado.
-- **Repro**: `grep -n "^| Q2\|^| RQ-09\|^| RQ-10" …/00-requisito.md` e `grep -ln "use VesteAparenciaDasTelas" app/Filament/Pages/Auth/*.php`
-- **Evidência**: Q2 `aberta`; 8 páginas vestidas
+- **Dimensão**: B (H correlata)
+- **Relacionado a**: P-18, CT-40, passo 3 do PRD
+- **Esperado**: P-18, "com uma cor de painel clara, o texto do painel passa a escuro". O docblock de `corDoPainel()` diz "sempre uma cor concreta, para o contraste do texto ser decidido".
+- **Observado**: a `cor_primaria_hex` da instalação aceita `#rgb` (regex do `ColorPicker` em `ConfiguracoesDoKit` e `config/kit.php`: "Formato `#rgb` ou `#rrggbb`"). `corDoPainel()` devolve esse valor como está, mas `luminancia()` só entende `#RRGGBB` (`FORMATO_DA_COR`) e `oklch(`. Com isso, `fundoClaro('#ff0')` dá `false`: texto branco sobre amarelo, contraste de cerca de 1,07:1. Com `#ffff00` o resultado é correto (`true`). Também falha para `rgb(...)`. Já existia no ciclo 1 e não foi apontado ali.
+- **Repro**: `php artisan tinker --execute 'config(["kit.cor_primaria_hex" => "#ff0"]); $c = App\Support\AparenciaDasTelasDeAcesso::corDoPainel(["layout" => "painel"], null); var_dump($c, App\Support\AparenciaDasTelasDeAcesso::fundoClaro($c));'` → `string(4) "#ff0"`, `bool(false)`
+- **Destino**: 3 (o CT-40 não tem a classe "hex curto vindo da primária"), depois 2
+- **Ação exigida**: pela `feature-test-design`, uma linha do CT-40 com a primária da instalação em `#rgb` claro, que falha hoje. Depois, expandir `#rgb` ou normalizá-lo em `corDoPainel()`.
+
+### QA-11 — Aproximação `L³` do `oklch` escolhe o texto de menor contraste em Fuchsia e Pink 600 · Minor · destino 3 → 2
+
+- **Dimensão**: B / H
+- **Relacionado a**: P-18, CT-40
+- **Observado**: comparei o `fundoClaro()` com a luminância real (OKLCH → sRGB linear) em todas as constantes de `Filament\Support\Colors\Color`. Divergem: Fuchsia[600] (escolhe escuro 3,65:1, o branco daria 4,66:1), Pink[600] (escuro 3,74:1, branco 4,54:1), Sky[600] (branco 4,02:1, escuro 4,23:1) e Violet[500], que não é usado. Nos dois primeiros, o texto do apoio cai abaixo de 4,5:1 quando o branco passaria.
+- **Repro**: script `php -r` que percorre `ReflectionClass(Color::class)->getConstants()`, converte o `oklch` de cada tom 600 e compara `fundoClaro($c)` com a decisão pela luminância real. Saída: `DIVERGE Fuchsia[600] … escolha=escuro branco=4.66 escuro=3.65`, e o mesmo para Pink[600] e Sky[600].
+- **Destino**: 3, depois 2
+- **Ação exigida**: incluir Fuchsia/Pink 600 por nome no CT-40 e converter o `oklch` de verdade, ou usar a tabela hex do tom 600, em vez de `L³`.
+
+### QA-12 — PRD e `03` ainda dizem que o preview é protegido pelo `Authenticate` do Filament · Major · destino 1
+
+- **Dimensão**: L3 / L4
+- **Relacionado a**: P-17, QA-01 (ação 3), passo 6, `.ai/rules/providers.md`
+- **Esperado**: o texto bate com o código: rota sob `web` + `panel:admin` + `auth`, e `canAccessPanel(admin)` na página.
+- **Observado**: `01-plano-acao.md` › Autorização: "Preview: rota do kit sob `panel:admin` + o `Authenticate` do Filament (só quem entra no `/admin`, P-17)". No `03` › Conformidade com Rules, a linha `providers.md` diz "`web` explícito + `panel:admin` + `Authenticate` do Filament". A linha SEC-02 da Revisão do Diff fala em "correção (middleware do Filament)", sem nota de que foi substituída. A linha `auth.md` do `03` não registra o achado do ciclo 1 (`getCurrentOrDefaultPanel()`). Fora do preview, o `01` (passo 1) descreve `corDoPainel` como "hex validado … senão a da instalação". Isso omite a constante `oklch` e o fallback âmbar 600.
+- **Repro**: `grep -rn "Authenticate" wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/ | grep -v 06-relatorio` → `01` (Autorização) e `03` (linhas SEC-02 e `providers.md`)
 - **Destino**: 1
-- **Ação exigida**: obter a resposta do solicitante a Q2 (registrar como Adendo) ou estreitar o escopo para o login. Até lá, a decomposição não pode marcar RQ-09/RQ-10 como `fechada`.
+- **Ação exigida**: corrigir e datar `*(alterado em …)*` a Autorização e o passo 1 do `01`, as linhas `providers.md` e `auth.md` da Conformidade e a linha SEC-02 do `03`.
 
-### QA-04 — Texto branco no painel com contraste abaixo de 3:1 em cores médias, inclusive na primária default · Major · destino 3 → 2
+### QA-13 — `00`: P-02 ainda condicionada a "Enquanto Q2 não é respondida" · Minor · destino 1
 
-- **Dimensão**: H (G correlata)
-- **Relacionado a**: P-18, RQ-01 (acessibilidade), CT-40, passo 3 do PRD
-- **Esperado**: P-18, *"Com uma cor de painel clara, o texto do painel passa a escuro, para continuar legível"*.
-- **Observado**: o limiar `luminância > 0,4` (`app/Support/AparenciaDasTelasDeAcesso.php:fundoClaro:266`) deixa texto branco entre L 0,18 e 0,40. Nessa faixa, branco perde do preto e fica abaixo de 4,5:1. Exemplos: `#00aaff` dá 2,56:1, `#ff6600` 2,94:1, `#d97706` 3,19:1. Com a cor em branco (o default), `fundoClaro()` devolve sempre `false`, e o painel usa `--primary-600`. No kit sem cor configurada, isso é o âmbar 600, cerca de 3,2:1 sob o nome da aplicação (17 px bold, no topo, onde o gradiente é transparente). O docblock de `fundoClaro` afirma que as cores da paleta no tom 600 *"são escuras"*, o que é falso para amber, yellow e lime. O CT-40 só testa os extremos (`#ffffff`, `#f5f5dc`, `#123456`, `#000000`), sem os valores de fronteira.
-- **Repro**:
-  1. `php -r 'require "vendor/autoload.php"; var_dump(App\Support\AparenciaDasTelasDeAcesso::fundoClaro("#00aaff"));'` → `false` (texto branco, 2,56:1)
-  2. Abrir `http://127.0.0.1:8123/admin/login`: `.kit-painel-de-marca` sem `style`, cor `--primary-600`, `color: #fff` (`resources/css/filament/kit.css:291`); captura em `art/telas-de-acesso-painel.png`
-- **Evidência**: contraste calculado com a fórmula do próprio `fundoClaro`
-- **Destino**: 3 (o CT-40 precisa de BVA no limiar, de cerca de 0,18 a 0,40, e do caso da primária default), depois 2
-- **Ação exigida**: via `feature-test-design`, BVA do contraste. O CT novo falha antes da correção; depois, corrigir o limiar (escolher a cor de texto de maior contraste) e o caso sem hex.
-
-### QA-05 — PRD, ADR e docs descrevem a mídia do painel e a superfície do preview de um jeito que o código contradiz · Major · destino 1
-
-- **Dimensão**: L3 (e L5, parte Minor)
-- **Relacionado a**: P-15, ADR-03, ADR-04, passos 1 e 6
-- **Esperado**: o texto bate com o código, ou leva a marca `*(alterado em …)*`.
-- **Observado**:
-  - (a) `01-plano-acao.md:197` diz *"mídia da base (ou a arte, se a base não tiver)"* e `02-decisoes-arquiteturais.md:75` diz *"(a da base, ou a arte)"*. O código usa sempre a arte da identidade (`AparenciaDasTelasDeAcesso.php:aplicar:176`, P-15).
-  - (b) A docs pt e en, na linha 127, diz que *"O painel de marca aproveita a arte… que os providers configuraram"* / *"uses the artwork… the providers configured"*. É a mesma consequência, invalidada pela P-15.
-  - (c) A `## Superfície Livewire` do `02` lista *"ação **Atualizar preview** (código novo, Action de schema)"* e *"uuid do rascunho no formulário — cliente pode trocar"*. O código tem um botão Alpine `$wire.$refresh()` sem Action (`preview-das-telas-de-acesso.blade.php:56`) e a chave usa o id do componente Livewire (`EditorDeAparenciaDasTelas.php:urlDoPreview:249`), não um campo de formulário. A ADR-04 ainda diz *"uuid da instância"*.
-- **Repro**: `grep -rn "mídia da base\|da base, ou a arte\|uuid" wikis/specs/feat/aparencia-das-telas-de-acesso/` e `grep -n "aproveita\|providers configured" docs/*/autenticacao/aparencia-das-telas.md`
-- **Evidência**: as quatro ocorrências citadas
+- **Dimensão**: A (auditoria do requisito) / L3
+- **Observado**: Q2 aparece como respondida pela leitura do texto, com "confirmação explícita pedida ao solicitante no fechamento". P-02 continua começando por "Enquanto Q2 não é respondida…". A confirmação pendente não aparece como débito no `03`.
+- **Repro**: `grep -n "^| Q2\|^| P-02" wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/00-requisito.md`
 - **Destino**: 1
-- **Ação exigida**: corrigir e datar `01:197`, `02:75`, `02` ADR-04 e a Superfície Livewire, e `docs/pt` e `docs/en/autenticacao/aparencia-das-telas.md:127`.
+- **Ação exigida**: alinhar P-02 ao estado de Q2 e registrar no `03` a confirmação pendente como débito, até o solicitante responder. Se ele responder "só o login", vira Adendo.
 
-### QA-06 — "80 arquivos alterados" da Verificação Final não se reproduz · Major · destino 1
-
-- **Dimensão**: L6
-- **Relacionado a**: RQ-12, `## Verificação Final`
-- **Esperado**: um número que algum comando reproduza.
-- **Observado**: `git diff main --name-only | wc -l` = 77 (71 de código + 6 da wiki); `git diff --name-only main...HEAD | wc -l` = 77. Nenhum comando conferido chega a 80.
-- **Repro**: `grep -rn "80 arquivos" wikis/specs/feat/aparencia-das-telas-de-acesso/` → só `03-progresso.md:130`
-- **Evidência**: as saídas acima
-- **Destino**: 1
-- **Ação exigida**: refazer a busca do RQ-12 e colar a contagem real com o comando que a produz.
-
-### QA-07 — Vocabulário: "telas de autenticação" com outra extensão e termos novos fora do glossário · Minor · destino 1
-
-- **Dimensão**: L7
-- **Esperado**: no glossário, *Tela de autenticação* inclui a escolha de painel (`wikis/glossario.md:38`).
-- **Observado**: a doc, o helperText e o CHANGELOG dizem que a aparência vale para "todas as telas de autenticação", mas P-02 exclui a escolha de painel. "Aparência padrão", "painel de marca" e "telas de acesso" foram decididos nesta feature e não entraram no glossário.
-- **Repro**: `sed -n 38p wikis/glossario.md`; `grep -n "todas as telas de autenticação" docs/pt/autenticacao/aparencia-das-telas.md CHANGELOG.md`
-- **Destino**: 1
-- **Ação exigida**: alinhar o texto ("as telas vestidas pelo Auth Designer, exceto a escolha de painel") e acrescentar os três termos ao glossário.
-
-### QA-08 — CT-33 (Tenancy) só com expectativas negadas e a padrão nula: não distingue o "clássico próprio" da "padrão" · Minor · destino 3
-
-- **Dimensão**: K1
-- **Relacionado a**: CT-33, P-07
-- **Observado**: `k1-oraculo-fraco.sh` → `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php:224 … só expectativa negada`. Com a padrão nula, um defeito que trate o `['layout'=>'classico']` da organização como "usa a padrão" passa. Nenhum teste combina "padrão em painel + organização no clássico", que a doc promete (*"A organização pode escolher o clássico mesmo com a padrão em painel"*).
-- **Repro**: `bash .ai/skills/feature-quality-gate/scripts/k1-oraculo-fraco.sh tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php`
-- **Destino**: 3
-- **Ação exigida**: um cenário com a padrão em `painel` e a organização em `classico`, com a ausência do painel confirmada no HTML.
-
-### QA-09 — Cabeçalhos e registro desatualizados no `04` e no `03` · Cosmético · destino 1
+### QA-14 — Contagem do cabeçalho do `04` fora do template · Cosmético · destino 1
 
 - **Dimensão**: L1
-- **Observado**: o cabeçalho do `04` não tem a linha `Cenários: n · Regras: n` (o valor real por `grep -cE … \[CT-[0-9]+\]` é 41). O "Oráculo atual" para em P-14 e os "Acréscimos" em CT-35 (faltam P-15..18 e CT-36..41). O `## Índice de Cenários` ainda diz *"propostos, ainda não implementados"*. No `03`, a linha 5 de `## Despachos` está quebrada por uma quebra de linha literal na célula.
+- **Observado**: o cabeçalho diz "Cenários: 42 · Regras: 17 *(contado por `grep -oE "\[CT-[0-9]+\]" 04 | sort -u | wc -l`)*". Esse comando só conta CT. Pelo template, `grep -cE '^## Regra R[0-9]+'` dá **16**, e não há seção `## Regra R17`. Também faltam "Mutantes previstos" (`grep -cE '^\| M-?[0-9]+'` = 57) e "Sem matador".
+- **Repro**: os quatro comandos de `feature-test-design/references/template-04.md` §*Contagem do cabeçalho*, rodados na pasta da feature. `grep -rn "Regras: 17" wikis/specs/feat/aparencia-das-telas-de-acesso/` → só o `04`.
 - **Destino**: 1
-- **Ação exigida**: recalcular pelos comandos do `template-04.md` §*Contagem do cabeçalho* e consertar a linha da tabela.
+- **Ação exigida**: recolar a linha do cabeçalho com a saída dos quatro comandos e criar a seção da R17, ou ajustar a contagem.
 
 ## Matriz de Rastreabilidade
 
-`rastreabilidade.sh` exit 0. Indicam lacuna só estas linhas:
+`rastreabilidade.sh` exit 0. Só estas linhas têm lacuna:
 
 | RQ/P | Cláusula ou premissa | Passo PRD | CT | CT-B | Código | Resultado | Veredito |
 |------|----------------------|-----------|----|------|--------|-----------|----------|
-| RQ-08 | cenários ao final | 9 | CT-21, CT-27 (sessão) | — | — | não executado | ❌ QA-02 |
-| RQ-09/RQ-10 | tela de config / preview (Q2 aberta) | 5, 6 | CT-01..03, 14..20 | B05 | 8 páginas vestidas | escopo amplo sem resposta | ❌ QA-03 |
-| P-17 | preview só para quem entra no admin | 6 | CT-38 (verde por estado vazado), CT-39 | — | `KitServiceProvider` (rota) | barreira avalia o painel `app` | ❌ QA-01 |
-| P-18 | texto legível sobre cor clara | 3 | CT-40 (sem fronteira) | — | `fundoClaro()` | 2,56–3,2:1 em cores médias | ❌ QA-04 |
+| RQ-08 | cenários ao final | 9 | CT-21, CT-27 (sessão) | — | — | só sobre `b28debff` | ❌ QA-02 |
+| P-18 | texto legível sobre cor clara | 3 | CT-40 (sem `#rgb`, sem paleta por nome) | — | `fundoClaro()` | `#ff0` branco 1,07:1 | ❌ QA-10, QA-11 |
+| P-02 | recorte das telas (Q2) | 2 | CT-07, 25, 33 | B06 | 8 páginas vestidas | texto condicional desatualizado | ⚠️ QA-13 |
 
 ## Dimensões
 
 | # | Dimensão | Status | Observação |
 |---|----------|--------|------------|
-| A | Cobertura do requisito | ❌ | QA-02, QA-03 — `rastreabilidade.sh` exit 0; `indice.sh --check`: sem `07-tickets/`; `git diff` por passo conferido (arquivos dos passos 1–8 presentes no diff) |
-| B | Fronteiras e dados | ✅ | validação lida (`in`, regex `\z`, teto após trim por ponto de código, escape); CT-03/05/06/28–30, B07/B08 verdes |
-| C | Matriz de permissão | ❌ | admin/master × global/tenant/novo cobertos por CT-17/19/39; célula "conta só `/app`" × preview: QA-01 |
-| D | Observabilidade | ✅ | `storage/logs/tenancy-2026-11-13.log`: `[VesteAparenciaDasTelas@organizacaoDaAparencia]` com context `tenant_id/motivo/pagina`; preview e normalizar em `autenticacao`; sem PII no context |
-| E | Performance | ⏭️ não verificada | leitura: uma query por slug, memo por instância, sem coleção; contagem mecânica não executada (sem `pest-plugin-agent`; prova: `ls vendor/pestphp/`) |
-| F | UX de erro | ✅ | mensagens pt no campo ("Use no máximo 80 caracteres.", "Use uma cor no formato #RRGGBB."); nada salvo na recusa (CT-29) |
-| G | Tema e cor | ⏭️ não verificada | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`); nível 1 `dark-mode.sh` sobre views/css/Filament do diff exit 0; nível 2: CT-B03/B04 com `inDarkMode()` verdes; nível 3 sem MCP (só capturas claras de `art/` vistas) |
-| H | Acessibilidade | ⏭️ não verificada (com achado) | QA-04; teclado: CT-B03 verde; `assertNoAccessibilityIssues()` ausente nos CT-B da feature |
-| I | Segurança da superfície nova | ❌ | step 9 cobriu (4 passes; 19 linhas na tabela, BP-20 rejeitado); além dele: ordem real de middleware (QA-01), chave do rascunho com o id do usuário (sem IDOR), `#[Locked]` em `orgDaAparencia`/`rascunho`/`tela`, escopo inexistente falha fechado (403) |
-| J | Regressão adjacente | ✅ | os 13 arquivos Kit do `01` (+ helpers, site, citações): 499/499; Tenancy ancestrais: 52/52; Kit da feature 130/130; Tenancy 72/72; Browser da feature 40/40 (B05 falhou 1× sob carga e passou 2/2 isolado: flake, destino 4) |
-| K | Adequação da suíte | ⏭️ não verificada | K1 exit 1: 4 candidatas, 3 rejeitadas (asserção em helper: CT-31, CT-07, CT-11), 1 vira QA-08; K2 em `AparenciaDasTelasDeAcesso` pelo `pestw.cmd`, `--no-cache --parallel`, só o arquivo Kit: 198 mutantes, 181 testados, 0 sobreviventes, 17 uncovered (constantes 46–54, 154 e 241: fora do arquivo Kit), Score 91,41 %, `Duration` 8,80 s com relógio de parede de 15 min 38 s em 16 processos; morte não amostrada; re-revisão adversarial do conjunto revisado não feita (o próprio `04` declara) |
-| L | Consistência documental | ❌ | QA-05, 06, 07, 09 — L1 `ids-ct.sh` exit 0; L2 `citacoes.sh` exit 0; L4 `conformidade-rules.sh` exit 0 (19 linhas), com `auth.md` violada (QA-01); L6 `checkbox-sem-evidencia.sh` exit 0; reproduzidos: filacheck 17/17, Kit 5045 e Tenancy 741 por `--list-tests`, 19 rules; não reproduzido: "80 arquivos"; L8 `roteiro-manual.sh` exit 0 — L8 n/a: sem `08`, decisão `não` no `03` |
+| A | Cobertura do requisito | ❌ | QA-02, QA-13. `rastreabilidade.sh` exit 0. `indice.sh --check`: não aplicável, sem `07-tickets/`. Diff `b28debff..1b6d3a09` conferido contra as ações do ciclo 1 |
+| B | Fronteiras e dados | ❌ | QA-10 e QA-11, por sonda no `tinker` e varredura da paleta. Cor da aparência ainda limitada a `#RRGGBB`, sem regressão |
+| C | Matriz de permissão | ✅ | visitante → 302 (ao vivo). Conta só do `/app` com permissão do escopo → 403 (CT-38, agora discriminante). Papel admin global com `Update:Tenant` → CT-39. Admin/master × global/tenant/novo → CT-17/19 |
+| D | Observabilidade | ✅ | o ciclo 2 não acrescenta ponto de log. A negativa nova passa pelo `[User@canAccessPanel]` existente (`user_id`, `painel`, `motivo`), sem PII. Log real lido no ciclo 1 |
+| E | Performance | ✅ | `/admin/login` com a aparência `painel`: 3 queries, todas de `sessions`, medidas pelo kernel HTTP no `tinker`. Caminho da organização: uma query por slug, com memo, sem coleção |
+| F | UX de erro | ✅ | sem mudança no ciclo 2. As evidências do ciclo 1 continuam valendo (mensagens pt no campo, nada salvo na recusa) |
+| G | Tema e cor | ⏭️ não verificada | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`). Nível 1 `dark-mode.sh` sobre views/css/Filament do diff exit 0. Nível 2: CT-B03/B04 com `inDarkMode()`, `tests/Browser/AparenciaDasTelasDeAcessoTest.php` 40/40. Nível 3 sem MCP |
+| H | Acessibilidade | ⏭️ não verificada (com achados) | QA-10, QA-11. `assertNoAccessibilityIssues()` ausente nos CT-B da feature |
+| I | Segurança da superfície nova | ✅ | step 9 cobriu (4 passes, tabela de 19 linhas, BP-20 rejeitado). Além dele: ordem real do middleware resolvida na página, autorização refeita no update Livewire (`rascunhoAutorizado()` → `podeVer()`), visitante sem beco, `#[Locked]` mantido, escopo inexistente falha fechado |
+| J | Regressão adjacente | ✅ | feature Kit + Entrega + Tenancy 207/207. Browser da feature 40/40. Kit adjacentes (Citações, Diagramas, Site, TelasDeAutenticação, Bloqueio, PageHeader, ConfiguraçõesTela, SeçõesColapsáveis, CabeçalhoDoPainel, KitInfo) 905/905. Suíte inteira e cenários não rodados por este gate (cenários: QA-02) |
+| K | Adequação da suíte | ⏭️ não verificada | K1 `k1-oraculo-fraco.sh` exit 1: 4 candidatas. CT-31, CT-07 e CT-11 rejeitadas (asserção em helper, como no ciclo 1). CT-33 complementada pelo CT-42 (QA-08 fechado). K2 não rodado neste ciclo: `fundoClaro()`/`luminancia()` mudaram depois da medição do ciclo 1 (91,41 %), e o `04` ainda declara a re-revisão adversarial pendente |
+| L | Consistência documental | ❌ | QA-12, 13, 14. L1 `ids-ct.sh` exit 0. L2 `citacoes.sh` exit 1: 9 linhas, todas no `06` do ciclo 1 (texto deste gate, que este relatório substitui), destino 5. L4 `conformidade-rules.sh` exit 0 (19 linhas), com `providers.md` desatualizada (QA-12). L6 `checkbox-sem-evidencia.sh` exit 0; reproduzidos: 79 arquivos e as contagens do `04` (42 cenários). L7: três termos no glossário. L8 `roteiro-manual.sh` exit 0; n/a, sem `08` e com decisão `não` |
 
 ## Débitos Aceitos
 
@@ -150,14 +120,14 @@
 
 ## Suspeitas Não Confirmadas
 
-- "Browser 171/171" (`03:131`): `pest --testsuite=Browser --list-tests` lista 220. Pode ser skip condicional; a suíte inteira não foi rodada para confirmar.
-- Score do `--mutate` (0 sobreviventes em 181): o relógio de parede indica que os subprocessos rodaram, mas no Windows o plugin já deu morte falsa por filtro truncado. Sem amostragem manual de mutante, o número não fica certificado.
+- A rota do preview usa `auth`, sem a pilha `authMiddleware` do painel (`MustTwoFactor`, `Locker`). Uma sessão bloqueada ainda abriria o próprio rascunho. O ciclo 1 (com o `Authenticate` do Filament) tinha a mesma lacuna. Não foi reproduzido: exige sessão autenticada e bloqueada no app servido, sem MCP.
+- "Browser 171/171" (`03`, Verificação Final), herdado do ciclo 1: não reconferido.
 
 ## Não Verificado
 
-- E — contagem de queries por `--agent` não executada; motivo: `pest-plugin-agent` ausente (prova: `ls vendor/pestphp/`)
-- G nível 3 (olho nos dois temas) — motivo: Playwright MCP indisponível
-- H — axe (`assertNoAccessibilityIssues`) não executado; motivo: nenhum CT-B da feature o chama e o MCP está indisponível
-- K — prova indispensável pendente: amostragem de mutante morto (exige editar arquivo, vedado ao gate) e a re-revisão adversarial do `04` revisado (CT-29..41, B07/B08), declarada pendente no próprio `04`
-- Sessão autenticada no app servido (editor, preview 404/403 ao vivo) — motivo: sem MCP; coberta só por CT/CT-B
-- Busca do RQ-12 pelos nomes do projeto de referência — motivo: os nomes estão mascarados no `00`; só o oráculo genérico de links (CT-24) rodou
+- G nível 3 (olhar nos dois temas): Playwright MCP indisponível.
+- H, axe (`assertNoAccessibilityIssues`): nenhum CT-B da feature o chama, e o MCP está indisponível.
+- K: a re-revisão adversarial do `04` revisado (CT-29..42, B07/B08) está declarada pendente no próprio `04`. O K2 não foi refeito sobre o `fundoClaro()` novo, e a amostragem de mutante morto exige editar arquivo, o que é vedado ao gate.
+- Sessão autenticada no app servido (editor, preview 200/403 ao vivo): sem MCP. Coberta por CT/CT-B.
+- Cenários 1–4 sobre `1b6d3a09`: em execução por outro processo, fora do escopo deste gate (QA-02).
+- Busca do RQ-12 pelos nomes do projeto de referência: os nomes estão mascarados no `00`. Só o oráculo genérico (CT-24) e a contagem de 79 arquivos foram reproduzidos.

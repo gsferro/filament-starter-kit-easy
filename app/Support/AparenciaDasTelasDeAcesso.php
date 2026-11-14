@@ -235,7 +235,11 @@ final class AparenciaDasTelasDeAcesso
         $primaria = $resolvida['primary'] ?? null;
 
         if (is_string($primaria)) {
-            return $primaria;
+            // A primária hexadecimal aceita `#rgb` (`CorPrimaria`): expandida, para o contraste do
+            // texto ser decidido sobre ela (QA-10 do gate, ciclo 2).
+            return preg_match('/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/', $primaria, $p) === 1
+                ? strtolower('#'.$p[1].$p[1].$p[2].$p[2].$p[3].$p[3])
+                : $primaria;
         }
 
         if (is_array($primaria) && is_string($primaria[600] ?? null)) {
@@ -253,9 +257,8 @@ final class AparenciaDasTelasDeAcesso
      * um corte fixo deixava branco em cores médias (`#00aaff`, o âmbar 600 da primária default) com
      * contraste abaixo de 3:1.
      *
-     * Entende `#RRGGBB` e o `oklch(...)` das constantes de `Filament\Support\Colors\Color`; o
-     * `L` do OKLab vira luminância por `L³` (exato para cinzas, boa aproximação para as cores da
-     * paleta). Valor que não entende: `false` (texto branco, como sempre foi).
+     * Entende `#RRGGBB` e o `oklch(...)` das constantes de `Filament\Support\Colors\Color`
+     * (convertido a sRGB linear de verdade). Valor que não entende: `false` (texto branco).
      */
     public static function fundoClaro(?string $cor): bool
     {
@@ -290,13 +293,36 @@ final class AparenciaDasTelasDeAcesso
             return 0.2126 * $canal(substr($cor, 1, 2)) + 0.7152 * $canal(substr($cor, 3, 2)) + 0.0722 * $canal(substr($cor, 5, 2));
         }
 
-        if (preg_match('/^oklch\(\s*([0-9.]+)(%?)/i', $cor, $partes) === 1) {
-            $l = (float) $partes[1] / ($partes[2] === '%' ? 100 : 1);
-
-            return max(0.0, min(1.0, $l)) ** 3;
+        if (preg_match('/^oklch\(\s*([0-9.]+)(%?)\s+([0-9.]+)\s+([0-9.]+)/i', $cor, $partes) === 1) {
+            return self::luminanciaDoOklch(
+                (float) $partes[1] / ($partes[2] === '%' ? 100 : 1),
+                (float) $partes[3],
+                (float) $partes[4],
+            );
         }
 
         return null;
+    }
+
+    /**
+     * Luminância relativa de uma cor OKLCH, pela conversão de verdade OKLab → sRGB linear (Björn
+     * Ottosson). A aproximação `L³` errava a escolha em Fuchsia e Pink 600 (QA-11 do gate, ciclo 2).
+     */
+    private static function luminanciaDoOklch(float $l, float $c, float $h): float
+    {
+        $rad = deg2rad($h);
+        $a   = $c * cos($rad);
+        $b   = $c * sin($rad);
+
+        $l_ = ($l + 0.3963377774 * $a + 0.2158037573 * $b) ** 3;
+        $m_ = ($l - 0.1055613458 * $a - 0.0638541728 * $b) ** 3;
+        $s_ = ($l - 0.0894841775 * $a - 1.2914855480 * $b) ** 3;
+
+        $r = max(0.0, min(1.0, 4.0767416621 * $l_ - 3.3077115913 * $m_ + 0.2309699292 * $s_));
+        $g = max(0.0, min(1.0, -1.2684380046 * $l_ + 2.6097574011 * $m_ - 0.3413193965 * $s_));
+        $z = max(0.0, min(1.0, -0.0041960863 * $l_ - 0.7034186147 * $m_ + 1.7076147010 * $s_));
+
+        return 0.2126 * $r + 0.7152 * $g + 0.0722 * $z;
     }
 
     /**

@@ -121,7 +121,7 @@ própria, no mesmo formulário da organização. Nada muda para quem atualiza o 
 
 - Aba global: a mesma da página de configurações (`ExigePermissaoDaTela`, `canEdit() = canAccess()`)
 - Organização: o formulário já é autorizado pela `TenantPolicy` (`update`/`create`)
-- Preview: rota do kit sob `panel:admin` + o `Authenticate` do Filament (só quem entra no `/admin`, P-17);
+- Preview: rota do kit sob `panel:admin` + `auth`; a página exige `canAccessPanel(admin)` (só quem entra no `/admin`, P-17) *(alterado em 2026-11-14: QA-01/QA-12 — o `Authenticate` do Filament rodava antes do `SetUpPanel:admin` e decidia pelo painel default)*;
   o `mount()` exige rascunho do **próprio usuário** e autoriza o escopo gravado nele (configurações para
   `global`, `update` da organização, `create` para organização nova), e a autorização é refeita a cada
   request. Sem rascunho: 404; escopo negado: 403 *(alterado em 2026-11-13: SEC-02/SEC-03, BP-35)*
@@ -196,8 +196,9 @@ Nenhuma nova.
 - `aplicar(AuthDesignerConfig $base, ?array $aparencia): AuthDesignerConfig` — `null`/clássico devolve
   `$base` (o mesmo objeto); `painel` reconstrói com `mediaSize 50%`, posição pelo lado, mídia = a arte
   da identidade, lida no request (P-15), blur 0, alternador conforme a opção, hooks preservados *(alterado em 2026-11-13: P-15, QA-05)*
-- `corDoPainel(?array, ?Tenant): string` — hex validado: o da aparência, senão a primária da
-  organização, senão a da instalação
+- `corDoPainel(?array, ?Tenant): string` — sempre uma cor concreta: o `#RRGGBB` da aparência, senão a primária da
+  organização, senão a da instalação (hex, com `#rgb` expandido, ou a constante `oklch` da paleta), senão o âmbar 600
+  do Filament; `fundoClaro()` escolhe o texto de maior contraste (P-18) *(alterado em 2026-11-14: QA-04, QA-10, QA-11, QA-12)*
 - Settings: propriedade `aparencia_das_telas` (`?array`), linha no mapa
   (`identidade.aparencia_das_telas`), migration nova com `null` e limpeza do cache na ida e na volta
 - **Atende**: RQ-07, RQ-11, RQ-13, P-01
