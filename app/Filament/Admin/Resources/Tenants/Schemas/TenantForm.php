@@ -269,6 +269,9 @@ class TenantForm
                 Section::make('Telas de acesso')
                     ->description('A aparência do login, do cadastro e do bloqueio de sessão desta organização.')
                     ->collapsible()
+                    // A largura inteira: o editor tem grupos lado a lado e o preview precisa de espaço
+                    // (na coluna da grade, os campos quebravam palavra a palavra e o preview encolhia).
+                    ->columnSpanFull()
                     ->components([
                         Toggle::make('usar_aparencia_padrao')
                             ->label('Usar a aparência padrão')

@@ -357,9 +357,16 @@ it('[CT-B05] atualizar o preview mostra o que ainda não foi salvo', function (s
 
     $iframe = "document.querySelector('.kit-preview-das-telas__iframe')";
 
-    // O documento interno recebe o rascunho (A), não o persistido (P).
-    $pagina->assertScript("{$iframe}.contentDocument?.body?.innerText.includes('{$sentinela}') === true")
-        ->assertScript("!{$iframe}.contentDocument.body.innerText.includes('PADRAO')");
+    // O documento interno recebe o rascunho (A), não o persistido (P). No celular a faixa não
+    // mostra texto (P-22, Adendo 1): o rascunho chega ao documento, mas a frase não fica visível.
+    if ($dimensao === 'celular') {
+        $pagina->assertScript("{$iframe}.contentDocument?.body?.innerHTML.includes('{$sentinela}') === true")
+            ->assertScript("!{$iframe}.contentDocument.body.innerText.includes('{$sentinela}')");
+    } else {
+        $pagina->assertScript("{$iframe}.contentDocument?.body?.innerText.includes('{$sentinela}') === true");
+    }
+
+    $pagina->assertScript("!{$iframe}.contentDocument.body.innerHTML.includes('PADRAO')");
 
     // A tela escolhida: login tem senha e não tem nome; recuperação não tem senha; cadastro tem nome e senha.
     $esperado = match ($tela) {
@@ -516,4 +523,105 @@ it('[CT-B08] payload de aspas permanece texto inerte no login e no preview', fun
     'login, quebra de atributo'     => ['login', 'apoio', '" autofocus onfocus="alert(1)'],
     'preview, quebra de JavaScript' => ['preview', 'frase', "';alert(1);//"],
     'preview, quebra de atributo'   => ['preview', 'apoio', '" autofocus onfocus="alert(1)'],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| Adendo 1 — celular só com a marca, ilustração em movimento, largura do painel
+|--------------------------------------------------------------------------
+*/
+
+/** O painel cheio do Adendo 1: textos, destaque e rede em movimento. */
+function aparenciaCheiaDoAdendo(array $extra = []): array
+{
+    return [...aparenciaDeTeste('P'), 'destaque' => 'logo', 'ilustracao' => 'rede', 'movimento' => true, ...$extra];
+}
+
+it('[CT-B09] no celular a faixa mostra só a logo ou o nome da aplicação', function (bool $comLogo): void {
+    if ($comLogo) {
+        identidadeComArquivosReais();
+    }
+    definirAparenciaGlobal(aparenciaCheiaDoAdendo());
+
+    $pagina = visit('/admin/login')->resize(390, 844);
+
+    $visivel = json_decode((string) $pagina->script(<<<'JS'
+        (() => {
+            const painel = document.querySelector('.kit-painel-de-marca');
+            const visto = (sel) => [...painel.querySelectorAll(sel)].some((el) => el.getClientRects().length > 0);
+            return JSON.stringify({
+                texto: painel.innerText.trim(),
+                logo: visto('.kit-painel-de-marca__topo img'),
+                meio: visto('.kit-painel-de-marca__meio'),
+                base: visto('.kit-painel-de-marca__base'),
+                rede: visto('.kit-painel-de-marca__rede'),
+            });
+        })()
+    JS), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($visivel['texto'])->toBe($comLogo ? '' : config('app.name'))
+        ->and($visivel['logo'])->toBe($comLogo)
+        ->and($visivel['meio'])->toBeFalse()
+        ->and($visivel['base'])->toBeFalse()
+        ->and($visivel['rede'])->toBeFalse();
+
+    // No computador, o mesmo painel mostra tudo.
+    $pagina->resize(1440, 900);
+    $pagina->assertScript("document.querySelector('.kit-painel-de-marca__frase').getClientRects().length > 0")
+        ->assertScript("document.querySelector('.kit-painel-de-marca__rede').getClientRects().length > 0")
+        ->assertNoJavaScriptErrors();
+})->with(['com logo' => true, 'sem logo' => false]);
+
+it('[CT-B10] a rede se move, o botão pausa e retoma', function (): void {
+    definirAparenciaGlobal(aparenciaCheiaDoAdendo());
+
+    $pagina = visit('/admin/login')->resize(1440, 900);
+    $ponto  = "document.querySelector('.kit-painel-de-marca__rede circle').getAttribute('cx')";
+
+    $pagina->assertScript("!document.querySelector('[data-kit-pausa]').hidden");
+    $antes = $pagina->script($ponto);
+    $pagina->wait(0.6);
+    expect($pagina->script($ponto))->not->toBe($antes, 'a rede deveria estar em movimento');
+
+    $pagina->click('Pausar o movimento')->wait(0.2);
+    $parado = $pagina->script($ponto);
+    $pagina->wait(0.6);
+    expect($pagina->script($ponto))->toBe($parado, 'a rede deveria ter parado')
+        ->and($pagina->script("document.querySelector('[data-kit-pausa]').getAttribute('aria-pressed')"))->toBe('true');
+
+    $pagina->click('Retomar o movimento')->wait(0.6);
+    expect($pagina->script($ponto))->not->toBe($parado, 'a rede deveria ter voltado a se mover');
+    $pagina->assertNoJavaScriptErrors();
+});
+
+it('[CT-B10] movimento desligado deixa a rede parada e sem botão', function (): void {
+    definirAparenciaGlobal(aparenciaCheiaDoAdendo(['movimento' => false]));
+
+    $pagina = visit('/admin/login')->resize(1440, 900);
+    $ponto  = "document.querySelector('.kit-painel-de-marca__rede circle').getAttribute('cx')";
+
+    $antes = $pagina->script($ponto);
+    $pagina->wait(0.6);
+
+    expect($pagina->script($ponto))->toBe($antes)
+        ->and($pagina->script("document.querySelectorAll('[data-kit-pausa]').length"))->toBe(0);
+});
+
+it('[CT-B11] a largura escolhida divide a tela entre painel e formulário', function (int $tamanho, string $lado): void {
+    definirAparenciaGlobal(['tamanho_do_painel' => $tamanho, 'lado_do_formulario' => $lado] + aparenciaDeTeste('P'));
+
+    $pagina = visit('/admin/login')->resize(1440, 900);
+    $m      = json_decode((string) $pagina->script(<<<'JS'
+        (() => {
+            const secao = document.querySelector('.fi-auth-media-section').getBoundingClientRect();
+            const form = document.querySelector('.fi-auth-form-container').getBoundingClientRect();
+            return JSON.stringify({ largura: secao.width, esquerda: secao.left, form: form.left });
+        })()
+    JS), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($m['largura'])->toEqualWithDelta(1440 * $tamanho / 100, 2)
+        ->and($lado === 'direita' ? $m['form'] > $m['esquerda'] : $m['form'] < $m['esquerda'])->toBeTrue();
+})->with([
+    'estreito, formulário à direita' => [30, 'direita'],
+    'largo, formulário à esquerda'   => [70, 'esquerda'],
 ]);

@@ -192,7 +192,9 @@ it('[CT-30] a normalização precede a contagem na organização', function (): 
         ->and($acme->fresh()->aparencia_das_telas['apoio'])->toBeNull();
 })->group('tenancy');
 
-it('[CT-35] os editores da organização não têm upload próprio da aparência', function (string $tela): void {
+// CT-35 (@obsoleto pelo Adendo 1, RQ-20): o editor ganhou o upload da imagem do destaque. O que o
+// CT-35 protegia — nenhum arquivo arbitrário — passa ao CT-43.
+it('[CT-43] o único upload da aparência da organização aceita só PNG, JPEG ou WebP no diretório das telas de acesso', function (string $tela): void {
     [$acme] = organizacoesAB();
     $this->actingAs(usuarioComPapel('master_global'));
     $editor = $tela === 'criação' ? criadorDeOrganizacao() : editorDaOrganizacao($acme);
@@ -200,9 +202,13 @@ it('[CT-35] os editores da organização não têm upload próprio da aparência
 
     $uploads = collect($editor->instance()->form->getFlatComponents(withHidden: true))
         ->filter(fn ($c): bool => $c instanceof FileUpload && str_contains((string) $c->getStatePath(), 'aparencia_das_telas'))
-        ->count();
+        ->values();
 
-    expect($uploads)->toBe(0);
+    expect($uploads)->toHaveCount(1)
+        ->and($uploads[0]->getStatePath())->toEndWith('aparencia_das_telas.imagem_do_destaque')
+        ->and($uploads[0]->getAcceptedFileTypes())->toBe(['image/png', 'image/jpeg', 'image/webp'])
+        ->and($uploads[0]->getDiskName())->toBe('public')
+        ->and($uploads[0]->getDirectory())->toBe('telas-de-acesso');
 })->with(['criação', 'edição'])->group('tenancy');
 
 /*

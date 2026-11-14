@@ -3396,27 +3396,37 @@ function esperarAcessoLivre(string $url): void
  */
 function aparenciaDeTeste(string $qual): array
 {
+    /*
+     * Os campos do Adendo 1 (tamanho, destaque, ilustração) entram em toda aparência de teste com
+     * os padrões, e P e A trocam alguns deles: o round-trip cobre os campos novos sem mudar o que
+     * os cenários antigos verificam (P-23).
+     */
+    $adendo = [
+        'tamanho_do_painel' => 50, 'destaque' => 'nenhum', 'imagem_do_destaque' => null, 'tamanho_do_destaque' => 'medio',
+        'ilustracao'        => 'nenhuma', 'movimento' => true, 'cor_da_ilustracao' => null,
+    ];
+
     return match ($qual) {
         'P' => [
             'layout' => 'painel', 'lado_do_formulario' => 'esquerda', 'fundo' => 'cor', 'cor' => '#123456',
             'frase'  => 'PADRAO', 'apoio' => 'APOIO P', 'logo_no_painel' => true, 'alternador_de_tema' => true,
-        ],
+        ] + ['tamanho_do_painel' => 60, 'tamanho_do_destaque' => 'grande'] + $adendo,
         'A' => [
             'layout' => 'painel', 'lado_do_formulario' => 'direita', 'fundo' => 'cor', 'cor' => '#654321',
             'frase'  => 'ORG A', 'apoio' => 'APOIO A', 'logo_no_painel' => false, 'alternador_de_tema' => false,
-        ],
+        ] + ['tamanho_do_painel' => 40, 'ilustracao' => 'rede', 'movimento' => false, 'cor_da_ilustracao' => '#ffcc00'] + $adendo,
         'B' => [
             'layout' => 'painel', 'lado_do_formulario' => 'esquerda', 'fundo' => 'cor', 'cor' => '#0a0b0c',
             'frase'  => 'ORG B', 'apoio' => 'APOIO B', 'logo_no_painel' => true, 'alternador_de_tema' => false,
-        ],
+        ] + $adendo,
         'P0' => [
             'layout' => 'painel', 'lado_do_formulario' => 'esquerda', 'fundo' => 'cor', 'cor' => null,
             'frase'  => null, 'apoio' => null, 'logo_no_painel' => false, 'alternador_de_tema' => false,
-        ],
+        ] + $adendo,
         'P2' => [
             'layout' => 'painel', 'lado_do_formulario' => 'direita', 'fundo' => 'arte', 'cor' => '#abcdef',
             'frase'  => 'P DOIS', 'apoio' => 'APOIO P2', 'logo_no_painel' => false, 'alternador_de_tema' => true,
-        ],
+        ] + $adendo,
         'classico' => ['layout' => 'classico'],
     };
 }

@@ -57,6 +57,20 @@
 | P-16 | nada além do que a tela mostra | 2 | step 9 |
 | P-17 | preview exige admin e reautoriza | 6 | step 9 |
 | P-18 | texto escuro sobre cor clara | 3 | step 9 |
+| RQ-17 | resolver o PR, merge com tag e 4 cenários | — | processo: `03` › Verificação Final e Adendo 1 |
+| RQ-18 | capturas a mais no site | 10 | arte de fundo, tema escuro, editor da organização |
+| RQ-19 | frase e apoio editáveis | 5, 10 | já existiam; o editor ganha exemplo no placeholder |
+| RQ-20 | logo ou imagem no meio | 10 | destaque central |
+| RQ-21 | ilustração em movimento ou parada | 10 | rede de pontos |
+| RQ-22 | sugestão da referência, tudo editável | 10 | cada elemento do painel é opção |
+| RQ-23 | tamanho e lado do formulário | 10 | `mediaSize` 30–70 e lado |
+| RQ-24 | celular só com a marca | 10 | faixa só com logo ou nome |
+| P-19 | largura 30–70 em passos de 5 | 10 | Adendo 1 |
+| P-20 | destaque nenhum/logo/imagem | 10 | Adendo 1 |
+| P-21 | rede, movimento com pausa, cor | 10 | Adendo 1 |
+| P-22 | celular só logo ou nome | 10 | Adendo 1 |
+| P-23 | aparência antiga continua igual | 10 | Adendo 1 |
+| P-24 | imagem só em `telas-de-acesso/` | 10 | Adendo 1 |
 
 ## Objetivo
 
@@ -307,6 +321,23 @@ Nenhuma nova.
 - CT do `04` pelo `fw-executor-ct`; CT-B do `05` pelo `fw-executor-ctb`
 - Os 4 cenários de `wikis/checklist-de-release.md` sobre o commit final
 - **Atende**: RQ-07, RQ-08, RQ-01, RQ-09, RQ-10, RQ-11, RQ-13, RQ-14, P-01, P-02
+
+### 10. Adendo 1 — largura, destaque, ilustração, celular
+
+- **Decisor** (`app/Support/AparenciaDasTelasDeAcesso.php`): campos `tamanho_do_painel`
+  (`TAMANHOS_DO_PAINEL`, 30–70, vira `mediaSize`), `destaque`, `imagem_do_destaque`
+  (`caminhoDaImagem()`, só `telas-de-acesso/*.png|jpg|jpeg|webp`), `tamanho_do_destaque`,
+  `ilustracao`, `movimento`, `cor_da_ilustracao`; `urlDaImagem()` (disco público, `warning` se sumiu);
+  `rede()` (desenho fixo, duas ligações por ponto). Padrões reproduzem o painel anterior (P-23)
+- **Trait** (`VesteAparenciaDasTelas`): `destaqueDoPainelDeMarca()` público, vazio fora do painel
+  (P-16); `urlDaImagemDoDestaque()` protegido, sobrescrito pelo preview
+- **Editor**: campos agrupados em `Fieldset` (Disposição, Fundo, Textos, Logo e destaque central,
+  Ilustração); upload só PNG/JPEG/WebP no disco público; campos ocultos desidratados (ADR-02)
+- **Preview**: o rascunho guarda `imagem_temporaria` (URL assinada do Livewire, só PNG/JPEG/WebP);
+  a página a prefere à gravada
+- **View e CSS**: topo/meio/base; rede em SVG com componente Alpine (pausa, `prefers-reduced-motion`,
+  aba oculta); abaixo de 1024 px some tudo menos o topo
+- **Docs** pt/en, CHANGELOG e capturas novas (`art/telas-de-acesso-{painel-arte,painel-escuro,organizacao}.png`)
 
 ## Verificação
 

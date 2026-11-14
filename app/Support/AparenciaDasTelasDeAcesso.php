@@ -9,6 +9,7 @@ use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
 use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * A aparência das telas de autenticação: o que a instalação (e, com tenancy, a organização)
@@ -55,6 +56,30 @@ final class AparenciaDasTelasDeAcesso
     public const LIMITE_DO_APOIO = 160;
 
     /**
+     * Largura do painel de marca, em %, no modo lateral do auth designer (`mediaSize`): o
+     * formulário fica com o resto. Passos de 5, de 30 a 70 — fora disso o formulário ou o painel
+     * ficam estreitos demais para o conteúdo (P-19).
+     */
+    public const TAMANHOS_DO_PAINEL = [30, 35, 40, 45, 50, 55, 60, 65, 70];
+
+    /** O que aparece no meio do painel (P-20). */
+    public const DESTAQUES = ['nenhum', 'logo', 'imagem'];
+
+    public const TAMANHOS_DO_DESTAQUE = ['pequeno', 'medio', 'grande'];
+
+    /** A ilustração decorativa do painel (P-21). */
+    public const ILUSTRACOES = ['nenhuma', 'rede'];
+
+    /**
+     * Onde a imagem do destaque mora no disco `public`. O caminho gravado só vale aqui dentro
+     * (P-24): a aparência é JSON que o kit lê numa tela pública, e um caminho livre faria a tela
+     * de login apontar para qualquer arquivo do disco.
+     */
+    public const DIRETORIO_DAS_IMAGENS = 'telas-de-acesso';
+
+    private const FORMATO_DO_CAMINHO = '#^telas-de-acesso/[A-Za-z0-9][A-Za-z0-9._-]*\.(png|jpe?g|webp)\z#i';
+
+    /**
      * Só `#RRGGBB`: o valor vai para um atributo `style`, e nada além de hexadecimal entra lá.
      *
      * `\z`, e não `$`: o `$` do PCRE aceita uma quebra de linha no fim, e `#123456\n` passaria.
@@ -65,19 +90,29 @@ final class AparenciaDasTelasDeAcesso
      * O objeto com que o layout `painel` nasce — no editor da instalação e na organização que
      * deixa de usar a padrão quando a padrão ainda é o clássico.
      *
-     * @return array{layout: string, lado_do_formulario: string, fundo: string, cor: ?string, frase: ?string, apoio: ?string, logo_no_painel: bool, alternador_de_tema: bool}
+     * Os campos do Adendo 1 (tamanho, destaque, ilustração) nascem nos valores que reproduzem o
+     * painel de antes: uma aparência gravada sem eles continua igual (P-23).
+     *
+     * @return array<string, mixed>
      */
     public static function padraoDoPainel(): array
     {
         return [
-            'layout'             => self::LAYOUT_PAINEL,
-            'lado_do_formulario' => 'direita',
-            'fundo'              => 'cor',
-            'cor'                => null,
-            'frase'              => null,
-            'apoio'              => null,
-            'logo_no_painel'     => true,
-            'alternador_de_tema' => true,
+            'layout'              => self::LAYOUT_PAINEL,
+            'lado_do_formulario'  => 'direita',
+            'tamanho_do_painel'   => 50,
+            'fundo'               => 'cor',
+            'cor'                 => null,
+            'frase'               => null,
+            'apoio'               => null,
+            'logo_no_painel'      => true,
+            'destaque'            => 'nenhum',
+            'imagem_do_destaque'  => null,
+            'tamanho_do_destaque' => 'medio',
+            'ilustracao'          => 'nenhuma',
+            'movimento'           => true,
+            'cor_da_ilustracao'   => null,
+            'alternador_de_tema'  => true,
         ];
     }
 
@@ -85,7 +120,7 @@ final class AparenciaDasTelasDeAcesso
      * O valor gravado, reduzido ao vocabulário. `null` = clássico.
      *
      * @param  string  $origem  `global` ou `tenant:{id}` — só para o log
-     * @return array{layout: string, lado_do_formulario: string, fundo: string, cor: ?string, frase: ?string, apoio: ?string, logo_no_painel: bool, alternador_de_tema: bool}|null
+     * @return array<string, mixed>|null
      */
     public static function normalizar(mixed $bruto, string $origem): ?array
     {
@@ -114,14 +149,21 @@ final class AparenciaDasTelasDeAcesso
         $padrao = self::padraoDoPainel();
 
         return [
-            'layout'             => self::LAYOUT_PAINEL,
-            'lado_do_formulario' => self::umDe($bruto['lado_do_formulario'] ?? null, self::LADOS, $padrao['lado_do_formulario']),
-            'fundo'              => self::umDe($bruto['fundo'] ?? null, self::FUNDOS, $padrao['fundo']),
-            'cor'                => self::cor($bruto['cor'] ?? null),
-            'frase'              => self::texto($bruto['frase'] ?? null, self::LIMITE_DA_FRASE),
-            'apoio'              => self::texto($bruto['apoio'] ?? null, self::LIMITE_DO_APOIO),
-            'logo_no_painel'     => self::booleano($bruto['logo_no_painel'] ?? null, $padrao['logo_no_painel']),
-            'alternador_de_tema' => self::booleano($bruto['alternador_de_tema'] ?? null, $padrao['alternador_de_tema']),
+            'layout'              => self::LAYOUT_PAINEL,
+            'lado_do_formulario'  => self::umDe($bruto['lado_do_formulario'] ?? null, self::LADOS, $padrao['lado_do_formulario']),
+            'tamanho_do_painel'   => self::tamanho($bruto['tamanho_do_painel'] ?? null),
+            'fundo'               => self::umDe($bruto['fundo'] ?? null, self::FUNDOS, $padrao['fundo']),
+            'cor'                 => self::cor($bruto['cor'] ?? null),
+            'frase'               => self::texto($bruto['frase'] ?? null, self::LIMITE_DA_FRASE),
+            'apoio'               => self::texto($bruto['apoio'] ?? null, self::LIMITE_DO_APOIO),
+            'logo_no_painel'      => self::booleano($bruto['logo_no_painel'] ?? null, $padrao['logo_no_painel']),
+            'destaque'            => self::umDe($bruto['destaque'] ?? null, self::DESTAQUES, $padrao['destaque']),
+            'imagem_do_destaque'  => self::caminhoDaImagem($bruto['imagem_do_destaque'] ?? null),
+            'tamanho_do_destaque' => self::umDe($bruto['tamanho_do_destaque'] ?? null, self::TAMANHOS_DO_DESTAQUE, $padrao['tamanho_do_destaque']),
+            'ilustracao'          => self::umDe($bruto['ilustracao'] ?? null, self::ILUSTRACOES, $padrao['ilustracao']),
+            'movimento'           => self::booleano($bruto['movimento'] ?? null, $padrao['movimento']),
+            'cor_da_ilustracao'   => self::cor($bruto['cor_da_ilustracao'] ?? null),
+            'alternador_de_tema'  => self::booleano($bruto['alternador_de_tema'] ?? null, $padrao['alternador_de_tema']),
         ];
     }
 
@@ -179,7 +221,7 @@ final class AparenciaDasTelasDeAcesso
         return new AuthDesignerConfig(
             position: ($aparencia['lado_do_formulario'] ?? 'direita') === 'esquerda' ? MediaPosition::Right : MediaPosition::Left,
             media: $media,
-            mediaSize: '50%',
+            mediaSize: self::tamanho($aparencia['tamanho_do_painel'] ?? null).'%',
             blur: 0,
             mediaAlt: $base->mediaAlt ?? config('app.name'),
             showThemeSwitcher: $base->showThemeSwitcher && (bool) ($aparencia['alternador_de_tema'] ?? true),
@@ -323,6 +365,94 @@ final class AparenciaDasTelasDeAcesso
         $z = max(0.0, min(1.0, -0.0041960863 * $l_ - 0.7034186147 * $m_ + 1.7076147010 * $s_));
 
         return 0.2126 * $r + 0.7152 * $g + 0.0722 * $z;
+    }
+
+    /**
+     * O desenho da ilustração "rede" (P-21): pontos num quadro de 600×400 e as ligações entre eles.
+     *
+     * Fixo, e não sorteado por request: a tela de login é a mesma a cada visita, e o teste pode
+     * contar pontos e ligações. Cada ponto liga aos dois vizinhos mais próximos ainda não ligados a
+     * ele — o resultado é uma malha sem cruzamentos longos. O movimento (quando ligado) é só um
+     * deslocamento pequeno de cada ponto em torno desta posição, feito no navegador.
+     *
+     * @return array{pontos: list<array{x: int, y: int, r: int}>, ligacoes: list<array{0: int, 1: int}>}
+     */
+    public static function rede(): array
+    {
+        $pontos = [
+            ['x' => 70, 'y' => 60, 'r' => 5], ['x'    => 190, 'y' => 30, 'r' => 7], ['x' => 320, 'y' => 85, 'r' => 9],
+            ['x' => 455, 'y' => 40, 'r' => 6], ['x'   => 560, 'y' => 120, 'r' => 8], ['x' => 120, 'y' => 170, 'r' => 8],
+            ['x' => 250, 'y' => 200, 'r' => 11], ['x' => 395, 'y' => 180, 'r' => 7], ['x' => 520, 'y' => 245, 'r' => 10],
+            ['x' => 60, 'y' => 290, 'r' => 6], ['x'   => 185, 'y' => 320, 'r' => 7], ['x' => 330, 'y' => 300, 'r' => 9],
+            ['x' => 450, 'y' => 345, 'r' => 6], ['x'  => 575, 'y' => 370, 'r' => 5],
+        ];
+
+        $ligacoes = [];
+
+        foreach ($pontos as $i => $ponto) {
+            $distancias = [];
+
+            foreach ($pontos as $j => $outro) {
+                if ($i !== $j) {
+                    $distancias[$j] = ($ponto['x'] - $outro['x']) ** 2 + ($ponto['y'] - $outro['y']) ** 2;
+                }
+            }
+
+            asort($distancias);
+
+            foreach (array_slice(array_keys($distancias), 0, 2) as $j) {
+                $par                          = [min($i, $j), max($i, $j)];
+                $ligacoes[implode('-', $par)] = $par;
+            }
+        }
+
+        return ['pontos' => $pontos, 'ligacoes' => array_values($ligacoes)];
+    }
+
+    /**
+     * A URL da imagem do destaque, ou `null` quando não há arquivo utilizável: caminho fora do
+     * diretório das telas de acesso (P-24) ou arquivo que sumiu do disco — a tela segue sem o
+     * destaque, nunca quebra (P-20).
+     */
+    public static function urlDaImagem(mixed $caminho): ?string
+    {
+        $caminho = self::caminhoDaImagem($caminho);
+
+        if ($caminho === null) {
+            return null;
+        }
+
+        if (! Storage::disk('public')->exists($caminho)) {
+            Log::channel('autenticacao')->warning(
+                '[AparenciaDasTelasDeAcesso@urlDaImagem] Imagem do destaque ausente no disco | caminho: '.$caminho,
+                ['caminho' => $caminho, 'disco' => 'public'],
+            );
+
+            return null;
+        }
+
+        // `asset()`, e não `url()` do disco: segue o host do request (mesma razão de `IdentidadeDoKit::doDisco()`).
+        return asset('storage/'.$caminho);
+    }
+
+    /**
+     * O caminho gravado, se for um caminho do diretório das telas de acesso (P-24). Aceita o
+     * estado do `FileUpload` do Filament — `['uuid' => 'caminho']` — além da string.
+     */
+    public static function caminhoDaImagem(mixed $valor): ?string
+    {
+        if (is_array($valor)) {
+            $valor = count($valor) === 1 ? reset($valor) : null;
+        }
+
+        return is_string($valor) && preg_match(self::FORMATO_DO_CAMINHO, $valor) === 1 ? $valor : null;
+    }
+
+    private static function tamanho(mixed $valor): int
+    {
+        $numero = is_int($valor) || (is_string($valor) && ctype_digit($valor)) ? (int) $valor : null;
+
+        return in_array($numero, self::TAMANHOS_DO_PAINEL, true) ? $numero : 50;
     }
 
     /**

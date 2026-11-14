@@ -10,9 +10,12 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 - Aparência das telas de acesso escolhida na tela (`wikis/specs/feat/aparencia-das-telas-de-acesso/`): a aba
   **Telas de acesso** de *Configurações da aplicação* troca o layout das telas de autenticação vestidas pelo Auth Designer nos três
   painéis — login, cadastro, recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de
-  sessão — entre o **clássico** (o de sempre, o default) e o **painel de marca**: o formulário numa metade e, na
-  outra, um painel arredondado com cor ou arte de fundo, a logo num selo claro e duas frases opcionais, que no
-  celular vira uma faixa curta acima do formulário em vez de sumir. Um **preview** mostra login, recuperação de
+  sessão — entre o **clássico** (o de sempre, o default) e o **painel de marca**: o formulário de um lado e, do
+  outro, um painel arredondado de largura escolhida (30% a 70%, o `mediaSize` do Auth Designer) com cor ou arte de
+  fundo, a logo num selo claro, um destaque no meio (a logo grande ou uma imagem PNG/JPEG/WebP enviada), uma
+  ilustração de rede de pontos parada ou em movimento (com botão de pausar e respeito a "reduzir movimento"), cor
+  própria da ilustração e duas frases opcionais. No celular o painel vira uma faixa curta acima do formulário,
+  só com a logo ou o nome da aplicação. Um **preview** mostra login, recuperação de
   senha e cadastro com as alterações ainda não salvas, em largura de computador e de celular, sem autenticar nem
   enviar nada. Com organizações, o formulário de cada uma ganha a seção **Telas de acesso**: usar a aparência
   padrão ou ter a sua, que vale no login com `?org=`, no cadastro e no bloqueio de sessão dela. Camada no kit,

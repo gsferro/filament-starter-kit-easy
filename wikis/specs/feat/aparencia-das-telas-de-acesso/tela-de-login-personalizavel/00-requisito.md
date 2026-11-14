@@ -92,9 +92,55 @@ auditoria) e no `02` (RQ-04).
 | P-16 | Uma tela de autenticação não entrega ao navegador cor nem logo de organização que ela não mostra: fora do layout "painel" (ou com a logo desligada) essas informações não saem nem por chamada direta ao componente | step 9 — SEC-01 (filament-security-audit) e RD-02 | 2026-11-13 | P-06, RQ-13 | vigente |
 | P-17 | O preview só abre para quem entra no painel admin, e a autorização do escopo vale a cada atualização da página, não só na abertura | step 9 — SEC-02/SEC-03, BP-35, CX-01 | 2026-11-13 | P-08 | vigente |
 | P-18 | Com uma cor de painel clara, o texto do painel passa a escuro, para continuar legível | step 9 — BP-23 (reviewing-filament-plans) | 2026-11-13 | P-03 | vigente |
+| P-19 | No "painel", o painel de marca ocupa de 30 % a 70 % da largura em passos de 5 (o formulário fica com o resto), padrão 50 %; o lado do formulário continua esquerda ou direita | decisão de desenho (Adendo 1) — espelha `mediaSize`/`mediaPosition` do auth designer | 2026-11-14 | RQ-23 | vigente |
+| P-20 | O destaque central do painel é "nenhum" (padrão), "logo" (a da organização, senão a da instalação; sem logo, o nome da aplicação) ou "imagem" enviada (PNG, JPEG ou WebP, sem SVG, no teto de upload do kit), em três tamanhos; imagem gravada que não existe mais no disco some sem derrubar a tela | decisão de desenho (Adendo 1) | 2026-11-14 | RQ-20 | vigente |
+| P-21 | A ilustração do painel é "nenhuma" (padrão) ou "rede" — pontos ligados por linhas —, com movimento ligado ou desligado e cor própria opcional (`#RRGGBB`; em branco, a cor do texto do painel). Em movimento, há botão de pausar; com "reduzir movimento" no sistema, ela fica parada | decisão de desenho (Adendo 1) — WCAG 2.2.2 e `prefers-reduced-motion` | 2026-11-14 | RQ-21, RQ-22 | vigente |
+| P-22 | No celular, a faixa do painel mostra só a logo (ou o nome da aplicação, sem logo); frase, apoio, destaque e ilustração ficam de fora | Adendo 1 (RQ-24), substitui em parte P-09 | 2026-11-14 | RQ-24 | vigente |
+| P-23 | Uma aparência gravada antes do Adendo 1 continua com o mesmo resultado: campo novo ausente vale o padrão, que reproduz o de antes (50 %, sem destaque, sem ilustração) | decisão de desenho (Adendo 1) — RQ-07 | 2026-11-14 | RQ-07 | vigente |
+| P-24 | O caminho de imagem gravado na aparência só vale dentro do diretório das telas de acesso do disco público; outro caminho é descartado | decisão de desenho (Adendo 1) — segurança | 2026-11-14 | RQ-20, P-05 | vigente |
 
 ## Fora de Escopo (declarado)
 
 - Mudar o fluxo de autenticação (credenciais, login social, 2FA, captcha, login unificado): só a
   aparência muda
 - Textos jurídicos/termos de uso
+
+## Adendo 1 — 2026-11-14
+
+- **Fonte**: pedidos do solicitante no chat, com o PR da feature aberto e antes do merge (cinco mensagens, na ordem)
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: —
+- **Máscara**: a mesma do Texto Original — a URL de referência aparece como
+  `[referência externa omitida a pedido do solicitante]` (RQ-12)
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> veja o PR #193 que esta aberto, resolva os problemas e faça o merge na main com nova tag + testes dos 4 cenarios
+
+> sua pergunta: "Se quiser capturas a mais (layout com a arte de fundo, tema escuro, editor da organização), eu tiro e adiciono ao PR."
+> minha resposta: sim
+
+> coloque também a opção de editar o texto que aparece: "Tudo o que a sua equipe precisa, num lugar só" e o subtexto.
+> - tem que ter a opção de exibir uma logo ou imagem no meio
+> - na url de parametro: "[referência externa omitida a pedido do solicitante]" tem uma imagem com animação que fica em movimento mas a mesma pode ser static
+> - revise no codigo fonte como esta implementado e traga para cá como sugestão mas deixe TUDO editavel para dar a maxima possibilidade de customização para o usuário do kit
+> - coloque também a opção de definir qual o tamanho que o form do login terá e em qual posição (left ou right) ele ficara, igual é usado no pacote default auth designer. temos que usar essas parametrizações para dar mais liberdade de customização
+> - use o "codex --yolo" se necessário
+> - crie uma /feature-wiki se necessário
+
+> - na parte mobile, não deve aparecer nenhum testo, so o nome da aplicação ou a Logo no topo
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-17 | Os problemas do PR são resolvidos e a feature entra na `main` com tag nova, depois dos 4 cenários | "resolva os problemas e faça o merge na main com nova tag + testes dos 4 cenarios" | processo | — |
+| RQ-18 | O site ganha capturas a mais: painel com a arte de fundo, tema escuro e o editor da organização | "Se quiser capturas a mais (layout com a arte de fundo, tema escuro, editor da organização)" … "sim" | não-funcional | — |
+| RQ-19 | A frase de destaque e o texto de apoio do painel são editáveis | "coloque também a opção de editar o texto que aparece" … "e o subtexto" | funcional | — |
+| RQ-20 | O painel pode exibir uma logo ou uma imagem no meio | "tem que ter a opção de exibir uma logo ou imagem no meio" | funcional | — |
+| RQ-21 | O painel oferece uma ilustração em movimento, que também pode ficar parada | "tem uma imagem com animação que fica em movimento mas a mesma pode ser static" | funcional | — |
+| RQ-22 | A ilustração é uma sugestão inspirada na referência, e todo elemento do painel é editável | "traga para cá como sugestão mas deixe TUDO editavel para dar a maxima possibilidade de customização" | funcional | — |
+| RQ-23 | O admin define o tamanho do formulário e o lado (esquerda ou direita), com as parametrizações do auth designer | "opção de definir qual o tamanho que o form do login terá e em qual posição (left ou right) ele ficara, igual é usado no pacote default auth designer" | funcional | — |
+| RQ-24 | No celular, o painel não mostra texto nenhum: só o nome da aplicação ou a logo, no topo | "na parte mobile, não deve aparecer nenhum testo, so o nome da aplicação ou a Logo no topo" | funcional | P-09 (parcial) |

@@ -20,7 +20,7 @@ always were — including in projects that update the kit.
 | Layout | What it looks like | When to use it |
 |---|---|---|
 | **Classic** (the default) | The artwork takes most of the screen (70%) and the form sits beside it: on the right on the login, on the left on the other screens. Below 1024 px wide the artwork disappears and the form takes the screen | Whoever already uses the kit and wants no change at all; whoever prefers the large artwork |
-| **Brand panel** | The screen splits in half: one half holds the form, the other a rounded panel with your brand — color or artwork background, the logo on a light badge and two optional sentences. On phones the panel **does not disappear**: it becomes a short strip above the form, with the logo and the headline | Whoever wants an entrance with identity, a message and the same look on phones |
+| **Brand panel** | The screen splits between the form and a rounded panel with your brand — you choose the width (30% to 70%) and the side. On the panel: color or artwork background, the logo on a light badge, a centerpiece (the logo, large, or an image of your own), a network-of-dots illustration — still or moving — and two optional sentences. On phones the panel **does not disappear**: it becomes a short strip above the form, **with the logo only** (or the application name, when there is no logo) | Whoever wants an entrance with identity, a message and the same look on phones |
 
 The chosen layout applies to the authentication screens dressed by the Auth Designer in the three panels — login, registration, password request and reset, e-mail confirmation, two factors and session lock; the panel choice, shown after signing in, stays as it is — (`/admin`, `/app`,
 `/infra`) and to the single pages `/login`, `/cadastro` and `/esqueci-minha-senha`, when the single
@@ -30,17 +30,37 @@ login page is on.
 |---|---|
 | [![Login with the brand panel](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel.png) | [![Brand strip on phones](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-celular.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-celular.png) |
 
+| Artwork background, centerpiece and network | Dark theme |
+|---|---|
+| [![Panel with the artwork background, the logo in the middle and the network of dots](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-arte.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-arte.png) | [![Brand panel in the dark theme](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-escuro.png) |
+
 ## Brand panel options
+
+[![The brand panel fields in the Telas de acesso tab](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)
 
 | Option | What it does | Default |
 |---|---|---|
 | **Form side** | Left or right; the panel goes to the other side | Right |
+| **Brand panel width** | 30% to 70% of the screen, in steps of 5; the form takes the rest (at 35%, the form takes 65%). It is the Auth Designer `mediaSize`. It does not apply on phones: there the panel is always the top strip | 50% |
 | **Panel background** | **Color** or **Identity artwork** — the same artwork as the Identity tab (or the artwork generated with the application name, when none was uploaded). A dark veil goes over the artwork, so the text stays readable | Color |
 | **Panel color** | A color in `#RRGGBB` format. Blank means the primary color — the organization's, when the screen belongs to an organization with its own color. With a light color, the panel text turns dark, so it stays readable | Blank |
 | **Headline** | Up to 80 characters, plain text. Shown on the panel, always smaller than the form title | Empty |
-| **Supporting text** | Up to 160 characters, plain text. Hidden on phones, so the strip stays short | Empty |
-| **Logo on the panel** | The identity logo (or the organization's) on a light badge, which works on any background color. With no logo uploaded, the application name is shown | On |
+| **Supporting text** | Up to 160 characters, plain text, right below the headline | Empty |
+| **Logo at the top of the panel** | The identity logo (or the organization's) on a light badge, which works on any background color. With no logo uploaded, the application name is shown | On |
+| **In the middle of the panel** | **Nothing**, the **Logo** (the same as the top one, larger, on a light badge; with no logo, the application name in large letters) or an **Image of your own** | Nothing |
+| **Centerpiece size** | Small, medium or large | Medium |
+| **Centerpiece image** | PNG, JPEG or WebP, up to the kit upload limit. SVG is rejected. Stored on the public disk, in `storage/app/public/telas-de-acesso/`. If the file disappears from the disk, the centerpiece disappears and the screen keeps working | — |
+| **Panel illustration** | **None** or **Network of dots**: dots linked by lines, decorative, at the top of the panel | None |
+| **Moving** | On, the network dots drift slowly and the screen gets a **Pause the motion** button (labelled "Pausar o movimento"); whoever asked the operating system to reduce motion sees the network still. Off, the network stays still | On |
+| **Illustration color** | A `#RRGGBB` color for the network. Blank means the same color as the panel text | Blank |
 | **Theme switcher** | The light/dark/system selector in the corner of the screen | On |
+
+The sentences are yours: the editor shows an example as a placeholder, but the panel only shows
+what you write.
+
+**On phones**, the top strip shows **the logo only** (or the application name, when there is no
+logo). Headline, supporting text, centerpiece and illustration only show from desktop width up (1024
+px and wider).
 
 Text is always treated as text: no field accepts HTML, CSS or script, and repeated or edge spaces
 are removed. A color outside the format, a text above the limit or an option outside the list is
@@ -53,6 +73,7 @@ rejected with an error on the field itself, and nothing is saved.
 The **Pré-visualização** (preview) section shows the screen with the changes **not saved yet**:
 
 - pick the screen (login, password request or registration) and the width (desktop or phone) — the frame has the size of a real screen (1440×900 or 390×844), scaled down to fit;
+- a centerpiece image you just uploaded already shows in the preview, before saving;
 - the preview refreshes by itself when a field changes; the **Atualizar preview** (refresh preview) button forces it;
 - the preview fields are for show: they do not sign in, do not send e-mail and do not lead to a
   social provider.
@@ -86,6 +107,8 @@ Turning the switch back on discards the organization's own appearance; turning i
 from a fresh copy of the current default.
 
 The organization can pick the classic even when the default is the brand panel (and vice versa).
+
+[![The Telas de acesso section in the organization form, with the preview](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacao.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacao.png)
 
 ### On which screen the organization's appearance applies
 
@@ -125,7 +148,10 @@ access rule.
 Whoever hand-customized the providers' `AuthDesignerPlugin` block keeps that configuration on the
 classic: the classic layout uses exactly what the providers build. The brand panel uses the
 Identity tab artwork (not the provider's media) and the switcher the providers configured, and decides the
-rest by itself (half the screen, side, no blur).
+rest by itself (the width and side chosen on the screen, no blur).
+
+A brand panel appearance saved before the width, centerpiece and illustration options keeps looking
+the same: whatever it lacks takes the default — 50%, no centerpiece, no illustration.
 
 ## How it works inside
 
@@ -145,6 +171,11 @@ For whoever is going to extend the kit:
   same.
 - The style lives in `resources/css/filament/kit.css`, scoped to `.kit-painel-de-marca` — the classic
   does not have that class and is not reached.
+- The network is drawn on the server (`AparenciaDasTelasDeAcesso::rede()`, always the same drawing)
+  and the motion is an Alpine component in the view itself, with no external script: it honors
+  `prefers-reduced-motion`, stops when the tab is hidden and has the pause button.
+- The centerpiece image is only read from `telas-de-acesso/` on the public disk: a stored path outside
+  that directory is discarded.
 - The installation's appearance lives in `ConfiguracoesDoKit::$aparencia_das_telas`
   (`config('kit.identidade.aparencia_das_telas')`); the organization's, in the JSON column
   `tenants.aparencia_das_telas`. Empty = classic for the installation and "use the default" for the

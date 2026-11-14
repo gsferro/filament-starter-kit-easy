@@ -53,7 +53,7 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R6 — Preview do rascunho e inércia | segurança/completo | RQ-10, P-08, **P-13** | EP × efeitos | CT-14–16 |
 | R7 — Autorização, dono e escopo | segurança/completo | RQ-09–11, RQ-13, P-08, **P-13** | papel × ação, IDOR, tipos | CT-17–20 |
 | R8 — Preservação da instalação existente | compatibilidade/padrão | RQ-07, RQ-08, P-01, **P-14**, Q10 | regressão e checklist de release | CT-21–22, CT-27 |
-| R9 — Documentação detalhada bilíngue | documentação/mínimo | RQ-15, Q11 | EP por canal e idioma | CT-23 |
+| R9 — Documentação detalhada bilíngue | documentação/mínimo | RQ-15, RQ-18, Q11 | EP por canal e idioma | CT-23 |
 | R10 — Composição de computador | apresentação/padrão | RQ-01, P-03, **P-14** | EP, geometria | CT-B01 |
 | R11 — Composição de celular | apresentação/padrão | RQ-01, P-09, **P-14** | EP, geometria | CT-B02 |
 | R12 — Interação acessível | apresentação/padrão | RQ-01 | EP, teclado | CT-B03 |
@@ -62,6 +62,14 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R14 — Preview interativo | apresentação/padrão | RQ-10, P-08, **P-14** | JavaScript e iframe | CT-B05 |
 | R15 — Clássico idêntico | compatibilidade/padrão | RQ-01, RQ-07, RQ-11, P-03, **P-14** | igualdade de configuração e regressão | CT-33, CT-B06 |
 | R16 — Referências externas restritas | documentação/mínimo | RQ-12, Q9 | inspeção genérica de links | CT-24 |
+| R18 — Vocabulário dos campos novos | tolerância/padrão | RQ-22, P-19, P-20, P-21, P-23, P-24 | EP, BVA | CT-44, CT-45, CT-46 |
+| R19 — Disposição | apresentação/padrão | RQ-23, P-19 | EP, BVA, geometria | CT-47, CT-B11 |
+| R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso | CT-48 |
+| R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10 |
+| R22 — Só o que a tela mostra | segurança/completo | P-16, P-20 | papel × ação | CT-50 |
+| R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-20, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
+| R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 |
+| R25 — Processo do Adendo 1 | processo/mínimo | RQ-17, RQ-18 | execução pela sessão | CT-21 (cenários, `03`), CT-23 (docs e capturas) |
 
 Tratamento das cláusulas:
 
@@ -272,6 +280,9 @@ Funcionalidade: Configurar a aparência
       Quando a pessoa abre o login
       Então a configuração efetiva tem formulário à direita, fundo de cor primária #654321, frases ausentes, logo ligada e alternador ligado
 
+    # Substituído pelo Adendo 1 (RQ-20 pede imagem própria no meio do painel): o upload agora existe;
+    # o que este cenário protegia — nenhum arquivo arbitrário — passa ao CT-43 e ao CT-45.
+    @obsoleto
     Esquema do Cenário: [CT-35] O editor reutiliza a identidade sem upload próprio
       Dado pessoa autorizada a <editor> e identidade com arte e logo conhecidas
       Quando a pessoa abre o editor da aparência
@@ -1019,6 +1030,7 @@ Destinos automatizados (implementados):
 
 - **K:** `tests/Kit/AparenciaDasTelasDeAcessoTest.php`
 - **T:** `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php`
+- **A:** `tests/Kit/AparenciaDasTelasAdendoTest.php` (Adendo 1)
 - **E:** `tests/Kit/AparenciaDasTelasDeAcessoEntregaTest.php`
 - **B:** `tests/Browser/AparenciaDasTelasDeAcessoTest.php` e correspondente em `tests/BrowserTenancy`
 
@@ -1074,6 +1086,19 @@ Destinos automatizados (implementados):
 | CT-B06 | Aparência clássica existente | R15 | regressão | G4 | browser | B e testes existentes | M46–47 |
 | CT-B07 | Entrada Unicode no navegador | R1 | BVA | G4 | browser | B | M71 |
 | CT-B08 | Aspas sem execução | R3 | escape contextual | G4 | browser | B | M72 |
+| CT-43 | Único upload restrito | R23 | EP | G1 | componente Livewire/Filament | K/T | — |
+| CT-44 | Vocabulário dos campos novos | R18 | EP, BVA | G1 | Pest unitário | A | — |
+| CT-45 | Caminho da imagem restrito | R18 | EP | G1 | Pest unitário | A | — |
+| CT-46 | Aparência antiga igual | R18 | regressão | G2 | Pest feature HTTP | A | — |
+| CT-47 | Largura vira mediaSize | R19 | EP, BVA | G2 | Pest feature HTTP | A | — |
+| CT-48 | Destaque central | R20 | EP, falha de recurso | G2 | Pest feature HTTP | A | — |
+| CT-49 | Rede, movimento e cor | R21 | EP | G2 | Pest feature HTTP | A | — |
+| CT-50 | Destaque só no painel | R22 | papel × ação | G1 | componente Livewire | A | — |
+| CT-51 | Editor grava campos novos e upload | R23 | rastreio de escrita | G1 | componente Livewire/Filament | A | — |
+| CT-52 | Preview com imagem não salva | R23 | EP × efeitos | G2 | Pest feature HTTP | A | — |
+| CT-B09 | Celular só com a marca | R24 | visibilidade | G4 | browser | B | — |
+| CT-B10 | Movimento com pausa | R21 | estado × evento | G4 | browser | B | — |
+| CT-B11 | Largura na tela | R19 | geometria | G4 | browser | B | — |
 
 ## Regra R17 — Achados do step 9 e do quality gate
 
@@ -1201,3 +1226,133 @@ Como foram acrescentados cenários, a skill exige uma re-revisão independente d
 Não restaram perguntas necessárias para fechar ADV-01..ADV-23. Não foram criadas políticas adicionais de concorrência, retry, TTL ou conformidade normativa.
 
 References lidas da skill solicitada: `template-04.md` — passos 2/6/7 e formato; `template-05.md` e `pest-plugin-browser.md` — arquivo 05; `tecnicas-por-regra.md` — passo 3; `taxonomia-de-defeito.md` — passo 4; `gherkin.md` — passo 5; `armadilhas-de-api.md` — passos 5/7; `escolha-de-camada.md` — passos 2/7; `mutation-testing.md` — passo 6; `revisao-adversarial.md` — fechamento. A orientação de `testing-best-practices` para ler implementação foi afastada pela restrição explícita desta derivação cega.
+
+## Adendo 1 — tamanho do painel, destaque central, ilustração e celular só com a marca
+
+Derivados pela **sessão** a partir do Adendo 1 (RQ-17..RQ-24) e das P-19..P-24 do `00`. Degradação
+declarada no `03`: a `feature-test-design` não derivou às cegas estes cenários; a revisão adversarial
+independente (`fw-adversario-ct`) roda sobre eles no step 9 do adendo.
+
+| Regra | Área/perfil | Origem | Técnica | Cenários |
+|---|---|---|---|---|
+| R18 — Vocabulário dos campos novos | tolerância/padrão | RQ-20..RQ-23, P-19..P-21, P-23, P-24 | EP, BVA | CT-44, CT-45, CT-46 |
+| R19 — Disposição | apresentação/padrão | RQ-23, P-19 | EP, BVA, geometria | CT-47, CT-B11 |
+| R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso | CT-48 |
+| R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10 |
+| R22 — Só o que a tela mostra | segurança/completo | P-16, P-20 | papel × ação | CT-50 |
+| R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
+| R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 (linhas de celular) |
+
+```gherkin
+# language: pt
+Funcionalidade: Adendo 1 da aparência das telas de acesso
+
+  Regra: R18 — Campo novo fora do vocabulário volta ao padrão do campo
+
+    Esquema do Cenário: [CT-44] Valor inválido de campo novo vale o padrão; valor válido é preservado
+      Dado a aparência P com <campo> = <valor>
+      Quando a aparência é lida
+      Então <campo> vale <lido> e os demais campos de P continuam iguais
+      Exemplos:
+        | campo | valor | lido |
+        | tamanho_do_painel | 25, 75, 52, -50, "grande" | 50 |
+        | tamanho_do_painel | 30, 70, "45" | 30, 70, 45 |
+        | destaque | "video" | nenhum |
+        | tamanho_do_destaque | "enorme" | medio |
+        | ilustracao | "estrelas" | nenhuma |
+        | movimento | "sim" / false | true / false |
+        | cor_da_ilustracao | "red; background: url(x)" / "#ABCDEF" | vazia / #abcdef |
+      # Origem: P-19..P-21, P-04 · Mata: limite aberto, passo ignorado, CSS na cor
+
+    Esquema do Cenário: [CT-45] Caminho de imagem fora do diretório das telas de acesso é descartado
+      Dado a aparência P com imagem_do_destaque = <caminho>
+      Quando a aparência é lida
+      Então a imagem vale <lido>
+      Exemplos:
+        | caminho | lido |
+        | telas-de-acesso/abc.png | o mesmo |
+        | estado do FileUpload {uuid: telas-de-acesso/abc.webp} | telas-de-acesso/abc.webp |
+        | telas-de-acesso/../.env · kit/logo.png · telas-de-acesso/x.svg · /etc/passwd · URL · subpasta · quebra de linha no fim · dois arquivos | vazia |
+      # Origem: P-24 · Mata: prefixo sem âncora, `..`, SVG, `$` que aceita `\n`
+
+    Cenário: [CT-46] Aparência gravada antes do adendo continua igual
+      Dado uma aparência painel gravada só com os campos de antes do adendo
+      Quando o login é aberto
+      Então o mediaSize é 50% e não há destaque, ilustração nem botão de pausar
+      # Origem: P-23, RQ-07
+
+  Regra: R19 — A largura escolhida divide a tela
+
+    Esquema do Cenário: [CT-47] A largura vira o mediaSize do pacote, dos dois lados
+      Dado a aparência P com largura <n> e formulário à <lado>
+      Quando o login é aberto
+      Então a configuração tem mediaSize "<n>%" e o HTML tem "--media-size: <n>%" e a classe do lado
+      Exemplos:
+        | n | lado |
+        | 30 | direita |
+        | 70 | esquerda |
+        | 55 | direita |
+      # E com o clássico, a configuração é a anterior exata, mesmo com largura gravada
+      # Origem: P-19, P-14 · Mata: largura fixa, largura no clássico
+
+  Regra: R20 — Destaque central
+
+    Esquema do Cenário: [CT-48] O meio do painel mostra o destaque escolhido
+      Dado a aparência P com destaque <tipo>
+      Quando o login é aberto
+      Então <resultado>
+      Exemplos:
+        | tipo | resultado |
+        | imagem gravada, tamanhos pequeno/médio/grande | a imagem do disco, com a classe do tamanho |
+        | imagem gravada que sumiu do disco | nada no meio, frase intacta e aviso no log |
+        | logo, com logo | a logo da identidade |
+        | logo, sem logo | o nome da aplicação |
+        | nenhum, com imagem gravada | nada no meio |
+      # Origem: P-20 · Mata: imagem ausente derruba a tela, destaque "nenhum" ignorado
+
+  Regra: R21 — Ilustração
+
+    Cenário: [CT-49] A rede desenha os pontos e as ligações, decorativa
+      Dado a aparência P com ilustração "rede"
+      Quando o login é aberto
+      Então o SVG tem aria-hidden, um círculo por ponto e uma linha por ligação do desenho fixo
+      # E com movimento ligado há o componente Alpine e o botão de pausar, nascido escondido; desligado, nenhum dos dois
+      # E a cor própria vai para o SVG; em branco, nenhuma cor própria; com "nenhuma", não há rede
+      # Origem: P-21 · Mata: botão visível sem JavaScript, movimento sem pausa, cor sem validação
+
+  Regra: R22 — O componente não entrega o que a tela não mostra
+
+    Esquema do Cenário: [CT-50] Chamada direta ao destaque devolve só o que a tela mostra
+      Dado a aparência <caso> com imagem gravada
+      Quando o componente de login é chamado diretamente
+      Então o destaque devolvido é <tipo>
+      Exemplos:
+        | caso | tipo |
+        | clássico | nenhum |
+        | painel sem destaque | nenhum |
+        | painel com imagem | imagem |
+        | painel com logo | logo |
+      # Origem: P-16 estendida ao destaque
+
+  Regra: R23 — Editor, upload e preview
+
+    Esquema do Cenário: [CT-43] O único upload da aparência da organização é restrito
+      Dado pessoa autorizada a <criar ou editar> organização, com aparência própria
+      Quando o formulário é aberto
+      Então há exatamente um upload na aparência, o da imagem do destaque, aceitando só PNG, JPEG e WebP no disco público, em telas-de-acesso
+      # Origem: P-20, P-24 · substitui o CT-35
+
+    Cenário: [CT-51] O editor grava os campos novos e o upload no diretório certo
+      Dado o editor da instalação com largura 35, destaque imagem (PNG enviado), tamanho grande, rede parada e cor #00ff88
+      Quando a pessoa salva
+      Então a aparência gravada tem esses valores e a imagem existe em telas-de-acesso/ no disco público
+      # E um SVG enviado é recusado com erro no campo e nada é gravado
+      # Origem: RQ-19..RQ-22, P-20
+
+    Cenário: [CT-52] O preview mostra a imagem enviada e ainda não salva
+      Dado o editor com destaque imagem e um PNG enviado e não salvo
+      Quando o preview é aberto
+      Então a imagem do destaque vem da URL temporária assinada do Livewire, nada foi gravado nem copiado para o disco público
+      # E um SVG não salvo não vira imagem temporária
+      # Origem: P-08, P-20
+```

@@ -166,6 +166,15 @@ class PreviewDasTelasDeAcesso extends SimplePage
     }
 
     /**
+     * A imagem do destaque recém-enviada e ainda não salva tem precedência sobre a gravada: o
+     * preview mostra o que AINDA NÃO foi salvo (P-08).
+     */
+    protected function urlDaImagemDoDestaque(mixed $caminho): ?string
+    {
+        return $this->rascunhoAutorizado()['imagem_temporaria'] ?? AparenciaDasTelasDeAcesso::urlDaImagem($caminho);
+    }
+
+    /**
      * A organização do escopo do rascunho, SEM as condições de P-06: o preview roda no `/admin` e
      * mostra a aparência daquela organização a quem pode editá-la. Só cor e logo dependem dela.
      */
@@ -184,7 +193,7 @@ class PreviewDasTelasDeAcesso extends SimplePage
      * O rascunho, de novo autorizado a cada request — não só no `mount()`: quem perde a permissão
      * com o preview aberto deixa de ver o escopo no próximo update Livewire (SEC-03/CX-01).
      *
-     * @return array{escopo: string, aparencia: array<string, mixed>|null}|null
+     * @return array{escopo: string, aparencia: array<string, mixed>|null, imagem_temporaria: ?string}|null
      */
     private function rascunhoAutorizado(): ?array
     {

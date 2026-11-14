@@ -25,8 +25,8 @@ use Illuminate\Support\Facades\Log;
  * `app` (inclui as páginas únicas `/login` e `/cadastro`, servidas sob `panel:app`) e organização
  * ativa. Fora delas, vale a aparência da instalação. A aparência NUNCA decide acesso.
  *
- * Os três métodos públicos (`aparenciaDaTela()`, `corDoPainelDeMarca()`, `logosDoPainelDeMarca()`)
- * existem para o partial `media` lê-los do componente. São ações chamáveis por `$wire` como todo
+ * Os quatro métodos públicos (`aparenciaDaTela()`, `corDoPainelDeMarca()`, `logosDoPainelDeMarca()`,
+ * `destaqueDoPainelDeMarca()`) existem para o partial `media` lê-los do componente. São ações chamáveis por `$wire` como todo
  * método público de componente Livewire; por isso a cor e as logos saem vazias fora do layout
  * `painel` (e as logos, com a logo desligada) — nada além do que a própria tela mostra (P-16).
  */
@@ -86,6 +86,36 @@ trait VesteAparenciaDasTelas
         }
 
         return IdentidadeDoKit::logosPara($this->organizacaoDaAparenciaMemo());
+    }
+
+    /**
+     * O destaque central do painel (P-20): `logo` traz o par de logos (o da organização, com queda
+     * para a instalação), `imagem` traz a URL da imagem enviada. `null` fora do `painel`, sem
+     * destaque, ou com imagem que não existe mais — nada além do que a tela mostra (P-16).
+     *
+     * @return array{tipo: 'logo', clara: ?string, escura: ?string}|array{tipo: 'imagem', url: string}|null
+     */
+    public function destaqueDoPainelDeMarca(): ?array
+    {
+        if (! $this->ehPainel()) {
+            return null;
+        }
+
+        $aparencia = $this->aparenciaDaTela();
+
+        return match ($aparencia['destaque'] ?? 'nenhum') {
+            'logo'   => ['tipo' => 'logo', ...IdentidadeDoKit::logosPara($this->organizacaoDaAparenciaMemo())],
+            'imagem' => ($url = $this->urlDaImagemDoDestaque($aparencia['imagem_do_destaque'] ?? null)) !== null
+                ? ['tipo' => 'imagem', 'url' => $url]
+                : null,
+            default  => null,
+        };
+    }
+
+    /** A página de preview sobrescreve: lá a imagem pode ainda não estar salva. */
+    protected function urlDaImagemDoDestaque(mixed $caminho): ?string
+    {
+        return AparenciaDasTelasDeAcesso::urlDaImagem($caminho);
     }
 
     private function ehPainel(): bool

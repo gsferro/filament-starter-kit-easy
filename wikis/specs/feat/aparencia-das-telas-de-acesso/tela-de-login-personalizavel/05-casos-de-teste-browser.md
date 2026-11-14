@@ -454,3 +454,44 @@ CT-B07 acrescenta a prova do limite efetivo do controle do navegador. CT-B08 acr
 | ADV-21 | Origens e dimensões atualizadas em CT-B01/02/04/05/06 |
 
 O fechamento integral ADV-01..ADV-23 está no 04. Os cenários novos requerem re-revisão independente pela sessão, conforme a skill. Nenhuma execução, aprovação visual, conformidade normativa ou confirmação de costura é alegada.
+
+## Adendo 1 — celular só com a marca, movimento e largura
+
+Derivados pela sessão (ver `04` › Adendo 1). CT-B05 mudou nas linhas de celular: a frase do
+rascunho chega ao documento do preview, mas não fica visível na faixa (P-22).
+
+```gherkin
+# language: pt
+Funcionalidade: Adendo 1 no navegador
+
+  Regra: R24 — No celular, só a marca
+
+    Esquema do Cenário: [CT-B09] A faixa do celular mostra só a logo ou o nome
+      Dado a aparência com frase, apoio, destaque logo e rede em movimento, <com ou sem> logo na identidade
+      Quando o login é aberto em 390×844
+      Então o texto visível da faixa é <vazio | o nome da aplicação>, e meio, base e rede não aparecem
+      E em 1440×900 a frase e a rede aparecem, sem erro de JavaScript
+      # Origem: RQ-24, P-22
+
+  Regra: R21 — Movimento com pausa
+
+    Cenário: [CT-B10] A rede se move, o botão pausa e retoma
+      Dado a rede em movimento
+      Quando o login é aberto em 1440×900
+      Então o botão de pausar está visível e um ponto muda de posição
+      E depois de "Pausar o movimento" o ponto fica parado e o botão marca aria-pressed
+      E depois de "Retomar o movimento" o ponto volta a se mover
+      # E com movimento desligado, o ponto não muda e não há botão
+      # Origem: P-21 (WCAG 2.2.2)
+
+  Regra: R19 — Largura
+
+    Esquema do Cenário: [CT-B11] A largura escolhida divide a tela
+      Dado largura <n> e formulário à <lado>
+      Quando o login é aberto em 1440×900
+      Então a seção do painel mede <n>% de 1440 (±2 px) e o formulário fica do lado escolhido
+      Exemplos:
+        | n | lado |
+        | 30 | direita |
+        | 70 | esquerda |
+```

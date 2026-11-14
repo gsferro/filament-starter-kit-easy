@@ -14,6 +14,7 @@ use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\FileUpload;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -808,23 +809,29 @@ it('[CT-33] o clássico ignora os valores exclusivos do painel', function (strin
 
 /*
 |--------------------------------------------------------------------------
-| R1 — sem upload novo
+| R23 — o único upload é o da imagem do destaque (CT-35 @obsoleto pelo Adendo 1)
 |--------------------------------------------------------------------------
 */
 
-it('[CT-35] o editor reutiliza a identidade sem upload próprio', function (): void {
+it('[CT-43] o único upload da aparência da instalação aceita só PNG, JPEG ou WebP no diretório das telas de acesso', function (): void {
     definirAparenciaGlobal(aparenciaDeTeste('P'));
     $this->actingAs(usuarioDoKit('master_global'));
 
-    $tela    = telaDeAparencia();
-    $uploads = collect($tela->instance()->form->getFlatComponents(withHidden: true))
-        ->filter(fn ($c): bool => $c instanceof Filament\Forms\Components\FileUpload && str_contains((string) $c->getStatePath(), 'aparencia_das_telas'))
-        ->count();
+    $tela   = telaDeAparencia();
+    $upload = $tela->instance()->form->getComponent(
+        fn ($c): bool => method_exists($c, 'getName') && $c->getName() === 'imagem_do_destaque',
+        withHidden: true,
+    );
 
-    expect($uploads)->toBe(0)
-        ->and($tela->html())->not->toContain('type="file"');
+    // `\Filament\...` com a barra inicial: sem ela o nome resolve dentro do namespace do arquivo de
+    // teste e o `instanceof` nunca casa — era o que deixava o antigo CT-35 sempre verde.
+    expect($upload)->toBeInstanceOf(FileUpload::class)
+        ->and($upload->getStatePath())->toEndWith('aparencia_das_telas.imagem_do_destaque')
+        ->and($upload->getAcceptedFileTypes())->toBe(['image/png', 'image/jpeg', 'image/webp'])
+        ->and($upload->getDiskName())->toBe('public')
+        ->and($upload->getDirectory())->toBe('telas-de-acesso');
 
-    // As opções de arte e logo são as da identidade existente: o fundo "arte" e o toggle da logo.
+    // As opções de arte e logo continuam as da identidade existente: o fundo "arte" e o toggle da logo.
     $tela->assertFormFieldExists(chaveDoCampo($tela, 'fundo'))->assertFormFieldExists(chaveDoCampo($tela, 'logo_no_painel'));
 })->group('kit');
 
