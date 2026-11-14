@@ -10,6 +10,7 @@ use App\Filament\Pages\Auth\TelaRedefinirSenha;
 use App\Filament\Pages\Auth\TelaVerificacaoDeEmail;
 use App\Models\Convite;
 use App\Models\Role;
+use App\Models\User;
 use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
@@ -19,6 +20,7 @@ use Filament\Support\Colors\Color;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -520,9 +522,12 @@ it('[CT-85] cadastro por convite e redefinição de senha renderizam a aparênci
 
     expect(textoDoPainelDeMarca(htmlDe('/app/register?token='.conviteDoCadastro()), 'frase'))->toBe('FRASE CAD');
 
+    // A redefinição de verdade: a URL assinada que o e-mail de recuperação leva (divergência 3 do QA-34).
     Filament::setCurrentPanel('admin');
-    $redefinir = Livewire::withQueryParams(['email' => 'x@example.com', 'token' => 'tok'])->test(TelaRedefinirSenha::class)->instance();
-    expect($redefinir->aparenciaDaTela()['frase'])->toBe('FRASE REC');
+    $pessoa = User::factory()->create();
+    $url    = Filament::getResetPasswordUrl(Password::broker()->createToken($pessoa), $pessoa);
+
+    expect(textoDoPainelDeMarca(htmlDe($url), 'frase'))->toBe('FRASE REC');
 })->group('kit');
 
 it('[CT-86] cor de gradiente com CSS anexado ou fora de #RRGGBB não chega ao estilo', function (array $campos, string $esperado): void {
@@ -549,11 +554,18 @@ it('[CT-87] o editor recusa cor de gradiente fora de #RRGGBB e não grava nada',
 })->with(['#abc', 'red', '#11223344'])->group('kit');
 
 it('[CT-88] login social e anti-robô só aparecem quando configurados', function (): void {
+    // Desligados de forma explícita, sem depender do padrão do ambiente (divergência 4 do QA-34).
+    config()->set('kit.login.anti_robo.habilitado', false);
+    foreach (ProvedorSocial::cases() as $provedor) {
+        config()->set("kit.login.{$provedor->value}.habilitado", false);
+    }
     definirAparenciaGlobal(painelComFrase('direita', 'LOGIN'));
 
     $html = htmlDe('/admin/login');
 
-    expect($html)->not->toContain('/auth/google/redirect')
+    // Controle positivo: o painel de marca foi desenhado; a ausência abaixo é dentro dele.
+    expect(textoDoPainelDeMarca($html, 'frase'))->toBe('LOGIN')
+        ->and($html)->not->toContain('/auth/google/redirect')
         ->and($html)->not->toContain('Entrar com')
         ->and($html)->not->toContain('www.google.com/recaptcha/api.js')
         ->and($html)->not->toContain('data-anti-robo');
@@ -612,8 +624,12 @@ it('[CT-91] texto antigo com metacaracteres continua literal depois de salvo, na
         ->and(textoDoPainelDeMarca($html, 'apoio'))->toBe($apoio);
 })->group('kit');
 
-it('[CT-92] frase gravada acima do teto visível volta ao padrão na tela', function (): void {
-    definirAparenciaGlobal(['frase' => '**'.str_repeat('a', 81).'**'] + aparenciaDeTeste('P'));
+it('[CT-92] frase gravada acima do teto visível volta ao padrão na tela', function (int $visiveis, ?string $esperada): void {
+    definirAparenciaGlobal(['frase' => '**'.str_repeat('a', $visiveis).'**'] + aparenciaDeTeste('P'));
 
-    expect(textoDoPainelDeMarca(htmlDe('/admin/login'), 'frase'))->toBeNull();
-})->group('kit');
+    expect(textoDoPainelDeMarca(htmlDe('/admin/login'), 'frase'))->toBe($esperada);
+})->with([
+    // O teto conta o visível: 80 caracteres com a marcação de negrito ainda aparecem.
+    'no teto (80)'       => [80, str_repeat('a', 80)],
+    'acima do teto (81)' => [81, null],
+])->group('kit');

@@ -15,6 +15,27 @@ ter a sua.
 Nada muda sozinho: enquanto ninguém escolher outro layout, as telas continuam exatamente como sempre
 foram — inclusive em projetos que atualizam o kit.
 
+## Veja as possibilidades
+
+Cada quadro abaixo é a mesma tela de login com uma combinação diferente de opções — tudo feito na tela de configurações, sem código.
+
+[![As variações da tela de login: clássico, cor primária, cor própria, gradiente, arte com rede, imagem no meio, tema escuro, cadastro e esqueci a senha com aparência própria](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso.gif)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso.gif)
+
+Clique numa imagem para vê-la em tamanho real.
+
+|  |  |  |
+|---|---|---|
+| [![Clássico (o padrão de sempre)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-classico.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-classico.png) | [![Painel na cor primária do Filament](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-cor-primaria.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-cor-primaria.png) | [![Cor própria, formulário à direita, painel de 40% e rede parada](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-cor-propria.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-cor-propria.png) |
+| *Clássico (o padrão de sempre)* | *Painel na cor primária do Filament* | *Cor própria, formulário à direita, painel de 40% e rede parada* |
+| [![Gradiente diagonal com a logo grande no meio](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-gradiente-diagonal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente-diagonal.png) | [![Arte de fundo, logo no meio e rede de pontos](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-arte-e-rede.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-arte-e-rede.png) | [![Imagem sua no meio do painel, gradiente vertical](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-imagem-no-meio.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-imagem-no-meio.png) |
+| *Gradiente diagonal com a logo grande no meio* | *Arte de fundo, logo no meio e rede de pontos* | *Imagem sua no meio do painel, gradiente vertical* |
+| [![Tema escuro, com a logo escura](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-tema-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-tema-escuro.png) | [![Cadastro com aparência própria](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-cadastro-propria.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-cadastro-propria.png) | [!["Esqueci a senha" com aparência própria](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-esqueci-propria.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-propria.png) |
+| *Tema escuro, com a logo escura* | *Cadastro com aparência própria* | *"Esqueci a senha" com aparência própria* |
+
+| No celular, com a logo | No celular, sem logo (nome da aplicação) |
+|---|---|
+| [![Faixa do celular com a logo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-celular-logo.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-celular-logo.png) | [![Faixa do celular com o nome da aplicação](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-celular-nome.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-celular-nome.png) |
+
 ## Os dois layouts
 
 | Layout | Como fica | Quando usar |
@@ -63,6 +84,15 @@ proteção anti-robô ligada, o desafio aparece.
 ## As opções do painel de marca
 
 [![Os campos do painel de marca na aba Telas de acesso](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)
+
+O editor, seção por seção — disposição, fundo, textos, ilustração, uma tela com aparência própria e o preview:
+
+[![O editor das telas de acesso: disposição, fundo em gradiente, textos com formatação, ilustração, seção Cadastro e preview](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.gif)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.gif)
+
+| | | |
+|---|---|---|
+| [![Fundo: cor, gradiente ou arte](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-editor-2-fundo.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor-2-fundo.png) | [![Textos com negrito, itálico e link](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-editor-3-textos.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor-3-textos.png) | [![Cadastro com aparência própria](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-editor-5-cadastro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor-5-cadastro.png) |
+| *Fundo: cor, gradiente ou arte* | *Textos com negrito, itálico e link* | *Cadastro com aparência própria* |
 
 | Opção | O que faz | Padrão |
 |---|---|---|

@@ -1,105 +1,61 @@
-# Relatório de QA — feat/aparencia-das-telas-de-acesso: Tela de login personalizável (Adendos 2 e 3)
+# Relatório de QA — feat/aparencia-das-telas-de-acesso: Tela de login personalizável (Ciclo 2 dos Adendos 2 e 3)
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
-> Perfil de esforço: completo. A UI tem JS (editor Markdown EasyMDE, iframe de preview, rede animada com Alpine). O domínio é sensível: texto formatado vira HTML numa tela pública sem autenticação, e há o escopo por organização
+> Perfil de esforço: completo. A UI tem JS (EasyMDE, iframe de preview, rede animada com Alpine). O domínio é sensível: Markdown vira HTML numa tela pública, e há escopo por organização
 > Natureza da wiki: evolução · Toca infra compartilhada: sim → todas as telas de autenticação dos três painéis · Regressão: sim
 > Independência: sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa
 > Cobertura: 8 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
 
-## Veredito — Ciclo 1 dos Adendos 2 e 3
+## Veredito — Ciclo 2 dos Adendos 2 e 3
 
-**REPROVADO → especificação (QA-27, QA-31), com teste (QA-30) e implementação (QA-28)**
+**REPROVADO → teste (QA-34)**
 
-- Blocker: 0 · Major: 4 · Minor: 3 · Cosmético: 0
+- Blocker: 0 · Major: 1 novo (QA-34). Fica também 1 Major do ciclo 1 aberto como pendência de release (QA-28, cenários) · Minor: 1 novo (QA-35) · Cosmético: 0
 - Não verificadas: G, H, J, K. As causas estão em *Não Verificado*
-- `RQ` abertas: nenhuma. Q1 continua `aberta` e o código implementa só a premissa estreita P-01, então não gera achado. A confirmação de Q2 segue pendente. As duas estão nos Débitos do `03`
-- Ambiente: app em `http://127.0.0.1:8123`, HEAD `7ca671df` (tag `pre-adendo2-final`). Pest 5.0.5, sem `--agent`. Playwright MCP indisponível. Boost MCP indisponível (`laravel-boost` CONNECT_TIMEOUT). Os cenários 1–4 estavam rodando em outro processo durante este gate
-- O loop recomeça no ciclo 1 porque os Adendos 2 e 3 trouxeram pedido novo (RQ-25..RQ-33). Os QA-18..26 estão tratados no `03` e não foram reabertos, exceto a evidência do QA-18 (ver QA-28)
+- `RQ` abertas: nenhuma formalmente. Duas perguntas seguem abertas com a recomendação implementada como premissa estreita: Q1 (P-01) e Q12 (P-27, registrada a pedido do QA-29). Ficam como débito, como no ciclo 1
+- Ambiente: app em `http://127.0.0.1:8123`, HEAD `694ec0d8`. As telas `/admin`, `/app` e `/infra/login` respondem 200 com `media-left`, e `/admin/password-reset/request` responde 200 com `media-right`. Pest 5, sem `--agent`. Boost MCP indisponível (`laravel-boost` CONNECT_TIMEOUT). Playwright MCP indisponível
+- Rodado por este gate, um arquivo por vez: `tests/Kit/AparenciaDasTelasPorTelaTest.php` 87/87; `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php` 82/82; `tests/Kit/ConfiguracoesSecoesColapsaveisTest.php` 32/32; `tests/Browser/AparenciaDasTelasDeAcessoTest.php --filter='CT-B1[678]'` 6/6
+- Sobre o número alegado pela sessão: Kit 5198 − 5166 = +32. Isso bate com o PorTela, que passou de 55 para 87, e o arquivo foi rodado aqui. O badge do README passou de 2.562 para 2.581, +19, que é CT-79..96 mais CT-B18. A suíte inteira não foi reproduzida
+
+## Situação dos achados do ciclo 1
+
+| QA | Situação | Evidência |
+|---|---|---|
+| QA-27 | fechado | Há `campos(daOrganizacao: true)` no `TenantForm`. O `PreviewDasTelasDeAcesso::recuperacaoNaOrganizacao()` devolve `global()` e a organização como `null`. A P-31 está no `00`, e as docs pt/en e o CHANGELOG falam em "Login e Cadastro" na organização. CT-79, CT-94 e CT-95 estão verdes (Tenancy 82/82). Não reproduzi o "CT-79 cai sem a correção", porque exigiria editar o código |
+| QA-28 | **aberto, como pendência de release** | A linha do QA-18 foi corrigida e a rodada `d1`..`d4` foi registrada. Falta a rodada dos 4 cenários sobre o commit final. A rodada `e1`..`e4` aponta para `7ca671df`, mas esse commit já foi superado: depois dele mudaram 5 arquivos de `app`/`resources` (QA-35) |
+| QA-29 | fechado | O trecho da RQ-27 inclui "possibilidade de usar html". A Q12 está registrada com o porquê, e a P-05 está marcada *(alterado)* |
+| QA-30 | fechado para CT-57..CT-79 | Pela contagem com `awk` sobre `04:1461-1846`, os 23 cenários têm `Então`. Há M73..M101 no `04` e M102..M108 no `05`, e o `fw-adversario-ct` rodou (ADV-C1..C32). **Os acréscimos dessa revisão repetiram a mesma classe de defeito: QA-34** |
+| QA-31 | fechado | `grep "abas\|three tabs"` não encontra mais nada sobre o editor nas docs, no CHANGELOG, no `01` e no `02`. A Superfície Livewire do `02` tem `destaqueDoPainelDeMarca()` e `gradienteDoPainelDeMarca()`, e o docblock da view foi corrigido |
+| QA-32 | parcial | Foram feitos os despachos 19..26, a degradação e o Estado. **Não foram feitos** a tabela `## Testes` e a contagem da seção 11 (QA-35) |
+| QA-33 | parcial, aceito como débito | O glossário ganhou "Painel de marca", "Tela própria" e "Família de tela". A P-27 continua dizendo "rodapé da tela de login", sem o termo "Recado do login". A Q12 faz a ponte entre os dois termos |
 
 ## Achados
 
-### QA-27 — A aba "Esqueci a senha" da organização nunca é aplicada, e o preview a mostra como se fosse · Major · destino 1
-
-- **Dimensão**: A
-- **Relacionado a**: RQ-25, RQ-10, RQ-13, P-06, P-25, P-08, passo 11 do PRD, CT-64, CT-73
-- **Esperado**: pela P-25, cada tela tem a sua aparência, e a organização escolhe o objeto inteiro antes da tela. Pela RQ-10, o preview mostra "como fica".
-- **Observado**: pela P-06, a recuperação e a redefinição de senha nunca consideram a organização. `TelaRecuperarSenha` e `TelaRedefinirSenha` não sobrescrevem `organizacaoDaAparencia()`. Mesmo assim, o editor da organização oferece a seção "Esqueci a senha", e a doc diz "A organização com aparência própria tem as mesmas três abas". O preview com escopo `tenant:{id}` e `tela=recuperar-senha` faz `daFamilia(rascunho da organização, 'recuperacao')`, o que é declarado no docblock: "SEM as condições de P-06". O admin da organização configura e vê no preview uma tela que nenhum usuário jamais verá.
-- **Repro**:
-  1. `grep -n "organizacaoDaAparencia" app/Filament/Pages/Auth/*.php` → só `PreviewDasTelasDeAcesso`, `RegistroPorConvite`, `TelaBloqueio` e `TelaLogin`
-  2. `sed -n 147,158p docs/pt/autenticacao/aparencia-das-telas.md` → "Recuperar e redefinir senha … nenhuma | padrão"
-  3. `EditorDeAparenciaDasTelas::campos()` → `secaoDeTelaPropria('recuperacao', …)` sem condição de escopo
-- **Evidência**: as três saídas acima, e `PreviewDasTelasDeAcesso::familiaDaAparencia()`/`organizacaoDaAparencia()`
-- **Destino**: 1. P-06 e P-25 juntas produzem uma configuração sem efeito
-- **Ação exigida**: decidir em `P-nn` uma das duas saídas: esconder ou explicar a seção "Esqueci a senha" no escopo da organização, ou aplicar a recuperação da organização quando ela é identificável. Em seguida, CT com `Origem` = `P-nn` e o preview alinhado ao que a tela real mostra.
-
-### QA-28 — Os cenários 1–4 não têm evidência sobre o código dos adendos, e o tratamento do QA-18 aponta evidência inexistente · Major · destino 2
-
-- **Dimensão**: A / J / L6
-- **Relacionado a**: RQ-07, RQ-08, RQ-17, P-23
-- **Esperado**: RQ-08 pede os cenários "ao finalizar". O código distribuído é o de `7ca671df`, com 10 arquivos em `app`, `resources` e `public` mudados desde `fe9ea589`.
-- **Observado**: a Verificação Final só tem rodadas sobre `b28debff` e `d343fc56`. A linha QA-18 do `03` diz "cenários 1–4 sobre o commit final do adendo … — Verificação Final", mas essa linha não existe (há a tag `pre-adendo-final` e nenhum registro). Para os Adendos 2 e 3, a seção 11 nem tem o item. Segundo o orquestrador, a rodada sobre `7ca671df` está em andamento.
-- **Repro**: `grep -n "Cenários 1 a 4" 03-progresso.md` → linhas 202 e 203 apenas. `git diff --stat fe9ea589..7ca671df -- app resources public` → 10 arquivos.
-- **Destino**: 2
-- **Ação exigida**: registrar na Verificação Final a saída dos 4 cenários sobre `7ca671df`, incluindo uma instalação com aparência `painel` e texto gravados antes do Adendo 2 (CT-61/CT-67 na instalação atualizada). Corrigir a linha QA-18: ou colar a rodada do Adendo 1, ou dizer que ela não foi registrada.
-
-### QA-29 — "possibilidade de usar html" ficou fora da RQ-27, e a P-27 a estreita sem pergunta ao solicitante · Minor · destino 1
-
-- **Dimensão**: A (auditoria do requisito) / L5
-- **Relacionado a**: RQ-27, P-27, P-05
-- **Observado**: o texto do Adendo 2 diz "temos que ter a possibilidade de usar html, mude para uso do componente que é usado no 'Rodapé da tela de login'". O trecho literal da RQ-27 corta a primeira metade. A P-27 decide Markdown seguro com o HTML cru descartado, e justifica só com "— tela pública". O motivo completo, XSS armazenado numa tela sem autenticação e o mesmo `Str::markdown` com `html_input: strip` do componente pedido, está no docblock de `ConfiguracoesDoKit::login_rodape` e na doc pt/en, mas não na wiki. A decisão é a estreita e segura, e coincide com o componente pedido, por isso não é Major (mesmo critério da Q1). Ainda assim, ela contradiz o literal "usar html", e nenhuma `Qn` foi registrada.
-- **Repro**: `sed -n 168p 00-requisito.md` × a linha RQ-27 da decomposição do Adendo 2. `grep -n "Q1[2-9]" 00-requisito.md` → nada.
-- **Ação exigida**: incluir "possibilidade de usar html" no trecho da RQ-27. Registrar `Q12` com a recomendação "Markdown seguro, o próprio componente pedido descarta HTML" e o porquê (XSS armazenado em tela pública). Marcar a P-05 como alterada pela P-27.
-
-### QA-30 — 17 dos 22 cenários dos Adendos 2 e 3 não têm "Então", não há mutantes previstos e não houve revisão adversarial · Major · destino 3
+### QA-34 — CT-80..CT-96 da revisão adversarial não têm cenário: o oráculo está só no teste · Major · destino 3
 
 - **Dimensão**: K / L1
-- **Relacionado a**: R26–R30, RQ-25..RQ-33, P-25..P-30
-- **Observado**:
-  - Na seção "Adendos 2 e 3" do `04`, CT-57, 61, 62, 64–72 e 74–78 não têm passo `Então`. Os esquemas têm `Exemplos:` em linha, sem tabela, ou nenhum exemplo (CT-71, CT-72). O oráculo de R27 (segurança, Impacto 3, Markdown numa tela pública) existe só no teste: o dataset do CT-57 tem 8 linhas, e o Gherkin cita 6. Faltam "título com href" e "sem esquema".
-  - Nenhuma linha `| M` foi acrescentada (Mutantes previstos continua 57).
-  - O texto diz "Derivados pela sessão". Nenhum `fw-adversario-ct` rodou sobre R26–R30, nem há a linha `Revisão adversarial: NÃO FEITA` no cabeçalho.
-  - O cabeçalho diz "Cenários: 56" e "Oráculo atual: RQ-01..RQ-24, P-01..P-24". O cabeçalho do `05` também para no Adendo 1.
+- **Relacionado a**: R26–R29, RQ-25..RQ-33, P-25..P-31, ADV-C1..C32
+- **Esperado**: cada CT do `04` tem um cenário com `Dado`/`Quando`/`Então` e `Exemplos` derivado do requisito. O mutante previsto aponta o CT que o mata. O QA-30 do ciclo 1 cobrou exatamente essa classe, e a ação dele foi aceita.
+- **Observado**: os 17 CT novos (CT-80..CT-96) existem só em dois lugares: uma linha no `## Índice de Cenários` (`04:1137-1153`) e uma célula na tabela de fechamento da revisão adversarial (`04:1855-1877`). Nenhum tem cenário Gherkin. O oráculo de R27 está só em `tests/Kit/AparenciaDasTelasPorTelaTest.php:'[CT-80]':423`..`[CT-92]`. R27 tem Impacto 3: é Markdown hostil numa tela pública, e o CT-81 cobre caixa mista, `data:`, `vbscript:` e formulário cru. O mesmo vale para CT-93..96 em `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php:'[CT-93]':797`..`[CT-96]`. A coluna de mutantes do índice também não fecha. O CT-80 aponta o M86, e o M86 (`04:1811`) tem o CT-57 como matador. O mesmo acontece com M74, M76, M78, M80, M84, M85 e M87..M99: nenhuma linha `| M` cita CT-80..96 como matador. O cabeçalho diz "Cenários: 79" e "Revisão adversarial … feita". Os dois estão certos pela regra do grep, mas escondem os 17.
 - **Repro**:
-  1. `awk` da seção "## Adendos 2 e 3" contando `Então` por `[CT-nn]` → 17 sem `Então`
-  2. `grep -cE '^[[:space:]]*(Cenário|Esquema do Cenário): \[CT-[0-9]+\]' 04-casos-de-teste.md` → 78. Regras 17, mutantes 57, sem matador 0
-  3. `sed -n 195,205p tests/Kit/AparenciaDasTelasPorTelaTest.php`
-- **Evidência**: `grep -rn "Cenários: 56" wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/` → `04:5` e a linha QA-23 do `03` (histórica)
+  1. `grep -nE 'CT-(8[0-9]|9[0-6])\b' 04-casos-de-teste.md` → só as linhas 1137–1153 e 1855–1877
+  2. `grep -cE '^[[:space:]]*(Cenário|Esquema do Cenário): \[CT-[0-9]+\]' 04-casos-de-teste.md` → 79. O último cenário é o CT-79 (`04:1767`)
+  3. `grep -nE '^\| *M(8[6-9]|9[0-9])' 04-casos-de-teste.md` → a coluna matador cita CT-57, 65, 66, 67, 68, 69, 70, 71 e 72, nunca CT-80..96
+- **Evidência**: `ids-ct.sh` exit 0. O ID existe no índice, então o script não pega a falta de cenário. `grep -rn "Cenários: 79" {wiki}` → só `04:5`
 - **Destino**: 3
-- **Ação exigida**: invocar a `feature-test-design` para dar `Então` e `Exemplos` em tabela a R26–R30, prever mutantes (R27: esquema do `href`, lista de tags, teto visível × bruto) e rodar o `fw-adversario-ct` com o `00` e o `04`/`05`. Sem a revisão, declarar `Revisão adversarial: NÃO FEITA — {motivo}`. Recalcular o cabeçalho pelos `grep -cE` e atualizar o oráculo dos cabeçalhos do `04` e do `05`.
+- **Ação exigida**: invocar a `feature-test-design` para dar cenário completo, com `Então` e `Exemplos` em tabela, a CT-80..CT-96. Antes de qualquer outra coisa, R27: CT-81, CT-90, CT-91 e CT-92. Ligar cada CT a um mutante cujo matador seja ele mesmo, ou corrigir a coluna do índice. Recalcular o cabeçalho pelos `grep -cE`. A lacuna se repetiu de um ciclo para o outro: o fechamento de achado adversarial virou teste sem passar pelo `04`. Por isso cabe propor, na `feature-test-design`, uma linha de checklist: "achado adversarial fechado por CT novo exige cenário no `04` antes do teste".
 
-### QA-31 — PRD, ADR-05, docs pt/en e CHANGELOG descrevem "abas", e o código tem seções; superfície e premissas sem marca · Major · destino 1
+### QA-35 — `03`: a Verificação Final aponta como "final" um commit superado, e Testes e seção 11 seguem defasados · Minor · destino 1
 
-- **Dimensão**: L3 / L5
-- **Relacionado a**: passo 11 do PRD, ADR-05, Superfície Livewire do `02`, P-05
+- **Dimensão**: L6 (resíduo do QA-32 e do QA-28)
 - **Observado**:
-  - Passo 11 do PRD: "**Editor**: abas Login / Cadastro / Esqueci a senha". ADR-05: "um único conjunto de campos por aba". Doc pt:39 e pt:56 dizem "três abas"; en:39 e en:57 dizem "three tabs"; o `CHANGELOG.md`:23 diz "abas próprias". O código (`EditorDeAparenciaDasTelas::campos`) usa três `Section` colapsáveis. O desvio está registrado só no `03` (seção 11), sem marca *(alterado)*.
-  - A Superfície Livewire do `02` lista só `aparenciaDaTela()`, `corDoPainelDeMarca()` e `logosDoPainelDeMarca()`. Faltam os métodos públicos `gradienteDoPainelDeMarca()` (Adendo 2) e `destaqueDoPainelDeMarca()` (Adendo 1).
-  - P-05 ("Textos da aparência saem escapados") segue `vigente` sem marca, e o docblock de `painel-de-marca.blade.php` diz "Tudo aqui sai escapado". A frase e o apoio agora saem como `HtmlString` filtrada (P-27).
-- **Repro**: `grep -rn "abas\|three tabs" docs/*/autenticacao/aparencia-das-telas.md CHANGELOG.md wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/01-plano-acao.md`. `grep -n "public function" app/Filament/Concerns/VesteAparenciaDasTelas.php`
-- **Destino**: 1
-- **Ação exigida**: reescrever com marca o passo 11, a ADR-05, a doc pt/en e o CHANGELOG ("seções"). Acrescentar os dois métodos à Superfície Livewire. Marcar a P-05 e o docblock da view.
-
-### QA-32 — `03`: Despachos e Degradações sem os Adendos 2 e 3, e estado e tabela de testes defasados · Minor · destino 1
-
-- **Dimensão**: L6 (o mesmo padrão do QA-22)
-- **Observado**:
-  - A seção 11 cita o Codex como juiz cego do desenho e o workflow de revisão (Codex, `fw-revisor-diff`, `filament-security-audit`, céticos), mas `## Despachos` termina no #18.
-  - As Degradações não dizem que R26–R30 foram derivadas pela sessão, sem revisão adversarial.
-  - O `**Estado**` ainda diz "Adendo 1".
-  - `## Testes` não tem `AparenciaDasTelasPorTelaTest`/`AdendoTest` e para no CT-B08.
-  - A seção 11 não traz contagem por arquivo nem item aberto de gate e cenários.
-- **Repro**: `grep -n "^| 1[89] \|^| 2[0-9] " 03-progresso.md` → só o #18. `sed -n 3p 03-progresso.md`
-- **Ação exigida**: uma linha por disparo dos adendos, com modelo, `Custo` e auditoria. Declarar a degradação da derivação, atualizar Estado e Testes, e acrescentar à seção 11 a contagem medida (PorTela 55, Adendo 58, DeAcesso 133, Entrega 5, Tenancy 75, Browser 55) e o item aberto.
-
-### QA-33 — Glossário defasado e termo do rodapé diferente do glossário · Minor · destino 1
-
-- **Dimensão**: L7
-- **Observado**:
-  - "Painel de marca" ainda diz "com cor ou arte de fundo" e "duas frases opcionais", sem gradiente nem formatação.
-  - O glossário chama de **Recado do login** o texto Markdown do cartão, e tem "Assinatura do rodapé" como "não confundir com". A P-27, o passo 11 e as docs falam em "rodapé da tela de login", o rótulo da UI.
-  - Os termos decididos na feature ("tela própria", "Igual ao login", "família de tela") não estão no glossário.
-- **Repro**: `grep -n "Painel de marca\|Recado do login" wikis/glossario.md`
-- **Ação exigida**: atualizar "Painel de marca". Na P-27, citar "Recado do login (seção 'Rodapé da tela de login')". Registrar os termos novos.
+  - `03:208` diz "Cenários 1 a 4 sobre o commit final dos Adendos 2 e 3 (`7ca671df` …) — em execução", e o despacho #25 diz o mesmo. Mas o `325eca85` mudou `app/`/`resources/` depois: `git diff --name-only 7ca671df..HEAD -- app resources public` → `TenantForm.php`, `EditorDeAparenciaDasTelas.php`, `PreviewDasTelasDeAcesso.php`, `AparenciaDasTelasDeAcesso.php` e `painel-de-marca.blade.php`. Uma rodada sobre `7ca671df` não prova o código de HEAD.
+  - A última linha de suíte (`03:209`) é sobre `ca469486`, com Kit 5166. Os números de `694ec0d8` que a sessão mediu (Kit 5198, Tenancy 744, Browser 235) não estão no `03`.
+  - `## Testes` (`03:125-133`) continua sem `AparenciaDasTelasPorTelaTest`/`AdendoTest` e para no CT-B08. A seção 11 não tem a contagem por arquivo.
+  - Cosmético: o despacho #26 aparece antes do #25, e o Estado (`03:3`) ainda diz "ciclo 1 … em tratamento".
+- **Repro**: `sed -n 208,209p 03-progresso.md`; `sed -n 125,133p 03-progresso.md`; `git diff --name-only 7ca671df..HEAD -- app resources public`
+- **Evidência**: `grep -rn "5166\|7ca671df" {wiki}` → `03:208`, `03:209` e `03:278` (no `06` do ciclo 1, as linhas são históricas)
+- **Ação exigida**: apontar a rodada dos cenários para o commit final de verdade (o HEAD depois deste ciclo) e corrigir as linhas 208, 278 e o despacho #25. Registrar na Verificação Final a saída das suítes sobre o HEAD. Atualizar `## Testes` (PorTela 87, Tenancy 82, Adendo, Browser até CT-B18) e a seção 11. Ordenar os despachos.
 
 ## Matriz de Rastreabilidade
 
@@ -107,42 +63,42 @@
 
 | RQ/P | Cláusula ou premissa | Passo PRD | CT | CT-B | Código | Resultado | Veredito |
 |------|----------------------|-----------|----|------|--------|-----------|----------|
-| RQ-25 / P-25 × P-06 | por tela, também na organização | 11 | CT-64, CT-73 | — | editor, preview, `TelaRecuperarSenha` | "Esqueci a senha" da organização sem efeito; o preview mente | ❌ QA-27 |
-| RQ-27 / P-27 | textos formatados | 11 | CT-57, 65–67 (sem `Então`) | — | `textoComoHtml` | correto; oráculo só no teste; "usar html" sem `Qn` | ⚠️ QA-29, QA-30 |
-| RQ-07 / RQ-08 / P-23 | não quebrar quem usa o kit; cenários | — (processo) | CT-21, CT-27 `@obsoleto` | — | 10 arquivos distribuídos | sem rodada registrada sobre `7ca671df` | ❌ QA-28 |
+| RQ-25/26, RQ-27, RQ-28/29, P-31 | por tela; Markdown seguro; gradiente; organização | 11 | CT-80..96 (sem cenário) | CT-B18 | `textoComoHtml`, `normalizar`, preview | comportamento correto e testes verdes; o oráculo está só no teste | ⚠️ QA-34 |
+| RQ-07 / RQ-08 / RQ-17 | não quebrar quem usa o kit; cenários | — (processo) | CT-21, CT-27 `@obsoleto` | — | 5 arquivos mudados depois de `7ca671df` | sem rodada sobre o commit final | ⏳ QA-28 (pendência de release), QA-35 |
 
 ## Dimensões
 
 | # | Dimensão | Status | Observação |
 |---|----------|--------|------------|
-| A | Cobertura do requisito | ❌ | `rastreabilidade.sh` exit 0. `indice.sh --check` não se aplica (sem `07-tickets/`). Conferi o diff por passo: passo 11 × `fe9ea589..7ca671df`. RQ-25/26 (CT-58..64, 73), RQ-28/29 (CT-68..70, 76, 77), RQ-30 (CT-B16) e RQ-31..33 (CT-71, CT-72, CT-B17) estão implementadas. No app servido, `/admin/login` é `media-left`, gradiente `135deg #1e3a8a→#7c3aed`, frase `<p>…<strong>` e apoio com `<a … rel="noopener noreferrer">`; `/admin/password-reset/request` é `media-right`, cor `#0f766e` (formulário à esquerda); `/app/register` e `/cadastro` respondem 302 (cadastro desligado localmente). Achados: QA-27, QA-28, QA-29 |
-| B | Fronteiras e dados | ✅ | Pest 5.0.5 sem `--agent`. Sondei `textoComoHtml` por `tinker` (sem gravação) com 15 entradas: `JaVaScRiPt:`, `data:`, autolink `<javascript:…>`, `https:evil`, ` //evil`, `<//evil>`, HTML cru, atributo injetado no título, lista, citação, código. Todas inertes: o `href` só sai com `https?://`, `mailto:` ou caminho `/` sem `//`. O dataset do CT-66 cobre 80/81 visíveis e 4 KiB; o do CT-68 cobre a injeção na direção e na cor |
-| C | Matriz de permissão | ✅ | Nenhuma rota, policy ou action nova. Os editores continuam nas configurações e no `TenantPolicy`. No preview, `$tela` é `#[Locked]` numa lista fechada, e `familiaDaAparencia()` é `protected`. CT-38/39 verdes no `DeAcessoTest` |
-| D | Observabilidade | ✅ | Nenhum ponto de log novo no diff. A origem do log de valor inválido ganha `:{familia}`. Linha real em `storage/logs/autenticacao-2026-11-14.log`: `[AparenciaDasTelasDeAcesso@normalizar] … {"origem":"x:cadastro","motivo":"layout"}`, sem PII |
-| E | Performance | ✅ | Por leitura. `daFamilia()` trabalha sobre o objeto já carregado, sem query nova. `Str::markdown` e o filtro por DOM rodam duas vezes por render, sobre no máximo 4 KiB. Não houve contagem dinâmica de queries (sem `--agent`) |
-| F | UX de erro | ✅ | Mensagens "Use no máximo 80 caracteres visíveis." e "O texto, com a formatação, passa de 4 KB." no campo. As ajudas explicam o HTML descartado e o comportamento no celular |
-| G | Tema e cor | ⏭️ não verificada | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`). Nível 1 sobre `--diff-filter=AM fe9ea589..HEAD` (app/resources/public): exit 0. A superfície do gradiente é fixa e escura, `rgb(17 24 39/.9)` com texto `#fff`, independente do tema. Nível 3 sem MCP |
-| H | Acessibilidade | ⏭️ não verificada | `grep -c assertNoAccessibilityIssues` no arquivo de navegador = 0, e o MCP está indisponível. Por leitura: os links do painel são sublinhados e, sobre o gradiente, o texto fica em superfície opaca |
-| I | Segurança da superfície nova | ✅ | Coberto pelo step 9: `## Revisão do Diff — Adendos 2 e 3` do `03` (10 linhas, 14 achados, 0 rejeitados). As quatro linhas *eixo 9* não rodaram de novo. Além do step 9: sondagem do filtro (B); `aparenciaDaTela()` da família login sem a chave `telas` (`unset` em `daFamilia`), então o `$wire` do login não revela cadastro nem recuperação; o gradiente é montado só de peças fechadas (CT-68); a chave secreta do anti-robô fora do HTML (CT-72). A lacuna da Superfície Livewire do `02` está no QA-31 |
-| J | Regressão adjacente | ⏭️ não verificada | Rodada em parte. Arquivos da feature: PorTela 55/55, Adendo 58/58, DeAcesso 133/133, Entrega 5/5, Tenancy 75/75, Browser 55/55. Vizinhos: `TelasDeAutenticacao`, `BloqueioDeSessao`, `LoginSocialPorPainel`, `CadastroSocialPorConvite`, `ConfiguracoesSecoesColapsaveis` e `HelpersDeTeste` 158/158; `ProtecaoAntiRobo` 98/98. Sem `--tia` e sem as suítes, por restrição de memória do orquestrador. Kit 5166, Tenancy 744 e Browser 235 com 1 falha (Dock CT-B02) foram lidos como alegação, não reproduzidos. Cenários pendentes: QA-28. RCRCRC: social e anti-robô (Core/Risk), recuperação e convite (Recent) |
-| K | Adequação da suíte | ⏭️ não verificada | K1 `k1-oraculo-fraco.sh` exit 1 com 5 candidatas, todas rejeitadas: CT-75, CT-07 e CT-11 afirmam no helper `afirmarAparenciaNoHtml`; CT-31 e CT-33 já foram julgadas em ciclos anteriores. K2 não rodou. Revisão adversarial de R26–R30 não feita (QA-30) |
-| L | Consistência documental | ❌ | L1 `ids-ct.sh` exit 0, sem ID duplicado, mas há o QA-30. L2 `citacoes.sh` exit 0. L3: QA-31. L4 `conformidade-rules.sh main` exit 0; conferidas `pages.md` (seções colapsáveis com ícone e id), `testes.md` (helpers de um arquivo só, `HelpersDeTesteTest` verde), `css-filament.md` (classes `kit-*`, espelho `public/css/kit/kit-correcoes.css` idêntico no trecho novo) e `views.md`. L5: QA-29, QA-31; pt × en coerentes entre si. L6 `checkbox-sem-evidencia.sh` exit 0, mas há o QA-28 e o QA-32. L7: QA-33. L8 `roteiro-manual.sh` exit 0; n/a, sem `08` e com decisão `não` |
+| A | Cobertura do requisito | ⚠️ | `rastreabilidade.sh` exit 0; sem `07-tickets/`. Conferi o diff por passo `7ca671df..HEAD`: a P-31 está implementada no editor e no preview, e o ADV-C8 (`$propria === []` segue o login) está no normalizador e no CT-83. No app servido, o login fica à esquerda (`media-left`) e a recuperação à direita (`media-right`). Pendência: QA-28 |
+| B | Fronteiras e dados | ✅ | CT-81 (12 linhas hostis), CT-86 (CSS anexado, 8 dígitos), CT-87 e CT-90 (160/161 visíveis, 4096/4097 bytes, multibyte) rodaram verdes aqui. A sondagem do filtro do ciclo 1 continua válida, porque o `textoComoHtml` não mudou depois de `7ca671df` |
+| C | Matriz de permissão | ✅ | Nenhuma rota, policy ou action nova. O preview da organização só troca o que mostra depois de `rascunhoAutorizado()`, então a autorização vem antes. CT-79 e CT-95 cobrem os dois formulários (criar e editar) |
+| D | Observabilidade | ✅ | Nenhum ponto de log novo no ciclo. Linha real em `storage/logs/autenticacao-2026-11-14.log`: `[AparenciaDasTelasDeAcesso@normalizar] … {"origem":"x:cadastro","motivo":"layout"}`, sem PII. A recusa do preview loga `user_id`, `motivo` e `escopo` |
+| E | Performance | ✅ | Por leitura. No escopo da organização, o `recuperacaoNaOrganizacao()` chama `rascunhoAutorizado()` (cache + `Tenant::find` + `Gate`) mais de uma vez por render. A contagem é fixa e não cresce com N, numa página só do admin, por isso não é achado |
+| F | UX de erro | ✅ | Os erros de cor do gradiente aparecem no campo (CT-87). O editor da organização não explica por que não há "Esqueci a senha". A doc pt/en explica, e por isso fica sem achado |
+| G | Tema e cor | ⏭️ não verificada | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`). O nível 1 sobre `--diff-filter=AM fe9ea589...HEAD` (app/resources/public) deu exit 0. O CT-B18 (gradiente claro → superfície `rgba(17,24,39,.9)`, texto branco, link sublinhado) está verde. O nível 3 não rodou, por falta de MCP |
+| H | Acessibilidade | ⏭️ não verificada | Nenhum CT-B da feature chama `assertNoAccessibilityIssues` (grep = 0) e o MCP está indisponível |
+| I | Segurança da superfície nova | ✅ | O step 9 cobre até `ca469486` (`## Revisão do Diff — Adendos 2 e 3`: 14 achados, 0 rejeitados), e as quatro linhas *eixo 9* não rodaram de novo. Por cima do step 9, olhei o `325eca85`, que nenhum revisor viu. O preview da recuperação na organização lê só a padrão **salva**, sem o rascunho de ninguém (ADV-C31). `organizacaoDaAparencia()` devolve `null` nesse caso, então nem cor nem logo da organização vão ao HTML. O editor da organização some com a seção por schema, não por `visible` no cliente. O normalizador com `[]` não abre caminho novo |
+| J | Regressão adjacente | ⏭️ não verificada | Rodei só os arquivos da feature e o vizinho do editor (`ConfiguracoesSecoesColapsaveisTest` 32/32). Não rodei `--tia` nem as suítes inteiras, por restrição de memória. Os números da sessão ficam como alegação, com plausibilidade conferida (+32 = PorTela). Os cenários 1–4 sobre o commit final estão pendentes (QA-28) |
+| K | Adequação da suíte | ⏭️ não verificada | K1 `k1-oraculo-fraco.sh` sobre os testes de `7ca671df...HEAD` deu exit 1 com 5 candidatas, todas rejeitadas: CT-88 só com negações, mas os mesmos textos têm controle positivo no CT-71 e no CT-89, e `htmlDe` afirma 200; CT-75, CT-07 e CT-11 afirmam pelo helper `afirmarAparenciaNoHtml`; CT-33 já foi julgada. K2 não rodou. A revisão adversarial foi feita, mas os acréscimos dela não têm cenário (QA-34) |
+| L | Consistência documental | ❌ | L1 `ids-ct.sh {wiki} 'tests/**/AparenciaDasTelas*.php'` exit 0, mas há o QA-34. L2 `citacoes.sh` exit 0. L3: o passo 11 e a ADR-05 foram reconciliados com marca. L4 `conformidade-rules.sh {wiki} main` exit 0. L5: pt × en coerentes ("Login e Cadastro" na organização) e CHANGELOG alinhado. L6 `checkbox-sem-evidencia.sh` exit 0, mas há o QA-35. L7: resíduo do QA-33, aceito. L8 `roteiro-manual.sh` exit 0; n/a, porque não há `08` e a decisão é `não` |
 
 ## Débitos Aceitos
 
-- Nenhum neste ciclo, porque há Major aberto. Os débitos do `03` (Q1, Q2, alternador fora do teclado, organização fora do navegador, positivo em redefinir/verificar/2FA, preview sem a pilha do painel, ADV-A15) seguem lá e não foram contestados.
+- Nenhum neste ciclo, porque há Major aberto. Continuam no `03`, sem contestação: Q1, Q2, Q12 (recomendação implementada), alternador fora do teclado, organização fora do navegador, positivo em redefinir/verificar/2FA, preview sem a pilha do painel, ADV-A15, ADV-C23 (largura com o widget do reCAPTCHA) e ADV-C30 (dois eventos no "Quando").
+- Resíduo do QA-33: a P-27 sem o termo "Recado do login". A Q12 faz a ponte.
 
 ## Suspeitas Não Confirmadas
 
-- A família de dois fatores, bloqueio, confirmação de e-mail e redefinição de senha só é provada por reflexão (CT-62). Não houve visita HTTP com aparência própria nessas telas. É o mesmo débito BP-51.
-- A imagem trocada continua deixando o arquivo antigo em `telas-de-acesso/` (já registrada no ciclo anterior). Com três telas, a cópia multiplica as referências. Não reproduzi, porque exigiria gravar no app.
+- O CT-81 não tem controle positivo de que o bloco da frase ou do apoio existe. Se o texto hostil fosse descartado inteiro, o teste passaria no vazio. Na prática, o CT-80 ancora a classe da frase e o CT-57 a do apoio. Não reproduzi a vacuidade, porque exigiria alterar código.
+- A imagem trocada deixa o arquivo antigo em `telas-de-acesso/` (ciclo 1). Não reproduzi, porque exigiria gravar no app.
 
 ## Não Verificado
 
-- G, nível 3, e H, axe e teclado ao vivo: Playwright MCP indisponível, e nenhum CT-B da feature chama `assertNoAccessibilityIssues`.
-- J: as suítes inteiras e o `--tia` não rodaram, por restrição de memória (os cenários rodavam em paralelo). Os números de suíte do `03` ficaram como alegação.
-- J / RQ-08: cenários 1–4 sobre `7ca671df` em andamento, fora deste gate.
-- K2, `--mutate`: as ferramentas existem (`php -m` → pcov e xdebug; `vendor/pestphp/pest-plugin-mutate`), mas o custo, centenas de mutantes × ~30 s por subprocesso, não cabia na restrição de memória. Também há prova pendente: R26–R30 não tiveram revisão adversarial (QA-30).
-- B / I ao vivo: Markdown hostil gravado no app servido exigiria escrever configuração. O filtro foi sondado em `tinker` e está coberto pelo CT-57.
-- Cadastro próprio, login social e anti-robô no app servido: o cadastro está desligado e não há provedor nem anti-robô configurados localmente (302 em `/app/register` e `/cadastro`, `data-provedor`/`data-anti-robo` = 0). A cobertura vem de CT-58, CT-71, CT-72 e CT-B17.
-- RQ-12: os nomes de referência estão mascarados no `00`. Conferi só o oráculo genérico: os hosts novos do diff são `raw.githubusercontent.com` do kit, `img.shields.io` e `exemplo.test` (em teste).
+- G, nível 3, e H, axe, teclado e foco ao vivo: Playwright MCP indisponível, e nenhum CT-B da feature chama `assertNoAccessibilityIssues`.
+- J: as suítes inteiras e o `--tia` não rodaram, por restrição de memória do orquestrador.
+- J / RQ-08 / RQ-17: os cenários 1–4 sobre o commit final não rodaram. A rodada `e1`..`e4` aponta para `7ca671df`, que já foi superado (QA-35). Pendência de release, e bloqueia o merge.
+- K2, `--mutate`: as ferramentas existem (`php -m` → pcov e Xdebug; `vendor/pestphp/pest-plugin-mutate`). Não rodou por três motivos: a restrição de memória; o plugin é sabidamente pouco confiável no Windows (filtro truncado acima de ~8 KB e cache mostram mortos falsos); e a amostragem manual exigiria editar a árvore, o que este gate não faz. A falsificabilidade alegada no `03` (CT-79 e CT-83 caem sem a correção) ficou como alegação.
+- B e I ao vivo: Markdown hostil e aparência por organização gravados no app servido exigiriam escrever configuração. A cobertura vem dos CT rodados neste ciclo.
+- Cadastro próprio, login social e anti-robô no app servido: `/cadastro`, `/app/register` e `/login` respondem 302 (cadastro e login unificado desligados localmente). A cobertura vem de CT-71, CT-72, CT-88, CT-89 e CT-B17.
+- RQ-12: os nomes de referência estão mascarados no `00`. Conferi só o oráculo genérico: o diff `7ca671df..HEAD` não traz host novo fora do próprio kit.

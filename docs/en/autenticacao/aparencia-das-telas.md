@@ -15,6 +15,27 @@ have its own.
 Nothing changes by itself: while nobody picks another layout, the screens stay exactly as they
 always were — including in projects that update the kit.
 
+## See what you can do
+
+Each frame below is the same login screen with a different combination of options — all set on the settings screen, no code.
+
+[![Login screen variations: classic, primary color, own color, gradient, art with network, image in the middle, dark theme, sign-up and forgot password with their own appearance](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso.gif)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso.gif)
+
+Click an image to see it full size.
+
+|  |  |  |
+|---|---|---|
+| [![Classic (the usual default)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-classico.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-classico.png) | [![Panel in the Filament primary color](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-cor-primaria.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-cor-primaria.png) | [![Own color, form on the right, 40% panel and still network](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-cor-propria.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-cor-propria.png) |
+| *Classic (the usual default)* | *Panel in the Filament primary color* | *Own color, form on the right, 40% panel and still network* |
+| [![Diagonal gradient with the big logo in the middle](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-gradiente-diagonal.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente-diagonal.png) | [![Background art, logo in the middle and dot network](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-arte-e-rede.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-arte-e-rede.png) | [![Your own image in the middle, vertical gradient](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-imagem-no-meio.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-imagem-no-meio.png) |
+| *Diagonal gradient with the big logo in the middle* | *Background art, logo in the middle and dot network* | *Your own image in the middle, vertical gradient* |
+| [![Dark theme, with the dark logo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-tema-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-tema-escuro.png) | [![Sign-up with its own appearance](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-cadastro-propria.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-cadastro-propria.png) | [![Forgot password with its own appearance](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-esqueci-propria.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-propria.png) |
+| *Dark theme, with the dark logo* | *Sign-up with its own appearance* | *Forgot password with its own appearance* |
+
+| On a phone, with the logo | On a phone, no logo (app name) |
+|---|---|
+| [![Phone strip with the logo](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-celular-logo.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-celular-logo.png) | [![Phone strip with the app name](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-celular-nome.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-celular-nome.png) |
+
 ## The two layouts
 
 | Layout | What it looks like | When to use it |
@@ -64,6 +85,15 @@ the challenge shows.
 ## Brand panel options
 
 [![The brand panel fields in the Telas de acesso tab](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)
+
+The editor, section by section — layout, background, texts, illustration, a screen with its own appearance and the preview:
+
+[![The access screens editor: layout, gradient background, formatted texts, illustration, Cadastro section and preview](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.gif)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.gif)
+
+| | | |
+|---|---|---|
+| [![Background: color, gradient or art](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-editor-2-fundo.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor-2-fundo.png) | [![Texts with bold, italic and link](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-editor-3-textos.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor-3-textos.png) | [![Sign-up with its own appearance](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-editor-5-cadastro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor-5-cadastro.png) |
+| *Background: color, gradient or art* | *Texts with bold, italic and link* | *Sign-up with its own appearance* |
 
 | Option | What it does | Default |
 |---|---|---|

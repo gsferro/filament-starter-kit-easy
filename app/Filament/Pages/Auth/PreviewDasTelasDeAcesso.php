@@ -184,6 +184,11 @@ class PreviewDasTelasDeAcesso extends SimplePage
      */
     protected function urlDaImagemDoDestaque(mixed $caminho): ?string
     {
+        // Na recuperação da organização vale a padrão salva (P-31), imagem inclusive (CX-C1).
+        if ($this->recuperacaoNaOrganizacao()) {
+            return AparenciaDasTelasDeAcesso::urlDaImagem($caminho);
+        }
+
         $temporarias = $this->rascunhoAutorizado()['imagem_temporaria'] ?? [];
 
         return $temporarias[$this->familiaDaAparencia()] ?? AparenciaDasTelasDeAcesso::urlDaImagem($caminho);

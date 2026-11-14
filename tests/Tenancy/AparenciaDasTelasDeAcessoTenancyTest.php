@@ -16,6 +16,7 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Features\SupportTesting\Testable;
@@ -762,6 +763,32 @@ it('[CT-79] a organização não tem a tela "esqueci a senha": nem no editor, ne
         ->and($html)->not->toContain('RECUPERACAO DA ACME')
         ->and(textoDoPainelDeMarca($this->get(urlDoPreviewDe($id, 'login'))->getContent(), 'frase'))->toBe('RASCUNHO DA ACME');
 })->with(['criação', 'edição'])->group('tenancy');
+
+/**
+ * CX-C1 (revisão do Codex, ciclo 2): na recuperação, o preview da organização mostra a padrão
+ * SALVA (P-31) — inclusive a imagem do destaque. A imagem recém-enviada no editor da organização
+ * vale para o login dela, nunca para a recuperação, que não é dela.
+ */
+it('[CT-97] na recuperação, o preview da organização usa a imagem da padrão, não a enviada no editor dela', function (): void {
+    [$acme] = organizacoesAB();
+    Storage::fake('public');
+    Storage::disk('public')->put('telas-de-acesso/global.png', 'png');
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'destaque' => 'imagem', 'imagem_do_destaque' => 'telas-de-acesso/global.png']);
+    $this->actingAs(usuarioComPapel('master_global'));
+
+    $id         = rascunhoDe('tenant:'.$acme->getKey(), [...aparenciaDeTeste('A'), 'destaque' => 'imagem']);
+    $chave      = 'aparencia-preview:'.auth()->id().':'.$id;
+    $temporaria = '/livewire/preview-file/IMAGEM-DA-ACME';
+    Cache::put($chave, [...Cache::get($chave), 'imagem_temporaria' => ['login' => $temporaria, 'cadastro' => $temporaria, 'recuperacao' => $temporaria]], now()->addHour());
+    Filament::setCurrentPanel('admin');
+
+    $imagemDe = fn (string $tela): ?string => arvoreDoHtml($this->get(urlDoPreviewDe($id, $tela))->assertOk()->getContent())
+        ->query('//img[@data-kit-destaque="imagem"]')->item(0)?->getAttribute('src');
+
+    expect($imagemDe('recuperar-senha'))->toContain('telas-de-acesso/global.png')
+        // Controle: no login da organização, a imagem enviada e ainda não salva aparece (P-08).
+        ->and($imagemDe('login'))->toBe($temporaria);
+})->group('tenancy');
 
 /*
 | Revisão adversarial dos Adendos 2 e 3 — organização (ADV-C6, C7, C14, C15, C20)

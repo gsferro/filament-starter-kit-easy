@@ -5,6 +5,7 @@ use App\Filament\Admin\Resources\Users\Pages\ListUsers as ListUsersDoAdmin;
 use App\Filament\Admin\Resources\Users\UserResource;
 use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\Infra\Pages\BackupRunsPage;
+use App\Models\Convite;
 use App\Models\Projeto;
 use App\Models\Role;
 use App\Models\Tenant;
@@ -14,6 +15,8 @@ use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Pest\Browser\Api\AwaitableWebpage;
 use Pest\Browser\Api\PendingAwaitablePage;
 use Sehsah\FilamentRememberTable\Models\TableView;
 use Tests\TenancyTestCase;
@@ -1329,6 +1332,247 @@ it('captura a aba Tabelas das configurações', function (): void {
 
 /*
 |--------------------------------------------------------------------------
+| Telas de acesso — as variações da aparência (wiki tela-de-login-personalizavel)
+|--------------------------------------------------------------------------
+|
+| Os quadros do `telas-de-acesso.gif` (as possibilidades de customização, uma por quadro) e do
+| `telas-de-acesso-editor.gif` (o editor, seção por seção), mais as duas faixas do celular. Cada
+| quadro também é IMAGEM em `KitArte::IMAGENS`, para a documentação mostrar cada variação sozinha.
+|
+| A logo vem de `tests/Browser/Fixtures/logo-de-arte*.png` e a imagem do destaque é a captura do
+| central de infraestrutura já publicada em `art/infra-hub.png`: tudo do próprio repositório, nada externo.
+| `movimento` desligado em todos os quadros: a rede parada sai igual em toda execução.
+*/
+
+/**
+ * Uma aparência completa de painel, com textos em Markdown, sobre a qual cada quadro troca o que
+ * quer mostrar.
+ *
+ * @param  array<string, mixed>  $extra
+ * @return array<string, mixed>
+ */
+function aparenciaDeArte(array $extra = []): array
+{
+    return [
+        'layout'              => 'painel',
+        'lado_do_formulario'  => 'esquerda',
+        'fundo'               => 'cor',
+        'cor'                 => null,
+        'frase'               => 'Tudo o que a sua equipe precisa, **num lugar só**.',
+        'apoio'               => 'Acesse com o e-mail e a senha cadastrados. Dúvidas? [Fale com o suporte](mailto:suporte@example.com).',
+        'logo_no_painel'      => true,
+        'alternador_de_tema'  => true,
+        'tamanho_do_painel'   => 50,
+        'destaque'            => 'nenhum',
+        'imagem_do_destaque'  => null,
+        'tamanho_do_destaque' => 'medio',
+        'ilustracao'          => 'nenhuma',
+        'movimento'           => false,
+        'cor_da_ilustracao'   => null,
+        'gradiente_de'        => null,
+        'gradiente_ate'       => null,
+        'gradiente_direcao'   => 'diagonal',
+        'formato_dos_textos'  => 'markdown',
+        ...$extra,
+    ];
+}
+
+/** A logo (clara e escura) e a imagem do destaque no disco público, gravadas como a instalação grava. */
+function identidadeDeArte(): void
+{
+    $disco = Storage::disk('public');
+    $disco->put('kit/arte-logo.png', (string) file_get_contents(base_path('tests/Browser/Fixtures/logo-de-arte.png')));
+    $disco->put('kit/arte-logo-escura.png', (string) file_get_contents(base_path('tests/Browser/Fixtures/logo-de-arte-escura.png')));
+    $disco->put('telas-de-acesso/arte-produto.png', (string) file_get_contents(base_path('art/infra-hub.png')));
+
+    gravarConfiguracao('logo', 'kit/arte-logo.png');
+    gravarConfiguracao('logo_dark', 'kit/arte-logo-escura.png');
+    // Separadas, para o tema escuro usar a variante escura (unificada, a escura é inerte).
+    gravarConfiguracao('unifica_logo_marca', false);
+    alinharConfiguracoesDoKit();
+}
+
+/** Grava a aparência padrão da instalação (banco e config, como `definirAparenciaGlobal()`). */
+function aparenciaDaInstalacaoParaArte(array $aparencia): void
+{
+    gravarConfiguracao('aparencia_das_telas', $aparencia);
+    config()->set('kit.identidade.aparencia_das_telas', $aparencia);
+}
+
+/** As variações, na ordem do GIF: arquivo => [aparência, tela]. */
+function variacoesDasTelasDeAcesso(): array
+{
+    return [
+        'telas-de-acesso-classico'       => [['layout' => 'classico'], '/admin/login'],
+        'telas-de-acesso-cor-primaria'   => [aparenciaDeArte(), '/admin/login'],
+        'telas-de-acesso-cor-propria'    => [aparenciaDeArte([
+            'lado_do_formulario' => 'direita', 'cor' => '#0f766e', 'tamanho_do_painel' => 40,
+            'ilustracao'         => 'rede', 'cor_da_ilustracao' => '#99f6e4',
+        ]), '/admin/login'],
+        'telas-de-acesso-gradiente-diagonal' => [aparenciaDeArte([
+            'fundo'    => 'gradiente', 'gradiente_de' => '#4f46e5', 'gradiente_ate' => '#db2777', 'gradiente_direcao' => 'diagonal',
+            'destaque' => 'logo', 'tamanho_do_destaque' => 'grande', 'tamanho_do_painel' => 60,
+        ]), '/admin/login'],
+        'telas-de-acesso-arte-e-rede' => [aparenciaDeArte([
+            'lado_do_formulario' => 'direita', 'fundo' => 'arte', 'tamanho_do_painel' => 55,
+            'destaque'           => 'logo', 'ilustracao' => 'rede',
+        ]), '/admin/login'],
+        'telas-de-acesso-imagem-no-meio' => [aparenciaDeArte([
+            'fundo'              => 'gradiente', 'gradiente_direcao' => 'vertical', 'tamanho_do_painel' => 65,
+            'destaque'           => 'imagem', 'imagem_do_destaque' => 'telas-de-acesso/arte-produto.png', 'tamanho_do_destaque' => 'grande',
+            'frase'              => 'Veja **tudo** antes de entrar.',
+            'apoio'              => 'Uma imagem no meio do painel: a tela do produto, uma campanha ou a marca.',
+        ]), '/admin/login'],
+        'telas-de-acesso-cadastro-propria' => [aparenciaDeArte([
+            'telas' => ['cadastro' => aparenciaDeArte([
+                'lado_do_formulario' => 'direita', 'fundo' => 'gradiente', 'gradiente_de' => '#0f766e', 'gradiente_ate' => '#1e3a8a',
+                'gradiente_direcao'  => 'horizontal', 'destaque' => 'logo',
+                'frase'              => 'Crie a sua conta em **um minuto**.',
+                'apoio'              => 'O cadastro tem a aparência dele; o login continua com a sua.',
+            ])],
+        ]), '/app/register'],
+        'telas-de-acesso-esqueci-propria' => [aparenciaDeArte([
+            'telas' => ['recuperacao' => aparenciaDeArte([
+                'cor'                => '#1e293b', 'tamanho_do_painel' => 45, 'ilustracao' => 'rede', 'cor_da_ilustracao' => '#fbbf24',
+                'frase'              => 'Esqueceu a senha? **Sem problema.**',
+                'apoio'              => 'Enviamos um link para o seu e-mail. Ele vale por uma hora.',
+            ])],
+        ]), '/admin/password-reset/request'],
+    ];
+}
+
+it('captura as variações das telas de acesso', function (string $arquivo): void {
+    [$aparencia, $tela] = variacoesDasTelasDeAcesso()[$arquivo];
+
+    config(['kit.registro.habilitado' => true]);
+    identidadeDeArte();
+    aparenciaDaInstalacaoParaArte($aparencia);
+    auth()->logout();
+
+    // Com organizações, o cadastro do /app é por convite: a tela só abre com um token válido.
+    if ($tela === '/app/register') {
+        $token = Convite::factory()->create([
+            'email'   => 'convidado@example.com',
+            'role_id' => Role::findByName('panel_user')->getKey(),
+        ])->enviar();
+        $tela .= "?token={$token}";
+    }
+
+    // Fora do cronômetro do Playwright (cabeçalho deste arquivo).
+    $this->get($tela);
+
+    $pagina = visit($tela)
+        ->resize(1400, 875)
+        ->assertPresent('form')
+        ->assertNoBrokenImages();
+
+    if (($aparencia['layout'] ?? null) === 'painel') {
+        $pagina->assertPresent('.kit-painel-de-marca');
+    }
+
+    $pagina->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: false, filename: $arquivo);
+})->with([
+    'clássico'                => 'telas-de-acesso-classico',
+    'cor primária'            => 'telas-de-acesso-cor-primaria',
+    'cor própria e rede'      => 'telas-de-acesso-cor-propria',
+    'gradiente diagonal'      => 'telas-de-acesso-gradiente-diagonal',
+    'arte e rede'             => 'telas-de-acesso-arte-e-rede',
+    'imagem no meio'          => 'telas-de-acesso-imagem-no-meio',
+    'cadastro próprio'        => 'telas-de-acesso-cadastro-propria',
+    'esqueci a senha própria' => 'telas-de-acesso-esqueci-propria',
+])->after(function (): void {
+    Storage::disk('public')->delete(['kit/arte-logo.png', 'kit/arte-logo-escura.png', 'telas-de-acesso/arte-produto.png']);
+})->group('browser', 'art');
+
+it('captura a faixa de marca no celular', function (bool $comLogo, string $arquivo): void {
+    if ($comLogo) {
+        identidadeDeArte();
+    }
+    aparenciaDaInstalacaoParaArte(aparenciaDeArte(['fundo' => 'gradiente', 'destaque' => 'logo', 'ilustracao' => 'rede']));
+    auth()->logout();
+
+    $this->get('/admin/login');
+
+    visit('/admin/login')
+        ->resize(390, 844)
+        ->assertPresent('.kit-painel-de-marca')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: false, filename: $arquivo);
+})->with([
+    'com a logo'              => [true, 'telas-de-acesso-celular-logo'],
+    'com o nome da aplicação' => [false, 'telas-de-acesso-celular-nome'],
+])->after(function (): void {
+    Storage::disk('public')->delete(['kit/arte-logo.png', 'kit/arte-logo-escura.png', 'telas-de-acesso/arte-produto.png']);
+})->group('browser', 'art');
+
+/**
+ * Rola a tela de configurações até um título (legenda de fieldset ou cabeçalho de seção), com
+ * folga para a barra do topo, e espera o fim da rolagem.
+ */
+function rolarAte(AwaitableWebpage $pagina, string $titulo): void
+{
+    $alvo = json_encode($titulo, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+    $pagina->script(<<<JS
+        (() => {
+            const alvo = [...document.querySelectorAll('legend, .fi-section-header-heading')]
+                .find((el) => el.textContent.trim() === {$alvo});
+            if (! alvo) { throw new Error('título não encontrado: ' + {$alvo}); }
+            window.scrollTo({ top: alvo.getBoundingClientRect().top + window.scrollY - 90, behavior: 'instant' });
+        })()
+    JS);
+    $pagina->wait(0.4);
+}
+
+/**
+ * Os quadros do editor: a seção Login por partes, a seção Cadastro com aparência própria e o
+ * preview. A aparência gravada antes já tem gradiente, Markdown, destaque e rede, para cada parte
+ * aparecer preenchida.
+ */
+it('captura os quadros do editor das telas de acesso', function (): void {
+    identidadeDeArte();
+    aparenciaDaInstalacaoParaArte(aparenciaDeArte([
+        'fundo'    => 'gradiente', 'gradiente_de' => '#4f46e5', 'gradiente_ate' => '#db2777',
+        'destaque' => 'logo', 'ilustracao' => 'rede', 'cor_da_ilustracao' => '#c7d2fe',
+        'telas'    => ['cadastro' => aparenciaDeArte(['lado_do_formulario' => 'direita', 'cor' => '#0f766e'])],
+    ]));
+
+    $this->get('/admin/configuracoes-da-aplicacao');
+
+    $pagina = visit('/admin/configuracoes-da-aplicacao')
+        ->resize(1400, 875)
+        ->click('Telas de acesso')
+        ->assertVisible('[id$="aparencia_das_telas.frase"]');
+
+    rolarAte($pagina, 'Login');
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-editor-1-disposicao');
+
+    rolarAte($pagina, 'Fundo');
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-editor-2-fundo');
+
+    rolarAte($pagina, 'Textos');
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-editor-3-textos');
+
+    rolarAte($pagina, 'Ilustração');
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-editor-4-ilustracao');
+
+    rolarAte($pagina, 'Cadastro');
+    $pagina->click('Cadastro')
+        ->assertSee('Igual ao login');
+    rolarAte($pagina, 'Cadastro');
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-editor-5-cadastro');
+
+    $pagina->script("document.querySelector('iframe')?.scrollIntoView({ block: 'center', behavior: 'instant' })");
+    $pagina->wait(2);
+    $pagina->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: false, filename: 'telas-de-acesso-editor-6-preview');
+})->after(function (): void {
+    Storage::disk('public')->delete(['kit/arte-logo.png', 'kit/arte-logo-escura.png', 'telas-de-acesso/arte-produto.png']);
+})->group('browser', 'art');
+
+/*
+|--------------------------------------------------------------------------
 | Visões salvas e carregamento contínuo em tema escuro — no FIM do arquivo
 |--------------------------------------------------------------------------
 */
@@ -1347,4 +1591,29 @@ it('captura os quadros do botão Carregar mais em tema escuro', function (): voi
 
 it('captura a aba Tabelas das configurações em tema escuro', function (): void {
     capturarAbaTabelas($this, visit('/admin/configuracoes-da-aplicacao'), true, 'admin-configuracoes-tabelas-escuro');
+})->group('browser', 'art');
+
+/*
+| A variação em tema escuro das telas de acesso — no fim do arquivo, como as outras escuras.
+*/
+
+it('captura a tela de login com o painel de marca em tema escuro', function (): void {
+    identidadeDeArte();
+    aparenciaDaInstalacaoParaArte(aparenciaDeArte([
+        'lado_do_formulario' => 'direita', 'fundo' => 'gradiente', 'gradiente_direcao' => 'diagonal',
+        'destaque'           => 'logo', 'ilustracao' => 'rede',
+    ]));
+    auth()->logout();
+
+    $this->get('/admin/login');
+
+    visit('/admin/login')
+        ->inDarkMode()
+        ->resize(1400, 875)
+        ->assertPresent('.kit-painel-de-marca')
+        ->assertNoBrokenImages()
+        ->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: false, filename: 'telas-de-acesso-tema-escuro');
+})->after(function (): void {
+    Storage::disk('public')->delete(['kit/arte-logo.png', 'kit/arte-logo-escura.png', 'telas-de-acesso/arte-produto.png']);
 })->group('browser', 'art');
