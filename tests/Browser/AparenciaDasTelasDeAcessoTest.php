@@ -350,7 +350,10 @@ it('[CT-B05] atualizar o preview mostra o que ainda não foi salvo', function (s
 
     $sentinela = 'RASCUNHO'.strtoupper($tela === 'recuperar-senha' ? 'REC' : substr($tela, 0, 3)).'X'.($dimensao === 'celular' ? 'C' : 'D');
 
+    // Tab tira o foco do campo (o live onBlur grava o rascunho), como a pessoa faria.
     $pagina->fill('[id$="aparencia_das_telas.frase"]', $sentinela)
+        ->keys('[id$="aparencia_das_telas.frase"]', 'Tab')
+        ->wait(0.5)
         ->select('.kit-preview-das-telas__select', $tela)
         ->click($dimensao === 'celular' ? 'Celular' : 'Computador')
         ->click('Atualizar preview');
@@ -362,7 +365,8 @@ it('[CT-B05] atualizar o preview mostra o que ainda não foi salvo', function (s
     [$larguraInterna] = $dimensao === 'celular' ? [390] : [1440];
     esperarNoNavegador($pagina, "(() => { const f = {$iframe}; const d = f?.contentDocument;
         return !!d && d.readyState === 'complete' && f.contentWindow.location.href.includes('tela={$tela}')
-            && f.contentWindow.innerWidth === {$larguraInterna} && d.body.innerHTML.includes('{$sentinela}'); })()");
+            && f.contentWindow.innerWidth === {$larguraInterna} && d.body.innerHTML.includes('{$sentinela}'); })()",
+        aCada: fn () => $pagina->click('Atualizar preview'));
 
     // O documento interno recebe o rascunho (A), não o persistido (P). No celular a faixa não
     // mostra texto (P-22, Adendo 1): o rascunho chega ao documento, mas a frase não fica visível.
@@ -712,13 +716,20 @@ it('[CT-B12] num painel estreito o botão de pausar continua inteiro dentro do p
 });
 
 /** Repete a expressão no navegador até ela dar `true` — asserção que tolera o recarregamento de um iframe. */
-function esperarNoNavegador(mixed $pagina, string $expressao, float $segundos = 20): void
+function esperarNoNavegador(mixed $pagina, string $expressao, float $segundos = 30, ?Closure $aCada = null): void
 {
-    $limite = microtime(true) + $segundos;
+    $limite   = microtime(true) + $segundos;
+    $proximo  = microtime(true) + 6;
 
     while (microtime(true) < $limite) {
         if ($pagina->script($expressao) === true) {
             return;
+        }
+
+        // Num runner lento o primeiro clique pode chegar antes do rascunho: repete a ação da pessoa.
+        if ($aCada !== null && microtime(true) > $proximo) {
+            $aCada();
+            $proximo = microtime(true) + 6;
         }
 
         $pagina->wait(0.25);
