@@ -357,6 +357,13 @@ it('[CT-B05] atualizar o preview mostra o que ainda não foi salvo', function (s
 
     $iframe = "document.querySelector('.kit-preview-das-telas__iframe')";
 
+    // Espera o iframe recarregar na tela e na largura escolhidas, com o rascunho: antes disso o
+    // documento ainda é o anterior, e uma asserção negativa passaria ou falharia por corrida (CI).
+    [$larguraInterna] = $dimensao === 'celular' ? [390] : [1440];
+    esperarNoNavegador($pagina, "(() => { const f = {$iframe}; const d = f?.contentDocument;
+        return !!d && d.readyState === 'complete' && f.contentWindow.location.href.includes('tela={$tela}')
+            && f.contentWindow.innerWidth === {$larguraInterna} && d.body.innerHTML.includes('{$sentinela}'); })()");
+
     // O documento interno recebe o rascunho (A), não o persistido (P). No celular a faixa não
     // mostra texto (P-22, Adendo 1): o rascunho chega ao documento, mas a frase não fica visível.
     if ($dimensao === 'celular') {
@@ -703,3 +710,19 @@ it('[CT-B12] num painel estreito o botão de pausar continua inteiro dentro do p
         ->and($m['botao']['r'])->toBeLessThanOrEqual($m['painel']['r'] + 0.5)
         ->and($m['botao']['b'])->toBeLessThanOrEqual($m['painel']['b'] + 0.5, 'o botão de pausar foi cortado pelo painel');
 });
+
+/** Repete a expressão no navegador até ela dar `true` — asserção que tolera o recarregamento de um iframe. */
+function esperarNoNavegador(mixed $pagina, string $expressao, float $segundos = 20): void
+{
+    $limite = microtime(true) + $segundos;
+
+    while (microtime(true) < $limite) {
+        if ($pagina->script($expressao) === true) {
+            return;
+        }
+
+        $pagina->wait(0.25);
+    }
+
+    expect(false)->toBeTrue("o navegador não chegou a: {$expressao}");
+}
