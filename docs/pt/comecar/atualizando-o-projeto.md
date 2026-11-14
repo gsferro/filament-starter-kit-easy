@@ -138,6 +138,13 @@ que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
 
+**Na v0.53.0 há duas migrations, e as telas de acesso continuam idênticas.** Rode `php artisan migrate`
+(a configuração `aparencia_das_telas` e a coluna `tenants.aparencia_das_telas`, as duas vazias) e
+`php artisan filament:assets` (CSS do kit). Nada muda até alguém escolher o painel de marca em
+**Configurações da aplicação › Telas de acesso** (ver [Aparência das telas](../../autenticacao/aparencia-das-telas/)).
+Quem mudou à mão o bloco `AuthDesignerPlugin` dos providers ou o partial `media` do Auth Designer
+revisa o diff: as páginas de redefinição de senha e de confirmação de e-mail passam a ser as do kit.
+
 **Na v0.52.1 não há nada a instalar nem migrar**: o cadastro por convite com o login unificado desligado
 passa a cair no painel do papel do convite em vez de 403 (ver [Login unificado](../../autenticacao/login-unificado/)).
 Quem mudou à mão o `app/Http/Responses/RespostaDeCadastro.php` ou o `app/Support/DestinoAposLogin.php` revisa o diff.

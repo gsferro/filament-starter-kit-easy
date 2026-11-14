@@ -5,6 +5,10 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.53.0] - 2026-11-14
+
+A v0.53.0 traz a **aparência das telas de acesso** escolhida na tela, com preview e por organização. Duas migrations, as duas vazias: as telas continuam idênticas até alguém escolher o painel de marca. Wiki: `wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/`.
+
 ### Adicionado
 
 - Aparência das telas de acesso escolhida na tela (`wikis/specs/feat/aparencia-das-telas-de-acesso/`): a aba

@@ -139,6 +139,13 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
 
+**v0.53.0 adds two migrations, and the access screens stay identical.** Run `php artisan migrate`
+(the `aparencia_das_telas` setting and the `tenants.aparencia_das_telas` column, both empty) and
+`php artisan filament:assets` (kit CSS). Nothing changes until someone picks the brand panel in
+**Configurações da aplicação › Telas de acesso** (see [Access screen appearance](../../autenticacao/aparencia-das-telas/)).
+Whoever hand-edited the providers' `AuthDesignerPlugin` block or the Auth Designer `media` partial
+reviews the diff: the password reset and e-mail confirmation pages become the kit's.
+
 **v0.52.1 has nothing to install or migrate**: invitation sign-up with the unified login disabled now
 lands on the invitation role's panel instead of a 403 (see [Unified login](../../autenticacao/login-unificado/)).
 If you hand-edited `app/Http/Responses/RespostaDeCadastro.php` or `app/Support/DestinoAposLogin.php`, review the diff.
