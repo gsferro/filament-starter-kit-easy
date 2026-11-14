@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
 use Filament\Support\Colors\Color;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -423,6 +424,12 @@ final class AparenciaDasTelasDeAcesso
         }
 
         if (! Storage::disk('public')->exists($caminho)) {
+            // Uma vez por hora por caminho: a tela é pública, e um aviso por request seria volume
+            // que o visitante controla (SEC-A1 da revisão do adendo).
+            if (! Cache::add('aparencia-imagem-ausente:'.hash('xxh128', $caminho), true, now()->addHour())) {
+                return null;
+            }
+
             Log::channel('autenticacao')->warning(
                 '[AparenciaDasTelasDeAcesso@urlDaImagem] Imagem do destaque ausente no disco | caminho: '.$caminho,
                 ['caminho' => $caminho, 'disco' => 'public'],

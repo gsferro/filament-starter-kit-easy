@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ContextoDePapeis;
+use App\Support\TetoDeUpload;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -208,6 +209,7 @@ it('[CT-43] o único upload da aparência da organização aceita só PNG, JPEG 
         ->and($uploads[0]->getStatePath())->toEndWith('aparencia_das_telas.imagem_do_destaque')
         ->and($uploads[0]->getAcceptedFileTypes())->toBe(['image/png', 'image/jpeg', 'image/webp'])
         ->and($uploads[0]->getDiskName())->toBe('public')
+        ->and($uploads[0]->getMaxSize())->toBe(TetoDeUpload::emKb())
         ->and($uploads[0]->getDirectory())->toBe('telas-de-acesso');
 })->with(['criação', 'edição'])->group('tenancy');
 
@@ -669,4 +671,31 @@ it('[CT-42] organização com o clássico próprio não herda o painel da padrã
 
     expect($semOrganizacao)->toContain('data-kit-aparencia="painel"');
     $this->assertStringNotContainsString('data-kit-aparencia="painel"', $daOrganizacao, 'o clássico próprio virou "usa a padrão"');
+})->group('tenancy');
+
+/*
+| Adendo 1 — campos novos na aparência da organização (ADV-A4, ADV-A11 da revisão do adendo)
+*/
+
+it('[CT-53] a aparência própria da organização leva largura, destaque e rede ao login dela', function (): void {
+    $acme = organizacaoComLogoPropria();
+    comLogoNaIdentidade();
+    Storage::disk('public')->put('org/logo-a.png', 'png');
+    definirAparenciaGlobal(aparenciaDeTeste('P'));
+    $acme->update(['aparencia_das_telas' => [
+        'tamanho_do_painel' => 70, 'destaque' => 'logo', 'ilustracao' => 'rede',
+    ] + aparenciaDeTeste('A')]);
+
+    $daOrganizacao = loginDe('/app/login?org=acme');
+    $arvore        = arvoreDoHtml($daOrganizacao);
+
+    expect($daOrganizacao)->toContain('--media-size: 70%')
+        ->and($arvore->query('//svg[@data-kit-ilustracao="rede"]')->length)->toBe(1)
+        // A logo do destaque é a da organização, não a da instalação (P-20).
+        ->and($arvore->query('//*[@data-kit-destaque="logo"]//img')->item(0)?->getAttribute('src'))->toContain('logo-a.png');
+
+    $semOrganizacao = loginDe('/app/login');
+
+    expect($semOrganizacao)->toContain('--media-size: 60%')
+        ->and(arvoreDoHtml($semOrganizacao)->query('//svg[@data-kit-ilustracao="rede"]')->length)->toBe(0);
 })->group('tenancy');

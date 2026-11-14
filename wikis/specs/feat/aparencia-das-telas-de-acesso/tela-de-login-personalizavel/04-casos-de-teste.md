@@ -64,9 +64,9 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R16 — Referências externas restritas | documentação/mínimo | RQ-12, Q9 | inspeção genérica de links | CT-24 |
 | R18 — Vocabulário dos campos novos | tolerância/padrão | RQ-22, P-19, P-20, P-21, P-23, P-24 | EP, BVA | CT-44, CT-45, CT-46 |
 | R19 — Disposição | apresentação/padrão | RQ-23, P-19 | EP, BVA, geometria | CT-47, CT-B11 |
-| R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso | CT-48 |
+| R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso, geometria | CT-48, CT-B12 |
 | R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10 |
-| R22 — Só o que a tela mostra | segurança/completo | P-16, P-20 | papel × ação | CT-50 |
+| R22 — Só o que a tela mostra | segurança/completo | P-06, P-16, P-20 | papel × ação | CT-50, CT-53 |
 | R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-20, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
 | R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 |
 | R25 — Processo do Adendo 1 | processo/mínimo | RQ-17, RQ-18 | execução pela sessão | CT-21 (cenários, `03`), CT-23 (docs e capturas) |
@@ -1099,6 +1099,8 @@ Destinos automatizados (implementados):
 | CT-B09 | Celular só com a marca | R24 | visibilidade | G4 | browser | B | — |
 | CT-B10 | Movimento com pausa | R21 | estado × evento | G4 | browser | B | — |
 | CT-B11 | Largura na tela | R19 | geometria | G4 | browser | B | — |
+| CT-53 | Campos novos na aparência da organização | R22 | estado × evento | G2 | Pest feature HTTP | T | — |
+| CT-B12 | Destaque e botão de pausar dentro do painel | R20 | geometria | G4 | browser | B | — |
 
 ## Regra R17 — Achados do step 9 e do quality gate
 
@@ -1237,9 +1239,9 @@ independente (`fw-adversario-ct`) roda sobre eles no step 9 do adendo.
 |---|---|---|---|---|
 | R18 — Vocabulário dos campos novos | tolerância/padrão | RQ-20..RQ-23, P-19..P-21, P-23, P-24 | EP, BVA | CT-44, CT-45, CT-46 |
 | R19 — Disposição | apresentação/padrão | RQ-23, P-19 | EP, BVA, geometria | CT-47, CT-B11 |
-| R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso | CT-48 |
+| R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso, geometria | CT-48, CT-B12 |
 | R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10 |
-| R22 — Só o que a tela mostra | segurança/completo | P-16, P-20 | papel × ação | CT-50 |
+| R22 — Só o que a tela mostra | segurança/completo | P-06, P-16, P-20 | papel × ação | CT-50, CT-53 |
 | R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
 | R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 (linhas de celular) |
 
@@ -1355,4 +1357,47 @@ Funcionalidade: Adendo 1 da aparência das telas de acesso
       Então a imagem do destaque vem da URL temporária assinada do Livewire, nada foi gravado nem copiado para o disco público
       # E um SVG não salvo não vira imagem temporária
       # Origem: P-08, P-20
+```
+
+### Acréscimos da revisão do diff do adendo (step 9)
+
+Derivados pela sessão a partir dos achados confirmados (ver `03` › Revisão do Diff — Adendo 1).
+
+```gherkin
+# language: pt
+Funcionalidade: Achados da revisão do adendo
+
+  Regra: R22 — Campos novos da organização e saída pública
+
+    Cenário: [CT-53] A aparência própria da organização leva largura, destaque e rede ao login dela
+      Dado tenancy ligada, a padrão P (largura 60, sem rede) e a organização A ativa, com logo própria e aparência própria de largura 70, destaque logo e rede
+      Quando o login é aberto com ?org=A e sem organização
+      Então com ?org=A o mediaSize é 70%, há rede e o destaque mostra a logo de A; sem organização, 60% e sem rede
+      # Origem: P-06 × P-19..P-21 (ADV-A4, ADV-A11)
+
+    Cenário: [CT-50] A aparência devolvida pelo componente não traz imagem nem cor que a tela não usa
+      Dado destaque "nada" com imagem gravada e ilustração "nenhuma" com cor gravada
+      Quando o componente de login é chamado diretamente
+      Então a imagem e a cor devolvidas são vazias, e o gravado continua inteiro
+      # Origem: P-16 (CX-A4)
+
+  Regra: R19 — As outras telas
+
+    Esquema do Cenário: [CT-47] A largura, o destaque e a rede valem nas outras telas
+      Dado largura 70, destaque imagem e rede
+      Quando <tela> é aberta
+      Então o HTML tem "--media-size: 70%", a imagem e a rede
+      Exemplos:
+        | tela |
+        | recuperar senha |
+        | cadastro |
+      # Origem: P-02 (ADV-A3)
+
+  Regra: R18 — Aviso sem volume controlado pelo visitante
+
+    Cenário: [CT-48] Imagem ausente gera um aviso, não um por visita
+      Dado destaque imagem com arquivo ausente
+      Quando o login é aberto duas vezes
+      Então o aviso "Imagem do destaque ausente" é registrado uma vez
+      # Origem: SEC-A1
 ```

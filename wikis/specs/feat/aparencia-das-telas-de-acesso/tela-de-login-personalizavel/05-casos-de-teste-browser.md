@@ -495,3 +495,38 @@ Funcionalidade: Adendo 1 no navegador
         | 30 | direita |
         | 70 | esquerda |
 ```
+
+### Acréscimos da revisão do diff do adendo (step 9)
+
+```gherkin
+# language: pt
+Funcionalidade: Achados da revisão do adendo no navegador
+
+  Regra: R21 — Movimento só quando permitido e visível
+
+    Cenário: [CT-B10] Com "reduzir movimento" no sistema a rede fica parada e sem botão
+      Dado a rede em movimento e o navegador emulando prefers-reduced-motion: reduce
+      Quando o login é aberto em 1440×900
+      Então um ponto não muda de posição e o botão de pausar continua escondido
+      # Origem: P-21 (ADV-A1)
+
+    Cenário: [CT-B10] No celular o laço de animação não roda
+      Dado a rede em movimento
+      Quando o login é aberto em 390×844
+      Então um ponto não muda de posição; em 1440×900 volta a mudar
+      # Origem: P-21, P-22 (RD-A1)
+
+  Regra: R20 — Nada é cortado ou sobreposto
+
+    Cenário: [CT-B12] A imagem grande do destaque não cobre os textos numa tela baixa
+      Dado largura 30, destaque imagem alta em tamanho grande e textos no teto
+      Quando o login é aberto em 1366×768
+      Então a imagem termina acima da base com os textos
+      # Origem: P-20 (RD-A2, CX-A2)
+
+    Cenário: [CT-B12] Num painel estreito o botão de pausar continua inteiro
+      Dado largura 30, rede em movimento e textos no teto
+      Quando o login é aberto em 1024×768
+      Então o botão de pausar está inteiro dentro do painel
+      # Origem: P-21 (CX-A1)
+```

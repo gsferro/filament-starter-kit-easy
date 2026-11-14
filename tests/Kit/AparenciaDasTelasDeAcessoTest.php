@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
+use App\Support\TetoDeUpload;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -829,6 +830,7 @@ it('[CT-43] o único upload da aparência da instalação aceita só PNG, JPEG o
         ->and($upload->getStatePath())->toEndWith('aparencia_das_telas.imagem_do_destaque')
         ->and($upload->getAcceptedFileTypes())->toBe(['image/png', 'image/jpeg', 'image/webp'])
         ->and($upload->getDiskName())->toBe('public')
+        ->and($upload->getMaxSize())->toBe(TetoDeUpload::emKb())
         ->and($upload->getDirectory())->toBe('telas-de-acesso');
 
     // As opções de arte e logo continuam as da identidade existente: o fundo "arte" e o toggle da logo.

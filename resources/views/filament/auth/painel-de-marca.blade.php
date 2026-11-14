@@ -14,7 +14,10 @@
 
     A ilustração "rede" (P-21) é um SVG decorativo (aria-hidden). Com movimento, um componente
     Alpine desloca os pontos em torno da posição desenhada aqui; sem JavaScript, ou com "reduzir
-    movimento" no sistema, a rede fica parada e o botão de pausar continua escondido.
+    movimento" no sistema, a rede fica parada e o botão de pausar continua escondido. O laço só
+    roda com a rede à vista: abaixo de 1024 px (onde o CSS a esconde, P-22), com a aba oculta,
+    pausado ou com "reduzir movimento" — também quando a preferência muda com a tela aberta —,
+    nenhum quadro é pedido (RD-A1 e CX-A3 da revisão do adendo).
 --}}
 @php
     $fundoArte = ($aparencia['fundo'] ?? 'cor') === 'arte';
@@ -48,9 +51,6 @@
             quadro: null,
             inicio: null,
             init() {
-                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                    return
-                }
                 const pontos = [...this.$refs.rede.querySelectorAll('circle')].map((circulo, i) => ({
                     circulo,
                     x: Number(circulo.getAttribute('cx')),
@@ -82,24 +82,23 @@
                     }
                     this.quadro = requestAnimationFrame(passo)
                 }
-                this.retomar = () => { this.quadro = requestAnimationFrame(passo) }
-                this.$refs.pausa.hidden = false
-                document.addEventListener('visibilitychange', () => {
-                    if (document.hidden) {
-                        cancelAnimationFrame(this.quadro)
-                    } else if (! this.pausado) {
-                        this.retomar()
+                const largo = window.matchMedia('(min-width: 1024px)')
+                const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)')
+                this.sincronizar = () => {
+                    cancelAnimationFrame(this.quadro)
+                    this.$refs.pausa.hidden = reduzido.matches
+                    if (largo.matches && ! reduzido.matches && ! this.pausado && ! document.hidden) {
+                        this.quadro = requestAnimationFrame(passo)
                     }
-                })
-                this.retomar()
+                }
+                largo.addEventListener('change', this.sincronizar)
+                reduzido.addEventListener('change', this.sincronizar)
+                document.addEventListener('visibilitychange', this.sincronizar)
+                this.sincronizar()
             },
             alternar() {
                 this.pausado = ! this.pausado
-                if (this.pausado) {
-                    cancelAnimationFrame(this.quadro)
-                } else {
-                    this.retomar()
-                }
+                this.sincronizar()
             },
         }"
     @endif

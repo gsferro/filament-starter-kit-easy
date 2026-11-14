@@ -50,11 +50,36 @@ trait VesteAparenciaDasTelas
     public function aparenciaDaTela(): ?array
     {
         if (! $this->aparenciaFoiResolvida) {
-            $this->aparenciaResolvida    = $this->resolverAparencia();
+            $this->aparenciaResolvida    = self::soOQueATelaMostra($this->resolverAparencia());
             $this->aparenciaFoiResolvida = true;
         }
 
         return $this->aparenciaResolvida;
+    }
+
+    /**
+     * A aparência gravada é um objeto inteiro (ADR-02): guarda a imagem do destaque mesmo com o
+     * destaque em "nada", e a cor da rede mesmo sem rede. Este método é chamável por `$wire` numa
+     * tela pública, então sai dele só o que está em uso (P-16; CX-A4 da revisão do adendo).
+     *
+     * @param  array<string, mixed>|null  $aparencia
+     * @return array<string, mixed>|null
+     */
+    private static function soOQueATelaMostra(?array $aparencia): ?array
+    {
+        if ($aparencia === null) {
+            return null;
+        }
+
+        if (($aparencia['destaque'] ?? 'nenhum') !== 'imagem') {
+            $aparencia['imagem_do_destaque'] = null;
+        }
+
+        if (($aparencia['ilustracao'] ?? 'nenhuma') !== 'rede') {
+            $aparencia['cor_da_ilustracao'] = null;
+        }
+
+        return $aparencia;
     }
 
     /**

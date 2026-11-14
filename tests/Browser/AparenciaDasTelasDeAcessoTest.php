@@ -625,3 +625,81 @@ it('[CT-B11] a largura escolhida divide a tela entre painel e formulário', func
     'estreito, formulário à direita' => [30, 'direita'],
     'largo, formulário à esquerda'   => [70, 'esquerda'],
 ]);
+
+/** A mesma visita com "reduzir movimento" no sistema: o plugin repassa as opções ao contexto do Playwright. */
+function visitaComMovimentoReduzido(string $url): mixed
+{
+    $pendente = visit($url);
+
+    return (fn () => new self($this->browserType, $this->device, $this->url, ['reducedMotion' => 'reduce', ...$this->options]))->call($pendente);
+}
+
+it('[CT-B10] com "reduzir movimento" no sistema a rede fica parada e sem botão', function (): void {
+    definirAparenciaGlobal(aparenciaCheiaDoAdendo());
+
+    $pagina = visitaComMovimentoReduzido('/admin/login')->resize(1440, 900);
+    $ponto  = "document.querySelector('.kit-painel-de-marca__rede circle').getAttribute('cx')";
+
+    $pagina->assertScript("matchMedia('(prefers-reduced-motion: reduce)').matches");
+    $antes = $pagina->script($ponto);
+    $pagina->wait(0.6);
+
+    expect($pagina->script($ponto))->toBe($antes)
+        ->and($pagina->script("document.querySelector('[data-kit-pausa]').hidden"))->toBeTrue();
+});
+
+it('[CT-B10] no celular, onde a rede não aparece, o laço de animação não roda', function (): void {
+    definirAparenciaGlobal(aparenciaCheiaDoAdendo());
+
+    $pagina = visit('/admin/login')->resize(390, 844);
+    $ponto  = "document.querySelector('.kit-painel-de-marca__rede circle').getAttribute('cx')";
+
+    $antes = $pagina->script($ponto);
+    $pagina->wait(0.6);
+    expect($pagina->script($ponto))->toBe($antes, 'a rede escondida não deveria ser animada');
+
+    // De volta à largura de computador, a animação recomeça.
+    $pagina->resize(1440, 900)->wait(0.6);
+    expect($pagina->script($ponto))->not->toBe($antes);
+});
+
+it('[CT-B12] a imagem grande do destaque não cobre os textos numa tela baixa', function (): void {
+    Storage::disk('public')->put('telas-de-acesso/ct-b12.png', UploadedFile::fake()->image('alta.png', 400, 1200)->get());
+    definirAparenciaGlobal([
+        ...aparenciaNosTetos('direita'),
+        'tamanho_do_painel'   => 30, 'destaque' => 'imagem', 'imagem_do_destaque' => 'telas-de-acesso/ct-b12.png',
+        'tamanho_do_destaque' => 'grande',
+    ]);
+
+    $pagina = visit('/admin/login')->resize(1366, 768);
+    $m      = json_decode((string) $pagina->script(<<<'JS'
+        (() => {
+            const img = document.querySelector('[data-kit-destaque="imagem"]').getBoundingClientRect();
+            const base = document.querySelector('.kit-painel-de-marca__base').getBoundingClientRect();
+            return JSON.stringify({ imagem: img.bottom, base: base.top, altura: img.height });
+        })()
+    JS), true, flags: JSON_THROW_ON_ERROR);
+
+    Storage::disk('public')->delete('telas-de-acesso/ct-b12.png');
+
+    expect($m['altura'])->toBeGreaterThan(0)
+        ->and($m['imagem'])->toBeLessThanOrEqual($m['base'] + 0.5, 'a imagem invadiu a base com os textos');
+});
+
+it('[CT-B12] num painel estreito o botão de pausar continua inteiro dentro do painel', function (): void {
+    definirAparenciaGlobal([...aparenciaNosTetos('direita'), 'tamanho_do_painel' => 30, 'ilustracao' => 'rede', 'movimento' => true]);
+
+    $pagina = visit('/admin/login')->resize(1024, 768);
+    $m      = json_decode((string) $pagina->script(<<<'JS'
+        (() => {
+            const botao = document.querySelector('[data-kit-pausa]').getBoundingClientRect();
+            const painel = document.querySelector('.kit-painel-de-marca').getBoundingClientRect();
+            return JSON.stringify({ botao: { l: botao.left, r: botao.right, t: botao.top, b: botao.bottom, w: botao.width }, painel: { l: painel.left, r: painel.right, t: painel.top, b: painel.bottom } });
+        })()
+    JS), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($m['botao']['w'])->toBeGreaterThan(0)
+        ->and($m['botao']['l'])->toBeGreaterThanOrEqual($m['painel']['l'] - 0.5)
+        ->and($m['botao']['r'])->toBeLessThanOrEqual($m['painel']['r'] + 0.5)
+        ->and($m['botao']['b'])->toBeLessThanOrEqual($m['painel']['b'] + 0.5, 'o botão de pausar foi cortado pelo painel');
+});

@@ -1,6 +1,6 @@
 # Progresso — feat: tela de login personalizável
 
-**Estado**: bloqueada — gate no teto (ciclo 3 REPROVADO; QA-15..17 corrigidos depois do veredito, aguardando decisão do solicitante)
+**Estado**: em implementação — Adendo 1 (2026-11-14); o gate da entrega original fechou no teto (ciclo 3), e o solicitante respondeu com o Adendo 1 e o pedido de merge
 
 `{base}`: `main` · branch `feat/aparencia-das-telas-de-acesso`
 
@@ -54,6 +54,43 @@
 
 - [x] CT e CT-B verdes — Kit 125/125, Tenancy 72/72, Entrega 5/5, Browser 40/40, 2026-11-13
 - [x] Cenários 1 a 4 — ver Verificação Final, 2026-11-13
+
+## 10. Adendo 1 — largura, destaque, ilustração, celular
+
+- [x] Adendo 1 registrado no `00` (5 mensagens verbatim, URL mascarada) com RQ-17..RQ-24 e P-19..P-24 — 2026-11-14
+- [x] Referência estudada para RQ-21/22 (ilustração de rede em movimento com botão de pausa e `prefers-reduced-motion`): trazida como sugestão própria, desenho e código do kit, sem copiar coordenadas, texto ou marca — 2026-11-14
+- [x] Decisor: `tamanho_do_painel`→`mediaSize`, destaque, caminho restrito, ilustração, cor, `rede()`, `urlDaImagem()` — 2026-11-14
+- [x] Trait: `destaqueDoPainelDeMarca()` (P-16); preview com `imagem_temporaria` — 2026-11-14
+- [x] Editor em grupos; campos ocultos desidratados (o teste CT-02/CT-10 pegou `tamanho_do_destaque` e `movimento` caindo ao padrão quando ocultos) — 2026-11-14
+- [x] View/CSS: topo/meio/base, rede SVG + Alpine, celular só com a marca — 2026-11-14
+- [x] Seção da organização em largura total (a captura mostrou os campos espremidos na coluna da grade) — 2026-11-14
+- [x] CT-35 `@obsoleto` (RQ-20) → CT-43; o CT-35 da suíte Kit era vácuo (`instanceof Filament\...` sem a barra inicial resolvia no namespace do teste) — 2026-11-14
+- [x] Testes: `AparenciaDasTelasAdendoTest` 53, feature Kit+Entrega+Tenancy 211, Browser da feature 46 — 2026-11-14
+- [x] Falsificabilidade: CT-45 cai com o formato do caminho aberto (3 linhas); CT-B09 cai sem a regra do celular (2/2); CT-02/CT-10 caíram com `dehydratedWhenHidden()` ausente. CT-50 NÃO distingue o gate de `destaqueDoPainelDeMarca()` no clássico (o normalizador já zera o clássico): o gate fica como defesa em profundidade — 2026-11-14
+- [x] Capturas novas: painel, celular, escuro, arte, editor, preview, organização (`art/telas-de-acesso-*.png`) — 2026-11-14
+- [x] Revisão do diff do adendo (step 9) — ver "Revisão do Diff — Adendo 1" — 2026-11-14
+- [ ] Quality gate do adendo, CI do PR, merge, tag e cenários 1–4 (RQ-17)
+
+## Revisão do Diff — Adendo 1
+
+Diff `cbb65fb6..81f62ce6` (sem `wikis/` e `art/`). Workflow de 4 revisores em paralelo, cada achado verificado por um cético que tenta refutá-lo; o Codex (`exec --yolo`, juiz cego) não terminou dentro do workflow e foi rodado de novo pela sessão, sem prazo.
+
+| Achado | Origem | Verificação | Destino | O que foi feito |
+|---|---|---|---|---|
+| RD-A1 | `fw-revisor-diff` | real (leitura) | código | laço só com a rede à vista (≥ 1024 px), aba visível e sem pausa; CT-B10 (celular) falha sem a correção |
+| RD-A2 / CX-A2 | `fw-revisor-diff`, Codex | real, reproduzido | código | meio com `overflow: hidden` e destaque com `max-height: min(teto, 100%)`; CT-B12 (1366×768) falha sem a correção |
+| SEC-A1 | segurança | real (leitura) | código | aviso de imagem ausente uma vez por hora por caminho (`Cache::add`); CT-48 pede um aviso em duas visitas |
+| CX-A1 | Codex | aceito (o Codex reproduziu no Chromium) | código | `.kit-painel-de-marca__base` com `flex-wrap`; CT-B12 (1024×768, 30%) falha sem a correção |
+| CX-A3 | Codex | aceito | código | o componente ouve a mudança de `prefers-reduced-motion`, para o laço e esconde o botão |
+| CX-A4 | Codex | aceito | código | `aparenciaDaTela()` (chamável por `$wire`) devolve sem a imagem fora do destaque "imagem" e sem a cor fora da rede; CT-50 falha sem a correção |
+| ADV-A1 | `fw-adversario-ct` | lacuna real | CT | CT-B10 com `reducedMotion: reduce` no contexto do Playwright |
+| ADV-A3, ADV-A11 | `fw-adversario-ct` | código certo, lacuna de teste | CT | CT-47 em recuperar senha e cadastro; CT-53 na organização |
+| ADV-A4 | `fw-adversario-ct` | código certo, lacuna real | CT | CT-53: o destaque mostra a logo da organização |
+| ADV-A6 | `fw-adversario-ct` | código certo | CT | CT-43 afirma `getMaxSize()` = teto do kit |
+| ADV-A8 | `fw-adversario-ct` | código certo, oráculo fraco | CT + `00` | CT-44 com `''`; padrões de movimento e tamanho do destaque escritos em P-20/P-21 |
+| ADV-A12, ADV-A17 | `fw-adversario-ct` | decisão faltando no `00` | `00` | P-20 (logo do destaque independe do topo) e P-24 (raiz do diretório) |
+| ADV-A2, A5, A7, A9, A10, A13..A16, A18 | `fw-adversario-ct` | refutados pelo cético (código e cenário já cobrem, ou premissa falsa) | — | — |
+| ADV-A15 (oráculos em comentário `# E …`) | `fw-adversario-ct` | forma, não defeito | débito | os ramos existem como testes; a promoção a cenários formais fica como débito da wiki |
 
 ## Testes
 

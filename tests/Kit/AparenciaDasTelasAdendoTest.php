@@ -67,6 +67,7 @@ it('[CT-44] campo novo fora do vocabulário volta ao padrão do campo', function
     'tamanho do destaque'   => ['tamanho_do_destaque', 'enorme', 'medio'],
     'ilustração'            => ['ilustracao', 'estrelas', 'nenhuma'],
     'movimento'             => ['movimento', 'sim', true],
+    'movimento vazio'       => ['movimento', '', true],
     'cor da ilustração'     => ['cor_da_ilustracao', 'red; background: url(x)', null],
 ])->group('kit');
 
@@ -135,6 +136,21 @@ it('[CT-47] a largura escolhida vira o mediaSize do pacote, dos dois lados', fun
     'meio'                          => [55, 'direita', 'media-left'],
 ])->group('kit');
 
+it('[CT-47] a largura, o destaque e a rede valem nas outras telas de acesso', function (string $caminho): void {
+    config(['kit.registro.habilitado' => true]);
+    $caminhoDaImagem = imagemDoDestaqueNoDisco();
+    definirAparenciaGlobal([
+        'tamanho_do_painel' => 70, 'destaque' => 'imagem', 'imagem_do_destaque' => $caminhoDaImagem, 'ilustracao' => 'rede',
+    ] + aparenciaDeTeste('P'));
+
+    $html   = $this->get($caminho)->assertOk()->getContent();
+    $arvore = arvoreDoHtml($html);
+
+    expect($html)->toContain('--media-size: 70%')
+        ->and($arvore->query('//img[@data-kit-destaque="imagem"]')->length)->toBe(1)
+        ->and($arvore->query('//svg[@data-kit-ilustracao="rede"]')->length)->toBe(1);
+})->with(['recuperar senha' => '/admin/password-reset/request', 'cadastro' => '/app/register'])->group('kit');
+
 it('[CT-47] o clássico não recebe a largura do painel', function (): void {
     $this->get('/admin/login')->assertOk();
     $antes = configDoLoginDoAdendo();
@@ -169,7 +185,10 @@ it('[CT-48] imagem gravada que sumiu do disco some do painel sem derrubar a tela
 
     expect(arvoreDoHtml($html)->query('//*[@data-kit-destaque]')->length)->toBe(0)
         ->and(textoDoPainelDeMarca($html, 'frase'))->toBe('PADRAO');
-    Log::shouldHaveReceived('warning')->withArgs(fn (string $mensagem): bool => str_contains($mensagem, 'Imagem do destaque ausente'));
+
+    // Outra visita à tela pública não repete o aviso (SEC-A1): um por hora por caminho.
+    $this->get('/admin/login')->assertOk();
+    Log::shouldHaveReceived('warning')->once()->withArgs(fn (string $mensagem): bool => str_contains($mensagem, 'Imagem do destaque ausente'));
 })->group('kit');
 
 it('[CT-48] destaque "logo" mostra a logo; sem logo, o nome da aplicação', function (bool $comLogo): void {
@@ -341,4 +360,19 @@ it('[CT-52] rascunho com SVG não salvo não vira imagem temporária', function 
     $id = rascunhoDoEditor($tela);
 
     expect(Cache::get('aparencia-preview:'.auth()->id().':'.$id)['imagem_temporaria'] ?? null)->toBeNull();
+})->group('kit');
+
+it('[CT-50] a aparência que o componente devolve não traz imagem nem cor que a tela não usa', function (): void {
+    definirAparenciaGlobal([
+        'destaque'   => 'nenhum', 'imagem_do_destaque' => imagemDoDestaqueNoDisco(),
+        'ilustracao' => 'nenhuma', 'cor_da_ilustracao' => '#00ff88',
+    ] + aparenciaDeTeste('P'));
+    $this->get('/admin/login')->assertOk();
+
+    $aparencia = Livewire::test(TelaLogin::class)->instance()->aparenciaDaTela();
+
+    expect($aparencia['imagem_do_destaque'])->toBeNull()
+        ->and($aparencia['cor_da_ilustracao'])->toBeNull()
+        // O gravado continua inteiro (ADR-02): só a saída pública é que é reduzida.
+        ->and(configuracaoGravada('aparencia_das_telas')['cor_da_ilustracao'])->toBe('#00ff88');
 })->group('kit');

@@ -366,12 +366,17 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
     letter-spacing: 0.01em;
 }
 
+/*
+| O meio encolhe para a base caber; a imagem obedece à altura que sobrar (`min(teto, 100%)`), em
+| vez de transbordar por cima dos textos numa tela baixa (RD-A2 da revisão do adendo).
+*/
 .kit-painel-de-marca__meio {
     display: flex;
     flex: 1 1 auto;
     align-items: center;
     justify-content: center;
     min-height: 0;
+    overflow: hidden;
 }
 
 .kit-painel-de-marca__destaque {
@@ -391,27 +396,27 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 }
 
 .kit-painel-de-marca__destaque--pequeno {
-    max-height: 4rem;
+    max-height: min(4rem, 100%);
 }
 
 .kit-painel-de-marca__destaque--medio {
-    max-height: 7rem;
+    max-height: min(7rem, 100%);
 }
 
 .kit-painel-de-marca__destaque--grande {
-    max-height: 12rem;
+    max-height: min(12rem, 100%);
 }
 
 .kit-painel-de-marca__destaque--imagem.kit-painel-de-marca__destaque--pequeno {
-    max-height: 8rem;
+    max-height: min(8rem, 100%);
 }
 
 .kit-painel-de-marca__destaque--imagem.kit-painel-de-marca__destaque--medio {
-    max-height: 14rem;
+    max-height: min(14rem, 100%);
 }
 
 .kit-painel-de-marca__destaque--imagem.kit-painel-de-marca__destaque--grande {
-    max-height: 22rem;
+    max-height: min(22rem, 100%);
 }
 
 .kit-painel-de-marca__nome-destaque {
@@ -433,11 +438,13 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
     font-size: 3.5rem;
 }
 
+/* Quebra a linha num painel estreito: o botão de pausar desce em vez de ser cortado (CX-A1). */
 .kit-painel-de-marca__base {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 1.5rem;
+    gap: 1rem 1.5rem;
 }
 
 .kit-painel-de-marca__textos {
