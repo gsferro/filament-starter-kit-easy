@@ -135,6 +135,10 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 - [x] Cenários 1 a 4 sobre `b28debff` (tag local `pre-aparencia-das-telas`): 1 e 2 por `git archive` + `kit:install --create-project` (2 com `kit:tenancy --force`), 3 e 4 por `create-project` da v0.52.1 + `kit:update --repo={kit} --tag=pre-aparencia-das-telas --all` (4 com `kit:tenancy` antes) — os 4 com todos os arquivos novos, `kit.identidade.aparencia_das_telas` = null e 5786 testes, 0 falhas; erros só em 1 (5) e 2 (4), todos `phpstan dump-parameters` com timeout de 60 s sob carga no `QualidadeDeCodigoTest`, verde isolado (31: 29 passaram, 2 pulados); pulados 1161 nos quatro = teto 1156 + 5 do `AparenciaDasTelasDeAcessoEntregaTest` (CT-23 × 4 e CT-24, guardados por `naArvoreDoKit()`: docs e README não viajam) — 2026-11-13
 - [x] Cenários 1 a 4 sobre o commit final pós-gate (`d343fc56`, tag local `pre-aparencia-das-telas-3`; a rodada sobre `1b6d3a09` foi interrompida e descartada porque o ciclo 2 gerou commit novo), mesmos procedimentos (diretórios `c1c`..`c4c`): os 4 com todos os arquivos novos, `kit.identidade.aparencia_das_telas` = null e 5795 testes (+9 do ciclo 1 e 2), 0 falhas; erros só `phpstan dump-parameters` com timeout de 60 s sob carga no `QualidadeDeCodigoTest` (1: 5; 3: 2; 4: 2), verde isolado em 1, 3 e 4 (31: 29 passaram, 2 pulados); 2 limpo na repetição (a primeira caiu por `WorkerCrashedException` — timeout de 5 s do `git rev-parse` chamado pelo Pest, ambiente); pulados 1161 nos quatro, igual à rodada anterior; `kit:update` aplicou 46 arquivos e as 2 migrations novas em 3 e 4 — 2026-11-14
 
+## Blockers
+
+- **Gate no teto de ciclos** (2026-11-14): o ciclo 3 reprovou por QA-15 (laço do `ResizeObserver` no preview, que derrubava um teste de navegador existente) e QA-16/QA-17 (texto do `03`). Os três foram corrigidos depois do veredito, com QA-15 provado falsificável e a suíte `Browser` verde; não há ciclo 4. O aceite final é do solicitante, no PR
+
 ## Débitos
 
 - **Q1 aberta** (instalação nova nasce no clássico ou no painel?): implementada a premissa estreita P-01 — nada muda sem decisão do admin, nem em instalação nova. Confirmar com o solicitante
@@ -200,6 +204,8 @@ Tratamento do ciclo 3 (último do loop; achados corrigidos depois do veredito, s
 | QA-17 | 1 | linha do ciclo 2 com o destino do veredito |
 
 ## Candidatos a Rule
+
+Step 12 (2026-11-14): nenhum candidato passa em *Vale virar rule*. As decisões duráveis (ADR-01..04) são desta feature e já estão nos docblocks; as Notas de Implementação são armadilhas de framework, não decisão do projeto. Observação do gate, não promovida por falta de recorrência: "a suíte `Browser` inclui `tests/BrowserTenancy`; regressão de UI do admin roda as duas pastas".
 
 ## Despachos
 
