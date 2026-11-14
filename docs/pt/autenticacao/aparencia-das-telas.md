@@ -48,6 +48,10 @@ cadastro e do "esqueci a senha" à esquerda.
 | **Cadastro** | cadastro aberto e aceite de convite |
 | **Esqueci a senha** | pedido de recuperação e redefinição de senha |
 
+| Login em gradiente | "Esqueci a senha" com o formulário à esquerda |
+|---|---|
+| [![Login com fundo em gradiente e texto formatado](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente.png) | [![Tela de esqueci a senha com aparência própria](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-a-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-a-senha.png) |
+
 Cada tela pode até ter um layout diferente: o login no painel de marca e o "esqueci a senha" no
 clássico, ou o contrário. A organização com aparência própria tem as mesmas três abas.
 

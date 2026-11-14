@@ -204,6 +204,8 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 
 - [x] Adendo 1, sobre `a1a50f6f`: `pest --testsuite=Kit --parallel` 5110 (5107 passaram, 3 pulados, 0 falhas); `--testsuite=Tenancy --parallel` 743/743; `--testsuite=Browser` 230 com 193 passaram, 37 pulados, 0 falhas numa rodada da sessão — o gate, em duas rodadas, viu 2 e 1 falhas: `DockDeAtalhosTest` CT-B02 (flake registrado no ciclo 3, fora do diff) e o CT-B09 da feature uma vez (logo compartilhada com o CT-B04; corrigido, QA-21) *(alterado em 2026-11-14: QA-20)*; `phpstan` 0 erros nos arquivos do adendo; `filacheck` 17/17; scripts da wiki exit 0 — 2026-11-14
 
+- [x] Adendos 2 e 3, sobre `ca469486`: `pest --testsuite=Kit --parallel` 5166 (5163 passaram, 3 pulados, 0 falhas); `--testsuite=Tenancy --parallel` 744/744; `--testsuite=Browser` 235 (197 passaram, 37 pulados, 1 falha: `DockDeAtalhosTest` CT-B02, flake de transição de tema registrado no ciclo 3, verde isolado 4/4); `phpstan` 0 erros nos arquivos tocados; `filacheck` 17/17; scripts da wiki exit 0 — 2026-11-14
+
 ## Blockers
 
 - **Gate no teto de ciclos** (2026-11-14): o ciclo 3 reprovou por QA-15 (laço do `ResizeObserver` no preview, que derrubava um teste de navegador existente) e QA-16/QA-17 (texto do `03`). Os três foram corrigidos depois do veredito, com QA-15 provado falsificável e a suíte `Browser` verde; não há ciclo 4. O aceite final é do solicitante, no PR

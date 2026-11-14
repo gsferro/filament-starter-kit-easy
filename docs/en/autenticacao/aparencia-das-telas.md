@@ -48,6 +48,10 @@ example, the login form on the right and the sign-up and forgot-password forms o
 | **Cadastro** | open sign-up and invitation acceptance |
 | **Esqueci a senha** | password request and password reset |
 
+| Login on a gradient | Forgot password with the form on the left |
+|---|---|
+| [![Login with a gradient background and formatted text](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-gradiente.png) | [![Forgot-password screen with its own appearance](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-a-senha.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-esqueci-a-senha.png) |
+
 Each screen may even have a different layout: the login on the brand panel and the forgot-password
 screen on the classic, or the other way around. An organization with its own appearance has the same
 three tabs.
