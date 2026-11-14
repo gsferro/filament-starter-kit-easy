@@ -19,6 +19,20 @@
         tela: 'login',
         largura: 'computador',
         escala: 1,
+        larguraMedida: 0,
+        observar() {
+            {{-- A altura da moldura muda com a escala; reagir a ela fecharia um laço de layout
+                 (erro 'ResizeObserver loop' no console). Só a LARGURA decide a escala, e a medição
+                 sai do callback do observer para o próximo quadro. --}}
+            new ResizeObserver(([entrada]) => {
+                const largura = Math.round(entrada.contentRect.width)
+                if (largura === this.larguraMedida) {
+                    return
+                }
+                this.larguraMedida = largura
+                requestAnimationFrame(() => this.medir())
+            }).observe(this.$refs.moldura)
+        },
         medir() {
             const disponivel = this.$refs.moldura?.clientWidth ?? 0
             const base = this.largura === 'celular' ? 390 : 1440
@@ -39,7 +53,7 @@
             return url.toString()
         },
     }"
-    x-init="medir(); new ResizeObserver(() => medir()).observe($refs.moldura); $watch('largura', () => $nextTick(() => medir()))"
+    x-init="medir(); observar(); $watch('largura', () => $nextTick(() => medir()))"
     class="kit-preview-das-telas"
     data-kit-preview-das-telas
 >

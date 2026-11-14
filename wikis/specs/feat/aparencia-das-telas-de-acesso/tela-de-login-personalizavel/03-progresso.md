@@ -1,6 +1,6 @@
 # Progresso — feat: tela de login personalizável
 
-**Estado**: em revisão
+**Estado**: bloqueada — gate no teto (ciclo 3 REPROVADO; QA-15..17 corrigidos depois do veredito, aguardando decisão do solicitante)
 
 `{base}`: `main` · branch `feat/aparencia-das-telas-de-acesso`
 
@@ -114,7 +114,7 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 | `.ai/rules/settings.md` | aplicada | propriedade + linha no mapa + migration nova com limpeza de cache; lida por request (`AparenciaDasTelasDeAcesso::global()` no render); `KitInfoTest` 73 |
 | `.ai/rules/specs.md` | aplicada | citações `arquivo:símbolo:linha` (`citacoes.sh` exit 0; `CitacoesDeCodigoTest` verde) |
 | `.ai/rules/support.md` | n.a. | nenhuma escrita de `.env` |
-| `.ai/rules/testes-browser.md` | aplicada | `tests/Browser/AparenciaDasTelasDeAcessoTest.php` 40/40; suíte Browser 171/171 |
+| `.ai/rules/testes-browser.md` | aplicada | `tests/Browser/AparenciaDasTelasDeAcessoTest.php` 40/40; suíte `Browser` (`tests/Browser` + `tests/BrowserTenancy`) 220: 183 passaram, 37 pulados, 0 falhas sobre o commit do ciclo 3 *(alterado em 2026-11-14: QA-16)* |
 | `.ai/rules/testes.md` | aplicada | helpers compartilhados em `tests/Pest.php`; classe de teste com namespace (`tests/Kit/fixtures`); `toContain` sem mensagem; skip por `naArvoreDoKit()` |
 | `.ai/rules/vendor.md` | aplicada | só o partial `media` (já autoral e em `CAMINHOS_DO_KIT`) foi alterado; `KitUpdateTest` verde |
 | `.ai/rules/views.md` | aplicada | nenhuma diretiva em comentário Blade (`painel-de-marca`, preview, botão) |
@@ -128,10 +128,12 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 - [x] `conformidade-rules.sh {wiki} main` — exit 0, 19 rules com linha, 2026-11-13
 - [x] Falsificabilidade: CT-36 (arte no painel), CT-37 (gate do `$wire`) e CT-40 (texto escuro) falham com a correção revertida em cópia de segurança e voltam verdes restaurados; CT-32 e CT-05 nasceram vermelhos (b) pelo executor e ficaram verdes com a correção — 2026-11-13
 - [x] RQ-12: grep pelos identificadores do projeto e da URL de referência (não registrados aqui) em todo arquivo alterado contra `main`, incluindo a wiki — `{ git diff main --name-only; git ls-files --others --exclude-standard; } | sort -u` = 79 arquivos, 0 ocorrências *(alterado em 2026-11-13: QA-06 — o "80" anterior não tinha comando)*, 2026-11-13
-- [x] Regressão Kit 5045 testes, 0 falhas fora das contagens do README (corrigidas: `SiteDeDocumentacaoTest` 68/68); Tenancy 741/741; Browser 171/171 — 2026-11-13
+- [x] Regressão Kit 5045 testes, 0 falhas fora das contagens do README (corrigidas: `SiteDeDocumentacaoTest` 68/68); Tenancy 741/741 — 2026-11-13
+- [x] Suíte `Browser` (`vendor/bin/pest --testsuite=Browser --compact`, inclui `tests/BrowserTenancy`) sobre o commit do ciclo 3: 220 testes, 183 passaram, 37 pulados, 0 falhas. Rodada anterior com a mesma árvore: 1 falha no `DockDeAtalhosTest` CT-B02 (cor lida no meio da transição de tema, `oklab` interpolado), verde isolado (4/4) e na repetição — flake, fora do diff *(alterado em 2026-11-14: QA-16 — o "171/171" de 2026-11-13 era anterior aos ciclos 1 e 2)* — 2026-11-14
+- [x] QA-15 falsificável: com a view do preview de `d343fc56`, `tests/BrowserTenancy/IdentidadeVisualTest.php` falha com `ResizeObserver loop completed with undelivered notifications`; com a correção, 9/9 — 2026-11-14
 - [x] `phpstan analyse` 0 erros; `filacheck` 17/17; `pint --dirty` — 2026-11-13
 - [x] Cenários 1 a 4 sobre `b28debff` (tag local `pre-aparencia-das-telas`): 1 e 2 por `git archive` + `kit:install --create-project` (2 com `kit:tenancy --force`), 3 e 4 por `create-project` da v0.52.1 + `kit:update --repo={kit} --tag=pre-aparencia-das-telas --all` (4 com `kit:tenancy` antes) — os 4 com todos os arquivos novos, `kit.identidade.aparencia_das_telas` = null e 5786 testes, 0 falhas; erros só em 1 (5) e 2 (4), todos `phpstan dump-parameters` com timeout de 60 s sob carga no `QualidadeDeCodigoTest`, verde isolado (31: 29 passaram, 2 pulados); pulados 1161 nos quatro = teto 1156 + 5 do `AparenciaDasTelasDeAcessoEntregaTest` (CT-23 × 4 e CT-24, guardados por `naArvoreDoKit()`: docs e README não viajam) — 2026-11-13
-- [ ] Cenários 1 a 4 sobre o commit pós-gate (`1b6d3a09`, tag local `pre-aparencia-das-telas-2`)
+- [x] Cenários 1 a 4 sobre o commit final pós-gate (`d343fc56`, tag local `pre-aparencia-das-telas-3`; a rodada sobre `1b6d3a09` foi interrompida e descartada porque o ciclo 2 gerou commit novo), mesmos procedimentos (diretórios `c1c`..`c4c`): os 4 com todos os arquivos novos, `kit.identidade.aparencia_das_telas` = null e 5795 testes (+9 do ciclo 1 e 2), 0 falhas; erros só `phpstan dump-parameters` com timeout de 60 s sob carga no `QualidadeDeCodigoTest` (1: 5; 3: 2; 4: 2), verde isolado em 1, 3 e 4 (31: 29 passaram, 2 pulados); 2 limpo na repetição (a primeira caiu por `WorkerCrashedException` — timeout de 5 s do `git rev-parse` chamado pelo Pest, ambiente); pulados 1161 nos quatro, igual à rodada anterior; `kit:update` aplicou 46 arquivos e as 2 migrations novas em 3 e 4 — 2026-11-14
 
 ## Débitos
 
@@ -161,6 +163,8 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 | Ciclo | Veredito | Data |
 |---|---|---|
 | 1 | REPROVADO → especificação (QA-01, QA-02 Blocker; QA-03..06 Major; E, G, H, K não verificadas) | 2026-11-13 |
+| 2 | REPROVADO → especificação (QA-02 aberto até os cenários do commit final; QA-10, QA-12 Major; QA-11, QA-13 Minor; QA-14 Cosmético) | 2026-11-14 |
+| 3 | REPROVADO → especificação (QA-16) com implementação (QA-15); QA-17 Cosmético — teto do loop, escalado ao solicitante | 2026-11-14 |
 
 Tratamento do ciclo 1:
 
@@ -175,6 +179,25 @@ Tratamento do ciclo 1:
 | QA-07 | 1 | "telas vestidas pelo Auth Designer, sem a escolha de painel" na doc e no CHANGELOG; três termos no glossário |
 | QA-08 | 3 | CT-42 (padrão em painel × organização no clássico próprio), com controle positivo |
 | QA-09 | 1 | cabeçalho do `04` com contagem e comando; linha quebrada do `03` corrigida |
+
+Tratamento do ciclo 2 (commit `d343fc56`):
+
+| QA | Destino | O que foi feito |
+|---|---|---|
+| QA-02 | 2 | cenários 1 a 4 sobre `d343fc56`, verdes — Verificação Final |
+| QA-10 | 3 → 2 | `#rgb` expandido antes do contraste; linha nova no CT-40 |
+| QA-11 | 3 → 2 | luminância do `oklch` pela conversão OKLab → sRGB linear; Fuchsia/Pink 600 com texto branco, Sky 600 com escuro, no CT-40 |
+| QA-12 | 1 | PRD e `03` (rules) dizem que a página exige `canAccessPanel(admin)` |
+| QA-13 | 1 | P-02 sem a condição "enquanto Q2 não é respondida" |
+| QA-14 | 1 | cabeçalho do `04` no formato do template |
+
+Tratamento do ciclo 3 (último do loop; achados corrigidos depois do veredito, sem novo ciclo de gate):
+
+| QA | Destino | O que foi feito |
+|---|---|---|
+| QA-15 | 2 | o `ResizeObserver` do preview reagia à altura da moldura, que muda com a escala (laço de layout); agora só a largura decide e a medição vai para `requestAnimationFrame`. `IdentidadeVisualTest` vermelho com a view antiga, verde com a nova |
+| QA-16 | 1 | as duas linhas "Browser 171/171" trocadas pela saída real da suíte `Browser` sobre o commit final |
+| QA-17 | 1 | linha do ciclo 2 com o destino do veredito |
 
 ## Candidatos a Rule
 
@@ -195,6 +218,8 @@ Tratamento do ciclo 1:
 | 11 | 9 | `general-purpose`/opus com `reviewing-filament-plans` | `01`, diff, testes | BP-01..51 (34 ok) | 166 k tokens · 293 s | amostrados BP-23, BP-35, BP-37 |
 | 12 | 9 | `general-purpose`/opus com `filament-security-audit` | diff | SEC-01..04 (0 alta/média) | 127 k tokens · 150 s | SEC-01 reproduzido (CT-37) |
 | 13 | 7 | executor-ct (SendMessage) | CT-36..41 | 197 casos verdes | 356 k tokens · 716 s | falsificabilidade CT-36/37/40 provada |
+| 14 | 11 | `general-purpose` / herdado (cenários) | tags locais `pre-aparencia-das-telas{,-3}`, procedimento dos 4 cenários | 4 cenários × 2 rodadas, 0 falhas | 150 k tokens · 9918 s (última rodada) | logs `c?c.test.log` conferidos pelo gate do ciclo 3 |
+| 15 | 11 | `fw-qa-gate` / herdado (ciclos 1, 2 e 3) | path da wiki, URL servida, `diff --stat`, base | ciclo 3: REPROVADO, QA-15..17 | 196 k tokens · 1357 s (ciclo 3) | QA-15 reproduzido pela sessão com a view antiga |
 
 Degradações: `search-docs` indisponível; Ponytail em passe manual.
 
