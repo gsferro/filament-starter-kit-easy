@@ -98,6 +98,12 @@ auditoria) e no `02` (RQ-04).
 | P-22 | No celular, a faixa do painel mostra só a logo (ou o nome da aplicação, sem logo); frase, apoio, destaque e ilustração ficam de fora | Adendo 1 (RQ-24), substitui em parte P-09 | 2026-11-14 | RQ-24 | vigente |
 | P-23 | Uma aparência gravada antes do Adendo 1 continua com o mesmo resultado no computador: campo novo ausente vale o padrão, que reproduz o de antes (50 %, sem destaque, sem ilustração). No celular ela segue RQ-24 — a faixa perde a frase *(alterado em 2026-11-14: QA-24)* | decisão de desenho (Adendo 1) — RQ-07 | 2026-11-14 | RQ-07 | vigente |
 | P-24 | O caminho de imagem gravado na aparência só vale na raiz do diretório das telas de acesso do disco público (sem subpasta); outro caminho é descartado *(alterado em 2026-11-14: ADV-A17)* | decisão de desenho (Adendo 1) — segurança | 2026-11-14 | RQ-20, P-05 | vigente |
+| P-25 | A aparência tem a do login na raiz e, em `telas`, a do cadastro e a do "esqueci a senha"; tela ausente ou vazia segue o login; `{"layout":"classico"}` numa tela é escolha explícita; uma tela própria nasce como cópia do login e não tem outras telas dentro. A organização escolhe primeiro o objeto inteiro (o dela ou o padrão) e só depois a tela | decisão de desenho (Adendo 2, juiz cego: X corrigida) | 2026-11-14 | RQ-25, RQ-26 | vigente |
+| P-26 | Família de cada página: login, dois fatores, bloqueio e confirmação de e-mail seguem o login; cadastro aberto e por convite seguem o cadastro; recuperar e redefinir senha seguem o "esqueci a senha" | decisão de desenho (Adendo 2) | 2026-11-14 | RQ-25 | vigente |
+| P-27 | Frase e apoio aceitam a formatação do rodapé da tela de login — negrito, itálico, tachado e link —, em Markdown seguro (HTML cru é descartado, link só com esquema seguro); imagem e título digitados ou colados não aparecem. O teto (80 / 160) mede o texto visível; há também um teto de 4 KiB do texto bruto. Texto gravado antes desta versão continua texto puro, igual a antes | decisão de desenho (Adendo 2, juiz cego: Y) — tela pública | 2026-11-14 | RQ-27 | vigente |
+| P-28 | O fundo é cor, gradiente ou arte. Na cor, "cor primária" (o padrão do Filament: a da organização, senão a da instalação) ou uma cor `#RRGGBB` | decisão de desenho (Adendo 2, juiz cego: Y) | 2026-11-14 | RQ-28 | vigente |
+| P-29 | O gradiente usa duas cores `#RRGGBB` opcionais (vazias: tons 600 e 900 da primária) e uma de três direções (vertical, horizontal, diagonal); nenhum CSS livre. Sobre o gradiente, os textos ficam numa superfície escura opaca, em branco, com links sublinhados | decisão de desenho (Adendo 2, juiz cego: Y) — WCAG 1.4.3 | 2026-11-14 | RQ-29 | vigente |
+| P-30 | No celular, com fundo de arte, a faixa não mostra a imagem da arte: usa a cor do painel sob o véu escuro | correção (Adendo 2) | 2026-11-14 | RQ-30 | vigente |
 
 ## Fora de Escopo (declarado)
 
@@ -144,3 +150,55 @@ auditoria) e no `02` (RQ-04).
 | RQ-22 | A ilustração é uma sugestão inspirada na referência, e todo elemento do painel é editável | "traga para cá como sugestão mas deixe TUDO editavel para dar a maxima possibilidade de customização" | funcional | — |
 | RQ-23 | O admin define o tamanho do formulário e o lado (esquerda ou direita), com as parametrizações do auth designer | "opção de definir qual o tamanho que o form do login terá e em qual posição (left ou right) ele ficara, igual é usado no pacote default auth designer" | funcional | — |
 | RQ-24 | No celular, o painel não mostra texto nenhum: só o nome da aplicação ou a logo, no topo | "na parte mobile, não deve aparecer nenhum testo, so o nome da aplicação ou a Logo no topo" | funcional | P-09 (parcial) |
+
+## Adendo 2 — 2026-11-14
+
+- **Fonte**: pedido do solicitante no chat, depois de testar o Adendo 1 no servidor local
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: —
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> ficou otimo, mas vamos evoluir:
+> - crie uma /feature-wiki se necessário
+> - use o codex para te ajudar
+> - temos 3 telas: login, cadastro e esqueci a senha, temos que ter a configuração especifica para cada uma delas para melhor customização (muitos sistemas trocam de posição o form do login na direita e o cadastro e esqueci a senha na esquerda)
+> - nos textos: temos que ter a possibilidade de usar html, mude para uso do componente que é usado no "Rodapé da tela de login" que da a possibilidade de formatar melhor o que será exibido, dando mais personalização. isso para texto e texto de apoio
+> - na parte do "fundo" quando escolher a "Cor", de a opção de usar a cor default do filament, de a opção de usar gradiente.
+> - bug no mobile: com a configuração e "fundo" como "arte da identidade" e sem logo no meio, fica sobreposto o nome da app e a logo, conforme deixei salvo e voce consegue ver na url abrindo como mobile: "http://127.0.0.1:8123/admin/login"
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-25 | Login, cadastro e "esqueci a senha" têm, cada uma, a sua configuração de aparência | "temos 3 telas: login, cadastro e esqueci a senha, temos que ter a configuração especifica para cada uma delas" | funcional | — |
+| RQ-26 | A posição do formulário pode diferir entre as telas (ex.: login à direita, cadastro e "esqueci a senha" à esquerda) | "muitos sistemas trocam de posição o form do login na direita e o cadastro e esqueci a senha na esquerda" | funcional | — |
+| RQ-27 | A frase e o texto de apoio são formatáveis, com o mesmo componente do "Rodapé da tela de login" | "mude para uso do componente que é usado no \"Rodapé da tela de login\"" … "isso para texto e texto de apoio" | funcional | RQ-19 (parcial) |
+| RQ-28 | Com fundo de cor, há a opção de usar a cor padrão do Filament | "quando escolher a \"Cor\", de a opção de usar a cor default do filament" | funcional | — |
+| RQ-29 | Com fundo de cor, há a opção de gradiente | "de a opção de usar gradiente" | funcional | — |
+| RQ-30 | No celular, com fundo de arte, a marca da faixa não fica sobreposta ao nome desenhado na arte | "bug no mobile: com a configuração e \"fundo\" como \"arte da identidade\" e sem logo no meio, fica sobreposto o nome da app e a logo" | correção | P-22 (parcial) |
+
+## Adendo 3 — 2026-11-14
+
+- **Fonte**: pedido do solicitante no chat, durante a implementação do Adendo 2 (repetido em duas mensagens)
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: —
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> atenção:
+> - essa nova tela de login, deve também contemplar o login social e o recaptcha, quando configurado.
+> - crie testes para esses cenarios
+> - continue ate o fim. prossiga com tudo
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-31 | No layout "painel", as telas mostram o login social quando há provedor configurado | "essa nova tela de login, deve também contemplar o login social … quando configurado" | funcional | — |
+| RQ-32 | No layout "painel", as telas mostram o desafio anti-robô quando ele está ligado | "deve também contemplar … o recaptcha, quando configurado" | funcional | — |
+| RQ-33 | Há testes automatizados para o login social e o anti-robô no layout "painel" | "crie testes para esses cenarios" | não-funcional | — |

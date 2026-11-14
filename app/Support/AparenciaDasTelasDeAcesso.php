@@ -11,6 +11,8 @@ use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 
 /**
  * A aparência das telas de autenticação: o que a instalação (e, com tenancy, a organização)
@@ -50,7 +52,24 @@ final class AparenciaDasTelasDeAcesso
 
     public const LADOS = ['esquerda', 'direita'];
 
-    public const FUNDOS = ['cor', 'arte'];
+    public const FUNDOS = ['cor', 'gradiente', 'arte'];
+
+    /**
+     * As famílias de tela com aparência própria (P-25, P-26). O login é a raiz do objeto; as outras
+     * moram em `telas` e, vazias, seguem o login.
+     */
+    public const FAMILIA_LOGIN = 'login';
+
+    public const FAMILIAS_COM_APARENCIA_PROPRIA = ['cadastro', 'recuperacao'];
+
+    /** Direções do gradiente: um vocabulário fechado, nunca CSS livre (P-29). */
+    public const DIRECOES_DO_GRADIENTE = ['vertical' => '180deg', 'horizontal' => '90deg', 'diagonal' => '135deg'];
+
+    /** Formato da frase e do apoio: `texto` (gravado antes do Adendo 2) ou `markdown` (P-27). */
+    public const FORMATOS_DOS_TEXTOS = ['texto', 'markdown'];
+
+    /** Teto do texto BRUTO de cada campo formatado, antes da conversão (P-27). */
+    public const LIMITE_BRUTO_DO_TEXTO = 4096;
 
     public const LIMITE_DA_FRASE = 80;
 
@@ -104,6 +123,10 @@ final class AparenciaDasTelasDeAcesso
             'tamanho_do_painel'   => 50,
             'fundo'               => 'cor',
             'cor'                 => null,
+            'gradiente_de'        => null,
+            'gradiente_ate'       => null,
+            'gradiente_direcao'   => 'diagonal',
+            'formato_dos_textos'  => 'markdown',
             'frase'               => null,
             'apoio'               => null,
             'logo_no_painel'      => true,
@@ -118,12 +141,71 @@ final class AparenciaDasTelasDeAcesso
     }
 
     /**
-     * O valor gravado, reduzido ao vocabulário. `null` = clássico.
+     * O objeto inteiro gravado, reduzido ao vocabulário: a aparência do login na raiz e, em `telas`,
+     * a do cadastro e a do "esqueci a senha" (ADR-05). `null` = clássico em todas as telas.
+     *
+     * Sem `telas`, a saída é a mesma de antes do Adendo 2 — o login, e as outras telas seguindo-o.
+     * Com o login no clássico e outra tela própria, a raiz vira `['layout' => 'classico']`, e as
+     * telas próprias continuam (o juiz cego apontou que reduzir a raiz a `null` as apagaria).
      *
      * @param  string  $origem  `global` ou `tenant:{id}` — só para o log
      * @return array<string, mixed>|null
      */
     public static function normalizar(mixed $bruto, string $origem): ?array
+    {
+        $login = self::normalizarTela($bruto, $origem);
+        $telas = [];
+
+        foreach (self::FAMILIAS_COM_APARENCIA_PROPRIA as $familia) {
+            $propria = is_array($bruto) && is_array($bruto['telas'] ?? null) ? ($bruto['telas'][$familia] ?? null) : null;
+
+            if (! is_array($propria) || ($propria['igual_ao_login'] ?? false) === true) {
+                continue;
+            }
+
+            $telas[$familia] = ($propria['layout'] ?? null) === self::LAYOUT_CLASSICO
+                ? ['layout' => self::LAYOUT_CLASSICO]
+                : self::normalizarTela($propria, $origem.':'.$familia);
+
+            if ($telas[$familia] === null) {
+                unset($telas[$familia]);
+            }
+        }
+
+        if ($telas === []) {
+            return $login;
+        }
+
+        return [...($login ?? ['layout' => self::LAYOUT_CLASSICO]), 'telas' => $telas];
+    }
+
+    /**
+     * A aparência de UMA família de tela, tirada do objeto inteiro: a própria, se a tela tem uma;
+     * senão a do login. `null` = clássico nessa tela (P-25).
+     *
+     * @param  array<string, mixed>|null  $aparencia  saída de `normalizar()`
+     * @return array<string, mixed>|null
+     */
+    public static function daFamilia(?array $aparencia, string $familia): ?array
+    {
+        if ($aparencia === null) {
+            return null;
+        }
+
+        $tela = $familia !== self::FAMILIA_LOGIN ? ($aparencia['telas'][$familia] ?? null) : null;
+        $tela ??= $aparencia;
+
+        unset($tela['telas']);
+
+        return ($tela['layout'] ?? null) === self::LAYOUT_PAINEL ? $tela : null;
+    }
+
+    /**
+     * Uma tela: o valor gravado reduzido ao vocabulário. `null` = clássico.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function normalizarTela(mixed $bruto, string $origem): ?array
     {
         if ($bruto === null || $bruto === []) {
             return null;
@@ -148,6 +230,8 @@ final class AparenciaDasTelasDeAcesso
         }
 
         $padrao = self::padraoDoPainel();
+        // Sem a chave, é uma aparência gravada antes do Adendo 2: texto puro, exibido como antes (P-27).
+        $formato = self::umDe($bruto['formato_dos_textos'] ?? 'texto', self::FORMATOS_DOS_TEXTOS, 'texto');
 
         return [
             'layout'              => self::LAYOUT_PAINEL,
@@ -155,8 +239,12 @@ final class AparenciaDasTelasDeAcesso
             'tamanho_do_painel'   => self::tamanho($bruto['tamanho_do_painel'] ?? null),
             'fundo'               => self::umDe($bruto['fundo'] ?? null, self::FUNDOS, $padrao['fundo']),
             'cor'                 => self::cor($bruto['cor'] ?? null),
-            'frase'               => self::texto($bruto['frase'] ?? null, self::LIMITE_DA_FRASE),
-            'apoio'               => self::texto($bruto['apoio'] ?? null, self::LIMITE_DO_APOIO),
+            'gradiente_de'        => self::cor($bruto['gradiente_de'] ?? null),
+            'gradiente_ate'       => self::cor($bruto['gradiente_ate'] ?? null),
+            'gradiente_direcao'   => self::umDe($bruto['gradiente_direcao'] ?? null, array_keys(self::DIRECOES_DO_GRADIENTE), $padrao['gradiente_direcao']),
+            'formato_dos_textos'  => $formato,
+            'frase'               => self::textoNoFormato($bruto['frase'] ?? null, $formato, self::LIMITE_DA_FRASE),
+            'apoio'               => self::textoNoFormato($bruto['apoio'] ?? null, $formato, self::LIMITE_DO_APOIO),
             'logo_no_painel'      => self::booleano($bruto['logo_no_painel'] ?? null, $padrao['logo_no_painel']),
             'destaque'            => self::umDe($bruto['destaque'] ?? null, self::DESTAQUES, $padrao['destaque']),
             'imagem_do_destaque'  => self::caminhoDaImagem($bruto['imagem_do_destaque'] ?? null),
@@ -272,26 +360,96 @@ final class AparenciaDasTelasDeAcesso
             return $propria;
         }
 
+        return self::primariaEm(600, $organizacao);
+    }
+
+    /**
+     * O gradiente do painel, como valor CSS montado só de peças fechadas: duas cores (`#RRGGBB`
+     * validado ou um tom da primária) e um ângulo do vocabulário (P-29). `null` fora do gradiente.
+     *
+     * @param  array<string, mixed>|null  $aparencia
+     */
+    public static function gradienteDoPainel(?array $aparencia, ?Tenant $organizacao): ?string
+    {
+        if (($aparencia['fundo'] ?? null) !== 'gradiente') {
+            return null;
+        }
+
+        $de     = self::cor($aparencia['gradiente_de'] ?? null) ?? self::primariaEm(600, $organizacao);
+        $ate    = self::cor($aparencia['gradiente_ate'] ?? null) ?? self::primariaEm(900, $organizacao);
+        $angulo = self::DIRECOES_DO_GRADIENTE[$aparencia['gradiente_direcao'] ?? 'diagonal'] ?? self::DIRECOES_DO_GRADIENTE['diagonal'];
+
+        return "linear-gradient({$angulo}, {$de}, {$ate})";
+    }
+
+    /**
+     * Um tom da cor primária — a da organização, senão a da instalação, senão o âmbar que o
+     * Filament usa sem primária configurada (P-28: "a cor padrão do Filament").
+     */
+    public static function primariaEm(int $tom, ?Tenant $organizacao): string
+    {
         $resolvida = ($organizacao !== null ? CorPrimaria::resolver($organizacao->cor_primaria, $organizacao->cor_primaria_nome) : [])
             ?: CorPrimaria::paleta();
 
         $primaria = $resolvida['primary'] ?? null;
 
+        if (is_string($primaria) && $tom !== 600) {
+            $paleta   = Color::hex(self::hexCompleto($primaria));
+            $primaria = $paleta;
+        }
+
         if (is_string($primaria)) {
             // A primária hexadecimal aceita `#rgb` (`CorPrimaria`): expandida, para o contraste do
             // texto ser decidido sobre ela (QA-10 do gate, ciclo 2).
-            return preg_match('/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/', $primaria, $p) === 1
-                ? strtolower('#'.$p[1].$p[1].$p[2].$p[2].$p[3].$p[3])
-                : $primaria;
+            return self::hexCompleto($primaria);
         }
 
-        if (is_array($primaria) && is_string($primaria[600] ?? null)) {
-            return $primaria[600];
+        if (is_array($primaria) && is_string($primaria[$tom] ?? null)) {
+            return $primaria[$tom];
         }
 
         // Sem primária configurada, o Filament usa o âmbar: a cor é dita aqui, e não deixada à
         // variável `--primary-600`, para o contraste do texto poder ser decidido (QA-04).
-        return Color::Amber[600];
+        return Color::Amber[$tom] ?? Color::Amber[600];
+    }
+
+    private static function hexCompleto(string $hex): string
+    {
+        return preg_match('/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/', $hex, $p) === 1
+            ? strtolower('#'.$p[1].$p[1].$p[2].$p[2].$p[3].$p[3])
+            : $hex;
+    }
+
+    /**
+     * A frase ou o apoio como HTML seguro para a tela pública (P-27): `markdown` passa pelo mesmo
+     * `Str::markdown` do rodapé da tela de login (HTML cru descartado, link só com esquema seguro) e
+     * depois só fica a formatação acordada — imagem, título e lista digitados ou colados viram texto
+     * ou somem; `texto` (gravado antes do Adendo 2) sai escapado, como sempre saiu.
+     */
+    public static function textoComoHtml(?string $texto, string $formato): ?HtmlString
+    {
+        if ($texto === null || $texto === '') {
+            return null;
+        }
+
+        if ($formato !== 'markdown') {
+            return new HtmlString(e($texto));
+        }
+
+        $html = Str::markdown($texto, ['html_input' => 'strip', 'allow_unsafe_links' => false]);
+        $html = strip_tags($html, '<p><br><strong><em><del><a>');
+        // Do `<a>`, só o `href` (que o CommonMark já filtrou): fora `title` e qualquer outro atributo.
+        $html = (string) preg_replace('/<a\s[^>]*?href="([^"]*)"[^>]*>/i', '<a href="$1" rel="noopener noreferrer">', $html);
+
+        return new HtmlString(trim($html));
+    }
+
+    /** O texto que a tela mostra, para medir o teto (P-27): sem tags, entidades decodificadas, espaços normalizados. */
+    public static function textoVisivel(?string $texto, string $formato): ?string
+    {
+        $html = self::textoComoHtml($texto, $formato);
+
+        return $html === null ? null : self::textoLimpo(html_entity_decode(strip_tags((string) $html), ENT_QUOTES | ENT_HTML5));
     }
 
     /**
@@ -497,6 +655,32 @@ final class AparenciaDasTelasDeAcesso
         // Acima do teto é inválido, e campo inválido volta ao padrão dele — ausente (P-04). Cortar
         // mostraria na tela de login um texto que ninguém escreveu daquele jeito.
         return $limpo === null || mb_strlen($limpo) > $limite ? null : $limpo;
+    }
+
+    /**
+     * O texto gravado no seu formato. `markdown`: mantido como foi escrito (as quebras importam),
+     * aparado nas bordas, com o teto bruto de 4 KiB e o teto do texto VISÍVEL (P-27); acima de
+     * qualquer um, volta ao padrão do campo — ausente. `texto`: o tratamento de antes (P-11).
+     */
+    private static function textoNoFormato(mixed $valor, string $formato, int $limite): ?string
+    {
+        if ($formato !== 'markdown') {
+            return self::texto($valor, $limite);
+        }
+
+        if (! is_string($valor)) {
+            return null;
+        }
+
+        $bruto = trim($valor);
+
+        if ($bruto === '' || strlen($bruto) > self::LIMITE_BRUTO_DO_TEXTO) {
+            return null;
+        }
+
+        $visivel = self::textoVisivel($bruto, 'markdown');
+
+        return $visivel === null || mb_strlen($visivel) > $limite ? null : $bruto;
     }
 
     private static function booleano(mixed $valor, bool $padrao): bool

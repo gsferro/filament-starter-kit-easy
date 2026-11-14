@@ -430,6 +430,8 @@ O mutante **M72**, registrado em R3 do 04, é morto por CT-B08: interpolação i
 | CT-B13 | R21 | estado × evento | G4 | browser | Browser | — |
 | CT-B14 | R21 | estado × evento | G4 | browser | Browser | — |
 | CT-B15 | R21 | geometria | G4 | browser | Browser | — |
+| CT-B16 | R30 | BVA de largura | G4 | browser | Browser | — |
+| CT-B17 | R29 | geometria | G4 | browser | Browser | — |
 
 CT-B07 acrescenta a prova do limite efetivo do controle do navegador. CT-B08 acrescenta a prova de execução. Essas observações não são duplicadas pelas assertions de persistência de CT-30 ou pela inspeção de resposta de CT-06.
 
@@ -536,4 +538,30 @@ Funcionalidade: Achados da revisão do adendo no navegador
       Quando o login é aberto em 1024×768
       Então o botão de pausar está inteiro dentro do painel
       # Origem: P-21 (CX-A1)
+```
+
+## Adendos 2 e 3 no navegador
+
+```gherkin
+# language: pt
+Funcionalidade: Adendos 2 e 3 no navegador
+
+  Regra: R30 — Faixa do celular com arte
+
+    Esquema do Cenário: [CT-B16] Com fundo de arte, a faixa do celular não mostra a imagem
+      Dado fundo de arte e nenhum destaque
+      Quando o login é aberto em <largura> px
+      Então a imagem da arte <aparece ou não>
+      Exemplos:
+        | largura | arte |
+        | 390 | não |
+        | 1023 | não |
+        | 1024 | sim |
+
+  Regra: R29 — Social e anti-robô no painel
+
+    Esquema do Cenário: [CT-B17] O botão social e o desafio anti-robô ficam visíveis no formulário
+      Dado o Google configurado e o anti-robô ligado, com o painel cheio
+      Quando o login é aberto em <computador | celular>
+      Então o botão do Google está visível dentro do formulário e o desafio não está escondido
 ```

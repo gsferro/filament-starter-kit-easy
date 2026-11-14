@@ -32,6 +32,12 @@ class TelaRecuperarSenha extends RequestPasswordReset
 {
     use VesteAparenciaDasTelas;
 
+    /** Família da aparência (P-26): a desta tela pode diferir da do login. */
+    protected function familiaDaAparencia(): string
+    {
+        return 'recuperacao';
+    }
+
     /** Regra do kit: página de auth redeclara o `$layout`. Ver `.ai/rules/auth.md`. */
     protected static string $layout = 'filament-auth-designer::components.layouts.auth';
 

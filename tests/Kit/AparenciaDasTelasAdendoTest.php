@@ -366,7 +366,7 @@ it('[CT-52] rascunho com SVG não salvo não vira imagem temporária', function 
 
     $id = rascunhoDoEditor($tela);
 
-    expect(Cache::get('aparencia-preview:'.auth()->id().':'.$id)['imagem_temporaria'] ?? null)->toBeNull();
+    expect(Cache::get('aparencia-preview:'.auth()->id().':'.$id)['imagem_temporaria'] ?? [])->toBe([]);
 })->group('kit');
 
 it('[CT-56] a aparência que o componente devolve não traz imagem nem cor que a tela não usa', function (): void {

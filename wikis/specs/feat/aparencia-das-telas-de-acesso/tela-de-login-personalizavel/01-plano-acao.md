@@ -71,6 +71,21 @@
 | P-22 | celular só logo ou nome | 10 | Adendo 1 |
 | P-23 | aparência antiga continua igual | 10 | Adendo 1 |
 | P-24 | imagem só em `telas-de-acesso/` | 10 | Adendo 1 |
+| RQ-25 | uma configuração por tela | 11 | Adendo 2 |
+| RQ-26 | lado diferente por tela | 11 | Adendo 2 |
+| RQ-27 | textos formatados como o rodapé | 11 | Adendo 2 |
+| RQ-28 | cor padrão do Filament | 11 | Adendo 2 |
+| RQ-29 | gradiente | 11 | Adendo 2 |
+| RQ-30 | celular com arte sem sobreposição | 11 | Adendo 2 |
+| RQ-31 | login social no painel | 11 | Adendo 3 |
+| RQ-32 | anti-robô no painel | 11 | Adendo 3 |
+| RQ-33 | testes de social e anti-robô | 11 | Adendo 3 |
+| P-25 | login na raiz, telas próprias em `telas` | 11 | Adendo 2 |
+| P-26 | família pela classe da página | 11 | Adendo 2 |
+| P-27 | Markdown seguro, teto visível, legado puro | 11 | Adendo 2 |
+| P-28 | cor primária ou própria | 11 | Adendo 2 |
+| P-29 | gradiente fechado e superfície escura | 11 | Adendo 2 |
+| P-30 | faixa do celular sem a arte | 11 | Adendo 2 |
 
 ## Objetivo
 
@@ -338,6 +353,24 @@ Nenhuma nova.
 - **View e CSS**: topo/meio/base; rede em SVG com componente Alpine (pausa, `prefers-reduced-motion`,
   aba oculta); abaixo de 1024 px some tudo menos o topo
 - **Docs** pt/en, CHANGELOG e capturas novas (`art/telas-de-acesso-{painel-arte,painel-escuro,organizacao}.png`)
+
+### 11. Adendo 2 e 3 — por tela, textos formatados, cor/gradiente, social e anti-robô
+
+- **Decisor**: `normalizar()` devolve o login na raiz e `telas.{cadastro,recuperacao}` (sem
+  recursão; `igual_ao_login` = segue o login; `{"layout":"classico"}` explícito); `daFamilia()`
+  escolhe a tela; `normalizarTela()` é a normalização de antes, com `gradiente_*` e
+  `formato_dos_textos`; `textoComoHtml()`/`textoVisivel()` (Markdown seguro do rodapé, só
+  `p/br/strong/em/del/a`); `gradienteDoPainel()` e `primariaEm()` (tons 600/900)
+- **Trait**: `familiaDaAparencia()` (login por padrão; `RegistroPorConvite` = cadastro;
+  `TelaRecuperarSenha`/`TelaRedefinirSenha` = recuperação; preview pela tela escolhida);
+  `gradienteDoPainelDeMarca()` com o gate P-16
+- **Editor**: abas Login / Cadastro / Esqueci a senha; "Igual ao login" copia o login ao desligar;
+  `MarkdownEditor` com a barra do rodapé; `origem_da_cor` (primária × própria); gradiente; o
+  `layout` é obrigatório só na raiz (CT-20 × CT-28)
+- **View/CSS**: textos em `div` com o HTML seguro; `--gradiente` com superfície escura; faixa do
+  celular sem a arte
+- **Social e anti-robô**: sem mudança de código — o formulário é o mesmo em qualquer layout; os
+  CT-71/72 e o CT-B17 provam
 
 ## Verificação
 

@@ -205,12 +205,20 @@ it('[CT-43] o único upload da aparência da organização aceita só PNG, JPEG 
         ->filter(fn ($c): bool => $c instanceof FileUpload && str_contains((string) $c->getStatePath(), 'aparencia_das_telas'))
         ->values();
 
-    expect($uploads)->toHaveCount(1)
-        ->and($uploads[0]->getStatePath())->toEndWith('aparencia_das_telas.imagem_do_destaque')
-        ->and($uploads[0]->getAcceptedFileTypes())->toBe(['image/png', 'image/jpeg', 'image/webp'])
-        ->and($uploads[0]->getDiskName())->toBe('public')
-        ->and($uploads[0]->getMaxSize())->toBe(TetoDeUpload::emKb())
-        ->and($uploads[0]->getDirectory())->toBe('telas-de-acesso');
+    // Adendo 2 (P-25): um upload por tela — login, cadastro e "esqueci a senha" —, todos restritos.
+    expect($uploads)->toHaveCount(3)
+        ->and($uploads->map(fn ($u): string => (string) $u->getStatePath())->all())->toBe([
+            'data.aparencia_das_telas.imagem_do_destaque',
+            'data.aparencia_das_telas.telas.cadastro.imagem_do_destaque',
+            'data.aparencia_das_telas.telas.recuperacao.imagem_do_destaque',
+        ]);
+
+    foreach ($uploads as $upload) {
+        expect($upload->getAcceptedFileTypes())->toBe(['image/png', 'image/jpeg', 'image/webp'])
+            ->and($upload->getDiskName())->toBe('public')
+            ->and($upload->getMaxSize())->toBe(TetoDeUpload::emKb())
+            ->and($upload->getDirectory())->toBe('telas-de-acesso');
+    }
 })->with(['criação', 'edição'])->group('tenancy');
 
 /*
@@ -219,7 +227,8 @@ it('[CT-43] o único upload da aparência da organização aceita só PNG, JPEG 
 
 it('[CT-06] conteúdo hostil da organização sai como texto no login', function (string $campo, string $texto): void {
     [$acme] = organizacoesAB();
-    $acme->update(['aparencia_das_telas' => [$campo => $texto] + aparenciaDeTeste('A')]);
+    // Formato `texto` (gravado antes do Adendo 2); o `markdown` tem o CT-57.
+    $acme->update(['aparencia_das_telas' => [$campo => $texto, 'formato_dos_textos' => 'texto'] + aparenciaDeTeste('A')]);
 
     $html   = loginDe('/app/login?org=acme');
     $arvore = arvoreDoHtml($html);
@@ -698,4 +707,29 @@ it('[CT-53] a aparência própria da organização leva largura, destaque e rede
 
     expect($semOrganizacao)->toContain('--media-size: 60%')
         ->and(arvoreDoHtml($semOrganizacao)->query('//svg[@data-kit-ilustracao="rede"]')->length)->toBe(0);
+})->group('tenancy');
+
+/*
+| Adendo 2 — uma aparência por tela também na organização (P-25: primeiro o objeto, depois a tela)
+*/
+
+it('[CT-73] a organização com aparência própria por tela: login e cadastro dela, cada um com a sua', function (): void {
+    [$acme] = organizacoesAB();
+    definirAparenciaGlobal(['frase' => 'PADRAO DO LOGIN'] + aparenciaDeTeste('P'));
+    $acme->update(['aparencia_das_telas' => [
+        'frase' => 'ACME LOGIN', 'lado_do_formulario' => 'direita',
+        'telas' => ['cadastro' => ['frase' => 'ACME CADASTRO', 'lado_do_formulario' => 'esquerda'] + aparenciaDeTeste('A')],
+    ] + aparenciaDeTeste('A')]);
+    config(['kit.registro.habilitado' => true, 'kit.registro.aprovacao_manual' => false, 'kit.registro.verificar_email' => false]);
+
+    $login    = loginDe('/app/login?org=acme');
+    $cadastro = loginDe('/app/register?org=acme');
+    $semOrg   = loginDe('/app/login');
+
+    expect(textoDoPainelDeMarca($login, 'frase'))->toBe('ACME LOGIN')
+        ->and($login)->toContain('media-left')
+        ->and(textoDoPainelDeMarca($cadastro, 'frase'))->toBe('ACME CADASTRO')
+        ->and($cadastro)->toContain('media-right')
+        // Sem organização, nada da Acme: nem a tela própria dela se mistura à padrão.
+        ->and(textoDoPainelDeMarca($semOrg, 'frase'))->toBe('PADRAO DO LOGIN');
 })->group('tenancy');

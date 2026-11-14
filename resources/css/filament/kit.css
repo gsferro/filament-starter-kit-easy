@@ -321,6 +321,44 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
     color: #111827;
 }
 
+/*
+| Gradiente (P-29): só peças fechadas chegam aqui (duas cores validadas e um ângulo do vocabulário).
+| O contraste não é decidido sobre a interpolação: os textos e o nome ficam numa superfície escura
+| opaca, em branco, com links sublinhados (juiz cego do Adendo 2; WCAG 1.4.3).
+*/
+.kit-painel-de-marca--gradiente {
+    background-image: var(--kit-painel-gradiente);
+}
+
+.kit-painel-de-marca--gradiente .kit-painel-de-marca__textos,
+.kit-painel-de-marca--gradiente .kit-painel-de-marca__nome {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background-color: rgb(17 24 39 / 0.9);
+    color: #fff;
+}
+
+.kit-painel-de-marca--gradiente .kit-painel-de-marca__apoio {
+    color: rgb(255 255 255 / 0.92);
+}
+
+/* Textos formatados (P-27): o Markdown chega em parágrafos; o espaçamento é o do bloco. */
+.kit-painel-de-marca__frase p,
+.kit-painel-de-marca__apoio p {
+    margin: 0;
+}
+
+.kit-painel-de-marca__frase p + p,
+.kit-painel-de-marca__apoio p + p {
+    margin-top: 0.5rem;
+}
+
+.kit-painel-de-marca__textos a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .kit-painel-de-marca--claro::before {
     display: none;
 }
@@ -566,6 +604,15 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
     .kit-painel-de-marca__meio,
     .kit-painel-de-marca__base,
     .kit-painel-de-marca__rede {
+        display: none;
+    }
+
+    /*
+    | A arte da identidade costuma trazer o nome da aplicação desenhado nela: recortada na faixa de
+    | 7rem, esse texto caía atrás do selo da logo (RQ-30). Na faixa, a arte sai e fica a cor do
+    | painel sob o véu escuro, que mantém legível a logo ou o nome.
+    */
+    .kit-painel-de-marca--arte .kit-painel-de-marca__arte {
         display: none;
     }
 

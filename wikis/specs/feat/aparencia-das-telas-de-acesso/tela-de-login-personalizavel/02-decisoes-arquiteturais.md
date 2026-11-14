@@ -98,6 +98,25 @@ separa duas abas do mesmo usuário (juiz cego, item 5). *(alterado em 2026-11-13
 admin, sem os botões sociais e sem o anti-robô. O alternador de tema fica desligado no preview para
 não trocar a preferência do próprio admin.
 
+## ADR-05 — Uma aparência por família de tela, dentro do mesmo objeto
+
+**Status**: aceita · 2026-11-14 · Adendo 2
+
+**Portões**: difícil de reverter ✅ (formato gravado) · surpreendente ✅ (três aparências num JSON) ·
+trade-off ✅ (objeto aninhado × três colunas/propriedades)
+
+**Decisão**: o objeto de aparência guarda o login na raiz e `telas.cadastro` / `telas.recuperacao`
+com objetos do mesmo vocabulário, sem `telas` dentro. Vazio = segue o login; `{"layout":"classico"}`
+= clássico escolhido. A família da página vem da classe da página (P-26), não da URL.
+
+**Por quê**: mantém ADR-02 (um objeto inteiro na instalação e um opcional na organização), o JSON
+antigo continua válido sem migração (sem `telas` = tudo segue o login), e o editor reaproveita um
+único conjunto de campos por aba. Três propriedades/colunas exigiriam migration nova em settings e
+em `tenants` e triplicariam a regra "usa a padrão".
+
+**Alternativas**: três propriedades em settings e três colunas em `tenants` (descartada pelos
+motivos acima); herança campo a campo entre telas (descartada como na ADR-02).
+
 ## Superfície Livewire
 
 Greps (`grep -n "public function\|public ?\|public [a-z]" …`) a refazer sobre o código final antes do step 9.

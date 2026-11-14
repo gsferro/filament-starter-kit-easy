@@ -9,15 +9,19 @@ use App\Support\TetoDeUpload;
 use Closure;
 use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -53,9 +57,79 @@ final class EditorDeAparenciaDasTelas
      */
     public static function campos(): Group
     {
+        return Group::make([
+            Tabs::make('telas_da_aparencia')
+                ->label('Telas')
+                ->tabs([
+                    Tab::make('Login')
+                        ->schema([
+                            Text::make('Vale também para os dois fatores, o bloqueio de sessão e a confirmação de e-mail.')
+                                ->color('gray'),
+                            ...self::camposDaTela(raiz: true),
+                        ]),
+                    self::abaDeTelaPropria('cadastro', 'Cadastro', 'Vale para o cadastro aberto e para o aceite de convite.'),
+                    self::abaDeTelaPropria('recuperacao', 'Esqueci a senha', 'Vale para o pedido de recuperação e para a redefinição de senha.'),
+                ])
+                ->columnSpanFull(),
+        ])
+            ->statePath('aparencia_das_telas')
+            ->columnSpanFull();
+    }
+
+    /**
+     * A aba de uma tela com aparência própria (P-25): "Igual ao login" ligado = a tela segue o login;
+     * desligado = a tela tem a sua, que nasce como CÓPIA do login daquele momento.
+     */
+    private static function abaDeTelaPropria(string $familia, string $rotulo, string $explicacao): Tab
+    {
+        $caminho = "telas.{$familia}";
+
+        return Tab::make($rotulo)
+            ->schema([
+                Toggle::make("{$caminho}.igual_ao_login")
+                    ->label('Igual ao login')
+                    ->helperText($explicacao.' Desligado, esta tela passa a ter a sua aparência, começando como cópia da do login.')
+                    ->default(true)
+                    ->live()
+                    ->afterStateUpdated(function (?bool $state, Get $get, Set $set) use ($caminho): void {
+                        if ($state === false) {
+                            $set($caminho, [...self::estadoDoLogin($get), 'igual_ao_login' => false]);
+                        }
+                    }),
+
+                Group::make(self::camposDaTela(raiz: false))
+                    ->statePath($caminho)
+                    ->columns(2)
+                    ->visible(fn (Get $get): bool => $get("{$caminho}.igual_ao_login") === false),
+            ]);
+    }
+
+    /**
+     * O estado atual dos campos do login, para a cópia de uma tela própria.
+     *
+     * @return array<string, mixed>
+     */
+    private static function estadoDoLogin(Get $get): array
+    {
+        $estado = [];
+
+        foreach (array_keys(AparenciaDasTelasDeAcesso::padraoDoPainel()) as $campo) {
+            $estado[$campo] = $get($campo);
+        }
+
+        return $estado;
+    }
+
+    /**
+     * Os campos de UMA tela, relativos ao caminho do grupo que os contém.
+     *
+     * @return array<Component>
+     */
+    private static function camposDaTela(bool $raiz): array
+    {
         $ehPainel = static fn (Get $get): bool => $get('layout') === AparenciaDasTelasDeAcesso::LAYOUT_PAINEL;
 
-        return Group::make([
+        return [
             Select::make('layout')
                 ->label('Layout')
                 ->options([
@@ -64,10 +138,18 @@ final class EditorDeAparenciaDasTelas
                 ])
                 ->default(AparenciaDasTelasDeAcesso::LAYOUT_CLASSICO)
                 ->selectablePlaceholder(false)
-                ->required()
+                // Obrigatório só no login (a raiz): um estado forjado sem objeto é recusado em vez de
+                // zerar a aparência (CT-20). Nas outras telas o grupo some com "Igual ao login", e a
+                // regra disparava mesmo oculta num estado sem `telas` (CT-28); lá, valor ausente cai
+                // no clássico pelo normalizador (P-04).
+                ->required($raiz)
+                ->in(AparenciaDasTelasDeAcesso::LAYOUTS)
                 ->live()
-                ->helperText('O clássico mantém as telas exatamente como estão hoje. O painel de marca vale para login, cadastro, recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de sessão.')
+                ->helperText('O clássico mantém a tela exatamente como está hoje.')
                 ->columnSpanFull(),
+
+            // O formato dos textos de quem passa pelo editor (P-27): Markdown, como o rodapé do login.
+            Hidden::make('formato_dos_textos')->default('markdown'),
 
             Fieldset::make('Disposição')
                 ->schema([
@@ -97,13 +179,30 @@ final class EditorDeAparenciaDasTelas
                 ->schema([
                     ToggleButtons::make('fundo')
                         ->label('Fundo do painel')
-                        ->options(['cor' => 'Cor', 'arte' => 'Arte da identidade'])
+                        ->options(['cor' => 'Cor', 'gradiente' => 'Gradiente', 'arte' => 'Arte da identidade'])
                         ->in(AparenciaDasTelasDeAcesso::FUNDOS)
                         ->default('cor')
                         ->inline()
                         ->required()
                         ->live()
-                        ->helperText('A arte é a mesma da aba Identidade (ou a gerada com o nome da aplicação).'),
+                        ->helperText('A arte é a mesma da aba Identidade (ou a gerada com o nome da aplicação). No celular, a faixa usa a cor do painel no lugar da arte.')
+                        ->columnSpanFull(),
+
+                    // Só de tela: a escolha é "cor vazia" (a primária) ou uma cor (P-28).
+                    ToggleButtons::make('origem_da_cor')
+                        ->label('Cor')
+                        ->options(['primaria' => 'Cor primária (padrão do Filament)', 'propria' => 'Cor própria'])
+                        ->inline()
+                        ->live()
+                        ->dehydrated(false)
+                        ->afterStateHydrated(fn (ToggleButtons $component, Get $get) => $component->state(filled($get('cor')) ? 'propria' : 'primaria'))
+                        ->afterStateUpdated(function (?string $state, Set $set): void {
+                            if ($state === 'primaria') {
+                                $set('cor', null);
+                            }
+                        })
+                        ->helperText('A primária é a da organização, quando houver; senão, a da instalação; sem nenhuma, o âmbar do Filament.')
+                        ->visible(fn (Get $get): bool => $get('fundo') === 'cor'),
 
                     ColorPicker::make('cor')
                         ->label('Cor do painel')
@@ -112,11 +211,39 @@ final class EditorDeAparenciaDasTelas
                         ->regex(AparenciaDasTelasDeAcesso::FORMATO_DA_COR)
                         ->validationMessages(['regex' => 'Use uma cor no formato #RRGGBB.'])
                         ->live(onBlur: true)
-                        ->helperText('Em branco, a cor primária (a da organização, quando houver).')
-                        ->visible(fn (Get $get): bool => $get('fundo') === 'cor')
-                        // Oculta com fundo de arte, mas GRAVADA: a aparência é um objeto inteiro (P-07), e a
-                        // cor escolhida volta se o fundo voltar a ser cor. Sem isto a cópia da padrão perdia
-                        // a cor (CT-32).
+                        ->visible(fn (Get $get): bool => $get('fundo') === 'cor' && $get('origem_da_cor') === 'propria')
+                        // Oculta, mas GRAVADA: a aparência é um objeto inteiro (P-07) (CT-32).
+                        ->dehydratedWhenHidden(),
+
+                    ColorPicker::make('gradiente_de')
+                        ->label('Gradiente: cor de início')
+                        ->hex()
+                        ->regex(AparenciaDasTelasDeAcesso::FORMATO_DA_COR)
+                        ->validationMessages(['regex' => 'Use uma cor no formato #RRGGBB.'])
+                        ->live(onBlur: true)
+                        ->helperText('Em branco, o tom 600 da cor primária.')
+                        ->visible(fn (Get $get): bool => $get('fundo') === 'gradiente')
+                        ->dehydratedWhenHidden(),
+
+                    ColorPicker::make('gradiente_ate')
+                        ->label('Gradiente: cor de fim')
+                        ->hex()
+                        ->regex(AparenciaDasTelasDeAcesso::FORMATO_DA_COR)
+                        ->validationMessages(['regex' => 'Use uma cor no formato #RRGGBB.'])
+                        ->live(onBlur: true)
+                        ->helperText('Em branco, o tom 900 da cor primária.')
+                        ->visible(fn (Get $get): bool => $get('fundo') === 'gradiente')
+                        ->dehydratedWhenHidden(),
+
+                    ToggleButtons::make('gradiente_direcao')
+                        ->label('Direção do gradiente')
+                        ->options(['vertical' => 'Vertical', 'horizontal' => 'Horizontal', 'diagonal' => 'Diagonal'])
+                        ->in(array_keys(AparenciaDasTelasDeAcesso::DIRECOES_DO_GRADIENTE))
+                        ->default('diagonal')
+                        ->inline()
+                        ->live()
+                        ->helperText('Sobre o gradiente, os textos ficam numa faixa escura, para continuarem legíveis em qualquer ponto.')
+                        ->visible(fn (Get $get): bool => $get('fundo') === 'gradiente')
                         ->dehydratedWhenHidden(),
                 ])
                 ->columns(2)
@@ -124,21 +251,27 @@ final class EditorDeAparenciaDasTelas
 
             Fieldset::make('Textos')
                 ->schema([
-                    TextInput::make('frase')
+                    /*
+                     * O mesmo componente e a mesma barra do "Rodapé da tela de login" (RQ-27): Markdown,
+                     * e não HTML cru — a tela é pública. A view passa o texto pelo mesmo `Str::markdown`
+                     * seguro e só deixa negrito, itálico, tachado e link (P-27).
+                     */
+                    MarkdownEditor::make('frase')
                         ->label('Frase de destaque')
+                        ->toolbarButtons([['bold', 'italic', 'strike', 'link']])
                         ->rule(static fn (): Closure => self::teto(AparenciaDasTelasDeAcesso::LIMITE_DA_FRASE))
                         ->live(onBlur: true)
                         ->placeholder('Ex.: Tudo o que a sua equipe precisa, num lugar só.')
-                        ->helperText('Opcional. Aparece no painel, menor que o título do formulário. Até '.AparenciaDasTelasDeAcesso::LIMITE_DA_FRASE.' caracteres, texto puro.')
+                        ->helperText('Opcional. Aceita negrito, itálico, tachado e link. Até '.AparenciaDasTelasDeAcesso::LIMITE_DA_FRASE.' caracteres visíveis. HTML cru é descartado, porque a tela é pública.')
                         ->columnSpanFull(),
 
-                    Textarea::make('apoio')
+                    MarkdownEditor::make('apoio')
                         ->label('Texto de apoio')
+                        ->toolbarButtons([['bold', 'italic', 'strike', 'link']])
                         ->rule(static fn (): Closure => self::teto(AparenciaDasTelasDeAcesso::LIMITE_DO_APOIO))
-                        ->rows(2)
                         ->live(onBlur: true)
                         ->placeholder('Ex.: Acesse com o e-mail e a senha cadastrados.')
-                        ->helperText('Opcional. Até '.AparenciaDasTelasDeAcesso::LIMITE_DO_APOIO.' caracteres, texto puro. No celular nenhum texto aparece: só a logo ou o nome da aplicação.')
+                        ->helperText('Opcional. Aceita negrito, itálico, tachado e link. Até '.AparenciaDasTelasDeAcesso::LIMITE_DO_APOIO.' caracteres visíveis. No celular nenhum texto aparece: só a logo ou o nome da aplicação.')
                         ->columnSpanFull(),
                 ])
                 ->visible($ehPainel),
@@ -230,10 +363,7 @@ final class EditorDeAparenciaDasTelas
                 ->default(true)
                 ->live()
                 ->visible($ehPainel),
-        ])
-            ->statePath('aparencia_das_telas')
-            ->columns(2)
-            ->columnSpanFull();
+        ];
     }
 
     /**
@@ -253,12 +383,12 @@ final class EditorDeAparenciaDasTelas
     }
 
     /**
-     * O teto de um texto, medido como ele é gravado (P-11): pontos de código, depois de tirar os
-     * espaços das bordas e os repetidos.
+     * O teto de um texto formatado (P-27): o texto VISÍVEL — o Markdown renderizado como a tela o
+     * mostra, sem tags, entidades decodificadas e espaços normalizados — e o teto bruto de 4 KiB.
      *
-     * Regra própria, e não `maxLength()`: o `maxLength()` mede o valor cru — "  " + 80 + "  "
-     * seria recusado embora grave 80 — e ainda põe `maxlength` no HTML, que o navegador conta em
-     * unidades UTF-16 (um emoji vale dois). Valor acima do teto é RECUSADO, nunca cortado (P-10).
+     * Regra própria, e não `maxLength()`: o `maxLength()` mede o valor cru e põe `maxlength` no
+     * HTML, que o navegador conta em unidades UTF-16. Valor acima do teto é RECUSADO, nunca cortado
+     * (P-10).
      *
      * O chamador passa por `fn (): Closure => self::teto(...)`: o Filament AVALIA todo closure
      * entregue a `rule()` com injeção de dependência, e o `$attribute` da regra do Laravel não se
@@ -267,10 +397,16 @@ final class EditorDeAparenciaDasTelas
     private static function teto(int $limite): Closure
     {
         return static function (string $attribute, mixed $value, Closure $fail) use ($limite): void {
-            $limpo = AparenciaDasTelasDeAcesso::textoLimpo($value);
+            if (is_string($value) && strlen(trim($value)) > AparenciaDasTelasDeAcesso::LIMITE_BRUTO_DO_TEXTO) {
+                $fail('O texto, com a formatação, passa de 4 KB.');
 
-            if ($limpo !== null && mb_strlen($limpo) > $limite) {
-                $fail("Use no máximo {$limite} caracteres.");
+                return;
+            }
+
+            $visivel = is_string($value) ? AparenciaDasTelasDeAcesso::textoVisivel(trim($value), 'markdown') : null;
+
+            if ($visivel !== null && mb_strlen($visivel) > $limite) {
+                $fail("Use no máximo {$limite} caracteres visíveis.");
             }
         };
     }
@@ -306,11 +442,50 @@ final class EditorDeAparenciaDasTelas
     public static function paraOFormulario(mixed $gravado): array
     {
         $normalizado = AparenciaDasTelasDeAcesso::normalizar($gravado, 'formulario');
+        $login       = self::telaParaOFormulario($normalizado);
+        $telas       = [];
 
-        return $normalizado ?? [
-            ...AparenciaDasTelasDeAcesso::padraoDoPainel(),
-            'layout' => AparenciaDasTelasDeAcesso::LAYOUT_CLASSICO,
-        ];
+        foreach (AparenciaDasTelasDeAcesso::FAMILIAS_COM_APARENCIA_PROPRIA as $familia) {
+            $propria = $normalizado['telas'][$familia] ?? null;
+
+            // Sem aparência própria, a aba já traz a cópia do login, com "Igual ao login" ligado (P-25).
+            $telas[$familia] = $propria === null
+                ? [...$login, 'igual_ao_login' => true]
+                : [...self::telaParaOFormulario($propria), 'igual_ao_login' => false];
+        }
+
+        return [...$login, 'telas' => $telas];
+    }
+
+    /**
+     * Uma tela, como o formulário a mostra: o vocabulário completo, com o clássico explícito, e o
+     * texto gravado antes do Adendo 2 convertido para Markdown ESCAPADO — aparece igual, e quem
+     * salvar passa a gravar Markdown (P-27).
+     *
+     * @param  array<string, mixed>|null  $tela
+     * @return array<string, mixed>
+     */
+    private static function telaParaOFormulario(?array $tela): array
+    {
+        if ($tela === null || ($tela['layout'] ?? null) !== AparenciaDasTelasDeAcesso::LAYOUT_PAINEL) {
+            return [...AparenciaDasTelasDeAcesso::padraoDoPainel(), 'layout' => AparenciaDasTelasDeAcesso::LAYOUT_CLASSICO];
+        }
+
+        unset($tela['telas']);
+
+        if (($tela['formato_dos_textos'] ?? 'texto') === 'texto') {
+            $tela['frase']              = self::escaparMarkdown($tela['frase'] ?? null);
+            $tela['apoio']              = self::escaparMarkdown($tela['apoio'] ?? null);
+            $tela['formato_dos_textos'] = 'markdown';
+        }
+
+        return $tela;
+    }
+
+    /** Texto puro como Markdown que o mostra literalmente: toda pontuação ASCII escapada. */
+    private static function escaparMarkdown(?string $texto): ?string
+    {
+        return $texto === null ? null : (string) preg_replace('/([\\\\`*_{}\[\]()#+\-.!|<>~])/', '\\\\$1', $texto);
     }
 
     /**
@@ -367,7 +542,7 @@ final class EditorDeAparenciaDasTelas
         $valor   = [
             'escopo'             => $escopo,
             'aparencia'          => AparenciaDasTelasDeAcesso::normalizar($aparencia, 'rascunho'),
-            'imagem_temporaria'  => self::imagemTemporaria(is_array($aparencia) ? ($aparencia['imagem_do_destaque'] ?? null) : null),
+            'imagem_temporaria'  => self::imagensTemporarias($aparencia),
         ];
         $versao  = hash('xxh128', (string) json_encode($valor));
 
@@ -381,6 +556,26 @@ final class EditorDeAparenciaDasTelas
      * temporário), como URL assinada do próprio Livewire — o preview mostra o que ainda não foi
      * salvo (P-08). Só PNG, JPEG ou WebP: o `FileUpload` só valida o tipo ao salvar.
      */
+    /**
+     * A imagem ainda não salva de cada família (P-25): a do login na raiz, as outras em `telas`.
+     *
+     * @return array<string, string>
+     */
+    private static function imagensTemporarias(mixed $aparencia): array
+    {
+        if (! is_array($aparencia)) {
+            return [];
+        }
+
+        $estados = [AparenciaDasTelasDeAcesso::FAMILIA_LOGIN => $aparencia['imagem_do_destaque'] ?? null];
+
+        foreach (AparenciaDasTelasDeAcesso::FAMILIAS_COM_APARENCIA_PROPRIA as $familia) {
+            $estados[$familia] = $aparencia['telas'][$familia]['imagem_do_destaque'] ?? null;
+        }
+
+        return array_filter(array_map(self::imagemTemporaria(...), $estados));
+    }
+
     private static function imagemTemporaria(mixed $estado): ?string
     {
         $arquivo = is_array($estado) && count($estado) === 1 ? reset($estado) : $estado;
@@ -396,7 +591,7 @@ final class EditorDeAparenciaDasTelas
     /**
      * O rascunho do PRÓPRIO usuário com esse id, ou `null`.
      *
-     * @return array{escopo: string, aparencia: array<string, mixed>|null, imagem_temporaria: ?string}|null
+     * @return array{escopo: string, aparencia: array<string, mixed>|null, imagem_temporaria: array<string, string>}|null
      */
     public static function lerRascunho(string $id): ?array
     {
@@ -413,7 +608,7 @@ final class EditorDeAparenciaDasTelas
         return [
             'escopo'            => $valor['escopo'],
             'aparencia'         => is_array($valor['aparencia'] ?? null) ? $valor['aparencia'] : null,
-            'imagem_temporaria' => is_string($valor['imagem_temporaria'] ?? null) ? $valor['imagem_temporaria'] : null,
+            'imagem_temporaria' => is_array($valor['imagem_temporaria'] ?? null) ? array_filter($valor['imagem_temporaria'], 'is_string') : [],
         ];
     }
 

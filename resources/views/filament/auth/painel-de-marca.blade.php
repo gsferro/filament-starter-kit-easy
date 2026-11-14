@@ -20,15 +20,18 @@
     nenhum quadro é pedido (RD-A1 e CX-A3 da revisão do adendo).
 --}}
 @php
-    $fundoArte = ($aparencia['fundo'] ?? 'cor') === 'arte';
+    $fundo = $aparencia['fundo'] ?? 'cor';
+    $fundoArte = $fundo === 'arte';
     $cor = method_exists($livewire, 'corDoPainelDeMarca') ? $livewire->corDoPainelDeMarca() : null;
+    $gradiente = $fundo === 'gradiente' && method_exists($livewire, 'gradienteDoPainelDeMarca') ? $livewire->gradienteDoPainelDeMarca() : null;
+    $formato = $aparencia['formato_dos_textos'] ?? 'texto';
     $logos = ($aparencia['logo_no_painel'] ?? true) && method_exists($livewire, 'logosDoPainelDeMarca')
         ? $livewire->logosDoPainelDeMarca()
         : ['clara' => null, 'escura' => null];
     $destaque = method_exists($livewire, 'destaqueDoPainelDeMarca') ? $livewire->destaqueDoPainelDeMarca() : null;
     $nome = (string) config('app.name');
-    $frase = $aparencia['frase'] ?? null;
-    $apoio = $aparencia['apoio'] ?? null;
+    $frase = \App\Support\AparenciaDasTelasDeAcesso::textoComoHtml($aparencia['frase'] ?? null, $formato);
+    $apoio = \App\Support\AparenciaDasTelasDeAcesso::textoComoHtml($aparencia['apoio'] ?? null, $formato);
     $comRede = ($aparencia['ilustracao'] ?? 'nenhuma') === 'rede';
     $emMovimento = $comRede && (bool) ($aparencia['movimento'] ?? true);
     $corDaRede = $comRede ? ($aparencia['cor_da_ilustracao'] ?? null) : null;
@@ -40,10 +43,11 @@
     @class([
         'kit-painel-de-marca',
         'kit-painel-de-marca--arte' => $fundoArte,
-        'kit-painel-de-marca--cor' => ! $fundoArte,
-        'kit-painel-de-marca--claro' => ! $fundoArte && \App\Support\AparenciaDasTelasDeAcesso::fundoClaro($cor),
+        'kit-painel-de-marca--cor' => $fundo === 'cor',
+        'kit-painel-de-marca--gradiente' => filled($gradiente),
+        'kit-painel-de-marca--claro' => $fundo === 'cor' && \App\Support\AparenciaDasTelasDeAcesso::fundoClaro($cor),
     ])
-    @if (filled($cor)) style="--kit-painel-fundo: {{ $cor }}" @endif
+    @if (filled($cor)) style="--kit-painel-fundo: {{ $cor }}@if (filled($gradiente)); --kit-painel-gradiente: {{ $gradiente }}@endif" @endif
     data-kit-aparencia="painel"
     @if ($emMovimento)
         x-data="{
@@ -166,11 +170,11 @@
             @if (filled($frase) || filled($apoio))
                 <div class="kit-painel-de-marca__textos">
                     @if (filled($frase))
-                        <p class="kit-painel-de-marca__frase">{{ $frase }}</p>
+                        <div class="kit-painel-de-marca__frase">{{ $frase }}</div>
                     @endif
 
                     @if (filled($apoio))
-                        <p class="kit-painel-de-marca__apoio">{{ $apoio }}</p>
+                        <div class="kit-painel-de-marca__apoio">{{ $apoio }}</div>
                     @endif
                 </div>
             @endif

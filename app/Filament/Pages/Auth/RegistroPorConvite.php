@@ -78,6 +78,12 @@ class RegistroPorConvite extends Register
 {
     use VesteAparenciaDasTelas;
 
+    /** Família da aparência (P-26): a desta tela pode diferir da do login. */
+    protected function familiaDaAparencia(): string
+    {
+        return 'cadastro';
+    }
+
     /**
      * A classe pai já declara a propriedade
      * (`vendor/caresome/filament-auth-designer/src/Pages/Auth/Register.php:14`), então o

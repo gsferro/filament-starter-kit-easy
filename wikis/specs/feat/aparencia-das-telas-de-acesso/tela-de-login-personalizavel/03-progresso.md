@@ -92,6 +92,16 @@ Diff `cbb65fb6..81f62ce6` (sem `wikis/` e `art/`). Workflow de 4 revisores em pa
 | ADV-A2, A5, A7, A9, A10, A13..A16, A18 | `fw-adversario-ct` | refutados pelo cético (código e cenário já cobrem, ou premissa falsa) | — | — |
 | ADV-A15 (oráculos em comentário `# E …`) | `fw-adversario-ct` | forma, não defeito | débito | os ramos existem como testes; a promoção a cenários formais fica como débito da wiki |
 
+## 11. Adendos 2 e 3 — por tela, textos formatados, cor/gradiente, celular, social e anti-robô
+
+- [x] Adendos 2 e 3 registrados verbatim no `00`; P-25..P-30 e ADR-05 — 2026-11-14
+- [x] Codex como juiz cego do desenho (X corrigida no item 1, Y nos itens 2 e 3, X no 4) — 2026-11-14
+- [x] Decisor, trait, páginas por família, editor em abas, view/CSS — 2026-11-14
+- [x] Bug do celular com arte (RQ-30) corrigido e coberto pelo CT-B16 (cai sem a regra) — 2026-11-14
+- [x] Login social e anti-robô no painel: sem mudança de código; CT-71/72 e CT-B17 provam — 2026-11-14
+- [x] Dois defeitos pegos pelos testes durante a implementação: o `required()` do `layout` disparava em abas ocultas (CT-28) e, retirado da raiz, deixava um estado forjado zerar a aparência (CT-20) — `required` só na raiz — 2026-11-14
+- [x] Falsificabilidade: `daFamilia()` ignorando as telas derruba CT-58/60/64; sem a regra do celular, o CT-B16 cai — 2026-11-14
+
 ## Testes
 
 | Arquivo | CT |

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
@@ -351,9 +352,8 @@ it('[CT-B05] atualizar o preview mostra o que ainda não foi salvo', function (s
     $sentinela = 'RASCUNHO'.strtoupper($tela === 'recuperar-senha' ? 'REC' : substr($tela, 0, 3)).'X'.($dimensao === 'celular' ? 'C' : 'D');
 
     // Tab tira o foco do campo (o live onBlur grava o rascunho), como a pessoa faria.
-    $pagina->fill('[id$="aparencia_das_telas.frase"]', $sentinela)
-        ->keys('[id$="aparencia_das_telas.frase"]', 'Tab')
-        ->wait(0.5)
+    escreverNoEditorDeTexto($pagina, 'frase', $sentinela);
+    $pagina->wait(0.5)
         ->select('.kit-preview-das-telas__select', $tela)
         ->click($dimensao === 'celular' ? 'Celular' : 'Computador')
         ->click('Atualizar preview');
@@ -462,8 +462,8 @@ it('[CT-B07] emojis válidos não são cortados pelo controle de entrada', funct
 
     $pagina = abrirEditorDaInstalacao();
 
-    $pagina->type($seletor, $emojis)
-        ->assertScript("[...document.querySelector('{$seletor}').value].length === {$n}");
+    escreverNoEditorDeTexto($pagina, $campo, $emojis);
+    $pagina->assertScript("[...document.querySelector('{$seletor} .CodeMirror').CodeMirror.getValue()].length === {$n}");
 
     $pagina->press('Salvar');
 
@@ -509,9 +509,9 @@ it('[CT-B08] payload de aspas permanece texto inerte no login e no preview', fun
     } else {
         definirAparenciaGlobal($aparencia);
         $pagina        = abrirEditorDaInstalacao();
-        $campoDoEditor = '[id$="aparencia_das_telas.'.$campo.'"]';
-        // Tab tira o foco do campo (o live onBlur grava o rascunho), como a pessoa faria.
-        $pagina->fill($campoDoEditor, $texto)->keys($campoDoEditor, 'Tab')->click('Atualizar preview');
+        // O texto vai como Markdown ESCAPADO (P-27): aspas e sinais saem literais na tela.
+        escreverNoEditorDeTexto($pagina, $campo, preg_replace('/([\\\\`*_{}\\[\\]()#+\\-.!|<>~])/', '\\\\$1', $texto));
+        $pagina->click('Atualizar preview');
         $alvoDoc = "document.querySelector('.kit-preview-das-telas__iframe').contentDocument";
         $pagina->assertScript("{$alvoDoc}?.querySelector('.kit-painel-de-marca__{$campo}')?.textContent === ".json_encode($texto));
     }
@@ -743,4 +743,66 @@ function esperarNoNavegador(mixed $pagina, string $expressao, float $segundos = 
     }
 
     expect(false)->toBeTrue("o navegador não chegou a: {$expressao}");
+}
+
+/*
+|--------------------------------------------------------------------------
+| Adendo 2 e 3 — arte no celular, login social e anti-robô no painel
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-B16] com fundo de arte, a faixa do celular não mostra a imagem da arte; no computador, mostra', function (int $largura, bool $arteVisivel): void {
+    definirAparenciaGlobal(['fundo' => 'arte', 'destaque' => 'nenhum'] + aparenciaDeTeste('P'));
+
+    $pagina = visit('/admin/login')->resize($largura, 900);
+
+    expect($pagina->script("getComputedStyle(document.querySelector('.kit-painel-de-marca__arte')).display !== 'none'"))->toBe($arteVisivel)
+        ->and($pagina->script("document.querySelector('.kit-painel-de-marca').getClientRects().length > 0"))->toBeTrue();
+})->with([
+    'celular 390'     => [390, false],
+    'limite 1023'     => [1023, false],
+    'computador 1024' => [1024, true],
+]);
+
+it('[CT-B17] no painel, o botão de login social e o desafio anti-robô ficam visíveis no formulário', function (int $largura): void {
+    ligarProvedor(ProvedorSocial::Google);
+    config()->set('kit.login.anti_robo', [
+        'habilitado'    => true, 'local' => true, 'provedor' => 'recaptcha_v2',
+        'chave_do_site' => 'SITE-42', 'chave_secreta' => 'SEGREDO-42', 'pontuacao_minima' => 0.5,
+    ]);
+    definirAparenciaGlobal(aparenciaCheiaDoAdendo());
+
+    $pagina = visit('/admin/login')->resize($largura, 900);
+
+    $m = json_decode((string) $pagina->script(<<<'JS'
+        (() => {
+            const form = document.querySelector('.fi-auth-form-container').getBoundingClientRect();
+            const social = document.querySelector('[data-provedor="google"]');
+            const anti = document.querySelector('[data-anti-robo]');
+            const caixa = (el) => el ? el.getBoundingClientRect() : null;
+            return JSON.stringify({
+                form: { l: form.left, r: form.right },
+                social: caixa(social), socialVisivel: !!social && social.getClientRects().length > 0,
+                anti: caixa(anti), antiExibido: !!anti && getComputedStyle(anti).display !== 'none',
+            });
+        })()
+    JS), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($m['socialVisivel'])->toBeTrue('o botão de login social sumiu no painel')
+        ->and($m['social']['left'])->toBeGreaterThanOrEqual($m['form']['l'] - 0.5)
+        ->and($m['social']['right'])->toBeLessThanOrEqual($m['form']['r'] + 0.5)
+        ->and($m['antiExibido'])->toBeTrue('o desafio anti-robô foi escondido no painel');
+})->with(['computador' => 1440, 'celular' => 390]);
+
+/**
+ * Escreve na frase ou no apoio, que desde o Adendo 2 são o editor Markdown do rodapé (EasyMDE sobre
+ * CodeMirror): o texto substitui o conteúdo com a origem `+input` — a da digitação; o componente do
+ * Filament ignora a origem `setValue` — e o foco sai do editor, que é quando o `live(onBlur)` grava.
+ */
+function escreverNoEditorDeTexto(mixed $pagina, string $campo, string $texto): void
+{
+    $seletor = "[id\$=\"aparencia_das_telas.{$campo}\"] .CodeMirror";
+
+    $pagina->assertScript("!!document.querySelector('{$seletor}')?.CodeMirror");
+    $pagina->script("(() => { const cm = document.querySelector('{$seletor}').CodeMirror; cm.focus(); cm.execCommand('selectAll'); cm.replaceSelection(".json_encode($texto, JSON_UNESCAPED_UNICODE).", null, '+input'); cm.getInputField().blur(); })()");
 }

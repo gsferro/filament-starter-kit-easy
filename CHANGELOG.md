@@ -19,7 +19,12 @@ A v0.53.0 traz a **aparência das telas de acesso** escolhida na tela, com previ
   fundo, a logo num selo claro, um destaque no meio (a logo grande ou uma imagem PNG/JPEG/WebP enviada), uma
   ilustração de rede de pontos parada ou em movimento (com botão de pausar e respeito a "reduzir movimento"), cor
   própria da ilustração e duas frases opcionais. No celular o painel vira uma faixa curta acima do formulário,
-  só com a logo ou o nome da aplicação. Um **preview** mostra login, recuperação de
+  só com a logo ou o nome da aplicação. **Uma aparência por tela**: login, cadastro e "esqueci a senha" têm
+  abas próprias no editor ("Igual ao login" ou a sua), e cada uma pode ter outro lado, outra largura ou outro
+  layout. A frase e o apoio aceitam a formatação do rodapé da tela de login (Markdown seguro: negrito,
+  itálico, tachado, link). O fundo de cor oferece a cor primária (padrão do Filament) ou uma cor própria, e
+  há fundo em gradiente (duas cores e três direções, com os textos numa faixa escura legível). Login social
+  e desafio anti-robô continuam no formulário em qualquer layout. Um **preview** mostra login, recuperação de
   senha e cadastro com as alterações ainda não salvas, em largura de computador e de celular, sem autenticar nem
   enviar nada. Com organizações, o formulário de cada uma ganha a seção **Telas de acesso**: usar a aparência
   padrão ou ter a sua, que vale no login com `?org=`, no cadastro e no bloqueio de sessão dela. Camada no kit,

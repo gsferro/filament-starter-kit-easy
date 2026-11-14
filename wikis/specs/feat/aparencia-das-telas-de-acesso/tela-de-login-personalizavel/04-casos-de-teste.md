@@ -70,6 +70,11 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-20, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
 | R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 |
 | R25 — Processo do Adendo 1 | processo/mínimo | RQ-17, RQ-18 | execução pela sessão | CT-21 (cenários, `03`), CT-23 (docs e capturas) |
+| R26 — Uma aparência por tela | isolamento/completo | RQ-25, RQ-26, P-25, P-26 | estado × evento, decisão | CT-58, CT-59, CT-60, CT-61, CT-62, CT-63, CT-64, CT-73 |
+| R27 — Textos formatados | segurança/completo | RQ-27, P-27 | EP, BVA, conteúdo hostil | CT-57, CT-65, CT-66, CT-67 |
+| R28 — Cor primária e gradiente | apresentação/padrão | RQ-28, RQ-29, P-28, P-29 | EP, valor hostil | CT-68, CT-69, CT-70 |
+| R29 — Social e anti-robô no painel | regressão/padrão | RQ-31, RQ-32, RQ-33 | EP por painel e tela | CT-71, CT-72, CT-B17 |
+| R30 — Faixa do celular com arte | apresentação/padrão | RQ-30, P-30 | BVA de largura | CT-B16 |
 
 Tratamento das cláusulas:
 
@@ -1031,6 +1036,7 @@ Destinos automatizados (implementados):
 - **K:** `tests/Kit/AparenciaDasTelasDeAcessoTest.php`
 - **T:** `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php`
 - **A:** `tests/Kit/AparenciaDasTelasAdendoTest.php` (Adendo 1)
+- **P:** `tests/Kit/AparenciaDasTelasPorTelaTest.php` (Adendos 2 e 3)
 - **E:** `tests/Kit/AparenciaDasTelasDeAcessoEntregaTest.php`
 - **B:** `tests/Browser/AparenciaDasTelasDeAcessoTest.php` e correspondente em `tests/BrowserTenancy`
 
@@ -1103,6 +1109,25 @@ Destinos automatizados (implementados):
 | CT-54 | Campos novos nas outras telas | R19 | EP | G2 | Pest feature HTTP | A | — |
 | CT-55 | Um aviso de imagem ausente por hora | R18 | estado × evento | G2 | Pest feature HTTP | A | — |
 | CT-56 | Saída pública sem imagem/cor fora de uso | R22 | papel × ação | G1 | componente Livewire | A | — |
+| CT-57 | Markdown hostil inerte | R27 | conteúdo hostil | G1 | Pest feature HTTP | P | — |
+| CT-58 | Cada tela com a sua aparência | R26 | decisão | G2 | Pest feature HTTP | P | — |
+| CT-59 | Tela sem própria segue o login | R26 | EP | G2 | Pest feature HTTP | P | — |
+| CT-60 | Clássico explícito por tela | R26 | estado × evento | G2 | Pest feature HTTP | P | — |
+| CT-61 | JSON sem `telas` igual nas três | R26 | regressão | G2 | Pest feature HTTP | P | — |
+| CT-62 | Família pela classe da página | R26 | EP | G1 | Pest unitário | P | — |
+| CT-63 | Editor: cópia do login e descarte | R26 | rastreio de escrita | G1 | componente Livewire | P | — |
+| CT-64 | Preview por tela | R26 | EP | G2 | Pest feature HTTP | P | — |
+| CT-65 | Formatação acordada chega | R27 | EP | G2 | Pest feature HTTP | P | — |
+| CT-66 | Teto visível e bruto | R27 | BVA | G1 | componente Livewire | P | — |
+| CT-67 | Texto legado igual antes e depois | R27 | regressão | G2 | Pest feature HTTP | P | — |
+| CT-68 | Gradiente só com peças fechadas | R28 | valor hostil | G2 | Pest feature HTTP | P | — |
+| CT-69 | Cor primária grava vazio | R28 | rastreio de escrita | G1 | componente Livewire | P | — |
+| CT-70 | Gradiente não sai fora do painel | R28 | papel × ação | G1 | componente Livewire | P | — |
+| CT-71 | Login social no painel | R29 | EP por painel | G2 | Pest feature HTTP | P | — |
+| CT-72 | Anti-robô no painel | R29 | EP por tela | G2 | Pest feature HTTP | P | — |
+| CT-73 | Organização com aparência por tela | R26 | estado × evento | G2 | Pest feature HTTP | T | — |
+| CT-B16 | Arte fora da faixa do celular | R30 | BVA | G4 | browser | B | — |
+| CT-B17 | Social e anti-robô visíveis no painel | R29 | geometria | G4 | browser | B | — |
 | CT-B12 | Destaque sem cobrir os textos | R20 | geometria | G4 | browser | B | — |
 | CT-B13 | Reduzir movimento | R21 | estado × evento | G4 | browser | B | — |
 | CT-B14 | Sem animação no celular | R21 | estado × evento | G4 | browser | B | — |
@@ -1406,4 +1431,86 @@ Funcionalidade: Achados da revisão do adendo
       Quando o login é aberto duas vezes
       Então o aviso "Imagem do destaque ausente" é registrado uma vez
       # Origem: SEC-A1
+```
+
+## Adendos 2 e 3 — por tela, textos formatados, cor/gradiente, celular com arte, social e anti-robô
+
+Derivados pela sessão a partir dos Adendos 2 e 3 (RQ-25..RQ-33) e das P-25..P-30; o desenho foi
+julgado às cegas pelo Codex antes (ver `03` › Despachos). Mudaram oráculos antigos, cada um pela
+premissa que o substitui: CT-06 passa a fixar o formato `texto` (o legado) e o `markdown` vai para o
+CT-57; CT-30 (colapso) mede o texto visível e grava o Markdown como foi escrito (P-27); CT-43 conta
+um upload por tela (P-25); CT-B05/07/08 escrevem no editor Markdown.
+
+```gherkin
+# language: pt
+Funcionalidade: Adendos 2 e 3
+
+  Regra: R26 — Uma aparência por tela
+
+    Cenário: [CT-58] Login, cadastro e esqueci a senha usam cada um a sua aparência
+      Dado login com formulário à direita e cadastro e recuperação próprios à esquerda
+      Quando as três telas são abertas
+      Então cada uma mostra a sua frase e o seu lado
+
+    Esquema do Cenário: [CT-59] Tela sem aparência própria segue o login
+      Dado a recuperação <estado>
+      Quando a tela de recuperação é aberta
+      Então ela mostra a frase e o lado do login
+      Exemplos:
+        | estado |
+        | sem a chave |
+        | nula |
+        | com "igual ao login" |
+        | com valor inválido |
+
+    Cenário: [CT-60] Clássico escolhido numa tela vale com o login em painel, e vice-versa
+      Dado a recuperação no clássico e o login no painel (depois o contrário)
+      Então cada tela segue o seu layout
+
+    Cenário: [CT-61] Aparência gravada sem "telas" vale igual nas três telas
+
+    Esquema do Cenário: [CT-62] A família de cada página vem da classe
+      Exemplos:
+        | página | família |
+        | login, dois fatores, bloqueio, confirmação de e-mail | login |
+        | cadastro (aberto e convite) | cadastro |
+        | recuperar e redefinir senha | recuperacao |
+
+    Cenário: [CT-63] O editor grava uma tela própria a partir da cópia do login
+      Quando "Igual ao login" é desligado na aba Esqueci a senha
+      Então os campos mostram a cópia do login; o lado alterado é gravado só na tela própria
+      E religar "Igual ao login" e salvar remove a tela própria
+
+    Esquema do Cenário: [CT-64] O preview mostra a aparência da tela escolhida
+      Exemplos: login, cadastro e recuperar senha, cada um com a sua frase do rascunho
+
+    Cenário: [CT-73] Organização com aparência própria por tela
+      Então login e cadastro dela mostram cada um a sua; sem organização, a padrão sem mistura
+
+  Regra: R27 — Textos formatados (Markdown seguro)
+
+    Esquema do Cenário: [CT-57] Markdown hostil não deixa elemento executável, estilo nem imagem
+      Exemplos: HTML cru com evento, imagem Markdown, link `javascript:`, título, `<style>`, `<iframe>`
+
+    Esquema do Cenário: [CT-65] A formatação acordada chega à tela
+      Exemplos: negrito → strong, itálico → em, tachado → del, link → a[href][rel]
+
+    Esquema do Cenário: [CT-66] O teto mede o texto visível e há um teto bruto de 4 KiB
+      Exemplos: 80 visíveis em negrito (aceita), 81 (recusa), link longo com 5 visíveis (aceita), bruto > 4 KiB (recusa)
+
+    Cenário: [CT-67] Texto gravado antes aparece igual, também depois de salvo pelo editor
+
+  Regra: R28 — Cor primária e gradiente
+
+    Esquema do Cenário: [CT-68] O gradiente só usa cores validadas e um ângulo do vocabulário
+      Exemplos: vertical, horizontal, direção inválida (diagonal), cor com CSS (primária), vazias (600 e 900)
+
+    Cenário: [CT-69] "Cor primária" grava a cor vazia, e a tela usa a primária
+    Cenário: [CT-70] O gradiente não sai pelo componente fora do painel
+
+  Regra: R29 — Login social e anti-robô no painel (Adendo 3)
+
+    Esquema do Cenário: [CT-71] O login social aparece no layout painel nos três painéis
+    Esquema do Cenário: [CT-72] O anti-robô aparece no layout painel em login, cadastro e esqueci a senha
+      E a chave secreta nunca sai
 ```

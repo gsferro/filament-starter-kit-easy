@@ -3404,6 +3404,8 @@ function aparenciaDeTeste(string $qual): array
     $adendo = [
         'tamanho_do_painel' => 50, 'destaque' => 'nenhum', 'imagem_do_destaque' => null, 'tamanho_do_destaque' => 'medio',
         'ilustracao'        => 'nenhuma', 'movimento' => true, 'cor_da_ilustracao' => null,
+        // Adendo 2: gradiente e textos formatados (o editor grava Markdown, P-27).
+        'gradiente_de' => null, 'gradiente_ate' => null, 'gradiente_direcao' => 'diagonal', 'formato_dos_textos' => 'markdown',
     ];
 
     return match ($qual) {

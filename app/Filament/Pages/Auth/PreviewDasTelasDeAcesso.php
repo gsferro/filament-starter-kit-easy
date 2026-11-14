@@ -171,7 +171,20 @@ class PreviewDasTelasDeAcesso extends SimplePage
      */
     protected function urlDaImagemDoDestaque(mixed $caminho): ?string
     {
-        return $this->rascunhoAutorizado()['imagem_temporaria'] ?? AparenciaDasTelasDeAcesso::urlDaImagem($caminho);
+        $temporarias = $this->rascunhoAutorizado()['imagem_temporaria'] ?? [];
+
+        return (is_array($temporarias) ? ($temporarias[$this->familiaDaAparencia()] ?? null) : null)
+            ?? AparenciaDasTelasDeAcesso::urlDaImagem($caminho);
+    }
+
+    /** A família da tela escolhida no seletor do preview (P-26). */
+    protected function familiaDaAparencia(): string
+    {
+        return match ($this->tela) {
+            'cadastro'        => 'cadastro',
+            'recuperar-senha' => 'recuperacao',
+            default           => AparenciaDasTelasDeAcesso::FAMILIA_LOGIN,
+        };
     }
 
     /**
@@ -193,7 +206,7 @@ class PreviewDasTelasDeAcesso extends SimplePage
      * O rascunho, de novo autorizado a cada request — não só no `mount()`: quem perde a permissão
      * com o preview aberto deixa de ver o escopo no próximo update Livewire (SEC-03/CX-01).
      *
-     * @return array{escopo: string, aparencia: array<string, mixed>|null, imagem_temporaria: ?string}|null
+     * @return array{escopo: string, aparencia: array<string, mixed>|null, imagem_temporaria: array<string, string>}|null
      */
     private function rascunhoAutorizado(): ?array
     {

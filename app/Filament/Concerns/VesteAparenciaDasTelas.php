@@ -50,7 +50,9 @@ trait VesteAparenciaDasTelas
     public function aparenciaDaTela(): ?array
     {
         if (! $this->aparenciaFoiResolvida) {
-            $this->aparenciaResolvida    = self::soOQueATelaMostra($this->resolverAparencia());
+            $this->aparenciaResolvida    = self::soOQueATelaMostra(
+                AparenciaDasTelasDeAcesso::daFamilia($this->resolverAparencia(), $this->familiaDaAparencia()),
+            );
             $this->aparenciaFoiResolvida = true;
         }
 
@@ -96,6 +98,19 @@ trait VesteAparenciaDasTelas
         }
 
         return AparenciaDasTelasDeAcesso::corDoPainel($this->aparenciaDaTela(), $this->organizacaoDaAparenciaMemo());
+    }
+
+    /**
+     * O gradiente do painel (P-29), já montado só de peças fechadas. `null` fora do painel ou sem
+     * gradiente — nada além do que a tela mostra (P-16).
+     */
+    public function gradienteDoPainelDeMarca(): ?string
+    {
+        if (! $this->ehPainel()) {
+            return null;
+        }
+
+        return AparenciaDasTelasDeAcesso::gradienteDoPainel($this->aparenciaDaTela(), $this->organizacaoDaAparenciaMemo());
     }
 
     /**
@@ -152,6 +167,16 @@ trait VesteAparenciaDasTelas
     protected function resolverAparencia(): ?array
     {
         return AparenciaDasTelasDeAcesso::daOrganizacao($this->organizacaoDaAparenciaMemo());
+    }
+
+    /**
+     * A família desta tela (P-26): `login` (o padrão — login, dois fatores, bloqueio, confirmação
+     * de e-mail), `cadastro` ou `recuperacao`. Vem da classe da página, e não da URL, para valer
+     * também nos updates Livewire.
+     */
+    protected function familiaDaAparencia(): string
+    {
+        return AparenciaDasTelasDeAcesso::FAMILIA_LOGIN;
     }
 
     /** A página que conhece uma organização sobrescreve. O padrão é a aparência da instalação. */

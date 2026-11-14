@@ -34,6 +34,28 @@ login page is on.
 |---|---|
 | [![Panel with the artwork background, the logo in the middle and the network of dots](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-arte.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-arte.png) | [![Brand panel in the dark theme](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-escuro.png) |
 
+## One appearance per screen
+
+The editor has three tabs: **Login**, **Cadastro** (sign-up) and **Esqueci a senha** (forgot
+password). Each one has the same options, and the last two start with the **Igual ao login** (same as
+login) switch on — the screen follows the login, including future changes. Switched off, the screen
+gets its own appearance, starting as a copy of the login at that moment. That is how you put, for
+example, the login form on the right and the sign-up and forgot-password forms on the left.
+
+| Tab | Applies to |
+|---|---|
+| **Login** | login, two-factor challenge, session lock and e-mail confirmation |
+| **Cadastro** | open sign-up and invitation acceptance |
+| **Esqueci a senha** | password request and password reset |
+
+Each screen may even have a different layout: the login on the brand panel and the forgot-password
+screen on the classic, or the other way around. An organization with its own appearance has the same
+three tabs.
+
+Social login and the anti-bot challenge stay where they always were, inside the form, in any layout
+and on any screen: with a social provider configured, its button shows; with anti-bot protection on,
+the challenge shows.
+
 ## Brand panel options
 
 [![The brand panel fields in the Telas de acesso tab](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)
@@ -42,10 +64,11 @@ login page is on.
 |---|---|---|
 | **Form side** | Left or right; the panel goes to the other side | Right |
 | **Brand panel width** | 30% to 70% of the screen, in steps of 5; the form takes the rest (at 35%, the form takes 65%). It is the Auth Designer `mediaSize`. It does not apply on phones: there the panel is always the top strip | 50% |
-| **Panel background** | **Color** or **Identity artwork** — the same artwork as the Identity tab (or the artwork generated with the application name, when none was uploaded). A dark veil goes over the artwork, so the text stays readable | Color |
-| **Panel color** | A color in `#RRGGBB` format. Blank means the primary color — the organization's, when the screen belongs to an organization with its own color. With a light color, the panel text turns dark, so it stays readable | Blank |
-| **Headline** | Up to 80 characters, plain text. Shown on the panel, always smaller than the form title | Empty |
-| **Supporting text** | Up to 160 characters, plain text, right below the headline | Empty |
+| **Panel background** | **Color**, **Gradient** or **Identity artwork** — the same artwork as the Identity tab (or the artwork generated with the application name, when none was uploaded). A dark veil goes over the artwork, so the text stays readable | Color |
+| **Color** | **Primary color (Filament default)** — the organization's, when the screen belongs to an organization with its own color; otherwise the installation's; with neither, Filament's amber — or **Custom color**, in `#RRGGBB` format. With a light color, the panel text turns dark, so it stays readable | Primary color |
+| **Gradient** | Two `#RRGGBB` colors (blank: the primary's 600 and 900 shades) and a direction — vertical, horizontal or diagonal. Over the gradient, the headline, supporting text and name sit on a dark band, in white, readable at any point | Diagonal |
+| **Headline** | Up to 80 visible characters, with **bold**, *italic*, ~~strikethrough~~ and links — the same toolbar as the login screen footer. Shown on the panel, always smaller than the form title | Empty |
+| **Supporting text** | Up to 160 visible characters, with the same formatting, right below the headline | Empty |
 | **Logo at the top of the panel** | The identity logo (or the organization's) on a light badge, which works on any background color. With no logo uploaded, the application name is shown | On |
 | **In the middle of the panel** | **Nothing**, the **Logo** (the same as the top one, larger, on a light badge; with no logo, the application name in large letters) or an **Image of your own** | Nothing |
 | **Centerpiece size** | Small, medium or large | Medium |
@@ -56,10 +79,15 @@ login page is on.
 | **Theme switcher** | The light/dark/system selector in the corner of the screen | On |
 
 The sentences are yours: the editor shows an example as a placeholder, but the panel only shows
-what you write.
+what you write. Formatting is Markdown, like the login screen footer: the screen is public, so raw
+HTML is discarded, links only go out with a safe address, and typed images or headings don't show.
+The limit counts the text that shows, not the markup (a long link doesn't use up the 80 characters),
+with a 4 KB cap on the raw text. A sentence written before this version keeps showing exactly as
+before.
 
 **On phones**, the top strip shows **the logo only** (or the application name, when there is no
-logo). Headline, supporting text, centerpiece and illustration only show from desktop width up (1024
+logo). With an artwork background, the strip uses the panel color instead of the image: the artwork
+often has the application name drawn on it, and it would sit behind the logo. Headline, supporting text, centerpiece and illustration only show from desktop width up (1024
 px and wider).
 
 Text is always treated as text: no field accepts HTML, CSS or script, and repeated or edge spaces

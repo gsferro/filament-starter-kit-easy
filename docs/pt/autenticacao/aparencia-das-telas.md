@@ -34,6 +34,27 @@ O layout escolhido vale para as telas de autenticação vestidas pelo Auth Desig
 |---|---|
 | [![Painel com a arte de fundo, a logo no meio e a rede de pontos](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-arte.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-arte.png) | [![Painel de marca com o tema escuro](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-escuro.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-painel-escuro.png) |
 
+## Uma aparência para cada tela
+
+O editor tem três abas: **Login**, **Cadastro** e **Esqueci a senha**. Cada uma tem as mesmas
+opções, e as duas últimas começam com o interruptor **Igual ao login** ligado — a tela segue o login,
+inclusive nas mudanças futuras. Desligado, a tela passa a ter a sua aparência, que começa como cópia
+do login daquele momento. É assim que se põe, por exemplo, o formulário do login à direita e o do
+cadastro e do "esqueci a senha" à esquerda.
+
+| Aba | Vale para |
+|---|---|
+| **Login** | login, desafio de dois fatores, bloqueio de sessão e confirmação de e-mail |
+| **Cadastro** | cadastro aberto e aceite de convite |
+| **Esqueci a senha** | pedido de recuperação e redefinição de senha |
+
+Cada tela pode até ter um layout diferente: o login no painel de marca e o "esqueci a senha" no
+clássico, ou o contrário. A organização com aparência própria tem as mesmas três abas.
+
+O login social e o desafio anti-robô continuam onde sempre estiveram, dentro do formulário, em
+qualquer layout e em qualquer tela: com um provedor social configurado, o botão aparece; com a
+proteção anti-robô ligada, o desafio aparece.
+
 ## As opções do painel de marca
 
 [![Os campos do painel de marca na aba Telas de acesso](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-editor.png)
@@ -42,10 +63,11 @@ O layout escolhido vale para as telas de autenticação vestidas pelo Auth Desig
 |---|---|---|
 | **Lado do formulário** | Esquerda ou direita; o painel fica do outro lado | Direita |
 | **Largura do painel de marca** | De 30% a 70% da tela, de 5 em 5; o formulário fica com o resto (com 35%, o formulário ocupa 65%). É o `mediaSize` do Auth Designer. No celular não vale: lá o painel é sempre a faixa do topo | 50% |
-| **Fundo do painel** | **Cor** ou **Arte da identidade** — a mesma arte da aba Identidade (ou a arte gerada com o nome da aplicação, quando nenhuma foi enviada). Sobre a arte vai um véu escuro, para o texto continuar legível | Cor |
-| **Cor do painel** | Uma cor no formato `#RRGGBB`. Em branco, a cor primária — a da organização, quando a tela é de uma organização com cor própria. Com uma cor clara, o texto do painel passa a escuro, para continuar legível | Em branco |
-| **Frase de destaque** | Até 80 caracteres, texto puro. Sai no painel, sempre menor que o título do formulário | Vazia |
-| **Texto de apoio** | Até 160 caracteres, texto puro, logo abaixo da frase | Vazio |
+| **Fundo do painel** | **Cor**, **Gradiente** ou **Arte da identidade** — a mesma arte da aba Identidade (ou a arte gerada com o nome da aplicação, quando nenhuma foi enviada). Sobre a arte vai um véu escuro, para o texto continuar legível | Cor |
+| **Cor** | **Cor primária (padrão do Filament)** — a da organização, quando a tela é de uma organização com cor própria; senão, a da instalação; sem nenhuma, o âmbar do Filament — ou **Cor própria**, no formato `#RRGGBB`. Com uma cor clara, o texto do painel passa a escuro, para continuar legível | Cor primária |
+| **Gradiente** | Duas cores `#RRGGBB` (em branco: os tons 600 e 900 da primária) e uma direção — vertical, horizontal ou diagonal. Sobre o gradiente, a frase, o apoio e o nome ficam numa faixa escura, em branco, legíveis em qualquer ponto | Diagonal |
+| **Frase de destaque** | Até 80 caracteres visíveis, com **negrito**, *itálico*, ~~tachado~~ e link — a mesma barra do rodapé da tela de login. Sai no painel, sempre menor que o título do formulário | Vazia |
+| **Texto de apoio** | Até 160 caracteres visíveis, com a mesma formatação, logo abaixo da frase | Vazio |
 | **Logo no topo do painel** | A logo da identidade (ou a da organização) num selo claro, que funciona com qualquer cor de fundo. Sem logo enviada, aparece o nome da aplicação | Ligado |
 | **No meio do painel** | **Nada**, a **Logo** (a mesma do topo, maior, num selo claro; sem logo, o nome da aplicação em letras grandes) ou uma **Imagem própria** | Nada |
 | **Tamanho do destaque** | Pequeno, médio ou grande | Médio |
@@ -56,9 +78,15 @@ O layout escolhido vale para as telas de autenticação vestidas pelo Auth Desig
 | **Alternador de tema** | O seletor claro/escuro/sistema no canto da tela | Ligado |
 
 As frases são suas: o editor sugere um exemplo ("Tudo o que a sua equipe precisa, num lugar só."),
-mas o painel só mostra o que você escrever.
+mas o painel só mostra o que você escrever. A formatação é em Markdown, como no rodapé da tela de
+login: a tela é pública, então HTML cru é descartado, link só sai com endereço seguro, e imagem ou
+título digitados não aparecem. O teto conta o texto que aparece, não a marcação (um link longo não
+gasta os 80 caracteres), com um limite de 4 KB para o texto bruto. Uma frase escrita antes desta
+versão continua aparecendo exatamente como antes.
 
 **No celular**, a faixa do topo mostra **só a logo** (ou o nome da aplicação, quando não há logo).
+Com fundo de arte, a faixa usa a cor do painel no lugar da imagem: a arte costuma trazer o nome da
+aplicação desenhado, e ele ficaria atrás da logo.
 Frase, texto de apoio, destaque e ilustração aparecem só do computador para cima (a partir de 1024 px
 de largura).
 

@@ -219,7 +219,9 @@ it('[CT-05] o fallback é local e usa o padrão literal do campo', function (str
 */
 
 it('[CT-06] conteúdo hostil sai como texto, no login e no preview', function (string $campo, string $texto, string $saida): void {
-    $aparencia         = [$campo => $texto] + aparenciaDeTeste('P');
+    // Formato `texto`: a aparência gravada antes do Adendo 2, que continua texto puro (P-27).
+    // O formato `markdown` tem o seu próprio cenário (CT-57, `AparenciaDasTelasAdendoTest`).
+    $aparencia         = [$campo => $texto, 'formato_dos_textos' => 'texto'] + aparenciaDeTeste('P');
     $esperadoNaPosicao = $campo === 'frase' ? 'frase' : 'apoio';
 
     if ($saida === 'login') {
@@ -707,9 +709,11 @@ it('[CT-30] a normalização precede a contagem em pontos de código', function 
     }
 })->with([
     'trim destaque'     => ['frase', '  {80a}  ', '{80a}'],
-    'colapso destaque'  => ['frase', '{39a}   {40b}', '{39a} {40b}'],
+    // Adendo 2 (P-27): o Markdown é gravado como foi escrito (as quebras e os espaços importam);
+    // o teto mede o texto VISÍVEL, normalizado — 39 + 1 + 40 = 80 cabe.
+    'colapso destaque'  => ['frase', '{39a}   {40b}', '{39a}   {40b}'],
     'trim apoio'        => ['apoio', '  {160a}  ', '{160a}'],
-    'colapso apoio'     => ['apoio', '{79a}   {80b}', '{79a} {80b}'],
+    'colapso apoio'     => ['apoio', '{79a}   {80b}', '{79a}   {80b}'],
     'vazio destaque'    => ['frase', '', null],
     'espaços apoio'     => ['apoio', '   ', null],
     'emojis'            => ['frase', '{80emojis}', '{80emojis}'],
