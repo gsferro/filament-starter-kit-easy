@@ -1,6 +1,6 @@
 # Progresso — feat: tela de login personalizável
 
-**Estado**: em revisão — Adendos 2, 3 e 4 (2026-11-14); Adendo 4 (transição entre as telas) implementado e testado; gate dos Adendos 2 e 3 no ciclo 2 (REPROVADO → teste, QA-34 e QA-35 tratados); arte das telas de acesso gerada pelo `composer art`; merge, tag v0.53.0 e cenários sobre o commit final pendentes (RQ-17, QA-28)
+**Estado**: aprovado com débito — Adendos 2, 3 e 4 (2026-11-15); gate no ciclo 3 dos Adendos 2 e 3 e ciclo 1 do Adendo 4 com o QA-28 fechado pela rodada `f1`..`f4` sobre `e267f909`; débito: G, H, J, K; merge na `main` e tag v0.53.0 a seguir
 
 `{base}`: `main` · branch `feat/aparencia-das-telas-de-acesso`
 
@@ -239,7 +239,7 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 - [x] Rodada `e1`..`e4` sobre `7ca671df` interrompida e descartada: o ciclo 1 do gate gerou código novo depois dela (QA-35) — 2026-11-14
 - [x] Adendos 2 e 3, sobre `694ec0d8`: `pest --testsuite=Kit --parallel --processes=4` 5198 (5195 passaram, 3 pulados, 2 risky, 0 falhas); CI do PR #193 todo verde (instalacao, qualidade, telas, site) — 2026-11-14
 - [x] Adendos 2 e 3, sobre `ca469486`: `pest --testsuite=Kit --parallel` 5166 (5163 passaram, 3 pulados, 0 falhas); `--testsuite=Tenancy --parallel` 744/744; `--testsuite=Browser` 235 (197 passaram, 37 pulados, 1 falha: `DockDeAtalhosTest` CT-B02, flake de transição de tema registrado no ciclo 3, verde isolado 4/4); `phpstan` 0 erros nos arquivos tocados; `filacheck` 17/17; scripts da wiki exit 0 — 2026-11-14
-- [ ] Cenários 1 a 4 sobre o commit final (tag local `pre-final`), diretórios `f1`..`f4`, com texto gravado antes do Adendo 2, um de cada vez
+- [x] Cenários 1 a 4 sobre o commit final (`e267f909`, tag local `pre-final`), diretórios `f1`..`f4`, um de cada vez: os quatro na versão 0.53.0, com `AparenciaDasTelasPorTelaTest`, `daFamilia` e `familiaDaAparencia` presentes e o `wikis/checklist-de-release.md` copiado (CT-18); 5998 testes e 1161 pulados (o mesmo teto); `f1`, `f3` e `f4` `passed` (4837 passaram, 0 falhas); `f2` com 1 erro, o "exceeded the timeout" do `phpstan dump-parameters` no `QualidadeDeCodigoTest` (flake de carga conhecido, também em `c2` e `d2`), verde isolado (31: 29 passaram, 2 pulados); `f1`/`f2` com `aparencia_das_telas` = null; `f3`/`f4` (`kit:update` de um projeto com aparência gravada antes do Adendo 2, frase `ANTIGA <b>literal</b> &copy;`): 20 arquivos novos e 36 modificados, a migration nova aplicada, a gravação intacta no banco e `f3.depois.login.html` com a frase escapada (`ANTIGA &lt;b&gt;literal`), a regra `data-kit-transicao-entre-telas` e o painel marcado (P-32: gravação anterior conta como ligada) — 2026-11-15
 
 ## Blockers
 
@@ -278,7 +278,7 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 | Adendo 1 · 1 | REPROVADO → especificação (QA-19, QA-20) com implementação (QA-18); Major 3, Minor 6, Cosmético 1; teto APROVADO COM DÉBITO (G, H, K) | 2026-11-14 |
 | Adendos 2 e 3 · 1 | REPROVADO → especificação (QA-27, QA-31) com teste (QA-30) e implementação (QA-28); Major 4, Minor 3; teto APROVADO COM DÉBITO (G, H, J, K) | 2026-11-14 |
 | Adendos 2 e 3 · 2 | REPROVADO → teste (QA-34); Major 1 novo + QA-28 como pendência de release, Minor 1 (QA-35); teto APROVADO COM DÉBITO (G, H, J, K) | 2026-11-14 |
-| Adendos 2 e 3 · 3 / Adendo 4 · 1 | REPROVADO → implementação só pelo QA-28 (cenários sobre o commit final); Minor 3 (QA-36..38), Cosmético 1 (QA-39); com a rodada `f1`..`f4` verde, cai para o teto APROVADO COM DÉBITO (G, H, J, K) | 2026-11-14 |
+| Adendos 2 e 3 · 3 / Adendo 4 · 1 | REPROVADO → implementação só pelo QA-28 (cenários sobre o commit final); Minor 3 (QA-36..38), Cosmético 1 (QA-39); com a rodada `f1`..`f4` verde (2026-11-15), APROVADO COM DÉBITO (G, H, J, K) | 2026-11-14 |
 
 Tratamento do ciclo 1:
 
@@ -309,7 +309,7 @@ Tratamento do ciclo 3 dos Adendos 2 e 3 e do ciclo 1 do Adendo 4:
 
 | QA | Destino | O que foi feito |
 |---|---|---|
-| QA-28 | 2 | rodada `f1`..`f4` sobre o commit final, depois destas correções (nenhuma mudança de `app/`/`resources/` depois dela) |
+| QA-28 | 2 | rodada `f1`..`f4` sobre o commit final `e267f909`, depois destas correções (nenhuma mudança de `app/`/`resources/` depois dela): verde, registrada na Verificação Final — 2026-11-15 |
 | QA-36 | 1 | passo 12 do `01` (RD-D1, CT-102..106, `pagereveal`); P-32 com a regra da raiz clássica; aspas da `# Origem` do CT-102; badge; `## Testes`; despachos e Verificação Final em ordem; degradação do Adendo 4; oráculo do `04`/`05`; "Transição entre as telas" no glossário |
 | QA-37 | 1 | P-35: na organização vale a opção da instalação, sem interruptor no formulário dela; CT-104/CT-105 antes da correção; ajuda e docs pt/en |
 | QA-38 | 3 | CT-106 (aceite de convite, cadastro aberto, cadastro unificado) com M144; derivado pela sessão (degradação declarada) |
