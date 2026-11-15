@@ -1,6 +1,6 @@
 # Casos de Teste de Browser — Aparência das telas de acesso
 
-> Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11. Adendo 1 (seções no fim): RQ-17..RQ-24 e P-19..P-24, derivados pela sessão *(alterado em 2026-11-14: QA-23)*. Adendos 2 e 3 (seção no fim): RQ-25..RQ-33 e P-25..P-31, derivados pela sessão. Oráculo atual: RQ-01..RQ-33 e P-01..P-31 *(alterado em 2026-11-14: QA-30)*.
+> Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11. Adendo 1 (seções no fim): RQ-17..RQ-24 e P-19..P-24, derivados pela sessão *(alterado em 2026-11-14: QA-23)*. Adendos 2 e 3 (seção no fim): RQ-25..RQ-33 e P-25..P-31, derivados pela sessão. Oráculo atual: RQ-01..RQ-36 e P-01..P-35 *(alterado em 2026-11-14: QA-30)*.
 >
 > Cenários: 19 · Regras: 8 · Mutantes previstos: 23 · Sem matador: 0 *(2026-11-14, depois do CT-B19 (Adendo 4); os `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho aplicados a este arquivo, com `\[CT-B[0-9]+\]` no padrão de cenário, 2026-11-14; as regras dos Adendos estão no `Regra:` do Gherkin, sem `## Regra` próprio; o sem matador é o M108, lacuna declarada do CT-B16)*
 >

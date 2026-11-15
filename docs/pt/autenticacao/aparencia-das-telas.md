@@ -142,6 +142,8 @@ e só o conteúdo troca.
 
 - A opção **Transição entre as telas** fica na seção **Login** e vale para todas as telas, porque a
   animação depende das duas pontas: a tela de onde se sai e a tela aonde se chega.
+- Com organizações, vale a opção da instalação: o "esqueci a senha" usa sempre a aparência padrão,
+  e a animação precisa das duas telas — por isso o formulário da organização não tem o interruptor.
 - Só entre telas no painel de marca: indo para uma tela no clássico, ou depois de entrar no sistema, a
   troca é a de sempre.
 - Só no computador (a partir de 1024 px). No celular o painel é a faixa do topo e não troca de lado.

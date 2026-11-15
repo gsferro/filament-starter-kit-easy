@@ -848,3 +848,35 @@ it('[CT-96] "cor primária" na aparência da organização usa a primária da or
 
     expect($estilo)->toContain('--kit-painel-fundo: #7c3aed');
 })->group('tenancy');
+
+/**
+ * QA-37 do gate (ciclo 3), P-35: a transição entre as telas é da instalação. A recuperação de senha
+ * usa sempre a padrão (P-31), e a transição exige as duas pontas — então o login da organização
+ * segue a opção da instalação, não uma própria, e o formulário da organização não oferece o
+ * interruptor.
+ */
+it('[CT-104] na organização, a transição segue a opção da instalação', function (bool $daInstalacao, bool $daOrganizacao): void {
+    [$acme] = organizacoesAB();
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => $daInstalacao]);
+    $acme->update(['aparencia_das_telas' => [...aparenciaDeTeste('A'), 'transicao_entre_telas' => $daOrganizacao]]);
+
+    $login = arvoreDoHtml(loginDe('/app/login?org=acme'));
+
+    expect(textoDoPainelDeMarca(loginDe('/app/login?org=acme'), 'frase'))->toBe('ORG A')
+        ->and($login->query('//head/style[@data-kit-transicao-entre-telas]')->length)->toBe($daInstalacao ? 1 : 0)
+        ->and($login->query('//*[@data-kit-aparencia="painel"][@data-kit-transicao]')->length)->toBe($daInstalacao ? 1 : 0);
+})->with([
+    'instalação ligada, organização desligada' => [true, false],
+    'instalação desligada, organização ligada' => [false, true],
+])->group('tenancy');
+
+it('[CT-105] o formulário da organização não oferece a transição entre as telas', function (): void {
+    [$acme] = organizacoesAB();
+    $this->actingAs(usuarioComPapel('master_global'));
+
+    $editor   = editorDaOrganizacao($acme)->fillForm(['usar_aparencia_padrao' => false]);
+    $caminhos = collect($editor->instance()->form->getFlatComponents(withHidden: true))->map(fn ($c): string => (string) $c->getStatePath());
+
+    expect($caminhos->filter(fn (string $c): bool => str_ends_with($c, 'transicao_entre_telas'))->all())->toBe([])
+        ->and($caminhos->contains('data.aparencia_das_telas.alternador_de_tema'))->toBeTrue();
+})->group('tenancy');

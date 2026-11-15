@@ -272,6 +272,15 @@ final class AparenciaDasTelasDeAcesso
     }
 
     /**
+     * A opção "Transição entre as telas" da instalação (P-32, P-35): a do login da padrão, ligada
+     * quando não há nada gravado.
+     */
+    public static function transicaoDaInstalacao(): bool
+    {
+        return (bool) (self::global()['transicao_entre_telas'] ?? true);
+    }
+
+    /**
      * A da instalação — `config('kit.identidade.aparencia_das_telas')`, já sobreposta pelo banco
      * no boot (`ConfiguracoesDoKit::aplicarNaConfig()`).
      *

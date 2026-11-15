@@ -386,7 +386,9 @@ Nenhuma nova.
 - **CSS** (`kit.css` e o espelho publicado): `view-transition-name` no `.fi-auth-media-wrapper`
   (`kit-painel`) e no `.fi-auth-form-container` (`kit-formulario`); o grupo do formulário sem
   animação, o antigo invisível e o novo com fade-in depois do início do deslize (P-34)
-- **Testes**: CT-98..CT-101 e CT-B19 (prova pelo `pageswap` da página de origem)
+- **Testes**: CT-98..CT-103 e CT-106 (Kit), CT-104/CT-105 (Tenancy) e CT-B19 (prova pelo `pageswap` da origem e pelo `pagereveal` do destino) *(alterado em 2026-11-14: revisão do diff do Adendo 4 e QA-36/37/38 do gate)*
+- **Raiz clássica** (RD-D1): com o login no clássico, `normalizar()` guarda a opção na raiz e `telaParaOFormulario()` a reabre
+- **Organização** (P-35): `aparenciaDaTela()` aplica a opção da instalação (`transicaoDaInstalacao()`); o formulário da organização não tem o interruptor
 - **Arte e docs**: `telas-de-acesso-transicao.gif` (quadros do meio reconstruídos — o screenshot do
   Pest adianta as animações até o fim); seção "Transição entre as telas" nas docs pt/en
 

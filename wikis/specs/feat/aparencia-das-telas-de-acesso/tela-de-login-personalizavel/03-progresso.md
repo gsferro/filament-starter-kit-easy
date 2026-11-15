@@ -115,7 +115,8 @@ Diff `cbb65fb6..81f62ce6` (sem `wikis/` e `art/`). Workflow de 4 revisores em pa
 - [x] Testes (`vendor/bin/pest <arquivo> --compact`): CT-98..CT-101 12/12; CT-B19 2/2 (o `pageswap` da página de login traz `viewTransition` só com a opção ligada); os 316 casos dos arquivos da feature seguem verdes com a chave nova nas fixtures — 2026-11-14
 - [x] Falsificabilidade: sem a cópia da opção do login para as telas próprias, as 4 linhas do CT-99 caem — 2026-11-14
 - [x] Arte: `telas-de-acesso-transicao.gif` (5 quadros); os 3 do meio são reconstruídos a partir das posições medidas nas duas páginas, porque o `screenshot()` do Pest usa `animations: 'disabled'` e encerra a transição antes da foto (medido: com `pause()`/`currentTime` o quadro sai no estado final) — 2026-11-14
-- [x] Docs pt/en ("Transição entre as telas" e a linha na tabela de opções), CHANGELOG e README; badge 2.592 — 2026-11-14
+- [x] Docs pt/en ("Transição entre as telas" e a linha na tabela de opções), CHANGELOG e README; badge 2.594 depois da revisão do diff e 2.597 depois do gate *(alterado em 2026-11-14: QA-36 — dizia 2.592)* — 2026-11-14
+- [x] Gate (ciclo 3 dos Adendos 2 e 3 e ciclo 1 do Adendo 4): QA-37 virou P-35 (na organização vale a opção da instalação; o interruptor sai do formulário dela) com CT-104/CT-105 escritos antes da correção (os 3 casos falharam sem ela); QA-38 virou CT-106 (aceite de convite, cadastro aberto e unificado); QA-39 refez as capturas do editor (o interruptor aparece no quadro 4); QA-36 reconciliou `01`, `03`, `04`, `05`, P-32 e glossário — Tenancy da feature 86/86, CT-106 3/3 — 2026-11-14
 
 ## Revisão do Diff — Adendo 4
 
@@ -155,9 +156,9 @@ Diff `fe9ea589..0d9034fa` (sem `wikis/`, `art/`, `docs/`). Workflow: Codex (`exe
 | `tests/Kit/AparenciaDasTelasDeAcessoTest.php` | CT do 04 com destino K (Kit) |
 | `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php` | CT do 04 com destino T (Tenancy) |
 | `tests/Kit/AparenciaDasTelasDeAcessoEntregaTest.php` | CT-23, CT-24 |
-| `tests/Browser/AparenciaDasTelasDeAcessoTest.php` | CT-B01..CT-B18 |
+| `tests/Browser/AparenciaDasTelasDeAcessoTest.php` | CT-B01..CT-B19 |
 | `tests/Kit/AparenciaDasTelasAdendoTest.php` | CT do Adendo 1 (CT-43..CT-56) com destino K |
-| `tests/Kit/AparenciaDasTelasPorTelaTest.php` | CT-57..CT-92 com destino K |
+| `tests/Kit/AparenciaDasTelasPorTelaTest.php` | CT-57..CT-106 com destino K |
 | `tests/BrowserTenancy/CapturaDeArteTest.php` | arte das telas de acesso (só com `KIT_ART=1`) |
 | cenários do checklist de release (sessão) | CT-21, CT-27 |
 
@@ -237,8 +238,8 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 - [x] Cenários 1 a 4 sobre `e5b0d157` (Adendo 1; tags locais `pre-adendo-final` e `pre-adendo-base`), diretórios `d1`..`d4`: os quatro com 5857 testes e 1161 pulados (o mesmo teto da rodada anterior); `d3` e `d4` (`kit:update` de um projeto com painel gravado antes do adendo) `passed`, 4696 passaram, 0 falhas; `d1` e `d2` com 2 erros cada, ambos "exceeded the timeout" do `phpstan dump-parameters` (flake de carga conhecido). Prova de P-23 em `d3.login.depois.html`: `--media-size: 50%`, `media-right` e a frase `ANTIGA` presentes, sem `data-kit-destaque` — 2026-11-14
 - [x] Rodada `e1`..`e4` sobre `7ca671df` interrompida e descartada: o ciclo 1 do gate gerou código novo depois dela (QA-35) — 2026-11-14
 - [x] Adendos 2 e 3, sobre `694ec0d8`: `pest --testsuite=Kit --parallel --processes=4` 5198 (5195 passaram, 3 pulados, 2 risky, 0 falhas); CI do PR #193 todo verde (instalacao, qualidade, telas, site) — 2026-11-14
-- [ ] Cenários 1 a 4 sobre o commit final (tag local `pre-final`), diretórios `f1`..`f4`, com texto gravado antes do Adendo 2, um de cada vez
 - [x] Adendos 2 e 3, sobre `ca469486`: `pest --testsuite=Kit --parallel` 5166 (5163 passaram, 3 pulados, 0 falhas); `--testsuite=Tenancy --parallel` 744/744; `--testsuite=Browser` 235 (197 passaram, 37 pulados, 1 falha: `DockDeAtalhosTest` CT-B02, flake de transição de tema registrado no ciclo 3, verde isolado 4/4); `phpstan` 0 erros nos arquivos tocados; `filacheck` 17/17; scripts da wiki exit 0 — 2026-11-14
+- [ ] Cenários 1 a 4 sobre o commit final (tag local `pre-final`), diretórios `f1`..`f4`, com texto gravado antes do Adendo 2, um de cada vez
 
 ## Blockers
 
@@ -277,6 +278,7 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 | Adendo 1 · 1 | REPROVADO → especificação (QA-19, QA-20) com implementação (QA-18); Major 3, Minor 6, Cosmético 1; teto APROVADO COM DÉBITO (G, H, K) | 2026-11-14 |
 | Adendos 2 e 3 · 1 | REPROVADO → especificação (QA-27, QA-31) com teste (QA-30) e implementação (QA-28); Major 4, Minor 3; teto APROVADO COM DÉBITO (G, H, J, K) | 2026-11-14 |
 | Adendos 2 e 3 · 2 | REPROVADO → teste (QA-34); Major 1 novo + QA-28 como pendência de release, Minor 1 (QA-35); teto APROVADO COM DÉBITO (G, H, J, K) | 2026-11-14 |
+| Adendos 2 e 3 · 3 / Adendo 4 · 1 | REPROVADO → implementação só pelo QA-28 (cenários sobre o commit final); Minor 3 (QA-36..38), Cosmético 1 (QA-39); com a rodada `f1`..`f4` verde, cai para o teto APROVADO COM DÉBITO (G, H, J, K) | 2026-11-14 |
 
 Tratamento do ciclo 1:
 
@@ -302,6 +304,16 @@ Tratamento do ciclo 2 (commit `d343fc56`):
 | QA-12 | 1 | PRD e `03` (rules) dizem que a página exige `canAccessPanel(admin)` |
 | QA-13 | 1 | P-02 sem a condição "enquanto Q2 não é respondida" |
 | QA-14 | 1 | cabeçalho do `04` no formato do template |
+
+Tratamento do ciclo 3 dos Adendos 2 e 3 e do ciclo 1 do Adendo 4:
+
+| QA | Destino | O que foi feito |
+|---|---|---|
+| QA-28 | 2 | rodada `f1`..`f4` sobre o commit final, depois destas correções (nenhuma mudança de `app/`/`resources/` depois dela) |
+| QA-36 | 1 | passo 12 do `01` (RD-D1, CT-102..106, `pagereveal`); P-32 com a regra da raiz clássica; aspas da `# Origem` do CT-102; badge; `## Testes`; despachos e Verificação Final em ordem; degradação do Adendo 4; oráculo do `04`/`05`; "Transição entre as telas" no glossário |
+| QA-37 | 1 | P-35: na organização vale a opção da instalação, sem interruptor no formulário dela; CT-104/CT-105 antes da correção; ajuda e docs pt/en |
+| QA-38 | 3 | CT-106 (aceite de convite, cadastro aberto, cadastro unificado) com M144; derivado pela sessão (degradação declarada) |
+| QA-39 | 1 | capturas do editor refeitas pelo `composer art` com o interruptor |
 
 Tratamento do ciclo 2 dos Adendos 2 e 3:
 
@@ -382,12 +394,13 @@ Step 12 (2026-11-14): nenhum candidato passa em *Vale virar rule*. As decisões 
 | 27 | 11 (CI) | Codex `exec --yolo` / não exposto | duas falhas do job `telas` no CI de `7ca671df`; sem rodar testes | ambas (b) prováveis, sem defeito da branch | — | CI de `694ec0d8` todo verde: as duas não se repetiram |
 | 28 | 11 (Adendos 2 e 3) | `fw-qa-gate` / herdado | path da wiki, URL servida, `diff --stat`, base; sem suítes inteiras | ciclo 2: REPROVADO → teste, QA-34 (Major) e QA-35 (Minor) | 208 k tokens · 586 s | QA-34 reproduzido pelos greps do relatório; o `git status` que o gate estranhou era a arte desta sessão |
 | 29 | 9 (Adendos 2 e 3) | Codex `exec --yolo` (revisor cego) / não exposto | diff `ca469486..HEAD` de `app`/`resources`/`tests`/`public/css` | CX-C1 (Minor), reproduzido fora do repositório | — | CT-97 cai sem a correção |
+| 30 | 7 (QA-34) | `general-purpose` com `feature-test-design` / herdado | `00`, `04`, glossário, nomes dos testes | Gherkin de CT-80..CT-96, M109..M132; 6 divergências teste × cenário | 162 k tokens · 354 s | 3 divergências viraram teste mais forte (CT-85, 88, 92); CT-96 respondida no `04` (regra da cor sólida do QA-10); CT-81 e CT-84 só de forma |
 | 31 | 3 (Adendo 4) | Codex `exec --yolo` (juiz cego) / não exposto | pedido verbatim, proposta X, repositório | X corrigida: fade do formulário, nome no wrapper, opção comum, só ≥ 1024 px | — | correções conferidas no código (layout do auth-designer, `@stack('styles')` do layout base) |
 | 32 | 9 (Adendo 4) | Codex `exec --yolo` (revisor cego) / não exposto | diff `fb051a17..55c5c09f` | CX-D1 (Major), CX-D2, CX-D3 | — | CX-D1 = RD-D1, reproduzido pelos dois |
 | 33 | 9 (Adendo 4) | `fw-revisor-diff` / herdado | o mesmo diff, eixos, Superfície | RD-D1 (Major), RD-D2, RD-D3 | 64 k tokens · 181 s | CT-102 cai sem a correção |
-| 30 | 7 (QA-34) | `general-purpose` com `feature-test-design` / herdado | `00`, `04`, glossário, nomes dos testes | Gherkin de CT-80..CT-96, M109..M132; 6 divergências teste × cenário | 162 k tokens · 354 s | 3 divergências viraram teste mais forte (CT-85, 88, 92); CT-96 respondida no `04` (regra da cor sólida do QA-10); CT-81 e CT-84 só de forma |
+| 34 | 11 (Adendos 2, 3 e 4) | `fw-qa-gate` / herdado | path da wiki, URL servida, `diff --stat`, base; sem suítes inteiras | ciclo 3 dos Adendos 2 e 3 e ciclo 1 do Adendo 4: REPROVADO → implementação só pelo QA-28; QA-36..QA-39 (Minor/Cosmético) | 217 k tokens · 897 s | QA-37 reproduzido pelos CT-104/CT-105 antes da correção |
 
-Degradações: `search-docs` indisponível; Ponytail em passe manual. Adendos 2 e 3: os cenários R26–R30 foram derivados pela sessão; o gate (QA-30) mandou reescrevê-los pela `feature-test-design` e passar pelo `fw-adversario-ct` — feito depois do gate (ver Despachos). Adendo 1: os cenários CT-43..CT-56 e CT-B09..CT-B15 foram derivados pela sessão, não às cegas pela `feature-test-design`; a revisão adversarial independente (`fw-adversario-ct`) rodou sobre o conjunto antes do step 9, e os acrescentados depois dela (CT-53..CT-56, CT-B12..CT-B15) não tiveram re-revisão *(alterado em 2026-11-14: QA-22)*.
+Degradações: `search-docs` indisponível; Ponytail em passe manual. Adendo 4: os cenários CT-98..CT-106 e CT-B19 foram derivados pela sessão, não às cegas pela `feature-test-design`, e não houve revisão adversarial dos CT do Adendo 4 (área de perfil padrão); a revisão do diff com dois revisores cegos e o gate acrescentaram CT-102..CT-106 *(QA-36)*. Adendos 2 e 3: os cenários R26–R30 foram derivados pela sessão; o gate (QA-30) mandou reescrevê-los pela `feature-test-design` e passar pelo `fw-adversario-ct` — feito depois do gate (ver Despachos). Adendo 1: os cenários CT-43..CT-56 e CT-B09..CT-B15 foram derivados pela sessão, não às cegas pela `feature-test-design`; a revisão adversarial independente (`fw-adversario-ct`) rodou sobre o conjunto antes do step 9, e os acrescentados depois dela (CT-53..CT-56, CT-B12..CT-B15) não tiveram re-revisão *(alterado em 2026-11-14: QA-22)*.
 
 ## Referências Abertas
 

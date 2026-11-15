@@ -142,6 +142,8 @@ changes.
 
 - The **Transição entre as telas** option lives in the **Login** section and applies to every screen,
   because the animation depends on both ends: the screen you leave and the screen you reach.
+- With organizations, the installation's option applies: forgot password always uses the default
+  appearance, and the animation needs both screens — that's why the organization form has no switch.
 - Only between brand-panel screens: going to a classic screen, or after signing in, the change is the
   usual one.
 - Only on desktop (1024 px and up). On phones the panel is the top strip and doesn't change sides.

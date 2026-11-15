@@ -74,7 +74,7 @@ final class EditorDeAparenciaDasTelas
                 ->collapsible()
                 ->persistCollapsed()
                 ->id('aparencia-das-telas-login')
-                ->schema(self::camposDaTela(raiz: true))
+                ->schema(self::camposDaTela(raiz: true, daOrganizacao: $daOrganizacao))
                 ->columns(2)
                 ->columnSpanFull(),
             self::secaoDeTelaPropria('cadastro', 'Cadastro', 'heroicon-o-user-plus', 'Vale para o cadastro aberto e para o aceite de convite.'),
@@ -152,7 +152,7 @@ final class EditorDeAparenciaDasTelas
      *
      * @return array<Component>
      */
-    private static function camposDaTela(bool $raiz): array
+    private static function camposDaTela(bool $raiz, bool $daOrganizacao = false): array
     {
         $ehPainel = static fn (Get $get): bool => $get('layout') === AparenciaDasTelasDeAcesso::LAYOUT_PAINEL;
 
@@ -391,11 +391,12 @@ final class EditorDeAparenciaDasTelas
                 ->live()
                 ->visible($ehPainel),
 
-            // Uma opção só, no login: o efeito depende das duas telas (P-32, Adendo 4).
-            ...($raiz ? [
+            // Uma opção só, no login da instalação: o efeito depende das duas telas (P-32), e a
+            // organização segue a da instalação (P-35).
+            ...($raiz && ! $daOrganizacao ? [
                 Toggle::make('transicao_entre_telas')
                     ->label('Transição entre as telas')
-                    ->helperText('Ao ir do login para o cadastro ou o "esqueci a senha" (e de volta), o painel desliza para o lado da outra tela e o formulário aparece aos poucos. Vale entre telas no painel de marca, em computador, nos navegadores com suporte; quem pediu ao sistema para reduzir movimento não vê animação.')
+                    ->helperText('Ao ir do login para o cadastro ou o "esqueci a senha" (e de volta), o painel desliza para o lado da outra tela e o formulário aparece aos poucos. Vale entre telas no painel de marca, em computador, nos navegadores com suporte; quem pediu ao sistema para reduzir movimento não vê animação. Vale também para as organizações.')
                     ->default(true)
                     ->visible($ehPainel)
                     ->dehydratedWhenHidden(),

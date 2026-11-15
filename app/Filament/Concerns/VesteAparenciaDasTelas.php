@@ -50,9 +50,15 @@ trait VesteAparenciaDasTelas
     public function aparenciaDaTela(): ?array
     {
         if (! $this->aparenciaFoiResolvida) {
-            $this->aparenciaResolvida    = self::soOQueATelaMostra(
-                AparenciaDasTelasDeAcesso::daFamilia($this->resolverAparencia(), $this->familiaDaAparencia()),
-            );
+            $tela = AparenciaDasTelasDeAcesso::daFamilia($this->resolverAparencia(), $this->familiaDaAparencia());
+
+            // A transição entre as telas é da instalação, também na organização (P-35): a
+            // recuperação de senha usa sempre a padrão, e a transição exige as duas pontas.
+            if ($tela !== null) {
+                $tela['transicao_entre_telas'] = AparenciaDasTelasDeAcesso::transicaoDaInstalacao();
+            }
+
+            $this->aparenciaResolvida    = self::soOQueATelaMostra($tela);
             $this->aparenciaFoiResolvida = true;
         }
 

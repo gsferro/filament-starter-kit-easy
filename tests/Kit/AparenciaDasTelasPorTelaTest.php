@@ -758,6 +758,29 @@ it('[CT-103] as páginas únicas do login unificado participam da transição', 
     expect(participaDaTransicao(htmlDe($caminho)))->toBeTrue();
 })->with(['/login', '/esqueci-minha-senha'])->group('kit');
 
+/** QA-38 do gate (ciclo 3): as telas de cadastro também participam (RQ-34 cita o cadastro). */
+it('[CT-106] as telas de cadastro participam da transição', function (string $tela): void {
+    config(['kit.registro.habilitado' => true, 'kit.registro.aprovacao_manual' => false, 'kit.registro.verificar_email' => false]);
+    definirAparenciaGlobal([
+        ...painelComFrase('direita', 'LOGIN', ['transicao_entre_telas' => true]),
+        'telas' => ['cadastro' => painelComFrase('esquerda', 'CAD')],
+    ]);
+
+    $caminho = match ($tela) {
+        'convite'   => '/app/register?token='.conviteDoCadastro(),
+        'aberto'    => '/app/register',
+        'unificado' => (function (): string {
+            ligarLoginUnificado();
+
+            return '/cadastro';
+        })(),
+    };
+    $html = htmlDe($caminho);
+
+    expect(textoDoPainelDeMarca($html, 'frase'))->toBe('CAD')
+        ->and(participaDaTransicao($html))->toBeTrue();
+})->with(['convite', 'aberto', 'unificado'])->group('kit');
+
 it('[CT-101] o formulário não desliza: só o painel tem a animação de posição, e o formulário entra por opacidade', function (string $arquivo): void {
     $css = preg_replace('/\s+/', ' ', (string) file_get_contents(base_path($arquivo)));
 
