@@ -138,7 +138,7 @@ que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
 
-**Na v0.53.0 há duas migrations, e as telas de acesso continuam idênticas.** Rode `php artisan migrate`
+**Na v0.53.1 há duas migrations, e as telas de acesso continuam idênticas.** Rode `php artisan migrate`
 (a configuração `aparencia_das_telas` e a coluna `tenants.aparencia_das_telas`, as duas vazias) e
 `php artisan filament:assets` (CSS do kit). Nada muda até alguém escolher o painel de marca em
 **Configurações da aplicação › Telas de acesso** (ver [Aparência das telas](../../autenticacao/aparencia-das-telas/)).

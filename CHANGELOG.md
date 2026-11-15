@@ -5,9 +5,11 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-## [0.53.0] - 2026-11-14
+## [0.53.1] - 2026-11-15
 
-A v0.53.0 traz a **aparência das telas de acesso** escolhida na tela, com preview e por organização. Duas migrations, as duas vazias: as telas continuam idênticas até alguém escolher o painel de marca. Wiki: `wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/`.
+A v0.53.1 é a entrega da v0.53.0. A tag `v0.53.0` foi publicada por engano no commit da v0.52.1 e o Packagist, que não deixa uma versão estável mudar de conteúdo, guardou essa referência: quem instalou a v0.53.0 pelo `composer create-project` recebeu o código da v0.52.1, com o marcador `0.52.1`. A tag `v0.53.0` voltou a esse commit e não deve ser usada; este roteiro vai direto da v0.52.1 para a v0.53.1.
+
+A v0.53.1 traz a **aparência das telas de acesso** escolhida na tela, com preview e por organização. Duas migrations, as duas vazias: as telas continuam idênticas até alguém escolher o painel de marca. Wiki: `wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/`.
 
 ### Adicionado
 

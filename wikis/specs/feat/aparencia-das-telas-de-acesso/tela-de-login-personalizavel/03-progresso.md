@@ -1,6 +1,6 @@
 # Progresso — feat: tela de login personalizável
 
-**Estado**: aprovado com débito — Adendos 2, 3 e 4 (2026-11-15); gate no ciclo 3 dos Adendos 2 e 3 e ciclo 1 do Adendo 4 com o QA-28 fechado pela rodada `f1`..`f4` sobre `e267f909`; débito: G, H, J, K; merge na `main` e tag v0.53.0 a seguir
+**Estado**: concluída com débito (G, H, J, K) — publicada na v0.53.1 (2026-11-15); Q1, Q12 e P-35 confirmadas pelo solicitante
 
 `{base}`: `main` · branch `feat/aparencia-das-telas-de-acesso`
 
@@ -69,7 +69,7 @@
 - [x] Falsificabilidade: CT-45 cai com o formato do caminho aberto (3 linhas); CT-B09 cai sem a regra do celular (2/2); CT-02/CT-10 caíram com `dehydratedWhenHidden()` ausente. CT-50 NÃO distingue o gate de `destaqueDoPainelDeMarca()` no clássico (o normalizador já zera o clássico): o gate fica como defesa em profundidade — 2026-11-14
 - [x] Capturas novas: painel, celular, escuro, arte, editor, preview, organização (`art/telas-de-acesso-*.png`) — 2026-11-14
 - [x] Revisão do diff do adendo (step 9) — ver "Revisão do Diff — Adendo 1" — 2026-11-14
-- [ ] Quality gate do adendo, CI do PR, merge, tag e cenários 1–4 (RQ-17)
+- [x] Quality gate do adendo, CI do PR, merge, tag e cenários 1–4 (RQ-17): PR #193 na `main` (`bfce1edd`). A tag `v0.53.0` saiu primeiro, por engano, sobre a `main` antiga (`216dd4b0`), e o Packagist guardou essa referência como imutável; a versão foi publicada como v0.53.1 e a tag `v0.53.0` voltou para `216dd4b0`, como o Packagist pede. Q1, Q12 e P-35 confirmadas pelo solicitante — 2026-11-15
 
 ## Revisão do Diff — Adendo 1
 

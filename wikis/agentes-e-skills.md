@@ -184,7 +184,7 @@ versão; o roteiro que vale para a próxima atualização é sempre o do link.
 
 <!-- roteiro-de-atualizacao:inicio -->
 
-# Roteiro de atualização — v0.52.1 → v0.53.0
+# Roteiro de atualização — v0.52.1 → v0.53.1
 
 Leia o roteiro inteiro antes de alterar um arquivo do projeto.
 
@@ -192,11 +192,11 @@ Leia o roteiro inteiro antes de alterar um arquivo do projeto.
 
 Origem: v0.52.1
 
-Destino: v0.53.0
+Destino: v0.53.1
 
-Data: 2026-11-14
+Data: 2026-11-15
 
-Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.53.0/wikis/atualizacoes/v0.53.0.md
+Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.53.1/wikis/atualizacoes/v0.53.1.md
 
 Padrão do link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 
@@ -206,7 +206,7 @@ Leia também o mesmo arquivo na `main`. Se o arquivo da `main` trouxer a linha `
 
 ## Antes de começar
 
-O pedido que dispara este roteiro é: “Atualize meu projeto da v0.52.1 para a v0.53.0 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão do link com a versão destino `v0.53.0` e confira que o endereço montado é o mesmo da Identificação.
+O pedido que dispara este roteiro é: “Atualize meu projeto da v0.52.1 para a v0.53.1 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão do link com a versão destino `v0.53.1` e confira que o endereço montado é o mesmo da Identificação.
 
 Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e PowerShell, exceto onde aparecem as duas formas. Guarde as saídas para o relatório final.
 
@@ -225,7 +225,7 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan tinker --execute 'echo config("kit.version");'
    ```
 
-   Esperado: `0.52.1`. Outro valor encerra este roteiro sem aplicar arquivos: `0.53.0` indica que o marcador já está no destino; uma versão anterior a `0.52.1` exige primeiro as atualizações intermediárias, em ordem; uma versão posterior a `0.53.0` exige outro roteiro. Informe ao dono o valor encontrado.
+   Esperado: `0.52.1`. Outro valor encerra este roteiro sem aplicar arquivos: `0.53.1` indica que o marcador já está no destino; `0.53.0` vem da tag retirada (veja O que muda nesta versão) e também encerra; uma versão anterior a `0.52.1` exige primeiro as atualizações intermediárias, em ordem; uma versão posterior a `0.53.1` exige outro roteiro. Informe ao dono o valor encontrado.
 
 3. **O banco está acessível, e a impressão dos dados foi guardada.**
 
@@ -244,22 +244,22 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    ```bash
    git remote
    git tag -l "kit-*"
-   git branch --list kit-update/v0.53.0
+   git branch --list kit-update/v0.53.1
    ```
 
-   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.53.0`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
+   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.53.1`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
 
 5. **O dry-run corresponde à release, sem dependência nova.**
 
    ```bash
-   php artisan kit:update --from=0.52.1 --tag=v0.53.0 --dry-run --keep-remote --no-interaction
-   git diff --stat kit-v0.52.1 kit-v0.53.0 -- composer.json composer.lock package.json package-lock.json
-   git diff --name-status kit-v0.52.1 kit-v0.53.0 -- database/migrations database/settings tests/Kit tests/Tenancy
+   php artisan kit:update --from=0.52.1 --tag=v0.53.1 --dry-run --keep-remote --no-interaction
+   git diff --stat kit-v0.52.1 kit-v0.53.1 -- composer.json composer.lock package.json package-lock.json
+   git diff --name-status kit-v0.52.1 kit-v0.53.1 -- database/migrations database/settings tests/Kit tests/Tenancy
    ```
 
    Esperado:
 
-   - resumo entre `kit-v0.52.1` e `kit-v0.53.0`, com os caminhos rotulados `novo no kit`, `modificado` ou `removido do kit`, e a informação de que nenhum arquivo foi tocado;
+   - resumo entre `kit-v0.52.1` e `kit-v0.53.1`, com os caminhos rotulados `novo no kit`, `modificado` ou `removido do kit`, e a informação de que nenhum arquivo foi tocado;
    - diff dos quatro arquivos de dependências **vazio**: esta versão não traz pacote novo nem bump, e não há install a fazer;
    - exatamente duas migrations novas: `database/migrations/2026_11_13_100000_add_aparencia_das_telas_to_tenants_table.php` e `database/settings/2026_11_13_100000_add_aparencia_das_telas_to_kit_settings.php`;
    - os arquivos novos `tests/Kit/AparenciaDasTelasDeAcessoTest.php`, `tests/Kit/AparenciaDasTelasAdendoTest.php`, `tests/Kit/AparenciaDasTelasDeAcessoEntregaTest.php`, `tests/Kit/fixtures/ComponenteDeRascunhoDeTeste.php` e `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php`;
@@ -275,7 +275,7 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
 
    ```bash
    git diff --name-only kit-v0.52.1 HEAD -- caminho/do/modificado
-   git diff --name-only kit-v0.53.0 HEAD -- caminho/do/novo
+   git diff --name-only kit-v0.53.1 HEAD -- caminho/do/novo
    ```
 
    Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos. Repita sem `--name-only` para descrever a edição ao dono.
@@ -294,11 +294,13 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
 
 ## O que muda nesta versão
 
-A v0.53.0 traz a **aparência das telas de acesso**, escolhida na própria aplicação. A aba **Telas de acesso** de *Configurações da aplicação*, no `/admin`, troca o layout das telas de autenticação dos três painéis (login, cadastro, recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de sessão) entre o **clássico**, que é o de sempre e continua o default, e o **painel de marca**: o formulário de um lado e, do outro, um painel arredondado de largura escolhida (30% a 70%), com cor ou arte de fundo, a logo num selo claro, um destaque central (a logo grande ou uma imagem PNG, JPEG ou WebP enviada), uma ilustração de rede de pontos parada ou em movimento, com botão de pausar e respeito a "reduzir movimento", e duas frases opcionais com negrito, itálico, tachado e link (Markdown seguro). O fundo pode ser a cor primária, uma cor própria, um **gradiente** ou a arte. No celular o painel vira uma faixa curta acima do formulário, só com a logo ou o nome da aplicação. Login, cadastro e "esqueci a senha" podem ter **cada um a sua aparência**, e a troca entre eles é animada (**transição entre as telas**: o painel desliza para o lado da outra tela e o formulário aparece aos poucos, só em computador e sem "reduzir movimento"). Login social e desafio anti-robô continuam no formulário em qualquer layout. Um **preview** mostra login, recuperação de senha e cadastro com as alterações ainda não salvas, em largura de computador e de celular, sem autenticar nem enviar nada.
+A v0.53.1 é a entrega da v0.53.0. A tag `v0.53.0` foi publicada por engano no commit da v0.52.1 e o Packagist, que não deixa uma versão estável mudar de conteúdo, guardou essa referência: quem instalou a v0.53.0 pelo `composer create-project` recebeu o código da v0.52.1, com o marcador `0.52.1`. A tag `v0.53.0` voltou a esse commit e não deve ser usada; este roteiro vai direto da v0.52.1 para a v0.53.1.
+
+A v0.53.1 traz a **aparência das telas de acesso**, escolhida na própria aplicação. A aba **Telas de acesso** de *Configurações da aplicação*, no `/admin`, troca o layout das telas de autenticação dos três painéis (login, cadastro, recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de sessão) entre o **clássico**, que é o de sempre e continua o default, e o **painel de marca**: o formulário de um lado e, do outro, um painel arredondado de largura escolhida (30% a 70%), com cor ou arte de fundo, a logo num selo claro, um destaque central (a logo grande ou uma imagem PNG, JPEG ou WebP enviada), uma ilustração de rede de pontos parada ou em movimento, com botão de pausar e respeito a "reduzir movimento", e duas frases opcionais com negrito, itálico, tachado e link (Markdown seguro). O fundo pode ser a cor primária, uma cor própria, um **gradiente** ou a arte. No celular o painel vira uma faixa curta acima do formulário, só com a logo ou o nome da aplicação. Login, cadastro e "esqueci a senha" podem ter **cada um a sua aparência**, e a troca entre eles é animada (**transição entre as telas**: o painel desliza para o lado da outra tela e o formulário aparece aos poucos, só em computador e sem "reduzir movimento"). Login social e desafio anti-robô continuam no formulário em qualquer layout. Um **preview** mostra login, recuperação de senha e cadastro com as alterações ainda não salvas, em largura de computador e de celular, sem autenticar nem enviar nada.
 
 Com a multi-organização ligada, o formulário de cada organização ganha a seção **Telas de acesso**: usar a aparência padrão ou ter a sua, que vale no login com `?org=`, no cadastro e no bloqueio de sessão dela.
 
-**Nada muda na tela de quem atualiza** até um administrador escolher o painel de marca. As duas migrations novas nascem vazias: a configuração `aparencia_das_telas` no grupo `kit` das Configurações, com valor nulo, e a coluna JSON anulável `aparencia_das_telas` na tabela `tenants`. Nulo significa layout clássico. O `config/kit.php` ganha, além do marcador `0.53.0`, a chave `aparencia_das_telas` com valor `null` no bloco `identidade`.
+**Nada muda na tela de quem atualiza** até um administrador escolher o painel de marca. As duas migrations novas nascem vazias: a configuração `aparencia_das_telas` no grupo `kit` das Configurações, com valor nulo, e a coluna JSON anulável `aparencia_das_telas` na tabela `tenants`. Nulo significa layout clássico. O `config/kit.php` ganha, além do marcador `0.53.1`, a chave `aparencia_das_telas` com valor `null` no bloco `identidade`.
 
 O que chega em arquivos:
 
@@ -319,7 +321,7 @@ Não há dependência nova nem bump de composer ou npm, jornada nova a semear, p
 - **Os arquivos da feature trabalham juntos.** Manter a versão do dono num provider de painel deixa a redefinição de senha (e, no `/app`, a confirmação de e-mail) na página do pacote, sem a aparência. Manter o partial de mídia faz o painel de marca nunca aparecer, mesmo escolhido. Manter o `KitServiceProvider` sem a rota nova quebra o preview da aba **Telas de acesso**. Manter o `app/Models/Tenant.php` impede a organização de gravar a sua aparência. Manter o `tests/Pest.php` deixa os testes novos sem os helpers. Em todos esses casos, registre a entrega como parcial.
 - **A suíte pode recriar tabelas no banco que receber.** Execute-a somente com as três variáveis de banco forçadas no próprio comando do passo 6, depois de limpar o cache de configuração.
 - **O `--all` substitui arquivos existentes.** Resolva previamente a decisão de conflito e restaure ou reaplique as edições conforme o passo 2 antes de executar os demais passos.
-- **O marcador não prova a entrega.** O comando pode marcar `0.53.0` depois de aplicar apenas parte dos arquivos. Confira o branch, os arquivos novos, as migrations e a rota.
+- **O marcador não prova a entrega.** O comando pode marcar `0.53.1` depois de aplicar apenas parte dos arquivos. Confira o branch, os arquivos novos, as migrations e a rota.
 - **Não crie o link de storage por conta própria.** Se o passo 5 mostrar que `public/storage` não existe, registre e recomende ao dono; não rode comandos que mexam em `public/` além dos deste roteiro.
 - **O `.env` e os canais de log são do dono.** Esta versão não exige alterar o `.env` nem o `config/logging.php`.
 - **As mudanças ficam para revisão.** O comando aplica arquivos no índice. Use `git status` e `git diff --cached`; não commite, não faça merge e não apague o branch por conta própria.
@@ -333,13 +335,13 @@ Nenhuma outra decisão do dono nesta versão.
 
 ### Conflito em arquivo do kit que você editou
 
-Pergunta: Estes arquivos do kit têm edição sua e a v0.53.0 também os altera (em especial o bloco AuthDesignerPlugin dos providers dos painéis e o partial de mídia do Auth Designer): para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
+Pergunta: Estes arquivos do kit têm edição sua e a v0.53.1 também os altera (em especial o bloco AuthDesignerPlugin dos providers dos painéis e o partial de mídia do Auth Designer): para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
 
 Recomendação da release: receber a versão do kit com suas mudanças reaplicadas, depois de revisar os diffs; nos providers, preservar as suas configurações do `AuthDesignerPlugin` e acrescentar o `usingResetPage(TelaRedefinirSenha::class)` e, no `/app`, a `TelaVerificacaoDeEmail` na confirmação de e-mail; no partial de mídia, acrescentar o ramo do painel de marca antes dos seus ramos.
 
 Sem resposta: mantém a versão do dono e registra no relatório, arquivo a arquivo, o que deixou de chegar.
 
-Explique junto da pergunta a dependência entre os arquivos: manter um provider, o partial de mídia, o `KitServiceProvider`, o `app/Models/Tenant.php` ou o `tests/Pest.php` na versão do dono deixa parte da aparência das telas de acesso sem efeito, como descrito em `## Cuidados`, e a entrega fica parcial mesmo com o marcador em `0.53.0`. Com o `tests/Pest.php` mantido, os casos dos testes novos da aparência falham por falta dos helpers: diga isso na pergunta, porque o passo 6 vai parar nesse caso. No `config/kit.php`, preservar o conteúdo do dono inclui mudar o marcador para `0.53.0` e acrescentar a chave `aparencia_das_telas` com valor `null` no bloco `identidade`, sem substituir suas configurações.
+Explique junto da pergunta a dependência entre os arquivos: manter um provider, o partial de mídia, o `KitServiceProvider`, o `app/Models/Tenant.php` ou o `tests/Pest.php` na versão do dono deixa parte da aparência das telas de acesso sem efeito, como descrito em `## Cuidados`, e a entrega fica parcial mesmo com o marcador em `0.53.1`. Com o `tests/Pest.php` mantido, os casos dos testes novos da aparência falham por falta dos helpers: diga isso na pergunta, porque o passo 6 vai parar nesse caso. No `config/kit.php`, preservar o conteúdo do dono inclui mudar o marcador para `0.53.1` e acrescentar a chave `aparencia_das_telas` com valor `null` no bloco `identidade`, sem substituir suas configurações.
 
 ## Passos
 
@@ -352,10 +354,10 @@ Condição: as seis conferências do pré-voo passaram, e a decisão de conflito
 Ação:
 
 ```bash
-php artisan kit:update --from=0.52.1 --tag=v0.53.0 --all --keep-remote --no-interaction
+php artisan kit:update --from=0.52.1 --tag=v0.53.1 --all --keep-remote --no-interaction
 ```
 
-Evidência: os arquivos aparecem como `aplicado:`, a saída contém `config/kit.php: versão marcada como 0.53.0` e o branch criado é `kit-update/v0.53.0`. As tags ficam disponíveis para resolver conflitos.
+Evidência: os arquivos aparecem como `aplicado:`, a saída contém `config/kit.php: versão marcada como 0.53.1` e o branch criado é `kit-update/v0.53.1`. As tags ficam disponíveis para resolver conflitos.
 
 Se o comando recusar a árvore, pedir nova execução ou anunciar outra versão, pare. Não faça commit para tentar uma segunda rodada.
 
@@ -369,7 +371,7 @@ Ação, arquivo a arquivo:
 - **Receber a versão do kit:** mantenha o que o passo 1 aplicou.
 - **Receber a versão do kit com as mudanças do dono:** consulte o diff guardado no pré-voo e reaplique somente as mudanças do dono com a ferramenta de edição. Se a integração não for clara, pare e mostre o ponto ao dono.
 
-Quando preservar o `config/kit.php`, troque `'version' => '0.52.1',` por `'version' => '0.53.0',` e acrescente, no bloco `identidade`, logo depois da chave `arte_do_login`, a linha `'aparencia_das_telas' => null,`. Nada mais muda nesse arquivo.
+Quando preservar o `config/kit.php`, troque `'version' => '0.52.1',` por `'version' => '0.53.1',` e acrescente, no bloco `identidade`, logo depois da chave `arte_do_login`, a linha `'aparencia_das_telas' => null,`. Nada mais muda nesse arquivo.
 
 Revise e adicione ao índice cada arquivo integrado:
 
@@ -402,7 +404,7 @@ git diff --cached --name-status
 git ls-files --error-unmatch app/Filament/Pages/Auth/TelaRedefinirSenha.php app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php app/Filament/Pages/Auth/PreviewDasTelasDeAcesso.php app/Support/AparenciaDasTelasDeAcesso.php resources/views/filament/auth/painel-de-marca.blade.php database/migrations/2026_11_13_100000_add_aparencia_das_telas_to_tenants_table.php database/settings/2026_11_13_100000_add_aparencia_das_telas_to_kit_settings.php tests/Kit/AparenciaDasTelasDeAcessoTest.php tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php
 ```
 
-Evidência: versão `0.53.0`, branch `kit-update/v0.53.0` e os nove caminhos novos impressos pelo `git ls-files`. O índice corresponde ao resumo do dry-run, consideradas as escolhas de conflito. Os arquivos que o dono manteve aparecem no relatório como exceções.
+Evidência: versão `0.53.1`, branch `kit-update/v0.53.1` e os nove caminhos novos impressos pelo `git ls-files`. O índice corresponde ao resumo do dry-run, consideradas as escolhas de conflito. Os arquivos que o dono manteve aparecem no relatório como exceções.
 
 A ausência de arquivo novo só pode corresponder a uma escolha explícita de conflito, que deixa a entrega incompleta e deve ser registrada. Ausência sem essa explicação exige parada.
 
@@ -520,7 +522,7 @@ git status --short
 git diff --cached --stat
 ```
 
-Evidência: `kit.version` responde `0.53.0`; a multi-organização tem o mesmo valor do pré-voo; `kit.identidade.aparencia_das_telas` responde `NULL`; as migrations têm o estado do pré-voo mais as duas desta versão, sem pendências; a impressão dos usuários, das organizações e das Configurações é exatamente igual à inicial; o diff de `.env` e `config/logging.php` é vazio.
+Evidência: `kit.version` responde `0.53.1`; a multi-organização tem o mesmo valor do pré-voo; `kit.identidade.aparencia_das_telas` responde `NULL`; as migrations têm o estado do pré-voo mais as duas desta versão, sem pendências; a impressão dos usuários, das organizações e das Configurações é exatamente igual à inicial; o diff de `.env` e `config/logging.php` é vazio.
 
 Confira também cada arquivo que ficou com a versão do dono e cada integração aprovada. Qualquer diferença de dados ou customização não explicada exige parada.
 
@@ -551,7 +553,7 @@ git remote
 git tag -l "kit-*"
 ```
 
-Nenhum remote `kit` e nenhuma tag `kit-*`. O branch `kit-update/v0.53.0` permanece com as mudanças para revisão, sem commit.
+Nenhum remote `kit` e nenhuma tag `kit-*`. O branch `kit-update/v0.53.1` permanece com as mudanças para revisão, sem commit.
 
 ## Como conferir
 
@@ -559,7 +561,7 @@ O estado esperado é o mesmo dos cenários 3 e 4 de atualização: versão, arqu
 
 | O que | Esperado |
 |---|---|
-| Versão do kit | `0.53.0`, depois de limpar o cache de configuração |
+| Versão do kit | `0.53.1`, depois de limpar o cache de configuração |
 | Arquivos novos que provam a entrega | `TelaRedefinirSenha`, `TelaVerificacaoDeEmail`, `PreviewDasTelasDeAcesso`, `AparenciaDasTelasDeAcesso` e o partial `painel-de-marca` presentes e rastreados |
 | Testes novos | `tests/Kit/AparenciaDasTelasDeAcessoTest.php` e `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php` presentes e rastreados |
 | Multi-organização | O mesmo `SIM` ou `NAO` do pré-voo |
@@ -575,10 +577,10 @@ O estado esperado é o mesmo dos cenários 3 e 4 de atualização: versão, arqu
 | `.env` | Intacto |
 | Canais de log | `config/logging.php` intacto, incluindo os canais próprios do projeto |
 | Dados do banco | Impressão final idêntica à inicial: mesmos usuários, mesmas organizações e mesmas Configurações, fora o campo novo vazio |
-| Branch e índice | `kit-update/v0.53.0`, mudanças revisáveis e sem commit |
+| Branch e índice | `kit-update/v0.53.1`, mudanças revisáveis e sem commit |
 | Remote e tags temporários | Remote `kit` e tags `kit-*` removidos |
 
-Uma escolha de manter arquivo antigo deve aparecer como entrega parcial. O marcador `0.53.0` sozinho não permite declarar que a aparência das telas de acesso chegou inteira.
+Uma escolha de manter arquivo antigo deve aparecer como entrega parcial. O marcador `0.53.1` sozinho não permite declarar que a aparência das telas de acesso chegou inteira.
 
 ## Quando parar
 
@@ -589,7 +591,7 @@ Pare sem tentar contornar e informe ao dono a condição encontrada, a saída re
 - **Versão instalada diferente de `0.52.1`:** informe o valor encontrado e a origem exigida.
 - **Nomes reservados já existentes:** informe o remote, as tags ou o branch encontrados; não os remova.
 - **Banco inacessível ou migrations pendentes do dono:** mostre o erro ou os nomes pendentes; o `migrate --force` deste roteiro as executaria junto.
-- **Tag destino indisponível:** informe que a atualização depende da publicação de `v0.53.0`.
+- **Tag destino indisponível:** informe que a atualização depende da publicação de `v0.53.1`.
 - **Dry-run diferente do previsto:** mostre os arquivos divergentes. Qualquer mudança nos arquivos de dependências entre as tags, ou migration além das duas esperadas, não é esperada.
 - **Arquivo novo esperado ausente na tag:** informe o caminho; não substitua a tag por outra referência.
 - **Aplicação incompleta, árvore recusada ou pedido de segunda execução:** informe que o projeto pode estar entre versões e que nenhuma nova rodada ou commit foi feito.
