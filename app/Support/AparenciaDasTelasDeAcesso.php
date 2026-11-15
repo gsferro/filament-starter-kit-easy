@@ -7,9 +7,11 @@ namespace App\Support;
 use App\Models\Tenant;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
+use Filament\Facades\Filament;
 use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -278,6 +280,35 @@ final class AparenciaDasTelasDeAcesso
     public static function transicaoDaInstalacao(): bool
     {
         return (bool) (self::global()['transicao_entre_telas'] ?? true);
+    }
+
+    /**
+     * Os caminhos das telas que podem participar da transição: as de autenticação de cada painel e
+     * as páginas únicas do login unificado. A página que sai pula a transição para qualquer outro
+     * destino — o painel depois de entrar, por exemplo —, que não a declara: sem isso o navegador
+     * aborta a transição e registra um erro de JavaScript a cada login (teste manual da v0.53.1).
+     *
+     * @return list<string>
+     */
+    public static function caminhosDaTransicao(): array
+    {
+        $nomes = ['login', 'cadastro', 'esqueci-minha-senha'];
+
+        foreach (Filament::getPanels() as $painel) {
+            foreach (['login', 'register', 'password-reset.request', 'password-reset.reset', 'two-factor', 'email-verification.prompt'] as $tela) {
+                $nomes[] = "filament.{$painel->getId()}.auth.{$tela}";
+            }
+        }
+
+        $caminhos = [];
+
+        foreach ($nomes as $nome) {
+            if (Route::has($nome)) {
+                $caminhos[] = '/'.ltrim((string) parse_url(route($nome), PHP_URL_PATH), '/');
+            }
+        }
+
+        return array_values(array_unique($caminhos));
     }
 
     /**

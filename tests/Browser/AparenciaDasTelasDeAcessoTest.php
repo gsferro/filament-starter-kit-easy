@@ -885,3 +885,44 @@ it('[CT-B19] do login para o "esqueci a senha", a troca de tela tem transição 
     $pagina->resize(390, 844);
     expect($nomeDe($pagina, '.fi-auth-media-wrapper'))->toBe('none');
 })->with(['ligada' => true, 'desligada' => false]);
+
+/**
+ * [CT-B20] Teste manual da v0.53.1: entrando pelo login no painel de marca com a transição ligada,
+ * o painel do Filament não declara a transição. A página que sai a pula, e nenhum erro de
+ * JavaScript é registrado — antes, o navegador abortava a transição e registrava
+ * "Transition was aborted because of invalid state" a cada login.
+ */
+it('[CT-B20] entrar pelo login com transição não registra erro de JavaScript', function (): void {
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => true]);
+    $usuario = usuarioDoKit('master_global', 'login@example.com');
+
+    // Aquece as duas pontas: na primeira compilação das views, o clique chega antes de a página
+    // estar pronta, com ou sem transição — o ruído que se quer medir aqui é só o da transição.
+    $this->get('/app/login');
+    $this->actingAs($usuario)->get('/app');
+    auth()->logout();
+
+    $pagina = visit('/app/login')
+        ->resize(1440, 900)
+        ->assertPresent('.kit-painel-de-marca[data-kit-transicao]');
+
+    // A transição abortada chega à página de destino como promessa rejeitada sem tratamento —
+    // o que um monitor de erros captura e o `assertNoJavaScriptErrors` não vê.
+    $pagina->page()->context()->addInitScript(<<<'JS'
+        addEventListener('unhandledrejection', (e) => {
+            const lista = JSON.parse(sessionStorage.getItem('kit-rejeicoes') || '[]');
+            lista.push(String(e.reason && e.reason.message || e.reason));
+            sessionStorage.setItem('kit-rejeicoes', JSON.stringify(lista));
+        });
+    JS);
+
+    $pagina
+        ->fill('#form\\.email', 'login@example.com')
+        ->fill('#form\\.password', 'password')
+        ->press('Login')
+        ->assertPathIs('/app')
+        ->assertSee('Painel de Controle')
+        ->assertNoJavaScriptErrors();
+
+    expect($pagina->script("sessionStorage.getItem('kit-rejeicoes') || '[]'"))->toBe('[]');
+});
