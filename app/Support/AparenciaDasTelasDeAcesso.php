@@ -420,8 +420,7 @@ final class AparenciaDasTelasDeAcesso
         $primaria = $resolvida['primary'] ?? null;
 
         if (is_string($primaria) && ($tom !== 600 || $daPaleta)) {
-            $paleta   = Color::hex(self::hexCompleto($primaria));
-            $primaria = $paleta;
+            $primaria = Color::hex(self::hexCompleto($primaria));
         }
 
         if (is_string($primaria)) {
@@ -487,7 +486,7 @@ final class AparenciaDasTelasDeAcesso
             return '';
         }
 
-        self::limparNo($raiz);
+        self::limparNo($raiz, $documento);
 
         $saida = '';
 
@@ -498,14 +497,8 @@ final class AparenciaDasTelasDeAcesso
         return trim($saida);
     }
 
-    private static function limparNo(\DOMNode $no): void
+    private static function limparNo(\DOMNode $no, \DOMDocument $documento): void
     {
-        $documento = $no->ownerDocument;
-
-        if ($documento === null) {
-            return;
-        }
-
         $permitidos = ['p', 'br', 'strong', 'em', 'del', 'a'];
 
         foreach (iterator_to_array($no->childNodes) as $filho) {
@@ -517,7 +510,7 @@ final class AparenciaDasTelasDeAcesso
                 continue;
             }
 
-            self::limparNo($filho);
+            self::limparNo($filho, $documento);
 
             $tag = strtolower($filho->tagName);
 

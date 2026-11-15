@@ -24,13 +24,11 @@
 @php
     $fundo = $aparencia['fundo'] ?? 'cor';
     $fundoArte = $fundo === 'arte';
-    $cor = method_exists($livewire, 'corDoPainelDeMarca') ? $livewire->corDoPainelDeMarca() : null;
-    $gradiente = $fundo === 'gradiente' && method_exists($livewire, 'gradienteDoPainelDeMarca') ? $livewire->gradienteDoPainelDeMarca() : null;
+    $cor = $livewire->corDoPainelDeMarca();
+    $gradiente = $livewire->gradienteDoPainelDeMarca();
     $formato = $aparencia['formato_dos_textos'] ?? 'texto';
-    $logos = ($aparencia['logo_no_painel'] ?? true) && method_exists($livewire, 'logosDoPainelDeMarca')
-        ? $livewire->logosDoPainelDeMarca()
-        : ['clara' => null, 'escura' => null];
-    $destaque = method_exists($livewire, 'destaqueDoPainelDeMarca') ? $livewire->destaqueDoPainelDeMarca() : null;
+    $logos = $livewire->logosDoPainelDeMarca();
+    $destaque = $livewire->destaqueDoPainelDeMarca();
     $nome = (string) config('app.name');
     $frase = \App\Support\AparenciaDasTelasDeAcesso::textoComoHtml($aparencia['frase'] ?? null, $formato);
     $apoio = \App\Support\AparenciaDasTelasDeAcesso::textoComoHtml($aparencia['apoio'] ?? null, $formato);

@@ -112,7 +112,7 @@ class TelaLogin extends Login
     protected function organizacaoDaAparencia(): ?Tenant
     {
         if (blank($this->orgDaAparencia) || ! config('kit.tenancy.enabled')) {
-            return $this->organizacaoParaAparencia(null);
+            return null;
         }
 
         return $this->organizacaoParaAparencia(Tenant::query()->where('slug', $this->orgDaAparencia)->first());

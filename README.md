@@ -478,15 +478,23 @@ Os onze últimos não entram nas perguntas porque são **código ou dado de tela
 
 ## Atualizando um projeto que já nasceu do kit
 
-**O kit é um ponto de partida, não uma dependência.** Depois do `create-project` o projeto é seu: você renomeia painéis, muda `canAccessPanel()`, edita seeders. Por isso **não existe** um `kit:update` que sobrescreve arquivos — ele reescreveria justamente o que você personalizou, e um starter kit que estraga o projeto do usuário não serve para nada.
+**O kit é um ponto de partida, não uma dependência.** Depois do `create-project` o projeto é seu: você renomeia painéis, muda `canAccessPanel()`, edita seeders. Por isso o `kit:update` nunca sobrescreve às cegas: ele compara só os caminhos do kit entre a sua versão e a nova, mostra o resumo e pergunta antes de aplicar, num branch próprio e sem commit.
 
 O que muda separa-se em três camadas, e cada uma tem um caminho próprio:
 
 | Camada | O que é | Como atualizar |
 |---|---|---|
 | **Dependências** | Filament, plugins, Laravel | `composer update` — é a maior parte das melhorias e chega sozinha |
-| **Cola do kit** | providers, traits, widgets, views de erro | diff manual contra a tag nova (abaixo) |
+| **Cola do kit** | providers, traits, widgets, views, migrations do kit | `php artisan kit:update`, sozinho ou conduzido por um agente (abaixo) |
 | **Seu negócio** | tudo que você escreveu | nunca é tocado |
+
+**Pedindo a um agente** (Claude Code, Codex, Cursor ou outro que rode comandos no terminal e edite arquivos). Toda versão, a partir da v0.52.0, tem um roteiro de atualização que o agente segue usando o `kit:update` como ferramenta e parando para perguntar a você em cada decisão sua. Com a árvore do git limpa, numa sessão nova:
+
+```text
+Atualize este projeto seguindo o roteiro em https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
+```
+
+`{versão}` é a versão destino, com o `v` (ex.: `v0.53.1`). Um roteiro cobre uma passagem só; quem está várias versões atrás segue um por vez, em ordem. As mudanças ficam no branch `kit-update/v{versão}`, sem commit, para você revisar. O passo a passo, o caminho manual e os detalhes: [Atualizando o projeto](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/atualizando-o-projeto.html).
 
 ## Solução de problemas
 

@@ -53,8 +53,7 @@ final class EditorDeAparenciaDasTelas
 
     /**
      * Os campos, sob o caminho `aparencia_das_telas`.
-     */
-    /**
+     *
      * @param  bool  $daOrganizacao  no formulário da organização não há a seção "Esqueci a senha":
      *                               a recuperação e a redefinição de senha nunca sabem a organização
      *                               da pessoa e usam sempre a padrão (P-06, P-31)
@@ -231,33 +230,17 @@ final class EditorDeAparenciaDasTelas
                         ->helperText('A primária é a da organização, quando houver; senão, a da instalação; sem nenhuma, o âmbar do Filament.')
                         ->visible(fn (Get $get): bool => $get('fundo') === 'cor'),
 
-                    ColorPicker::make('cor')
-                        ->label('Cor do painel')
-                        ->hex()
-                        // `hex()` só troca o formato do picker; a regra é que barra o resto (P-05).
-                        ->regex(AparenciaDasTelasDeAcesso::FORMATO_DA_COR)
-                        ->validationMessages(['regex' => 'Use uma cor no formato #RRGGBB.'])
-                        ->live(onBlur: true)
+                    self::corHex('cor', 'Cor do painel')
                         ->visible(fn (Get $get): bool => $get('fundo') === 'cor' && $get('origem_da_cor') === 'propria')
                         // Oculta, mas GRAVADA: a aparência é um objeto inteiro (P-07) (CT-32).
                         ->dehydratedWhenHidden(),
 
-                    ColorPicker::make('gradiente_de')
-                        ->label('Gradiente: cor de início')
-                        ->hex()
-                        ->regex(AparenciaDasTelasDeAcesso::FORMATO_DA_COR)
-                        ->validationMessages(['regex' => 'Use uma cor no formato #RRGGBB.'])
-                        ->live(onBlur: true)
+                    self::corHex('gradiente_de', 'Gradiente: cor de início')
                         ->helperText('Em branco, o tom 600 da cor primária.')
                         ->visible(fn (Get $get): bool => $get('fundo') === 'gradiente')
                         ->dehydratedWhenHidden(),
 
-                    ColorPicker::make('gradiente_ate')
-                        ->label('Gradiente: cor de fim')
-                        ->hex()
-                        ->regex(AparenciaDasTelasDeAcesso::FORMATO_DA_COR)
-                        ->validationMessages(['regex' => 'Use uma cor no formato #RRGGBB.'])
-                        ->live(onBlur: true)
+                    self::corHex('gradiente_ate', 'Gradiente: cor de fim')
                         ->helperText('Em branco, o tom 900 da cor primária.')
                         ->visible(fn (Get $get): bool => $get('fundo') === 'gradiente')
                         ->dehydratedWhenHidden(),
@@ -372,12 +355,7 @@ final class EditorDeAparenciaDasTelas
                         ->visible(fn (Get $get): bool => $get('ilustracao') === 'rede')
                         ->dehydratedWhenHidden(),
 
-                    ColorPicker::make('cor_da_ilustracao')
-                        ->label('Cor da ilustração')
-                        ->hex()
-                        ->regex(AparenciaDasTelasDeAcesso::FORMATO_DA_COR)
-                        ->validationMessages(['regex' => 'Use uma cor no formato #RRGGBB.'])
-                        ->live(onBlur: true)
+                    self::corHex('cor_da_ilustracao', 'Cor da ilustração')
                         ->helperText('Em branco, a mesma cor do texto do painel.')
                         ->visible(fn (Get $get): bool => $get('ilustracao') === 'rede')
                         ->dehydratedWhenHidden(),
@@ -599,12 +577,10 @@ final class EditorDeAparenciaDasTelas
     }
 
     /**
-     * A imagem do destaque ainda NÃO salva (o upload que o Livewire guarda no diretório
-     * temporário), como URL assinada do próprio Livewire — o preview mostra o que ainda não foi
-     * salvo (P-08). Só PNG, JPEG ou WebP: o `FileUpload` só valida o tipo ao salvar.
-     */
-    /**
      * A imagem ainda não salva de cada família (P-25): a do login na raiz, as outras em `telas`.
+     * É o upload que o Livewire guarda no diretório temporário, como URL assinada do próprio
+     * Livewire — o preview mostra o que ainda não foi salvo (P-08). Só PNG, JPEG ou WebP: o
+     * `FileUpload` só valida o tipo ao salvar.
      *
      * @return array<string, string>
      */
@@ -668,6 +644,20 @@ final class EditorDeAparenciaDasTelas
     private static function chave(string $id): string
     {
         return 'aparencia-preview:'.auth()->id().':'.$id;
+    }
+
+    /**
+     * Seletor de cor hexadecimal. `hex()` só troca o formato do picker; a regra é que barra o
+     * resto (P-05).
+     */
+    private static function corHex(string $campo, string $rotulo): ColorPicker
+    {
+        return ColorPicker::make($campo)
+            ->label($rotulo)
+            ->hex()
+            ->regex(AparenciaDasTelasDeAcesso::FORMATO_DA_COR)
+            ->validationMessages(['regex' => 'Use uma cor no formato #RRGGBB.'])
+            ->live(onBlur: true);
     }
 
     /**

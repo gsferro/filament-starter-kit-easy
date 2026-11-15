@@ -56,8 +56,6 @@ class PreviewDasTelasDeAcesso extends SimplePage
     /** Regra do kit: página de auth redeclara o `$layout`. Ver `.ai/rules/auth.md`. */
     protected static string $layout = 'filament-auth-designer::components.layouts.auth';
 
-    public const TELAS = ['login', 'recuperar-senha', 'cadastro'];
-
     #[Locked]
     public string $rascunho = '';
 
@@ -70,7 +68,7 @@ class PreviewDasTelasDeAcesso extends SimplePage
     public function mount(): void
     {
         $tela       = request()->query('tela');
-        $this->tela = is_string($tela) && in_array($tela, self::TELAS, true) ? $tela : 'login';
+        $this->tela = is_string($tela) && array_key_exists($tela, EditorDeAparenciaDasTelas::telas()) ? $tela : 'login';
 
         $id = request()->query('rascunho');
         $id = is_string($id) ? $id : '';

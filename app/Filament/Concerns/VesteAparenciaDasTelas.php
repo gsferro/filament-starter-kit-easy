@@ -32,15 +32,6 @@ use Illuminate\Support\Facades\Log;
  */
 trait VesteAparenciaDasTelas
 {
-    /** @var array<string, mixed>|null */
-    private ?array $aparenciaResolvida = null;
-
-    private bool $aparenciaFoiResolvida = false;
-
-    private ?Tenant $organizacaoDaAparenciaResolvida = null;
-
-    private bool $organizacaoDaAparenciaFoiResolvida = false;
-
     /**
      * A aparência que esta tela usa — `null` = clássico. Memoizada por instância: o layout, o
      * partial e o `getAuthDesignerConfig()` perguntam no mesmo render.
@@ -49,7 +40,7 @@ trait VesteAparenciaDasTelas
      */
     public function aparenciaDaTela(): ?array
     {
-        if (! $this->aparenciaFoiResolvida) {
+        return once(function (): ?array {
             $tela = AparenciaDasTelasDeAcesso::daFamilia($this->resolverAparencia(), $this->familiaDaAparencia());
 
             // A transição entre as telas é da instalação, também na organização (P-35): a
@@ -58,11 +49,8 @@ trait VesteAparenciaDasTelas
                 $tela['transicao_entre_telas'] = AparenciaDasTelasDeAcesso::transicaoDaInstalacao();
             }
 
-            $this->aparenciaResolvida    = self::soOQueATelaMostra($tela);
-            $this->aparenciaFoiResolvida = true;
-        }
-
-        return $this->aparenciaResolvida;
+            return self::soOQueATelaMostra($tela);
+        });
     }
 
     /**
@@ -207,19 +195,18 @@ trait VesteAparenciaDasTelas
      */
     protected function organizacaoParaAparencia(?Tenant $candidata): ?Tenant
     {
-        $motivo = match (true) {
-            ! config('kit.tenancy.enabled')                      => 'sem_tenancy',
-            Paineis::correnteOuPadrao()->getId() !== 'app'       => 'painel_sem_tenancy',
-            ! $candidata instanceof Tenant                       => 'org_ausente',
-            ! $candidata->ativo                                  => 'org_inativa',
-            default                                              => 'ok',
-        };
-
         // Só a recusa é explicada: sem candidata não há o que explicar, e um log a cada abertura de
         // login com organização válida seria volume que um visitante controla.
         if (! $candidata instanceof Tenant) {
             return null;
         }
+
+        $motivo = match (true) {
+            ! config('kit.tenancy.enabled')                => 'sem_tenancy',
+            Paineis::correnteOuPadrao()->getId() !== 'app' => 'painel_sem_tenancy',
+            ! $candidata->ativo                            => 'org_inativa',
+            default                                        => 'ok',
+        };
 
         if ($motivo === 'ok') {
             return $candidata;
@@ -235,11 +222,6 @@ trait VesteAparenciaDasTelas
 
     private function organizacaoDaAparenciaMemo(): ?Tenant
     {
-        if (! $this->organizacaoDaAparenciaFoiResolvida) {
-            $this->organizacaoDaAparenciaResolvida    = $this->organizacaoDaAparencia();
-            $this->organizacaoDaAparenciaFoiResolvida = true;
-        }
-
-        return $this->organizacaoDaAparenciaResolvida;
+        return once(fn (): ?Tenant => $this->organizacaoDaAparencia());
     }
 }
