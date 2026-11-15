@@ -56,6 +56,7 @@ class PreviewDasTelasDeAcesso extends SimplePage
     /** Regra do kit: página de auth redeclara o `$layout`. Ver `.ai/rules/auth.md`. */
     protected static string $layout = 'filament-auth-designer::components.layouts.auth';
 
+    /** As telas que esta página sabe montar — os `match` abaixo. */
     public const TELAS = ['login', 'recuperar-senha', 'cadastro'];
 
     #[Locked]

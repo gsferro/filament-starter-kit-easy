@@ -45,7 +45,7 @@
 - **Esperado**: a revisão do diff do Adendo 4 mudou a regra (a raiz clássica guarda a opção) e acrescentou CTs. O texto da wiki deveria acompanhar.
 - **Observado**:
   1. `01:389` diz "**Testes**: CT-98..CT-101 e CT-B19 (prova pelo `pageswap` da página de origem)". Faltam CT-102 e CT-103, e o CT-B19 hoje também confere o `pagereveal` do destino. O passo 12 não traz a regra do RD-D1: com o login no clássico, a raiz guarda `transicao_entre_telas`, e o editor a reabre (`AparenciaDasTelasDeAcesso::normalizar` e `EditorDeAparenciaDasTelas::telaParaOFormulario`).
-  2. A `# Origem` do CT-102 (`04:2206`) cita entre aspas, como se fosse da P-32, a frase "com o login no clássico, vale o que estiver gravado na raiz". A frase não está na P-32 (`00:109`). Ela só existe no comentário do código (`app/Support/AparenciaDasTelasDeAcesso.php:normalizar:155`).
+  2. A `# Origem` do CT-102 (`04:2206`) cita entre aspas, como se fosse da P-32, a frase "com o login no clássico, vale o que estiver gravado na raiz". A frase não está na P-32 (`00:109`). Ela só existe no comentário do código (`app/Support/AparenciaDasTelasDeAcesso.php:normalizar:157`).
   3. O `03`:
      - `03:118` diz "badge 2.592", mas o README e o README.en têm 2.594, e o `SiteDeDocumentacaoTest` passa com 2.594.
      - `## Testes` (`03:158-160`) diz que o PorTela tem "CT-57..CT-92" (ele vai até o CT-103) e que o Browser tem "CT-B01..CT-B18" (falta o CT-B19).

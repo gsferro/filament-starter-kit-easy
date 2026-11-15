@@ -33,18 +33,20 @@
                 requestAnimationFrame(() => this.medir())
             }).observe(this.$refs.moldura)
         },
+        get dimensoes() {
+            return this.largura === 'celular' ? [390, 844] : [1440, 900]
+        },
         medir() {
             const disponivel = this.$refs.moldura?.clientWidth ?? 0
-            const base = this.largura === 'celular' ? 390 : 1440
+            const [base] = this.dimensoes
             this.escala = disponivel > 0 ? Math.min(1, disponivel / base) : 1
         },
         get estiloDoQuadro() {
-            const [largura, altura] = this.largura === 'celular' ? [390, 844] : [1440, 900]
+            const [largura, altura] = this.dimensoes
             return `width: ${largura}px; height: ${altura}px; transform: scale(${this.escala}); transform-origin: top left`
         },
         get alturaDaMoldura() {
-            const altura = this.largura === 'celular' ? 844 : 900
-            const largura = this.largura === 'celular' ? 390 : 1440
+            const [largura, altura] = this.dimensoes
             return `height: ${Math.ceil(altura * this.escala)}px; width: ${Math.ceil(largura * this.escala)}px`
         },
         srcPara(base) {

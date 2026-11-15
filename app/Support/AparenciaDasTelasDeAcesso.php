@@ -7,9 +7,11 @@ namespace App\Support;
 use App\Models\Tenant;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
+use Filament\Facades\Filament;
 use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -281,6 +283,39 @@ final class AparenciaDasTelasDeAcesso
     }
 
     /**
+     * Os caminhos das telas que podem participar da transição: as de autenticação de cada painel e
+     * as páginas únicas do login unificado. A página que sai pula a transição para qualquer outro
+     * destino — o painel depois de entrar, por exemplo —, que não a declara: sem isso o navegador
+     * aborta a transição e registra um erro de JavaScript a cada login (teste manual da v0.53.1).
+     *
+     * @return list<string>
+     */
+    public static function caminhosDaTransicao(): array
+    {
+        $nomes = ['login', 'cadastro', 'esqueci-minha-senha'];
+
+        foreach (Filament::getPanels() as $painel) {
+            foreach (['login', 'register', 'password-reset.request', 'password-reset.reset', 'two-factor', 'email-verification.prompt'] as $tela) {
+                $nomes[] = "filament.{$painel->getId()}.auth.{$tela}";
+            }
+        }
+
+        $caminhos = [];
+
+        foreach ($nomes as $nome) {
+            $rota = Route::getRoutes()->getByName($nome);
+
+            // Rota com parâmetro (o dois fatores do `/app` com organizações: `app/{tenant}/...`)
+            // fica de fora: sem o valor não há caminho, e ir para ela só perde a animação.
+            if ($rota !== null && $rota->parameterNames() === []) {
+                $caminhos[] = '/'.ltrim((string) parse_url(url($rota->uri()), PHP_URL_PATH), '/');
+            }
+        }
+
+        return array_values(array_unique($caminhos));
+    }
+
+    /**
      * A da instalação — `config('kit.identidade.aparencia_das_telas')`, já sobreposta pelo banco
      * no boot (`ConfiguracoesDoKit::aplicarNaConfig()`).
      *
@@ -420,8 +455,7 @@ final class AparenciaDasTelasDeAcesso
         $primaria = $resolvida['primary'] ?? null;
 
         if (is_string($primaria) && ($tom !== 600 || $daPaleta)) {
-            $paleta   = Color::hex(self::hexCompleto($primaria));
-            $primaria = $paleta;
+            $primaria = Color::hex(self::hexCompleto($primaria));
         }
 
         if (is_string($primaria)) {
@@ -487,7 +521,7 @@ final class AparenciaDasTelasDeAcesso
             return '';
         }
 
-        self::limparNo($raiz);
+        self::limparNo($raiz, $documento);
 
         $saida = '';
 
@@ -498,14 +532,8 @@ final class AparenciaDasTelasDeAcesso
         return trim($saida);
     }
 
-    private static function limparNo(\DOMNode $no): void
+    private static function limparNo(\DOMNode $no, \DOMDocument $documento): void
     {
-        $documento = $no->ownerDocument;
-
-        if ($documento === null) {
-            return;
-        }
-
         $permitidos = ['p', 'br', 'strong', 'em', 'del', 'a'];
 
         foreach (iterator_to_array($no->childNodes) as $filho) {
@@ -517,7 +545,7 @@ final class AparenciaDasTelasDeAcesso
                 continue;
             }
 
-            self::limparNo($filho);
+            self::limparNo($filho, $documento);
 
             $tag = strtolower($filho->tagName);
 

@@ -197,6 +197,15 @@ A organização pode escolher o clássico mesmo com a padrão em painel de marca
 
 [![Seção Telas de acesso no formulário da organização, com o preview](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacao.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacao.png)
 
+[![Login da instalação e de duas organizações, cada uma com a sua aparência](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacoes.gif)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacoes.gif)
+
+O mesmo `/app/login`: sem organização, a aparência padrão; com `?org=acme` e `?org=globex`, a de cada uma. O login social e o desafio anti-robô acompanham qualquer aparência.
+
+| | | |
+|---|---|---|
+| [![Aparência padrão](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-organizacoes-1-padrao.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacoes-1-padrao.png) | [![Acme, com a sua](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-organizacoes-2-acme.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacoes-2-acme.png) | [![Globex, com a sua](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/thumbs/telas-de-acesso-organizacoes-3-globex.png)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-organizacoes-3-globex.png) |
+| Aparência padrão | Acme, com a sua | Globex, com a sua |
+
 ### Em que tela a aparência da organização vale
 
 A aparência só identifica a organização onde isso é seguro e possível; no resto, vale a padrão:

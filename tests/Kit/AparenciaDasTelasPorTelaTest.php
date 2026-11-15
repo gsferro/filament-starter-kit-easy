@@ -11,6 +11,7 @@ use App\Filament\Pages\Auth\TelaVerificacaoDeEmail;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\AparenciaDasTelasDeAcesso;
 use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
@@ -757,6 +758,48 @@ it('[CT-103] as páginas únicas do login unificado participam da transição', 
 
     expect(participaDaTransicao(htmlDe($caminho)))->toBeTrue();
 })->with(['/login', '/esqueci-minha-senha'])->group('kit');
+
+/**
+ * Teste manual da v0.53.1: a página que sai só mantém a transição indo para uma tela que também
+ * participa. Entrando no painel (que não a declara), o navegador abortava a transição e registrava
+ * um erro de JavaScript a cada login. Toda página que participa está na lista; o painel e a escolha
+ * de painel, não.
+ */
+it('[CT-107] a transição só segue para telas que participam dela', function (): void {
+    config(['kit.registro.habilitado' => true]);
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => true]);
+
+    $destinos = AparenciaDasTelasDeAcesso::caminhosDaTransicao();
+
+    // As telas dos painéis com o login unificado desligado; as páginas únicas, com ele ligado
+    // (ligado, o `/admin/login` redireciona para o `/login`).
+    foreach ([false => ['/admin/login', '/admin/password-reset/request', '/app/login', '/app/register', '/app/password-reset/request'], true => ['/login', '/cadastro', '/esqueci-minha-senha']] as $unificado => $caminhos) {
+        ligarLoginUnificado((bool) $unificado);
+
+        foreach ($caminhos as $caminho) {
+            expect(participaDaTransicao(htmlDe($caminho)))->toBeTrue("{$caminho} deveria participar");
+            expect($destinos)->toContain($caminho);
+        }
+    }
+
+    ligarLoginUnificado(false);
+
+    expect($destinos)->not->toContain('/admin')
+        ->and($destinos)->not->toContain('/app')
+        ->and($destinos)->not->toContain('/login/painel');
+
+    // A página que participa leva a lista, no mesmo <head> da regra.
+    $script = arvoreDoHtml(htmlDe('/admin/login'))->query('//head/script[@data-kit-transicao-entre-telas-destinos]');
+    expect($script->length)->toBe(1)
+        ->and($script->item(0)->textContent)->toContain('skipTransition()')
+        ->and($script->item(0)->textContent)->toContain('password-reset');
+})->group('kit');
+
+it('[CT-107] sem a transição, a página não leva a lista de destinos', function (): void {
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => false]);
+
+    expect(arvoreDoHtml(htmlDe('/admin/login'))->query('//script[@data-kit-transicao-entre-telas-destinos]')->length)->toBe(0);
+})->group('kit');
 
 /** QA-38 do gate (ciclo 3): as telas de cadastro também participam (RQ-34 cita o cadastro). */
 it('[CT-106] as telas de cadastro participam da transição', function (string $tela): void {

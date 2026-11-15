@@ -157,6 +157,12 @@ class KitArte extends Command
             'telas-de-acesso-transicao-4-chegando',
             'telas-de-acesso-transicao-5-esqueci',
         ],
+        // Com organizações: o login da instalação e o de duas organizações, cada uma com a sua.
+        'telas-de-acesso-organizacoes' => [
+            'telas-de-acesso-organizacoes-1-padrao',
+            'telas-de-acesso-organizacoes-2-acme',
+            'telas-de-acesso-organizacoes-3-globex',
+        ],
         'telas-de-acesso-editor' => [
             'telas-de-acesso-editor-1-disposicao',
             'telas-de-acesso-editor-2-fundo',
@@ -261,6 +267,10 @@ class KitArte extends Command
         'telas-de-acesso-editor-6-preview',
         'telas-de-acesso-celular-logo',
         'telas-de-acesso-celular-nome',
+        'telas-de-acesso-organizacoes-1-padrao',
+        'telas-de-acesso-organizacoes-2-acme',
+        'telas-de-acesso-organizacoes-3-globex',
+        'telas-de-acesso-organizacao',
 
         // As duas telas de login com o desafio no ar, cada uma com chave real do
         // provedor. Só são geradas por quem tem as chaves no ambiente — os cenários

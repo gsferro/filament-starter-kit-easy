@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Testes](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=testes)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Cobertura](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
-[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-2.597-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
+[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-2.604-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -478,15 +478,23 @@ Os onze últimos não entram nas perguntas porque são **código ou dado de tela
 
 ## Atualizando um projeto que já nasceu do kit
 
-**O kit é um ponto de partida, não uma dependência.** Depois do `create-project` o projeto é seu: você renomeia painéis, muda `canAccessPanel()`, edita seeders. Por isso **não existe** um `kit:update` que sobrescreve arquivos — ele reescreveria justamente o que você personalizou, e um starter kit que estraga o projeto do usuário não serve para nada.
+**O kit é um ponto de partida, não uma dependência.** Depois do `create-project` o projeto é seu: você renomeia painéis, muda `canAccessPanel()`, edita seeders. Por isso o `kit:update` nunca sobrescreve às cegas: ele compara só os caminhos do kit entre a sua versão e a nova, mostra o resumo e pergunta antes de aplicar, num branch próprio e sem commit.
 
 O que muda separa-se em três camadas, e cada uma tem um caminho próprio:
 
 | Camada | O que é | Como atualizar |
 |---|---|---|
 | **Dependências** | Filament, plugins, Laravel | `composer update` — é a maior parte das melhorias e chega sozinha |
-| **Cola do kit** | providers, traits, widgets, views de erro | diff manual contra a tag nova (abaixo) |
+| **Cola do kit** | providers, traits, widgets, views, migrations do kit | `php artisan kit:update`, sozinho ou conduzido por um agente (abaixo) |
 | **Seu negócio** | tudo que você escreveu | nunca é tocado |
+
+**Pedindo a um agente** (Claude Code, Codex, Cursor ou outro que rode comandos no terminal e edite arquivos). Toda versão, a partir da v0.52.0, tem um roteiro de atualização que o agente segue usando o `kit:update` como ferramenta e parando para perguntar a você em cada decisão sua. Com a árvore do git limpa, numa sessão nova:
+
+```text
+Atualize este projeto seguindo o roteiro em https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
+```
+
+`{versão}` é a versão destino, com o `v` (ex.: `v0.53.1`). Um roteiro cobre uma passagem só; quem está várias versões atrás segue um por vez, em ordem. As mudanças ficam no branch `kit-update/v{versão}`, sem commit, para você revisar. O passo a passo, o caminho manual e os detalhes: [Atualizando o projeto](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/atualizando-o-projeto.html).
 
 ## Solução de problemas
 

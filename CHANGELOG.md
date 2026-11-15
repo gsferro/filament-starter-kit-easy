@@ -5,9 +5,11 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
-## [0.53.0] - 2026-11-14
+## [0.53.1] - 2026-11-15
 
-A v0.53.0 traz a **aparência das telas de acesso** escolhida na tela, com preview e por organização. Duas migrations, as duas vazias: as telas continuam idênticas até alguém escolher o painel de marca. Wiki: `wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/`.
+A v0.53.1 é a entrega da v0.53.0. A tag `v0.53.0` foi publicada por engano no commit da v0.52.1 e o Packagist, que não deixa uma versão estável mudar de conteúdo, guardou essa referência: quem instalou a v0.53.0 pelo `composer create-project` recebeu o código da v0.52.1, com o marcador `0.52.1`. A tag `v0.53.0` voltou a esse commit e não deve ser usada; este roteiro vai direto da v0.52.1 para a v0.53.1.
+
+A v0.53.1 traz a **aparência das telas de acesso** escolhida na tela, com preview e por organização. Duas migrations, as duas vazias: as telas continuam idênticas até alguém escolher o painel de marca. Wiki: `wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/`.
 
 ### Adicionado
 
@@ -56,6 +58,12 @@ roteiro de atualização escrito antes da tag. Nada a instalar nem migrar. Wiki:
 `wikis/specs/fix/convite-painel-do-papel/`.
 
 ### Corrigido
+
+- Em relação ao código que chegou a sair na tag `v0.53.0`, achados no teste manual (Playwright, com login social
+  e reCAPTCHA, com e sem organizações): entrar no painel pelo login com a transição ligada não registra mais
+  uma promessa rejeitada ("Transition was aborted because of invalid state") — a página que sai pula a
+  transição para um destino que não participa dela; e desligar "Usar a aparência padrão" no formulário da
+  organização não gera mais "Livewire Entangle Error" no console.
 
 - Cadastro por convite com o login unificado **desligado** não termina mais em 403 quando o papel do convite
   é de outro painel (#191, `wikis/specs/fix/convite-painel-do-papel/`). O link do convite é sempre o cadastro

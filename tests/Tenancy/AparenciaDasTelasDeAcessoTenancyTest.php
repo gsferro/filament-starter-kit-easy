@@ -10,6 +10,7 @@ use App\Filament\Pages\Auth\TelaLogin;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\AparenciaDasTelasDeAcesso;
 use App\Support\ContextoDePapeis;
 use App\Support\TetoDeUpload;
 use Database\Seeders\PapeisSeeder;
@@ -868,6 +869,47 @@ it('[CT-104] na organização, a transição segue a opção da instalação', f
 })->with([
     'instalação ligada, organização desligada' => [true, false],
     'instalação desligada, organização ligada' => [false, true],
+])->group('tenancy');
+
+/**
+ * Teste manual da v0.53.1: com organizações, o dois fatores do `/app` é `app/{tenant}/...`. A lista
+ * de destinos da transição (CT-107) não pode pedir essa rota sem o parâmetro — o login no painel de
+ * marca respondia 500. Rota com parâmetro fica fora da lista.
+ */
+it('[CT-108] com organizações, as telas com transição abrem e levam a lista de destinos', function (string $caminho): void {
+    organizacoesAB();
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => true]);
+
+    $html     = loginDe($caminho);
+    $destinos = AparenciaDasTelasDeAcesso::caminhosDaTransicao();
+
+    expect(arvoreDoHtml($html)->query('//head/script[@data-kit-transicao-entre-telas-destinos]')->length)->toBe(1)
+        ->and($destinos)->toContain('/admin/login')
+        ->and($destinos)->toContain('/app/login')
+        ->and(collect($destinos)->filter(fn (string $c): bool => str_contains($c, '{'))->all())->toBe([]);
+})->with(['/admin/login', '/app/login', '/app/login?org=acme', '/app/password-reset/request'])->group('tenancy');
+
+/**
+ * Teste manual da v0.53.1: desligar "usar a padrão" troca a aparência inteira por uma cópia nova.
+ * A cópia tem de trazer o auxiliar da cor (não gravado), senão o seletor perde a propriedade que
+ * entrelaça e o navegador registra "Livewire Entangle Error" no console.
+ */
+it('[CT-109] a cópia da padrão traz o auxiliar da cor, no login e em cada tela', function (?string $cor, string $origem): void {
+    [$acme] = organizacoesAB();
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'fundo' => 'cor', 'cor' => $cor]);
+    $this->actingAs(usuarioComPapel('master_global'));
+
+    $editor = editorDaOrganizacao($acme)->set('data.usar_aparencia_padrao', false);
+
+    expect($editor->get('data.aparencia_das_telas.origem_da_cor'))->toBe($origem)
+        ->and($editor->get('data.aparencia_das_telas.telas.cadastro.origem_da_cor'))->toBe($origem);
+
+    // O auxiliar não é gravado.
+    $editor->call('save')->assertHasNoFormErrors();
+    expect($acme->refresh()->aparencia_das_telas)->not->toHaveKey('origem_da_cor');
+})->with([
+    'cor primária' => [null, 'primaria'],
+    'cor própria'  => ['#123456', 'propria'],
 ])->group('tenancy');
 
 it('[CT-105] o formulário da organização não oferece a transição entre as telas', function (): void {

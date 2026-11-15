@@ -2,7 +2,7 @@
 
 > Derivado do **requisito**, não do plano. Nenhuma implementação foi consultada.
 >
-> Cenários: 106 · Regras: 17 · Mutantes previstos: 121 · Sem matador: 0 *(2026-11-14, depois do Adendo 4, da revisão do diff dele e do gate (CT-98..CT-106, M134..M144); 2026-11-14, depois do CT-97 e do M133 (CX-C1); os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos cenários CT-80..CT-96 da revisão adversarial e dos mutantes M109..M132 (QA-34); antes: 79 cenários e 86 mutantes, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
+> Cenários: 109 · Regras: 17 · Mutantes previstos: 124 · Sem matador: 0 *(2026-11-15, depois do teste manual da v0.53.1 (CT-107..CT-109, M145..M147); 2026-11-14, depois do Adendo 4, da revisão do diff dele e do gate (CT-98..CT-106, M134..M144); 2026-11-14, depois do CT-97 e do M133 (CX-C1); os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos cenários CT-80..CT-96 da revisão adversarial e dos mutantes M109..M132 (QA-34); antes: 79 cenários e 86 mutantes, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
 >
 > Revisão adversarial dos Adendos 2 e 3: feita (`fw-adversario-ct`, ADV-C1..C32) — fechamento na seção "Revisão adversarial dos Adendos 2 e 3"; os CT-80..CT-96 que a fecham têm cenário em "Cenários da revisão adversarial dos Adendos 2 e 3" *(QA-34)*
 >
@@ -69,7 +69,7 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R20 — Destaque central | apresentação/padrão | RQ-20, P-20 | EP, falha de recurso, geometria | CT-48, CT-B12 |
 | R21 — Ilustração | apresentação/padrão | RQ-21, RQ-22, P-21 | EP, estado × evento | CT-49, CT-B10, CT-B13, CT-B14, CT-B15 |
 | R22 — Só o que a tela mostra | segurança/completo | P-06, P-16, P-20 | papel × ação | CT-50, CT-53, CT-56 |
-| R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-20, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52 |
+| R23 — Editor, upload e preview | segurança/completo | RQ-19, RQ-20, P-08, P-20, P-24 | EP, rastreio de escrita | CT-43, CT-51, CT-52, CT-109 |
 | R24 — Celular só com a marca | apresentação/padrão | RQ-24, P-22 | EP, visibilidade | CT-B09, CT-B05 |
 | R25 — Processo do Adendo 1 | processo/mínimo | RQ-17, RQ-18 | execução pela sessão | CT-21 (cenários, `03`), CT-23 (docs e capturas) |
 | R26 — Uma aparência por tela | isolamento/completo | RQ-25, RQ-26, P-25, P-26, P-31 | estado × evento, decisão | CT-58, CT-59, CT-60, CT-61, CT-62, CT-63, CT-64, CT-73, CT-74, CT-75, CT-78, CT-79, CT-82, CT-83, CT-84, CT-85, CT-93, CT-94, CT-95 |
@@ -77,7 +77,7 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R28 — Cor primária e gradiente | apresentação/padrão | RQ-28, RQ-29, P-28, P-29 | EP, valor hostil | CT-68, CT-69, CT-70, CT-76, CT-77, CT-86, CT-87, CT-96 |
 | R29 — Social e anti-robô no painel | regressão/padrão | RQ-31, RQ-32, RQ-33 | EP por painel e tela | CT-71, CT-72, CT-88, CT-89, CT-B17 |
 | R30 — Faixa do celular com arte | apresentação/padrão | RQ-30, P-30 | BVA de largura | CT-B16 |
-| R31 — Transição entre as telas (Adendo 4) | apresentação/padrão | RQ-34, RQ-35, RQ-36, P-32, P-33, P-34, P-35 | EP da opção, tabela de decisão, rastreio de efeito | CT-98..CT-106, CT-B19 |
+| R31 — Transição entre as telas (Adendo 4) | apresentação/padrão | RQ-34, RQ-35, RQ-36, P-32, P-33, P-34, P-35, P-36 | EP da opção, tabela de decisão, rastreio de efeito | CT-98..CT-108, CT-B19, CT-B20 |
 
 Tratamento das cláusulas:
 
@@ -1162,6 +1162,9 @@ Destinos automatizados (implementados):
 | CT-104 | Na organização, a transição segue a opção da instalação | R31 | tabela de decisão | G2 | Pest feature HTTP | T | M142 |
 | CT-105 | O formulário da organização não oferece a transição | R31 | partição | G1 | componente Livewire | T | M143 |
 | CT-106 | As telas de cadastro participam da transição | R31 | partição de página | G2 | Pest feature HTTP | K | M144 |
+| CT-107 | A transição só segue para telas que participam dela | R31 | partição de destino | G2 | Pest feature HTTP | K | M145 |
+| CT-108 | Com organizações, as telas com transição abrem e levam a lista de destinos | R31 | partição de rota (com parâmetro) | G2 | Pest feature HTTP | T | M146 |
+| CT-109 | A cópia da padrão traz o auxiliar da cor | R23 | rastreio de estado | G2 | componente Livewire | T | M147 |
 | CT-B19 | Do login ao "esqueci a senha", transição só com a opção ligada | R31 | rastreio de efeito no navegador | G4 | browser | B | M139 (no `05`) |
 | CT-B16 | Arte fora da faixa do celular | R30 | BVA | G4 | browser | B | M104..M107 (no `05`; M108 sem matador) |
 | CT-B17 | Social e anti-robô visíveis no painel | R29 | geometria | G4 | browser | B | M102, M103 (no `05`) |
@@ -2250,6 +2253,40 @@ Funcionalidade: Transição entre as telas de acesso
         | o cadastro aberto (/app/register)       |
         | o cadastro unificado (/cadastro)        |
       # Origem: RQ-34 ("clica em esqueceu senha ou registro") — QA-38 do gate (ciclo 3)
+
+    Cenário: [CT-107] A transição só segue para telas que participam dela
+      Dado a aparência padrão no painel com a transição ligada
+      Quando o visitante abre cada tela de autenticação dos painéis e, com o login unificado, cada página única
+      Então cada uma participa da transição e o caminho dela está na lista de destinos do <head>
+      E o painel ("/admin", "/app") e a escolha de painel ("/login/painel") não estão na lista
+      E, com a transição desligada, a página não leva a lista
+      # Origem: P-36 — teste manual da v0.53.1
+
+    Esquema do Cenário: [CT-108] Com organizações, as telas com transição abrem e levam a lista de destinos
+      Dado tenancy ligada e a aparência padrão no painel com a transição ligada
+      Quando o visitante abre <tela>
+      Então a tela responde 200 e leva a lista de destinos
+      E nenhum destino da lista tem parâmetro de rota
+
+      Exemplos:
+        | tela                         |
+        | /admin/login                 |
+        | /app/login                   |
+        | /app/login?org=acme          |
+        | /app/password-reset/request  |
+      # Origem: P-36 — teste manual da v0.53.1 (o dois fatores do /app é app/{tenant}/...)
+
+    Esquema do Cenário: [CT-109] A cópia da padrão traz o auxiliar da cor
+      Dado tenancy ligada, a aparência padrão no painel com o fundo em cor <cor>
+      Quando o master global desliga "Usar a aparência padrão" no formulário da Acme
+      Então o estado do editor tem a origem da cor <origem> no login e no cadastro
+      E, salvo, a aparência da Acme não grava a origem da cor
+
+      Exemplos:
+        | cor      | origem   |
+        | primária | primaria |
+        | #123456  | propria  |
+      # Origem: P-12, P-07 — teste manual da v0.53.1 (Livewire Entangle Error no console)
 ```
 
 #### Mutantes previstos — R31 (transição entre as telas)
@@ -2268,3 +2305,6 @@ Perfil padrão (teto 5).
 | M142 | O login da organização usa a opção gravada na aparência dela | CT-104 | as duas linhas seguem a instalação; o mutante segue a organização |
 | M143 | O interruptor aparece também no formulário da organização | CT-105 | nenhum campo da transição; o mutante tem |
 | M144 | As telas de cadastro não empurram a regra (ou não marcam o painel) | CT-106 | as três linhas participam; o mutante não |
+| M145 | A página que participa não pula a transição para um destino que não participa | CT-107 | a lista no `<head>` com `skipTransition()`; o mutante não a tem |
+| M146 | A lista de destinos chama `route()` em rota com parâmetro | CT-108 | as quatro telas respondem 200; o mutante responde 500 com organizações |
+| M147 | A cópia da padrão sai sem o auxiliar da cor | CT-109 | `origem_da_cor` no login e no cadastro; o mutante deixa `null` |

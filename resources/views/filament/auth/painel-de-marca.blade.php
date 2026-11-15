@@ -24,13 +24,11 @@
 @php
     $fundo = $aparencia['fundo'] ?? 'cor';
     $fundoArte = $fundo === 'arte';
-    $cor = method_exists($livewire, 'corDoPainelDeMarca') ? $livewire->corDoPainelDeMarca() : null;
-    $gradiente = $fundo === 'gradiente' && method_exists($livewire, 'gradienteDoPainelDeMarca') ? $livewire->gradienteDoPainelDeMarca() : null;
+    $cor = $livewire->corDoPainelDeMarca();
+    $gradiente = $livewire->gradienteDoPainelDeMarca();
     $formato = $aparencia['formato_dos_textos'] ?? 'texto';
-    $logos = ($aparencia['logo_no_painel'] ?? true) && method_exists($livewire, 'logosDoPainelDeMarca')
-        ? $livewire->logosDoPainelDeMarca()
-        : ['clara' => null, 'escura' => null];
-    $destaque = method_exists($livewire, 'destaqueDoPainelDeMarca') ? $livewire->destaqueDoPainelDeMarca() : null;
+    $logos = $livewire->logosDoPainelDeMarca();
+    $destaque = $livewire->destaqueDoPainelDeMarca();
     $nome = (string) config('app.name');
     $frase = \App\Support\AparenciaDasTelasDeAcesso::textoComoHtml($aparencia['frase'] ?? null, $formato);
     $apoio = \App\Support\AparenciaDasTelasDeAcesso::textoComoHtml($aparencia['apoio'] ?? null, $formato);
@@ -46,6 +44,8 @@
     Transição entre as telas (Adendo 4, ADR-06): a View Transitions API entre documentos. A regra
     `@view-transition` vai no <head> só das páginas que participam — as duas pontas precisam dela —,
     e só em tela larga e sem "reduzir movimento". Os nomes e as animações estão no kit.css.
+    Indo para uma página que não participa (o painel, depois de entrar), a que sai pula a
+    transição: senão o navegador a aborta e registra um erro de JavaScript.
 --}}
 @if ($comTransicao)
     @push('styles')
@@ -54,6 +54,15 @@
                 @view-transition { navigation: auto; }
             }
         </style>
+        <script data-kit-transicao-entre-telas-destinos>
+            addEventListener('pageswap', (evento) => {
+                const transicao = evento.viewTransition
+                if (! transicao) return
+                const destino = evento.activation?.entry?.url
+                const caminho = destino ? new URL(destino).pathname : null
+                if (! @js(\App\Support\AparenciaDasTelasDeAcesso::caminhosDaTransicao()).includes(caminho)) transicao.skipTransition()
+            })
+        </script>
     @endpush
 @endif
 

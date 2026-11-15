@@ -143,8 +143,8 @@ própria, no mesmo formulário da organização. Nada muda para quem atualiza o 
 
 - `AparenciaDasTelasDeAcesso@normalizar` — `warning` quando o valor gravado é inválido e cai no
   clássico: `[AparenciaDasTelasDeAcesso@normalizar] Aparencia invalida descartada | origem: {global|tenant:id} - motivo: {campo}`
-- `VesteAparenciaDasTelas@organizacaoDaAparencia` — `debug` no `tenancy`:
-  `[VesteAparenciaDasTelas@organizacaoDaAparencia] Organizacao da aparencia resolvida | tenant: {id|nenhum} - motivo: {sem_tenancy|painel_sem_tenancy|org_ausente|org_inativa|ok}`
+- `VesteAparenciaDasTelas@organizacaoParaAparencia` — `debug` no `tenancy`, só na recusa de uma candidata:
+  `[VesteAparenciaDasTelas@organizacaoParaAparencia] Organizacao da aparencia resolvida | tenant: {id} - motivo: {sem_tenancy|painel_sem_tenancy|org_inativa}` *(alterado em 2026-11-15: o `/code-review` da v0.53.1 — o rótulo é o do método que registra; sem candidata nada é registrado, então `nenhum` e `org_ausente` nunca saíam)*
 - `PreviewDasTelasDeAcesso@mount` — `warning` quando o rascunho não existe, expirou ou o escopo é
   negado: `[PreviewDasTelasDeAcesso@mount] Preview recusado | user: {id} - motivo: {rascunho_ausente|escopo_negado}`
 - Contexto: `user_id`, `tenant_id`, `escopo`, `motivo` — nunca o conteúdo da aparência
