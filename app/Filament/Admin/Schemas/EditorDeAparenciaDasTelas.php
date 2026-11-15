@@ -489,6 +489,7 @@ final class EditorDeAparenciaDasTelas
                 'layout'                => AparenciaDasTelasDeAcesso::LAYOUT_CLASSICO,
                 // A opção da transição sobrevive ao login no clássico (RD-D1 da revisão do Adendo 4).
                 'transicao_entre_telas' => ($tela['transicao_entre_telas'] ?? true) !== false,
+                'origem_da_cor'         => 'primaria',
             ];
         }
 
@@ -499,6 +500,11 @@ final class EditorDeAparenciaDasTelas
             $tela['apoio']              = self::escaparMarkdown($tela['apoio'] ?? null);
             $tela['formato_dos_textos'] = 'markdown';
         }
+
+        // O auxiliar da cor (não gravado) vai junto: quem troca o estado inteiro de uma vez — o
+        // "usar a padrão" da organização — deixaria o seletor sem a propriedade que ele entrelaça
+        // (Livewire Entangle Error no teste manual da v0.53.1).
+        $tela['origem_da_cor'] = filled($tela['cor'] ?? null) ? 'propria' : 'primaria';
 
         return $tela;
     }
