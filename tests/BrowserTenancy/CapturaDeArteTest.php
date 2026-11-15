@@ -1507,6 +1507,75 @@ it('captura a faixa de marca no celular', function (bool $comLogo, string $arqui
 })->group('browser', 'art');
 
 /**
+ * Com organizações ligadas: cada organização usa a aparência padrão ou a sua. Acme e Globex têm
+ * a própria; o login sem `?org=` mostra a padrão. O login social fica ligado, como numa instalação
+ * real, para mostrar que o botão acompanha cada aparência.
+ */
+function organizacoesDeArte(): void
+{
+    test()->organizacao->update(['aparencia_das_telas' => aparenciaDeArte([
+        'lado_do_formulario' => 'direita', 'cor' => '#0f766e', 'tamanho_do_painel' => 45,
+        'ilustracao'         => 'rede', 'cor_da_ilustracao' => '#99f6e4', 'movimento' => false,
+        'frase'              => 'Acme: **cuidado** em cada detalhe.',
+        'apoio'              => 'O login da Acme tem a cor e a frase dela; a instalação continua com a sua.',
+    ])]);
+
+    Tenant::query()->create(['nome' => 'Globex', 'slug' => 'globex', 'ativo' => true])->update(['aparencia_das_telas' => aparenciaDeArte([
+        'fundo'    => 'gradiente', 'gradiente_de' => '#ea580c', 'gradiente_ate' => '#9f1239', 'gradiente_direcao' => 'diagonal',
+        'destaque' => 'logo', 'tamanho_do_destaque' => 'grande', 'tamanho_do_painel' => 60,
+        'frase'    => 'Globex: o seu dia **começa aqui**.',
+        'apoio'    => 'Outra organização, outra aparência — no mesmo kit.',
+    ])]);
+}
+
+it('captura o login de cada organização', function (): void {
+    identidadeDeArte();
+    ligarProvedor(ProvedorSocial::Google);
+    aparenciaDaInstalacaoParaArte(aparenciaDeArte([
+        'fundo' => 'gradiente', 'gradiente_de' => '#4f46e5', 'gradiente_ate' => '#db2777', 'destaque' => 'logo',
+    ]));
+    organizacoesDeArte();
+    auth()->logout();
+
+    foreach ([
+        'telas-de-acesso-organizacoes-1-padrao' => ['/app/login', 'num lugar só'],
+        'telas-de-acesso-organizacoes-2-acme'   => ['/app/login?org=acme', 'em cada detalhe'],
+        'telas-de-acesso-organizacoes-3-globex' => ['/app/login?org=globex', 'começa aqui'],
+    ] as $arquivo => [$tela, $frase]) {
+        $this->get($tela);
+
+        visit($tela)
+            ->resize(1400, 875)
+            ->assertPresent('.kit-painel-de-marca')
+            ->assertSee($frase)
+            ->assertNoBrokenImages()
+            ->assertNoJavaScriptErrors()
+            ->screenshot(fullPage: false, filename: $arquivo);
+    }
+})->after(function (): void {
+    Storage::disk('public')->delete(['kit/arte-logo.png', 'kit/arte-logo-escura.png', 'telas-de-acesso/arte-produto.png']);
+})->group('browser', 'art');
+
+it('captura a aparência própria no formulário da organização', function (): void {
+    identidadeDeArte();
+    aparenciaDaInstalacaoParaArte(aparenciaDeArte(['fundo' => 'gradiente', 'gradiente_de' => '#4f46e5', 'gradiente_ate' => '#db2777']));
+    organizacoesDeArte();
+
+    $url = TenantResource::getUrl('edit', ['record' => $this->organizacao], panel: 'admin');
+    $this->get($url);
+
+    $pagina = visit($url)
+        ->resize(1400, 875)
+        ->assertSee('Usar a aparência padrão');
+
+    rolarAte($pagina, 'Telas de acesso');
+    $pagina->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: false, filename: 'telas-de-acesso-organizacao');
+})->after(function (): void {
+    Storage::disk('public')->delete(['kit/arte-logo.png', 'kit/arte-logo-escura.png', 'telas-de-acesso/arte-produto.png']);
+})->group('browser', 'art');
+
+/**
  * Rola a tela de configurações até um título (legenda de fieldset ou cabeçalho de seção), com
  * folga para a barra do topo, e espera o fim da rolagem.
  */

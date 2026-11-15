@@ -110,6 +110,7 @@ auditoria) e no `02` (RQ-04).
 | P-33 | A transição só acontece entre duas telas no painel de marca, em tela de computador (a partir de 1024 px) e sem "reduzir movimento" no sistema; nos navegadores sem a View Transitions API entre documentos, a tela troca sem animação | decisão de desenho (Adendo 4, juiz cego Codex) | 2026-11-14 | RQ-34, RQ-35 | vigente |
 | P-34 | Na transição, o painel inteiro (com logo, destaque e textos) é o que desliza; o formulário antigo some na hora e o novo entra por opacidade, depois do início do deslize, para nunca ser visto do lado errado | decisão de desenho (Adendo 4, juiz cego Codex) | 2026-11-14 | RQ-35, RQ-36 | vigente |
 | P-35 | Na organização, a transição entre as telas segue a opção da instalação: a recuperação de senha usa sempre a padrão (P-31) e a transição exige as duas pontas, então uma opção própria da organização não teria efeito previsível. O formulário da organização não oferece o interruptor | quality gate — QA-37 | 2026-11-14 | RQ-34, P-31, P-32 | vigente — confirmada pelo solicitante em 2026-11-15 |
+| P-36 | A transição só segue para uma tela que também participa dela (as de autenticação dos painéis e as páginas únicas do login unificado, sem rota com parâmetro). Para qualquer outro destino — o painel depois de entrar — a página que sai a pula: sem isso o navegador a aborta e registra uma promessa rejeitada a cada login | teste manual da v0.53.1 (Playwright) | 2026-11-15 | RQ-34, P-32 | vigente |
 
 ## Fora de Escopo (declarado)
 

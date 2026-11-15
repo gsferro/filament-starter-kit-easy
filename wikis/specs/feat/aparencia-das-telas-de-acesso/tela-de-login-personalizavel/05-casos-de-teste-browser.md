@@ -1,6 +1,6 @@
 # Casos de Teste de Browser — Aparência das telas de acesso
 
-> Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11. Adendo 1 (seções no fim): RQ-17..RQ-24 e P-19..P-24, derivados pela sessão *(alterado em 2026-11-14: QA-23)*. Adendos 2 e 3 (seção no fim): RQ-25..RQ-33 e P-25..P-31, derivados pela sessão. Oráculo atual: RQ-01..RQ-36 e P-01..P-35 *(alterado em 2026-11-14: QA-30)*.
+> Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11. Adendo 1 (seções no fim): RQ-17..RQ-24 e P-19..P-24, derivados pela sessão *(alterado em 2026-11-14: QA-23)*. Adendos 2 e 3 (seção no fim): RQ-25..RQ-33 e P-25..P-31, derivados pela sessão. Oráculo atual: RQ-01..RQ-36 e P-01..P-36 *(alterado em 2026-11-14: QA-30)*.
 >
 > Cenários: 19 · Regras: 8 · Mutantes previstos: 23 · Sem matador: 0 *(2026-11-14, depois do CT-B19 (Adendo 4); os `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho aplicados a este arquivo, com `\[CT-B[0-9]+\]` no padrão de cenário, 2026-11-14; as regras dos Adendos estão no `Regra:` do Gherkin, sem `## Regra` próprio; o sem matador é o M108, lacuna declarada do CT-B16)*
 >
@@ -437,6 +437,7 @@ O mutante **M72**, registrado em R3 do 04, é morto por CT-B08: interpolação i
 | CT-B16 | R30 | BVA de largura | G4 | browser | Browser | M104–M108 |
 | CT-B18 | R28 | estilo computado | G4 | browser | Browser | — |
 | CT-B19 | R31 | rastreio de efeito (navegação real) | G4 | browser | Browser | M139 |
+| CT-B20 | R31 | rastreio de efeito (login real) | G4 | browser | Browser | M148 |
 | CT-B17 | R29 | geometria | G4 | browser | Browser | M102–M103 |
 
 CT-B07 acrescenta a prova do limite efetivo do controle do navegador. CT-B08 acrescenta a prova de execução. Essas observações não são duplicadas pelas assertions de persistência de CT-30 ou pela inspeção de resposta de CT-06.
@@ -642,8 +643,16 @@ Funcionalidade: Transição entre as telas no navegador
         | ligada    | "kit-painel" e "kit-formulario" | sim       |
         | desligada | "none" e "none"               | não       |
       # Origem: RQ-34, RQ-35, P-32, P-33
+
+    Cenário: [CT-B20] Entrar pelo login com transição não registra erro de JavaScript
+      Dado o login no painel com a transição ligada, aberto em 1440×900
+      Quando o master global entra pelo formulário
+      Então ele chega ao "/app" com o "Painel de Controle"
+      E nenhum erro de JavaScript nem promessa rejeitada sem tratamento é registrado
+      # Origem: P-36 — teste manual da v0.53.1
 ```
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
+| M148 | A página que participa não pula a transição ao entrar no painel | CT-B20 | nenhuma rejeição registrada; o mutante registra "Transition was aborted because of invalid state" |
 | M139 | A regra e os nomes existem, mas só numa das pontas, e o navegador não faz a transição | CT-B19 | linha "ligada": `pageswap` na origem e `pagereveal` pronto no destino; o mutante falha um dos dois *(alterado em 2026-11-14: RD-D3/CX-D2 — antes só a origem era conferida)* |

@@ -70,6 +70,8 @@
 - [x] Capturas novas: painel, celular, escuro, arte, editor, preview, organização (`art/telas-de-acesso-*.png`) — 2026-11-14
 - [x] Revisão do diff do adendo (step 9) — ver "Revisão do Diff — Adendo 1" — 2026-11-14
 - [x] Quality gate do adendo, CI do PR, merge, tag e cenários 1–4 (RQ-17): PR #193 na `main` (`bfce1edd`). A tag `v0.53.0` saiu primeiro, por engano, sobre a `main` antiga (`216dd4b0`), e o Packagist guardou essa referência como imutável; a versão foi publicada como v0.53.1 e a tag `v0.53.0` voltou para `216dd4b0`, como o Packagist pede. Q1, Q12 e P-35 confirmadas pelo solicitante — 2026-11-15
+- [x] v0.53.1 — revisões pedidas pelo solicitante: `ponytail-review` e Blueprint Filament em workflow com verificação adversarial (10 achados de excesso confirmados e aplicados, 0 divergências do Blueprint confirmadas, `filacheck` sem API depreciada); `/code-review` do branch (roteiro cobre o marcador `0.53.0` e avisa da tag retirada; memo sem `once()`; lista de telas do preview junto dos `match`); `pest --testsuite=Kit` 5240 (5237 passaram, 3 pulados), `--testsuite=Tenancy` 755/755 — 2026-11-15
+- [x] Teste manual com Playwright em duas instalações limpas do commit atual, com login social do Google (credencial falsa: só o desvio) e reCAPTCHA v2 com as chaves de teste do Google: `g1` sem organizações 26/26 e `g2` com organizações 33/33 — o admin troca a aparência pelo editor e salva; login, "esqueci a senha" e cadastro no painel com o captcha e o botão do Google dentro do formulário; envio recusado sem o captcha; transição ao ir para o "esqueci a senha"; desvio para o consentimento do Google; entrada no `/admin` e no `/app`; aparência própria da Acme pelo formulário da organização e o login dela; organização inexistente cai na padrão; celular sem rolagem horizontal. Três defeitos achados e corrigidos com teste antes da correção: a transição abortada ao entrar no painel (P-36, CT-107, CT-B20), o login no painel respondendo 500 com organizações pela lista de destinos (CT-108) e o "Livewire Entangle Error" ao desligar "usar a padrão" na organização (CT-109). Arte com organizações: `telas-de-acesso-organizacoes.gif` e o formulário da organização no `composer art` — 2026-11-15
 
 ## Revisão do Diff — Adendo 1
 
@@ -156,9 +158,9 @@ Diff `fe9ea589..0d9034fa` (sem `wikis/`, `art/`, `docs/`). Workflow: Codex (`exe
 | `tests/Kit/AparenciaDasTelasDeAcessoTest.php` | CT do 04 com destino K (Kit) |
 | `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php` | CT do 04 com destino T (Tenancy) |
 | `tests/Kit/AparenciaDasTelasDeAcessoEntregaTest.php` | CT-23, CT-24 |
-| `tests/Browser/AparenciaDasTelasDeAcessoTest.php` | CT-B01..CT-B19 |
+| `tests/Browser/AparenciaDasTelasDeAcessoTest.php` | CT-B01..CT-B20 |
 | `tests/Kit/AparenciaDasTelasAdendoTest.php` | CT do Adendo 1 (CT-43..CT-56) com destino K |
-| `tests/Kit/AparenciaDasTelasPorTelaTest.php` | CT-57..CT-106 com destino K |
+| `tests/Kit/AparenciaDasTelasPorTelaTest.php` | CT-57..CT-107 com destino K |
 | `tests/BrowserTenancy/CapturaDeArteTest.php` | arte das telas de acesso (só com `KIT_ART=1`) |
 | cenários do checklist de release (sessão) | CT-21, CT-27 |
 

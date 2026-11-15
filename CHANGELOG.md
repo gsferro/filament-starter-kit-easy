@@ -59,6 +59,12 @@ roteiro de atualização escrito antes da tag. Nada a instalar nem migrar. Wiki:
 
 ### Corrigido
 
+- Em relação ao código que chegou a sair na tag `v0.53.0`, achados no teste manual (Playwright, com login social
+  e reCAPTCHA, com e sem organizações): entrar no painel pelo login com a transição ligada não registra mais
+  uma promessa rejeitada ("Transition was aborted because of invalid state") — a página que sai pula a
+  transição para um destino que não participa dela; e desligar "Usar a aparência padrão" no formulário da
+  organização não gera mais "Livewire Entangle Error" no console.
+
 - Cadastro por convite com o login unificado **desligado** não termina mais em 403 quando o papel do convite
   é de outro painel (#191, `wikis/specs/fix/convite-painel-do-papel/`). O link do convite é sempre o cadastro
   do `/app`, e o `RespostaDeCadastro` caía no painel corrente depois de descartar a URL pretendida
