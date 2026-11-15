@@ -25,13 +25,19 @@ use Illuminate\Support\Facades\Log;
  * `app` (inclui as páginas únicas `/login` e `/cadastro`, servidas sob `panel:app`) e organização
  * ativa. Fora delas, vale a aparência da instalação. A aparência NUNCA decide acesso.
  *
- * Os quatro métodos públicos (`aparenciaDaTela()`, `corDoPainelDeMarca()`, `logosDoPainelDeMarca()`,
- * `destaqueDoPainelDeMarca()`) existem para o partial `media` lê-los do componente. São ações chamáveis por `$wire` como todo
- * método público de componente Livewire; por isso a cor e as logos saem vazias fora do layout
- * `painel` (e as logos, com a logo desligada) — nada além do que a própria tela mostra (P-16).
+ * Os cinco métodos públicos (`aparenciaDaTela()`, `corDoPainelDeMarca()`, `gradienteDoPainelDeMarca()`,
+ * `logosDoPainelDeMarca()`, `destaqueDoPainelDeMarca()`) existem para o partial `media` lê-los do componente. São ações chamáveis por `$wire` como todo
+ * método público de componente Livewire; por isso a cor, o gradiente e as logos saem vazios fora do layout
+ * `painel` (o gradiente, fora do fundo em gradiente; as logos, com a logo desligada) — nada além do que a própria tela mostra (P-16).
  */
 trait VesteAparenciaDasTelas
 {
+    /** @var array{0: array<string, mixed>|null}|null a aparência memoizada; o envelope distingue "clássico" (null) de "ainda não resolvida" */
+    private ?array $aparenciaMemo = null;
+
+    /** @var array{0: Tenant|null}|null */
+    private ?array $organizacaoDaAparenciaMemo = null;
+
     /**
      * A aparência que esta tela usa — `null` = clássico. Memoizada por instância: o layout, o
      * partial e o `getAuthDesignerConfig()` perguntam no mesmo render.
@@ -40,17 +46,19 @@ trait VesteAparenciaDasTelas
      */
     public function aparenciaDaTela(): ?array
     {
-        return once(function (): ?array {
-            $tela = AparenciaDasTelasDeAcesso::daFamilia($this->resolverAparencia(), $this->familiaDaAparencia());
+        if ($this->aparenciaMemo !== null) {
+            return $this->aparenciaMemo[0];
+        }
 
-            // A transição entre as telas é da instalação, também na organização (P-35): a
-            // recuperação de senha usa sempre a padrão, e a transição exige as duas pontas.
-            if ($tela !== null) {
-                $tela['transicao_entre_telas'] = AparenciaDasTelasDeAcesso::transicaoDaInstalacao();
-            }
+        $tela = AparenciaDasTelasDeAcesso::daFamilia($this->resolverAparencia(), $this->familiaDaAparencia());
 
-            return self::soOQueATelaMostra($tela);
-        });
+        // A transição entre as telas é da instalação, também na organização (P-35): a
+        // recuperação de senha usa sempre a padrão, e a transição exige as duas pontas.
+        if ($tela !== null) {
+            $tela['transicao_entre_telas'] = AparenciaDasTelasDeAcesso::transicaoDaInstalacao();
+        }
+
+        return ($this->aparenciaMemo = [self::soOQueATelaMostra($tela)])[0];
     }
 
     /**
@@ -213,7 +221,7 @@ trait VesteAparenciaDasTelas
         }
 
         Log::channel('tenancy')->debug(
-            '[VesteAparenciaDasTelas@organizacaoDaAparencia] Organizacao da aparencia resolvida | tenant: '.$candidata->getKey().' - motivo: '.$motivo,
+            '[VesteAparenciaDasTelas@organizacaoParaAparencia] Organizacao da aparencia resolvida | tenant: '.$candidata->getKey().' - motivo: '.$motivo,
             ['tenant_id' => $candidata->getKey(), 'motivo' => $motivo, 'pagina' => static::class],
         );
 
@@ -222,6 +230,6 @@ trait VesteAparenciaDasTelas
 
     private function organizacaoDaAparenciaMemo(): ?Tenant
     {
-        return once(fn (): ?Tenant => $this->organizacaoDaAparencia());
+        return ($this->organizacaoDaAparenciaMemo ??= [$this->organizacaoDaAparencia()])[0];
     }
 }
