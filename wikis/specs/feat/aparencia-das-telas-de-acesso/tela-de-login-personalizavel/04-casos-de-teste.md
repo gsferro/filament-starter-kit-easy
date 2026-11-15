@@ -2,7 +2,7 @@
 
 > Derivado do **requisito**, não do plano. Nenhuma implementação foi consultada.
 >
-> Cenários: 97 · Regras: 17 · Mutantes previstos: 111 · Sem matador: 0 *(2026-11-14, depois do CT-97 e do M133 (CX-C1); os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos cenários CT-80..CT-96 da revisão adversarial e dos mutantes M109..M132 (QA-34); antes: 79 cenários e 86 mutantes, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
+> Cenários: 101 · Regras: 17 · Mutantes previstos: 116 · Sem matador: 0 *(2026-11-14, depois do Adendo 4 (CT-98..CT-101, M134..M138); 2026-11-14, depois do CT-97 e do M133 (CX-C1); os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos cenários CT-80..CT-96 da revisão adversarial e dos mutantes M109..M132 (QA-34); antes: 79 cenários e 86 mutantes, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
 >
 > Revisão adversarial dos Adendos 2 e 3: feita (`fw-adversario-ct`, ADV-C1..C32) — fechamento na seção "Revisão adversarial dos Adendos 2 e 3"; os CT-80..CT-96 que a fecham têm cenário em "Cenários da revisão adversarial dos Adendos 2 e 3" *(QA-34)*
 >
@@ -77,6 +77,7 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R28 — Cor primária e gradiente | apresentação/padrão | RQ-28, RQ-29, P-28, P-29 | EP, valor hostil | CT-68, CT-69, CT-70, CT-76, CT-77, CT-86, CT-87, CT-96 |
 | R29 — Social e anti-robô no painel | regressão/padrão | RQ-31, RQ-32, RQ-33 | EP por painel e tela | CT-71, CT-72, CT-88, CT-89, CT-B17 |
 | R30 — Faixa do celular com arte | apresentação/padrão | RQ-30, P-30 | BVA de largura | CT-B16 |
+| R31 — Transição entre as telas (Adendo 4) | apresentação/padrão | RQ-34, RQ-35, RQ-36, P-32, P-33, P-34 | EP da opção, tabela de decisão, rastreio de efeito | CT-98, CT-99, CT-100, CT-101, CT-B19 |
 
 Tratamento das cláusulas:
 
@@ -1152,6 +1153,11 @@ Destinos automatizados (implementados):
 | CT-95 | Editor da organização mantém a seção Cadastro | R26 | partição | G1 | componente Livewire | T | M127 |
 | CT-96 | Cor primária da organização | R28 | partição de escopo | G2 | Pest feature HTTP | T | M130 |
 | CT-97 | Preview da organização na recuperação usa a imagem da padrão | R26 | rastreio de efeito | G2 | Pest feature HTTP | T | M133 |
+| CT-98 | A página no painel participa da transição conforme a opção | R31 | EP da opção | G2 | Pest feature HTTP | K | M134, M135 |
+| CT-99 | Uma opção só, a do login | R31 | tabela de decisão | G2 | Pest feature HTTP | K | M136 |
+| CT-100 | A opção só na seção Login, gravada como escolhida | R31 | rastreio de escrita | G1 | componente Livewire | K | M137 |
+| CT-101 | O formulário não desliza; só o painel tem nome de transição | R31 | inspeção do CSS publicado | G1 | Pest | K | M138 |
+| CT-B19 | Do login ao "esqueci a senha", transição só com a opção ligada | R31 | rastreio de efeito no navegador | G4 | browser | B | M139 (no `05`) |
 | CT-B16 | Arte fora da faixa do celular | R30 | BVA | G4 | browser | B | M104..M107 (no `05`; M108 sem matador) |
 | CT-B17 | Social e anti-robô visíveis no painel | R29 | geometria | G4 | browser | B | M102, M103 (no `05`) |
 | CT-B12 | Destaque sem cobrir os textos | R20 | geometria | G4 | browser | B | — |
@@ -2127,3 +2133,76 @@ no normalizador; CT-83).
 | ADV-C31 | coberto pelo desenho: o preview da organização na recuperação lê a padrão SALVA (`global()`), nunca rascunho; sem cenário próprio |
 | ADV-C32 | CT-92 (valor gravado acima do teto volta ao padrão) |
 | RQ-27 × Q12 | a RQ-27 depende da Q12 (aberta, com a recomendação implementada); o oráculo "HTML cru descartado" vale enquanto a Q12 não for respondida em contrário |
+
+## Adendo 4 — transição entre as telas
+
+Derivados pela sessão do Adendo 4 (RQ-34..RQ-36) e das P-32..P-34; o desenho foi julgado às cegas
+pelo Codex antes (ver `03` › Despachos). R31 segue o padrão dos Adendos: regra no `## Mapa de Regras`
+e no `Regra:` do Gherkin.
+
+```gherkin
+# language: pt
+Funcionalidade: Transição entre as telas de acesso
+
+  Regra: R31 — Transição entre as telas
+
+    Esquema do Cenário: [CT-98] A página no painel participa da transição conforme a opção do login
+      Dado a aparência padrão <aparência>
+      Quando o visitante abre o login e o "esqueci a senha" do admin
+      Então as duas páginas <participam> da transição: a regra "@view-transition { navigation: auto; }" no <head>, dentro de "@media (min-width: 1024px) and (prefers-reduced-motion: no-preference)", e o painel marcado com data-kit-transicao
+
+      Exemplos:
+        | caso                      | aparência                                      | participam |
+        | ligada                    | no painel, com a transição ligada              | participam |
+        | desligada                 | no painel, com a transição desligada           | não participam |
+        | gravada antes do Adendo 4 | no painel, sem a chave da transição            | participam |
+        | valor inválido            | no painel, com a transição gravada como "sim"  | participam |
+        | clássico                  | no clássico, com a transição ligada            | não participam |
+      # Origem: RQ-34, P-32 (ligada por padrão; o objeto antigo conta como ligada), P-33, P-04 (valor inválido volta ao padrão)
+
+    Esquema do Cenário: [CT-99] A transição é uma opção só, a do login
+      Dado o login <login> e a tela própria de recuperação no painel com a transição gravada <própria>
+      Quando o visitante abre o "esqueci a senha" do admin
+      Então a página <participa> da transição
+
+      Exemplos:
+        | caso                              | login                                       | própria   | participa |
+        | login desligada, própria ligada   | no painel, transição desligada              | ligada    | não participa |
+        | login ligada, própria desligada   | no painel, transição ligada                 | desligada | participa |
+        | login clássico, raiz desligada    | no clássico, transição desligada na raiz    | ligada    | não participa |
+        | login clássico, nada na raiz      | no clássico, sem a chave na raiz            | desligada | participa |
+      # Origem: P-32 (a opção é a do login e vale para todas as telas)
+
+    Cenário: [CT-100] O editor tem a opção só na seção Login e grava o que a pessoa escolheu
+      Dado o master global no editor da instalação, aba telas de acesso, com o login no painel
+      E a seção "Esqueci a senha" com "Igual ao login" desligado
+      Quando ele desliga "Transição entre as telas" e salva
+      Então o formulário tem o campo da transição na raiz e nenhum nas telas próprias
+      E a aparência gravada tem a transição desligada
+      E nem o login nem o "esqueci a senha" participam da transição
+      # Origem: P-32
+
+    Esquema do Cenário: [CT-101] O formulário não desliza: só o painel tem a animação de posição
+      Dado o CSS <arquivo>
+      Quando a regra da transição é lida
+      Então, dentro de "@media (min-width: 1024px) and (prefers-reduced-motion: no-preference)", o wrapper da mídia se chama "kit-painel" e o contêiner do formulário "kit-formulario"
+      E o grupo "kit-formulario" não tem animação, o antigo fica com opacidade 0 e o novo entra pela animação "kit-formulario-aparece", de opacidade 0 a 1
+
+      Exemplos:
+        | arquivo                             |
+        | resources/css/filament/kit.css      |
+        | public/css/kit/kit-correcoes.css    |
+      # Origem: RQ-35, RQ-36, P-34
+```
+
+#### Mutantes previstos — R31 (transição entre as telas)
+
+Perfil padrão (teto 5).
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M134 | A regra `@view-transition` vai no CSS global, sem depender da opção | CT-98 | linha "desligada": a página não tem a regra; o mutante a tem |
+| M135 | A regra sai sem a condição de largura e de "reduzir movimento" | CT-98 | linha "ligada": o texto da regra tem o `@media` com as duas condições; o mutante não |
+| M136 | Cada tela lê a própria opção (por tela), sem a do login | CT-99 | linhas 1 e 2: a recuperação segue o login; o mutante segue a gravada nela |
+| M137 | O interruptor aparece também nas seções Cadastro e Esqueci a senha | CT-100 | nenhum campo da transição sob `telas.cadastro`/`telas.recuperacao`; o mutante tem |
+| M138 | O formulário recebe a mesma animação de posição do painel (desliza) | CT-101 | grupo `kit-formulario` com `animation: none`; o mutante o anima |

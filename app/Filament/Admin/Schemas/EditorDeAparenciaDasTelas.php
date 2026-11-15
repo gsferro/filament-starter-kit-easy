@@ -390,6 +390,16 @@ final class EditorDeAparenciaDasTelas
                 ->default(true)
                 ->live()
                 ->visible($ehPainel),
+
+            // Uma opção só, no login: o efeito depende das duas telas (P-32, Adendo 4).
+            ...($raiz ? [
+                Toggle::make('transicao_entre_telas')
+                    ->label('Transição entre as telas')
+                    ->helperText('Ao ir do login para o cadastro ou o "esqueci a senha" (e de volta), o painel desliza para o lado da outra tela e o formulário aparece aos poucos. Vale entre telas no painel de marca, em computador, nos navegadores com suporte; quem pediu ao sistema para reduzir movimento não vê animação.')
+                    ->default(true)
+                    ->visible($ehPainel)
+                    ->dehydratedWhenHidden(),
+            ] : []),
         ];
     }
 

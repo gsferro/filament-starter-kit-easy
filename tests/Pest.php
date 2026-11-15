@@ -3406,6 +3406,8 @@ function aparenciaDeTeste(string $qual): array
         'ilustracao'        => 'nenhuma', 'movimento' => true, 'cor_da_ilustracao' => null,
         // Adendo 2: gradiente e textos formatados (o editor grava Markdown, P-27).
         'gradiente_de' => null, 'gradiente_ate' => null, 'gradiente_direcao' => 'diagonal', 'formato_dos_textos' => 'markdown',
+        // Adendo 4: a transição entre as telas (uma opção, a do login — P-32).
+        'transicao_entre_telas' => true,
     ];
 
     return match ($qual) {

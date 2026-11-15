@@ -633,3 +633,102 @@ it('[CT-92] frase gravada acima do teto visível volta ao padrão na tela', func
     'no teto (80)'       => [80, str_repeat('a', 80)],
     'acima do teto (81)' => [81, null],
 ])->group('kit');
+
+/*
+|--------------------------------------------------------------------------
+| Adendo 4 — transição entre as telas (RQ-34..RQ-36, P-32..P-34)
+|--------------------------------------------------------------------------
+*/
+
+/** A página participa da transição: a regra `@view-transition` no <head> e o painel marcado. */
+function participaDaTransicao(string $html): bool
+{
+    $regra  = arvoreDoHtml($html)->query('//style[@data-kit-transicao-entre-telas]');
+    $painel = arvoreDoHtml($html)->query('//*[@data-kit-aparencia="painel"][@data-kit-transicao]');
+
+    if ($regra->length === 0) {
+        expect($painel->length)->toBe(0, 'o painel está marcado para a transição, mas a página não tem a regra');
+
+        return false;
+    }
+
+    // A regra só vale em tela larga e sem "reduzir movimento" (P-33).
+    expect(preg_replace('/\s+/', ' ', $regra->item(0)->textContent))
+        ->toContain('@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }')
+        ->and($painel->length)->toBe(1);
+
+    return true;
+}
+
+it('[CT-98] a página no painel participa da transição conforme a opção do login', function (array $aparencia, bool $participa): void {
+    definirAparenciaGlobal($aparencia);
+
+    expect(participaDaTransicao(htmlDe('/admin/login')))->toBe($participa)
+        ->and(participaDaTransicao(htmlDe('/admin/password-reset/request')))->toBe($participa);
+})->with([
+    'ligada'                     => [[...aparenciaDeTeste('P'), 'transicao_entre_telas' => true], true],
+    'desligada'                  => [[...aparenciaDeTeste('P'), 'transicao_entre_telas' => false], false],
+    'gravada antes do Adendo 4'  => [array_diff_key(aparenciaDeTeste('P'), ['transicao_entre_telas' => true]), true],
+    'valor inválido'             => [[...aparenciaDeTeste('P'), 'transicao_entre_telas' => 'sim'], true],
+    'clássico'                   => [['layout' => 'classico', 'transicao_entre_telas' => true], false],
+])->group('kit');
+
+it('[CT-99] a transição é uma opção só, a do login: a tela própria não a liga nem desliga', function (array $aparencia, bool $participa): void {
+    definirAparenciaGlobal($aparencia);
+
+    expect(participaDaTransicao(htmlDe('/admin/password-reset/request')))->toBe($participa);
+})->with([
+    'login desligada, própria gravada ligada' => [[
+        ...painelComFrase('direita', 'LOGIN', ['transicao_entre_telas' => false]),
+        'telas' => ['recuperacao' => painelComFrase('esquerda', 'REC', ['transicao_entre_telas' => true])],
+    ], false],
+    'login ligada, própria gravada desligada' => [[
+        ...painelComFrase('direita', 'LOGIN', ['transicao_entre_telas' => true]),
+        'telas' => ['recuperacao' => painelComFrase('esquerda', 'REC', ['transicao_entre_telas' => false])],
+    ], true],
+    'login no clássico com a opção desligada na raiz' => [[
+        'layout' => 'classico', 'transicao_entre_telas' => false,
+        'telas'  => ['recuperacao' => painelComFrase('esquerda', 'REC', ['transicao_entre_telas' => true])],
+    ], false],
+    'login no clássico sem nada gravado na raiz' => [[
+        'layout' => 'classico',
+        'telas'  => ['recuperacao' => painelComFrase('esquerda', 'REC', ['transicao_entre_telas' => false])],
+    ], true],
+])->group('kit');
+
+it('[CT-100] o editor tem a opção só na seção Login e grava o que a pessoa escolheu', function (): void {
+    definirAparenciaGlobal(painelComFrase('direita', 'LOGIN'));
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    $tela = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh();
+    $tela->set('data.aparencia_das_telas.telas.recuperacao.igual_ao_login', false);
+
+    $caminhos = collect($tela->instance()->form->getFlatComponents(withHidden: true))->map(fn ($c): string => (string) $c->getStatePath());
+
+    expect($caminhos->contains('data.aparencia_das_telas.transicao_entre_telas'))->toBeTrue()
+        ->and($caminhos->filter(fn (string $c): bool => preg_match('/\.telas\.(cadastro|recuperacao)\./', $c) === 1 && str_ends_with($c, 'transicao_entre_telas'))->all())->toBe([]);
+
+    $tela->set('data.aparencia_das_telas.transicao_entre_telas', false)->call('save')->assertHasNoFormErrors();
+
+    expect(configuracaoGravada('aparencia_das_telas')['transicao_entre_telas'])->toBeFalse();
+
+    // As telas de acesso são de quem não entrou: sai, com a configuração como o boot a alinharia.
+    auth()->logout();
+    alinharConfiguracoesDoKit();
+
+    expect(participaDaTransicao(htmlDe('/admin/login')))->toBeFalse()
+        ->and(participaDaTransicao(htmlDe('/admin/password-reset/request')))->toBeFalse();
+})->group('kit');
+
+it('[CT-101] o formulário não desliza: só o painel tem a animação de posição, e o formulário entra por opacidade', function (string $arquivo): void {
+    $css = preg_replace('/\s+/', ' ', (string) file_get_contents(base_path($arquivo)));
+
+    $bloco = Str::between($css, '@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) { .fi-auth-layout:has(.kit-painel-de-marca[data-kit-transicao])', '@keyframes kit-formulario-aparece');
+
+    expect($bloco)->toContain('.fi-auth-media-wrapper { view-transition-name: kit-painel; }')
+        ->toContain('.fi-auth-form-container { view-transition-name: kit-formulario; }')
+        ->toContain('::view-transition-group(kit-formulario) { animation: none; }')
+        ->toContain('::view-transition-old(kit-formulario) { animation: none; opacity: 0; }')
+        ->toContain('::view-transition-new(kit-formulario) { animation: kit-formulario-aparece')
+        ->and($css)->toContain('@keyframes kit-formulario-aparece { from { opacity: 0; } to { opacity: 1; } }');
+})->with(['resources/css/filament/kit.css', 'public/css/kit/kit-correcoes.css'])->group('kit');

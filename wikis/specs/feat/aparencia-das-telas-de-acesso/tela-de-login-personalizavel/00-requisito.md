@@ -106,6 +106,9 @@ auditoria) e no `02` (RQ-04).
 | P-29 | O gradiente usa duas cores `#RRGGBB` opcionais (vazias: tons 600 e 900 da primária) e uma de três direções (vertical, horizontal, diagonal); nenhum CSS livre. Sobre o gradiente, os textos ficam numa superfície escura opaca, em branco, com links sublinhados | decisão de desenho (Adendo 2, juiz cego: Y) — WCAG 1.4.3 | 2026-11-14 | RQ-29 | vigente |
 | P-30 | No celular, com fundo de arte, a faixa não mostra a imagem da arte: usa a cor do painel sob o véu escuro | correção (Adendo 2) | 2026-11-14 | RQ-30 | vigente |
 | P-31 | A aparência própria da organização não tem a tela "esqueci a senha": recuperar e redefinir senha usam sempre a padrão (P-06). O editor da organização não oferece essa seção, e o preview da organização mostra a padrão nessa tela | quality gate — QA-27 | 2026-11-14 | RQ-25, P-06, P-25 | vigente |
+| P-32 | A transição entre as telas é UMA opção, a do login ("Transição entre as telas", na seção Login do editor), e vale para todas as telas: a animação depende das duas páginas, a de origem e a de destino, então uma tela própria não a liga nem desliga sozinha. Ligada por padrão; o objeto gravado antes do Adendo 4 conta como ligada | decisão de desenho (Adendo 4, juiz cego Codex) | 2026-11-14 | RQ-34 | vigente |
+| P-33 | A transição só acontece entre duas telas no painel de marca, em tela de computador (a partir de 1024 px) e sem "reduzir movimento" no sistema; nos navegadores sem a View Transitions API entre documentos, a tela troca sem animação | decisão de desenho (Adendo 4, juiz cego Codex) | 2026-11-14 | RQ-34, RQ-35 | vigente |
+| P-34 | Na transição, o painel inteiro (com logo, destaque e textos) é o que desliza; o formulário antigo some na hora e o novo entra por opacidade, depois do início do deslize, para nunca ser visto do lado errado | decisão de desenho (Adendo 4, juiz cego Codex) | 2026-11-14 | RQ-35, RQ-36 | vigente |
 
 ## Fora de Escopo (declarado)
 
@@ -204,3 +207,26 @@ auditoria) e no `02` (RQ-04).
 | RQ-31 | No layout "painel", as telas mostram o login social quando há provedor configurado | "essa nova tela de login, deve também contemplar o login social … quando configurado" | funcional | — |
 | RQ-32 | No layout "painel", as telas mostram o desafio anti-robô quando ele está ligado | "deve também contemplar … o recaptcha, quando configurado" | funcional | — |
 | RQ-33 | Há testes automatizados para o login social e o anti-robô no layout "painel" | "crie testes para esses cenarios" | não-funcional | — |
+
+## Adendo 4 — 2026-11-14
+
+- **Fonte**: pergunta do solicitante no chat, durante o ciclo 2 do gate dos Adendos 2 e 3 (mensagem "questão")
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: —
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> # questão
+> - é possivel usarmos animation nas telas para dar uma sensação de transição?
+> - por ex, tela de login na direita, clica em esqueceu senha ou registro (que estão na esquerda) e ai com o efeito de animation a tela uma animação de slide, seria otimo.
+> - vou alem, nesse efeito de slide entre as paginas, se fosse trocando de posição, a parte do form seria usando fade-in e somente a parte da imagem seria slide para dar a sensaçao que trocou de lado ao abrir a pagina
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-34 | Ao ir de uma tela de acesso para outra (login → "esqueci a senha" ou cadastro, e de volta), a troca de tela é animada, dando a sensação de transição | "usarmos animation nas telas para dar uma sensação de transição" · "clica em esqueceu senha ou registro … animação de slide" | funcional | — |
+| RQ-35 | Quando as duas telas têm o formulário em lados opostos, só o painel da imagem desliza de um lado para o outro | "se fosse trocando de posição … somente a parte da imagem seria slide para dar a sensaçao que trocou de lado" | funcional | — |
+| RQ-36 | O formulário não desliza: aparece com fade-in | "a parte do form seria usando fade-in" | funcional | — |

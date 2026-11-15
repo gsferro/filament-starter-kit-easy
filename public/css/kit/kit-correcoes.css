@@ -625,6 +625,57 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 }
 
 /*
+| Transição entre as telas de acesso (Adendo 4, ADR-06). A página que participa emite
+| `@view-transition { navigation: auto }` (view do painel de marca); aqui ficam os nomes e as
+| animações. O painel (o wrapper arredondado da mídia) desliza para a posição da tela de destino;
+| o formulário não desliza: o antigo some na hora e o novo aparece aos poucos, depois do início do
+| deslize — assim ele nunca é visto do lado errado. Só em tela larga: no celular o painel é a faixa
+| do topo e não troca de lado.
+*/
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .fi-auth-layout:has(.kit-painel-de-marca[data-kit-transicao]) .fi-auth-media-wrapper {
+        view-transition-name: kit-painel;
+    }
+
+    .fi-auth-layout:has(.kit-painel-de-marca[data-kit-transicao]) .fi-auth-form-container {
+        view-transition-name: kit-formulario;
+    }
+
+    ::view-transition-group(kit-painel) {
+        animation-duration: 0.55s;
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    ::view-transition-group(kit-formulario) {
+        animation: none;
+    }
+
+    ::view-transition-old(kit-formulario) {
+        animation: none;
+        opacity: 0;
+    }
+
+    ::view-transition-new(kit-formulario) {
+        animation: kit-formulario-aparece 0.35s ease-out 0.2s both;
+    }
+
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation-duration: 0.2s;
+    }
+}
+
+@keyframes kit-formulario-aparece {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/*
 | Cabeçalho dos painéis (feat/cabecalho-do-painel): a marca composta
 | ("nome do projeto | nome do painel | logo") que `CabecalhoDoPainel::marca()`
 | devolve ao `brandLogo()`, e o bloco do usuário do render hook

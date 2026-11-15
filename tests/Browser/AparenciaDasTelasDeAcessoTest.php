@@ -840,3 +840,35 @@ it('[CT-B18] sobre um gradiente claro, os textos ficam numa superfície escura, 
         ->and($m['cor'])->toBe('rgb(255, 255, 255)')
         ->and($m['sublinhado'])->toContain('underline');
 });
+
+/**
+ * [CT-B19] Adendo 4 (RQ-34..RQ-36): do login (formulário à direita) para o "esqueci a senha"
+ * (formulário à esquerda), o navegador faz a transição entre os documentos — o `pageswap` da página
+ * de origem traz a `viewTransition` — com o painel nomeado para deslizar e o formulário nomeado para
+ * só aparecer. Desligada a opção, a troca é seca. No celular, nada é nomeado.
+ */
+it('[CT-B19] do login para o "esqueci a senha", a troca de tela tem transição só com a opção ligada', function (bool $ligada): void {
+    definirAparenciaGlobal([
+        ...aparenciaDeTeste('P'), 'lado_do_formulario' => 'direita', 'transicao_entre_telas' => $ligada,
+        'telas'                                        => ['recuperacao' => [...aparenciaDeTeste('P'), 'lado_do_formulario' => 'esquerda']],
+    ]);
+    $this->get('/admin/password-reset/request');
+
+    $nomeDe = fn ($pagina, string $seletor): string => (string) $pagina->script("getComputedStyle(document.querySelector('{$seletor}')).viewTransitionName");
+
+    $pagina = visit('/admin/login')->resize(1440, 900)->assertPresent('.kit-painel-de-marca');
+
+    expect($nomeDe($pagina, '.fi-auth-media-wrapper'))->toBe($ligada ? 'kit-painel' : 'none')
+        ->and($nomeDe($pagina, '.fi-auth-form-container'))->toBe($ligada ? 'kit-formulario' : 'none');
+
+    $pagina->script("window.addEventListener('pageswap', (e) => sessionStorage.setItem('kit-transicao', e.viewTransition ? 'sim' : 'nao'))");
+    $pagina->click('Esqueceu sua senha?')
+        ->assertPathIs('/admin/password-reset/request')
+        ->assertPresent('.fi-auth-layout.media-right .kit-painel-de-marca');
+
+    expect($pagina->script("sessionStorage.getItem('kit-transicao')"))->toBe($ligada ? 'sim' : 'nao');
+
+    // No celular o painel é a faixa do topo e não troca de lado: nada é nomeado (P-33).
+    $pagina->resize(390, 844);
+    expect($nomeDe($pagina, '.fi-auth-media-wrapper'))->toBe('none');
+})->with(['ligada' => true, 'desligada' => false]);

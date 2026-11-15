@@ -1571,6 +1571,80 @@ it('captura os quadros do editor das telas de acesso', function (): void {
     Storage::disk('public')->delete(['kit/arte-logo.png', 'kit/arte-logo-escura.png', 'telas-de-acesso/arte-produto.png']);
 })->group('browser', 'art');
 
+/**
+ * Os quadros do `telas-de-acesso-transicao.gif` (Adendo 4): do login, com o formulário à direita,
+ * para o "esqueci a senha", com o formulário à esquerda.
+ *
+ * ## Por que os quadros do meio são reconstruídos, e não fotografados
+ *
+ * A transição de verdade dura meio segundo, e o `screenshot()` do `pest-plugin-browser` fotografa
+ * com `animations: 'disabled'` (`vendor/pestphp/pest-plugin-browser/src/Playwright/Page.php`): o
+ * Playwright adianta toda animação finita até o fim, e a transição acaba antes da foto — medido,
+ * congelar com `pause()` e `currentTime` não adianta. Então os três quadros do meio são a página
+ * de destino com o painel deslocado de onde estava no login (posição medida nas duas páginas) até
+ * onde fica, e o formulário entrando pela opacidade — a mesma trajetória que o `kit.css` dá ao
+ * `::view-transition-group(kit-painel)` e o mesmo fade do `kit-formulario`. Quem prova que a
+ * transição acontece no navegador é o CT-B19.
+ */
+it('captura os quadros da transição entre as telas', function (): void {
+    identidadeDeArte();
+    $gradiente = ['fundo' => 'gradiente', 'gradiente_de' => '#4f46e5', 'gradiente_ate' => '#db2777', 'destaque' => 'logo', 'ilustracao' => 'rede'];
+    aparenciaDaInstalacaoParaArte(aparenciaDeArte([
+        'lado_do_formulario' => 'direita', ...$gradiente,
+        'telas'              => ['recuperacao' => aparenciaDeArte([
+            'lado_do_formulario' => 'esquerda', ...$gradiente,
+            'frase'              => 'Esqueceu a senha? **Sem problema.**',
+            'apoio'              => 'Enviamos um link para o seu e-mail. Ele vale por uma hora.',
+        ])],
+    ]));
+    auth()->logout();
+
+    $this->get('/admin/login');
+    $this->get('/admin/password-reset/request');
+
+    $xDoPainel = "document.querySelector('.fi-auth-media-wrapper').getBoundingClientRect().left";
+
+    $pagina = visit('/admin/login')
+        ->resize(1400, 875)
+        ->assertPresent('.kit-painel-de-marca[data-kit-transicao]')
+        ->assertNoJavaScriptErrors()
+        ->screenshot(fullPage: false, filename: 'telas-de-acesso-transicao-1-login');
+    $origem = (float) $pagina->script($xDoPainel);
+
+    $pagina->click('Esqueceu sua senha?')
+        ->assertPathIs('/admin/password-reset/request')
+        ->assertPresent('.fi-auth-layout.media-right .kit-painel-de-marca');
+    $pagina->wait(1);
+    $destino = (float) $pagina->script($xDoPainel);
+
+    // Progresso do deslize (curva do kit.css) e do formulário (que entra depois do início).
+    $quadro = function (float $deslize, float $formulario) use ($pagina, $origem, $destino): void {
+        $deslocamento = round(($origem - $destino) * (1 - $deslize), 1);
+        $pagina->script(<<<JS
+            (() => {
+                document.querySelector('.fi-auth-media-wrapper').style.transform = 'translateX({$deslocamento}px)';
+                document.querySelector('.fi-auth-media-wrapper').style.zIndex = '10';
+                // A transição real desenha o painel numa camada acima da página, sem o recorte da coluna.
+                for (const el of [document.querySelector('.fi-auth-media-section'), document.querySelector('.fi-auth-layout')]) {
+                    el.style.overflow = 'visible';
+                }
+                document.querySelector('.fi-auth-form-container').style.opacity = '{$formulario}';
+            })()
+        JS);
+    };
+
+    $quadro(0.2, 0.0);
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-transicao-2-saindo');
+    $quadro(0.6, 0.3);
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-transicao-3-meio');
+    $quadro(0.9, 0.75);
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-transicao-4-chegando');
+    $quadro(1.0, 1.0);
+    $pagina->screenshot(fullPage: false, filename: 'telas-de-acesso-transicao-5-esqueci');
+})->after(function (): void {
+    Storage::disk('public')->delete(['kit/arte-logo.png', 'kit/arte-logo-escura.png', 'telas-de-acesso/arte-produto.png']);
+})->group('browser', 'art');
+
 /*
 |--------------------------------------------------------------------------
 | Visões salvas e carregamento contínuo em tema escuro — no FIM do arquivo

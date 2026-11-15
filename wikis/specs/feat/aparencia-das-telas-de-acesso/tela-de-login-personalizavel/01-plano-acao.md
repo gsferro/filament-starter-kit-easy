@@ -80,6 +80,9 @@
 | RQ-31 | login social no painel | 11 | Adendo 3 |
 | RQ-32 | anti-robô no painel | 11 | Adendo 3 |
 | RQ-33 | testes de social e anti-robô | 11 | Adendo 3 |
+| RQ-34 | troca de tela animada | 12 | Adendo 4; P-32, P-33 |
+| RQ-35 | só o painel desliza para o outro lado | 12 | Adendo 4; P-34 |
+| RQ-36 | o formulário aparece por fade-in | 12 | Adendo 4; P-34 |
 | P-25 | login na raiz, telas próprias em `telas` | 11 | Adendo 2 |
 | P-26 | família pela classe da página | 11 | Adendo 2 |
 | P-27 | Markdown seguro, teto visível, legado puro | 11 | Adendo 2 |
@@ -371,6 +374,21 @@ Nenhuma nova.
   celular sem a arte
 - **Social e anti-robô**: sem mudança de código — o formulário é o mesmo em qualquer layout; os
   CT-71/72 e o CT-B17 provam
+
+### 12. Adendo 4 — transição entre as telas
+
+- **Decisor**: `transicao_entre_telas` no vocabulário (`padraoDoPainel()`, `normalizarTela()`), e
+  `normalizar()` copia a do login para as telas próprias no painel (P-32)
+- **Editor**: o interruptor "Transição entre as telas" só na seção Login (`camposDaTela(raiz: true)`)
+- **View**: a página que participa empurra para o `<head>` a regra `@view-transition` dentro de
+  `@media (min-width: 1024px) and (prefers-reduced-motion: no-preference)` e marca o painel com
+  `data-kit-transicao` (P-33)
+- **CSS** (`kit.css` e o espelho publicado): `view-transition-name` no `.fi-auth-media-wrapper`
+  (`kit-painel`) e no `.fi-auth-form-container` (`kit-formulario`); o grupo do formulário sem
+  animação, o antigo invisível e o novo com fade-in depois do início do deslize (P-34)
+- **Testes**: CT-98..CT-101 e CT-B19 (prova pelo `pageswap` da página de origem)
+- **Arte e docs**: `telas-de-acesso-transicao.gif` (quadros do meio reconstruídos — o screenshot do
+  Pest adianta as animações até o fim); seção "Transição entre as telas" nas docs pt/en
 
 ## Verificação
 

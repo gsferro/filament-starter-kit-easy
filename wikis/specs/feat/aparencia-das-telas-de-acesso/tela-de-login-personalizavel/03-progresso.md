@@ -1,6 +1,6 @@
 # Progresso — feat: tela de login personalizável
 
-**Estado**: em revisão — Adendos 2 e 3 (2026-11-14); gate dos Adendos 2 e 3 no ciclo 2 (REPROVADO → teste, QA-34 e QA-35 tratados); arte das telas de acesso gerada pelo `composer art`; merge, tag v0.53.0 e cenários sobre o commit final pendentes (RQ-17, QA-28)
+**Estado**: em revisão — Adendos 2, 3 e 4 (2026-11-14); Adendo 4 (transição entre as telas) implementado e testado; gate dos Adendos 2 e 3 no ciclo 2 (REPROVADO → teste, QA-34 e QA-35 tratados); arte das telas de acesso gerada pelo `composer art`; merge, tag v0.53.0 e cenários sobre o commit final pendentes (RQ-17, QA-28)
 
 `{base}`: `main` · branch `feat/aparencia-das-telas-de-acesso`
 
@@ -106,6 +106,16 @@ Diff `cbb65fb6..81f62ce6` (sem `wikis/` e `art/`). Workflow de 4 revisores em pa
 - [x] Revisão cega do Codex sobre `ca469486..694ec0d8` (correções da revisão, do gate e da revisão adversarial): 1 achado, CX-C1 (Minor) — na recuperação, o preview da organização trocava a aparência pela padrão, mas a imagem do destaque vinha do rascunho dela; corrigido em `PreviewDasTelasDeAcesso::urlDaImagemDoDestaque()`; CT-97 cai sem a correção (mostra `/livewire/preview-file/IMAGEM-DA-ACME`) — 2026-11-14
 - [x] Testes, medidos em 2026-11-14 depois do ciclo 2 (`vendor/bin/pest <arquivo> --compact`): `AparenciaDasTelasPorTelaTest` + `AparenciaDasTelasAdendoTest` + `AparenciaDasTelasDeAcessoTest` 278/278; `AparenciaDasTelasDeAcessoTenancyTest` 83/83; CT-85, CT-88 e CT-92 reforçados pelas divergências que a `feature-test-design` apontou no QA-34 (redefinição pela URL assinada do e-mail; social e anti-robô desligados de forma explícita com controle positivo; linha do teto 80) — 2026-11-14
 - [x] Arte do site gerada pelo `composer art` (pedido do solicitante: "gere gif com todas as possibilidades de customização" e "muitas arts"): cenários em `tests/BrowserTenancy/CapturaDeArteTest.php` (variações, celular, editor, tema escuro), `KitArte::CLIPES` `telas-de-acesso` (9 quadros) e `telas-de-acesso-editor` (6 quadros), 17 imagens em `KitArte::IMAGENS`; galeria e os dois GIFs nas docs pt/en; README pt/en com o resumo atual e o link do GIF; logo de arte em `tests/Browser/Fixtures/logo-de-arte*.png` — `KitArteTest`, `SeletorDeOrganizacaoArteTest`, `PacotesRodada3Test` 87/87; `SiteDeDocumentacaoTest`, `AparenciaDasTelasDeAcessoEntregaTest`, `KitInfoTest` 108/108 — 2026-11-14
+
+## 12. Adendo 4 — transição entre as telas
+
+- [x] Adendo 4 registrado verbatim no `00` (RQ-34..RQ-36); P-32..P-34 e ADR-06 — 2026-11-14
+- [x] Codex como juiz cego do desenho: "X corrigida" (o formulário antigo some na hora em vez de `animation: none` no grupo, nome no wrapper arredondado, opção comum, só a partir de 1024 px) — adotado na íntegra — 2026-11-14
+- [x] Decisor (`transicao_entre_telas`, copiada do login para as telas próprias), editor (interruptor só na seção Login), view (`@push('styles')` com a regra condicional e `data-kit-transicao`), CSS no `kit.css` e no espelho publicado — 2026-11-14
+- [x] Testes (`vendor/bin/pest <arquivo> --compact`): CT-98..CT-101 12/12; CT-B19 2/2 (o `pageswap` da página de login traz `viewTransition` só com a opção ligada); os 316 casos dos arquivos da feature seguem verdes com a chave nova nas fixtures — 2026-11-14
+- [x] Falsificabilidade: sem a cópia da opção do login para as telas próprias, as 4 linhas do CT-99 caem — 2026-11-14
+- [x] Arte: `telas-de-acesso-transicao.gif` (5 quadros); os 3 do meio são reconstruídos a partir das posições medidas nas duas páginas, porque o `screenshot()` do Pest usa `animations: 'disabled'` e encerra a transição antes da foto (medido: com `pause()`/`currentTime` o quadro sai no estado final) — 2026-11-14
+- [x] Docs pt/en ("Transição entre as telas" e a linha na tabela de opções), CHANGELOG e README; badge 2.592 — 2026-11-14
 
 ## Revisão do Diff — Adendos 2 e 3
 
@@ -359,6 +369,7 @@ Step 12 (2026-11-14): nenhum candidato passa em *Vale virar rule*. As decisões 
 | 27 | 11 (CI) | Codex `exec --yolo` / não exposto | duas falhas do job `telas` no CI de `7ca671df`; sem rodar testes | ambas (b) prováveis, sem defeito da branch | — | CI de `694ec0d8` todo verde: as duas não se repetiram |
 | 28 | 11 (Adendos 2 e 3) | `fw-qa-gate` / herdado | path da wiki, URL servida, `diff --stat`, base; sem suítes inteiras | ciclo 2: REPROVADO → teste, QA-34 (Major) e QA-35 (Minor) | 208 k tokens · 586 s | QA-34 reproduzido pelos greps do relatório; o `git status` que o gate estranhou era a arte desta sessão |
 | 29 | 9 (Adendos 2 e 3) | Codex `exec --yolo` (revisor cego) / não exposto | diff `ca469486..HEAD` de `app`/`resources`/`tests`/`public/css` | CX-C1 (Minor), reproduzido fora do repositório | — | CT-97 cai sem a correção |
+| 31 | 3 (Adendo 4) | Codex `exec --yolo` (juiz cego) / não exposto | pedido verbatim, proposta X, repositório | X corrigida: fade do formulário, nome no wrapper, opção comum, só ≥ 1024 px | — | correções conferidas no código (layout do auth-designer, `@stack('styles')` do layout base) |
 | 30 | 7 (QA-34) | `general-purpose` com `feature-test-design` / herdado | `00`, `04`, glossário, nomes dos testes | Gherkin de CT-80..CT-96, M109..M132; 6 divergências teste × cenário | 162 k tokens · 354 s | 3 divergências viraram teste mais forte (CT-85, 88, 92); CT-96 respondida no `04` (regra da cor sólida do QA-10); CT-81 e CT-84 só de forma |
 
 Degradações: `search-docs` indisponível; Ponytail em passe manual. Adendos 2 e 3: os cenários R26–R30 foram derivados pela sessão; o gate (QA-30) mandou reescrevê-los pela `feature-test-design` e passar pelo `fw-adversario-ct` — feito depois do gate (ver Despachos). Adendo 1: os cenários CT-43..CT-56 e CT-B09..CT-B15 foram derivados pela sessão, não às cegas pela `feature-test-design`; a revisão adversarial independente (`fw-adversario-ct`) rodou sobre o conjunto antes do step 9, e os acrescentados depois dela (CT-53..CT-56, CT-B12..CT-B15) não tiveram re-revisão *(alterado em 2026-11-14: QA-22)*.

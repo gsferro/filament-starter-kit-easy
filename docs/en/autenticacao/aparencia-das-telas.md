@@ -112,6 +112,7 @@ The editor, section by section — layout, background, texts, illustration, a sc
 | **Moving** | On, the network dots drift slowly and the screen gets a **Pause the motion** button (labelled "Pausar o movimento"); whoever asked the operating system to reduce motion sees the network still. Off, the network stays still | On |
 | **Illustration color** | A `#RRGGBB` color for the network. Blank means the same color as the panel text | Blank |
 | **Theme switcher** | The light/dark/system selector in the corner of the screen | On |
+| **Transição entre as telas** (transition between screens) | Only in the **Login** section, and it applies to all screens: going from login to sign-up or forgot password (and back), the panel slides to the other screen's side and the form fades in. See below | On |
 
 The sentences are yours: the editor shows an example as a placeholder, but the panel only shows
 what you write. Formatting is Markdown, like the login screen footer: the screen is public, so raw
@@ -128,6 +129,25 @@ px and wider).
 Text is always treated as text: no field accepts HTML, CSS or script, and repeated or edge spaces
 are removed. A color outside the format, a text above the limit or an option outside the list is
 rejected with an error on the field itself, and nothing is saved.
+
+## Transition between screens
+
+With login, sign-up and forgot password on the brand panel, moving from one screen to another is
+animated: when the form changes sides — for example, login with the form on the right and forgot
+password on the left —, **only the panel slides** to the other side, and the form **fades in**, without
+sliding. With the form on the same side on both screens, the panel stays put and only the content
+changes.
+
+[![The panel slides from login to forgot password, and the form fades in](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-transicao.gif)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-transicao.gif)
+
+- The **Transição entre as telas** option lives in the **Login** section and applies to every screen,
+  because the animation depends on both ends: the screen you leave and the screen you reach.
+- Only between brand-panel screens: going to a classic screen, or after signing in, the change is the
+  usual one.
+- Only on desktop (1024 px and up). On phones the panel is the top strip and doesn't change sides.
+- People who asked their operating system to **reduce motion** get no animation.
+- It is the browser's View Transitions API, with no new JavaScript: it works in Chrome, Edge and Safari
+  (18.2 or newer). Browsers without support switch screens without animation, as always.
 
 ## The preview
 

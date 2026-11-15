@@ -118,6 +118,27 @@ em `tenants` e triplicariam a regra "usa a padrão".
 **Alternativas**: três propriedades em settings e três colunas em `tenants` (descartada pelos
 motivos acima); herança campo a campo entre telas (descartada como na ADR-02).
 
+## ADR-06 — Transição entre as telas pela View Transitions API entre documentos
+
+**Status**: aceita · 2026-11-14 · Adendo 4
+
+**Portões**: difícil de reverter ❌ · surpreendente ✅ (animação entre páginas sem JavaScript) ·
+trade-off ✅ (suporte do navegador × biblioteca/SPA)
+
+**Decisão**: as telas continuam trocando por carga completa (os painéis não usam `->spa()`); a página
+no painel de marca que participa emite `@view-transition { navigation: auto }` e o CSS do kit nomeia
+o wrapper da mídia (`kit-painel`) e o contêiner do formulário (`kit-formulario`). O navegador
+interpola a posição do painel entre os dois documentos; o formulário só aparece (P-34).
+
+**Por quê**: é o único jeito de o painel "atravessar" de uma página para a outra sem transformar as
+telas de autenticação em SPA nem acrescentar JavaScript; sem suporte, a troca é a de sempre.
+
+**Alternativas**: navegação SPA (`wire:navigate`/`->spa()`) com animação em JavaScript — muda o
+comportamento de todas as telas de autenticação e de quem depende de carga completa (desafio
+anti-robô, redirecionamentos); animação só de entrada (CSS) — não dá a sensação de troca de lado.
+Juiz cego (Codex): "X corrigida" — fade do formulário corrigido (o antigo some na hora), nome no
+wrapper arredondado, opção comum em vez de por tela, só a partir de 1024 px.
+
 ## Superfície Livewire
 
 Greps (`grep -n "public function\|public ?\|public [a-z]" …`) a refazer sobre o código final antes do step 9.

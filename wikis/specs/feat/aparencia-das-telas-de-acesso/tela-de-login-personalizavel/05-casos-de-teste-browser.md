@@ -2,7 +2,7 @@
 
 > Derivado do `00-requisito.md`: RQ-01..RQ-16, premissas vigentes P-01..P-14 e decisões de Q3..Q11. Adendo 1 (seções no fim): RQ-17..RQ-24 e P-19..P-24, derivados pela sessão *(alterado em 2026-11-14: QA-23)*. Adendos 2 e 3 (seção no fim): RQ-25..RQ-33 e P-25..P-31, derivados pela sessão. Oráculo atual: RQ-01..RQ-33 e P-01..P-31 *(alterado em 2026-11-14: QA-30)*.
 >
-> Cenários: 17 · Regras: 8 · Mutantes previstos: 22 · Sem matador: 0 *(os `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho aplicados a este arquivo, com `\[CT-B[0-9]+\]` no padrão de cenário, 2026-11-14; as regras dos Adendos estão no `Regra:` do Gherkin, sem `## Regra` próprio; o sem matador é o M108, lacuna declarada do CT-B16)*
+> Cenários: 19 · Regras: 8 · Mutantes previstos: 23 · Sem matador: 0 *(2026-11-14, depois do CT-B19 (Adendo 4); os `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho aplicados a este arquivo, com `\[CT-B[0-9]+\]` no padrão de cenário, 2026-11-14; as regras dos Adendos estão no `Regra:` do Gherkin, sem `## Regra` próprio; o sem matador é o M108, lacuna declarada do CT-B16)*
 >
 > Revisão adversarial dos Adendos 2 e 3: feita — ver o `04`
 >
@@ -436,6 +436,7 @@ O mutante **M72**, registrado em R3 do 04, é morto por CT-B08: interpolação i
 | CT-B15 | R21 | geometria | G4 | browser | Browser | — |
 | CT-B16 | R30 | BVA de largura | G4 | browser | Browser | M104–M108 |
 | CT-B18 | R28 | estilo computado | G4 | browser | Browser | — |
+| CT-B19 | R31 | rastreio de efeito (navegação real) | G4 | browser | Browser | M139 |
 | CT-B17 | R29 | geometria | G4 | browser | Browser | M102–M103 |
 
 CT-B07 acrescenta a prova do limite efetivo do controle do navegador. CT-B08 acrescenta a prova de execução. Essas observações não são duplicadas pelas assertions de persistência de CT-30 ou pela inspeção de resposta de CT-06.
@@ -617,3 +618,31 @@ Funcionalidade: Gradiente claro
       Quando o login é aberto em 1440×900
       Então o bloco dos textos tem fundo rgba(17, 24, 39, 0.9), texto branco e o link sublinhado
 ```
+
+## Adendo 4 no navegador
+
+```gherkin
+# language: pt
+Funcionalidade: Transição entre as telas no navegador
+
+  Regra: R31 — Transição entre as telas
+
+    Esquema do Cenário: [CT-B19] Do login para o "esqueci a senha", a troca de tela tem transição só com a opção ligada
+      Dado o login no painel com o formulário à direita, a recuperação no painel com o formulário à esquerda e a transição <opção>
+      E o login aberto em 1440×900
+      Quando o visitante clica em "Esqueceu sua senha?"
+      Então o wrapper da mídia e o contêiner do formulário do login se chamam <nomes>
+      E o evento "pageswap" da página de login traz uma transição <transição>
+      E o "esqueci a senha" abre com o painel do outro lado
+      E, em 390×844, o wrapper da mídia não tem nome de transição
+
+      Exemplos:
+        | opção     | nomes                         | transição |
+        | ligada    | "kit-painel" e "kit-formulario" | sim       |
+        | desligada | "none" e "none"               | não       |
+      # Origem: RQ-34, RQ-35, P-32, P-33
+```
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M139 | A regra e os nomes existem, mas só numa das pontas (a de destino), e o navegador não faz a transição | CT-B19 | linha "ligada": `pageswap` com `viewTransition`; o mutante dá "nao" |

@@ -149,6 +149,14 @@ class KitArte extends Command
             'telas-de-acesso-cadastro-propria',
             'telas-de-acesso-esqueci-propria',
         ],
+        // A transição entre as telas (Adendo 4), em câmera lenta: login, três pontos do deslize, destino.
+        'telas-de-acesso-transicao' => [
+            'telas-de-acesso-transicao-1-login',
+            'telas-de-acesso-transicao-2-saindo',
+            'telas-de-acesso-transicao-3-meio',
+            'telas-de-acesso-transicao-4-chegando',
+            'telas-de-acesso-transicao-5-esqueci',
+        ],
         'telas-de-acesso-editor' => [
             'telas-de-acesso-editor-1-disposicao',
             'telas-de-acesso-editor-2-fundo',

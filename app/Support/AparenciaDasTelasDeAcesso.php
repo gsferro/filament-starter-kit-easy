@@ -118,25 +118,26 @@ final class AparenciaDasTelasDeAcesso
     public static function padraoDoPainel(): array
     {
         return [
-            'layout'              => self::LAYOUT_PAINEL,
-            'lado_do_formulario'  => 'direita',
-            'tamanho_do_painel'   => 50,
-            'fundo'               => 'cor',
-            'cor'                 => null,
-            'gradiente_de'        => null,
-            'gradiente_ate'       => null,
-            'gradiente_direcao'   => 'diagonal',
-            'formato_dos_textos'  => 'markdown',
-            'frase'               => null,
-            'apoio'               => null,
-            'logo_no_painel'      => true,
-            'destaque'            => 'nenhum',
-            'imagem_do_destaque'  => null,
-            'tamanho_do_destaque' => 'medio',
-            'ilustracao'          => 'nenhuma',
-            'movimento'           => true,
-            'cor_da_ilustracao'   => null,
-            'alternador_de_tema'  => true,
+            'layout'                => self::LAYOUT_PAINEL,
+            'lado_do_formulario'    => 'direita',
+            'tamanho_do_painel'     => 50,
+            'fundo'                 => 'cor',
+            'cor'                   => null,
+            'gradiente_de'          => null,
+            'gradiente_ate'         => null,
+            'gradiente_direcao'     => 'diagonal',
+            'formato_dos_textos'    => 'markdown',
+            'frase'                 => null,
+            'apoio'                 => null,
+            'logo_no_painel'        => true,
+            'destaque'              => 'nenhum',
+            'imagem_do_destaque'    => null,
+            'tamanho_do_destaque'   => 'medio',
+            'ilustracao'            => 'nenhuma',
+            'movimento'             => true,
+            'cor_da_ilustracao'     => null,
+            'alternador_de_tema'    => true,
+            'transicao_entre_telas' => true,
         ];
     }
 
@@ -171,6 +172,20 @@ final class AparenciaDasTelasDeAcesso
 
         if ($telas === []) {
             return $login;
+        }
+
+        /*
+         * A transição entre as telas é UMA opção, a do login (P-32): o efeito pertence ao par de
+         * páginas, então uma tela própria nunca a liga ou desliga sozinha. Com o login no clássico,
+         * vale o que estiver gravado na raiz, e o padrão (ligada) sem nada gravado.
+         */
+        $transicao = $login['transicao_entre_telas']
+            ?? self::booleano(is_array($bruto) ? ($bruto['transicao_entre_telas'] ?? null) : null, true);
+
+        foreach ($telas as $familia => $tela) {
+            if (($tela['layout'] ?? null) === self::LAYOUT_PAINEL) {
+                $telas[$familia]['transicao_entre_telas'] = $transicao;
+            }
         }
 
         return [...($login ?? ['layout' => self::LAYOUT_CLASSICO]), 'telas' => $telas];
@@ -231,25 +246,26 @@ final class AparenciaDasTelasDeAcesso
         $formato = self::umDe($bruto['formato_dos_textos'] ?? 'texto', self::FORMATOS_DOS_TEXTOS, 'texto');
 
         return [
-            'layout'              => self::LAYOUT_PAINEL,
-            'lado_do_formulario'  => self::umDe($bruto['lado_do_formulario'] ?? null, self::LADOS, $padrao['lado_do_formulario']),
-            'tamanho_do_painel'   => self::tamanho($bruto['tamanho_do_painel'] ?? null),
-            'fundo'               => self::umDe($bruto['fundo'] ?? null, self::FUNDOS, $padrao['fundo']),
-            'cor'                 => self::cor($bruto['cor'] ?? null),
-            'gradiente_de'        => self::cor($bruto['gradiente_de'] ?? null),
-            'gradiente_ate'       => self::cor($bruto['gradiente_ate'] ?? null),
-            'gradiente_direcao'   => self::umDe($bruto['gradiente_direcao'] ?? null, array_keys(self::DIRECOES_DO_GRADIENTE), $padrao['gradiente_direcao']),
-            'formato_dos_textos'  => $formato,
-            'frase'               => self::textoNoFormato($bruto['frase'] ?? null, $formato, self::LIMITE_DA_FRASE),
-            'apoio'               => self::textoNoFormato($bruto['apoio'] ?? null, $formato, self::LIMITE_DO_APOIO),
-            'logo_no_painel'      => self::booleano($bruto['logo_no_painel'] ?? null, $padrao['logo_no_painel']),
-            'destaque'            => self::umDe($bruto['destaque'] ?? null, self::DESTAQUES, $padrao['destaque']),
-            'imagem_do_destaque'  => self::caminhoDaImagem($bruto['imagem_do_destaque'] ?? null),
-            'tamanho_do_destaque' => self::umDe($bruto['tamanho_do_destaque'] ?? null, self::TAMANHOS_DO_DESTAQUE, $padrao['tamanho_do_destaque']),
-            'ilustracao'          => self::umDe($bruto['ilustracao'] ?? null, self::ILUSTRACOES, $padrao['ilustracao']),
-            'movimento'           => self::booleano($bruto['movimento'] ?? null, $padrao['movimento']),
-            'cor_da_ilustracao'   => self::cor($bruto['cor_da_ilustracao'] ?? null),
-            'alternador_de_tema'  => self::booleano($bruto['alternador_de_tema'] ?? null, $padrao['alternador_de_tema']),
+            'layout'                => self::LAYOUT_PAINEL,
+            'lado_do_formulario'    => self::umDe($bruto['lado_do_formulario'] ?? null, self::LADOS, $padrao['lado_do_formulario']),
+            'tamanho_do_painel'     => self::tamanho($bruto['tamanho_do_painel'] ?? null),
+            'fundo'                 => self::umDe($bruto['fundo'] ?? null, self::FUNDOS, $padrao['fundo']),
+            'cor'                   => self::cor($bruto['cor'] ?? null),
+            'gradiente_de'          => self::cor($bruto['gradiente_de'] ?? null),
+            'gradiente_ate'         => self::cor($bruto['gradiente_ate'] ?? null),
+            'gradiente_direcao'     => self::umDe($bruto['gradiente_direcao'] ?? null, array_keys(self::DIRECOES_DO_GRADIENTE), $padrao['gradiente_direcao']),
+            'formato_dos_textos'    => $formato,
+            'frase'                 => self::textoNoFormato($bruto['frase'] ?? null, $formato, self::LIMITE_DA_FRASE),
+            'apoio'                 => self::textoNoFormato($bruto['apoio'] ?? null, $formato, self::LIMITE_DO_APOIO),
+            'logo_no_painel'        => self::booleano($bruto['logo_no_painel'] ?? null, $padrao['logo_no_painel']),
+            'destaque'              => self::umDe($bruto['destaque'] ?? null, self::DESTAQUES, $padrao['destaque']),
+            'imagem_do_destaque'    => self::caminhoDaImagem($bruto['imagem_do_destaque'] ?? null),
+            'tamanho_do_destaque'   => self::umDe($bruto['tamanho_do_destaque'] ?? null, self::TAMANHOS_DO_DESTAQUE, $padrao['tamanho_do_destaque']),
+            'ilustracao'            => self::umDe($bruto['ilustracao'] ?? null, self::ILUSTRACOES, $padrao['ilustracao']),
+            'movimento'             => self::booleano($bruto['movimento'] ?? null, $padrao['movimento']),
+            'cor_da_ilustracao'     => self::cor($bruto['cor_da_ilustracao'] ?? null),
+            'alternador_de_tema'    => self::booleano($bruto['alternador_de_tema'] ?? null, $padrao['alternador_de_tema']),
+            'transicao_entre_telas' => self::booleano($bruto['transicao_entre_telas'] ?? null, $padrao['transicao_entre_telas']),
         ];
     }
 

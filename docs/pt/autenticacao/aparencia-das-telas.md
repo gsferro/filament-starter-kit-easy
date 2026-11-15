@@ -111,6 +111,7 @@ O editor, seção por seção — disposição, fundo, textos, ilustração, uma
 | **Em movimento** | Ligado, os pontos da rede flutuam devagar e a tela ganha o botão **Pausar o movimento**; quem pediu ao sistema operacional para reduzir movimento vê a rede parada. Desligado, a rede fica parada | Ligado |
 | **Cor da ilustração** | Uma cor `#RRGGBB` para a rede. Em branco, a mesma cor do texto do painel | Em branco |
 | **Alternador de tema** | O seletor claro/escuro/sistema no canto da tela | Ligado |
+| **Transição entre as telas** | Só na seção **Login**, e vale para todas: ao ir do login para o cadastro ou o "esqueci a senha" (e de volta), o painel desliza para o lado da outra tela e o formulário aparece aos poucos. Veja abaixo | Ligada |
 
 As frases são suas: o editor sugere um exemplo ("Tudo o que a sua equipe precisa, num lugar só."),
 mas o painel só mostra o que você escrever. A formatação é em Markdown, como no rodapé da tela de
@@ -128,6 +129,25 @@ de largura).
 O texto é sempre tratado como texto: nenhum campo aceita HTML, CSS ou script, e espaços repetidos ou
 nas bordas são removidos. Uma cor fora do formato, um texto acima do teto ou uma opção fora da lista
 são recusados com erro no próprio campo, e nada é salvo.
+
+## Transição entre as telas
+
+Com o login, o cadastro e o "esqueci a senha" no painel de marca, a troca de uma tela para a outra é
+animada: quando o formulário muda de lado — por exemplo, o login com o formulário à direita e o
+"esqueci a senha" à esquerda —, **só o painel desliza** para o outro lado, e o formulário **aparece aos
+poucos** (fade-in), sem deslizar. Com o formulário do mesmo lado nas duas telas, o painel fica onde está
+e só o conteúdo troca.
+
+[![O painel desliza do login para o esqueci a senha, e o formulário aparece aos poucos](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-transicao.gif)](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso-transicao.gif)
+
+- A opção **Transição entre as telas** fica na seção **Login** e vale para todas as telas, porque a
+  animação depende das duas pontas: a tela de onde se sai e a tela aonde se chega.
+- Só entre telas no painel de marca: indo para uma tela no clássico, ou depois de entrar no sistema, a
+  troca é a de sempre.
+- Só no computador (a partir de 1024 px). No celular o painel é a faixa do topo e não troca de lado.
+- Quem pediu ao sistema operacional para **reduzir movimento** não vê animação.
+- É a View Transitions API do navegador, sem JavaScript novo: funciona no Chrome, no Edge e no Safari
+  (18.2 ou mais novo). Nos navegadores sem suporte, a tela troca sem animação, como sempre.
 
 ## O preview
 

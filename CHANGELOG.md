@@ -24,7 +24,10 @@ A v0.53.0 traz a **aparência das telas de acesso** escolhida na tela, com previ
   layout. A frase e o apoio aceitam a formatação do rodapé da tela de login (Markdown seguro: negrito,
   itálico, tachado, link). O fundo de cor oferece a cor primária (padrão do Filament) ou uma cor própria, e
   há fundo em gradiente (duas cores e três direções, com os textos numa faixa escura legível). Login social
-  e desafio anti-robô continuam no formulário em qualquer layout. Um **preview** mostra login, recuperação de
+  e desafio anti-robô continuam no formulário em qualquer layout. **Transição entre as telas** (View Transitions
+  API, sem JavaScript novo, ligada por padrão, uma opção no login): do login para o cadastro ou o "esqueci a
+  senha", o painel desliza para o lado da outra tela e o formulário aparece aos poucos; só em computador e sem
+  "reduzir movimento". Um **preview** mostra login, recuperação de
   senha e cadastro com as alterações ainda não salvas, em largura de computador e de celular, sem autenticar nem
   enviar nada. Com organizações, o formulário de cada uma ganha a seção **Telas de acesso**: usar a aparência
   padrão ou ter a sua, que vale no login com `?org=`, no cadastro e no bloqueio de sessão dela. Camada no kit,

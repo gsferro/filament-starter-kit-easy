@@ -39,7 +39,23 @@
     $corDaRede = $comRede ? ($aparencia['cor_da_ilustracao'] ?? null) : null;
     $rede = $comRede ? \App\Support\AparenciaDasTelasDeAcesso::rede() : null;
     $tamanhoDoDestaque = $aparencia['tamanho_do_destaque'] ?? 'medio';
+    $comTransicao = (bool) ($aparencia['transicao_entre_telas'] ?? true);
 @endphp
+
+{{--
+    Transição entre as telas (Adendo 4, ADR-06): a View Transitions API entre documentos. A regra
+    `@view-transition` vai no <head> só das páginas que participam — as duas pontas precisam dela —,
+    e só em tela larga e sem "reduzir movimento". Os nomes e as animações estão no kit.css.
+--}}
+@if ($comTransicao)
+    @push('styles')
+        <style data-kit-transicao-entre-telas>
+            @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+                @view-transition { navigation: auto; }
+            }
+        </style>
+    @endpush
+@endif
 
 <div
     @class([
@@ -51,6 +67,7 @@
     ])
     @if (filled($cor)) style="--kit-painel-fundo: {{ $cor }}@if (filled($gradiente)); --kit-painel-gradiente: {{ $gradiente }}@endif" @endif
     data-kit-aparencia="painel"
+    @if ($comTransicao) data-kit-transicao @endif
     @if ($emMovimento)
         x-data="{
             pausado: false,
