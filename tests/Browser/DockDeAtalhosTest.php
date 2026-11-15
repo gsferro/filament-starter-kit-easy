@@ -71,6 +71,15 @@ it('[CT-B02] a superfície e o favorito do dock acompanham o tema efetivo do pai
         }
         JS;
 
+    /*
+     * Mede o estado ASSENTADO: o tema troca com transição de cor, e uma leitura no meio dela devolve
+     * o `oklab` interpolado (luminância ~0,55 entre o claro e o escuro) — era o que fazia este caso
+     * falhar às vezes logo depois do clique em "Mudar para tema escuro". Espera toda animação finita
+     * (transições CSS inclusive) terminar antes de cada medida; o oráculo não muda.
+     */
+    $assentar = 'await Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => null)));';
+    $pagina->script("(async () => { {$assentar} })()");
+
     $comparacao = $tema === 'navegador-claro' ? '>= 0.5' : '<= 0.2';
     $pagina->assertScript("(() => { const fundo = ({$medidor})(document.body, document.body); return fundo !== null && fundo.luminancia {$comparacao}; })()");
     $fundo = json_decode((string) $pagina->script("JSON.stringify(({$medidor})(document.body, document.body))"), true, flags: JSON_THROW_ON_ERROR);
@@ -83,7 +92,8 @@ it('[CT-B02] a superfície e o favorito do dock acompanham o tema efetivo do pai
         ->assertVisible('[data-layout][data-open="true"] a[href$="/admin/users"]');
 
     $medida = json_decode((string) $pagina->script(<<<JS
-        (() => {
+        (async () => {
+            {$assentar}
             const raiz = document.querySelector('[data-layout][data-open="true"]');
             const item = raiz?.querySelector('a[href$="/admin/users"]');
             const superficie = item?.closest('.qad-item')?.querySelector('.qad-label');
