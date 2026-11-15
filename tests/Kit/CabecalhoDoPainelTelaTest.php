@@ -1,8 +1,8 @@
 <?php
 
 use App\Filament\Admin\Pages\ConfiguracoesDoKit;
+use App\Filament\Pages\Auth\TelaVerificacaoDeEmail;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
-use Caresome\FilamentAuthDesigner\Pages\Auth\EmailVerification;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -235,7 +235,7 @@ it('[CT-35] a tela de verificacao de e-mail continua sem composicao depois de um
     Filament::setCurrentPanel('app');
 
     $tela = Livewire::actingAs($usuario)
-        ->test(EmailVerification::class);
+        ->test(TelaVerificacaoDeEmail::class);
 
     expect($tela->html())->not->toContain('kit-cabecalho')
         ->and(regiaoDoHeader($tela->html(), 'fi-logo'))->toContain('Projeto Ômega');

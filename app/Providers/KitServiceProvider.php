@@ -6,6 +6,7 @@ use App\Ai\Health\LocalAiCheck;
 use App\Ai\Listeners\RegistrarAiRun;
 use App\Filament\Pages\Auth\CadastroUnificado;
 use App\Filament\Pages\Auth\EscolhaDePainel;
+use App\Filament\Pages\Auth\PreviewDasTelasDeAcesso;
 use App\Filament\Pages\Auth\TelaLoginUnificada;
 use App\Filament\Pages\Auth\TelaRecuperarSenhaUnificada;
 use App\Http\Controllers\Auth\EntrarNoPainelController;
@@ -890,6 +891,18 @@ class KitServiceProvider extends ServiceProvider
             Route::get('/login/painel/{painel}', EntrarNoPainelController::class)->middleware('auth')->where('painel', '[a-z0-9_-]{1,32}')->name('login.painel.entrar');
             Route::get('/cadastro', CadastroUnificado::class)->name('cadastro');
             Route::get('/esqueci-minha-senha', TelaRecuperarSenhaUnificada::class)->name('esqueci-minha-senha');
+        });
+
+        /*
+         * O documento do preview de "Telas de acesso" (wiki `feat/aparencia-das-telas-de-acesso`,
+         * ADR-04). Rota do kit, e não página descoberta pelo painel, porque a página é uma
+         * `SimplePage` com o layout das telas de autenticação. Sob `panel:admin` + `auth`; quem decide
+         * é a página: acesso ao `/admin` (`canAccessPanel()`) e o escopo do rascunho, a cada request
+         * (P-17). O `Authenticate` do Filament NÃO serve aqui: o Laravel o ordena antes do
+         * `SetUpPanel:admin`, e ele decidiria pelo painel default (QA-01 do quality gate).
+         */
+        Route::middleware(['web', 'panel:admin', 'auth'])->group(function (): void {
+            Route::get('/admin/preview-das-telas-de-acesso', PreviewDasTelasDeAcesso::class)->name('kit.preview-das-telas-de-acesso');
         });
 
         /*

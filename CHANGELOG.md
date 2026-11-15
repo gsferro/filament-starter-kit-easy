@@ -5,6 +5,48 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.53.0] - 2026-11-14
+
+A v0.53.0 traz a **aparência das telas de acesso** escolhida na tela, com preview e por organização. Duas migrations, as duas vazias: as telas continuam idênticas até alguém escolher o painel de marca. Wiki: `wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/`.
+
+### Adicionado
+
+- Aparência das telas de acesso escolhida na tela (`wikis/specs/feat/aparencia-das-telas-de-acesso/`): a aba
+  **Telas de acesso** de *Configurações da aplicação* troca o layout das telas de autenticação vestidas pelo Auth Designer nos três
+  painéis — login, cadastro, recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de
+  sessão — entre o **clássico** (o de sempre, o default) e o **painel de marca**: o formulário de um lado e, do
+  outro, um painel arredondado de largura escolhida (30% a 70%, o `mediaSize` do Auth Designer) com cor ou arte de
+  fundo, a logo num selo claro, um destaque no meio (a logo grande ou uma imagem PNG/JPEG/WebP enviada), uma
+  ilustração de rede de pontos parada ou em movimento (com botão de pausar e respeito a "reduzir movimento"), cor
+  própria da ilustração e duas frases opcionais. No celular o painel vira uma faixa curta acima do formulário,
+  só com a logo ou o nome da aplicação. **Uma aparência por tela**: login, cadastro e "esqueci a senha" têm
+  seções próprias no editor ("Igual ao login" ou a sua; na organização, login e cadastro), e cada uma pode ter outro lado, outra largura ou outro
+  layout. A frase e o apoio aceitam a formatação do rodapé da tela de login (Markdown seguro: negrito,
+  itálico, tachado, link). O fundo de cor oferece a cor primária (padrão do Filament) ou uma cor própria, e
+  há fundo em gradiente (duas cores e três direções, com os textos numa faixa escura legível). Login social
+  e desafio anti-robô continuam no formulário em qualquer layout. **Transição entre as telas** (View Transitions
+  API, sem JavaScript novo, ligada por padrão, uma opção no login): do login para o cadastro ou o "esqueci a
+  senha", o painel desliza para o lado da outra tela e o formulário aparece aos poucos; só em computador e sem
+  "reduzir movimento". Um **preview** mostra login, recuperação de
+  senha e cadastro com as alterações ainda não salvas, em largura de computador e de celular, sem autenticar nem
+  enviar nada. Com organizações, o formulário de cada uma ganha a seção **Telas de acesso**: usar a aparência
+  padrão ou ter a sua, que vale no login com `?org=`, no cadastro e no bloqueio de sessão dela. Camada no kit,
+  sobre o `caresome/filament-auth-designer`, sem pacote novo nem layout publicado. Documentação:
+  `docs/{pt,en}/autenticacao/aparencia-das-telas.md`.
+
+### Atualizando
+
+- Rode `php artisan migrate` (settings `aparencia_das_telas` e a coluna `tenants.aparencia_das_telas`, as duas
+  vazias) e `php artisan filament:assets` (CSS do kit). As telas continuam idênticas até alguém escolher outro
+  layout. O `kit:update` passa a trazer `app/Filament/Pages/Auth/TelaRedefinirSenha.php` (registrada nos três
+  providers) e `TelaVerificacaoDeEmail.php` (no `/app`, o único painel com a confirmação de e-mail no ar) — a
+  redefinição de senha e a confirmação de e-mail eram as páginas do pacote: quem mudou à mão o bloco
+  `AuthDesignerPlugin` dos providers revisa o diff.
+
+### Defaults mudados
+
+- nenhum
+
 ## [0.52.1] - 2026-11-13
 
 A v0.52.1 corrige o cadastro por convite que terminava em **403** com o login unificado desligado quando o

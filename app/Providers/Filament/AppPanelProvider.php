@@ -10,6 +10,8 @@ use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
 use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaRecuperarSenha;
+use App\Filament\Pages\Auth\TelaRedefinirSenha;
+use App\Filament\Pages\Auth\TelaVerificacaoDeEmail;
 use App\Filament\Pages\DashboardClassico;
 use App\Filament\Pages\MyProfilePage;
 use App\Filament\Pages\PrimeirosPassos;
@@ -33,7 +35,6 @@ use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
 use Caresome\FilamentAuthDesigner\AuthDesignerPlugin;
 use Caresome\FilamentAuthDesigner\Data\AuthPageConfig;
 use Caresome\FilamentAuthDesigner\Enums\MediaPosition;
-use Caresome\FilamentAuthDesigner\Pages\Auth\EmailVerification;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -313,9 +314,11 @@ class AppPanelProvider extends PanelProvider
                      * erro nenhum. Ver ADR-06.
                      */
                     ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
-                        // A página do PEDIDO é a do kit, por causa do desafio anti-robô; a de
-                        // redefinição (com token do e-mail) continua a do vendor. Ver TelaRecuperarSenha.
+                        // A página do PEDIDO é a do kit, por causa do desafio anti-robô
+                        // (ver TelaRecuperarSenha); a de redefinição (com token do e-mail) também,
+                        // só para receber a aparência das telas de acesso (ver TelaRedefinirSenha).
                         ->usingPage(TelaRecuperarSenha::class)
+                        ->usingResetPage(TelaRedefinirSenha::class)
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')
@@ -539,7 +542,8 @@ class AppPanelProvider extends PanelProvider
              * `Register::sendEmailVerificationNotification()` pula o envio para ele
              * (Register.php:161-167). Ver ADR-05 da wiki `registro-e-aprovacao`.
              */
-            ->emailVerification(EmailVerification::class)
+            // A página do pacote, vestida com a aparência das telas de acesso (`TelaVerificacaoDeEmail`).
+            ->emailVerification(TelaVerificacaoDeEmail::class)
             ->emailVerifiedMiddlewareName(ExigirEmailVerificado::class)
             /*
              * Gatilho da busca ⌘K, no lugar exato do campo nativo.

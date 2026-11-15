@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Schemas\EditorDeAparenciaDasTelas;
 use App\Filament\Concerns\ExigePermissaoDaTela;
 use App\Settings\ConfiguracoesDoKit as SettingsDoKit;
 use App\Support\CarregamentoDaTabela;
@@ -131,6 +132,7 @@ class ConfiguracoesDoKit extends SettingsPage
                         $this->abaTabelas(),
                         $this->abaRegistro(),
                         $this->abaLogin(),
+                        $this->abaTelasDeAcesso(),
                         $this->abaAplicacao(),
                     ]),
             ]);
@@ -166,6 +168,8 @@ class ConfiguracoesDoKit extends SettingsPage
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['tabela_carregamento']             = CarregamentoDaTabela::coagir($data['tabela_carregamento'] ?? null)->value;
+        // O clássico grava `null`, o default de sempre; o resto passa pelo vocabulário (P-04).
+        $data['aparencia_das_telas']             = EditorDeAparenciaDasTelas::paraGravar($data['aparencia_das_telas'] ?? null, propria: false);
         $data['visoes_de_tabela_compartilhadas'] = (bool) ($data['visoes_de_tabela'] ?? false)
             && (bool) ($data['visoes_de_tabela_compartilhadas'] ?? false);
 
@@ -233,6 +237,10 @@ class ConfiguracoesDoKit extends SettingsPage
         // Mesmo raciocínio para o detalhe do usuário no cabeçalho: vocabulário fechado
         // (`perfil` | `email`), e `telefone` gravado à mão travaria a tela inteira.
         $data['cabecalho_detalhe_do_usuario'] = DetalheDoUsuario::coagir($data['cabecalho_detalhe_do_usuario'] ?? null)->value;
+
+        // A aparência entra no vocabulário completo, com o clássico explícito: o Select nunca segura
+        // lixo e um valor gravado à mão não trava a tela (o mesmo motivo da densidade acima).
+        $data['aparencia_das_telas'] = EditorDeAparenciaDasTelas::paraOFormulario($data['aparencia_das_telas'] ?? null);
 
         return $data;
     }
@@ -788,6 +796,22 @@ class ConfiguracoesDoKit extends SettingsPage
                         ->maxLength(500)
                         ->columnSpanFull(),
                 ]),
+        ]);
+    }
+
+    /**
+     * A aparência das telas de autenticação (wiki `feat/aparencia-das-telas-de-acesso`): o layout e o
+     * preview com as alterações ainda não salvas. O editor é o mesmo do formulário da organização
+     * (`EditorDeAparenciaDasTelas`).
+     */
+    private function abaTelasDeAcesso(): Tab
+    {
+        return $this->aba('telas-de-acesso', 'Telas de acesso', 'heroicon-o-window', [
+            $this->secao('telas-de-acesso', 'layout', 'Aparência', 'heroicon-o-swatch')
+                ->description('Como ficam o login e as demais telas de autenticação dos três painéis. Com organizações, cada uma pode ter a sua no formulário dela.')
+                ->schema([EditorDeAparenciaDasTelas::campos()]),
+            $this->secao('telas-de-acesso', 'preview', 'Pré-visualização', 'heroicon-o-eye')
+                ->schema(EditorDeAparenciaDasTelas::preview(static fn (): string => 'global')),
         ]);
     }
 

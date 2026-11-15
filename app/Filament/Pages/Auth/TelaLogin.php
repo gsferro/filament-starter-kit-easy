@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Filament\Concerns\VesteAparenciaDasTelas;
 use App\Filament\Forms\Components\CampoAntiRobo;
 use App\Http\Controllers\Auth\ContaIndisponivelController;
 use App\Models\Tenant;
@@ -10,6 +11,7 @@ use App\Support\ConfiguracaoDoLogin;
 use App\Support\DestinoAposLogin;
 use App\Support\Paineis;
 use App\Support\RegistroAberto;
+use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Login;
 use Filament\Actions\Action;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
@@ -28,6 +30,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Illuminate\Support\Timebox;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 
 /**
  * A tela de login dos TRÊS painéis. Duas diferenças em relação à do Auth Designer:
@@ -45,8 +48,21 @@ use Illuminate\Validation\ValidationException;
  */
 class TelaLogin extends Login
 {
+    use VesteAparenciaDasTelas;
+
     /** Regra do kit: página de auth redeclara o `$layout`. Ver `.ai/rules/auth.md`. */
     protected static string $layout = 'filament-auth-designer::components.layouts.auth';
+
+    /**
+     * O `?org=` do pedido, guardado na montagem para a APARÊNCIA da organização.
+     *
+     * Propriedade, e não `request()->query()`: um envio com senha errada volta pelo
+     * `/livewire/update`, sem a query, e a tela trocaria para a aparência da instalação no meio
+     * da digitação (P-06). `#[Locked]` porque o cliente não escolhe a organização da tela; e ela
+     * só decide aparência — quem decide acesso continua sendo `canAccessPanel()`.
+     */
+    #[Locked]
+    public ?string $orgDaAparencia = null;
 
     /**
      * Com a página única ligada, as telas de login dos painéis não são mais a porta: quem chega
@@ -79,7 +95,27 @@ class TelaLogin extends Login
             session()->forget(DestinoAposLogin::SESSAO_EM_CURSO);
         }
 
+        $this->orgDaAparencia = $this->orgDoPedido();
+
         parent::mount();
+    }
+
+    public function getAuthDesignerConfig(): AuthDesignerConfig
+    {
+        return $this->aplicarAparencia(parent::getAuthDesignerConfig());
+    }
+
+    /**
+     * A organização do `?org=`, se ela estiver ATIVA — sem exigir cadastro aberto: uma
+     * organização que só recebe convites também tem a sua aparência. Por slug, como o cadastro.
+     */
+    protected function organizacaoDaAparencia(): ?Tenant
+    {
+        if (blank($this->orgDaAparencia) || ! config('kit.tenancy.enabled')) {
+            return $this->organizacaoParaAparencia(null);
+        }
+
+        return $this->organizacaoParaAparencia(Tenant::query()->where('slug', $this->orgDaAparencia)->first());
     }
 
     /** A página única (`/login`) sobrescreve para `true`; as telas dos painéis são `false`. */

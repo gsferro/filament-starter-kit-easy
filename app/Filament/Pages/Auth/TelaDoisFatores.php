@@ -2,7 +2,9 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Filament\Concerns\VesteAparenciaDasTelas;
 use Caresome\FilamentAuthDesigner\Concerns\HasAuthDesignerLayout;
+use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Jeffgreco13\FilamentBreezy\Pages\TwoFactorPage;
 
 /**
@@ -27,7 +29,16 @@ use Jeffgreco13\FilamentBreezy\Pages\TwoFactorPage;
  */
 class TelaDoisFatores extends TwoFactorPage
 {
-    use HasAuthDesignerLayout;
+    /*
+     * Alias `as protected`, como na `TelaBloqueio`: a classe declara o próprio
+     * `getAuthDesignerConfig()` (para aplicar a aparência) e precisa chamar o da trait. Protegido
+     * porque o alias herdaria a visibilidade pública e viraria ação de `$wire`
+     * (`.ai/rules/filament.md`).
+     */
+    use HasAuthDesignerLayout {
+        getAuthDesignerConfig as protected configBaseDoAuthDesigner;
+    }
+    use VesteAparenciaDasTelas;
 
     /**
      * **Não remover por parecer redundante com a trait.** `$layout` é estático e a trait faz
@@ -60,5 +71,11 @@ class TelaDoisFatores extends TwoFactorPage
     protected function getAuthDesignerPageKey(): string
     {
         return 'password-reset';
+    }
+
+    /** Aparência da instalação: o desafio de 2FA não conhece organização (P-06). */
+    public function getAuthDesignerConfig(): AuthDesignerConfig
+    {
+        return $this->aplicarAparencia($this->configBaseDoAuthDesigner());
     }
 }

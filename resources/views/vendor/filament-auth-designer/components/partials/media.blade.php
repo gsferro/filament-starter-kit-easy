@@ -19,9 +19,19 @@
      */
     $logos = method_exists($livewire, 'urlsDasLogos') ? $livewire->urlsDasLogos() : null;
     $ehLogo = filled($logos['clara'] ?? null) && $logos['clara'] === $config->media;
+
+    /*
+     * Layout "painel" das telas de acesso (wiki `feat/aparencia-das-telas-de-acesso`, ADR-03): a
+     * mídia vira o painel de marca. A página que não conhece aparência (método ausente) e o
+     * clássico (`null`) seguem pelos ramos de sempre, byte a byte.
+     */
+    $aparencia = method_exists($livewire, 'aparenciaDaTela') ? $livewire->aparenciaDaTela() : null;
+    $ehPainel = ($aparencia['layout'] ?? null) === 'painel';
 @endphp
 
-@if($ehLogo)
+@if($ehPainel)
+    @include('filament.auth.painel-de-marca', ['config' => $config, 'aparencia' => $aparencia])
+@elseif($ehLogo)
     {{-- A logo da marca: centrada e contida — ela é o elemento, não a arte. --}}
     <div style="display:flex;justify-content:center;align-items:center;width:100%;height:100%">
         <img

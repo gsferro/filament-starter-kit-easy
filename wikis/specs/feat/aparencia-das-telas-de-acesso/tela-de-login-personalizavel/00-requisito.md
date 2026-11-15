@@ -1,0 +1,233 @@
+# Requisito — feat: tela de login personalizável
+
+## Fonte
+
+- **Origem**: pedido no chat (`/feature-wiki`), 2026-11-13
+- **Autor / solicitante**: gsferro (dono do kit)
+- **Fidelidade**: **alta** — texto escrito pelo solicitante
+- **Máscara**: o pedido cita uma URL pública e o caminho local de um projeto usados só como
+  referência de estudo. O próprio pedido proíbe citar esse projeto ou essa URL em qualquer lugar da
+  documentação ou do site; por isso os dois trechos aparecem abaixo como
+  `[referência externa omitida a pedido do solicitante]`. É a única alteração do texto, e ela é
+  exigida pelo próprio texto (RQ-12)
+
+## Texto Original
+
+<!-- IMUTÁVEL. Não editar, não corrigir ortografia, não resumir, não reordenar. -->
+
+> vamos melhorar a tela de login
+> - avalise a url: "[referência externa omitida a pedido do solicitante]"
+> - analise rigorosamente o projeto base: "[referência externa omitida a pedido do solicitante]" e veja como foi implementado a tela de login, usando o filament v5
+> - reflita, antes de implementar, se isso poderia ser um novo pacote baseado no auth design (que já esta implementado) ou se vale a pena fazer um wrapper direto dentro do kit para customização
+> - use o "codex --yolo" como auxiliar e subagent
+> - crie uma branch exclusiva para essa evolução
+> - a nova melhoria, não deve quebrar os sistemas que já usam o kit, rode os cenarios ao finalizar
+> - pense se vale a pena criar no admin, um settings de configuração e customização, que já renderiza as telas de auth como preview, para ver como fica conforme se customiza, deixando a criterio do admin da aplicação a forma de uso
+> - podemos extender essa customização para quando o tenant estiver ligado, podemos usar ou não um exclusivo por tenant (como é feito com outras features) tendo a opção de usar padrão ou customizar por tenant, dando uma melhor experiencia UX
+> - lembre-se de documentar muito bem detalhado na page e nos readmes do projeto
+> - NUNCA FAÇA REFERENCIA a outros projetos, se não for EXPLICITAMENTE DITO para ser feito. Logo, não faça referencia ao projeto da url passada em nenhum lugar da documentação ou dentro do site
+> - use o "codex --yolo" como um juiz cego e peça a ele ideias e seja completamente rigido e imparcial na analise das sugestões entre voces, escolhendo o melhor caminho e layout para uso
+
+## Decomposição em Cláusulas
+
+<!-- Derivada e revisável. Estado: fechada · aberta — Qn · substituída por RQ-nn (Adendo N) · decomposta em RQ-nn, RQ-mm -->
+
+| ID | Cláusula | Trecho literal de origem | Tipo | Estado |
+|----|----------|--------------------------|------|--------|
+| RQ-01 | A tela de login do kit fica melhor do que a atual (layout, hierarquia visual, responsividade, acessibilidade) | "vamos melhorar a tela de login" | funcional | fechada |
+| RQ-02 | A página de referência é avaliada antes do desenho | "avalise a url" | processo | fechada |
+| RQ-03 | A implementação de referência (Filament v5) é analisada antes do desenho | "analise rigorosamente o projeto base … e veja como foi implementado a tela de login, usando o filament v5" | processo | fechada |
+| RQ-04 | Antes de implementar, a escolha entre pacote novo sobre o auth designer e camada dentro do kit é decidida e justificada | "reflita, antes de implementar, se isso poderia ser um novo pacote baseado no auth design … ou se vale a pena fazer um wrapper direto dentro do kit para customização" | processo | fechada |
+| RQ-05 | O Codex com `--yolo` participa como auxiliar/sub-agente | "use o \"codex --yolo\" como auxiliar e subagent" | processo | fechada |
+| RQ-06 | A evolução tem branch própria | "crie uma branch exclusiva para essa evolução" | processo | fechada |
+| RQ-07 | Projetos que já usam o kit continuam funcionando depois de atualizar | "a nova melhoria, não deve quebrar os sistemas que já usam o kit" | restrição | fechada |
+| RQ-08 | Os cenários de atualização do kit são executados ao final | "rode os cenarios ao finalizar" | processo | fechada |
+| RQ-09 | O admin tem uma tela de configuração da aparência das telas de autenticação, se a avaliação concluir que vale | "pense se vale a pena criar no admin, um settings de configuração e customização" | funcional | fechada |
+| RQ-10 | Essa tela mostra um preview das telas de autenticação que acompanha a customização | "que já renderiza as telas de auth como preview, para ver como fica conforme se customiza" | funcional | fechada |
+| RQ-11 | Usar ou não a customização fica a critério do admin da aplicação | "deixando a criterio do admin da aplicação a forma de uso" | funcional | fechada |
+| RQ-12 | Nenhuma documentação nem o site citam outros projetos, nem o projeto/URL de referência | "NUNCA FAÇA REFERENCIA a outros projetos … não faça referencia ao projeto da url passada em nenhum lugar da documentação ou dentro do site" | restrição | fechada |
+| RQ-13 | Com tenancy ligada, cada organização pode usar a aparência padrão ou uma própria | "quando o tenant estiver ligado, podemos usar ou não um exclusivo por tenant … tendo a opção de usar padrão ou customizar por tenant" | funcional | fechada |
+| RQ-14 | A escolha padrão × própria por organização segue o padrão que o kit já usa em outras features | "(como é feito com outras features)" | restrição | fechada |
+| RQ-15 | A feature é documentada em detalhe na página de documentação e nos READMEs | "lembre-se de documentar muito bem detalhado na page e nos readmes do projeto" | não-funcional | fechada |
+| RQ-16 | O Codex com `--yolo` atua como juiz cego das ideias, e a escolha final de caminho e layout é imparcial | "use o \"codex --yolo\" como um juiz cego e peça a ele ideias e seja completamente rigido e imparcial na analise das sugestões entre voces, escolhendo o melhor caminho e layout para uso" | processo | fechada |
+
+Cláusulas de tipo `processo` não geram CT: a evidência delas é registro no `03` (despachos,
+auditoria) e no `02` (RQ-04).
+
+## Perguntas ao Solicitante
+
+| ID | Pergunta | Afeta | Recomendação | Estado |
+|----|----------|-------|--------------|--------|
+| Q1 | Projeto que já usa o kit e roda `kit:update`: as telas de autenticação passam para o layout novo sozinhas, ou continuam como estão até o admin escolher o novo? | RQ-01, RQ-07, RQ-11 | ➡️ continuam como estão (preset "atual" gravado para instalações existentes); instalação nova nasce no layout novo. Falha fechado: nenhuma tela muda sem decisão de quem administra | aberta |
+| Q2 | A customização vale para todas as telas de autenticação (login, recuperar senha, cadastro, dois fatores, bloqueio, escolha de painel) ou só para o login? | RQ-09, RQ-10 | ➡️ todas, com uma aparência só; o preview alterna entre elas | respondida pelo próprio texto original (QA-03 do gate): "um settings de configuração e customização, que já renderiza **as telas de auth** como preview" — a customização e o preview são das telas de autenticação, no plural; P-02 fixa o recorte (sem a escolha de painel). Confirmação explícita pedida ao solicitante no fechamento |
+| Q3 | Valor inválido digitado na tela (opção fora da lista, cor fora de `#RRGGBB`, texto acima do teto) é recusado ou normalizado? | P-03, P-05 | ➡️ recusado com erro no campo, sem salvar nada | respondida pela sessão como P-10 (autorização do pedido; devolvida pela derivação como Q?1) |
+| Q4 | "Caracteres" do teto são pontos de código ou grafemas? Espaços nas bordas contam? | P-03 | ➡️ pontos de código (como a validação de texto do Laravel); espaços nas bordas e repetidos são removidos | respondida pela sessão como P-11 (Q?2) |
+| Q5 | Quais os padrões de cada campo e o que é "ausente"? | P-03, P-04 | ➡️ formulário à direita, fundo de cor, cor primária, sem frases, logo e alternador ligados; vazio ou só espaços = ausente | respondida pela sessão como P-11 (Q?3) |
+| Q6 | Voltar à padrão e depois sair dela de novo recupera a aparência própria antiga? Organização inativa pode ser editada? | P-07 | ➡️ não recupera: voltar à padrão descarta a própria, e sair de novo começa de uma cópia nova da padrão; inativa edita como os demais campos dela | respondida pela sessão como P-12 (Q?4) |
+| Q7 | Preview sem rascunho, expirado, de outra pessoa ou com tela desconhecida responde o quê? | P-08 | ➡️ rascunho ausente/expirado/alheio: 404; escopo sem permissão: 403; tela desconhecida: login | respondida pela sessão como P-13 (Q?5) |
+| Q8 | Qual referência prova que o clássico ficou idêntico e que a faixa do celular cabe? | RQ-01, RQ-07, P-09 | ➡️ clássico: a mesma configuração de antes entregue ao pacote (mesmo objeto) e os testes de aparência existentes verdes; celular 390×844 e computador 1440×900 com os textos no teto | respondida pela sessão como P-14 (Q?6) |
+| Q9 | Como provar que nada citou o projeto de referência sem escrever o nome dele num teste? | RQ-12 | ➡️ teste sem os nomes: as páginas novas não têm links externos fora dos domínios do próprio kit; a busca pelos nomes é feita pela sessão e registrada no `03`, sem os nomes | respondida pela sessão (Q?8) |
+| Q10 | Quais fluxos provam a regressão de RQ-07? | RQ-07 | ➡️ as suítes Kit e Tenancy existentes e os quatro cenários do checklist de release | respondida pela sessão (Q?7) |
+| Q11 | Há upload novo, idioma ou README além do literal? | RQ-14, RQ-15 | ➡️ sem upload novo (arte e logo da identidade); docs pt e en; READMEs pt e en | respondida pela sessão (Q?9) |
+| Q12 | O Adendo 2 diz "possibilidade de usar html" e, na mesma frase, pede o componente do "Rodapé da tela de login", que descarta HTML cru (é Markdown seguro). Vale o componente (Markdown seguro: negrito, itálico, tachado, link) ou HTML livre? | RQ-27, P-05, P-27 | ➡️ o componente pedido, Markdown seguro: a tela de login é pública e sem autenticação, e HTML livre ali seria XSS armazenado (o mesmo motivo do rodapé, que é o "Recado do login" do glossário) | aberta — implementada a recomendação (P-27); confirmar com o solicitante |
+
+## Premissas
+
+| ID | Premissa | Origem | Data | Afeta | Estado |
+|----|----------|--------|------|-------|--------|
+| P-01 | Enquanto Q1 não é respondida, instalação existente mantém a aparência atual depois do `kit:update` | recomendação de Q1 | 2026-11-13 | RQ-07 | vigente |
+| P-02 | Pela leitura do texto original (Q2), a aparência configurada vale para todas as telas de autenticação vestidas com a arte do kit — login, cadastro (aberto e por convite), recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de sessão. A escolha de painel, que aparece depois de entrar e usa cartões, continua como está *(alterado em 2026-11-13: ADV-10 da revisão adversarial)* | recomendação de Q2 | 2026-11-13 | RQ-09, RQ-10 | vigente |
+| P-03 | Há dois layouts: "clássico" (o de hoje, idêntico) e "painel" (formulário numa coluna e, na outra metade, um painel de marca arredondado com fundo de cor ou da arte da identidade, logo opcional e duas frases opcionais — destaque com até 80 caracteres e apoio com até 160); no "painel" escolhe-se o lado do formulário, a cor (a primária, ou uma cor `#RRGGBB`) e se o alternador de tema aparece | decisão de desenho (step 4, juiz cego) | 2026-11-13 | RQ-01, RQ-09 | vigente |
+| P-04 | Valor gravado fora desse vocabulário nunca derruba uma tela de autenticação: campo inválido volta ao seu padrão, layout inválido volta ao clássico | decisão de desenho (falha fechado) | 2026-11-13 | RQ-07 | vigente |
+| P-05 | Textos da aparência saem escapados; nenhum campo aceita HTML, CSS ou script *(alterado em 2026-11-14: P-27 — frase e apoio saem como HTML seguro gerado do Markdown, só com negrito, itálico, tachado e link; HTML digitado continua descartado)* | decisão de desenho (segurança) | 2026-11-13 | RQ-09 | vigente |
+| P-06 | A aparência de uma organização só vale com tenancy ligada, nas telas do painel da organização (e nas páginas únicas `/login` e `/cadastro`), quando a organização é identificada (login com `?org=` de organização ativa, cadastro da organização, bloqueio de sessão dentro dela) e continua valendo depois de um envio com erro; nas demais telas (recuperar e redefinir senha, verificação de e-mail, dois fatores) e nos painéis sem organização vale a aparência padrão. A aparência nunca concede acesso | decisão de desenho (step 4) | 2026-11-13 | RQ-13 | vigente |
+| P-07 | A organização usa a aparência padrão inteira (padrão) ou a sua inteira; ao escolher a própria, ela começa como cópia da padrão e deixa de acompanhar mudanças posteriores da padrão | decisão de desenho (ADR-02) | 2026-11-13 | RQ-13, RQ-14 | vigente |
+| P-08 | O preview mostra login, recuperar senha e cadastro com valores ainda não salvos, em largura de computador e de celular; não executa autenticação, não envia e-mail, não segue para provedor social e só é aberto por quem pode salvar aquele escopo (configurações para a padrão; editar ou criar a organização para a da organização), e só com rascunho da própria pessoa | decisão de desenho (ADR-04) | 2026-11-13 | RQ-10 | vigente |
+| P-09 | No layout "painel", em telas estreitas (celular) o painel de marca não some: vira uma faixa curta acima do formulário, e o rodapé da tela continua dentro da dobra *(alterado em 2026-11-14: o conteúdo da faixa passa a ser o de P-22, Adendo 1)* | decisão de desenho (lição da referência) | 2026-11-13 | RQ-01 | vigente — em parte substituída por P-22 |
+| P-10 | Na tela de configurações e no formulário da organização, valor fora do vocabulário é recusado com erro no campo e nada é salvo | Q3 | 2026-11-13 | P-03, P-05 | vigente |
+| P-11 | Tetos contam pontos de código, medidos depois de remover os espaços das bordas e os repetidos; vazio ou só espaços é ausente. Padrões: formulário à direita, fundo de cor, cor primária, sem frases, logo e alternador ligados | Q4, Q5 | 2026-11-13 | P-03, P-04 | vigente |
+| P-12 | Voltar a "usar a padrão" descarta a aparência própria; sair dela de novo começa de uma cópia nova da padrão vigente. Organização inativa tem a aparência editada como os demais campos dela *(alterado em 2026-11-13: ADV-23)* | Q6 | 2026-11-13 | P-07 | vigente |
+| P-13 | Preview com rascunho ausente, expirado ou de outra pessoa responde 404; com escopo sem permissão, 403; com tela desconhecida mostra o login | Q7 | 2026-11-13 | P-08 | vigente |
+| P-14 | Com o clássico, as telas recebem exatamente a configuração de antes; as medidas de computador e celular são 1440×900 e 390×844, com os textos no teto | Q8 | 2026-11-13 | RQ-01, RQ-07, P-09 | vigente |
+| P-15 | Com o fundo "Arte da identidade", toda tela de autenticação — inclusive o bloqueio de sessão — usa a arte da identidade como fundo do painel; a logo fica só no selo | step 9 — RD-01 (fw-revisor-diff) e CX-02 (Codex) | 2026-11-13 | P-03 | vigente |
+| P-16 | Uma tela de autenticação não entrega ao navegador cor nem logo de organização que ela não mostra: fora do layout "painel" (ou com a logo desligada) essas informações não saem nem por chamada direta ao componente | step 9 — SEC-01 (filament-security-audit) e RD-02 | 2026-11-13 | P-06, RQ-13 | vigente |
+| P-17 | O preview só abre para quem entra no painel admin, e a autorização do escopo vale a cada atualização da página, não só na abertura | step 9 — SEC-02/SEC-03, BP-35, CX-01 | 2026-11-13 | P-08 | vigente |
+| P-18 | Com uma cor de painel clara, o texto do painel passa a escuro, para continuar legível | step 9 — BP-23 (reviewing-filament-plans) | 2026-11-13 | P-03 | vigente |
+| P-19 | No "painel", o painel de marca ocupa de 30 % a 70 % da largura em passos de 5 (o formulário fica com o resto), padrão 50 %; o lado do formulário continua esquerda ou direita | decisão de desenho (Adendo 1) — espelha `mediaSize`/`mediaPosition` do auth designer | 2026-11-14 | RQ-23 | vigente |
+| P-20 | O destaque central do painel é "nenhum" (padrão), "logo" (a da organização, senão a da instalação; sem logo, o nome da aplicação) ou "imagem" enviada (PNG, JPEG ou WebP, sem SVG, no teto de upload do kit), em três tamanhos (padrão médio); imagem gravada que não existe mais no disco some sem derrubar a tela. O destaque "logo" independe do interruptor "logo no topo" *(alterado em 2026-11-14: ADV-A8, ADV-A12 da revisão do adendo)* | decisão de desenho (Adendo 1) | 2026-11-14 | RQ-20 | vigente |
+| P-21 | A ilustração do painel é "nenhuma" (padrão) ou "rede" — pontos ligados por linhas —, com movimento ligado ou desligado e cor própria opcional (`#RRGGBB`; em branco, a cor do texto do painel). Movimento ligado por padrão; em movimento, há botão de pausar; com "reduzir movimento" no sistema — também se a preferência mudar com a tela aberta —, ela fica parada; onde a rede não aparece (celular), não há animação *(alterado em 2026-11-14: CX-A3, RD-A1)* | decisão de desenho (Adendo 1) — WCAG 2.2.2 e `prefers-reduced-motion` | 2026-11-14 | RQ-21, RQ-22 | vigente |
+| P-22 | No celular, a faixa do painel mostra só a logo (ou o nome da aplicação, sem logo); frase, apoio, destaque e ilustração ficam de fora | Adendo 1 (RQ-24), substitui em parte P-09 | 2026-11-14 | RQ-24 | vigente |
+| P-23 | Uma aparência gravada antes do Adendo 1 continua com o mesmo resultado no computador: campo novo ausente vale o padrão, que reproduz o de antes (50 %, sem destaque, sem ilustração). No celular ela segue RQ-24 — a faixa perde a frase *(alterado em 2026-11-14: QA-24)* | decisão de desenho (Adendo 1) — RQ-07 | 2026-11-14 | RQ-07 | vigente |
+| P-24 | O caminho de imagem gravado na aparência só vale na raiz do diretório das telas de acesso do disco público (sem subpasta); outro caminho é descartado *(alterado em 2026-11-14: ADV-A17)* | decisão de desenho (Adendo 1) — segurança | 2026-11-14 | RQ-20, P-05 | vigente |
+| P-25 | A aparência tem a do login na raiz e, em `telas`, a do cadastro e a do "esqueci a senha"; tela ausente ou vazia segue o login; `{"layout":"classico"}` numa tela é escolha explícita; uma tela própria nasce como cópia do login e não tem outras telas dentro. A organização escolhe primeiro o objeto inteiro (o dela ou o padrão) e só depois a tela | decisão de desenho (Adendo 2, juiz cego: X corrigida) | 2026-11-14 | RQ-25, RQ-26 | vigente |
+| P-26 | Família de cada página: login, dois fatores, bloqueio e confirmação de e-mail seguem o login; cadastro aberto e por convite seguem o cadastro; recuperar e redefinir senha seguem o "esqueci a senha" | decisão de desenho (Adendo 2) | 2026-11-14 | RQ-25 | vigente |
+| P-27 | Frase e apoio aceitam a formatação do rodapé da tela de login — negrito, itálico, tachado e link —, em Markdown seguro (HTML cru é descartado, link só com esquema seguro); imagem e título digitados ou colados não aparecem. O teto (80 / 160) mede o texto visível; há também um teto de 4 KiB do texto bruto. Texto gravado antes desta versão continua texto puro, igual a antes | decisão de desenho (Adendo 2, juiz cego: Y) — tela pública | 2026-11-14 | RQ-27 | vigente |
+| P-28 | O fundo é cor, gradiente ou arte. Na cor, "cor primária" (o padrão do Filament: a da organização, senão a da instalação) ou uma cor `#RRGGBB` | decisão de desenho (Adendo 2, juiz cego: Y) | 2026-11-14 | RQ-28 | vigente |
+| P-29 | O gradiente usa duas cores `#RRGGBB` opcionais (vazias: tons 600 e 900 da primária) e uma de três direções (vertical, horizontal, diagonal); nenhum CSS livre. Sobre o gradiente, os textos ficam numa superfície escura opaca, em branco, com links sublinhados | decisão de desenho (Adendo 2, juiz cego: Y) — WCAG 1.4.3 | 2026-11-14 | RQ-29 | vigente |
+| P-30 | No celular, com fundo de arte, a faixa não mostra a imagem da arte: usa a cor do painel sob o véu escuro | correção (Adendo 2) | 2026-11-14 | RQ-30 | vigente |
+| P-31 | A aparência própria da organização não tem a tela "esqueci a senha": recuperar e redefinir senha usam sempre a padrão (P-06). O editor da organização não oferece essa seção, e o preview da organização mostra a padrão nessa tela | quality gate — QA-27 | 2026-11-14 | RQ-25, P-06, P-25 | vigente |
+| P-32 | A transição entre as telas é UMA opção, a do login ("Transição entre as telas", na seção Login do editor), e vale para todas as telas: a animação depende das duas páginas, a de origem e a de destino, então uma tela própria não a liga nem desliga sozinha. Ligada por padrão; o objeto gravado antes do Adendo 4 conta como ligada. Com o login no clássico, a opção fica gravada na raiz e vale o que estiver lá *(alterado em 2026-11-14: RD-D1 da revisão do diff e QA-36 do gate)* | decisão de desenho (Adendo 4, juiz cego Codex) | 2026-11-14 | RQ-34 | vigente |
+| P-33 | A transição só acontece entre duas telas no painel de marca, em tela de computador (a partir de 1024 px) e sem "reduzir movimento" no sistema; nos navegadores sem a View Transitions API entre documentos, a tela troca sem animação | decisão de desenho (Adendo 4, juiz cego Codex) | 2026-11-14 | RQ-34, RQ-35 | vigente |
+| P-34 | Na transição, o painel inteiro (com logo, destaque e textos) é o que desliza; o formulário antigo some na hora e o novo entra por opacidade, depois do início do deslize, para nunca ser visto do lado errado | decisão de desenho (Adendo 4, juiz cego Codex) | 2026-11-14 | RQ-35, RQ-36 | vigente |
+| P-35 | Na organização, a transição entre as telas segue a opção da instalação: a recuperação de senha usa sempre a padrão (P-31) e a transição exige as duas pontas, então uma opção própria da organização não teria efeito previsível. O formulário da organização não oferece o interruptor | quality gate — QA-37 | 2026-11-14 | RQ-34, P-31, P-32 | vigente |
+
+## Fora de Escopo (declarado)
+
+- Mudar o fluxo de autenticação (credenciais, login social, 2FA, captcha, login unificado): só a
+  aparência muda
+- Textos jurídicos/termos de uso
+
+## Adendo 1 — 2026-11-14
+
+- **Fonte**: pedidos do solicitante no chat, com o PR da feature aberto e antes do merge (cinco mensagens, na ordem)
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: —
+- **Máscara**: a mesma do Texto Original — a URL de referência aparece como
+  `[referência externa omitida a pedido do solicitante]` (RQ-12)
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> veja o PR #193 que esta aberto, resolva os problemas e faça o merge na main com nova tag + testes dos 4 cenarios
+
+> sua pergunta: "Se quiser capturas a mais (layout com a arte de fundo, tema escuro, editor da organização), eu tiro e adiciono ao PR."
+> minha resposta: sim
+
+> coloque também a opção de editar o texto que aparece: "Tudo o que a sua equipe precisa, num lugar só" e o subtexto.
+> - tem que ter a opção de exibir uma logo ou imagem no meio
+> - na url de parametro: "[referência externa omitida a pedido do solicitante]" tem uma imagem com animação que fica em movimento mas a mesma pode ser static
+> - revise no codigo fonte como esta implementado e traga para cá como sugestão mas deixe TUDO editavel para dar a maxima possibilidade de customização para o usuário do kit
+> - coloque também a opção de definir qual o tamanho que o form do login terá e em qual posição (left ou right) ele ficara, igual é usado no pacote default auth designer. temos que usar essas parametrizações para dar mais liberdade de customização
+> - use o "codex --yolo" se necessário
+> - crie uma /feature-wiki se necessário
+
+> - na parte mobile, não deve aparecer nenhum testo, so o nome da aplicação ou a Logo no topo
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-17 | Os problemas do PR são resolvidos e a feature entra na `main` com tag nova, depois dos 4 cenários | "resolva os problemas e faça o merge na main com nova tag + testes dos 4 cenarios" | processo | — |
+| RQ-18 | O site ganha capturas a mais: painel com a arte de fundo, tema escuro e o editor da organização | "Se quiser capturas a mais (layout com a arte de fundo, tema escuro, editor da organização)" … "sim" | não-funcional | — |
+| RQ-19 | A frase de destaque e o texto de apoio do painel são editáveis | "coloque também a opção de editar o texto que aparece" … "e o subtexto" | funcional | — |
+| RQ-20 | O painel pode exibir uma logo ou uma imagem no meio | "tem que ter a opção de exibir uma logo ou imagem no meio" | funcional | — |
+| RQ-21 | O painel oferece uma ilustração em movimento, que também pode ficar parada | "tem uma imagem com animação que fica em movimento mas a mesma pode ser static" | funcional | — |
+| RQ-22 | A ilustração é uma sugestão inspirada na referência, e todo elemento do painel é editável | "traga para cá como sugestão mas deixe TUDO editavel para dar a maxima possibilidade de customização" | funcional | — |
+| RQ-23 | O admin define o tamanho do formulário e o lado (esquerda ou direita), com as parametrizações do auth designer | "opção de definir qual o tamanho que o form do login terá e em qual posição (left ou right) ele ficara, igual é usado no pacote default auth designer" | funcional | — |
+| RQ-24 | No celular, o painel não mostra texto nenhum: só o nome da aplicação ou a logo, no topo | "na parte mobile, não deve aparecer nenhum testo, so o nome da aplicação ou a Logo no topo" | funcional | P-09 (parcial) |
+
+## Adendo 2 — 2026-11-14
+
+- **Fonte**: pedido do solicitante no chat, depois de testar o Adendo 1 no servidor local
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: —
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> ficou otimo, mas vamos evoluir:
+> - crie uma /feature-wiki se necessário
+> - use o codex para te ajudar
+> - temos 3 telas: login, cadastro e esqueci a senha, temos que ter a configuração especifica para cada uma delas para melhor customização (muitos sistemas trocam de posição o form do login na direita e o cadastro e esqueci a senha na esquerda)
+> - nos textos: temos que ter a possibilidade de usar html, mude para uso do componente que é usado no "Rodapé da tela de login" que da a possibilidade de formatar melhor o que será exibido, dando mais personalização. isso para texto e texto de apoio
+> - na parte do "fundo" quando escolher a "Cor", de a opção de usar a cor default do filament, de a opção de usar gradiente.
+> - bug no mobile: com a configuração e "fundo" como "arte da identidade" e sem logo no meio, fica sobreposto o nome da app e a logo, conforme deixei salvo e voce consegue ver na url abrindo como mobile: "http://127.0.0.1:8123/admin/login"
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-25 | Login, cadastro e "esqueci a senha" têm, cada uma, a sua configuração de aparência | "temos 3 telas: login, cadastro e esqueci a senha, temos que ter a configuração especifica para cada uma delas" | funcional | — |
+| RQ-26 | A posição do formulário pode diferir entre as telas (ex.: login à direita, cadastro e "esqueci a senha" à esquerda) | "muitos sistemas trocam de posição o form do login na direita e o cadastro e esqueci a senha na esquerda" | funcional | — |
+| RQ-27 | A frase e o texto de apoio são formatáveis, com o mesmo componente do "Rodapé da tela de login" | "temos que ter a possibilidade de usar html, mude para uso do componente que é usado no \"Rodapé da tela de login\"" … "isso para texto e texto de apoio" | funcional | RQ-19 (parcial) |
+| RQ-28 | Com fundo de cor, há a opção de usar a cor padrão do Filament | "quando escolher a \"Cor\", de a opção de usar a cor default do filament" | funcional | — |
+| RQ-29 | Com fundo de cor, há a opção de gradiente | "de a opção de usar gradiente" | funcional | — |
+| RQ-30 | No celular, com fundo de arte, a marca da faixa não fica sobreposta ao nome desenhado na arte | "bug no mobile: com a configuração e \"fundo\" como \"arte da identidade\" e sem logo no meio, fica sobreposto o nome da app e a logo" | correção | P-22 (parcial) |
+
+## Adendo 3 — 2026-11-14
+
+- **Fonte**: pedido do solicitante no chat, durante a implementação do Adendo 2 (repetido em duas mensagens)
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: —
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> atenção:
+> - essa nova tela de login, deve também contemplar o login social e o recaptcha, quando configurado.
+> - crie testes para esses cenarios
+> - continue ate o fim. prossiga com tudo
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-31 | No layout "painel", as telas mostram o login social quando há provedor configurado | "essa nova tela de login, deve também contemplar o login social … quando configurado" | funcional | — |
+| RQ-32 | No layout "painel", as telas mostram o desafio anti-robô quando ele está ligado | "deve também contemplar … o recaptcha, quando configurado" | funcional | — |
+| RQ-33 | Há testes automatizados para o login social e o anti-robô no layout "painel" | "crie testes para esses cenarios" | não-funcional | — |
+
+## Adendo 4 — 2026-11-14
+
+- **Fonte**: pergunta do solicitante no chat, durante o ciclo 2 do gate dos Adendos 2 e 3 (mensagem "questão")
+- **Fidelidade**: alta (texto escrito)
+- **Responde a**: —
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> # questão
+> - é possivel usarmos animation nas telas para dar uma sensação de transição?
+> - por ex, tela de login na direita, clica em esqueceu senha ou registro (que estão na esquerda) e ai com o efeito de animation a tela uma animação de slide, seria otimo.
+> - vou alem, nesse efeito de slide entre as paginas, se fosse trocando de posição, a parte do form seria usando fade-in e somente a parte da imagem seria slide para dar a sensaçao que trocou de lado ao abrir a pagina
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-34 | Ao ir de uma tela de acesso para outra (login → "esqueci a senha" ou cadastro, e de volta), a troca de tela é animada, dando a sensação de transição | "usarmos animation nas telas para dar uma sensação de transição" · "clica em esqueceu senha ou registro … animação de slide" | funcional | — |
+| RQ-35 | Quando as duas telas têm o formulário em lados opostos, só o painel da imagem desliza de um lado para o outro | "se fosse trocando de posição … somente a parte da imagem seria slide para dar a sensaçao que trocou de lado" | funcional | — |
+| RQ-36 | O formulário não desliza: aparece com fade-in | "a parte do form seria usando fade-in" | funcional | — |

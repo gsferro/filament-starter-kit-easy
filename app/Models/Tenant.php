@@ -48,6 +48,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property ?string $logo
  * @property ?string $logo_dark
  * @property bool $unifica_logo
+ * @property array<string, mixed>|null $aparencia_das_telas
  */
 class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
 {
@@ -93,6 +94,10 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         // Uma logo só nos dois temas (o `unifica_logo_marca` do settings, da organização).
         // Fillable como os vizinhos: é a decisão de quem administra, tomada no formulário.
         'unifica_logo',
+        // A aparência das telas de autenticação da organização; `null` = usa a da instalação.
+        // Lida por `App\Support\AparenciaDasTelasDeAcesso::daOrganizacao()`, que a reduz ao
+        // vocabulário a cada leitura.
+        'aparencia_das_telas',
     ];
 
     /** Rótulo exibido acima do nome no seletor de tenant do painel. */
@@ -129,6 +134,7 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
             'ativo'               => 'boolean',
             'registro_habilitado' => 'boolean',
             'unifica_logo'        => 'boolean',
+            'aparencia_das_telas' => 'array',
         ];
     }
 

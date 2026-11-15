@@ -252,6 +252,430 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 }
 
 /*
+| Layout "painel" das telas de acesso (wiki `feat/aparencia-das-telas-de-acesso`).
+|
+| O painel de marca nasce no partial `media` do auth-designer, que o kit sobrescreve
+| (`resources/views/filament/auth/painel-de-marca.blade.php`); o layout do pacote NÃO é
+| publicado (ADR-03). Toda regra abaixo é escopada por `:has(.kit-painel-de-marca)`: o layout
+| clássico não tem essa classe, então nada aqui o alcança.
+|
+| Desktop (>= 1024px): a seção de mídia do pacote (`mediaSize` de 30 a 70 %, P-19) ganha uma
+| moldura de 8px e o painel fica arredondado. Três faixas: topo (logo ou nome), meio (o destaque,
+| P-20) e base (textos e o botão de pausar). A ilustração "rede" (P-21) fica atrás, no alto.
+| Abaixo de 1024px o pacote ESCONDE a mídia lateral; aqui ela volta como uma faixa curta acima do
+| formulário (P-09) só com a logo ou o nome — sem texto, destaque nem ilustração (P-22) —, e o
+| eixo vira coluna nos dois lados para a faixa ficar sempre em cima. O rodapé continua na dobra
+| pela regra `body:has(> .fi-auth-layout)` acima.
+|
+| Cor: `--kit-painel-fundo` vem da view, validada (hex ou constante da paleta); sem ela, a primária
+| do painel. Texto branco sobre véu escuro; quando o texto escuro tem mais contraste com a cor (`--claro`) o texto
+| passa a escuro e o véu sai (P-18).
+*/
+.fi-auth-layout:has(.kit-painel-de-marca) .fi-auth-media-section {
+    padding: 0.5rem;
+}
+
+.fi-auth-layout .fi-auth-media-wrapper:has(.kit-painel-de-marca) {
+    inset: 0.5rem;
+    border-radius: 1rem;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.fi-auth-media-wrapper .kit-painel-de-marca ~ .fi-auth-media-overlay {
+    display: none;
+}
+
+.kit-painel-de-marca {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    background-color: var(--kit-painel-fundo, var(--primary-600));
+    color: #fff;
+    overflow: hidden;
+}
+
+.kit-painel-de-marca__arte {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.kit-painel-de-marca__veu {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.65), rgb(0 0 0 / 0.15));
+}
+
+.kit-painel-de-marca--cor::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgb(0 0 0 / 0.35), rgb(0 0 0 / 0));
+}
+
+.kit-painel-de-marca--claro {
+    color: #111827;
+}
+
+/*
+| Gradiente (P-29): só peças fechadas chegam aqui (duas cores validadas e um ângulo do vocabulário).
+| O contraste não é decidido sobre a interpolação: os textos e o nome ficam numa superfície escura
+| opaca, em branco, com links sublinhados (juiz cego do Adendo 2; WCAG 1.4.3).
+*/
+.kit-painel-de-marca--gradiente {
+    background-image: var(--kit-painel-gradiente);
+}
+
+.kit-painel-de-marca--gradiente .kit-painel-de-marca__textos,
+.kit-painel-de-marca--gradiente .kit-painel-de-marca__nome,
+.kit-painel-de-marca--gradiente .kit-painel-de-marca__nome-destaque,
+.kit-painel-de-marca--gradiente .kit-painel-de-marca__pausa {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background-color: rgb(17 24 39 / 0.9);
+    color: #fff;
+}
+
+.kit-painel-de-marca--gradiente .kit-painel-de-marca__apoio {
+    color: rgb(255 255 255 / 0.92);
+}
+
+/* Textos formatados (P-27): o Markdown chega em parágrafos; o espaçamento é o do bloco. */
+.kit-painel-de-marca__frase p,
+.kit-painel-de-marca__apoio p {
+    margin: 0;
+}
+
+.kit-painel-de-marca__frase p + p,
+.kit-painel-de-marca__apoio p + p {
+    margin-top: 0.5rem;
+}
+
+.kit-painel-de-marca__textos a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.kit-painel-de-marca--claro::before {
+    display: none;
+}
+
+.kit-painel-de-marca--claro .kit-painel-de-marca__apoio {
+    color: rgb(17 24 39 / 0.8);
+}
+
+.kit-painel-de-marca--claro .kit-painel-de-marca__selo {
+    box-shadow: 0 0 0 1px rgb(17 24 39 / 0.12);
+}
+
+.kit-painel-de-marca__conteudo {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 3rem;
+    min-width: 0;
+}
+
+.kit-painel-de-marca__selo {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    background-color: #fff;
+}
+
+.kit-painel-de-marca__logo {
+    display: block;
+    height: 2rem;
+    width: auto;
+    max-width: 12rem;
+    object-fit: contain;
+}
+
+.kit-painel-de-marca__nome {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/*
+| O meio encolhe para a base caber; a imagem obedece à altura que sobrar (`min(teto, 100%)`), em
+| vez de transbordar por cima dos textos numa tela baixa (RD-A2 da revisão do adendo).
+*/
+.kit-painel-de-marca__meio {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.kit-painel-de-marca__destaque {
+    display: block;
+    width: auto;
+    max-width: 80%;
+    object-fit: contain;
+}
+
+.kit-painel-de-marca__selo--destaque {
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+}
+
+.kit-painel-de-marca__selo--destaque .kit-painel-de-marca__destaque {
+    max-width: 100%;
+}
+
+.kit-painel-de-marca__destaque--pequeno {
+    max-height: min(4rem, 100%);
+}
+
+.kit-painel-de-marca__destaque--medio {
+    max-height: min(7rem, 100%);
+}
+
+.kit-painel-de-marca__destaque--grande {
+    max-height: min(12rem, 100%);
+}
+
+.kit-painel-de-marca__destaque--imagem.kit-painel-de-marca__destaque--pequeno {
+    max-height: min(8rem, 100%);
+}
+
+.kit-painel-de-marca__destaque--imagem.kit-painel-de-marca__destaque--medio {
+    max-height: min(14rem, 100%);
+}
+
+.kit-painel-de-marca__destaque--imagem.kit-painel-de-marca__destaque--grande {
+    max-height: min(22rem, 100%);
+}
+
+.kit-painel-de-marca__nome-destaque {
+    font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.kit-painel-de-marca__nome-destaque--pequeno {
+    font-size: 1.75rem;
+}
+
+.kit-painel-de-marca__nome-destaque--medio {
+    font-size: 2.5rem;
+}
+
+.kit-painel-de-marca__nome-destaque--grande {
+    font-size: 3.5rem;
+}
+
+/* Quebra a linha num painel estreito: o botão de pausar desce em vez de ser cortado (CX-A1). */
+.kit-painel-de-marca__base {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+}
+
+.kit-painel-de-marca__textos {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 32rem;
+}
+
+/*
+| A rede: decorativa, atrás do conteúdo, no alto do painel. `currentColor` é a cor do texto do
+| painel (branco, ou escuro em cor clara — P-18), salvo a cor própria da ilustração.
+*/
+.kit-painel-de-marca__rede {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: min(62%, 26rem);
+    height: auto;
+    pointer-events: none;
+}
+
+.kit-painel-de-marca__rede line {
+    stroke: currentColor;
+    stroke-opacity: 0.3;
+    stroke-width: 1.5;
+}
+
+.kit-painel-de-marca__rede circle {
+    fill: currentColor;
+    fill-opacity: 0.7;
+}
+
+/* WCAG 2.2.2: movimento que dura mais de 5 s precisa de um jeito de parar. */
+.kit-painel-de-marca__pausa {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid currentColor;
+    border-radius: 9999px;
+    background: transparent;
+    color: inherit;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.kit-painel-de-marca__pausa:hover {
+    opacity: 1;
+}
+
+.kit-painel-de-marca__pausa:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.kit-painel-de-marca__pausa[hidden] {
+    display: none;
+}
+
+/* Nunca maior que o título do formulário (1.5rem no `fi-simple-header-heading`). */
+.kit-painel-de-marca__frase {
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.kit-painel-de-marca__apoio {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: rgb(255 255 255 / 0.88);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1023.98px) {
+    .fi-auth-layout.media-left:has(.kit-painel-de-marca),
+    .fi-auth-layout.media-right:has(.kit-painel-de-marca) {
+        flex-direction: column;
+    }
+
+    .fi-auth-layout.media-left:has(.kit-painel-de-marca) .fi-auth-media-section,
+    .fi-auth-layout.media-right:has(.kit-painel-de-marca) .fi-auth-media-section {
+        display: block;
+        width: 100%;
+        height: 7rem;
+        flex: 0 0 7rem;
+    }
+
+    /*
+    | O alternador de tema do pacote é fixo no canto superior direito (1.5rem) e cobriria a faixa:
+    | a faixa reserva a largura dele à direita. Sem alternador, sobra espaço — e só isso.
+    */
+    .kit-painel-de-marca__conteudo {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 1rem;
+        padding: 1rem 9rem 1rem 1.25rem;
+    }
+
+    .kit-painel-de-marca__topo {
+        flex-shrink: 0;
+    }
+
+    .kit-painel-de-marca__nome {
+        white-space: nowrap;
+        font-size: 1rem;
+    }
+
+    .kit-painel-de-marca__logo {
+        height: 1.5rem;
+    }
+
+    /* No celular, só a logo ou o nome (P-22). */
+    .kit-painel-de-marca__meio,
+    .kit-painel-de-marca__base,
+    .kit-painel-de-marca__rede {
+        display: none;
+    }
+
+    /*
+    | A arte da identidade costuma trazer o nome da aplicação desenhado nela: recortada na faixa de
+    | 7rem, esse texto caía atrás do selo da logo (RQ-30). Na faixa, a arte sai e fica a cor do
+    | painel sob o véu escuro, que mantém legível a logo ou o nome.
+    */
+    .kit-painel-de-marca--arte .kit-painel-de-marca__arte {
+        display: none;
+    }
+
+    .fi-auth-layout.media-left:has(.kit-painel-de-marca) .fi-auth-content-section,
+    .fi-auth-layout.media-right:has(.kit-painel-de-marca) .fi-auth-content-section {
+        padding: 1.5rem 1rem;
+    }
+}
+
+/*
+| Transição entre as telas de acesso (Adendo 4, ADR-06). A página que participa emite
+| `@view-transition { navigation: auto }` (view do painel de marca); aqui ficam os nomes e as
+| animações. O painel (o wrapper arredondado da mídia) desliza para a posição da tela de destino;
+| o formulário não desliza: o antigo some na hora e o novo aparece aos poucos, depois do início do
+| deslize — assim ele nunca é visto do lado errado. Só em tela larga: no celular o painel é a faixa
+| do topo e não troca de lado.
+*/
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .fi-auth-layout:has(.kit-painel-de-marca[data-kit-transicao]) .fi-auth-media-wrapper {
+        view-transition-name: kit-painel;
+    }
+
+    .fi-auth-layout:has(.kit-painel-de-marca[data-kit-transicao]) .fi-auth-form-container {
+        view-transition-name: kit-formulario;
+    }
+
+    ::view-transition-group(kit-painel) {
+        animation-duration: 0.55s;
+        animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    ::view-transition-group(kit-formulario) {
+        animation: none;
+    }
+
+    ::view-transition-old(kit-formulario) {
+        animation: none;
+        opacity: 0;
+    }
+
+    ::view-transition-new(kit-formulario) {
+        animation: kit-formulario-aparece 0.35s ease-out 0.2s both;
+    }
+
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation-duration: 0.2s;
+    }
+}
+
+@keyframes kit-formulario-aparece {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/*
 | Cabeçalho dos painéis (feat/cabecalho-do-painel): a marca composta
 | ("nome do projeto | nome do painel | logo") que `CabecalhoDoPainel::marca()`
 | devolve ao `brandLogo()`, e o bloco do usuário do render hook
@@ -422,4 +846,88 @@ body.fi-body:has(> .fi-auth-layout) > .fi-auth-layout {
 
 :root .fio-button--primary {
     background-color: var(--primary-700);
+}
+
+/*
+| Preview do editor de "Telas de acesso" (`resources/views/filament/admin/preview-das-telas-de-acesso.blade.php`).
+| Classes do kit, sem utilitária Tailwind: a blade é do kit e a CSS compilada do Filament não
+| as teria.
+*/
+.kit-preview-das-telas {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.kit-preview-das-telas__controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.kit-preview-das-telas__campo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.kit-preview-das-telas__select {
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    padding: 0.25rem 2rem 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    background-color: transparent;
+}
+
+.kit-preview-das-telas__atualizar {
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.kit-preview-das-telas__larguras {
+    display: inline-flex;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.kit-preview-das-telas__largura {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.kit-preview-das-telas__largura[aria-pressed='true'] {
+    background-color: var(--primary-600);
+    color: #fff;
+}
+
+.kit-preview-das-telas__quadro {
+    display: flex;
+    justify-content: center;
+    border: 1px solid var(--gray-200);
+    border-radius: 0.75rem;
+    background-color: var(--gray-100);
+    overflow: hidden;
+}
+
+.kit-preview-das-telas__palco {
+    position: relative;
+    overflow: hidden;
+}
+
+.kit-preview-das-telas__iframe {
+    display: block;
+    border: 0;
+    background-color: #fff;
+}
+
+.kit-preview-das-telas__nota {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--gray-500);
 }

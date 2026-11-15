@@ -189,8 +189,9 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * `visoes_de_tabela_compartilhadas`.
      * 69 → 71 na feature `agentes-ia-no-settings`: `agentes_ia_habilitado` e `agentes_ia_paineis`.
      * 71 → 72 na feature `onboarding-guiado`: `onboarding_habilitado`.
+     * 72 → 73 na feature `aparencia-das-telas-de-acesso`: `aparencia_das_telas`.
      */
-    expect($propriedades)->toHaveCount(72);
+    expect($propriedades)->toHaveCount(73);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));

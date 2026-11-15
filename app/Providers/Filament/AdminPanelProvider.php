@@ -8,6 +8,7 @@ use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\Auth\TelaDoisFatores;
 use App\Filament\Pages\Auth\TelaLogin;
 use App\Filament\Pages\Auth\TelaRecuperarSenha;
+use App\Filament\Pages\Auth\TelaRedefinirSenha;
 use App\Filament\Pages\DashboardClassico;
 use App\Filament\Pages\MyProfilePage;
 use App\Filament\Pages\PrimeirosPassos;
@@ -189,6 +190,8 @@ class AdminPanelProvider extends PanelProvider
                     )
                     ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config
                         ->usingPage(TelaRecuperarSenha::class)
+                        // A redefinição (o link do e-mail) também é do kit: só para receber a aparência das telas de acesso.
+                        ->usingResetPage(TelaRedefinirSenha::class)
                         ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))
                         ->mediaPosition(MediaPosition::Right)
                         ->mediaSize('70%')

@@ -136,6 +136,35 @@ class KitArte extends Command
             'tabela-carregar-mais-2-escuro',
             'tabela-carregar-mais-3-escuro',
         ],
+        // Telas de acesso (wiki tela-de-login-personalizavel): as possibilidades de customização, uma
+        // por quadro, e o editor seção por seção. Todos os quadros também são IMAGENS.
+        'telas-de-acesso' => [
+            'telas-de-acesso-classico',
+            'telas-de-acesso-cor-primaria',
+            'telas-de-acesso-cor-propria',
+            'telas-de-acesso-gradiente-diagonal',
+            'telas-de-acesso-arte-e-rede',
+            'telas-de-acesso-imagem-no-meio',
+            'telas-de-acesso-tema-escuro',
+            'telas-de-acesso-cadastro-propria',
+            'telas-de-acesso-esqueci-propria',
+        ],
+        // A transição entre as telas (Adendo 4), em câmera lenta: login, três pontos do deslize, destino.
+        'telas-de-acesso-transicao' => [
+            'telas-de-acesso-transicao-1-login',
+            'telas-de-acesso-transicao-2-saindo',
+            'telas-de-acesso-transicao-3-meio',
+            'telas-de-acesso-transicao-4-chegando',
+            'telas-de-acesso-transicao-5-esqueci',
+        ],
+        'telas-de-acesso-editor' => [
+            'telas-de-acesso-editor-1-disposicao',
+            'telas-de-acesso-editor-2-fundo',
+            'telas-de-acesso-editor-3-textos',
+            'telas-de-acesso-editor-4-ilustracao',
+            'telas-de-acesso-editor-5-cadastro',
+            'telas-de-acesso-editor-6-preview',
+        ],
     ];
 
     /**
@@ -212,6 +241,26 @@ class KitArte extends Command
         'tabela-carregar-mais-escuro',
         'admin-configuracoes-tabelas',
         'admin-configuracoes-tabelas-escuro',
+
+        // Telas de acesso: cada variação do clipe `telas-de-acesso`, os quadros do editor e as
+        // duas faixas do celular (com a logo e com o nome da aplicação).
+        'telas-de-acesso-classico',
+        'telas-de-acesso-cor-primaria',
+        'telas-de-acesso-cor-propria',
+        'telas-de-acesso-gradiente-diagonal',
+        'telas-de-acesso-arte-e-rede',
+        'telas-de-acesso-imagem-no-meio',
+        'telas-de-acesso-tema-escuro',
+        'telas-de-acesso-cadastro-propria',
+        'telas-de-acesso-esqueci-propria',
+        'telas-de-acesso-editor-1-disposicao',
+        'telas-de-acesso-editor-2-fundo',
+        'telas-de-acesso-editor-3-textos',
+        'telas-de-acesso-editor-4-ilustracao',
+        'telas-de-acesso-editor-5-cadastro',
+        'telas-de-acesso-editor-6-preview',
+        'telas-de-acesso-celular-logo',
+        'telas-de-acesso-celular-nome',
 
         // As duas telas de login com o desafio no ar, cada uma com chave real do
         // provedor. Só são geradas por quem tem as chaves no ambiente — os cenários
