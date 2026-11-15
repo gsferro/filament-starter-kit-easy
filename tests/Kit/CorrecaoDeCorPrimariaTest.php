@@ -39,10 +39,7 @@ function regrasDeVendorComCorPrimariaCravada(?array $folhas = null): array
 {
     $encontradas = [];
 
-    $folhas ??= array_merge(
-        glob(base_path('vendor/*/*/resources/dist/*.css')) ?: [],
-        glob(base_path('vendor/*/*/dist/*.css')) ?: [],
-    );
+    $folhas ??= folhasCssDoVendor();
 
     foreach ($folhas as $folha) {
         preg_match_all(
@@ -61,6 +58,19 @@ function regrasDeVendorComCorPrimariaCravada(?array $folhas = null): array
     }
 
     return $encontradas;
+}
+
+/**
+ * As folhas CSS distribuídas pelos pacotes de `vendor/`.
+ *
+ * @return list<string>
+ */
+function folhasCssDoVendor(): array
+{
+    return array_merge(
+        glob(base_path('vendor/*/*/resources/dist/*.css')) ?: [],
+        glob(base_path('vendor/*/*/dist/*.css')) ?: [],
+    );
 }
 
 /** O `kit.css` sem comentário — citar um seletor não é declará-lo (`.ai/rules/testes.md`). */
@@ -176,6 +186,10 @@ it('encontra as regras de vendor que cravam cor primaria', function (): void {
 it('corrige a MESMA classe que o vendor emite, e nao uma parecida', function (): void {
     $kit = correcoesDeCorDoKit();
 
+    // Hoje nenhum pacote crava a primária (o laço abaixo pode rodar zero vezes): a varredura em
+    // si precisa ter acontecido, senão "nada a corrigir" seria só ausência de asserção.
+    expect(folhasCssDoVendor())->not->toBeEmpty();
+
     foreach (regrasDeVendorComCorPrimariaCravada() as $classe => $origem) {
         // A classe vem do vendor JÁ escapada (`dark\:text-primary-400`) — escapar de novo
         // produz `dark\\:`, que não existe em folha nenhuma e deixa o caso vermelho por
@@ -198,6 +212,10 @@ it('corrige a MESMA classe que o vendor emite, e nao uma parecida', function ():
 
 it('vence o vendor por especificidade, em toda classe cravada', function (): void {
     $kit = correcoesDeCorDoKit();
+
+    // Hoje nenhum pacote crava a primária (o laço abaixo pode rodar zero vezes): a varredura em
+    // si precisa ter acontecido, senão "nada a corrigir" seria só ausência de asserção.
+    expect(folhasCssDoVendor())->not->toBeEmpty();
 
     foreach (regrasDeVendorComCorPrimariaCravada() as $classe => $origem) {
         $escapada = preg_quote($classe, '~');
