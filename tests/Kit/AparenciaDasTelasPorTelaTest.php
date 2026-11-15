@@ -643,7 +643,9 @@ it('[CT-92] frase gravada acima do teto visível volta ao padrão na tela', func
 /** A página participa da transição: a regra `@view-transition` no <head> e o painel marcado. */
 function participaDaTransicao(string $html): bool
 {
-    $regra  = arvoreDoHtml($html)->query('//style[@data-kit-transicao-entre-telas]');
+    // No <head>, uma vez só (CX-D3 da revisão do Adendo 4).
+    $regra  = arvoreDoHtml($html)->query('//head/style[@data-kit-transicao-entre-telas]');
+    expect(arvoreDoHtml($html)->query('//style[@data-kit-transicao-entre-telas]')->length)->toBe($regra->length);
     $painel = arvoreDoHtml($html)->query('//*[@data-kit-aparencia="painel"][@data-kit-transicao]');
 
     if ($regra->length === 0) {
@@ -653,6 +655,7 @@ function participaDaTransicao(string $html): bool
     }
 
     // A regra só vale em tela larga e sem "reduzir movimento" (P-33).
+    expect($regra->length)->toBe(1);
     expect(preg_replace('/\s+/', ' ', $regra->item(0)->textContent))
         ->toContain('@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }')
         ->and($painel->length)->toBe(1);
@@ -719,6 +722,41 @@ it('[CT-100] o editor tem a opção só na seção Login e grava o que a pessoa 
     expect(participaDaTransicao(htmlDe('/admin/login')))->toBeFalse()
         ->and(participaDaTransicao(htmlDe('/admin/password-reset/request')))->toBeFalse();
 })->group('kit');
+
+/**
+ * RD-D1/RD-D2 da revisão do Adendo 4: pelo caminho real (o editor grava, a tela lê, o editor
+ * reabre), a opção desligada sobrevive ao login no clássico com telas próprias no painel.
+ */
+it('[CT-102] com o login no clássico, a transição desligada continua desligada depois de salvar e reabrir', function (): void {
+    definirAparenciaGlobal(painelComFrase('direita', 'LOGIN'));
+    $this->actingAs(usuarioDoKit('master_global'));
+
+    $tela = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh();
+    $tela->set('data.aparencia_das_telas.telas.recuperacao.igual_ao_login', false)
+        ->set('data.aparencia_das_telas.transicao_entre_telas', false)
+        ->set('data.aparencia_das_telas.layout', 'classico')
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(configuracaoGravada('aparencia_das_telas')['transicao_entre_telas'] ?? null)->toBeFalse();
+
+    $reaberta = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'telas-de-acesso')->refresh();
+    expect($reaberta->get('data.aparencia_das_telas.transicao_entre_telas'))->toBeFalse();
+
+    auth()->logout();
+    alinharConfiguracoesDoKit();
+
+    expect(participaDaTransicao(htmlDe('/admin/password-reset/request')))->toBeFalse();
+})->group('kit');
+
+/** CT-98 no login unificado: as páginas únicas também participam (RD-D3). */
+it('[CT-103] as páginas únicas do login unificado participam da transição', function (string $caminho): void {
+    ligarLoginUnificado();
+    config(['kit.registro.habilitado' => true]);
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => true]);
+
+    expect(participaDaTransicao(htmlDe($caminho)))->toBeTrue();
+})->with(['/login', '/esqueci-minha-senha'])->group('kit');
 
 it('[CT-101] o formulário não desliza: só o painel tem a animação de posição, e o formulário entra por opacidade', function (string $arquivo): void {
     $css = preg_replace('/\s+/', ' ', (string) file_get_contents(base_path($arquivo)));

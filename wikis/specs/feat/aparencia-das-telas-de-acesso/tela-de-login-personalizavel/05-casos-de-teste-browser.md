@@ -633,6 +633,7 @@ Funcionalidade: Transição entre as telas no navegador
       Quando o visitante clica em "Esqueceu sua senha?"
       Então o wrapper da mídia e o contêiner do formulário do login se chamam <nomes>
       E o evento "pageswap" da página de login traz uma transição <transição>
+      E o evento "pagereveal" da página de destino traz uma transição <transição> que chega a ficar pronta
       E o "esqueci a senha" abre com o painel do outro lado
       E, em 390×844, o wrapper da mídia não tem nome de transição
 
@@ -645,4 +646,4 @@ Funcionalidade: Transição entre as telas no navegador
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M139 | A regra e os nomes existem, mas só numa das pontas (a de destino), e o navegador não faz a transição | CT-B19 | linha "ligada": `pageswap` com `viewTransition`; o mutante dá "nao" |
+| M139 | A regra e os nomes existem, mas só numa das pontas, e o navegador não faz a transição | CT-B19 | linha "ligada": `pageswap` na origem e `pagereveal` pronto no destino; o mutante falha um dos dois *(alterado em 2026-11-14: RD-D3/CX-D2 — antes só a origem era conferida)* |

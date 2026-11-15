@@ -117,6 +117,19 @@ Diff `cbb65fb6..81f62ce6` (sem `wikis/` e `art/`). Workflow de 4 revisores em pa
 - [x] Arte: `telas-de-acesso-transicao.gif` (5 quadros); os 3 do meio são reconstruídos a partir das posições medidas nas duas páginas, porque o `screenshot()` do Pest usa `animations: 'disabled'` e encerra a transição antes da foto (medido: com `pause()`/`currentTime` o quadro sai no estado final) — 2026-11-14
 - [x] Docs pt/en ("Transição entre as telas" e a linha na tabela de opções), CHANGELOG e README; badge 2.592 — 2026-11-14
 
+## Revisão do Diff — Adendo 4
+
+Diff `fb051a17..55c5c09f` (app, resources, public/css, tests), dois revisores cegos em paralelo: Codex `exec --yolo` e `fw-revisor-diff`.
+
+| Achado | Severidade | Fonte | Veredito | Tratamento |
+|---|---|---|---|---|
+| RD-D1 = CX-D1 | Major | os dois, reproduzido por cada um | defeito | com o login no clássico, a raiz gravada perdia a opção e a leitura voltava a ligá-la; `normalizar()` mantém a chave na raiz clássica e o editor a reabre; CT-102 cai sem a correção |
+| RD-D2 | Minor | revisor | lacuna de teste | CT-102 vai pelo caminho real (editor grava → tela lê → editor reabre) |
+| RD-D3 = CX-D2 | Minor | os dois | lacuna de teste | CT-B19 confere também o `pagereveal` do destino (transição pronta); CT-103 cobre `/login` e `/esqueci-minha-senha` |
+| CX-D3 | Minor | Codex | lacuna de teste | o helper exige a regra no `<head>`, uma vez só |
+
+Testes depois das correções: CT-98..CT-103 15/15; CT-B19 2/2 — 2026-11-14.
+
 ## Revisão do Diff — Adendos 2 e 3
 
 Diff `fe9ea589..0d9034fa` (sem `wikis/`, `art/`, `docs/`). Workflow: Codex (`exec --yolo`, juiz cego), `fw-revisor-diff` e auditoria `filament-security-audit`, um cético por achado. Os 14 achados foram confirmados; todos corrigidos com teste que cai sem a correção.
@@ -370,6 +383,8 @@ Step 12 (2026-11-14): nenhum candidato passa em *Vale virar rule*. As decisões 
 | 28 | 11 (Adendos 2 e 3) | `fw-qa-gate` / herdado | path da wiki, URL servida, `diff --stat`, base; sem suítes inteiras | ciclo 2: REPROVADO → teste, QA-34 (Major) e QA-35 (Minor) | 208 k tokens · 586 s | QA-34 reproduzido pelos greps do relatório; o `git status` que o gate estranhou era a arte desta sessão |
 | 29 | 9 (Adendos 2 e 3) | Codex `exec --yolo` (revisor cego) / não exposto | diff `ca469486..HEAD` de `app`/`resources`/`tests`/`public/css` | CX-C1 (Minor), reproduzido fora do repositório | — | CT-97 cai sem a correção |
 | 31 | 3 (Adendo 4) | Codex `exec --yolo` (juiz cego) / não exposto | pedido verbatim, proposta X, repositório | X corrigida: fade do formulário, nome no wrapper, opção comum, só ≥ 1024 px | — | correções conferidas no código (layout do auth-designer, `@stack('styles')` do layout base) |
+| 32 | 9 (Adendo 4) | Codex `exec --yolo` (revisor cego) / não exposto | diff `fb051a17..55c5c09f` | CX-D1 (Major), CX-D2, CX-D3 | — | CX-D1 = RD-D1, reproduzido pelos dois |
+| 33 | 9 (Adendo 4) | `fw-revisor-diff` / herdado | o mesmo diff, eixos, Superfície | RD-D1 (Major), RD-D2, RD-D3 | 64 k tokens · 181 s | CT-102 cai sem a correção |
 | 30 | 7 (QA-34) | `general-purpose` com `feature-test-design` / herdado | `00`, `04`, glossário, nomes dos testes | Gherkin de CT-80..CT-96, M109..M132; 6 divergências teste × cenário | 162 k tokens · 354 s | 3 divergências viraram teste mais forte (CT-85, 88, 92); CT-96 respondida no `04` (regra da cor sólida do QA-10); CT-81 e CT-84 só de forma |
 
 Degradações: `search-docs` indisponível; Ponytail em passe manual. Adendos 2 e 3: os cenários R26–R30 foram derivados pela sessão; o gate (QA-30) mandou reescrevê-los pela `feature-test-design` e passar pelo `fw-adversario-ct` — feito depois do gate (ver Despachos). Adendo 1: os cenários CT-43..CT-56 e CT-B09..CT-B15 foram derivados pela sessão, não às cegas pela `feature-test-design`; a revisão adversarial independente (`fw-adversario-ct`) rodou sobre o conjunto antes do step 9, e os acrescentados depois dela (CT-53..CT-56, CT-B12..CT-B15) não tiveram re-revisão *(alterado em 2026-11-14: QA-22)*.

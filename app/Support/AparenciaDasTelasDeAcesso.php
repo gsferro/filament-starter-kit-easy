@@ -188,7 +188,9 @@ final class AparenciaDasTelasDeAcesso
             }
         }
 
-        return [...($login ?? ['layout' => self::LAYOUT_CLASSICO]), 'telas' => $telas];
+        // Com o login no clássico, a raiz guarda a opção: sem ela, a escolha se perderia na próxima
+        // leitura (RD-D1 da revisão do Adendo 4).
+        return [...($login ?? ['layout' => self::LAYOUT_CLASSICO, 'transicao_entre_telas' => $transicao]), 'telas' => $telas];
     }
 
     /**

@@ -2,7 +2,7 @@
 
 > Derivado do **requisito**, não do plano. Nenhuma implementação foi consultada.
 >
-> Cenários: 101 · Regras: 17 · Mutantes previstos: 116 · Sem matador: 0 *(2026-11-14, depois do Adendo 4 (CT-98..CT-101, M134..M138); 2026-11-14, depois do CT-97 e do M133 (CX-C1); os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos cenários CT-80..CT-96 da revisão adversarial e dos mutantes M109..M132 (QA-34); antes: 79 cenários e 86 mutantes, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
+> Cenários: 103 · Regras: 17 · Mutantes previstos: 118 · Sem matador: 0 *(2026-11-14, depois do Adendo 4 e da revisão do diff dele (CT-98..CT-103, M134..M141); 2026-11-14, depois do CT-97 e do M133 (CX-C1); os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos cenários CT-80..CT-96 da revisão adversarial e dos mutantes M109..M132 (QA-34); antes: 79 cenários e 86 mutantes, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
 >
 > Revisão adversarial dos Adendos 2 e 3: feita (`fw-adversario-ct`, ADV-C1..C32) — fechamento na seção "Revisão adversarial dos Adendos 2 e 3"; os CT-80..CT-96 que a fecham têm cenário em "Cenários da revisão adversarial dos Adendos 2 e 3" *(QA-34)*
 >
@@ -77,7 +77,7 @@ P-13 determina o resultado de rascunho expirado, mas não determina seu TTL. O t
 | R28 — Cor primária e gradiente | apresentação/padrão | RQ-28, RQ-29, P-28, P-29 | EP, valor hostil | CT-68, CT-69, CT-70, CT-76, CT-77, CT-86, CT-87, CT-96 |
 | R29 — Social e anti-robô no painel | regressão/padrão | RQ-31, RQ-32, RQ-33 | EP por painel e tela | CT-71, CT-72, CT-88, CT-89, CT-B17 |
 | R30 — Faixa do celular com arte | apresentação/padrão | RQ-30, P-30 | BVA de largura | CT-B16 |
-| R31 — Transição entre as telas (Adendo 4) | apresentação/padrão | RQ-34, RQ-35, RQ-36, P-32, P-33, P-34 | EP da opção, tabela de decisão, rastreio de efeito | CT-98, CT-99, CT-100, CT-101, CT-B19 |
+| R31 — Transição entre as telas (Adendo 4) | apresentação/padrão | RQ-34, RQ-35, RQ-36, P-32, P-33, P-34 | EP da opção, tabela de decisão, rastreio de efeito | CT-98, CT-99, CT-100, CT-101, CT-102, CT-103, CT-B19 |
 
 Tratamento das cláusulas:
 
@@ -1157,6 +1157,8 @@ Destinos automatizados (implementados):
 | CT-99 | Uma opção só, a do login | R31 | tabela de decisão | G2 | Pest feature HTTP | K | M136 |
 | CT-100 | A opção só na seção Login, gravada como escolhida | R31 | rastreio de escrita | G1 | componente Livewire | K | M137 |
 | CT-101 | O formulário não desliza; só o painel tem nome de transição | R31 | inspeção do CSS publicado | G1 | Pest | K | M138 |
+| CT-102 | Login no clássico: a transição desligada sobrevive a salvar e reabrir | R31 | rastreio de escrita (ida e volta) | G1 | componente Livewire | K | M140 |
+| CT-103 | Páginas únicas do login unificado participam da transição | R31 | partição de rota | G2 | Pest feature HTTP | K | M141 |
 | CT-B19 | Do login ao "esqueci a senha", transição só com a opção ligada | R31 | rastreio de efeito no navegador | G4 | browser | B | M139 (no `05`) |
 | CT-B16 | Arte fora da faixa do celular | R30 | BVA | G4 | browser | B | M104..M107 (no `05`; M108 sem matador) |
 | CT-B17 | Social e anti-robô visíveis no painel | R29 | geometria | G4 | browser | B | M102, M103 (no `05`) |
@@ -2193,6 +2195,26 @@ Funcionalidade: Transição entre as telas de acesso
         | resources/css/filament/kit.css      |
         | public/css/kit/kit-correcoes.css    |
       # Origem: RQ-35, RQ-36, P-34
+
+    Cenário: [CT-102] Com o login no clássico, a transição desligada continua desligada depois de salvar e reabrir
+      Dado o master global no editor da instalação com o login no painel
+      E a seção "Esqueci a senha" com "Igual ao login" desligado
+      Quando ele desliga "Transição entre as telas", troca o login para o clássico e salva
+      Então a aparência gravada tem a transição desligada na raiz
+      E o editor reaberto mostra a transição desligada
+      E o "esqueci a senha" não participa da transição
+      # Origem: P-32 ("com o login no clássico, vale o que estiver gravado na raiz") — RD-D1/RD-D2 e CX-D1 da revisão do diff do Adendo 4
+
+    Esquema do Cenário: [CT-103] As páginas únicas do login unificado participam da transição
+      Dado o login unificado ligado e a aparência padrão no painel com a transição ligada
+      Quando o visitante abre <página>
+      Então a página participa da transição
+
+      Exemplos:
+        | página                |
+        | /login                |
+        | /esqueci-minha-senha  |
+      # Origem: RQ-34 (todas as telas de acesso), P-02 — RD-D3 da revisão do diff do Adendo 4
 ```
 
 #### Mutantes previstos — R31 (transição entre as telas)
@@ -2206,3 +2228,5 @@ Perfil padrão (teto 5).
 | M136 | Cada tela lê a própria opção (por tela), sem a do login | CT-99 | linhas 1 e 2: a recuperação segue o login; o mutante segue a gravada nela |
 | M137 | O interruptor aparece também nas seções Cadastro e Esqueci a senha | CT-100 | nenhum campo da transição sob `telas.cadastro`/`telas.recuperacao`; o mutante tem |
 | M138 | O formulário recebe a mesma animação de posição do painel (desliza) | CT-101 | grupo `kit-formulario` com `animation: none`; o mutante o anima |
+| M140 | Com o login no clássico, a raiz gravada perde a opção e a leitura volta ao padrão (ligada) — revisão do diff, RD-D1 (era defeito) | CT-102 | raiz gravada com a transição `false` e o editor reaberto desligado; o mutante grava sem a chave e reabre ligado |
+| M141 | As páginas únicas do login unificado não usam o partial do painel e ficam fora da transição | CT-103 | `/login` e `/esqueci-minha-senha` com a regra no `<head>`; o mutante não a tem |

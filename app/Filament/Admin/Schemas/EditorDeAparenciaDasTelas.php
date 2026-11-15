@@ -505,7 +505,12 @@ final class EditorDeAparenciaDasTelas
     private static function telaParaOFormulario(?array $tela): array
     {
         if ($tela === null || ($tela['layout'] ?? null) !== AparenciaDasTelasDeAcesso::LAYOUT_PAINEL) {
-            return [...AparenciaDasTelasDeAcesso::padraoDoPainel(), 'layout' => AparenciaDasTelasDeAcesso::LAYOUT_CLASSICO];
+            return [
+                ...AparenciaDasTelasDeAcesso::padraoDoPainel(),
+                'layout'                => AparenciaDasTelasDeAcesso::LAYOUT_CLASSICO,
+                // A opção da transição sobrevive ao login no clássico (RD-D1 da revisão do Adendo 4).
+                'transicao_entre_telas' => ($tela['transicao_entre_telas'] ?? true) !== false,
+            ];
         }
 
         unset($tela['telas']);

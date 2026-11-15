@@ -862,11 +862,24 @@ it('[CT-B19] do login para o "esqueci a senha", a troca de tela tem transição 
         ->and($nomeDe($pagina, '.fi-auth-form-container'))->toBe($ligada ? 'kit-formulario' : 'none');
 
     $pagina->script("window.addEventListener('pageswap', (e) => sessionStorage.setItem('kit-transicao', e.viewTransition ? 'sim' : 'nao'))");
+
+    // A outra ponta: a página de destino também aderiu, e a transição chegou a ficar pronta nela
+    // (o `pageswap` só prova a origem — RD-D3/CX-D2 da revisão do Adendo 4).
+    $pagina->page()->context()->addInitScript(<<<'JS'
+        window.kitTransicaoPronta = new Promise((resolve) => {
+            addEventListener('pagereveal', (e) => {
+                if (! e.viewTransition) { resolve(false); return; }
+                e.viewTransition.ready.then(() => resolve(true), () => resolve(false));
+            }, { once: true });
+        });
+    JS);
+
     $pagina->click('Esqueceu sua senha?')
         ->assertPathIs('/admin/password-reset/request')
         ->assertPresent('.fi-auth-layout.media-right .kit-painel-de-marca');
 
-    expect($pagina->script("sessionStorage.getItem('kit-transicao')"))->toBe($ligada ? 'sim' : 'nao');
+    expect($pagina->script("sessionStorage.getItem('kit-transicao')"))->toBe($ligada ? 'sim' : 'nao')
+        ->and($pagina->script('window.kitTransicaoPronta'))->toBe($ligada);
 
     // No celular o painel é a faixa do topo e não troca de lado: nada é nomeado (P-33).
     $pagina->resize(390, 844);
