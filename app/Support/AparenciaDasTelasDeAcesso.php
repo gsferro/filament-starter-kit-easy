@@ -303,8 +303,12 @@ final class AparenciaDasTelasDeAcesso
         $caminhos = [];
 
         foreach ($nomes as $nome) {
-            if (Route::has($nome)) {
-                $caminhos[] = '/'.ltrim((string) parse_url(route($nome), PHP_URL_PATH), '/');
+            $rota = Route::getRoutes()->getByName($nome);
+
+            // Rota com parâmetro (o dois fatores do `/app` com organizações: `app/{tenant}/...`)
+            // fica de fora: sem o valor não há caminho, e ir para ela só perde a animação.
+            if ($rota !== null && $rota->parameterNames() === []) {
+                $caminhos[] = '/'.ltrim((string) parse_url(url($rota->uri()), PHP_URL_PATH), '/');
             }
         }
 

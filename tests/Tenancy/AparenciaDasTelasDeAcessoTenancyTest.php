@@ -10,6 +10,7 @@ use App\Filament\Pages\Auth\TelaLogin;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\AparenciaDasTelasDeAcesso;
 use App\Support\ContextoDePapeis;
 use App\Support\TetoDeUpload;
 use Database\Seeders\PapeisSeeder;
@@ -869,6 +870,24 @@ it('[CT-104] na organização, a transição segue a opção da instalação', f
     'instalação ligada, organização desligada' => [true, false],
     'instalação desligada, organização ligada' => [false, true],
 ])->group('tenancy');
+
+/**
+ * Teste manual da v0.53.1: com organizações, o dois fatores do `/app` é `app/{tenant}/...`. A lista
+ * de destinos da transição (CT-107) não pode pedir essa rota sem o parâmetro — o login no painel de
+ * marca respondia 500. Rota com parâmetro fica fora da lista.
+ */
+it('[CT-108] com organizações, as telas com transição abrem e levam a lista de destinos', function (string $caminho): void {
+    organizacoesAB();
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => true]);
+
+    $html     = loginDe($caminho);
+    $destinos = AparenciaDasTelasDeAcesso::caminhosDaTransicao();
+
+    expect(arvoreDoHtml($html)->query('//head/script[@data-kit-transicao-entre-telas-destinos]')->length)->toBe(1)
+        ->and($destinos)->toContain('/admin/login')
+        ->and($destinos)->toContain('/app/login')
+        ->and(collect($destinos)->filter(fn (string $c): bool => str_contains($c, '{'))->all())->toBe([]);
+})->with(['/admin/login', '/app/login', '/app/login?org=acme', '/app/password-reset/request'])->group('tenancy');
 
 it('[CT-105] o formulário da organização não oferece a transição entre as telas', function (): void {
     [$acme] = organizacoesAB();
