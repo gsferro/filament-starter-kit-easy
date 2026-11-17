@@ -912,7 +912,7 @@ o `rastreabilidade.sh` só reconhece `### N.`, e a Cobertura apontava para os do
   self-loop opcional na nota).
 
   **Fato do código**: `Convite::situacao()` — precedência Aceito > Recusado > Expirado > Pendente
-  (`app/Models/Convite.php:situacao:587-593`); a ação "Reenviar" só é visível em Pendente ou
+  (`app/Models/Convite.php:situacao:600-606`); a ação "Reenviar" só é visível em Pendente ou
   Expirado (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:visible:89`).
 
   **Guarda**: os 4 valores possíveis de `situacao()` batem com os 4 estados do diagrama (comportamento

@@ -139,6 +139,12 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
 
+**v0.53.2 has nothing to install or migrate**: deleting a role that has invitations no longer answers 500
+(see [Invitations](../../autenticacao/convites/#deleting-a-role-that-has-invitations)). A project test that
+simulates "the invitation's role is gone" with `$role->delete()` must delete through the query builder —
+`Role::delete()` now refuses a role with a pending invitation. If you hand-edited `app/Models/Role.php` or
+the roles screen delete actions, review the diff.
+
 **v0.53.1 adds two migrations, and the access screens stay identical.** Run `php artisan migrate`
 (the `aparencia_das_telas` setting and the `tenants.aparencia_das_telas` column, both empty) and
 `php artisan filament:assets` (kit CSS). Nothing changes until someone picks the brand panel in

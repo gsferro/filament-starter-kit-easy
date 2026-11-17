@@ -2,7 +2,6 @@
 
 use App\Filament\App\Pages\ConvitesRecebidos;
 use App\Models\Convite;
-use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -162,7 +161,7 @@ it('[CT-19] aceitar pela tela de convites recebidos uma oferta cujo papel não e
     $convite = ofertaPara('bruno@example.com', papel: 'admin');
 
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::findByName('admin')->delete();
+    apagarPapelPelaQuery('admin');
     $convite->refresh();
 
     $this->actingAs($bruno);

@@ -292,9 +292,15 @@ de 2026-09-24 e muda a cada release.
 
 ---
 
-## 9. Excluir pela tela um papel que tem convite pendente responde 500
+## 9. ~~Excluir pela tela um papel que tem convite pendente responde 500~~ — FEITO
 
-> Medido em 2026-09-26 pela `feature-test-design` da wiki `phpstan-nivel-8` (premissa P-07).
+> Medido em 2026-09-26 pela `feature-test-design` da wiki `phpstan-nivel-8` (premissa P-07);
+> **fechado em 2026-11-17, na v0.53.2**, em `wikis/specs/feat/excluir-papel-com-convites/`.
+>
+> **A decisão de produto**: com convite **pendente**, a exclusão é recusada com um aviso que lista os
+> e-mails (só a quantidade para quem não vê convites); os convites **encerrados** (aceitos, recusados,
+> expirados) saem junto com o papel, auditados um a um. A regra mora em `Role::delete()`, atômica.
+> A medição original fica abaixo, como registro.
 
 A FK `convites.role_id` **sem cascade** (`database/migrations/2026_08_13_000002_create_convites_table.php`)
 é deliberada: apagar o papel de um convite pendente tem de doer na hora, em vez de deixar o convite
