@@ -1141,7 +1141,7 @@ it('[CT-13] aceitar convite cujo papel não existe mais lança exceção de inva
     $bruno   = usuarioDoKit('infra', 'bruno@example.com');
 
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::query()->whereKey(Role::findByName('admin')->getKey())->delete(); // pela query: o model recusa papel com convite pendente
+    apagarPapelPelaQuery('admin');
     $convite->refresh();
 
     Notification::fake();
@@ -1203,7 +1203,7 @@ it('[CT-18] a tela de cadastro por convite cujo papel não existe mais falha fec
     // docblock do CT-13 acima: o `PRAGMA foreign_keys` é no-op dentro da transação do
     // `RefreshDatabase`.
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::query()->whereKey(Role::findByName('admin')->getKey())->delete(); // pela query: o model recusa papel com convite pendente
+    apagarPapelPelaQuery('admin');
     $convite->refresh();
 
     Notification::fake();

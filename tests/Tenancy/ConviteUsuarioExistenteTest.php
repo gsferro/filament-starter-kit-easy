@@ -477,7 +477,7 @@ it('[CT-21] com tenancy, aceitar oferta cujo papel não existe mais falha fechad
     $convite = ofertaPara('bruno@example.com', $acme, 'admin');
 
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::query()->whereKey(Role::findByName('admin')->getKey())->delete(); // pela query: o model recusa papel com convite pendente
+    apagarPapelPelaQuery('admin');
     $convite->refresh();
 
     Notification::fake();

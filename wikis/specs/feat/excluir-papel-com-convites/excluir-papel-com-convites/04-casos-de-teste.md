@@ -15,7 +15,7 @@
 
 - P = 2 em todas: a correção integra com um componente existente (as três ações do `RoleResource` + a chave estrangeira sem cascade). I = 2 em A e B: erro gera retrabalho manual (convite pendente apagado por engano se reenvia; remoção dos mortos é pedida e auditada). I = 1 em C: texto. I = 3 em D: e-mail de terceiro exposto a quem não tem permissão de ver convites (autorização + dado pessoal) — disparou a revisão adversarial.
 - Técnicas aplicadas: EP, BVA 3-valores (escalada em R1), BVA 2-valores (escalada em R3), tabela de decisão (R4), rastreio de efeito (R5, R9), 2-switch (R6), matriz papel × ação (R8, R9).
-- Cenários: 19 · Regras: 10 · Mutantes previstos: 60 · Sem matador: 0
+- Cenários: 20 · Regras: 11 · Mutantes previstos: 65 · Sem matador: 0
 <!-- derivado por grep -c (comandos em references/template-04.md §Contagem do cabeçalho); recalcular a cada cenário novo -->
 - Teto do perfil: as regras R2, R3, R4, R5, R7 e R8 passam de 5 mutantes só por mutantes trazidos pela revisão adversarial (marcados `revisão adversarial`), que não contam para o teto (passo 6, item 1).
 
@@ -23,7 +23,7 @@
 
 | Letra | O que existe nesta feature | Cenários gerados |
 |---|---|---|
-| S | três ações de exclusão do Filament (linha, cabeçalho da edição, massa) sobre `roles`; tabela `convites` (FK `role_id` sem cascade); trilha `audits`; pivôs de permissão e de usuário do papel (o `deleting` do spatie os desliga — `vendor/spatie/laravel-permission/src/Traits/HasPermissions.php:bootHasPermissions:36-48`) | CT-02, CT-03, CT-08 |
+| S | três ações de exclusão do Filament (linha, cabeçalho da edição, massa) sobre `roles`; tabela `convites` (FK `role_id` sem cascade); trilha `audits`; pivôs de permissão e de usuário do papel (o `deleting` do spatie os desliga — `vendor/spatie/laravel-permission/src/Traits/HasPermissions.php:bootHasPermissions:34-48`) | CT-02, CT-03, CT-08 |
 | F | recusar exclusão com convite Pendente; listar e-mails (ou quantidade) no aviso, com o rótulo do papel; apagar os convites mortos junto; registrar na auditoria; falha fechada na massa | CT-01…CT-08, CT-13…CT-18 |
 | D | estado do convite derivado de três fatos (`aceito_em`, `recusado_em`, `expira_em`); cardinalidade de Pendentes 0 / 1 / 5 / 6 por papel; convites de outro papel; convites de outra organização; quem convidou (`convidado_por_id`) | CT-01, CT-04, CT-05, CT-08, CT-11, CT-12, CT-13, CT-18 |
 | I | tela `/admin/roles` (linha e massa), `/admin/roles/{record}/edit` (cabeçalho), exclusão direta pelo model (por fora da tela), tela de Convites (revogação), aceite do convite | CT-02, CT-03, CT-06, CT-09, CT-10, CT-16 |
@@ -45,6 +45,7 @@
 | R8 — Os e-mails só aparecem para quem pode ver convites; para os demais, só a quantidade de Pendentes por papel, sem e-mail e sem atalho para Convites | D (padrão) | P-06, RQ-03 | matriz papel × ação (com/sem `ViewAny:Convite` × caminho) | CT-13, CT-17, CT-18 |
 | R9 — Quem pode excluir o papel apaga os convites encerrados sem precisar de permissão de convite | B (padrão) | P-08, RQ-07, RQ-08 | matriz papel × ação + rastreio de efeito | CT-15 |
 | R10 — No aviso, o papel bloqueado aparece pelo rótulo da tela de papéis, com e sem os e-mails | C (mínimo) | P-07, P-06, RQ-03, P-03 | EP (caminho × forma do aviso) | CT-16 |
+| R11 — A exclusão é atômica, e o Pendente do momento da limpeza nunca sai como encerrado | E (padrão) | P-09, RQ-04, RQ-07, RQ-09 | rastreio de efeito (atomicidade) | CT-20 |
 
 - Técnica escalada em R1: BVA 3-valores (perfil padrão prevê 2) — `>` × `>=` sobre `datetime` só se separa com a borda exata (validade = agora).
 - Técnica escalada em R3: área mínima prevê só EP; o teto literal "5" de P-04 exige BVA (5 e 6), e o gate vence o teto (dois cenários na regra).
@@ -156,7 +157,7 @@ Funcionalidade: Excluir pela tela um papel que tem convite
 
 ## Regra R2 — Recusa pelos quatro caminhos, sem 500, e nada é apagado
 
-> `RQ-01`, `RQ-02`, `RQ-04`, `RQ-09`, `P-02` · perfil **padrão** · técnica: **EP** (caminho de exclusão) + **rastreio de não-efeito** (destinatários reais: convites mortos, permissão e usuário do papel, auditoria ligada). O `deleting` do spatie desliga permissões e usuários do papel antes do `DELETE` (`HasPermissions.php:bootHasPermissions:36-48`): uma recusa que chega só pela FK chega **depois** desse efeito — é a falha depois do ponto do efeito que o não-efeito exige.
+> `RQ-01`, `RQ-02`, `RQ-04`, `RQ-09`, `P-02` · perfil **padrão** · técnica: **EP** (caminho de exclusão) + **rastreio de não-efeito** (destinatários reais: convites mortos, permissão e usuário do papel, auditoria ligada). O `deleting` do spatie desliga permissões e usuários do papel antes do `DELETE` (`HasPermissions.php:bootHasPermissions:34-48`): uma recusa que chega só pela FK chega **depois** desse efeito — é a falha depois do ponto do efeito que o não-efeito exige.
 
 ```gherkin
 # language: pt
@@ -584,6 +585,48 @@ Funcionalidade: Excluir pela tela um papel que tem convite
 
 ---
 
+## Regra R11 — A exclusão do papel é atômica, e o Pendente do momento nunca sai como encerrado
+
+> `P-09` (também `RQ-04`, `RQ-07`, `RQ-09`) · área nova **E — atomicidade da exclusão** (P = 3, concorrência entre checagem e exclusão; I = 2, retrabalho manual) → P×I 6, perfil **padrão** · técnica: **rastreio de efeito — 4ª direção (atomicidade)**: falha provocada **depois** do ponto dos efeitos (desligar permissões/usuários, apagar encerrados, auditar), com destinatários reais (permissão, usuário, três encerrados, auditoria ligada) · costura **G2** (Pest feature HTTP, model), arquivo `tests/Kit/ExclusaoDePapelComConviteTest.php`
+
+```gherkin
+# language: pt
+Funcionalidade: Excluir pela tela um papel que tem convite
+
+  Regra: Se qualquer passo da exclusão do papel falhar, nada muda; e o convite que estiver Pendente no momento da limpeza nunca é apagado como encerrado
+
+    Esquema do Cenário: [CT-20] uma intercorrência no meio da exclusão não deixa nada pela metade
+      Dado o papel "suporte" com a permissão "View:Role", o usuário "rui@example.com" e a auditoria ligada
+      E com os convites Aceito de "ana@example.com", Recusado de "bia@example.com" e Expirado de "caio@example.com", e nenhum Pendente
+      E <intercorrencia>
+      Quando o papel "suporte" é excluído diretamente pelo model
+      Então o papel "suporte" continua existindo, com a permissão "View:Role" e o usuário "rui@example.com"
+      E os convites de ana, bia e caio continuam existindo com o papel "suporte", sem registro de auditoria "deleted"
+      E <convite_do_meio> continua existindo, Pendente e com o papel "suporte"
+
+      Exemplos:
+        | intercorrencia                                                                                                                                     | convite_do_meio                    | # ponto da falha                         |
+        | um convite Pendente para "dani@example.com" é criado para o papel durante o `deleting` do papel, depois da checagem de Pendentes                      | o convite de "dani@example.com"    | criado no meio — a FK recusa o `DELETE`  |
+        | o Expirado de "caio@example.com" é reenviado (volta a Pendente) quando a limpeza começa a apagar o primeiro encerrado que não é ele                 | o convite de "caio@example.com"    | reenviado no meio — Pendente na limpeza  |
+```
+
+> Arranjo, sem afirmar a forma da falha (exceção ou `false`): a chamada vai em `try { $retorno = $papel->delete(); } catch (Throwable) {}` e o oráculo é o banco, depois de `forgetCachedPermissions()`.
+> Linha 1: listener temporário `Role::deleting(...)` registrado no teste, depois do boot (roda dentro do `parent::delete()`, depois da checagem de Pendentes e depois do `deleting` do spatie que desliga permissões e usuários — `HasPermissions.php:bootHasPermissions:34-48`), que cria `ofertaPara('dani@example.com', null, 'suporte')` só na primeira chamada. O `DELETE` do papel bate na FK.
+> Linha 2: listener temporário `Convite::deleting(...)` que, no primeiro convite apagado que não é o de caio, chama `$caio->fresh()?->enviar()` (reenvio real: `expira_em` volta ao futuro). `caio` é criado por último, para ser o de maior id. **Sanidade obrigatória**: uma flag do listener prova que o reenvio disparou antes de caio ser apagado. Se a implementação apagar caio primeiro, a flag fica falsa e a linha vira **lacuna declarada** (a ordem da limpeza não é do requisito), registrada com o que foi tentado. Se a limpeza não passa por evento de model, M20 (CT-08) já está vermelho antes.
+> Os listeners morrem com o container do teste (`RefreshDatabase` + app novo por teste); mesmo assim, desligar com `Role::flushEventListeners()` está fora de questão — apagaria o `deleting` do spatie e o da própria feature. Use uma flag local que torna o listener inerte depois do primeiro disparo.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M61 | limpeza dos encerrados e `parent::delete()` sem transação: os encerrados saem e a FK recusa o papel depois | CT-20 linha 1 | ana, bia e caio continuam, sem `deleted`; o mutante os apagou e gravou três `deleted` |
+| M62 | transação só em volta da limpeza dos convites; o `parent::delete()` (detach do spatie + `DELETE`) fica fora | CT-20 linha 1 | "suporte" continua com "View:Role" e com rui; o mutante desliga os dois antes da FK recusar |
+| M63 | `try/catch` dentro da transação que engole a falha do `DELETE` e devolve `false`, deixando o commit acontecer | CT-20 linha 1 | ana, bia e caio continuam, sem `deleted`; o mutante comita a limpeza e devolve `false` |
+| M64 | na falha da FK, "tenta de novo" apagando todos os convites do papel e depois o papel (cascata de recuperação) | CT-20 linha 1 | o convite de dani continua, Pendente, e o papel continua; o mutante apaga dani e exclui o papel |
+| M65 | carrega a coleção dos encerrados uma vez e apaga a coleção sem reverificar o estado de cada um na hora de apagar | CT-20 linha 2 | caio continua, Pendente, e o papel continua; o mutante apaga caio (já Pendente) como encerrado, e o papel sai |
+
+---
+
 ## Revisão Adversarial
 
 Rodada 1 (`fw-adversario-ct`, contexto novo; entrada: `00` + `04` + glossário): **35 achados** (ADV-01…ADV-35), todos fechados; ADV-35 com destino "não se aplica". Rodada 2 (re-revisão única, disparada pelos cenários novos CT-14…CT-18; é a última pelo teto de 2 rodadas): **4 achados** (ADV-36…ADV-39), todos fechados sem nova rodada. O fechamento da rodada 2 criou CT-19, que **não** passa por nova revisão (teto atingido) — registrado como limite, não como aprovação.
@@ -667,8 +710,9 @@ Rodada 1 (`fw-adversario-ct`, contexto novo; entrada: `00` + `04` + glossário):
 | CT-17 | na massa, quantidade por papel sem a permissão e e-mails por trecho com ela | R8 | matriz papel × ação | G1 | componente Livewire/Filament | `tests/Kit/ExclusaoDePapelComConviteTest.php` | M47, M48, M53, M58 |
 | CT-18 | sem a permissão, nem quem convidou nem o convidado vê o e-mail | R8 | matriz papel × ação | G1 | componente Livewire/Filament | `tests/Kit/ExclusaoDePapelComConviteTest.php` | M51, M52, M53 |
 | CT-19 | revogado no /admin o Pendente de outra organização, a nova exclusão passa | R7 | 2-switch × EP (organização) | G3 | componente Livewire/Filament | `tests/Tenancy/ExclusaoDePapelComConviteTenancyTest.php` | M60 |
+| CT-20 | uma intercorrência no meio da exclusão não deixa nada pela metade | R11 | rastreio de efeito (atomicidade) | G2 | Pest feature HTTP | `tests/Kit/ExclusaoDePapelComConviteTest.php` | M61, M62, M63, M64, M65 |
 
-Rastreio de origem: RQ-01 → CT-02, CT-11 · RQ-02 → CT-01, CT-02, CT-03, CT-11 · RQ-03 → CT-04, CT-05, CT-07, CT-13, CT-16, CT-17, CT-18 · RQ-04 → CT-02, CT-03, CT-06, CT-07 · RQ-05 → CT-09 · RQ-06 → CT-10, CT-19 · RQ-07 → CT-01, CT-08, CT-12, CT-14, CT-15 · RQ-08 → CT-08, CT-12, CT-14, CT-15 · RQ-09 → CT-02, CT-03 · P-01 → CT-01, CT-13 · P-02 → CT-02, CT-08, CT-16 · P-03 → CT-06, CT-07, CT-17 · P-04 → CT-05 · P-05 → CT-11, CT-12, CT-19 · P-06 → CT-13, CT-16, CT-17, CT-18 · P-07 → CT-06, CT-07, CT-16, CT-17 · P-08 → CT-15.
+Rastreio de origem: RQ-01 → CT-02, CT-11 · RQ-02 → CT-01, CT-02, CT-03, CT-11 · RQ-03 → CT-04, CT-05, CT-07, CT-13, CT-16, CT-17, CT-18 · RQ-04 → CT-02, CT-03, CT-06, CT-07 · RQ-05 → CT-09 · RQ-06 → CT-10, CT-19 · RQ-07 → CT-01, CT-08, CT-12, CT-14, CT-15 · RQ-08 → CT-08, CT-12, CT-14, CT-15 · RQ-09 → CT-02, CT-03 · P-01 → CT-01, CT-13 · P-02 → CT-02, CT-08, CT-16 · P-03 → CT-06, CT-07, CT-17 · P-04 → CT-05 · P-05 → CT-11, CT-12, CT-19 · P-06 → CT-13, CT-16, CT-17, CT-18 · P-07 → CT-06, CT-07, CT-16, CT-17 · P-08 → CT-15 · P-09 → CT-20 (também RQ-04, RQ-07, RQ-09).
 
 ### Cogitado e cortado
 

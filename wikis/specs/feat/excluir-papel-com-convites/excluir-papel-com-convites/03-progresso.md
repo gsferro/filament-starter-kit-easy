@@ -1,6 +1,6 @@
 # Progresso — Roadmap item 9: excluir um papel que tem convite
 
-**Estado**: em implementação
+**Estado**: em revisão
 
 **Base do PR**: `main`
 
@@ -44,11 +44,33 @@ Não fatiado — 2026-11-16: 9 RQ vigentes, 19 CT, compactação: sim (a sessão
 
 | ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
 |---|---|---|---|---|---|
+| CR-01 / RD-01 / CX-01 | `/code-review`, eixos e `codex` (convergentes) | `Role::delete()` não é atômico: convite criado ou reenviado entre a contagem e a limpeza é apagado como encerrado, ou o `DELETE` falha depois do `deleting` do spatie e deixa o papel sem permissões, usuários e histórico | premissa → CT → correção | P-09 / CT-20 | — |
+| CR-02 | `/code-review` | dupla checagem (`before` e model) sem vínculo | coberto por P-09 | P-09 / CT-20 | — |
+| CR-03 | `/code-review` | expirado é reenviável e some com o papel sem aviso | — | — | decisão do solicitante: a resposta a Q2 inclui os expirados no "apagar junto" |
+| CR-04 | `/code-review` | N+1 no aviso da massa (uma consulta por papel) | — | — | papéis são poucos por instalação; o custo é linear no tamanho da seleção, sem query por linha da tabela |
+| CR-05 | `/code-review` | `valido()` repetia a condição de pendente à mão | correção (reuso) | — | — |
+| CR-06 / RD-02 | `/code-review`, eixos | docblock do scope apontava `Role::booted()` | correção de comentário | — | — |
+| CR-07 | `/code-review` | `Role` depende do painel `app` para nomear o escopo | — | — | mesmo padrão já usado por `Convite::pendentesPara()`; o painel `app` é parte do kit |
+| CR-08 | `/code-review` | filtro `instanceof Role` sem efeito, falha aberta | correção (tipo `Role` no `map`, falha fechada) | — | — |
+| CR-09 | `/code-review` | comentário inline repetido em seis testes | correção (helper `apagarPapelPelaQuery()` em `tests/Pest.php`) | — | — |
+| RD-03 | eixos | comentário dizia "a mesma regra da `acaoDeUsuarios()`", que aplica outra regra | correção de comentário | — | — |
 
 ## Conformidade com Rules
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
+| `app.md` | `app/**` | aplicada | logs no canal `autenticacao` com `[Role@delete]`; sem pasta-base nova (`app/Exceptions/` evitada) |
+| `config.md` | `config/**` | aplicada | só `kit.version` 0.53.2 |
+| `css-filament.md` | `app/Providers/**` | n.a. | só uma citação de linha num comentário do `AppPanelProvider` |
+| `filament-resources.md` | `app/Filament/**/Resources/**` | aplicada | ações nativas com `before()`; `authorizeIndividualRecords('delete')` mantido na massa |
+| `filament.md` | `app/Filament/**` | aplicada | `filacheck` 17/17; notificação nativa do Filament |
+| `kit.md` | `tests/Kit/**` | aplicada | testes do kit na suíte Kit, sem tenancy |
+| `models.md` | `app/Models/**` | aplicada | nenhuma model nova; `Role` e `Convite` sem trait nova |
+| `onboarding.md` | `app/Filament/**` | n.a. | nenhuma página, widget ou dock tocado |
+| `providers-filament.md` | `app/Providers/Filament/**` | n.a. | só comentário |
+| `providers.md` | `app/Providers/**` | n.a. | só comentário |
+| `specs.md` | `wikis/specs/**` | aplicada | wiki em `wikis/specs/feat/excluir-papel-com-convites/` com `00`–`04` |
+| `testes.md` | `tests/**` | aplicada | CT com ID no nome; helper com docblock em `tests/Pest.php`; tenancy em `tests/Tenancy` |
 
 ## Quality Gate
 
@@ -70,7 +92,7 @@ Nenhuma divergência de comportamento entre o `01` e o código.
 |---|---|---|
 | `$action->cancel()` no `before` interrompe a exclusão | `vendor/filament/actions/src/Action.php:cancel:691` existe; `before()` em `vendor/filament/actions/src/Concerns/HasLifecycleHooks.php:before:24` | nenhuma |
 | `$records` no `before` da exclusão em massa traz só os autorizados | `vendor/filament/actions/src/Action.php:records:576` injeta `getIndividuallyAuthorizedSelectedRecords()` | nenhuma |
-| Auditoria grava a remoção do convite | `config/audit.php:events:65` inclui `deleted`; só vale por instância e com `audit.console` ligado no teste (`tests/Kit/ConviteTest.php:audit.console:279`) | o passo 2 apaga um a um; CT de auditoria liga `audit.console` |
+| Auditoria grava a remoção do convite | `config/audit.php:events:65` inclui `deleted`; só vale por instância e com `audit.console` ligado no teste (`tests/Kit/ConviteTest.php:'audit.console':279`) | o passo 2 apaga um a um; CT de auditoria liga `audit.console` |
 | Citações do `01`/`02` | `citacoes.sh` acusou 5 símbolos fora da linha | símbolos trocados; `citacoes.sh` exit 0 |
 
 ### Varredura da classe irmã (step 5)
@@ -94,10 +116,17 @@ Nenhuma classe nova: a feature acrescenta um scope, uma relação e um método e
 ## Blockers
 
 ## Desvios do Plano
+- Passo 2: transação reinstalada (D2) pela P-09 do step 9; a recusa no meio usa `rollBack()` manual em vez de exceção própria, porque `app/Exceptions/` não existe e pasta-base nova pede aprovação
+- Passo 2: a checagem de pendente usa o scope SQL, não `situacao()` — os dois discordam na borda `expira_em = agora` (o CT-01 "validade 12:00:00" pegou)
+- Prova de falsificabilidade feita revertendo só o patch de `app/` no próprio repositório (`git apply -R` / `git apply`, conferido idêntico), e não numa cópia: na cópia, o `vendor/` por junção carregava o `app/` do repositório principal
 - Passo 2: listener `deleting` virou `delete()` sobrescrito — o `deleting` do spatie (`vendor/spatie/laravel-permission/src/Traits/HasPermissions.php:bootHasPermissions:34`) roda antes e desliga permissões e usuários; corrigido no `01` (D1, passo 2, Observers)
 - Passo 3: e-mails só para quem tem `ViewAny` de convite — P-06 no `00`, passo 3 do `01`
 
 ## Notas de Implementação
+- O `deleting` do spatie (`HasPermissions::bootHasPermissions()`) desliga permissões e usuários do papel antes de qualquer listener do kit; por isso a regra é o `delete()` sobrescrito
+- Citações de linha que envelheceram com o scope novo, corrigidas: `docs/{pt,en}/autenticacao/convites.md` (`situacao:600`), `app/Providers/Filament/AppPanelProvider.php` e o `04` da wiki `diagramas-da-arquitetura` (`email_verified_at:647`). Já velhas antes desta feature, não mexidas: `app/Models/User.php` e `app/Support/RegistroAberto.php` citam a linha 591 do `Convite.php`, que na `main` já era `'Recusado'`
+- Teste manual com Playwright (sem e com tenancy, banco SQLite próprio, drivers padrão de sessão, cache e fila em banco): 18/18 nos dois modos; auditoria com 5 `deleted` de convite em cada. Com `SESSION_DRIVER=file` e `CACHE_STORE=array` o aviso não aparecia na tela — artefato da configuração do teste, não do kit
+- No CT-19, `isset()` sobre o proxy do `test()` do Pest é sempre falso: o arnês guarda o escopo original em `$GLOBALS`
 
 ## Referências Abertas
 - `template-00-requisito.md` — step 4 — 2026-11-16

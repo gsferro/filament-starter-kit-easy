@@ -1180,6 +1180,18 @@ function papelDoKit(string $nome): Role
  *
  * @param  array<string, mixed>  $atributos
  */
+/**
+ * Apaga o papel direto no banco, pulando o model — para simular "o papel do convite sumiu".
+ *
+ * `$papel->delete()` não serve: desde a wiki `excluir-papel-com-convites`, `Role::delete()`
+ * recusa papel com convite pendente e devolve `false` antes do banco. Com
+ * `PRAGMA defer_foreign_keys = ON` antes, a chave estrangeira não barra o `DELETE`.
+ */
+function apagarPapelPelaQuery(string $nome): void
+{
+    Role::query()->whereKey(Role::findByName($nome)->getKey())->delete();
+}
+
 function ofertaPara(string $email, ?Tenant $tenant = null, string $papel = 'panel_user', array $atributos = []): Convite
 {
     $convite = Convite::factory()->create([

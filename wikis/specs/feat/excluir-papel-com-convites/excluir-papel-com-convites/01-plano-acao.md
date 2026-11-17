@@ -30,6 +30,7 @@
 | P-06 | E-mails só para quem vê convites | 3 | — |
 | P-07 | Papel pelo rótulo no aviso | 3 | — |
 | P-08 | Encerrados saem sem exigir permissão de convite | 2 | — |
+| P-09 | Exclusão atômica; convite pendente na limpeza não sai | 2 | — |
 
 ## Objetivo
 
@@ -48,14 +49,14 @@ mostra só "N não puderam ser excluídos", sem dizer por quê.
 ## Análise dos Arquivos Existentes
 
 ### `app/Models/Convite.php`
-- `app/Models/Convite.php:pendentesPara():527-539` já monta a condição de pendente (sem aceite, sem recusa, `expira_em > now()`) e tira o escopo de organização do painel `/app` com `withoutGlobalScope(Filament::getPanel('app')->getTenancyScopeName())`. É a mesma regra da `app/Models/Convite.php:situacao():587-595` (validade nula conta como Expirado, P-01).
+- `app/Models/Convite.php:pendentesPara():542-553` já monta a condição de pendente (sem aceite, sem recusa, `expira_em > now()`) e tira o escopo de organização do painel `/app` com `withoutGlobalScope(Filament::getPanel('app')->getTenancyScopeName())`. É a mesma regra da `app/Models/Convite.php:situacao():600-608` (validade nula conta como Expirado, P-01).
 - O model é auditável (`AuditsFillables`, eventos `created`/`updated`/`deleted` em `config/audit.php:events:65-70`): só `->delete()` por instância grava a trilha; `DELETE` em massa pela query não grava.
 
 ### `app/Models/Role.php`
 - `app/Models/Role.php:Role:39-45` estende o `Role` do spatie e só usa `TemUuid`. Não tem relação com convite.
 
 ### `app/Filament/Admin/Resources/Roles/RoleResource.php` e `Pages/EditRole.php`
-- Três caminhos de exclusão: `DeleteAction::make()` na linha da tabela (`app/Filament/Admin/Resources/Roles/RoleResource.php:DeleteAction:293`), `DeleteBulkAction::make()->authorizeIndividualRecords('delete')` (`app/Filament/Admin/Resources/Roles/RoleResource.php:DeleteBulkAction:305`) e `DeleteAction::make()` no cabeçalho da edição (`app/Filament/Admin/Resources/Roles/Pages/EditRole.php:DeleteAction:30`).
+- Três caminhos de exclusão: `DeleteAction::make()` na linha da tabela (`app/Filament/Admin/Resources/Roles/RoleResource.php:DeleteAction:297`), `DeleteBulkAction::make()->authorizeIndividualRecords('delete')` (`app/Filament/Admin/Resources/Roles/RoleResource.php:DeleteBulkAction:310`) e `DeleteAction::make()` no cabeçalho da edição (`app/Filament/Admin/Resources/Roles/Pages/EditRole.php:DeleteAction:31`).
 - `vendor/filament/actions/src/DeleteAction.php:action:51-60`: `$record->delete()` devolvendo `false` chama `failure()`, sem exceção.
 - `vendor/filament/actions/src/DeleteBulkAction.php:action:81-111`: cada registro é apagado num `try`; exceção vira "falha de processamento" genérica.
 
@@ -64,7 +65,8 @@ mostra só "N não puderam ser excluídos", sem dizer por quê.
 | # | Decisão | Pergunta | Portão que falta | Quem decidiu, data |
 |---|---|---|---|---|
 | D1 | A regra mora no model `Role` (`delete()` sobrescrito *(alterado em 2026-11-16: o `deleting` do spatie roda antes e já desliga permissões e usuários; recusar num listener deixaria o papel vazio)*), e as três ações só montam o aviso antes: assim tinker, seeder e qualquer tela futura recebem a mesma recusa | autorização existente ("prossiga até o fim") | surpreendente | sessão, 2026-11-16 |
-| ~~D2~~ | ~~A exclusão do papel roda numa transação~~ — cortada no step 6: a recusa acontece antes de apagar qualquer convite, então RQ-04 não depende dela; só um erro inesperado do banco depois do `deleting` deixaria convite encerrado apagado com o papel ainda presente, e esse convite já não servia para entrar | autorização existente | — | sessão, 2026-11-16 *(alterado em 2026-11-16: Ponytail)* |
+| D2 | A exclusão do papel roda numa transação, com o papel e os convites travados, e cada convite é relido antes de sair *(alterado em 2026-11-17: reinstalada pela P-09 — os três revisores do step 9 mostraram a corrida e o papel vazio quando o `DELETE` falha depois do `deleting` do spatie)* | P-09 | — | sessão, 2026-11-17 |
+| ~~D2 (versão do step 6)~~ | ~~A exclusão do papel roda numa transação~~ — cortada no step 6: a recusa acontece antes de apagar qualquer convite, então RQ-04 não depende dela; só um erro inesperado do banco depois do `deleting` deixaria convite encerrado apagado com o papel ainda presente, e esse convite já não servia para entrar | autorização existente | — | sessão, 2026-11-16 *(alterado em 2026-11-16: Ponytail)* |
 | D4 | O `[CT-12]` da `phpstan-nivel-8` passa a provar a chave estrangeira por um `DELETE` pela query, que pula o model: o `delete()` do model agora recusa antes do banco e não lança `QueryException` | Q5 (desenho) | trade-off | sessão, 2026-11-16 |
 | D3 | Canal de log `autenticacao`, o mesmo dos convites | convenção (`ConvitesTable` revogar) | trade-off | sessão, 2026-11-16 |
 
@@ -151,7 +153,8 @@ Nenhuma.
 - `delete(): ?bool` sobrescrito *(alterado em 2026-11-16: era um listener `deleting`; o `deleting` do spatie em `HasPermissions::bootHasPermissions()` roda antes e desliga permissões e usuários, então a recusa tem de vir antes de qualquer evento)*:
   - se há convite pendente: log e `return false`, sem chamar o `parent::delete()` (RQ-02, RQ-04, RQ-09)
   - senão: `convites()->get()->each->delete()` — instância por instância, para a auditoria (RQ-07, RQ-08) — e `parent::delete()`
-- **Atende**: RQ-01, RQ-02, RQ-04, RQ-05, RQ-06, RQ-07, RQ-08, RQ-09, P-05, P-08
+  - tudo dentro de `DB::beginTransaction()`, com `lockForUpdate()` no papel e nos convites; cada convite é relido pelo scope `pendentes()` antes de sair, e um que voltou a Pendente desfaz tudo e recusa; qualquer exceção faz `rollBack()` e sobe *(alterado em 2026-11-17: P-09)*
+- **Atende**: RQ-01, RQ-02, RQ-04, RQ-05, RQ-06, RQ-07, RQ-08, RQ-09, P-05, P-08, P-09
 - `tests/Kit/ConviteTest.php` `[CT-12]`: o `DELETE` vai pela query (`Role::query()->whereKey(...)->delete()`) para continuar provando a recusa do banco (D4)
 - **Logs**:
   - `Log::channel('autenticacao')->warning("[Role@delete] Exclusão recusada: papel com convite pendente | papel: {$papel->id}", ['role_id' => $papel->id, 'pendentes' => $quantidade])`

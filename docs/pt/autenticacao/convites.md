@@ -104,6 +104,31 @@ comando agendado (`routes/console.php:40`,
 (`app/Models/Convite.php:enviar:143`, `:lembrar:207`, `:aceitar:606`,
 `:aceitarComoUsuarioExistente:674`, `:recusar:739`).
 
+## Excluir um papel que tem convites
+
+O convite guarda o papel que ele concede, e a chave estrangeira `convites.role_id` não apaga em
+cascata de propósito: um convite pendente não pode ser aceito com papel nulo. A tela de papéis
+(`/admin/shield/roles`) trata isso nas três exclusões — a ação da linha, a do cabeçalho da edição e
+a exclusão em massa:
+
+| O papel tem… | O que acontece |
+|---|---|
+| convite **Pendente** | a exclusão é **recusada** com o aviso "Papel com convite pendente", que lista os e-mails pendentes de cada papel (até cinco, depois "e mais N"). Nada é apagado — nem o papel, nem convite algum. Revogue os convites na tela de Convites e tente de novo |
+| só convites **Aceitos, Recusados ou Expirados** | eles saem **junto** com o papel, um a um, e cada remoção fica em `/infra/audits` |
+| nenhum convite | exclusão normal |
+
+- Na exclusão em massa, se **um** papel da seleção tem convite pendente, **nenhum** sai, e o aviso
+  diz quais papéis estão bloqueados.
+- Os e-mails só aparecem para quem pode ver os convites (`ViewAny:Convite`). Quem só pode excluir
+  papéis vê a quantidade — "2 convites pendentes" —, sem e-mail.
+- Com organizações, os convites de **todas** elas contam: o banco recusa por qualquer convite.
+- A exclusão é atômica: se qualquer passo falhar — inclusive um convite criado ou reenviado no meio
+  dela —, nada muda, e o papel mantém permissões, usuários e convites.
+
+A regra mora em `Role::delete()`, e por isso vale também fora da tela (tinker, seeder, comando). Um
+`DELETE` direto pela query continua barrado pela chave estrangeira. Wiki:
+`wikis/specs/feat/excluir-papel-com-convites/`.
+
 ## Estados do convite
 
 ```mermaid
@@ -123,7 +148,7 @@ accDescr: Do Pendente, o convite vai a Aceito, Recusado (só com KIT_TENANCY) ou
 ```
 
 `Convite::situacao()` tem a precedência Aceito &gt; Recusado &gt; Expirado &gt; Pendente
-(`app/Models/Convite.php:situacao:587`, `:'Aceito':590`, `:'Recusado':591`); a ação Reenviar só é
+(`app/Models/Convite.php:situacao:600`, `:'Aceito':603`, `:'Recusado':604`); a ação Reenviar só é
 visível em Pendente ou Expirado
 (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:Action::make('reenviar'):73`,
 `:situacao() === 'Pendente':89`); a revogação é o `DeleteAction` nativo, visível em todo estado

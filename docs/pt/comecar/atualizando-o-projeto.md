@@ -138,6 +138,12 @@ que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
 
+**Na v0.53.2 não há nada a instalar nem migrar**: excluir um papel que tem convite deixa de responder 500
+(ver [Convites](../../autenticacao/convites/#excluir-um-papel-que-tem-convites)). Teste do projeto que simula
+"o papel do convite sumiu" com `$papel->delete()` passa a apagar pela query — `Role::delete()` agora recusa
+papel com convite pendente. Quem mudou à mão `app/Models/Role.php` ou as ações de exclusão da tela de
+papéis revisa o diff.
+
 **Na v0.53.1 há duas migrations, e as telas de acesso continuam idênticas.** Rode `php artisan migrate`
 (a configuração `aparencia_das_telas` e a coluna `tenants.aparencia_das_telas`, as duas vazias) e
 `php artisan filament:assets` (CSS do kit). Nada muda até alguém escolher o painel de marca em

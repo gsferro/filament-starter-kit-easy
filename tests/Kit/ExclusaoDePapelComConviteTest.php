@@ -14,6 +14,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
@@ -803,4 +804,84 @@ it('[CT-16] o aviso nomeia o papel bloqueado pelo rótulo, em cada caminho e nas
     'master, massa, com e-mails'                    => ['master', 'massa'],
     'operador sem ViewAny:Convite, linha'           => ['operador', 'linha'],
     'operador sem ViewAny:Convite, edição'          => ['operador', 'edicao'],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| R11 — A exclusão é atômica, e o Pendente do momento nunca sai como encerrado
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-20] uma intercorrência no meio da exclusão não deixa nada pela metade', function (string $intercorrencia): void {
+    $papel    = papelComPermissaoEUsuarioParaExclusao();
+    $convites = convitesDoPapelParaExclusao(comPendente: false);
+
+    // Fake depois da fixture: o reenvio da linha 2 não pode mandar e-mail de verdade.
+    Notification::fake();
+
+    $disparou = false;
+    $caio     = $convites['expirado'];
+    $dani     = null;
+
+    if ($intercorrencia === 'criado') {
+        // Dentro do `parent::delete()`, depois da checagem de Pendentes: o `DELETE` do papel bate na FK.
+        Role::deleting(function (Role $role) use (&$disparou, &$dani): void {
+            if ($disparou || $role->name !== 'suporte') {
+                return;
+            }
+
+            $disparou = true;
+            $dani     = ofertaPara('dani@example.com', null, 'suporte');
+        });
+    } else {
+        // No primeiro convite apagado que não é o do caio, o caio é reenviado (volta a Pendente).
+        $caioJaApagadoAntes = false;
+
+        Convite::deleting(function (Convite $convite) use (&$disparou, &$caioJaApagadoAntes, $caio): void {
+            if ($disparou) {
+                return;
+            }
+
+            if ($convite->getKey() === $caio->getKey()) {
+                $caioJaApagadoAntes = true;
+                $disparou           = true;
+
+                return;
+            }
+
+            $disparou = true;
+            $caio->fresh()?->enviar();
+        });
+    }
+
+    // A forma da falha (exceção ou `false`) não é afirmada: o oráculo é o banco.
+    try {
+        $papel->delete();
+    } catch (Throwable) {
+    }
+
+    if ($intercorrencia === 'reenviado' && ($caioJaApagadoAntes ?? false)) {
+        $this->markTestSkipped('lacuna declarada (04, R11): a limpeza apagou o caio ANTES de apagar qualquer outro encerrado; a ordem da limpeza não é do requisito, o reenvio no meio não pôde ser provocado.');
+    }
+
+    expect($disparou)->toBeTrue('a intercorrência não disparou: o arranjo não mediu nada');
+
+    expect(papelExisteNoBanco($papel))->toBeTrue()
+        ->and(papelMantemPermissaoEUsuario($papel))->toBeTrue();
+
+    foreach ($convites as $convite) {
+        expect(conviteExisteNoBanco($convite))->toBeTrue()
+            ->and((int) DB::table('convites')->where('id', $convite->getKey())->value('role_id'))->toBe($papel->getKey())
+            ->and(auditoriasDoConvite($convite, 'deleted'))->toBe(0);
+    }
+
+    /*
+     * O convite "do meio" (dani criado, caio reenviado) não é afirmado: aqui ele nasce NA MESMA
+     * conexão, dentro da transação da exclusão, e o rollback o desfaz junto. Num banco de verdade
+     * ele é outra transação, que espera a trava e se aplica depois — o que esta pilha não exibe.
+     * Não falsificável nesta pilha (04, R11); o caio, que já existia, está no laço acima.
+     */
+})->with([
+    'Pendente criado no meio (a FK recusa o DELETE)'   => ['criado'],
+    'Expirado reenviado no meio (Pendente na limpeza)' => ['reenviado'],
 ]);

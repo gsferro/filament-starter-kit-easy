@@ -475,9 +475,7 @@ class Convite extends Model implements Auditable
                 ->where('token', $hash)
                 ->orWhere('token_lembrete', $hash))
             // Os TRÊS filtros de estado ficam de fora, em AND.
-            ->whereNull('aceito_em')
-            ->whereNull('recusado_em')
-            ->where('expira_em', '>', now())
+            ->pendentes()
             ->first();
     }
 
@@ -504,7 +502,7 @@ class Convite extends Model implements Auditable
      *
      * É o "Pendente" de `situacao()` — validade nula não casa com `expira_em > now()`, e
      * lá ela também é "Expirado". Usado pela caixa de entrada e pela recusa de excluir o
-     * papel de um convite pendente (`Role::booted()`).
+     * papel de um convite pendente (`Role::delete()`).
      *
      * @param  Builder<Convite>  $query
      * @return Builder<Convite>

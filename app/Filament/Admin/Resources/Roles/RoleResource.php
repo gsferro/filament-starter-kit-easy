@@ -654,17 +654,16 @@ class RoleResource extends Resource
      * baixo — este método só existe para o administrador ler o porquê em vez de um 500.
      *
      * Os e-mails só aparecem para quem pode ver os convites (`ViewAny:Convite`); para o
-     * resto, a quantidade — excluir papel não é permissão para ler e-mail de terceiro, a
-     * mesma regra da `acaoDeUsuarios()`. No máximo cinco por papel.
+     * resto, a quantidade — excluir papel não é permissão para ler e-mail de terceiro.
+     * No máximo cinco por papel.
      *
-     * @param  iterable<Model>  $papeis
+     * @param  iterable<Role>  $papeis
      */
     public static function recusarSeHaConvitePendente(Action $action, iterable $papeis): void
     {
         $podeVerEmails = auth()->user()?->can('viewAny', Convite::class) ?? false;
 
         $linhas = collect($papeis)
-            ->filter(fn (Model $papel): bool => $papel instanceof Role)
             ->map(function (Role $papel) use ($podeVerEmails): ?string {
                 $emails = $papel->convites()->pendentes()->orderBy('email')->pluck('email');
 

@@ -108,6 +108,32 @@ reminder only exists through the scheduled command
 `::recusar()` (`app/Models/Convite.php:enviar:143`, `:lembrar:207`, `:aceitar:606`,
 `:aceitarComoUsuarioExistente:674`, `:recusar:739`).
 
+## Deleting a role that has invitations
+
+An invitation stores the role it grants, and the `convites.role_id` foreign key does not cascade on
+purpose: a pending invitation must not be accepted with a null role. The roles screen
+(`/admin/shield/roles`) handles this in all three deletions — the row action, the edit page header
+action and the bulk delete:
+
+| The role has… | What happens |
+|---|---|
+| a **Pending** invitation | the deletion is **refused** with the "Papel com convite pendente" warning, which lists each role's pending e-mails (up to five, then "e mais N"). Nothing is deleted — neither the role nor any invitation. Revoke the invitations on the Convites screen and try again |
+| only **Accepted, Declined or Expired** invitations | they are removed **together** with the role, one by one, and each removal is recorded in `/infra/audits` |
+| no invitation | normal deletion |
+
+- In a bulk delete, if **one** selected role has a pending invitation, **none** is deleted, and the
+  warning names the blocked roles.
+- E-mails are only shown to whoever can view invitations (`ViewAny:Convite`). Someone who can only
+  delete roles sees the count — "2 convites pendentes" — and no e-mail.
+- With organizations, invitations from **all** of them count: the database refuses because of any
+  invitation.
+- The deletion is atomic: if any step fails — including an invitation created or resent in the
+  middle of it —, nothing changes, and the role keeps its permissions, users and invitations.
+
+The rule lives in `Role::delete()`, so it also applies outside the screen (tinker, seeder, command).
+A direct `DELETE` through the query builder is still blocked by the foreign key. Wiki:
+`wikis/specs/feat/excluir-papel-com-convites/`.
+
 ## Invitation states
 
 ```mermaid
@@ -131,7 +157,7 @@ accDescr: From Pending, an invitation goes to Accepted, Declined (only with KIT_
 ```
 
 `Convite::situacao()` has the precedence Accepted &gt; Declined &gt; Expired &gt; Pending
-(`app/Models/Convite.php:situacao:587`, `:'Aceito':590`, `:'Recusado':591`); the Resend action is
+(`app/Models/Convite.php:situacao:600`, `:'Aceito':603`, `:'Recusado':604`); the Resend action is
 only visible on Pending or Expired
 (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:Action::make('reenviar'):73`,
 `:situacao() === 'Pendente':89`); revoking is the native `DeleteAction`, visible in every state

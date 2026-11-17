@@ -5,8 +5,10 @@ namespace App\Models;
 use App\Traits\TemUuid;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role as SpatieRole;
+use Throwable;
 
 /**
  * O papel do spatie com a coluna que o kit acrescentou.
@@ -57,31 +59,68 @@ class Role extends SpatieRole
      * É `delete()` e não um listener de `deleting` porque o `deleting` do spatie
      * (`HasPermissions::bootHasPermissions()`) roda antes e já desliga permissões e
      * usuários do papel: recusar depois dele deixaria o papel de pé, mas vazio.
+     *
+     * Tudo numa transação, com o papel e os convites dele travados até o fim: se qualquer
+     * passo falhar — inclusive o `DELETE` do papel, barrado pela FK por um convite criado
+     * no meio —, nada muda. Cada convite é relido antes de sair, porque um reenvio no meio
+     * da limpeza o devolve a Pendente; aí a exclusão inteira é desfeita e recusada.
      */
     public function delete(): ?bool
     {
-        $pendentes = $this->convites()->pendentes()->count();
+        DB::beginTransaction();
 
-        if ($pendentes > 0) {
-            Log::channel('autenticacao')->warning(
-                "[Role@delete] Exclusão recusada: papel com convite pendente | papel: {$this->id}",
-                ['role_id' => $this->id, 'pendentes' => $pendentes],
-            );
+        try {
+            // MySQL/Postgres: um convite novo para este papel lê a linha do papel pela FK e
+            // espera o commit; um reenvio espera a trava da linha do convite.
+            static::query()->whereKey($this->id)->lockForUpdate()->first();
+            $convites = $this->convites()->lockForUpdate()->get();
 
-            return false;
+            // A regra de "pendente" é a do scope (SQL), a mesma da caixa de entrada e do aviso.
+            $pendentes = $this->convites()->pendentes()->count();
+
+            if ($pendentes > 0) {
+                DB::rollBack();
+
+                return $this->recusarExclusao($pendentes);
+            }
+
+            foreach ($convites as $convite) {
+                if ($this->convites()->pendentes()->whereKey($convite->getKey())->exists()) {
+                    DB::rollBack();
+
+                    return $this->recusarExclusao(1);
+                }
+
+                $convite->delete();
+            }
+
+            $excluido = parent::delete();
+
+            DB::commit();
+        } catch (Throwable $erro) {
+            DB::rollBack();
+
+            throw $erro;
         }
 
-        $encerrados = $this->convites()->get();
-        $encerrados->each->delete();
-
-        if ($encerrados->isNotEmpty()) {
+        if ($convites->isNotEmpty()) {
             Log::channel('autenticacao')->info(
                 "[Role@delete] Convites encerrados apagados com o papel | papel: {$this->id}",
-                ['role_id' => $this->id, 'convites' => $encerrados->count()],
+                ['role_id' => $this->id, 'convites' => $convites->count()],
             );
         }
 
-        return parent::delete();
+        return $excluido;
+    }
+
+    private function recusarExclusao(int $pendentes): false
+    {
+        Log::channel('autenticacao')->warning(
+            "[Role@delete] Exclusão recusada: papel com convite pendente | papel: {$this->id}",
+            ['role_id' => $this->id, 'pendentes' => $pendentes],
+        );
+
+        return false;
     }
 
     /**

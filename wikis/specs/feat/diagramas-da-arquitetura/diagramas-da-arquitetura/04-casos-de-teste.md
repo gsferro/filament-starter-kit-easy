@@ -4097,7 +4097,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 > `app/Providers/Filament/AppPanelProvider.php` (linha 508, que citava `Convite.php` linha 591) — duas delas apontavam linha errada:
 > `DemoTenancySeeder.php` linha 103 (o `email_verified_at` está em
 > `database/seeders/DemoTenancySeeder.php:'email_verified_at':95`) e `Convite.php` linha 591 (está em
-> `app/Models/Convite.php:'email_verified_at':634`)
+> `app/Models/Convite.php:'email_verified_at':647`)
 
 `@premissa` P-22 (de comportamento, falha fechado): RQ-29 corrige afirmação falsa, e citação que aponta
 a linha errada é afirmação falsa — entram as citações de arquivos do kit (`app/`, `database/`, `config/`,
@@ -4318,7 +4318,7 @@ vermelha — é isso que CT-11 não fazia. O `admin_app` tem a sua em CT-12 (Ten
 > ou mandada entrar (`app/Filament/Pages/Auth/RegistroPorConvite.php:'Entre para aceitar o convite':270`), com
 > consumo atômico (`app/Models/Convite.php:public function aceitarComoUsuarioExistente:674`,
 > `app/Models/Convite.php:Este convite já foi usado.:699`). A conta nova nasce verificada
-> (`app/Models/Convite.php:'email_verified_at' => now():634`), ligada à organização
+> (`app/Models/Convite.php:'email_verified_at' => now():647`), ligada à organização
 > (`app/Models/Convite.php:syncWithoutDetaching:637`) e com o papel
 > (`app/Models/Convite.php:$this->atribuirPapel($user, $papel);:640`); a existente, idem
 > (`app/Models/Convite.php:syncWithoutDetaching:709`, `app/Models/Convite.php:atribuirPapel:712`).

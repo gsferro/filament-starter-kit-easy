@@ -5,6 +5,37 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.53.2] - 2026-11-17
+
+Correção do item 9 do roadmap: excluir pela tela um papel que tinha convite respondia **500**. Sem
+migration e sem default mudado. Wiki: `wikis/specs/feat/excluir-papel-com-convites/`.
+
+### Corrigido
+
+- Excluir um papel com convite **Pendente** é recusado com o aviso "Papel com convite pendente", que
+  lista os e-mails pendentes de cada papel (até cinco por papel, depois "e mais N"). Nada é apagado.
+  Vale nas três exclusões da tela de papéis — a ação da linha, a do cabeçalho da edição e a exclusão
+  em massa, que não exclui nenhum papel da seleção se um deles está bloqueado.
+- Convites **Aceitos, Recusados ou Expirados** não bloqueiam mais a exclusão: saem junto com o papel,
+  um a um, e cada remoção fica em `/infra/audits`.
+- Quem pode excluir papéis mas não pode ver convites (`ViewAny:Convite`) vê só a quantidade de
+  convites pendentes, sem e-mail.
+- A regra mora em `Role::delete()` e é atômica: se qualquer passo falhar — inclusive um convite
+  criado ou reenviado no meio —, nada muda; o papel mantém permissões, usuários e convites. Antes
+  disso, o `deleting` do spatie já desligava permissões e usuários do papel antes de o banco recusar.
+- `Convite::pendentes()` (scope) passa a ser a regra única de "pendente", usada pela caixa de
+  entrada, pela busca do token e pela exclusão do papel.
+
+### Atualizando
+
+- Nada a rodar além de aplicar os arquivos. Teste do projeto que simulava "o papel do convite sumiu"
+  com `$papel->delete()` precisa apagar pela query (`apagarPapelPelaQuery()` em `tests/Pest.php`),
+  porque o model agora recusa papel com convite pendente.
+
+### Defaults mudados
+
+- nenhum
+
 ## [0.53.1] - 2026-11-15
 
 A v0.53.1 é a entrega da v0.53.0. A tag `v0.53.0` foi publicada por engano no commit da v0.52.1 e o Packagist, que não deixa uma versão estável mudar de conteúdo, guardou essa referência: quem instalou a v0.53.0 pelo `composer create-project` recebeu o código da v0.52.1, com o marcador `0.52.1`. A tag `v0.53.0` voltou a esse commit e não deve ser usada; este roteiro vai direto da v0.52.1 para a v0.53.1.
