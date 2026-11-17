@@ -5,40 +5,40 @@
 **Base do PR**: `main`
 
 ## 1. Consulta nomeada de convite pendente
-- [ ] `scopePendentes()` no `Convite` e `pendentesPara()` reutilizando
+- [x] `scopePendentes()` no `Convite` e `pendentesPara()` reutilizando — `app/Models/Convite.php:scopePendentes:510`; `pendentesPara()` e `valido()` usam `->pendentes()`; CT-01 7/7 verdes, 2026-11-17
 
 ## 2. A regra no model `Role`
-- [ ] relação `convites()` sem o escopo do painel `/app`
-- [ ] `delete()`: recusa com pendente; apaga encerrados um a um
+- [x] relação `convites()` sem o escopo do painel `/app` — `app/Models/Role.php:convites`; CT-11/CT-12 (Tenancy) verdes nos três caminhos, 2026-11-17
+- [x] `delete()`: recusa com pendente; apaga encerrados um a um — transação com trava e releitura (P-09); CT-02, CT-03, CT-08, CT-14, CT-15, CT-20 verdes, 2026-11-17
 
 ## 3. O aviso nas três ações de exclusão
-- [ ] `recusarSeHaConvitePendente()` com teto de 5 e-mails
-- [ ] `before` na ação da linha, na exclusão em massa e na edição
+- [x] `recusarSeHaConvitePendente()` com teto de 5 e-mails — CT-04, CT-05, CT-13, CT-16, CT-17, CT-18, CT-21 verdes; log da recusa (QA-03), 2026-11-17
+- [x] `before` na ação da linha, na exclusão em massa e na edição — CT-02/CT-06/CT-07 nos três caminhos; Playwright 18/18 sem e com tenancy, 2026-11-17
 
 ## Testes
-- [ ] `tests/Kit/ExclusaoDePapelComConviteTest.php` (CT-01..CT-10, CT-13..CT-18)
-- [ ] `tests/Tenancy/ExclusaoDePapelComConviteTenancyTest.php` (CT-11, CT-12, CT-19)
-- [ ] Ajuste de testes existentes que simulavam "papel apagado" por `$papel->delete()` com convite pendente — agora pela query (D4): `tests/Kit/ConviteTest.php` (`[CT-12]`, `[CT-13]`, `[CT-18]`), `tests/Kit/CadastroSocialPorConviteTest.php`, `tests/Kit/ConviteUsuarioExistenteTest.php`, `tests/Tenancy/ConviteTenancyTest.php`, `tests/Tenancy/ConviteUsuarioExistenteTest.php`
+- [x] `tests/Kit/ExclusaoDePapelComConviteTest.php` (CT-01..CT-10, CT-13..CT-18, CT-20, CT-21) — também CT-20 e CT-21 — `vendor/bin/pest tests/Kit/ExclusaoDePapelComConviteTest.php` 41/41 (432 asserções), 2026-11-17
+- [x] `tests/Tenancy/ExclusaoDePapelComConviteTenancyTest.php` (CT-11, CT-12, CT-19) — `vendor/bin/pest --testsuite=Tenancy tests/Tenancy/ExclusaoDePapelComConviteTenancyTest.php` 7/7, 2026-11-17
+- [x] Ajuste de testes existentes que simulavam "papel apagado" por `$papel->delete()` com convite pendente — agora pela query (D4): `tests/Kit/ConviteTest.php` (`[CT-12]`, `[CT-13]`, `[CT-18]`), `tests/Kit/CadastroSocialPorConviteTest.php`, `tests/Kit/ConviteUsuarioExistenteTest.php`, `tests/Tenancy/ConviteTenancyTest.php`, `tests/Tenancy/ConviteUsuarioExistenteTest.php` — helper `apagarPapelPelaQuery()`; Kit 64/64 e Tenancy 18/18 nesses arquivos, 2026-11-17
 
 ## Tickets
 Não fatiado — 2026-11-16: 9 RQ vigentes, 19 CT, compactação: sim (a sessão já vinha compactada de outra feature), 4 perguntas de requisito — sinal de compactação conferido; não fatiado porque a correção toca 3 arquivos de app e cabe numa sessão
 
 ## Verificação Final
-- [ ] `/ponytail:ponytail-review` no diff
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/filacheck --fix`
-- [ ] testes da feature (Kit e Tenancy)
-- [ ] `vendor/bin/pest --parallel --tia` contra a baseline
-- [ ] `/code-review high main...HEAD` + passe de eixos (step 9), antes da reconciliação
-- [ ] Desvios propagados ao `01`/`02`/`04` de origem
-- [ ] `rastreabilidade.sh {wiki}` silencioso
-- [ ] `checkbox-sem-evidencia.sh {wiki}` silencioso
-- [ ] `citacoes.sh {wiki}` silencioso
-- [ ] `ids-ct.sh {wiki}` silencioso
-- [ ] `conformidade-rules.sh {wiki} main` silencioso
-- [ ] Falsificabilidade dos CT da recusa sem a correção
-- [ ] Docs pt/en, CHANGELOG e roadmap reconciliados
-- [ ] `git commit`
+- [x] `/ponytail:ponytail-review` no diff — `/ponytail-review` no diff: 2 sugestões (-7 linhas), ambas recusadas com motivo em `### Auditoria Ponytail`, 2026-11-17
+- [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"passed"}`, 2026-11-17
+- [x] `vendor/bin/filacheck --fix` — "All 17 rules passed!", 2026-11-17
+- [x] testes da feature (Kit e Tenancy) — Kit 41/41, Tenancy 7/7, 2026-11-17
+- [x] `vendor/bin/pest --parallel --tia` contra a baseline — `pest --tia --parallel --processes=3 --exclude-testsuite=Browser`: 6058 testes, 6054 passaram, 3 pulados, 1 falha (badge do README 2.624→2.625, corrigido; `SiteDeDocumentacaoTest`+`CitacoesDeCodigoTest`+`RoteiroDeAtualizacaoTest` 283/283 depois); Browser em série com `--tia`: 254, 202 passaram, 52 pulados, 0 falhas; baseline em `main`: 6264, 0 falhas, 2026-11-17
+- [x] `/code-review high main...HEAD` + passe de eixos (step 9), antes da reconciliação — 9 achados do `/code-review`, 3 do `fw-revisor-diff`, 2 do `codex`; destino de cada um em `## Revisão do Diff (step 9)`, 2026-11-17
+- [x] Desvios propagados ao `01`/`02`/`04` de origem — marcas `*(alterado em …)*` no `01` (D1, D2, passo 2, passo 3, Superfície de UI), no `02` e no `04` (QA-02, QA-05), 2026-11-17
+- [x] `rastreabilidade.sh {wiki}` silencioso — exit 0, 2026-11-17
+- [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — exit 0 (rodado depois deste fechamento), 2026-11-17
+- [x] `citacoes.sh {wiki}` silencioso — silencioso em `00`–`04`; as 5 linhas restantes são do `06` do ciclo 1, verbatim do gate (não editável), que o ciclo 2 substitui, 2026-11-17
+- [x] `ids-ct.sh {wiki}` silencioso — exit 0, 2026-11-17
+- [x] `conformidade-rules.sh {wiki} main` silencioso — exit 0, 2026-11-17
+- [x] Falsificabilidade dos CT da recusa sem a correção — patch de `app/` revertido (`git apply -R`, reaplicado idêntico): Kit 36 de 37 e Tenancy 7 de 7 falharam sem a correção — o que passa é o controle "sem convite algum" do CT-01; CT-20 vermelho antes da transação (permissões, linha 1; papel, linha 2) e CT-21 linha "sem ViewAny" vermelha antes da P-10; o "convite do meio continua" do CT-20 é não falsificável nesta pilha (mesma conexão, o rollback o desfaz), 2026-11-17
+- [x] Docs pt/en, CHANGELOG e roadmap reconciliados — `docs/{pt,en}/autenticacao/convites.md` ("Excluir um papel que tem convites"), `atualizando-o-projeto`, CHANGELOG 0.53.2, roadmap item 9 FEITO, roteiro `wikis/atualizacoes/v0.53.2.md` + cópia em `agentes-e-skills.md`, 2026-11-17
+- [x] `git commit` — `079fe61a`, `1c1e291a` e o commit do ciclo 1 do gate, 2026-11-17
 
 ## Revisão do Diff (step 9)
 
@@ -74,7 +74,9 @@ Não fatiado — 2026-11-16: 9 RQ vigentes, 19 CT, compactação: sim (a sessão
 
 ## Quality Gate
 
-<!-- Preenchido no step 11. -->
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-11-17
+- **Relatório**: `06-relatorio-qa.md` (ciclo 1)
+- **Achados e destino**: QA-01 (Major, implementação: PHPStan level 8 com 2 erros — corrigido com `Role $record` no `before`, `phpstan analyse` 0 erros) · QA-02 (Major, especificação: rota `/admin/shield/roles` e a recusa no `delete()`, corrigidos no `01`, `02`, `04`) · QA-03 (log da recusa pela tela — `RoleResource@recusarSeHaConvitePendente`) · QA-04 (P-10 → CT-21 → correção) · QA-05 (`04` alinhado à P-09) · QA-06 (este `03` com evidência e os despachos do step 9) · QA-07 (helper fora do docblock de `ofertaPara()`) · QA-08 (termo "Encerrado" no glossário)
 
 ## Candidatos a Rule
 
@@ -103,6 +105,8 @@ Nenhuma classe nova: a feature acrescenta um scope, uma relação e um método e
 |---|---|---|---|
 | 1 | Transação em volta do `delete()` do papel: a recusa vem antes de apagar convite, então RQ-04 não depende dela | sim | `01`, D2 e passo 2 |
 | 2 | Inlinar a condição de pendente no `Role` em vez do scope | recusada: o scope é reusado pela `pendentesPara()`, que repetia a mesma condição | `01`, passo 1 |
+| 3 | (diff, 2026-11-17) Tirar a contagem prévia de pendentes do `Role::delete()` — a releitura no laço já recusa | recusada: a contagem dá o número exato para o log da recusa e recusa o caso comum sem apagar e auditar encerrados só para desfazer | `app/Models/Role.php` |
+| 4 | (diff, 2026-11-17) `$bloqueados` por referência no `map` do aviso → `mapWithKeys` | recusada: estilo, não excesso (-1 linha) | `RoleResource.php` |
 
 ## Despachos
 
@@ -112,6 +116,11 @@ Nenhuma classe nova: a feature acrescenta um scope, uma relação e um método e
 | 2 | 7 | `fw-adversario-ct` — rodada 1 | não exposto pelo host | `01`, `02`, código | 34 achados (ADV-01..ADV-34) + ADV-35 não se aplica | 63k tokens · 2,8 min | todos fechados no `04` pela derivação (retomada 2) |
 | 3 | 7 | `fw-adversario-ct` — rodada 2 (última) | não exposto pelo host | `01`, `02`, código | 3 achados novos (ADV-36..ADV-38) + ADV-39 de registro | 60k tokens · 1,7 min | fechados no `04` (retomada 3); CT-19 sem nova rodada — limite de 2 rodadas |
 | 4 | impl. | `fw-executor-ct` — testes do `04` | não exposto pelo host | `01`, `03`, conversa | 25, depois 41 testes verdes; nenhum vermelho (b) | 158k + 209k tokens · 4,4 + 3,4 min | arquivos conferidos por `git status`; execução refeita pela sessão |
+| 5 | 9 | `/code-review high main...HEAD` (skill, sub-agente isolado) | não exposto pelo host | conversa | 9 achados (CR-01..CR-09) | 86k tokens · 2,4 min | CR-01 reproduzido pelo CT-20 vermelho antes da correção |
+| 6 | 9 | `fw-revisor-diff` — passe de eixos, sem `wikis/` | não exposto pelo host | `01`, `03`, conversa | 3 achados (RD-01..RD-03), 6 eixos sem achado | 56k tokens · 3,0 min | `git status --porcelain` vazio antes e depois; RD-01 convergente com CR-01 |
+| 7 | 9 | `codex exec --yolo` — revisor independente pedido pelo mantenedor | codex-cli 0.163.0 (modelo não exposto) | wiki, conversa | 2 achados (CX-01 = CR-01/RD-01) | — | convergente; nenhum arquivo alterado |
+| 8 | 10 | `codex exec --yolo` — roteiro `wikis/atualizacoes/v0.53.2.md` e a cópia em `agentes-e-skills.md` | codex-cli 0.163.0 | conversa | roteiro + cópia; `RoteiroDeAtualizacaoTest` e `ChecklistDeReleaseTest` 238 (235 + 3 pulados) | — | seções e links conferidos pela sessão (só o repositório do kit citado) |
+| 9 | 11 | `fw-qa-gate` — ciclo 1 | claude-opus-5-5 (informado no `06`) | conversa | `06` gravado verbatim; REPROVADO → especificação (2 Major, 6 Minor) | 249k tokens · 27 min | `git status --porcelain` vazio antes e depois; banco descartável alterado pelo gate (papel "vendas" excluído) |
 
 ## Blockers
 

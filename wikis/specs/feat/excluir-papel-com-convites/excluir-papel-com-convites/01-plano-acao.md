@@ -31,6 +31,7 @@
 | P-07 | Papel pelo rótulo no aviso | 3 | — |
 | P-08 | Encerrados saem sem exigir permissão de convite | 2 | — |
 | P-09 | Exclusão atômica; convite pendente na limpeza não sai | 2 | — |
+| P-10 | Sem permissão de convite, o aviso manda pedir a quem administra | 3 | — |
 
 ## Objetivo
 
@@ -83,9 +84,9 @@ Nenhuma rota nova.
 
 | Tela / Componente | Tipo | Rota | Interação do usuário | Depende de JS? |
 |---|---|---|---|---|
-| Lista de papéis — ação Excluir da linha | Filament | `/admin/roles` | exclui um papel e vê o aviso de recusa | Não |
-| Lista de papéis — exclusão em massa | Filament | `/admin/roles` | seleciona papéis, exclui e vê o aviso de recusa | Não |
-| Edição do papel — ação Excluir do cabeçalho | Filament | `/admin/roles/{record}/edit` | exclui e vê o aviso de recusa | Não |
+| Lista de papéis — ação Excluir da linha | Filament | `/admin/shield/roles` *(alterado em 2026-11-17: QA-02 do quality gate)* | exclui um papel e vê o aviso de recusa | Não |
+| Lista de papéis — exclusão em massa | Filament | `/admin/shield/roles` *(alterado em 2026-11-17: QA-02 do quality gate)* | seleciona papéis, exclui e vê o aviso de recusa | Não |
+| Edição do papel — ação Excluir do cabeçalho | Filament | `/admin/shield/roles/{record}/edit` *(alterado em 2026-11-17: QA-02 do quality gate)* | exclui e vê o aviso de recusa | Não |
 
 ## Variáveis de Ambiente
 
@@ -107,7 +108,7 @@ Nenhum.
 | O que é adiado, e por qual gatilho? | nada |
 | O que é memoizado por request? | nada |
 | O que é cacheado entre requests? | nada |
-| Custo do caminho principal | +1 consulta de pendentes por papel no aviso, +1 no `deleting`; com histórico, +1 consulta e 1 `DELETE` + 1 auditoria por convite encerrado |
+| Custo do caminho principal | +1 consulta de pendentes por papel no aviso, +1 no `delete()` do model *(alterado em 2026-11-17: QA-02 do quality gate)*; com histórico, +1 consulta e 1 `DELETE` + 1 auditoria por convite encerrado |
 
 ## Impacto em Features Existentes
 
@@ -170,8 +171,9 @@ Nenhuma.
 - `DeleteAction` da linha e da edição: `->before(fn (DeleteAction $action, Role $record) => self::recusarSeHaConvitePendente($action, [$record]))`
 - `DeleteBulkAction`: `->before(fn (DeleteBulkAction $action, Collection $records) => self::recusarSeHaConvitePendente($action, $records))`
 - O corpo diz o que fazer: "Revogue os convites pendentes na tela de Convites e tente de novo."
-- **Atende**: RQ-01, RQ-02, RQ-03, RQ-04, P-02, P-03, P-04, P-06, P-07
-- **Logs**: o do passo 2 cobre a recusa; o aviso não loga de novo
+- **Atende**: RQ-01, RQ-02, RQ-03, RQ-04, P-02, P-03, P-04, P-06, P-07, P-10
+- **Logs**: `Log::channel('autenticacao')->warning('[RoleResource@recusarSeHaConvitePendente] Exclusão recusada: papel com convite pendente | papeis: {ids}', ['pendentes_por_papel' => [...], 'operador_id' => ...])` — a recusa pela tela para antes de `Role::delete()`, que só loga a recusa por fora dela *(alterado em 2026-11-17: QA-03 do quality gate)*
+- Sem `ViewAny` de convite, a última frase do aviso manda pedir a quem administra os convites, não revogar "na tela de Convites" (P-10) *(alterado em 2026-11-17: QA-04 do quality gate)*
 
 ## Filosofia de Implementação
 
@@ -190,6 +192,7 @@ Nenhuma.
 - [ ] testes da feature (Kit e Tenancy)
 - [ ] `vendor/bin/pest --parallel --tia` contra a baseline
 - [ ] `/code-review high main...HEAD` + passe de eixos (step 9)
+- [ ] `vendor/bin/phpstan analyse` (level 8, gate do CI) *(alterado em 2026-11-17: QA-01 do quality gate)*
 
 ## Commits
 - `:bug: fix(papeis): excluir papel com convite pendente recusa com aviso; convites encerrados saem junto`

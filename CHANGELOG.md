@@ -19,7 +19,7 @@ migration e sem default mudado. Wiki: `wikis/specs/feat/excluir-papel-com-convit
 - Convites **Aceitos, Recusados ou Expirados** não bloqueiam mais a exclusão: saem junto com o papel,
   um a um, e cada remoção fica em `/infra/audits`.
 - Quem pode excluir papéis mas não pode ver convites (`ViewAny:Convite`) vê só a quantidade de
-  convites pendentes, sem e-mail.
+  convites pendentes, sem e-mail, e o aviso pede que procure quem administra os convites.
 - A regra mora em `Role::delete()` e é atômica: se qualquer passo falhar — inclusive um convite
   criado ou reenviado no meio —, nada muda; o papel mantém permissões, usuários e convites. Antes
   disso, o `deleting` do spatie já desligava permissões e usuários do papel antes de o banco recusar.

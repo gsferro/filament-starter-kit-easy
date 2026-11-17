@@ -9,9 +9,9 @@ A feature não cria página, widget nem componente: muda três ações existente
 
 | Ponto | Origem | O que o cliente alcança | Fronteira |
 |---|---|---|---|
-| `DeleteAction` da linha (`app/Filament/Admin/Resources/Roles/RoleResource.php:DeleteAction:297`) | framework | monta a ação com a chave de um registro da tabela | registro resolvido pela query da tabela; `RolePolicy::delete()`; recusa por convite pendente no `before` e no `deleting` |
-| `DeleteBulkAction` (`app/Filament/Admin/Resources/Roles/RoleResource.php:DeleteBulkAction:310`) | framework | envia as chaves selecionadas | `authorizeIndividualRecords('delete')`; recusa por convite pendente no `before` e no `deleting` |
-| `DeleteAction` da edição (`app/Filament/Admin/Resources/Roles/Pages/EditRole.php:DeleteAction:31`) | framework | o registro da página | `RolePolicy::delete()`; recusa no `before` e no `deleting` |
+| `DeleteAction` da linha (`app/Filament/Admin/Resources/Roles/RoleResource.php:DeleteAction:297`) | framework | monta a ação com a chave de um registro da tabela | registro resolvido pela query da tabela; `RolePolicy::delete()`; recusa por convite pendente no `before` e no `Role::delete()` *(alterado em 2026-11-17: QA-02 do quality gate)* |
+| `DeleteBulkAction` (`app/Filament/Admin/Resources/Roles/RoleResource.php:DeleteBulkAction:310`) | framework | envia as chaves selecionadas | `authorizeIndividualRecords('delete')`; recusa por convite pendente no `before` e no `Role::delete()` *(alterado em 2026-11-17: QA-02 do quality gate)* |
+| `DeleteAction` da edição (`app/Filament/Admin/Resources/Roles/Pages/EditRole.php:DeleteAction:31`) | framework | o registro da página | `RolePolicy::delete()`; recusa no `before` e no `Role::delete()` *(alterado em 2026-11-17: QA-02 do quality gate)* |
 
 Greps sobre o código que a feature escreve (2026-11-16, antes da implementação):
 

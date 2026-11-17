@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -884,4 +885,59 @@ it('[CT-20] uma intercorrência no meio da exclusão não deixa nada pela metade
 })->with([
     'Pendente criado no meio (a FK recusa o DELETE)'   => ['criado'],
     'Expirado reenviado no meio (Pendente na limpeza)' => ['reenviado'],
+]);
+
+/*
+|--------------------------------------------------------------------------
+| R12 — A saída indicada no aviso é uma que o operador alcança
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-21] o aviso de recusa indica a saída conforme a permissão de ver convites', function (bool $veConvites): void {
+    $papel = papelDeSuporteParaExclusao();
+    $carla = ofertaPara('pend.carla@example.com', papel: 'suporte');
+
+    $operador = usuarioDoKit('admin', 'operador.rui@example.com');
+    $admin    = papelDoKit('admin');
+
+    // Os nomes exatos existem no banco semeado (`findByName` lança se faltar).
+    Permission::findByName('ViewAny:Convite', 'web');
+    Permission::findByName('Delete:Convite', 'web');
+
+    // A permissão vizinha é cruzada ao contrário nas duas linhas.
+    if ($veConvites) {
+        $admin->givePermissionTo('ViewAny:Convite');
+        $admin->revokePermissionTo('Delete:Convite');
+    } else {
+        $admin->revokePermissionTo('ViewAny:Convite');
+        $admin->givePermissionTo('Delete:Convite');
+    }
+
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+    $operador = $operador->fresh();
+
+    expect($operador->can('ViewAny:Convite'))->toBe($veConvites)
+        ->and($operador->can('Delete:Convite'))->toBe(! $veConvites)
+        ->and($operador->can('Delete:Role'))->toBeTrue();
+
+    $this->actingAs($operador);
+
+    excluirPapelPeloCaminho('linha', [$papel]);
+
+    expect(papelExisteNoBanco($papel))->toBeTrue()
+        ->and(conviteExisteNoBanco($carla))->toBeTrue();
+
+    $texto = mb_strtolower(textoDosAvisosDeExclusao());
+
+    if ($veConvites) {
+        expect($texto)->toContain('tela de convites');
+
+        return;
+    }
+
+    expect($texto)->toContain('quem administra os convites')
+        ->and($texto)->not->toContain('tela de convites');
+})->with([
+    'com ViewAny:Convite e sem Delete:Convite' => [true],
+    'sem ViewAny:Convite e com Delete:Convite' => [false],
 ]);

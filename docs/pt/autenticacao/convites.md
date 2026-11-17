@@ -120,7 +120,8 @@ a exclusão em massa:
 - Na exclusão em massa, se **um** papel da seleção tem convite pendente, **nenhum** sai, e o aviso
   diz quais papéis estão bloqueados.
 - Os e-mails só aparecem para quem pode ver os convites (`ViewAny:Convite`). Quem só pode excluir
-  papéis vê a quantidade — "2 convites pendentes" —, sem e-mail.
+  papéis vê a quantidade — "2 convites pendentes" —, sem e-mail, e o aviso pede que procure quem
+  administra os convites, já que a tela de Convites não está ao alcance dela.
 - Com organizações, os convites de **todas** elas contam: o banco recusa por qualquer convite.
 - A exclusão é atômica: se qualquer passo falhar — inclusive um convite criado ou reenviado no meio
   dela —, nada muda, e o papel mantém permissões, usuários e convites.

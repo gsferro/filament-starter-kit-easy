@@ -124,7 +124,8 @@ action and the bulk delete:
 - In a bulk delete, if **one** selected role has a pending invitation, **none** is deleted, and the
   warning names the blocked roles.
 - E-mails are only shown to whoever can view invitations (`ViewAny:Convite`). Someone who can only
-  delete roles sees the count — "2 convites pendentes" — and no e-mail.
+  delete roles sees the count — "2 convites pendentes" — and no e-mail, and the warning tells them
+  to ask whoever manages invitations, since the Convites screen is out of their reach.
 - With organizations, invitations from **all** of them count: the database refuses because of any
   invitation.
 - The deletion is atomic: if any step fails — including an invitation created or resent in the

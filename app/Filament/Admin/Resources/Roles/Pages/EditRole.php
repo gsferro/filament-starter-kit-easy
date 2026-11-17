@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Filament\Admin\Resources\Roles\Pages;
 
 use App\Filament\Admin\Resources\Roles\RoleResource;
+use App\Models\Role;
 use App\Support\Paineis;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -29,7 +29,7 @@ class EditRole extends EditRecord
     {
         return [
             DeleteAction::make()
-                ->before(fn (DeleteAction $action, Model $record) => RoleResource::recusarSeHaConvitePendente($action, [$record])),
+                ->before(fn (DeleteAction $action, Role $record) => RoleResource::recusarSeHaConvitePendente($action, [$record])),
         ];
     }
 

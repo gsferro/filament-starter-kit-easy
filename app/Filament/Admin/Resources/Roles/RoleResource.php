@@ -295,7 +295,7 @@ class RoleResource extends Resource
                 self::acaoDeUsuarios(),
                 EditAction::make(),
                 DeleteAction::make()
-                    ->before(fn (DeleteAction $action, Model $record) => self::recusarSeHaConvitePendente($action, [$record])),
+                    ->before(fn (DeleteAction $action, Role $record) => self::recusarSeHaConvitePendente($action, [$record])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -662,14 +662,17 @@ class RoleResource extends Resource
     public static function recusarSeHaConvitePendente(Action $action, iterable $papeis): void
     {
         $podeVerEmails = auth()->user()?->can('viewAny', Convite::class) ?? false;
+        $bloqueados    = [];
 
         $linhas = collect($papeis)
-            ->map(function (Role $papel) use ($podeVerEmails): ?string {
+            ->map(function (Role $papel) use ($podeVerEmails, &$bloqueados): ?string {
                 $emails = $papel->convites()->pendentes()->orderBy('email')->pluck('email');
 
                 if ($emails->isEmpty()) {
                     return null;
                 }
+
+                $bloqueados[$papel->id] = $emails->count();
 
                 $quem = $podeVerEmails
                     ? $emails->take(5)->implode(', ').($emails->count() > 5 ? ' e mais '.($emails->count() - 5) : '')
@@ -683,10 +686,19 @@ class RoleResource extends Resource
             return;
         }
 
+        // A recusa pela tela para antes de `Role::delete()`, que é quem loga a recusa por fora dela.
+        Log::channel('autenticacao')->warning(
+            '[RoleResource@recusarSeHaConvitePendente] Exclusão recusada: papel com convite pendente | papeis: '.implode(',', array_keys($bloqueados)),
+            ['pendentes_por_papel' => $bloqueados, 'operador_id' => auth()->id()],
+        );
+
         Notification::make()
             ->danger()
             ->title('Papel com convite pendente')
-            ->body($linhas->implode('<br>').'<br>Revogue os convites pendentes na tela de Convites e tente de novo.')
+            // Quem não vê convites não alcança a tela de Convites: a saída é pedir a quem administra (P-10).
+            ->body($linhas->implode('<br>').'<br>'.($podeVerEmails
+                ? 'Revogue os convites pendentes na tela de Convites e tente de novo.'
+                : 'Peça a quem administra os convites que os revogue e tente de novo.'))
             ->persistent()
             ->send();
 

@@ -71,6 +71,7 @@
 | P-07 | No aviso, cada papel bloqueado aparece pelo rótulo que a tela de papéis usa como título do registro | step 7 — Q?1 da `feature-test-design` (Q3) | 2026-11-16 | RQ-03, P-03 | vigente |
 | P-08 | Os convites encerrados saem com o papel para qualquer pessoa autorizada a excluir o papel, sem exigir permissão de excluir convite | step 7 — Q?2 da `feature-test-design` (Q4); leitura literal da resposta a Q2 | 2026-11-16 | RQ-07, RQ-08 | vigente |
 | P-09 | A exclusão do papel é atômica: se qualquer passo falhar (inclusive por um convite criado ou reenviado no meio), nada muda — o papel mantém permissões, usuários e convites encerrados; e um convite que esteja pendente no momento da limpeza nunca é apagado como encerrado | step 9 — CR-01 (`/code-review`), RD-01 (`fw-revisor-diff`) e o revisor `codex`, convergentes | 2026-11-17 | RQ-04, RQ-07, RQ-09 | vigente |
+| P-10 | Para quem não pode ver os convites (`ViewAny` de convite), o aviso de recusa não manda revogar "na tela de Convites", que essa pessoa não alcança: diz para pedir a quem administra os convites que os revogue. Para quem pode ver, a frase continua apontando a tela de Convites | step 11 — QA-04 (`fw-qa-gate`, ciclo 1) | 2026-11-17 | RQ-06, P-06 | vigente |
 | P-05 | Os convites de todas as organizações contam, inclusive com tenancy ligada: o banco recusa por qualquer convite, não só pelos da organização corrente | step 3 — o convite tem escopo de organização no painel `/app`, e a chave estrangeira não | 2026-11-16 | RQ-02, RQ-07 | vigente |
 
 ## Fora de Escopo (declarado)
