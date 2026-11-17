@@ -1,6 +1,6 @@
 # Progresso — Roadmap item 9: excluir um papel que tem convite
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-11-17
 
 **Base do PR**: `main`
 
@@ -77,10 +77,14 @@ Não fatiado — 2026-11-16: 9 RQ vigentes, 19 CT, compactação: sim (a sessão
 
 - **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-11-17
 - **Ciclo**: 2 · **Veredito**: REPROVADO → especificação (QA-10 Major; QA-09, QA-11, QA-12 Minor) · **Data**: 2026-11-17 — QA-10: custo real do `delete()` no `01`; QA-09: três citações das docs; QA-11: PHPStan na Verificação Final; QA-12: nomes dos `it()` de CT-08/CT-14 e o comentário da R5 com "encerrados"
-- **Relatório**: `06-relatorio-qa.md` (ciclo 2; o do ciclo 1 está no histórico do git, commit `7044378b`)
+- **Ciclo**: 3 · **Veredito**: APROVADO COM DÉBITO · **Data**: 2026-11-17 — 0 Blocker, 0 Major; os três Minor (QA-13: citações deslocadas na wiki `diagramas-da-arquitetura`; QA-14: nome do CT-12 de Tenancy; QA-15: despachos dos ciclos 2 e 3) foram corrigidos em seguida, e não aceitos como débito
+- **Relatório**: `06-relatorio-qa.md` (ciclo 3; os dos ciclos 1 e 2 estão no histórico do git, commits `7044378b` e `7e8d45e3`)
+- **Débito** (o que ficou não verificado, por cobertura): J em parte — a suíte Browser não foi rodada pelo gate (a sessão rodou: 254, 202 passaram, 52 pulados, 0 falhas); K2 — sem prova confiável de mutação no Windows (`.ai/rules/testes.md`), o score do `--mutate` (~32 ms por mutante) não vale
 - **Achados e destino**: QA-01 (Major, implementação: PHPStan level 8 com 2 erros — corrigido com `Role $record` no `before`, `phpstan analyse` 0 erros) · QA-02 (Major, especificação: rota `/admin/shield/roles` e a recusa no `delete()`, corrigidos no `01`, `02`, `04`) · QA-03 (log da recusa pela tela — `RoleResource@recusarSeHaConvitePendente`) · QA-04 (P-10 → CT-21 → correção) · QA-05 (`04` alinhado à P-09) · QA-06 (este `03` com evidência e os despachos do step 9) · QA-07 (helper fora do docblock de `ofertaPara()`) · QA-08 (termo "Encerrado" no glossário)
 
 ## Candidatos a Rule
+
+- 2026-11-17 — rota: sessão principal, sem invocar a `requirement-to-rule` — apresentados 0 · gravados 0 · recusados 0 · descartados no gate 0 · poda 0 (os três ciclos do gate: nenhum candidato)
 
 ## Auditoria Pré-Implementação
 
@@ -123,6 +127,9 @@ Nenhuma classe nova: a feature acrescenta um scope, uma relação e um método e
 | 7 | 9 | `codex exec --yolo` — revisor independente pedido pelo mantenedor | codex-cli 0.163.0 (modelo não exposto) | wiki, conversa | 2 achados (CX-01 = CR-01/RD-01) | — | convergente; nenhum arquivo alterado |
 | 8 | 10 | `codex exec --yolo` — roteiro `wikis/atualizacoes/v0.53.2.md` e a cópia em `agentes-e-skills.md` | codex-cli 0.163.0 | conversa | roteiro + cópia; `RoteiroDeAtualizacaoTest` e `ChecklistDeReleaseTest` 238 (235 + 3 pulados) | — | seções e links conferidos pela sessão (só o repositório do kit citado) |
 | 9 | 11 | `fw-qa-gate` — ciclo 1 | claude-opus-5-5 (informado no `06`) | conversa | `06` gravado verbatim; REPROVADO → especificação (2 Major, 6 Minor) | 249k tokens · 27 min | `git status --porcelain` vazio antes e depois; banco descartável alterado pelo gate (papel "vendas" excluído) |
+| 10 | 11 | `fw-qa-gate` — ciclo 2 | claude-opus-5-5 (informado no `06`) | conversa | REPROVADO → especificação (QA-10 Major; QA-09, QA-11, QA-12 Minor) | 231k tokens · 28 min | `git status --porcelain` vazio antes e depois; banco descartável alterado (vendas e suporte excluídos, 7 convites inseridos em analista) |
+| 11 | 11 | `fw-qa-gate` — ciclo 3 | claude-opus-5-5 (informado no `06`) | conversa | `06` gravado verbatim; APROVADO COM DÉBITO (QA-13..QA-15 Minor, corrigidos depois) | 194k tokens · 24 min | `git status --porcelain` vazio antes e depois; banco descartável alterado (vendas excluída) |
+| 12 | 12 | Sem despacho — `requirement-to-rule` não invocada | — | — | os três ciclos do gate declararam "nenhum candidato que passe em *Vale virar rule*" | — | a proposta do ciclo 3 (rodar `citacoes.sh` nas wikis irmãs que citam o arquivo tocado) é passo de reconciliação, não rule |
 
 ## Blockers
 
@@ -135,7 +142,7 @@ Nenhuma classe nova: a feature acrescenta um scope, uma relação e um método e
 
 ## Notas de Implementação
 - O `deleting` do spatie (`HasPermissions::bootHasPermissions()`) desliga permissões e usuários do papel antes de qualquer listener do kit; por isso a regra é o `delete()` sobrescrito
-- Citações de linha que envelheceram com o scope novo, corrigidas: `docs/{pt,en}/autenticacao/convites.md` (`situacao:600`; e `aceitar:619`, `aceitarComoUsuarioExistente:687`, `recusar:752` na forma de continuação, que o `CitacoesDeCodigoTest` não confere — QA-09 do ciclo 2), `app/Providers/Filament/AppPanelProvider.php` e o `04` da wiki `diagramas-da-arquitetura` (`email_verified_at:647`). Já velhas antes desta feature, não mexidas: `app/Models/User.php` e `app/Support/RegistroAberto.php` citam a linha 591 do `Convite.php`, que na `main` já era `'Recusado'`
+- Citações de linha que envelheceram com o scope novo, corrigidas (também as 11 do `01` e do `04` da wiki `diagramas-da-arquitetura`, QA-13 do ciclo 3; as duas de `RegistroPorConvite.php` nessa wiki já estavam erradas antes): `docs/{pt,en}/autenticacao/convites.md` (`situacao:600`; e `aceitar:619`, `aceitarComoUsuarioExistente:687`, `recusar:752` na forma de continuação, que o `CitacoesDeCodigoTest` não confere — QA-09 do ciclo 2), `app/Providers/Filament/AppPanelProvider.php` e o `04` da wiki `diagramas-da-arquitetura` (`email_verified_at:647`). Já velhas antes desta feature, não mexidas: `app/Models/User.php` e `app/Support/RegistroAberto.php` citam a linha 591 do `Convite.php`, que na `main` já era `'Recusado'`
 - Teste manual com Playwright (sem e com tenancy, banco SQLite próprio, drivers padrão de sessão, cache e fila em banco): 18/18 nos dois modos; auditoria com 5 `deleted` de convite em cada. Com `SESSION_DRIVER=file` e `CACHE_STORE=array` o aviso não aparecia na tela — artefato da configuração do teste, não do kit
 - No CT-19, `isset()` sobre o proxy do `test()` do Pest é sempre falso: o arnês guarda o escopo original em `$GLOBALS`
 

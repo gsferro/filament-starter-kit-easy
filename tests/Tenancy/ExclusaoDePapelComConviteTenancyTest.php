@@ -149,7 +149,7 @@ it('[CT-11] o convite Pendente de outra organização também recusa a exclusão
     'exclusão em massa só com o suporte'  => ['massa'],
 ]);
 
-it('[CT-12] os convites mortos das duas organizações somem com o papel, auditados', function (string $caminho): void {
+it('[CT-12] os convites encerrados das duas organizações somem com o papel, auditados', function (string $caminho): void {
     $ana = ofertaPara('ana@example.com', $this->acme, 'suporte', ['aceito_em' => now()]);
     $gil = ofertaPara('gil@example.com', $this->globex, 'suporte', ['expira_em' => now()->subDay()]);
 
