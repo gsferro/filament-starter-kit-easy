@@ -6,131 +6,118 @@
 > Independência: sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa
 > Cobertura: 10 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
 
-## Veredito — Ciclo 1
+## Ciclo 1 (resumo)
 
-**REPROVADO → especificação** (destino de maior prioridade entre os Majors; QA-01 também reprova, destino implementação)
+REPROVADO → especificação, com QA-01 a QA-08. Conferido neste ciclo:
 
-- Blocker: 0 · Major: 2 · Minor: 6 · Cosmético: 0
-- Não verificadas: J (parcial, suíte Browser não reexecutada) e K (K2 sem prova confiável). As causas estão em *Não Verificado*
-- `RQ` abertas: nenhuma. As perguntas Q3 e Q4 seguem abertas, com P-07 e P-08 vigentes (forma prevista; não é achado)
-- Ambiente: app em `http://127.0.0.1:8150` (SQLite descartável) · Pest 5.0.5 · PCOV e Xdebug carregados · Playwright via Node (o MCP não foi usado) · Boost MCP indisponível (falha de conexão)
-- Banco alterado por este gate: o papel **"vendas"** foi excluído pelo `operador@manual.test`, e com ele os convites expirado (eva) e recusado (fabi). As duas recusas de "suporte" (linha e massa com "analista") e a recusa na edição pelo master não mudaram nada.
+- **Fechados no código e no app**: QA-01 (PHPStan com 0 erros), QA-03 (3 linhas `[RoleResource@recusarSeHaConvitePendente]` no log), QA-04 (o operador lê "Peça a quem administra os convites…"), QA-07 (o helper ficou fora do docblock de `ofertaPara()`).
+- **Fechados na wiki**: QA-02 e QA-05 (os greps de `/admin/roles` e de "lacuna declarada" da concorrência não acham mais nada), QA-06 (o `03` tem `[x]` com evidência e os despachos do step 9).
+- **Fechado em parte**: QA-08. O termo "Encerrado" entrou no glossário, mas os nomes de teste continuam com "mortos" (ver QA-12).
+- **Fechado em parte**: o resíduo de QA-01. A `Verificação Final` do `03` ainda não tem o item do PHPStan (ver QA-11).
+
+## Veredito — Ciclo 2
+
+**REPROVADO → especificação** (QA-10, Major, destino 1)
+
+- Blocker: 0 · Major: 1 · Minor: 3 · Cosmético: 0
+- Não verificadas: J (em parte: a suíte Browser não foi rodada de novo) e K (K2 sem prova confiável). As causas estão em *Não Verificado*.
+- `RQ` abertas: nenhuma. Q3 e Q4 continuam abertas com P-07 e P-08 vigentes, que é a forma prevista e não conta como achado.
+- Ambiente:
+  - App em `http://127.0.0.1:8150`, com SQLite descartável e sem tenancy.
+  - Pest 5 e PHPStan level 8.
+  - Playwright via Node. O MCP não foi usado.
+  - Boost MCP indisponível (falha de conexão).
+- Banco alterado por este gate:
+  - O operador excluiu **"vendas"**, e com ela saíram eva e fabi.
+  - O master revogou **carla** e **dani** e depois excluiu **"suporte"**, e com ela saiu ana.aceita.
+  - Foram **inseridos** 7 convites pendentes em "analista" (`a1..a6@qa2.test` e `<img src=x onerror=alert(1)>@qa2.test`). Eles continuam no banco.
+  - Uma chamada `Role::delete()` via tinker em "analista" foi recusada e não mudou nada.
 
 ## Achados
 
-### QA-01: PHPStan level 8 fica vermelho com o diff (gate do CI) · Major · destino 2
+### QA-09: docs pt/en citam três linhas do `Convite.php` que esta feature deslocou · Minor · destino 1
 
-- **Dimensão**: J (regressão de um gate que a `main` mantinha verde)
-- **Relacionado a**: passo 3 do PRD; `.ai/rules/app.md:33` ("PHPStan no level 8 (gate do `composer test`)"); `.github/workflows/ci.yml:45`
-- **Esperado**: level 8 com zero erros, como afirmam o README e a rule. `composer.json` tem `types:check` dentro de `test`
-- **Observado**: 2 erros `argument.type` em código novo
+- **Dimensão**: L2/L5
+- **Relacionado a**: passo 1 do PRD (o `scopePendentes` acrescentou 13 linhas antes de `aceitar()`); `.ai/rules/specs.md` ("vale para citação em QUALQUER arquivo")
+- **Esperado**: a citação do símbolo aponta a linha onde ele está. O `03` (`## Notas de Implementação`) diz que as citações que envelheceram com o scope novo foram corrigidas.
+- **Observado**: em `docs/pt/autenticacao/convites.md` (seção "Sequência: do envio ao aceite") e na seção irmã de `docs/en/autenticacao/convites.md`, só `situacao` foi atualizado. Os outros três continuam com a linha antiga:
+
+  | Citação | Linha citada | Linha real |
+  |---|---|---|
+  | `aceitar` | 606 | 619 |
+  | `aceitarComoUsuarioExistente` | 674 | 687 |
+  | `recusar` | 739 | 752 |
+
+  Na `main`, as três estavam certas. O `CitacoesDeCodigoTest` não pega o caso porque a forma de continuação (`:símbolo:linha`, sem path) fica fora dele.
 - **Repro**:
-  1. `vendor/bin/phpstan analyse --no-progress --memory-limit=4G`
-- **Evidência**: `"errors":2`. `app/Filament/Admin/Resources/Roles/Pages/EditRole.php:32` e `app/Filament/Admin/Resources/Roles/RoleResource.php:298`: *"Parameter #2 $papeis of static method RoleResource::recusarSeHaConvitePendente() expects iterable<App\Models\Role>, array<int, Illuminate\Database\Eloquent\Model> given."*
-- **Destino**: 2 implementação
-- **Ação exigida**: corrigir o tipo na origem (o `before` recebe `Model $record`), sem baseline nem ignore. Incluir `phpstan analyse` na `## Verificação Final` do `01` e do `03`, porque nenhum dos dois o lista.
+  1. `grep -n "function aceitar\|function recusar" app/Models/Convite.php` → 619, 687, 752
+  2. `grep -rn ":aceitar:606\|:recusar:739" docs/` → pt e en
+- **Evidência**: a saída acima. `git show main:app/Models/Convite.php | grep -n "function aceitar"` → 606, o que confirma que o defeito entrou com este diff.
+- **Destino**: 1
+- **Ação exigida**: corrigir as três citações em `docs/pt/autenticacao/convites.md` e em `docs/en/autenticacao/convites.md`, e corrigir a nota do `03` que diz "corrigidas".
 
-### QA-02: PRD e ADR descrevem rota e mecanismo que o código não tem · Major · destino 1
+### QA-10: o custo do `delete()` no PRD não é o do código · Major · destino 1
 
-- **Dimensão**: L3
-- **Relacionado a**: `## Superfície de UI` e `## Modelo de Execução` do `01`; `## Superfície Livewire` do `02`; D1
-- **Esperado**: o texto bate com o código ou leva a marca `*(alterado em …)*`
-- **Observado**:
-  - (a) A rota é `/admin/shield/roles` (`php artisan route:list --path=admin --name=roles`). O `01` diz `/admin/roles` e `/admin/roles/{record}/edit`; `GET /admin/roles` responde 404. As docs pt/en dizem `/admin/shield/roles`, que está certo.
-  - (b) O `02` diz três vezes "recusa por convite pendente no `before` e no `deleting`". Não existe recusa em `deleting`: ela está no `delete()` sobrescrito (`app/Models/Role.php:68`), e o D1 do `01` já foi marcado como alterado. O `01:110` ainda diz "+1 no `deleting`".
+- **Dimensão**: L3 (e E)
+- **Relacionado a**: `01-plano-acao.md`, `## Modelo de Execução`, linha "Custo do caminho principal"; P-09 e D2
+- **Esperado**: o PRD diz "+1 no `delete()` do model; com histórico, +1 consulta e 1 `DELETE` + 1 auditoria por convite encerrado".
+- **Observado**: o `Role::delete()` atual, reinstalado pela P-09, faz 3 consultas antes de decidir:
+  - a trava do papel;
+  - a leitura travada de todos os convites;
+  - a contagem de pendentes.
+
+  Depois, para cada convite encerrado, faz uma releitura `exists` além do `DELETE` e da auditoria. A linha só ganhou a troca de palavra do QA-02 (`deleting` → `delete()`). O número ficou o de antes da P-09.
 - **Repro**:
-  1. `grep -rn "/admin/roles" wikis/specs/feat/excluir-papel-com-convites/excluir-papel-com-convites/` → `01-plano-acao.md:86,87,88`, `04-casos-de-teste.md:29,74`
-  2. `grep -rn "deleting" …/excluir-papel-com-convites/` → `02-decisoes-arquiteturais.md:12,13,14`, `01-plano-acao.md:110`, `04-casos-de-teste.md:72` (este cita o `02`)
-- **Evidência**: as saídas acima, mais o 404 em `/admin/roles` no Playwright
-- **Destino**: 1 especificação
-- **Ação exigida**: corrigir e marcar a data em `01:86-88`, `01:110`, `02:12-14`, `04:29`, `04:72` e `04:74`.
+  1. `DB_CONNECTION=sqlite DB_DATABASE={banco descartável} php artisan tinker --execute '$r=App\Models\Role::findByName("analista"); DB::enableQueryLog(); $r->delete(); foreach(DB::getQueryLog() as $q){echo $q["query"],PHP_EOL;}'` sobre um papel com convite pendente
+- **Evidência**: três consultas, `select * from "roles" … limit 1`, `select * from "convites" where "convites"."role_id" = ?` e `select count(*) … "expira_em" > ?`, com resultado `false`. O laço de releitura está no `foreach` de `Role::delete()`. `grep -rn "+1 no" wikis/specs/feat/excluir-papel-com-convites/excluir-papel-com-convites/` só acha o `01`, sem cópia em outro arquivo.
+- **Destino**: 1
+- **Ação exigida**: reescrever a célula no `01` com o custo real (3 consultas por exclusão; por convite encerrado, 1 releitura + 1 `DELETE` + 1 auditoria) e marcar `*(alterado em …)*`.
 
-### QA-03: a recusa pela tela não gera log, ao contrário do que o PRD promete · Minor · destino 2
-
-- **Dimensão**: D
-- **Relacionado a**: passo 3 do PRD ("Logs: o do passo 2 cobre a recusa; o aviso não loga de novo"); RQ-02
-- **Esperado**: toda recusa grava `[Role@delete] Exclusão recusada… | papel: {id}` no canal `autenticacao`
-- **Observado**: o `before()` chama `$action->cancel()` antes de `Role::delete()`. Por isso, nos três caminhos da tela, a recusa não deixa nenhuma linha no log. Só a exclusão por fora da tela registra a recusa.
-- **Repro**:
-  1. Entrar como `operador@manual.test` e excluir "Suporte" pela linha; depois, em massa, "Suporte" + "Analista"
-  2. `grep "Role@delete\] Exclus" storage/logs/autenticacao-*.log | wc -l` → `0`
-- **Evidência**: 0 linhas depois das duas recusas (01:31–01:32 UTC). O teste manual anterior da sessão (00:44–00:55) também não deixou nenhuma. As linhas de sucesso existem e estão no padrão, sem PII: `[Role@delete] Convites encerrados apagados com o papel | papel: 6 {"role_id":6,"convites":2}`
-- **Destino**: 2 implementação
-- **Ação exigida**: registrar a recusa no `recusarSeHaConvitePendente()` (com `role_id` e contagem, sem e-mail), ou decidir no `01` que a recusa da tela não loga e corrigir o passo 3.
-
-### QA-04: o aviso manda revogar numa tela que o operador não alcança · Minor · destino 1
-
-- **Dimensão**: F (e o eixo "estado de erro sem saída" da I, para essa persona)
-- **Relacionado a**: P-06, RQ-06, CT-13/CT-18 (o `04:500` permite o texto)
-- **Esperado**: a mensagem diz como resolver
-- **Observado**: o operador sem `ViewAny:Convite` lê "Revogue os convites pendentes na tela de Convites e tente de novo.", mas não tem Convites no menu e não pode revogar
-- **Repro**:
-  1. Entrar como `operador@manual.test` e excluir "Suporte" pela linha
-  2. O aviso aparece com essa frase, e a barra lateral mostra só "Papéis"
-- **Evidência**: captura `op-recusa-linha.png` (scratchpad do gate); `.fi-no-notification` contém `<strong>Suporte</strong>: 2 convites pendentes<br>Revogue…`
-- **Destino**: 1 especificação
-- **Ação exigida**: decidir o texto para quem não vê convites, como uma `P-nn` nova (por exemplo, "peça a quem administra os convites"). Depois, CT no `04` com `Origem` nessa `P-nn`, e só então a correção.
-
-### QA-05: o `04` ainda trata a concorrência como lacuna e lista P-01…P-08 · Minor · destino 1
-
-- **Dimensão**: L5 (consequência invalidada ainda descrita)
-- **Observado**: `04:32` ("corrida entre checagem e exclusão (lacuna declarada)"), `04:668` ("Concorrência: lacuna declarada… SQLite não sustenta") e `04:54` ("toda P-nn vigente (P-01…P-08)"). Depois disso a P-09 entrou, e a R11/CT-20 cobre a atomicidade.
-- **Repro**: `sed -n '32p;54p;668p' …/04-casos-de-teste.md`
-- **Ação exigida**: alinhar as três linhas à R11/CT-20 e à P-09.
-
-### QA-06: o `03` não registra o estado real da entrega · Minor · destino 1
+### QA-11: a `Verificação Final` do `03` não registra o PHPStan · Minor · destino 1
 
 - **Dimensão**: L6
-- **Observado**:
-  - Os 5 itens dos passos e os 15 da `## Verificação Final` estão todos `[ ]`, com os dois commits feitos e "Estado: em revisão". Não há nenhuma alegação que se possa conferir. O `checkbox-sem-evidencia.sh` dá exit 0 só porque não existe `[x]`.
-  - `## Testes` (`03:19`) não menciona o CT-20.
-  - `## Despachos` não tem os disparos do step 9 (`/code-review`, `fw-revisor-diff`, `codex`) que a `## Revisão do Diff` cita na linha CR-01/RD-01/CX-01.
-- **Repro**: `grep -c '^- \[ \]' …/03-progresso.md` → 20; `grep -c '\[x\]' …/03-progresso.md` → 0
-- **Ação exigida**: fechar cada item com ` — {evidência}`, ou deixá-lo aberto e dizer por quê; acrescentar o CT-20 e as três linhas de despacho do step 9 com `Custo` (o valor reportado ou `—`).
+- **Relacionado a**: ação exigida do QA-01 do ciclo 1 ("Incluir `phpstan analyse` na `## Verificação Final` do `01` e do `03`")
+- **Observado**: o `01` ganhou o item. No `03`, o PHPStan só aparece na prosa de `## Quality Gate`, sem checkbox nem evidência na `## Verificação Final`.
+- **Repro**: `grep -n -i phpstan …/03-progresso.md` → só a linha de `## Quality Gate`
+- **Evidência**: `vendor/bin/phpstan analyse --no-progress --memory-limit=4G` → `{"result":"passed","errors":0}` (reproduzido por este gate).
+- **Ação exigida**: acrescentar `- [x] vendor/bin/phpstan analyse — 0 erros, {data}` à `## Verificação Final` do `03`.
 
-### QA-07: o novo helper descolou o docblock de `ofertaPara()` · Minor · destino 2
+### QA-12: os nomes de teste de CT-08 e CT-14 ainda dizem "mortos" · Minor · destino 1
 
-- **Dimensão**: L (documentação de código no diff)
-- **Observado**: `apagarPapelPelaQuery()` foi inserido entre o docblock de `ofertaPara()` (a explicação da correção CONDICIONAL e o `@param array<string, mixed> $atributos`) e a função. O helper fica com dois docblocks seguidos, e `ofertaPara()` fica sem nenhum.
-- **Repro**: `sed -n 1175,1196p tests/Pest.php`
-- **Ação exigida**: mover o helper para fora do par docblock/função.
-
-### QA-08: o termo "encerrado" foi decidido na feature e não está no glossário · Minor · destino 1
-
-- **Dimensão**: L7
-- **Observado**: "encerrados" (aceito, recusado ou expirado) é termo de P-08, P-09 e do `01:39`, e entra na UI do domínio via docs e CHANGELOG ("Aceitos, Recusados ou Expirados"). Não há entrada em `wikis/glossario.md`. O `04` usa ainda "mortos" como sinônimo.
-- **Repro**: `grep -n -i "encerrad" wikis/glossario.md` → nada
-- **Ação exigida**: registrar o termo no glossário, com "Não confundir com: Expirado".
+- **Dimensão**: L7 (e o título no L1)
+- **Relacionado a**: QA-08 do ciclo 1; glossário "Encerrado"; R5
+- **Observado**: o `04` passou a "encerrados" nos títulos de CT-08 e CT-14, mas os `it()` correspondentes em `tests/Kit/ExclusaoDePapelComConviteTest.php` e o comentário da R5 no arquivo continuam com "mortos". O título do teste diverge do título do Gherkin.
+- **Repro**: `grep -n "mortos" tests/Kit/ExclusaoDePapelComConviteTest.php` → `[CT-08] … convites mortos dele …` e `[CT-14] … audita os mortos dos dois`
+- **Ação exigida**: alinhar os nomes dos `it()` e o comentário da R5 ao termo do glossário, como no `04`.
 
 ## Dimensões
 
 | # | Dimensão | Status | Observação |
 |---|----------|--------|------------|
-| A | Cobertura do requisito | ✅ | `rastreabilidade.sh` exit 0; sem `07-tickets/` (não fatiado, com justificativa no `03`). O `git diff` de cada passo confere: passo 1 (`Convite::scopePendentes`), 2 (`Role::delete`/`convites`), 3 (`RoleResource`/`EditRole`). No app: RQ-01..RQ-04, RQ-07 e P-02/P-03/P-06/P-07/P-08 reproduzidos |
-| B | Fronteiras e dados | ✅ | validade × agora em 3 valores (CT-01) e teto de 5 (CT-05) verdes; e-mail e rótulo passam por `e()` no corpo HTML (`RoleResource.php`); validade nula = Expirado (CT-01) |
-| C | Matriz de permissão | ✅ | master: e-mails (edição, no app); operador com `Delete:Role` e sem `ViewAny:Convite`: só a contagem (linha e massa, no app) e exclusão dos encerrados (P-08, "vendas" no app); edição sem `Update:Role` fica inacessível ao operador, e a célula está coberta por CT-13 com a persona `admin`. A policy não mudou |
-| D | Observabilidade | ⚠️ | QA-03. O log de sucesso está no canal certo, com prefixo e context, e sem PII |
-| E | Performance | ✅ | uma consulta `pluck` por papel selecionado no aviso, linear na seleção e não nas linhas da tabela (CR-04 rejeitado com motivo); `delete()` com uma releitura por convite encerrado, aceitável para histórico |
-| F | UX de erro | ⚠️ | QA-04. Há título e corpo em pt, o que bloqueou e o que fazer, sem detalhe interno; nenhum 4xx/5xx nem erro de console nas ações |
-| G | Tema e cor | ✅ | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`); nível 1 exit 0 (diff só PHP); nível 3: capturas claro e escuro legíveis (título branco e corpo `oklch(0.705…)` sobre `oklch(0.21…)`) |
-| H | Acessibilidade | ✅ | axe (vendor do `pest-plugin-browser`) nos dois temas sem violação no aviso, que tem `role="alert"`; o foco volta ao botão Excluir. Violações pré-existentes da tabela (`empty-table-header`, `link-name`, `heading-order`) estão fora do diff |
-| I | Segurança da superfície nova | ✅ | coberto pelo step 9, `## Revisão do Diff` do `03` (10 achados, 3 rejeitados). Além dele: sem rota nova nem `can:` faltando; sem mass assignment; e-mail de terceiro escondido sem `ViewAny:Convite` (no app); escape `e()`; registro resolvido pela query da tabela, não pelo id do cliente |
-| J | Regressão adjacente | ⚠️ ⏭️ | `pest --parallel --processes=3 --tia --exclude-testsuite=Browser`: 6056 testes, 6053 passaram, 3 pulados, 0 falhas (TIA caiu para execução direta). Convites e papéis da ancestral: 246/246; CT-12 da `phpstan-nivel-8` verde por D4. QA-01 (PHPStan). Browser não reexecutado |
-| K | Adequação da suíte | ⏭️ | K1 `k1-oraculo-fraco.sh` exit 1: a única linha (`ConviteTest.php:289`, `assertDatabaseMissing` por PK na revogação) é rejeitada, porque é exclusão física e a PK é o oráculo certo. K2 sem prova confiável (ver *Não Verificado*). Revisão adversarial do `04` feita em 2 rodadas |
-| L | Consistência documental | ⚠️ | L1 `ids-ct.sh` exit 0 (46 testes = 46 linhas de Exemplos; cabeçalho 20/11/65/0 conferido por `grep -c`); L2 `citacoes.sh` exit 0; L3 QA-02; L4 `conformidade-rules.sh` exit 0, filacheck 17/17 e pint ok; L5 QA-05 (docs pt × en × CHANGELOG coerentes e números do README conferidos: 217/255 arquivos, `SiteDeDocumentacaoTest` verde); L6 `checkbox-sem-evidencia.sh` exit 0 e QA-06; L7 QA-08; L8 n/a (sem `08`, `Roteiro manual: não` no `03`) |
+| A | Cobertura do requisito | ✅ | `rastreabilidade.sh` exit 0. Sem `07-tickets/` (não fatiado, com justificativa no `03`). `git diff` por passo confere. No app: RQ-01..RQ-04, RQ-06 (revogar carla e dani na tela de Convites e excluir "suporte"), RQ-07, RQ-08 (5 `deleted` de `Convite` em `audits`, com e-mail, `role_id` e `convidado_por_id`), P-02, P-03, P-04 ("e mais 2" com 7 pendentes), P-06, P-07, P-08 e P-10 |
+| B | Fronteiras e dados | ✅ | Um e-mail `<img src=x onerror=alert(1)>@qa2.test` gravado direto no banco aparece escapado no aviso (0 `<img>` no nó, nenhum dialog). Com 7 pendentes, o aviso mostra 5 e "e mais 2" |
+| C | Matriz de permissão | ✅ | Master: e-mails na edição. Operador sem `ViewAny:Convite`: contagem na linha e na massa, e exclusão de "vendas" com os encerrados (P-08). A policy não mudou |
+| D | Observabilidade | ✅ | 3 recusas pela tela → 3 linhas `[RoleResource@recusarSeHaConvitePendente]` no canal `autenticacao`, com `pendentes_por_papel` e `operador_id` e sem e-mail. As linhas de sucesso `[Role@delete]` têm `role_id` e contagem. Sem PII |
+| E | Performance | ✅ | O aviso faz uma consulta por papel selecionado. O `delete()` faz 3 consultas + 3 por convite encerrado, linear e aceitável. A divergência com o PRD está em QA-10 |
+| F | UX de erro | ✅ | O aviso diz o que bloqueou e a saída alcançável para cada persona (P-10). Sem 4xx/5xx nem erro de console |
+| G | Tema e cor | ✅ | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`). Nível 1: `dark-mode.sh` sobre o diff, exit 0. Nível 3: capturas no escuro (master e operador) e no claro, legíveis: título `rgb(255,255,255)`, corpo `oklch(0.705…)` sobre `oklch(0.21…)` |
+| H | Acessibilidade | ✅ | axe (vendor do `pest-plugin-browser`) escopado ao aviso nos dois temas: só `heading-order` (moderate) no markup da notificação do Filament, fora do diff. `role="alert"`. O foco volta ao botão Excluir |
+| I | Segurança da superfície nova | ✅ | Coberta pelo step 9, `## Revisão do Diff` do `03` (10 achados, 3 rejeitados). Além dele: escape do e-mail provado no app, sem rota nova, sem mass assignment, registro resolvido pela query da tabela |
+| J | Regressão adjacente | ⚠️ ⏭️ | `pest --parallel --processes=3 --tia --exclude-testsuite=Browser`: 6058 testes, 6055 passaram, 3 pulados, 0 falhas (TIA caiu para execução direta). `SiteDeDocumentacao` + `CitacoesDeCodigo` + `RoteiroDeAtualizacao`: 283/283. CT-12 da ancestral verde por D4. Browser não rodado de novo |
+| K | Adequação da suíte | ⏭️ | K1 `k1-oraculo-fraco.sh` exit 1: a única linha (`assertDatabaseMissing` por PK na revogação, em `ConviteTest`) foi rejeitada no ciclo 1 e não reaparece como achado. K2 não verificado. Revisão adversarial do `04` feita em 2 rodadas |
+| L | Consistência documental | ⚠️ | L1 `ids-ct.sh` exit 0: 48 linhas de Exemplos = 41 Kit + 7 Tenancy; cabeçalho 21/12/70/0 conferido por `grep -c`. L2 `citacoes.sh` exit 1, só com linhas do `06` do ciclo 1 (substituído por este); docs em QA-09. L3: QA-10. L4 `conformidade-rules.sh` exit 0 e filacheck "All 17 rules passed!". L5: QA-09. L6 `checkbox-sem-evidencia.sh` exit 0; números reproduzidos (41/41 com 432 asserções, 7/7, 283/283, 6058 testes, filacheck 17); QA-11. L7: QA-12. L8 `roteiro-manual.sh` exit 0, n/a: sem `08`, com `Roteiro manual: não` no `03` |
 
 ## Débitos Aceitos
 
-- Nenhum neste ciclo. Os Minors QA-03..QA-08 voltam com a correção dos Majors.
+- Nenhum neste ciclo. Os Minors QA-09, QA-11 e QA-12 voltam junto com a correção do QA-10.
 
 ## Suspeitas Não Confirmadas
 
-- `Role::delete()` comita a limpeza dos encerrados se `parent::delete()` devolver `false` (um listener `deleting` que cancele). Hoje não há listener assim em `app/` (grep sem resultado), por isso não há repro.
-- `## Notas de Implementação` do `03` alega "18/18 nos dois modos; 5 `deleted` em cada". Não há comando que reproduza o número; está fora da `Verificação Final`, então não é achado L6.
+- `Role::delete()` comita a limpeza dos encerrados se `parent::delete()` devolver `false`. Continua sem repro: o spatie não sobrescreve `delete()` e nenhum listener `deleting` do kit cancela.
+- O caminho de recusa do `delete()` lê e trava todos os convites antes de contar os pendentes, uma leitura que não serve para nada quando a exclusão é recusada. É custo, não defeito. Fica só como registro.
 
 ## Não Verificado
 
-- K2 (mutação) — prova indispensável pendente. Duas execuções por `pestw.cmd` com `--no-cache` e `--path=app/Models/Role.php`: (1) com `--filter` de 4 CT, 22 mutantes, 100 %, Duration 0,83 s; (2) sem filtro, arquivo Kit (39 testes levam 4 min 25 s), 27 mutantes, 100 %, Duration 0,86 s. Isso dá cerca de 32 ms por mutante, contra segundos por teste. Foram dados como mortos mutantes sem efeito observável no SQLite: `Line 75: RemoveMethodCall`, a leitura com `lockForUpdate()` cujo resultado é descartado, e `Line 109/120: RemoveArrayItem` (context do log, que nenhum CT afirma). Como o arnês está quebrado, o score não vale. A amostragem manual de mutante exige editar `app/`, o que este gate não faz. `RoleResource::recusarSeHaConvitePendente` não foi mutado.
-- J — suíte Browser não reexecutada, por tempo e porque a feature não tem CT-B; a alegação do orquestrador (254/202/52/0) não foi reproduzida.
-- Auditoria no app servido — o banco do servidor não pôde ser lido (o `.env` aponta outro SQLite); os `deleted` do "vendas" não foram conferidos no app, só pelos CT-08/CT-15 verdes.
-- RQ-06 no app (revogar e excluir de novo) não foi reproduzido no app servido; está coberto por CT-10/CT-19 verdes.
+- **K2 (mutação)**: prova indispensável pendente. `.ai/rules/testes.md` só aceita score no Windows com amostragem manual de mutante (editar `app/` e rodar o CT), e este gate não altera a árvore. Não foi repetida a execução por `pestw.cmd`, cujo score o ciclo 1 já mostrou não ser plausível (cerca de 32 ms por mutante).
+- **J**: a suíte Browser não foi rodada de novo. A feature não tem CT-B. A alegação do `03` (254 testes, 202 passaram, 52 pulados, 0 falhas) não foi reproduzida.
+- **L6, falsificabilidade** (`03`, `Verificação Final`: "Kit 36 de 37 e Tenancy 7 de 7 falharam sem a correção"): reproduzir exige `git apply -R` em `app/`, que este gate não faz.

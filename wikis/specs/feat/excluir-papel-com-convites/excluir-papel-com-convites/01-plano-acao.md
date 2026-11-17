@@ -108,7 +108,7 @@ Nenhum.
 | O que é adiado, e por qual gatilho? | nada |
 | O que é memoizado por request? | nada |
 | O que é cacheado entre requests? | nada |
-| Custo do caminho principal | +1 consulta de pendentes por papel no aviso, +1 no `delete()` do model *(alterado em 2026-11-17: QA-02 do quality gate)*; com histórico, +1 consulta e 1 `DELETE` + 1 auditoria por convite encerrado |
+| Custo do caminho principal | aviso: +1 consulta de pendentes por papel selecionado; `delete()` do model: 3 consultas antes de decidir (trava do papel, leitura travada dos convites, contagem de pendentes) e, por convite encerrado, 1 releitura + 1 `DELETE` + 1 auditoria *(alterado em 2026-11-17: QA-10 do quality gate, ciclo 2 — o custo da P-09)* |
 
 ## Impacto em Features Existentes
 

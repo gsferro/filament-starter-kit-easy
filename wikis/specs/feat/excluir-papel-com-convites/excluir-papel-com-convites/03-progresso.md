@@ -26,6 +26,7 @@ Não fatiado — 2026-11-16: 9 RQ vigentes, 19 CT, compactação: sim (a sessão
 ## Verificação Final
 - [x] `/ponytail:ponytail-review` no diff — `/ponytail-review` no diff: 2 sugestões (-7 linhas), ambas recusadas com motivo em `### Auditoria Ponytail`, 2026-11-17
 - [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"passed"}`, 2026-11-17
+- [x] `vendor/bin/phpstan analyse --no-progress --memory-limit=4G` — `{"result":"passed","errors":0}` (reproduzido pelo gate no ciclo 2), 2026-11-17
 - [x] `vendor/bin/filacheck --fix` — "All 17 rules passed!", 2026-11-17
 - [x] testes da feature (Kit e Tenancy) — Kit 41/41, Tenancy 7/7, 2026-11-17
 - [x] `vendor/bin/pest --parallel --tia` contra a baseline — `pest --tia --parallel --processes=3 --exclude-testsuite=Browser`: 6058 testes, 6054 passaram, 3 pulados, 1 falha (badge do README 2.624→2.625, corrigido; `SiteDeDocumentacaoTest`+`CitacoesDeCodigoTest`+`RoteiroDeAtualizacaoTest` 283/283 depois); Browser em série com `--tia`: 254, 202 passaram, 52 pulados, 0 falhas; baseline em `main`: 6264, 0 falhas, 2026-11-17
@@ -75,7 +76,8 @@ Não fatiado — 2026-11-16: 9 RQ vigentes, 19 CT, compactação: sim (a sessão
 ## Quality Gate
 
 - **Ciclo**: 1 · **Veredito**: REPROVADO → especificação · **Data**: 2026-11-17
-- **Relatório**: `06-relatorio-qa.md` (ciclo 1)
+- **Ciclo**: 2 · **Veredito**: REPROVADO → especificação (QA-10 Major; QA-09, QA-11, QA-12 Minor) · **Data**: 2026-11-17 — QA-10: custo real do `delete()` no `01`; QA-09: três citações das docs; QA-11: PHPStan na Verificação Final; QA-12: nomes dos `it()` de CT-08/CT-14 e o comentário da R5 com "encerrados"
+- **Relatório**: `06-relatorio-qa.md` (ciclo 2; o do ciclo 1 está no histórico do git, commit `7044378b`)
 - **Achados e destino**: QA-01 (Major, implementação: PHPStan level 8 com 2 erros — corrigido com `Role $record` no `before`, `phpstan analyse` 0 erros) · QA-02 (Major, especificação: rota `/admin/shield/roles` e a recusa no `delete()`, corrigidos no `01`, `02`, `04`) · QA-03 (log da recusa pela tela — `RoleResource@recusarSeHaConvitePendente`) · QA-04 (P-10 → CT-21 → correção) · QA-05 (`04` alinhado à P-09) · QA-06 (este `03` com evidência e os despachos do step 9) · QA-07 (helper fora do docblock de `ofertaPara()`) · QA-08 (termo "Encerrado" no glossário)
 
 ## Candidatos a Rule
@@ -133,7 +135,7 @@ Nenhuma classe nova: a feature acrescenta um scope, uma relação e um método e
 
 ## Notas de Implementação
 - O `deleting` do spatie (`HasPermissions::bootHasPermissions()`) desliga permissões e usuários do papel antes de qualquer listener do kit; por isso a regra é o `delete()` sobrescrito
-- Citações de linha que envelheceram com o scope novo, corrigidas: `docs/{pt,en}/autenticacao/convites.md` (`situacao:600`), `app/Providers/Filament/AppPanelProvider.php` e o `04` da wiki `diagramas-da-arquitetura` (`email_verified_at:647`). Já velhas antes desta feature, não mexidas: `app/Models/User.php` e `app/Support/RegistroAberto.php` citam a linha 591 do `Convite.php`, que na `main` já era `'Recusado'`
+- Citações de linha que envelheceram com o scope novo, corrigidas: `docs/{pt,en}/autenticacao/convites.md` (`situacao:600`; e `aceitar:619`, `aceitarComoUsuarioExistente:687`, `recusar:752` na forma de continuação, que o `CitacoesDeCodigoTest` não confere — QA-09 do ciclo 2), `app/Providers/Filament/AppPanelProvider.php` e o `04` da wiki `diagramas-da-arquitetura` (`email_verified_at:647`). Já velhas antes desta feature, não mexidas: `app/Models/User.php` e `app/Support/RegistroAberto.php` citam a linha 591 do `Convite.php`, que na `main` já era `'Recusado'`
 - Teste manual com Playwright (sem e com tenancy, banco SQLite próprio, drivers padrão de sessão, cache e fila em banco): 18/18 nos dois modos; auditoria com 5 `deleted` de convite em cada. Com `SESSION_DRIVER=file` e `CACHE_STORE=array` o aviso não aparecia na tela — artefato da configuração do teste, não do kit
 - No CT-19, `isset()` sobre o proxy do `test()` do Pest é sempre falso: o arnês guarda o escopo original em `$GLOBALS`
 

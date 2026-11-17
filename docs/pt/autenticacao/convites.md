@@ -101,8 +101,8 @@ worker, nada sai (`app/Notifications/ConviteDeAcesso.php:ShouldQueue:27`). O lem
 comando agendado (`routes/console.php:40`,
 `app/Console/Commands/KitConvitesLembrar.php`), o único chamador de `lembrar()` em `app/`.
 `Convite::enviar()`, `::lembrar()`, `::aceitar()`, `::aceitarComoUsuarioExistente()` e `::recusar()`
-(`app/Models/Convite.php:enviar:143`, `:lembrar:207`, `:aceitar:606`,
-`:aceitarComoUsuarioExistente:674`, `:recusar:739`).
+(`app/Models/Convite.php:enviar:143`, `:lembrar:207`, `:aceitar:619`,
+`:aceitarComoUsuarioExistente:687`, `:recusar:752`).
 
 ## Excluir um papel que tem convites
 

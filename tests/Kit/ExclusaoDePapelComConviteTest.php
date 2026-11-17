@@ -333,10 +333,10 @@ it('[CT-04] o aviso lista só os e-mails Pendentes do papel excluído', function
 });
 
 it('[CT-05] o aviso mostra no máximo 5 e-mails por papel e diz quantos Pendentes faltam', function (array $chaves, int $pendentes, string $caminho, int $listados, string $resto): void {
-    $papeis  = [];
-    $emails  = [];
-    $mortos  = [];
-    $rotulos = [];
+    $papeis      = [];
+    $emails      = [];
+    $encerrados  = [];
+    $rotulos     = [];
 
     foreach ($chaves as $chave) {
         $papeis[$chave]  = papelDeSuporteParaExclusao($chave);
@@ -347,8 +347,8 @@ it('[CT-05] o aviso mostra no máximo 5 e-mails por papel e diz quantos Pendente
             ofertaPara("{$chave}.pend{$i}@example.com", papel: $chave);
         }
 
-        $mortos[] = "{$chave}.expirado@example.com";
-        $mortos[] = "{$chave}.aceito@example.com";
+        $encerrados[] = "{$chave}.expirado@example.com";
+        $encerrados[] = "{$chave}.aceito@example.com";
         ofertaPara("{$chave}.expirado@example.com", papel: $chave, atributos: ['expira_em' => now()->subDay()]);
         ofertaPara("{$chave}.aceito@example.com", papel: $chave, atributos: ['aceito_em' => now(), 'expira_em' => now()->addDay()]);
     }
@@ -362,8 +362,8 @@ it('[CT-05] o aviso mostra no máximo 5 e-mails por papel e diz quantos Pendente
 
     expect($presentes)->toBe($listados);
 
-    foreach ($mortos as $morto) {
-        expect($texto)->not->toContain($morto);
+    foreach ($encerrados as $encerrado) {
+        expect($texto)->not->toContain($encerrado);
     }
 
     match ($resto) {
@@ -444,17 +444,17 @@ it('[CT-07] o aviso da massa traz cada papel bloqueado com os próprios e-mails'
 
 /*
 |--------------------------------------------------------------------------
-| R5 — Os convites mortos somem com o papel, e a remoção fica auditada
+| R5 — Os convites encerrados somem com o papel, e a remoção fica auditada
 |--------------------------------------------------------------------------
 */
 
-it('[CT-08] excluir papel sem Pendente apaga os convites mortos dele, só os dele, auditando cada um uma vez', function (string $caminho): void {
+it('[CT-08] excluir papel sem Pendente apaga os convites encerrados dele, só os dele, auditando cada um uma vez', function (string $caminho): void {
     $papel  = papelDeSuporteParaExclusao();
     $lia    = usuario('lia@example.com');
     papelDeSuporteParaExclusao('vendas');
 
-    $mortos = convitesDoPapelParaExclusao(comPendente: false, atributos: ['convidado_por_id' => $lia->getKey()]);
-    $eva    = ofertaPara('eva@example.com', papel: 'vendas', atributos: ['expira_em' => now()->subDay()]);
+    $encerrados = convitesDoPapelParaExclusao(comPendente: false, atributos: ['convidado_por_id' => $lia->getKey()]);
+    $eva        = ofertaPara('eva@example.com', papel: 'vendas', atributos: ['expira_em' => now()->subDay()]);
 
     $this->actingAs(usuarioDoKit('master_global', 'master@example.com'));
 
@@ -462,7 +462,7 @@ it('[CT-08] excluir papel sem Pendente apaga os convites mortos dele, só os del
 
     expect(papelExisteNoBanco($papel))->toBeFalse();
 
-    foreach ($mortos as $convite) {
+    foreach ($encerrados as $convite) {
         $antigos = json_decode((string) DB::table('audits')
             ->where('auditable_type', Convite::class)
             ->where('auditable_id', $convite->getKey())
@@ -485,7 +485,7 @@ it('[CT-08] excluir papel sem Pendente apaga os convites mortos dele, só os del
     'exclusão em massa só com o suporte'  => ['massa'],
 ]);
 
-it('[CT-14] a exclusão em massa de dois papéis livres apaga e audita os mortos dos dois', function (): void {
+it('[CT-14] a exclusão em massa de dois papéis livres apaga e audita os encerrados dos dois', function (): void {
     $suporte = papelDeSuporteParaExclusao('suporte');
     $vendas  = papelDeSuporteParaExclusao('vendas');
 
@@ -751,7 +751,7 @@ it('[CT-15] o operador sem permissão de convite exclui o papel e os convites en
         ->and($operador->can('Delete:Convite'))->toBeFalse()
         ->and($operador->can('Delete:Role'))->toBeTrue();
 
-    $mortos = convitesDoPapelParaExclusao(comPendente: false);
+    $encerrados = convitesDoPapelParaExclusao(comPendente: false);
 
     $this->actingAs($operador);
 
@@ -759,7 +759,7 @@ it('[CT-15] o operador sem permissão de convite exclui o papel e os convites en
 
     expect(papelExisteNoBanco($papel))->toBeFalse();
 
-    foreach ($mortos as $convite) {
+    foreach ($encerrados as $convite) {
         expect(conviteExisteNoBanco($convite))->toBeFalse()
             ->and(auditoriasDoConvite($convite, 'deleted'))->toBe(1)
             ->and(DB::table('audits')
