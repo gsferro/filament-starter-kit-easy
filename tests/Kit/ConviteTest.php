@@ -1100,7 +1100,10 @@ it('[CT-12] excluir um papel que tem convite pendente é recusado pelo banco', f
     $papel   = Role::findByName('admin');
     $convite = ofertaPara('carla@example.com', papel: 'admin');
 
-    expect(fn () => $papel->delete())->toThrow(QueryException::class);
+    // Pela query, e não por `$papel->delete()`: desde a wiki `excluir-papel-com-convites` o
+    // model recusa antes do banco (`Role::delete()` devolve `false`). Aqui o que se prova é a
+    // chave estrangeira — o que segura um `DELETE` que pula o model.
+    expect(fn () => Role::query()->whereKey($papel->getKey())->delete())->toThrow(QueryException::class);
 
     expect(Role::query()->whereKey($papel->getKey())->exists())->toBeTrue()
         ->and($convite->fresh()?->role_id)->toBe($papel->getKey());
@@ -1138,7 +1141,7 @@ it('[CT-13] aceitar convite cujo papel não existe mais lança exceção de inva
     $bruno   = usuarioDoKit('infra', 'bruno@example.com');
 
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::findByName('admin')->delete();
+    Role::query()->whereKey(Role::findByName('admin')->getKey())->delete(); // pela query: o model recusa papel com convite pendente
     $convite->refresh();
 
     Notification::fake();
@@ -1200,7 +1203,7 @@ it('[CT-18] a tela de cadastro por convite cujo papel não existe mais falha fec
     // docblock do CT-13 acima: o `PRAGMA foreign_keys` é no-op dentro da transação do
     // `RefreshDatabase`.
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::findByName('admin')->delete();
+    Role::query()->whereKey(Role::findByName('admin')->getKey())->delete(); // pela query: o model recusa papel com convite pendente
     $convite->refresh();
 
     Notification::fake();

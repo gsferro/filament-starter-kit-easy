@@ -162,7 +162,7 @@ it('[CT-19] aceitar pela tela de convites recebidos uma oferta cujo papel não e
     $convite = ofertaPara('bruno@example.com', papel: 'admin');
 
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::findByName('admin')->delete();
+    Role::query()->whereKey(Role::findByName('admin')->getKey())->delete(); // pela query: o model recusa papel com convite pendente
     $convite->refresh();
 
     $this->actingAs($bruno);

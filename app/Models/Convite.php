@@ -500,6 +500,23 @@ class Convite extends Model implements Auditable
     }
 
     /**
+     * Convites que ainda abrem a porta: nem aceitos, nem recusados, dentro da validade.
+     *
+     * É o "Pendente" de `situacao()` — validade nula não casa com `expira_em > now()`, e
+     * lá ela também é "Expirado". Usado pela caixa de entrada e pela recusa de excluir o
+     * papel de um convite pendente (`Role::booted()`).
+     *
+     * @param  Builder<Convite>  $query
+     * @return Builder<Convite>
+     */
+    public function scopePendentes(Builder $query): Builder
+    {
+        return $query->whereNull('aceito_em')
+            ->whereNull('recusado_em')
+            ->where('expira_em', '>', now());
+    }
+
+    /**
      * Ofertas de acesso pendentes endereçadas a este usuário.
      *
      * Alimenta a caixa de entrada E o contador do menu do usuário. Vive aqui, e não num
@@ -528,9 +545,7 @@ class Convite extends Model implements Auditable
     {
         $query = static::query()
             ->withoutGlobalScope(Filament::getPanel('app')->getTenancyScopeName())
-            ->whereNull('aceito_em')
-            ->whereNull('recusado_em')
-            ->where('expira_em', '>', now());
+            ->pendentes();
 
         return $user instanceof User
             ? $query->whereRaw('lower(email) = ?', [mb_strtolower(trim($user->email))])

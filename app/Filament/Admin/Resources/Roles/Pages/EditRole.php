@@ -10,6 +10,7 @@ use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +28,8 @@ class EditRole extends EditRecord
     protected function getActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->before(fn (DeleteAction $action, Model $record) => RoleResource::recusarSeHaConvitePendente($action, [$record])),
         ];
     }
 
