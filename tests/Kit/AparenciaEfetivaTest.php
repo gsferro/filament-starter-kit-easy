@@ -108,6 +108,20 @@ it('[CT-11] tela sem pessoa logada mostra o padrão da instalação', function (
     'recuperar /admin'  => '/admin/password-reset/request',
 ]);
 
+it('[CT-41] a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha', function () use ($instalacao): void {
+    $this->actingAs(usuarioDoKit('admin', 'adm-preview@example.com'));
+    gravarAparenciaPelaSecao(null, 'admin');
+
+    expect(aparenciaEfetiva('/admin'))->densidade->toBe('Denso');
+
+    $efetiva = aparenciaEfetiva(urlDoPreviewDe(rascunhoDe('global', aparenciaDeTeste('P'))));
+
+    expect($efetiva)
+        ->densidade->toBe($instalacao['densidade'])
+        ->fonte->toBe($instalacao['fonte'])
+        ->cor->toBe($instalacao['cor']);
+});
+
 it('[CT-37] a página reflete a escolha nova logo depois de a pessoa gravá-la', function (): void {
     $this->actingAs(anaDoKit());
     gravarAparenciaPelaSecao(null, 'admin');

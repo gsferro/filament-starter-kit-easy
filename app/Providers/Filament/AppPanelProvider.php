@@ -238,10 +238,10 @@ class AppPanelProvider extends PanelProvider
 
                 /*
                  * A cor que a PESSOA escolheu no Meu perfil, quando a aparência pessoal vale aqui
-                 * (wiki `preferencias-de-aparencia`, P-02). Registrada no `bootUsing` pelo motivo que
-                 * a cor da organização documenta no `AppPanelProvider` (só no render do `<head>` a
-                 * sessão e a organização já existem) e DEPOIS dela, porque no `ColorManager` quem
-                 * registra por último vence. `[]` é o neutro: a cor anterior sobrevive.
+                 * (wiki `preferencias-de-aparencia`, P-02). Pelo mesmo motivo da cor da organização
+                 * acima (só no render do `<head>` a sessão e a organização existem) e DEPOIS dela,
+                 * porque no `ColorManager` quem registra por último vence. `[]` é o neutro: a cor da
+                 * organização ou a da instalação sobrevive.
                  */
                 FilamentColor::register(fn (): array => AparenciaDoUsuario::paletaDaPessoa());
                 // "Bloquear sessão" logo abaixo do "Meu perfil" — ver

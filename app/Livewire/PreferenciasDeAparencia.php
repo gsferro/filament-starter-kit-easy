@@ -32,9 +32,9 @@ use Jeffgreco13\FilamentBreezy\Livewire\MyProfileComponent;
  *
  * `canView()` tira a seção da tela quando a chave está desligada (P-06). Mas a tela pode ter sido
  * aberta ANTES de alguém desligar a chave, e `salvar()` é chamável pelo `$wire` a qualquer momento:
- * por isso ele confere de novo e recusa (falha fechada). A chave da organização não entra aqui — o
- * Meu perfil não fica dentro de organização nenhuma (P-13); quem a aplica é `AparenciaDoUsuario`,
- * na tela de cada organização.
+ * por isso ele confere de novo e recusa (falha fechada). A chave da organização não entra aqui: a
+ * escolha é uma só e vale em várias organizações, então gravar não depende de onde a pessoa está —
+ * quem aplica a chave da organização é `AparenciaDoUsuario`, ao servir cada tela (P-13).
  *
  * ## O que chega do navegador
  *

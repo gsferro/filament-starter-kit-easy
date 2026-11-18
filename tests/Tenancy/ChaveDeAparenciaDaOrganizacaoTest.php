@@ -195,6 +195,38 @@ it('[CT-26] valor não booleano numa chave é recusado e a chave fica como estav
     'Acme ["1"]'            => [true, 'acme', ['1']],
 ]);
 
+it('[CT-42] nulo forjado numa chave grava desligado, sem erro 500', function (string $tela): void {
+    ['ana' => $ana, 'acme' => $acme] = anaComAEscolhaDeReferencia();
+    $acme->update(['aparencia_por_usuario' => true]);
+
+    administradoraDaChave();
+
+    if ($tela === 'configuracoes') {
+        $componente = Livewire::test(ConfiguracoesDoKit::class);
+        carregarAba($componente, 'aplicacao')->refresh()
+            ->set('data.aparencia_por_usuario', null)
+            ->call('save')
+            ->assertSuccessful();
+
+        expect(configuracaoGravada('aparencia_por_usuario'))->toBeFalse();
+        alinharConfiguracoesDoKit();
+        $pagina = '/admin';
+    } else {
+        Livewire::test(EditTenant::class, ['record' => $acme->getRouteKey()])
+            ->set('data.aparencia_por_usuario', null)
+            ->call('save')
+            ->assertSuccessful();
+
+        expect($acme->fresh()->aparencia_por_usuario)->toBeFalse();
+        $pagina = '/app/acme';
+    }
+
+    expect(densidadeVistaPelaAna($ana, $pagina))->toBe('Compacto');
+})->with([
+    'instalação' => ['configuracoes'],
+    'Acme'       => ['acme'],
+]);
+
 it('[CT-28] quem administra uma organização não libera a aparência dela', function (): void {
     ['acme' => $acme] = anaComTresOrganizacoes();
 

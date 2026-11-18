@@ -20,14 +20,19 @@ use Filament\Facades\Filament;
  *
  * 1. a chave da instalação está ligada (`kit.aparencia_por_usuario`, RQ-07);
  * 2. há uma pessoa logada (P-10: login, cadastro e recuperação de senha mostram o padrão);
- * 3. se a tela é de uma organização (`Filament::getTenant()`), a chave DELA está ligada (RQ-09).
- *    Tela do `/app` sem organização no endereço — o Meu perfil — segue só a 1 (P-13).
+ * 3. a tela não é a pré-visualização das telas de acesso — ela mostra o que um VISITANTE vê, e o
+ *    administrador que a abre está logado (CR-01 do step 9);
+ * 4. se há organização corrente (`Filament::getTenant()`), a chave DELA está ligada (RQ-09). Com
+ *    organizações ligadas, toda tela do `/app` — inclusive o Meu perfil — está dentro de uma; sem
+ *    organização corrente (o `/admin`, o `/infra`, o `/app` sem tenancy) vale só a 1 (P-13).
  *
  * ## O que é lido, e por que nada é memoizado
  *
  * `config()` (já sobreposto pelo banco no boot), o usuário da sessão e a organização corrente —
- * os três já carregados. Zero consulta por chamada; memoizar só arriscaria servir a resposta de
- * antes de um `actingAs()`/troca de organização no mesmo processo.
+ * os três já carregados. Zero consulta por chamada; memoizar arriscaria servir a resposta de antes
+ * de um `actingAs()`, de uma troca de organização ou de uma gravação das configurações no mesmo
+ * processo (CT-10, CT-14, CT-37 e CT-40 medem exatamente isso). O custo de repetir foi medido no
+ * step 9 (CR-03): ver o `03` da wiki.
  *
  * ## Valor ilegível
  *
@@ -37,29 +42,13 @@ use Filament\Facades\Filament;
  */
 final class AparenciaDoUsuario
 {
-    /** As quatro chaves da coluna `users.aparencia`, na ordem da tela. */
-    public const CHAVES = ['densidade', 'fonte', 'cor', 'menu'];
+    /** A rota da pré-visualização das telas de acesso (`KitServiceProvider`), que mostra o padrão. */
+    private const ROTA_DA_PREVIEW = 'kit.preview-das-telas-de-acesso';
 
     /** A escolha pessoal vale na tela corrente? Ver o docblock da classe. */
     public static function liberada(): bool
     {
-        if (! config('kit.aparencia_por_usuario')) {
-            return false;
-        }
-
-        if (! self::pessoa() instanceof User) {
-            return false;
-        }
-
-        $organizacao = Filament::getTenant();
-
-        if ($organizacao === null) {
-            return true;
-        }
-
-        // `instanceof` e não `?->`: o model de tenancy é configurável, e um que não seja o do kit
-        // não tem a chave — falha fechada.
-        return $organizacao instanceof Tenant && $organizacao->aparencia_por_usuario;
+        return self::pessoaLiberada() instanceof User;
     }
 
     /**
@@ -72,31 +61,29 @@ final class AparenciaDoUsuario
     {
         $bruto = is_array($bruto) ? $bruto : [];
 
-        $texto = static fn (string $chave): ?string => is_string($bruto[$chave] ?? null) ? $bruto[$chave] : null;
-
-        $cor = $texto('cor');
+        $texto = static fn (string $chave): string => is_string($bruto[$chave] ?? null) ? $bruto[$chave] : '';
 
         return [
-            'densidade' => DensidadeDoLayout::tryFrom((string) $texto('densidade'))?->value,
-            'fonte'     => TamanhoDaFonte::tryFrom((string) $texto('fonte'))?->value,
-            'cor'       => in_array($cor, CustomizadorDaInstalacao::CORES, true) ? $cor : null,
-            'menu'      => ModoDoMenu::tryFrom((string) $texto('menu'))?->value,
+            'densidade' => DensidadeDoLayout::tryFrom($texto('densidade'))?->value,
+            'fonte'     => TamanhoDaFonte::tryFrom($texto('fonte'))?->value,
+            'cor'       => in_array($texto('cor'), CustomizadorDaInstalacao::CORES, true) ? $texto('cor') : null,
+            'menu'      => ModoDoMenu::tryFrom($texto('menu'))?->value,
         ];
     }
 
     public static function densidade(): DensidadeDoLayout
     {
-        return DensidadeDoLayout::tryFrom((string) self::escolha('densidade')) ?? DensidadeDoLayout::deConfig();
+        return DensidadeDoLayout::tryFrom(self::escolha('densidade')) ?? DensidadeDoLayout::deConfig();
     }
 
     public static function tamanhoDaFonte(): TamanhoDaFonte
     {
-        return TamanhoDaFonte::tryFrom((string) self::escolha('fonte')) ?? TamanhoDaFonte::deConfig();
+        return TamanhoDaFonte::tryFrom(self::escolha('fonte')) ?? TamanhoDaFonte::deConfig();
     }
 
     public static function modoDoMenu(): ModoDoMenu
     {
-        return ModoDoMenu::tryFrom((string) self::escolha('menu')) ?? ModoDoMenu::deConfig();
+        return ModoDoMenu::tryFrom(self::escolha('menu')) ?? ModoDoMenu::deConfig();
     }
 
     /**
@@ -109,25 +96,41 @@ final class AparenciaDoUsuario
     {
         $cor = self::escolha('cor');
 
-        return $cor === null ? [] : CorPrimaria::resolver(null, $cor);
+        return $cor === '' ? [] : CorPrimaria::resolver(null, $cor);
     }
 
-    /** A escolha válida da pessoa para uma chave, ou `null` quando não vale ou não há. */
-    private static function escolha(string $chave): ?string
+    /**
+     * A escolha válida da pessoa para uma chave, ou `''` quando não vale ou não há — string vazia, e
+     * não `null`, para ir direto ao `tryFrom()` dos enums, que devolve `null` para ela.
+     */
+    private static function escolha(string $chave): string
     {
-        if (! self::liberada()) {
+        $pessoa = self::pessoaLiberada();
+
+        return $pessoa instanceof User ? (self::escolhas($pessoa->aparencia)[$chave] ?? '') : '';
+    }
+
+    /** A pessoa logada, se a escolha dela vale na tela corrente; senão `null`. */
+    private static function pessoaLiberada(): ?User
+    {
+        if (! config('kit.aparencia_por_usuario') || request()->routeIs(self::ROTA_DA_PREVIEW)) {
             return null;
         }
 
-        $pessoa = self::pessoa();
-
-        return $pessoa instanceof User ? self::escolhas($pessoa->aparencia)[$chave] : null;
-    }
-
-    private static function pessoa(): ?User
-    {
         $pessoa = Filament::auth()->user();
 
-        return $pessoa instanceof User ? $pessoa : null;
+        if (! $pessoa instanceof User) {
+            return null;
+        }
+
+        $organizacao = Filament::getTenant();
+
+        if ($organizacao === null) {
+            return $pessoa;
+        }
+
+        // `instanceof` e não `?->`: o model de tenancy é configurável, e um que não seja o do kit
+        // não tem a chave — falha fechada.
+        return $organizacao instanceof Tenant && $organizacao->aparencia_por_usuario ? $pessoa : null;
     }
 }

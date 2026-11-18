@@ -1,0 +1,141 @@
+<?php
+
+use Database\Seeders\PapeisSeeder;
+use Database\Seeders\ShieldPermissionsSeeder;
+
+/**
+ * CT-B01 e CT-B02 — o que só o navegador calcula na aparência por usuário.
+ *
+ * `wikis/specs/feat/preferencias-de-aparencia/preferencias-de-aparencia/05-casos-de-teste-browser.md`.
+ *
+ * O recolher do menu é Alpine e a fonte pode perder a cascata para o tema: o HTML servido é o
+ * mesmo com e sem o defeito. O oráculo é `getBoundingClientRect`/`getComputedStyle`.
+ *
+ * O `beforeEach` não arranja painel (`.ai/rules/testes-browser.md`): cada cenário arranja o seu.
+ */
+beforeEach(function (): void {
+    $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
+});
+
+/**
+ * Largura VISÍVEL da barra lateral (a parte que cai dentro da viewport) e o estado do primeiro ícone.
+ */
+const MEDIDA_DA_BARRA_LATERAL = <<<'JS'
+    (() => {
+        const s = document.querySelector('.fi-sidebar').getBoundingClientRect();
+        const visivel = Math.max(0, Math.min(s.right, innerWidth) - Math.max(s.left, 0));
+        const i = document.querySelector('.fi-sidebar-item-icon');
+        const r = i.getBoundingClientRect(), cs = getComputedStyle(i);
+        const iconeVisivel = cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.height > 0
+            && r.right > 0 && r.left < innerWidth && r.bottom > 0 && r.top < innerHeight
+            && Math.min(r.right, innerWidth) - Math.max(r.left, 0) > 0;
+        return JSON.stringify({ largura: visivel, iconeVisivel });
+    })()
+JS;
+
+/**
+ * CT-B01 — recolhido, o menu segue o modo da Ana (a instalação é o oposto).
+ */
+it('[CT-B01] recolhido, o menu segue o modo escolhido pela Ana', function (string $menuDaInstalacao, string $menuDaAna, bool $manterIcones): void {
+    aparenciaDaInstalacao(porUsuario: true, menu: $menuDaInstalacao);
+
+    $ana = usuarioDoKit('admin', 'ana@example.com');
+    aparenciaDe($ana, ['menu' => $menuDaAna]);
+
+    $this->actingAs($ana)->get('/admin')->assertOk();
+
+    $pagina = visit('/admin')->resize(1280, 800);
+
+    $pagina->assertPathIs('/admin')
+        ->assertPresent('.fi-sidebar-item-icon');
+
+    $aberta = json_decode((string) $pagina->script(MEDIDA_DA_BARRA_LATERAL), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($aberta['largura'])->toBeGreaterThan(0)
+        ->and($aberta['iconeVisivel'])->toBeTrue();
+
+    $larguraAberta = $aberta['largura'];
+
+    $pagina->click('[aria-label="Recolher barra lateral"]:visible');
+
+    // A transição leva um instante: espera o estado final (menor que a aberta), sem wait().
+    $pagina->assertScript(
+        "(() => { const s = document.querySelector('.fi-sidebar').getBoundingClientRect();"
+        ."return Math.max(0, Math.min(s.right, innerWidth) - Math.max(s.left, 0)) < {$larguraAberta}; })()"
+    );
+
+    // Fim da transição: a largura visível parou de mudar.
+    $pagina->assertScript(<<<'JS'
+        new Promise(resolve => {
+            const medir = () => { const s = document.querySelector('.fi-sidebar').getBoundingClientRect();
+                return Math.max(0, Math.min(s.right, innerWidth) - Math.max(s.left, 0)); };
+            let anterior = medir(), estaveis = 0;
+            const id = setInterval(() => {
+                const atual = medir();
+                estaveis = atual === anterior ? estaveis + 1 : 0;
+                anterior = atual;
+                if (estaveis >= 3) { clearInterval(id); resolve(true); }
+            }, 100);
+        })
+    JS);
+
+    $recolhida = json_decode((string) $pagina->script(MEDIDA_DA_BARRA_LATERAL), true, flags: JSON_THROW_ON_ERROR);
+
+    if ($manterIcones) {
+        expect($recolhida['largura'])->toBeGreaterThan(0)->toBeLessThan($larguraAberta)
+            ->and($recolhida['iconeVisivel'])->toBeTrue();
+    } else {
+        expect($recolhida['largura'])->toEqual(0)
+            ->and($recolhida['iconeVisivel'])->toBeFalse();
+    }
+
+    $pagina->assertNoJavaScriptErrors();
+})->with([
+    'instalação Esconder tudo, Ana Manter os ícones' => ['oculto', 'icones', true],
+    'instalação Manter os ícones, Ana Esconder tudo' => ['icones', 'oculto', false],
+])->group('browser');
+
+/**
+ * CT-B02 — o texto da Ana fica no percentual de P-08 sobre o tamanho de referência da Bia.
+ */
+const MEDIDA_DA_FONTE = <<<'JS'
+    (() => {
+        const t = document.querySelector('.fi-header-heading'), r = document.querySelector('.fi-sidebar-item-label');
+        return JSON.stringify({
+            titulo: parseFloat(getComputedStyle(t).fontSize),
+            rotulo: parseFloat(getComputedStyle(r).fontSize),
+        });
+    })()
+JS;
+
+it('[CT-B02] o texto da Ana fica no percentual do tamanho escolhido', function (string $fonte, float $razao): void {
+    aparenciaDaInstalacao(porUsuario: true, fonte: 'normal');
+
+    $bia = usuarioDoKit('admin', 'bia@example.com');
+    $ana = usuarioDoKit('admin', 'ana@example.com');
+    aparenciaDe($ana, ['fonte' => $fonte]);
+
+    $this->actingAs($bia)->get('/admin')->assertOk();
+
+    $referencia = visit('/admin')->resize(1280, 800);
+    $referencia->assertPathIs('/admin')->assertPresent('.fi-header-heading');
+    $base = json_decode((string) $referencia->script(MEDIDA_DA_FONTE), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($base['titulo'])->toBeGreaterThan(0)->and($base['rotulo'])->toBeGreaterThan(0);
+
+    test()->flushSession();
+    $this->actingAs($ana)->get('/admin')->assertOk();
+
+    $pagina = visit('/admin')->resize(1280, 800);
+    $pagina->assertPathIs('/admin')->assertPresent('.fi-header-heading');
+    $medida = json_decode((string) $pagina->script(MEDIDA_DA_FONTE), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($medida['titulo'] / $base['titulo'])->toEqualWithDelta($razao, 0.01)
+        ->and($medida['rotulo'] / $base['rotulo'])->toEqualWithDelta($razao, 0.01);
+
+    $pagina->assertNoJavaScriptErrors();
+})->with([
+    'Pequena'      => ['pequena', 0.875],
+    'Grande'       => ['grande', 1.125],
+    'Muito grande' => ['muito-grande', 1.25],
+])->group('browser');

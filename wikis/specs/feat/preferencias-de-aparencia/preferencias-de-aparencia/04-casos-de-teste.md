@@ -383,7 +383,8 @@ Notas: CT-09 grava pela seção do `/app` (transição real) e lê nos três pai
 | M71 | cor pessoal registrada em `FilamentColor` e nunca desfeita (o registro de um request vale para o seguinte) | CT-10 | cor Red para a Ana; esperado `#0ea5e9` |
 | M72 | layout das telas de cadastro/recuperação (Auth Designer) sem o render hook da instalação | CT-11 (linhas cadastro, recuperação) | densidade Confortável / sem declaração; esperado Compacto |
 | M73 | escolha gravada com o painel como chave (preferência por painel) | CT-09 (linhas ligada /admin, /infra) | densidade Compacto no /admin; esperado Denso |
-| M74 | aparência efetiva guardada em cache por usuário sem invalidar ao salvar (ADV-06) | CT-37 | a página seguinte mostra Denso/Red; esperado Confortável/Amber |
+| M74 | aparência efetiva guardada em cache por usuário sem invalidar ao salvar (ADV-06) | CT-41 | a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | M86 |
+| CT-37 | a página seguinte mostra Denso/Red; esperado Confortável/Amber |
 
 ---
 
@@ -1036,6 +1037,23 @@ Rodada 2 — `fw-adversario-ct`, mesma entrada. **Última pelo teto de 2 rodadas
 | CT-B01, CT-B02 | ver `05-casos-de-teste-browser.md` | R13 | EP | G5 | browser | `tests/Browser/PreferenciasDeAparenciaTest.php` | ver `05` |
 
 Estouro de teto: R3, R4 e R7 com 4 cenários cada (justificados nas regras: M14/M16/M70/M82/M84, M74 e M85 só morrem nos cenários excedentes); as demais com no máximo 3. R1/R2/R3 dividem a superfície Livewire em três regras para respeitar o teto `padrão`. Nenhuma lacuna declarada.
+
+### CT-41 (step 9 — CR-01, P-17)
+
+> `P-17`, `P-10` · perfil **padrão** · técnica: **EP** (partição "tela de acesso servida a quem está logado") · acrescentado pela sessão no step 9, depois das duas rodadas da revisão adversarial
+
+```gherkin
+Cenário: a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha
+  Dado a instalação de referência (Compacto, Grande, cor #0ea5e9) com a chave da instalação ligada
+  E a administradora com a escolha de referência gravada pela seção Aparência do /admin
+  E o /admin dela mostrando densidade Denso
+  Quando ela abre a pré-visualização das telas de acesso de um rascunho
+  Então a pré-visualização mostra densidade Compacto, fonte Grande e cor #0ea5e9
+```
+
+| Mutante | Descrição | Matador |
+|---|---|---|
+| M86 | o decisor não distingue a pré-visualização de uma tela autenticada comum | CT-41 (densidade Denso em vez de Compacto — medido revertendo a guarda, 2026-11-18) |
 
 ## Cogitado e cortado
 
