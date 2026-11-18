@@ -31,6 +31,18 @@ desenvolvimento novas; nada muda em runtime. Wiki: `wikis/specs/feat/verificacao
   o `kit:update` traz o `composer-unused.php` e relata a diferença do `composer.json`, sem aplicá-la. Os
   três scripts `deps:*` entram à mão no `composer.json` do projeto (copie do kit).
 
+### Dependências
+
+Incluídas nesta release (PRs do dependabot com a CI verde, mais o Pest, aplicado à mão porque o PR
+entrou em conflito com o lock):
+
+- `nunomaduro/collision` 8.9.5 → 8.9.6 (#200), `livewire/blaze` 1.0.19 → 1.0.21 (#195),
+  `spatie/laravel-backup` 10.3.3 → 10.4.0 (#198), `concurrently` 10.0.6 → 10.0.7 (#199),
+  `driftingly/rector-laravel` 2.5.0 → 2.7.3 (#196)
+- `pestphp/pest` 5.1.1 → **5.3.7** (no lugar do #197): a 5.3.5 do PR quebrava o `--parallel`
+  (`TypeError` no `WrapperRunner::getTestFiles()`); a 5.3.6 corrigiu, e a suíte Kit em paralelo passa
+  com a 5.3.7 (5.390 testes, 0 falhas). Sobe junto o PHPUnit 13.3 → 13.4
+
 ### Defaults mudados
 
 - nenhum
