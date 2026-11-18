@@ -969,7 +969,7 @@ A asserção de "Admin" ausente em CT-30 é sobre o **texto do elemento de detal
 
 | Item | Cenário que mata | Grupo |
 |---|---|---|
-| IDOR / autorização horizontal | não se aplica: nenhuma rota nova recebe `{id}`; a organização vem da rota existente `/app/{slug}`, barrada antes do layout por `app/Models/User.php:canAccessTenant:819` (inclusive inativa). O vazamento horizontal possível — nome/logo/papel de **outra** organização ou de outro contexto — é coberto por CT-04, CT-07, CT-15, CT-30, CT-31 | G3 |
+| IDOR / autorização horizontal | não se aplica: nenhuma rota nova recebe `{id}`; a organização vem da rota existente `/app/{slug}`, barrada antes do layout por `app/Models/User.php:canAccessTenant:827` (inclusive inativa). O vazamento horizontal possível — nome/logo/papel de **outra** organização ou de outro contexto — é coberto por CT-04, CT-07, CT-15, CT-30, CT-31 | G3 |
 | Autorização exercida na ação (não só `can()`) | CT-26 — a célula da ação (`save()`) é coberta pela montagem: a barreira `ExigePermissaoDaTela` recusa com 403 antes de haver componente, então `save()` não é alcançável sem a permissão *(alterado em 2026-10-05: ADV-22)* | G2 |
 | Gate de camada: autorização por fora do componente | lacuna declarada: a barreira é a da tela existente (não é regra nova desta feature) e não há outra entrada HTTP que grave o settings — os demais escritores (`app/Console/Commands/KitInstall.php`, `KitUpdate.php`, `app/Support/CustomizadorDaInstalacao.php`) são CLI com acesso ao servidor. CT-26 é escrito como se a afirmação fosse falsa (página nova sem barreira) | G2 |
 | Gate de camada: validação de domínio por fora do componente | CT-18 | G1 |
@@ -985,7 +985,7 @@ A asserção de "Admin" ausente em CT-30 é sobre o **texto do elemento de detal
 | Texto livre (acento, emoji, marcação em conteúdo e em atributo, 255 caracteres) | CT-10, CT-11 | G1, G3 |
 | Unicode / limite de varchar | CT-10 (linha de 255 caracteres terminando em "ç🚀", ADV-13; a feature não corta texto, então não há mutante de corte) | G1 |
 | Unicidade + soft delete | não se aplica: nenhuma entidade única criada | — |
-| Entidade removível ou desativável | não se aplica: organização inativa é barrada antes do layout (`app/Models/User.php:canAccessTenant:819`); logo apagada do disco coberta em CT-08 | G1 |
+| Entidade removível ou desativável | não se aplica: organização inativa é barrada antes do layout (`app/Models/User.php:canAccessTenant:827`); logo apagada do disco coberta em CT-08 | G1 |
 | CRUD combinado | não se aplica: sem CRUD | — |
 | Mass assignment | não se aplica: nenhum model novo; o estado `$data` da SettingsPage existente ganha só as 5 chaves, exercitadas em CT-21…CT-23 | — |
 | Upload | não se aplica: sem upload novo (P-07) | — |

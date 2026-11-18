@@ -9,6 +9,8 @@ use App\Filament\Admin\Resources\Roles\Pages\EditRole;
 use App\Filament\Admin\Resources\Roles\Pages\ListRoles;
 use App\Filament\Admin\Resources\Roles\Pages\ViewRole;
 use App\Filament\Concerns\BadgeContagemNavegacao;
+use App\Models\Convite;
+use App\Models\Role;
 use App\Support\AdministradorDaInstalacao;
 use App\Support\Paineis;
 use App\Support\Papeis;
@@ -30,6 +32,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Panel;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Component;
@@ -49,6 +52,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Expression;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\Rules\Unique;
@@ -290,7 +294,8 @@ class RoleResource extends Resource
             ->recordActions([
                 self::acaoDeUsuarios(),
                 EditAction::make(),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->before(fn (DeleteAction $action, Role $record) => self::recusarSeHaConvitePendente($action, [$record])),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
@@ -302,7 +307,9 @@ class RoleResource extends Resource
                      * de exclusão em massa que mostrou; a guarda por registro sozinha não
                      * cobre o verbo irmão.
                      */
-                    DeleteBulkAction::make()->authorizeIndividualRecords('delete'),
+                    DeleteBulkAction::make()
+                        ->authorizeIndividualRecords('delete')
+                        ->before(fn (DeleteBulkAction $action, Collection $records) => self::recusarSeHaConvitePendente($action, $records)),
                 ]),
             ]);
     }
@@ -638,6 +645,64 @@ class RoleResource extends Resource
             ])
             ->columnSpan(static::shield()->getSectionColumnSpan())
             ->collapsible();
+    }
+
+    /**
+     * Recusa a exclusão quando algum dos papéis tem convite pendente, com um aviso que diz
+     * quais. Roda no `before()` das três exclusões (linha, massa e edição): se um papel da
+     * seleção está bloqueado, nada da seleção sai. `Role::delete()` recusa de novo por
+     * baixo — este método só existe para o administrador ler o porquê em vez de um 500.
+     *
+     * Os e-mails só aparecem para quem pode ver os convites (`ViewAny:Convite`); para o
+     * resto, a quantidade — excluir papel não é permissão para ler e-mail de terceiro.
+     * No máximo cinco por papel.
+     *
+     * @param  iterable<Role>  $papeis
+     */
+    public static function recusarSeHaConvitePendente(Action $action, iterable $papeis): void
+    {
+        $podeVerEmails = auth()->user()?->can('viewAny', Convite::class) ?? false;
+        $bloqueados    = [];
+
+        $linhas = collect($papeis)
+            ->map(function (Role $papel) use ($podeVerEmails, &$bloqueados): ?string {
+                $emails = $papel->convites()->pendentes()->orderBy('email')->pluck('email');
+
+                if ($emails->isEmpty()) {
+                    return null;
+                }
+
+                $bloqueados[$papel->id] = $emails->count();
+
+                $quem = $podeVerEmails
+                    ? $emails->take(5)->implode(', ').($emails->count() > 5 ? ' e mais '.($emails->count() - 5) : '')
+                    : $emails->count().' '.($emails->count() === 1 ? 'convite pendente' : 'convites pendentes');
+
+                return '<strong>'.e(Papeis::rotulo((string) $papel->getAttribute('name'))).'</strong>: '.e($quem);
+            })
+            ->filter();
+
+        if ($linhas->isEmpty()) {
+            return;
+        }
+
+        // A recusa pela tela para antes de `Role::delete()`, que é quem loga a recusa por fora dela.
+        Log::channel('autenticacao')->warning(
+            '[RoleResource@recusarSeHaConvitePendente] Exclusão recusada: papel com convite pendente | papeis: '.implode(',', array_keys($bloqueados)),
+            ['pendentes_por_papel' => $bloqueados, 'operador_id' => auth()->id()],
+        );
+
+        Notification::make()
+            ->danger()
+            ->title('Papel com convite pendente')
+            // Quem não vê convites não alcança a tela de Convites: a saída é pedir a quem administra (P-10).
+            ->body($linhas->implode('<br>').'<br>'.($podeVerEmails
+                ? 'Revogue os convites pendentes na tela de Convites e tente de novo.'
+                : 'Peça a quem administra os convites que os revogue e tente de novo.'))
+            ->persistent()
+            ->send();
+
+        $action->cancel();
     }
 
     /**

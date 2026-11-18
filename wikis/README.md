@@ -29,6 +29,7 @@ Leia nesta ordem. São ~20 minutos e evitam a maior parte dos erros caros:
 | 10 | [Roadmap](roadmap.md) | O que o kit já olhou e **decidiu adiar**, com o motivo e a medição — para você não reavaliar do zero |
 | 11 | [Checklist de release](checklist-de-release.md) | **Do mantenedor do kit**: os quatro cenários obrigatórios a cada tag, e o que já quebrou em cada um |
 | 12 | [Glossário](glossario.md) | O vocabulário do domínio decidido nas features — o termo certo em pt e en, e com o que não confundir |
+| 13 | [Candidatas a pacote](candidatas-a-pacote.md) | O que o kit implementou no próprio código e pode virar plugin Filament independente — com os arquivos, o acoplamento ao kit e o esforço de extrair |
 
 ## O kit em dez linhas
 

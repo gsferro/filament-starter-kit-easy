@@ -1,0 +1,196 @@
+# Progresso — Roadmap item 1: preferências de aparência por usuário
+
+**Estado**: concluída — 2026-11-18
+
+**Base do PR**: `main`
+
+## 1. Colunas na pessoa e na organização
+- [x] `users.aparencia` (JSON, fora do `$fillable`, em `$hidden`) e `tenants.aparencia_por_usuario` (default `false`) — `database/migrations/2026_11_18_100000_add_aparencia_to_users_table.php`, `…100001_add_aparencia_por_usuario_to_tenants_table.php`; CT-23 e CT-35 verdes, 2026-11-18
+
+## 2. Vocabulário e padrões da instalação
+- [x] `TamanhoDaFonte` e `ModoDoMenu` — `app/Support/TamanhoDaFonte.php`, `app/Support/ModoDoMenu.php`; CT-15, CT-16, CT-B02 verdes, 2026-11-18
+- [x] `aparencia_por_usuario`, `tamanho_da_fonte`, `modo_do_menu` nos três lugares do settings, `config/kit.php` e `.env.example` — CT-20, CT-21 verdes; âncora do `KitInfoTest` 73 → 76, 2026-11-18
+
+## 3. O decisor
+- [x] `AparenciaDoUsuario` — `app/Support/AparenciaDoUsuario.php`; CT-09..CT-18, CT-37..CT-41 verdes; guarda da pré-visualização (P-17) no step 9, 2026-11-18
+
+## 4. Os quatro consumidores
+- [x] render hook (densidade + fonte), largura do menu, modo do menu e cor nos três painéis — `KitServiceProvider::configureDensidadeDoLayout()`, os três providers; `DensidadeDoLayoutTest` 100% verde, CT-B01/CT-B02 verdes, e o roteiro Playwright versionado em `wikis/specs/feat/preferencias-de-aparencia/preferencias-de-aparencia/roteiro-playwright/` (`prepara.sh` + `manual.cjs`, da raiz: `node …/manual.cjs http://127.0.0.1:8091 0 saida`), 2026-11-18
+
+## 5. A tela de configurações
+- [x] seção "Aparência dos painéis" e coerção ao abrir e ao salvar — CT-20, CT-25, CT-26, CT-42 verdes; a coerção no save veio do vermelho do CT-25 (M49), 2026-11-18
+
+## 6. A seção "Aparência" do Meu perfil
+- [x] `PreferenciasDeAparencia` registrado nos três painéis — CT-01..CT-08, CT-29..CT-31, CT-35 verdes, 2026-11-18
+
+## 7. A chave da organização
+- [x] `Toggle aparencia_por_usuario` no `TenantForm` — CT-19, CT-22..CT-24, CT-26, CT-28, CT-42 verdes, 2026-11-18
+
+## 8. O documento de candidatas a pacote
+- [x] `wikis/candidatas-a-pacote.md` e links — roadmap item 1, `wikis/README.md`, `KitUpdate::CAMINHOS_DO_KIT`; CT-32..CT-34 verdes, 2026-11-18
+
+## Testes
+- [x] `tests/Kit/PreferenciasDeAparenciaTest.php` (CT-01..CT-08, CT-31, CT-35, CT-43, CT-46) — `vendor/bin/pest tests/Kit/PreferenciasDeAparenciaTest.php --no-tia`: 35/35, 240 asserções, 2026-11-18
+- [x] `tests/Kit/AparenciaEfetivaTest.php` (CT-09..CT-11, CT-15..CT-17, CT-29, CT-37..CT-41, CT-45) — `--no-tia`: 41/41, 235 asserções, 2026-11-18
+- [x] `tests/Kit/ConfiguracoesDeAparenciaTest.php` (CT-20, CT-21, CT-25, CT-27, CT-44) — `--no-tia`: 11/11, 46 asserções (CT-25 vermelho até a coerção no save), 2026-11-18
+- [x] `tests/Kit/CandidatasAPacoteTest.php` (CT-32..CT-34) — `--no-tia`: 3/3, 42 asserções, 2026-11-18
+- [x] `tests/Tenancy/AparenciaEfetivaTenancyTest.php` (CT-12..CT-14, CT-18) — `--no-tia`: 14/14, 99 asserções (linhas D5/D6 do CT-12 `@obsoleto`, P-13), 2026-11-18
+- [x] `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` (CT-19, CT-22..CT-24, CT-26, CT-28, CT-42) — `--no-tia`: 16/16, 120 asserções, 2026-11-18
+- [x] `tests/Tenancy/PreferenciasDeAparenciaTenancyTest.php` (CT-30) — `--no-tia`: 4/4, 28 asserções, 2026-11-18
+- [x] `tests/Browser/PreferenciasDeAparenciaTest.php` (CT-B01, CT-B02) — em série, `--no-tia`: 7/7, 89 asserções (CT-B01 com 4 linhas depois do BP-37); suíte Browser inteira em série: 261 testes, 209 passaram, 52 pulados, 0 falhas, 2026-11-18
+- [x] Ajustes em testes existentes — âncora de `tests/Kit/KitInfoTest.php` (73 → 76); citações deslocadas em `tests/Kit/{ChecklistDeRelease,CitacoesDeCodigo,DeployDockerLocal,DiagramasDaArquitetura,KitArte,LinkDoPainelSemTenancy}Test.php` e `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php`; `phpunit.xml` fixa as três chaves novas (CX-01), 2026-11-18
+
+## Tickets
+Não fatiado — 2026-11-18: 14 RQ vigentes (< 18), 45 CT no `04` final (< 60; eram 39 no step 8), compactação: sim (a sessão vinha compactada da feature anterior), 4 perguntas de requisito — só o sinal de compactação; não fatiado porque a feature cabe numa sessão e a implementação já estava em curso
+
+## Verificação Final
+- [ ] `/ponytail:ponytail-review` no diff
+- [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"passed"}`, 2026-11-18
+- [x] `vendor/bin/filacheck --fix` — "All 17 rules passed!", 2026-11-18
+- [x] `vendor/bin/phpstan analyse` (level 8) — `{"tool":"phpstan","result":"passed","errors":0}`, 2026-11-18
+- [x] testes da feature (Kit e Tenancy) — ver `## Testes`, 2026-11-18
+- [x] `vendor/bin/pest --parallel --tia` contra a baseline — `pest --tia --parallel --processes=3 --exclude-testsuite=Browser`: rodada 1 (antes do step 9) 6058 testes, 4 falhas (citação deslocada e contagens do README, corrigidas); rodada 2 6182 testes, 6177 passaram, 3 pulados, 2 falhas de corrida (a rodada começou no meio da edição do CT-46 e dos testes novos: badge 2.668 → 2.672 e o placeholder antigo), depois `SiteDeDocumentacaoTest` + `PreferenciasDeAparenciaTest` 103/103; baseline em `main` (v0.53.2) sem falhas, 2026-11-18
+- [x] `/code-review high main...HEAD` + passe de eixos (step 9), antes da reconciliação — 10 achados do `/code-review`, 2 do `fw-revisor-diff`, 1 do `codex`; destino de cada um em `## Revisão do Diff (step 9)`, 2026-11-18
+- [x] Playwright nos três painéis, sem e com tenancy — roteiro versionado em `wikis/specs/feat/preferencias-de-aparencia/preferencias-de-aparencia/roteiro-playwright/` (`prepara.sh` + `manual.cjs`, da raiz: `node …/manual.cjs http://127.0.0.1:8091 0 saida`); resultado da sessão (2026-11-18, banco SQLite próprio): sem tenancy 17/17; com tenancy 22/23 — o único vermelho foi o aviso "Aparência salva", já expirado na tela quando o roteiro o procurou no servidor lento (no roteiro sem tenancy ele foi visto); o gate do ciclo 1 reproduziu os pontos principais pelo próprio script (QA-01: os números agora têm comando)
+- [x] Falsificabilidade — a fiação da feature nos 13 arquivos de `app/` já existentes revertida (`git diff --diff-filter=M main -- app` + `git apply -R`, reaplicado e conferido por `git status`), com as classes novas mantidas: Kit 59 de 81 vermelhos (PreferenciasDeAparencia + AparenciaEfetiva + ConfiguracoesDeAparencia) e Tenancy 32 de 34; os que passam sem a fiação são os de vocabulário e fábrica dos enums novos e as recusas que já eram do Filament (Toggle `boolean`). CT-41 e CT-25 também provados vermelhos isolados contra as respectivas correções, 2026-11-18
+- [x] Desvios propagados ao `01`/`02`/`04` de origem — marcas `*(alterado em 2026-11-18…)*` no `00` (P-06, P-13), no `01` (Análise, passo 5, passo 7, P-13) e no `02`; CT-12 D5/D6 `@obsoleto`, CT-41 e CT-42 acrescentados ao `04`, 2026-11-18
+- [x] `rastreabilidade.sh {wiki}` silencioso — exit 0 depois de P-17 entrar na origem da R4, 2026-11-18
+- [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — exit 0, 2026-11-18
+- [x] `citacoes.sh {wiki}` silencioso — exit 0 depois de recalcular as citações do `01` deslocadas pela própria feature, 2026-11-18
+- [x] `ids-ct.sh {wiki}` silencioso — exit 0 com os oito arquivos de teste da feature, 2026-11-18
+- [x] `conformidade-rules.sh {wiki} main` silencioso — exit 0, 2026-11-18
+- [x] Docs pt/en, CHANGELOG, roadmap e roteiro de atualização reconciliados — `docs/{pt,en}/recursos/configuracoes-do-kit.md` (seção nova), `atualizando-o-projeto`, CHANGELOG 0.54.0, roadmap item 1 FEITO, glossário ("Aparência pessoal"), `wikis/atualizacoes/v0.54.0.md` + cópia em `agentes-e-skills.md`, READMEs (contagens), 2026-11-18
+- [ ] `git commit`
+
+## Auditoria Pré-Implementação
+
+- Entendimento confirmado: 2026-11-18 — mantenedor, pelas respostas escritas a Q1–Q4 e "prossiga ate finalizar" — 1 rodada, 4 perguntas na raia requisito (Q1–Q4), 0 na raia desenho (decisões rotineiras sob a autorização), 0 de fato
+- Roteiro manual: não — 2026-11-18 — instrução explícita do desenvolvedor ("use o playwrite para navegar no site e validar as correções") — a validação manual é a navegação Playwright da sessão, registrada na Verificação Final, sem `08`
+
+### Revisão profunda (step 5)
+
+| Premissa do plano | O que o código diz | Correção |
+|---|---|---|
+| sidebar recolhível por Closure no render | `HasSidebar::isSidebarFullyCollapsibleOnDesktop()` faz `evaluate()`; lido em `vendor/filament/filament/resources/views/components/layout/index.blade.php:isSidebarFullyCollapsibleOnDesktop:12` no render | nenhuma |
+| `/app/meu-perfil` sem organização no endereço | `route:list`: `app/meu-perfil` — rodado **sem** tenancy; com `KIT_TENANCY=true` a rota é `/app/{tenant}/meu-perfil` (descoberto pelo CT-12 na implementação) | P-13 escrita a partir disto e corrigida em 2026-11-18 |
+| Breezy filtra por `canView()` estático | `HasMyProfile::getRegisteredMyProfileComponents():96` | nenhuma |
+| cor da organização no `bootUsing`, registrada depois da do painel | `app/Providers/Filament/AppPanelProvider.php` (o `FilamentColor::register` da organização no `bootUsing`); a da pessoa precisa vir depois desta | D5 escrita a partir disto |
+| contagem de propriedades do settings travada num teste | `tests/Kit/KitInfoTest.php` âncora `toHaveCount(73)` | o passo 2 sobe para 76 (registrado em Impacto) |
+| `TenantPolicy` restringe o Resource | `app/Policies/TenantPolicy.php` existe | nenhuma |
+
+### Varredura da classe irmã
+
+- `App\Livewire\DefinirSenhaPorEmail` (irmã de `PreferenciasDeAparencia`): citada nos três providers (`->myProfileComponents`) e em `tests/Kit/DefinirSenhaPorEmailTest.php`. O componente novo entra nos três providers; nenhuma outra lista
+- `App\Support\DensidadeDoLayout` (irmã de `TamanhoDaFonte`/`ModoDoMenu`): `config/kit.php`, migration de settings, `ConfiguracoesDoKit` (classe e tela), três providers, `KitServiceProvider`, `.env.example`, `tests/Kit/DensidadeDoLayoutTest.php`, `tests/Kit/KitInfoTest.php` (âncora). Os dois enums novos entram em `config/kit.php`, settings (três lugares), tela e `.env.example`; a âncora sobe 73 → 76
+- `tenants.registro_habilitado` (irmã de `aparencia_por_usuario`): `Tenant::$fillable`/cast, `TenantForm`, `TenantHeader`, `TenantInfolist`. A chave nova entra em `$fillable`, cast e `TenantForm`; `TenantHeader`/`TenantInfolist` não (corte do Ponytail abaixo)
+
+### Auditoria Ponytail (step 6)
+
+Ponytail indisponível como plugin com namespace — passe manual pela skill `ponytail-review` do projeto sobre `01` e `02`:
+
+- `01` passo 7: `delete:` entrada no `TenantInfolist` — o requisito não pede exibir a chave; o formulário basta. Aplicado: passo 7 só no `TenantForm`
+- `01` D2: um decisor para quatro consumidores — mantido; quatro cópias da regra das duas chaves seriam o defeito da `.ai/rules/models.md` (fonte única)
+- `01` D6: mover a densidade de seção — mantido; é uma linha, e deixar a densidade longe de fonte e menu espalharia a mesma pergunta em duas seções
+- `02`: nada a cortar
+
+## Desvios do Plano
+
+- 2026-11-18 — **citações das wikis irmãs** que apontam para arquivos tocados por esta feature e estavam certas em `main`: 7 deslocadas em 6 wikis (`aparencia-das-telas-de-acesso`, `cabecalho-do-painel`, `diagramas-da-arquitetura` ×2, `roteiro-de-atualizacao` ×2), recalculadas pela ocorrência equivalente; as demais saídas do `citacoes.sh` nessas wikis já estavam assim em `main` e não são desta feature
+
+- 2026-11-18 — **P-13 corrigida pelo CT-12**: com tenancy, o Meu perfil do `/app` está dentro de uma organização (`/app/{tenant}/meu-perfil`); as linhas D5 e D6 do CT-12 (que abriam `/app/meu-perfil` com tenancy) viraram `@obsoleto` no `04` e saíram do teste; a fronteira "sem organização corrente" continua coberta pela linha D7/D10 (`/admin`) e pelo CT-09 (Kit, `/app` sem tenancy). O código não muda: `AparenciaDoUsuario::liberada()` já decide pela organização corrente
+- 2026-11-18 — **defeito achado pelo CT-25 (M49)**: fonte e menu de tipo errado forjados no estado da tela de configurações (`["grande"]`) passavam pelo `in()` do Select, chegavam nulos ao `fill()` do spatie e davam `TypeError` (500) ao salvar. Corrigido coagindo densidade, fonte e menu também em `mutateFormDataBeforeSave()`
+
+- 2026-11-18 — **ordem**: a implementação dos passos 1 a 8 começou em paralelo com a derivação do `04` (step 7), e não depois dela. O derivador recebeu só o `00`, as rotas e a Superfície de UI do `01`, a Superfície Livewire do `02` e o glossário, com a ordem de ler `app/` só para nomes. Para conter o risco de o `04` confirmar o código em vez do requisito: o `04` é auditado por comportamento que só viria de `app/` (nomes de método, textos de log ou de tela que não estão no `01`), passa pelo `fw-adversario-ct`, e a falsificabilidade é provada revertendo o patch de `app/` (`git apply -R`) e vendo os CT ficarem vermelhos
+- 2026-11-18 — **erro de leitura do step 3**: a coerção da densidade na tela de configurações mora em `mutateFormDataBeforeFill()`, não em `mutateFormDataBeforeSave()`; corrigido no `01` (Análise e passo 5), no `02` e no comentário do código
+- 2026-11-18 — **consequências do documento novo em `wikis/`**: `wikis/candidatas-a-pacote.md` entrou em `KitUpdate::CAMINHOS_DO_KIT` (a varredura de `wikis/*.md` do `KitUpdateTest`), na contagem de documentos de referência dos dois READMEs (12 → 13) e na tabela de `wikis/README.md`
+
+## Quality Gate
+
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação (QA-01, QA-02 Major; QA-03, QA-04, QA-05 Minor; QA-06 Cosmético) · **Data**: 2026-11-18 — nenhum defeito de comportamento; QA-01: números do `03` sem comando (corrigidos pela saída real, roteiro Playwright versionado em `roteiro-playwright/`); QA-02: `01`/`02` contradiziam o código (`declaracoes()`, coerção no save, guarda da pré-visualização, texto do log, rota do perfil com tenancy; P-15..P-17 na Cobertura); QA-03: texto do `04` (P-13, `$fillable`, Q5/Q6) e CT-41..CT-46 no Índice e no Mapa (e a linha do M74, que uma inserção anterior tinha quebrado); QA-04: o "Padrão" da cor falava de organização sem tenancy — CT-31 fortalecido (vermelho), depois o sufixo condicionado a `kit.tenancy.enabled`; QA-05: Q7 ao solicitante (P-13 vigente); QA-06: contagens do `04` (45 · 16 · 86) e tipo `nova` no `01`
+- **Ciclo**: 2 · **Veredito**: APROVADO COM DÉBITO · **Data**: 2026-11-18 — 0 Blocker, 0 Major; QA-01..QA-06 fechados (QA-05 encaminhado como Q7); os quatro novos corrigidos em seguida: QA-07 (docblock do componente repetia a frase do `in()` que o QA-02 corrigiu na wiki), QA-08 (Gherkin do CT-B01 com `/app`, `/infra` e o reabrir, mutante MB9; `Então` do CT-31 sem menção a organização, mutante M87), QA-09 (`PermissoesDeAcoesTest` no Impacto do `01`), QA-10 (marcas do `01` e a coluna Contexto do despacho 15)
+- **Relatório**: `06-relatorio-qa.md` (ciclo 2; o do ciclo 1 está no histórico do git, commit `cb615687`) — gravado do texto devolvido pelo gate; duas citações de linha sem símbolo (`[CT-B01]` e `[CT-16]`) foram reescritas pelo ID do CT, como manda `.ai/rules/specs.md`, para o `citacoes.sh` passar
+- **Débito** (aceito, sem verificação possível nesta máquina ou dependente do solicitante): E — contagem de queries por request não medida (sem `pest-plugin-agent`; o decisor não tem I/O, 23 µs por chamada, CR-03); K2 — `pest --mutate` no Windows não certifica score (`.ai/rules/testes.md`); Q5, Q6 e Q7 abertas ao solicitante com P-15, P-16 e P-13 vigentes; J — 2 timeouts de 60 s do `phpstan dump-parameters` no `QualidadeDeCodigoTest` com a máquina carregada, 31/31 isolado (ambiente)
+
+## Revisão do Diff (step 9)
+
+| ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
+|---|---|---|---|---|---|
+| CR-01 | `/code-review` | a pré-visualização das telas de acesso aplicava a aparência do administrador logado | premissa → CT → correção | P-17 / CT-41 (vermelho sem a guarda: Denso em vez de Compacto) | — |
+| CR-02 | `/code-review` | outros `string` do settings vindos de Select (`dock_layout`, `dock_estilo`, `cabecalho_detalhe_do_usuario`, `login_anti_robo_provedor`) também dariam 500 com array forjado | — | — | anterior à feature e fora do escopo; só quem administra a instalação alcança; registrado como pendência no relatório final |
+| CR-03 | `/code-review` | o decisor roda uma vez por item e grupo do menu | — | — | medido: 23 ms por 1.000 chamadas (~23 µs), ~2 ms numa página de 40 itens; memoizar quebraria CT-10/CT-14/CT-37/CT-40 (estado entre requests no mesmo processo) |
+| CR-04 | `/code-review` | docblocks diziam que o Meu perfil do `/app` fica fora de organização | correção de comentário | P-13 | — |
+| CR-05 | `/code-review` | o comentário copiado nos três providers citava "a cor da organização" no `/admin` e no `/infra` | correção de comentário | — | — |
+| CR-06 | `/code-review` | o tour do Meu perfil (`PerfilEDoisFatoresSeeder`) não citava a seção nova (`.ai/rules/onboarding.md`) | correção de texto | — | — |
+| CR-07 / CR-08 | `/code-review` | `escolha()` relia a pessoa e reduzia as quatro chaves duas vezes; `CHAVES` sem uso | simplificação | — | — |
+| CR-09 | `/code-review` | cinco enums com `opcoes()`/`coagir()`/`padrao()` repetidos | — | — | refatoração dos três enums anteriores fora do escopo; o molde é o da casa |
+| CR-10 | `/code-review` | comentários de linha em vez de PHPDoc | — | — | a convenção viva do kit usa comentário de linha para o porquê local (providers e telas inteiras) |
+| RD-01 | `fw-revisor-diff` | duas citações de `tests/Pest.php` deslocadas pelos `use` novos | correção | — | — |
+| RD-02 | `fw-revisor-diff` | `null` forjado nas chaves booleanas daria 500 (por leitura) | CT de regressão | CT-42 | refutado por execução: forjado pelo estado do Livewire, a gravação responde sem erro e grava desligado, com ou sem coerção; a coerção defensiva foi retirada por não ser falsificável |
+| CX-01 | `codex` | CT-21 dependia do `.env` local | correção (fixar as três chaves no `phpunit.xml`) | CT-21 | — |
+
+### Revisão contra o Filament Blueprint (pedido do usuário: "use o blueprint para validar o filament")
+
+Blueprint derivado pelo `codex` com a skill `planning-filament` só a partir de `00`/`01`/`02` (BP-01..BP-40; o pacote `filament/blueprint` não está instalado — limite declarado); conferência pela skill `reviewing-filament-plans` em sub-agente: 30 atendidos, 9 divergentes (1 Major, 8 Minor), 1 não verificável, nenhum defeito de comportamento.
+
+| BP | Achado | Destino |
+|---|---|---|
+| BP-37 (Major) | CT-B01 só recolhia no `/admin`, sem reabrir | CT-B01 ampliado: reabre pelo botão do topo e roda em `/admin`, `/app` e `/infra` |
+| BP-03 | `TamanhoDaFonte::declaracoes(): ?string` em vez de `variaveis(): ?array` | aceito como emenda: o nome e o tipo eram do Blueprint, não do `01`; o render hook monta uma declaração só e a string pronta evita uma segunda junção |
+| BP-19 | o "Padrão" da cor não dizia qual cor | correção: o placeholder nomeia a cor da aplicação (hex, senão o nome, senão a do Filament); CT-46 |
+| BP-23 / BP-33 | log da gravação e da recusa sem teste | CT-43 (também prova que o campo forjado não entra no log) |
+| BP-32 | a cor é lida do `ColorManager` depois do GET, não do CSS | mantido: o `ColorManager` é a fonte que o `<head>` serializa no mesmo render; o CSS final já é medido no navegador pelo Playwright da sessão (`--primary-500`) |
+| BP-34 / BP-10 | CT-25 aceita coagir em vez de recusar | mantido: o `00` não determina recusa para fonte e menu (ADV-23 da revisão adversarial limitou o CT ao invariante "∈ vocabulário e ≠ enviado") |
+| BP-35 | a seção nova e o vazio não selecionável sem teste | CT-44 |
+| BP-36 | a largura do menu com a densidade pessoal sem teste | CT-45 |
+| BP-39 | sem teste de consultas por página nem de rollback | mantido: zero consulta nova vem de ler o usuário e a organização já carregados (medido 23 µs por chamada, CR-03); os `down()` das três migrations existem e o padrão do kit testa rollback só de settings com valor semeado |
+| BP-40 | processo não rodado pelo revisor | rodado pela sessão: Pint, filacheck, PHPStan e suíte (ver Verificação Final) |
+
+## Conformidade com Rules
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+| `app.md` | `app/**` | aplicada | sem pasta-base nova; nenhum papel atribuído; nenhuma URL de disco |
+| `commands.md` | `app/Console/Commands/**` | aplicada | `KitUpdate::CAMINHOS_DO_KIT` ganhou `wikis/candidatas-a-pacote.md` em ordem alfabética |
+| `config.md` | `config/**` | aplicada | chave booleana nova por `BooleanoDoEnv::comPadrao()`; fonte e menu coagidos pelo enum, sem `(int) env()`; sem canal de log novo (D7) |
+| `css-filament.md` | `app/Providers/**` | aplicada | nenhuma regra por classe `fi-*`: fonte por variáveis `--text-*` fora de layer, no mesmo `<style>` do `--spacing` |
+| `filament-resources.md` | `app/Filament/**/Resources/**` | aplicada | só um `Toggle` no `TenantForm`; o Resource continua pela `TenantPolicy` (CT-28) |
+| `filament.md` | `app/Filament/**` | aplicada | `filacheck` 17/17; nenhuma Action nova (o salvar é método do componente do perfil, gateado pela tela `View:MyProfilePage` e pela chave); `PermissoesDeAcoesTest` verde na suíte |
+| `kit.md` | `tests/Kit/**` | aplicada | casos sem tenancy em `tests/Kit`, com `admin_app` só em `tests/Tenancy` |
+| `livewire.md` | `app/Livewire/**` | aplicada | o log do `salvar()` leva só os valores reduzidos ao vocabulário, nunca o bruto do cliente |
+| `models.md` | `app/Models/**` | aplicada | `users.aparencia` fora do `$fillable`, em `$hidden`, escrita só por `forceFill` (CT-35); nenhuma trait nova |
+| `onboarding.md` | `app/Filament/**` | aplicada | o tour do Meu perfil (`PerfilEDoisFatoresSeeder`) passou a citar a seção Aparência (CR-06); os tours das Configurações e das Organizações são genéricos e continuam verdadeiros |
+| `pages.md` | `app/Filament/Admin/Pages/**` | aplicada | a seção nova nasce por `secao('aplicacao', 'aparencia', …)` (colapsável, ícone, id estável); `ConfiguracoesSecoesColapsaveisTest` verde |
+| `providers-filament.md` | `app/Providers/Filament/**` | aplicada | o componente do perfil e a cor da pessoa entram nos TRÊS painéis |
+| `providers.md` | `app/Providers/**` | n.a. | nenhuma rota nova |
+| `settings.md` | `app/Settings/**` | aplicada | três propriedades nos três lugares (propriedade, `mapaDeConfiguracao()`, migration de settings); todas lidas por request (render hook e Closures) |
+| `specs.md` | `wikis/specs/**` | aplicada | citações de vendor por símbolo; citações de teste pelo ID do CT |
+| `support.md` | `app/Support/**` | n.a. | nenhuma gravação no `.env` |
+| `testes-browser.md` | `tests/Browser/**` | aplicada | em série, geometria por `script()`, `assertPathIs` antes do conteúdo (relato do `fw-executor-ctb`) |
+| `testes.md` | `tests/**` | aplicada | helpers cruzados em `tests/Pest.php` com docblock; `flushSession()` na segunda pessoa; `chaveDoCampo()`/`carregarAba()`; `naArvoreDoKit()` no caso que lê `wikis/` |
+| `views.md` | `resources/views/**` | aplicada | a view nova não menciona diretiva em comentário Blade |
+
+## Despachos
+
+| # | Step | Rota | Modelo | Contexto | Resultado | Custo | Auditoria |
+|---|---|---|---|---|---|---|---|
+| 1 | 3 | `Explore` (revisão do código para RQ-14) | não exposto pelo host | contexto novo, só o objetivo e as pastas | tabela de 20 candidatas com arquivos, acoplamento e esforço | 113k tokens · 2,5 min | amostragem: 8 arquivos citados conferidos por `ls` (todos existem); 2 chaves de config conferidas por grep e corrigidas no documento (`kit.exibir_versao`, `kit.tabelas.visoes_salvas`) |
+| 2 | 7 | `feature-test-design` (derivação do `04`) | `opus` | contexto novo: `00`, rotas e Superfície de UI do `01`, Superfície Livewire do `02`, glossário | 35 CT + 2 CT-B, 5 perguntas (Q?1..Q?5) | 273k tokens · 18 min | auditado por vazamento de `app/`: só nomes de arquivo de teste e paths do `01`; Q?2 virou fato (regra `boolean` do Toggle), Q?4 decisão de desenho, Q?5 correção do `02` |
+| 3 | 7 | `fw-adversario-ct` rodada 1 | não exposto pelo host | `00`, `04`, `05`, glossário | 18 achados (ADV-01..ADV-18) | 85k tokens · 4 min | amostragem de ADV-01/ADV-02 contra o `04`: procedentes |
+| 4 | 7 | `feature-test-design` (fechamento da rodada 1) | `opus` (mesmo agente) | o mesmo + os achados | 37 CT, 80 mutantes, 0 sem matador | 348k tokens · 6 min | `grep 'Q\?[0-9]'` vazio no `04` |
+| 5 | 7 | `fw-adversario-ct` rodada 2 (teto) | não exposto pelo host | o mesmo | 16 fechados, 1 parcial, 1 não verificável, 6 novos (ADV-19..ADV-24) | 143k tokens · 1,6 min | — |
+| 6 | 7 | `feature-test-design` (fechamento da rodada 2) | `opus` (mesmo agente) | o mesmo + os achados | 39 CT, 85 mutantes | 385k tokens · 3 min | delta repassado ao executor |
+| 7 | impl. | `fw-executor-ct` | não exposto pelo host | `04` + `.ai/rules/testes.md` | 7 arquivos, 117 testes; 3 vermelhos classificados "implementação divergente" (CT-12 D5/D6 → P-13; CT-25 → coerção no save) | 280k + 230k tokens · 32 min (parou no teto de turnos e foi retomado) | os 3 vermelhos reproduzidos pela sessão antes de corrigir |
+| 8 | impl. | `fw-executor-ctb` | não exposto pelo host | `05` + Superfície de UI | 1 arquivo, 5/5 verdes | 78k tokens · 1,3 min | — |
+| 9 | 9 | `/code-review high main...HEAD` | sub-agente (forked) | diff | 10 achados (CR-01..CR-10) | 183k tokens · 11 min | CR-01 reproduzido (CT-41 vermelho sem a guarda) |
+| 10 | 9 | `fw-revisor-diff` | não exposto pelo host | diff + Superfície Livewire | 2 achados (RD-01, RD-02) | 204k tokens · 26 min | RD-02 refutado por execução (CT-42 verde sem a coerção) |
+| 11 | 9 | `codex exec --yolo` (revisão independente) | não exposto pelo host | diff | 1 achado (CX-01) | — | reproduzido pelo próprio codex com `KIT_TAMANHO_DA_FONTE=grande` |
+| 12 | 10 | `codex exec --yolo` (roteiro de atualização v0.54.0) | não exposto pelo host | CHANGELOG, diff, docs | `wikis/atualizacoes/v0.54.0.md` + cópia em `agentes-e-skills.md`; `RoteiroDeAtualizacaoTest` 212/212 | — | conferido: chave ligada, três migrations, como iniciar desligada |
+| 13 | 10 | `codex exec --yolo` (Filament Blueprint, skill `planning-filament`) | não exposto pelo host | só `00`, `01`, `02` + vendor | 40 requisitos BP-01..BP-40 | — | pedido do usuário ("use o blueprint para validar o filament") |
+| 14 | 10 | `reviewing-filament-plans` (sub-agente) | `opus` | Blueprint + diff | 30 atendidos, 9 divergentes, 1 não verificável | 165k tokens · 10 min | BP-37 e BP-19 reproduzidos pela leitura do teste e do placeholder; destino de cada um na seção acima |
+| 15 | 11 | `fw-qa-gate` — ciclo 1 | claude-opus-5-5 (informado no `06`) | contexto novo, sem a conversa | `06` gravado verbatim; REPROVADO → especificação (2 Major de documentação) | 279k tokens · 38 min | `git status --porcelain` vazio antes e depois; bancos descartáveis 8091/8092 alterados e devolvidos ao estado inicial |
+| 16 | 11 | `fw-qa-gate` — ciclo 2 | claude-opus-5-5 (informado no `06`) | contexto novo, sem a conversa | `06` gravado verbatim; APROVADO COM DÉBITO (QA-07..QA-09 Minor, QA-10 Cosmético, corrigidos depois) | 268k tokens · 39 min | `git status --porcelain` vazio antes e depois; bancos 8091/8092 devolvidos ao estado inicial |
+| 17 | 12 | Sem despacho — `requirement-to-rule` não invocada | — | — | os dois ciclos do gate: nenhum candidato que passe em *Vale virar rule* | — | a lição do QA-07 (procurar a cópia da frase corrigida) já está em `.ai/rules/specs.md` |
+
+## Candidatos a Rule
+
+- 2026-11-18 — rota: sessão principal, sem invocar a `requirement-to-rule` — apresentados 0 · gravados 0 · recusados 0 · descartados no gate 0 · poda 0 (os dois ciclos do gate: nenhum candidato)

@@ -157,7 +157,7 @@ Roteiro manual: não — 2026-10-23 — resposta a Q11 — o cenário 5 pós-rel
 | C15 | impl. | `fw-executor-ct` — guarda do passo 3 | herdado | conversa, plano além de paths e D | 29 CT, 183 casos verdes | 239.304 tokens · 804 s | hook negou o `01`; usou as `@premissa` do `04` |
 | C14 | impl. | construtor (`general-purpose`) — passos 1, 2, 4, 5, 6 | opus | conversa | roteiro, contrato, cópia, workflow, checklist, docs, CHANGELOG | 273.775 tokens · 840 s | `git status` só nos arquivos do escopo; opções do `kit:update` conferidas no código |
 | C8 | 5 | `codex exec --yolo` — revisão profunda do `01` contra o código (só leitura) | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/revisao-profunda.md` (8 premissas a corrigir, 14 listas paralelas) | — | árvore intacta; amostra: `ChecklistDeReleaseTest` (4 linhas), `PageHeaderTest` [CT-36] (paridade), 89 `00-requisito.md` conferidos |
-| C7 | 3 | `codex exec --yolo` — parceiro de desenho (só leitura): fatos da atualização, o que viaja, cuidados, 3 desenhos, perguntas | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/desenho-roteiro.md` (3 desenhos, recomendação A, 16 perguntas) | — | árvore intacta; amostra: `.gitattributes:21,40`, `app/Console/Commands/KitUpdate.php:preVoo:409` (pré-voo `FAILURE`) e `app/Console/Commands/KitUpdate.php:marcarVersao:1140` conferidos |
+| C7 | 3 | `codex exec --yolo` — parceiro de desenho (só leitura): fatos da atualização, o que viaja, cuidados, 3 desenhos, perguntas | não exposto (Codex CLI 0.163.0) | conversa | `scratchpad/desenho-roteiro.md` (3 desenhos, recomendação A, 16 perguntas) | — | árvore intacta; amostra: `.gitattributes:21,40`, `app/Console/Commands/KitUpdate.php:preVoo:410` (pré-voo `FAILURE`) e `app/Console/Commands/KitUpdate.php:marcarVersao:1141` conferidos |
 
 
 
@@ -175,7 +175,7 @@ Roteiro manual: não — 2026-10-23 — resposta a Q11 — o cenário 5 pós-rel
 ## Notas de Implementação
 
 - `rastreabilidade.sh` acusa `RQ-16 sem CT` de propósito: "nada muda na aplicação nem no `kit:update`" é afirmação sobre o diff desta entrega, não comportamento que dura (`04`, `## Cogitado e cortado`); quem confere é o quality gate, pelo `git diff --stat` contra a `main`. Achado esperado do script até o step 11, 2026-10-23.
-- Do parecer C7: o pré-voo do `kit:update` atual sai com `FAILURE` (`app/Console/Commands/KitUpdate.php:preVoo:409`), mas a primeira rodada usa a classe antiga, que pode sair com 0; e a versão é marcada com qualquer arquivo aplicado (`app/Console/Commands/KitUpdate.php:marcarVersao:1140`). O roteiro confere versão **e** arquivos.
+- Do parecer C7: o pré-voo do `kit:update` atual sai com `FAILURE` (`app/Console/Commands/KitUpdate.php:preVoo:410`), mas a primeira rodada usa a classe antiga, que pode sair com 0; e a versão é marcada com qualquer arquivo aplicado (`app/Console/Commands/KitUpdate.php:marcarVersao:1141`). O roteiro confere versão **e** arquivos.
 
 ## Referências Abertas
 - `template-00-requisito.md` — step 4 — 2026-10-23

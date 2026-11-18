@@ -174,6 +174,20 @@ class TenantForm
                             ])
                             ->helperText('Cor de marca em hexadecimal. VENCE a paleta escolhida ao lado quando preenchida. O Filament deriva as 11 tonalidades e escolhe a legível por contraste.'),
 
+                        /*
+                         * A organização libera a aparência pessoal para as pessoas dela (wiki
+                         * `preferencias-de-aparencia`, RQ-08). Só aparece com a chave da
+                         * instalação ligada, porque é ela que libera primeiro (RQ-09) — o mesmo
+                         * critério do "Aceita cadastro público" acima: interruptor sem efeito
+                         * possível é promessa quebrada (P-11). Nasce desligado (P-04).
+                         */
+                        Toggle::make('aparencia_por_usuario')
+                            ->label('Liberar a aparência pessoal')
+                            ->helperText('As pessoas desta organização passam a ver, aqui dentro, a densidade, a fonte, a cor e o menu que escolheram no Meu perfil — inclusive uma cor diferente da cor desta organização. Desligado, todos veem a aparência desta organização e da instalação.')
+                            ->default(false)
+                            ->visible(fn (): bool => (bool) config('kit.aparencia_por_usuario'))
+                            ->columnSpanFull(),
+
                         FileUpload::make('logo')
                             ->label('Logo')
                             // `acceptedFileTypes()` explícito, e NÃO `->image()`: o `image()` do
