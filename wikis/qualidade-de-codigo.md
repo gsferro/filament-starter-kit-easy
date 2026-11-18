@@ -242,30 +242,36 @@ nela — senão o relatório esconderia exatamente o que existe para mostrar.
 
 ### A triagem de 2026-11-18 (a linha de base)
 
-**`composer-unused`** acusou 8 dos 62 pacotes do `require`:
+**`composer-unused`** acusou 8 dos 62 pacotes do `require`, e o **`composer-require-checker`** acusou
+**181 símbolos**, nenhum falso positivo: 137 de pacotes que só chegam como dependência transitiva e o kit
+usa direto, e 44 de oito extensões PHP que o `composer.json` não declara (`ext-ctype`, `ext-dom`,
+`ext-filter`, `ext-gd`, `ext-libxml`, `ext-mbstring`, `ext-SimpleXML` e `ext-tokenizer`).
 
-| Pacote | Veredito | Por onde é usado (evidência) |
-|---|---|---|
-| `anselmokossa/filament-sentinel` | usado — excluído na configuração | auto-discovery do provider registra middleware e o overlay de erros; `config/sentinel.php` |
-| `laravel/pulse` | usado — excluído | recorders em `config/pulse.php`, dashboard publicado em `resources/views/vendor/pulse`, daemon `pulse:check` no `docker-compose.yml` |
-| `laravel/reverb` | usado — excluído | serviço opt-in `reverb:start` no `docker-compose.yml`; os painéis desligam o polling quando o broadcast é o Reverb |
-| `livewire/blaze` | usado — excluído | auto-discovery do provider intercepta a compilação do Blade (nenhum `@blaze` próprio do kit) |
-| `spatie/laravel-backup` | usado — excluído | `config/backup.php` e o `backup:run` da Central de Comandos (`config/command-center.php`); o agendamento em `routes/console.php` está comentado |
-| `awcodes/filament-badgeable-column` | **sem uso** | nenhum consumo em `app`, `config`, `resources`, `routes`, `database` ou `tests`; anunciado em `wikis/pacotes.md` e em `docs/pt/referencia/pacotes-instalados.md` |
-| `lara-zeus/progress` | **sem uso** | idem; anunciado nas mesmas duas páginas |
-| `syriable/filament-activitylog` | **sem uso** | idem (a única menção no código é um comentário em `resources/css/filament/kit.css`); anunciado nas mesmas duas páginas |
+| Pacote | Veredito | Evidência | Recomendação |
+|---|---|---|---|
+| `anselmokossa/filament-sentinel` | usado por outro caminho | auto-discovery do provider registra middleware e o overlay de erros; `config/sentinel.php` | manter; excluído em `composer-unused.php` |
+| `laravel/pulse` | usado por outro caminho | recorders em `config/pulse.php`, dashboard em `resources/views/vendor/pulse`, daemon `pulse:check` no `docker-compose.yml` | manter; excluído |
+| `laravel/reverb` | usado por outro caminho | serviço opt-in `reverb:start` no `docker-compose.yml`; os painéis desligam o polling quando o broadcast é o Reverb | manter; excluído |
+| `livewire/blaze` | usado por outro caminho | auto-discovery do provider intercepta a compilação do Blade (nenhum `@blaze` próprio do kit) | manter; excluído |
+| `spatie/laravel-backup` | usado por outro caminho | `config/backup.php` e o `backup:run` da Central de Comandos (`config/command-center.php`); o agendamento em `routes/console.php` está comentado | manter; excluído |
+| `awcodes/filament-badgeable-column` | sem uso | nenhum consumo em `app`, `config`, `resources`, `routes`, `database` ou `tests`; anunciado em `wikis/pacotes.md` e em `docs/pt/referencia/pacotes-instalados.md` | remover do `require` (ou usar de verdade) e corrigir as duas páginas que o anunciam |
+| `lara-zeus/progress` | sem uso | idem; anunciado nas mesmas duas páginas | remover (ou usar) e corrigir as duas páginas |
+| `syriable/filament-activitylog` | sem uso | idem (a única menção no código é um comentário em `resources/css/filament/kit.css`); anunciado nas mesmas duas páginas | remover (ou usar) e corrigir as duas páginas |
+| `filament/actions` | uso direto de dependência só transitiva | 82 símbolos dos oito componentes do Filament (`actions`, `forms`, `infolists`, `notifications`, `schemas`, `support`, `tables`, `widgets`), trazidos por `filament/filament` em `self.version` | pode ficar como está: o `filament/filament` fixa os componentes em lockstep |
+| `spatie/laravel-permission` | uso direto de dependência só transitiva | 5 símbolos (`Role`, `Permission`, `HasRoles`, `PermissionRegistrar`, `Support\Config`); chega por `bezhansalleh/filament-shield`, e o kit estende o `Role` dele | declarar no `require`: é API que o kit usa como própria |
+| `spatie/laravel-health` | uso direto de dependência só transitiva | 13 símbolos (checks e o `Health`); chega por `shuvroroy/filament-spatie-laravel-health` | declarar no `require` |
+| `spatie/laravel-medialibrary` | uso direto de dependência só transitiva | 3 símbolos (`HasMedia`, `InteractsWithMedia`, `Media`) e mais 2 de `spatie/image`; chegam por `filament/spatie-laravel-media-library-plugin` | declarar no `require` |
+| `livewire/livewire` | uso direto de dependência só transitiva | 6 símbolos (`Component`, atributos, `Livewire`); chega por `filament/support` | declarar no `require`: o kit tem componentes Livewire próprios |
+| `laravel/prompts` | uso direto de dependência só transitiva | 6 funções (`select`, `text`, `confirm`…) nos comandos do kit; chega por `laravel/framework` | pode ficar: o framework a fixa |
+| `rappasoft/laravel-authentication-log` | uso direto de dependência só transitiva | 2 símbolos (`AuthenticationLog`, `AuthenticationLoggable`); chega por `tapp/filament-authentication-log` | declarar no `require` |
+| `bezhansalleh/filament-plugin-essentials` | uso direto de dependência só transitiva | 5 traits de Resource; chega por `filament-shield` e `filament-exceptions` | declarar, ou trocar pelos traits equivalentes do próprio Filament |
+| `danharrin/livewire-rate-limiting` | uso direto de dependência só transitiva | 2 símbolos (`WithRateLimiting`); chega por `filament/support` e `filament-lockscreen` | pode ficar: vem com o Filament |
+| `brimham/backup-monitor` | uso direto de dependência só transitiva | `BackupRun`; chega por `brimham/filament-backup-monitor` (que tem outro namespace) | declarar no `require` |
+| `nesbot/carbon` | uso direto de dependência só transitiva | `Carbon`, `CarbonImmutable`; chega por `laravel/framework`, assim como três componentes do Symfony (`finder`, `http-foundation`, `process`) e `vlucas/phpdotenv` | pode ficar: o framework os fixa |
 
-**`composer-require-checker`** acusou **181 símbolos**, e nenhum é falso positivo:
-
-- **137 de pacotes que só chegam como dependência transitiva** e o kit usa direto: os componentes
-  `filament/actions`, `forms`, `infolists`, `notifications`, `schemas`, `support`, `tables` e `widgets`
-  (82 símbolos, todos trazidos por `filament/filament`, que fixa a versão deles em `self.version`), e
-  `spatie/laravel-permission` (via `filament-shield`), `spatie/laravel-health`, `spatie/laravel-medialibrary`
-  e `spatie/image`, `livewire/livewire`, `laravel/prompts`, `nesbot/carbon`, três componentes do Symfony,
-  `vlucas/phpdotenv`, `rappasoft/laravel-authentication-log`, `bezhansalleh/filament-plugin-essentials`,
-  `danharrin/livewire-rate-limiting` e `brimham/backup-monitor`;
-- **44 de extensões PHP** que o `composer.json` não declara: `ext-ctype`, `ext-dom`, `ext-filter`, `ext-gd`,
-  `ext-libxml`, `ext-mbstring`, `ext-SimpleXML` e `ext-tokenizer`.
+As oito **extensões** não entram na tabela de pacotes; a recomendação para elas é declarar as `ext-*` no
+`require`, o que faz o `composer install` recusar um PHP sem elas em vez de falhar em runtime (o `ext-gd`
+é a que mais provavelmente falta).
 
 ### O que a triagem recomenda, e por que nada disso foi feito agora
 

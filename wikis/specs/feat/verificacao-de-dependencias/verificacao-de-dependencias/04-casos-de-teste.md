@@ -50,7 +50,7 @@
 - RQ-04 — coberta por CT-03
 - RQ-05 — coberta por CT-04
 - RQ-06 — coberta por CT-07 (e CT-06, CT-08 sobre a mesma triagem)
-- P-01 — coberta por CT-02; recorte "o `deps:check` entra no `composer test`?" aberto (Q?2)
+- P-01 — coberta por CT-02; recorte "o `deps:check` entra no `composer test`?" resolvido pela P-07 (fora)
 - P-02 — coberta por CT-04
 - P-03 — coberta por CT-06
 - P-04 — cobertura parcial: CT-07 cobre forma e domínio; **completude** (todo pacote acusado pela ferramenta está na triagem) é lacuna declarada — exige rodar a ferramenta e casar a saída dela com a tabela; ver Checklist de Taxonomia
@@ -61,9 +61,9 @@
 
 | Grupo | Regras | Costura | Existente ou nova | Por quê esta camada | Confirmada |
 |---|---|---|---|---|---|
-| Arquivos de ferramental do kit | R1, R2, R3, R5 | Pest feature HTTP | existente — `tests/Kit/QualidadeDeCodigoTest.php` (lê `composer.json` e o config de ferramenta no `beforeEach`) e `tests/Kit/CandidatasAPacoteTest.php` CT-32 (`caminhosDoKit()` + `.gitattributes`) | o `Então` afirma o conteúdo de arquivos versionados; a aplicação de pé só fornece `base_path()` e o `ReflectionClass` de `KitUpdate` | |
-| Passo do CI executado | R4 | Pest feature HTTP | existente — `tests/Kit/QualidadeDeCodigoTest.php` (`configuracaoEfetivaDoPhpstan()` roda o binário de verdade por `Process`) | "não reprova" e "publica" são comportamento de shell (`-eo pipefail`, redirecionamento): lido estaticamente, o YAML deixa passar o `set -e` que corta a segunda ferramenta. Só executando o `run` do passo isso falsifica | |
-| Triagem na documentação de qualidade | R6, R7, R8 | Pest feature HTTP | existente — `tests/Kit/CandidatasAPacoteTest.php` (`secoesDoMarkdown()`) | o `Então` afirma linhas de uma tabela do markdown e o cruzamento com o arquivo de configuração | |
+| Arquivos de ferramental do kit | R1, R2, R3, R5 | Pest feature HTTP | existente — `tests/Kit/QualidadeDeCodigoTest.php` (lê `composer.json` e o config de ferramenta no `beforeEach`) e `tests/Kit/CandidatasAPacoteTest.php` CT-32 (`caminhosDoKit()` + `.gitattributes`) | o `Então` afirma o conteúdo de arquivos versionados; a aplicação de pé só fornece `base_path()` e o `ReflectionClass` de `KitUpdate` || sessão, 2026-11-18 (irmãos citados; autorização "prossiga ate finalizar") |
+| Passo do CI executado | R4 | Pest feature HTTP | existente — `tests/Kit/QualidadeDeCodigoTest.php` (`configuracaoEfetivaDoPhpstan()` roda o binário de verdade por `Process`) | "não reprova" e "publica" são comportamento de shell (`-eo pipefail`, redirecionamento): lido estaticamente, o YAML deixa passar o `set -e` que corta a segunda ferramenta. Só executando o `run` do passo isso falsifica || sessão, 2026-11-18 (irmãos citados; autorização "prossiga ate finalizar") |
+| Triagem na documentação de qualidade | R6, R7, R8 | Pest feature HTTP | existente — `tests/Kit/CandidatasAPacoteTest.php` (`secoesDoMarkdown()`) | o `Então` afirma linhas de uma tabela do markdown e o cruzamento com o arquivo de configuração || sessão, 2026-11-18 (irmãos citados; autorização "prossiga ate finalizar") |
 
 **Divergência com a skill (a rule vence)**: a skill define `Pest feature HTTP` como teste em `tests/Feature`; aqui os casos moram em `tests/Kit`, porque `.ai/rules/kit.md`/`testes.md` e os irmãos (`QualidadeDeCodigoTest`, `CandidatasAPacoteTest`) põem o ferramental do kit lá. A camada é a mesma (aplicação de pé, sem componente).
 
@@ -83,15 +83,7 @@
 | `docs/{pt,en}/referencia/qualidade-de-codigo.md` | o `00` pede "documentação de qualidade", sem fixar quantas cópias | os CT leem `wikis/qualidade-de-codigo.md` (path do plano, como nome); as traduções ficam para a rede de documentação existente |
 | `composer-unused.php` como nome do arquivo | nome default da ferramenta (fato do vendor), usado só para localizar | detalhe do CT-05/CT-06 |
 
-**Perguntas geradas pela derivação** (provisórias; a sessão renumera):
-
-❓ Q?1 · raia: desenho · afeta: RQ-05, P-02 · depende de: —
-O CT-04 executa localmente o `run` do passo do CI (`bash -eo pipefail`, como o runner do GitHub, com `GITHUB_STEP_SUMMARY` apontando para um arquivo temporário) e roda as duas ferramentas de verdade (dezenas de segundos). Aceita esse custo, ou prefere um CT estático que fixe o mecanismo escolhido (`continue-on-error: true` no passo, por exemplo)?
-➡️ Recomendação: executar — é o único arnês que falsifica "a segunda ferramenta nunca roda porque a primeira saiu com código ≠ 0" e "`| tee` com `pipefail` reprova"; o CT estático só prova o mecanismo que já foi escolhido, e quebra se ele mudar honestamente.
-
-❓ Q?2 · raia: requisito · afeta: P-01, RQ-05 · depende de: —
-O `composer deps:check` entra no `composer test` (o gate local que reprova), ou fica só ao lado de `lint`, `types:check` e `filament:check` como comando sob demanda?
-➡️ Recomendação: fica fora do `composer test` — Q2 escolheu "só relatório", e um gate local que reprova com achado contradiz isso para quem desenvolve. Até a resposta, nenhum cenário afirma a presença ou a ausência no `composer test`.
+**Perguntas geradas pela derivação**: fechadas pela sessão em 2026-11-18 — Q?1 (desenho): o CT-04 executa o `run` do passo do CI, como recomendado; Q?2: virou a premissa P-07 do `00` (o `deps:check` fica fora do `composer test`), sem cenário próprio além do que o `composer.json` já mostra.
 
 ## Setup Global
 
@@ -364,6 +356,33 @@ Se a triagem tiver zero linhas desses dois vereditos, o cenário passa vácuo: o
 | Completude da triagem (todo pacote acusado pela ferramenta tem linha) | lacuna declarada: exige casar a saída do `composer-unused` com a tabela, e o formato da saída é do vendor; tentado reaproveitar a execução do CT-04, recusado para não somar um segundo oráculo a um CT do perfil mínimo. Fica para a conferência manual do quality gate | Triagem na documentação de qualidade |
 | Dependência de produção alterada nesta entrega (P-05) | lacuna declarada: CT permanente sobre o `require` expira quando o mantenedor acatar a recomendação; conferência do diff (`composer.json` `require` antes × depois) no quality gate | — |
 
+## Revisão Adversarial
+
+Rodada 1 (`fw-adversario-ct`, 2026-11-18): 15 achados. Fechados pela sessão acrescentando `Então` aos cenários existentes e um cenário novo (CT-09); o perfil é baixo risco, sem rodada 2.
+
+| ADV | Destino |
+|---|---|
+| ADV-01 (alta) | CT-03 ganha: "o `composer install` que precede o passo, no mesmo job, não traz `--no-dev`" |
+| ADV-02 (alta) | CT-04 ganha: "o resumo contém o nome de ao menos um pacote que a triagem dá como sem uso" (prova conteúdo, não banner) |
+| ADV-03 (média) | CT-06 ganha: "nem o `deps:check` nem o `run` do passo do CI trazem `--excludePackage`" |
+| ADV-04 (média) | CT-06 ganha: "a configuração só exclui por nome literal `vendor/pacote` (nenhum padrão `/…/`)" |
+| ADV-05, ADV-06 (média) | CT-05 ganha: "nenhum `--config-file` aponta para arquivo fora da lista do `kit:update`", e o `composer-unused.php` tem o nome que a ferramenta lê sozinha (sem `--config-file`) |
+| ADV-07, ADV-08 (média) | CT-08 ganha: "a triagem registra os achados do `composer-require-checker` — a contagem de símbolos, os pacotes só transitivos e as extensões `ext-*` — com recomendação" |
+| ADV-09 (baixa) | CT-03 ganha: "o passo está no job `qualidade` do workflow de CI, sem `if:` no passo" |
+| ADV-10 (baixa) | CT-06/CT-07: a evidência não é só marcador (`—`, `-`, `N/A`, `?`) |
+| ADV-11 (baixa) | M11/M12 condicionais: o `Dado` do CT-04 já tem achado nas duas ferramentas no estado atual da árvore (3 sem uso e 181 símbolos); registrado |
+| ADV-12 (baixa) | M18 atribuído ao 1º `Então` do CT-06 |
+| ADV-13 (alta) | CT-09 novo (P-07) |
+| ADV-14 (média) | mantido o corte: a completude da triagem fica no CT-08 pelos três pacotes sem uso e pelos grupos do require-checker; casar a saída inteira acoplaria o CT ao formato da ferramenta |
+| ADV-15 (baixa) | mantido: P-05 conferida no diff do lock (step 9 e gate) |
+
+```gherkin
+Cenário: [CT-09] o deps:check fica fora do gate local
+  Dado o composer.json do kit
+  Quando se expande o script "test" pelos scripts que ele chama
+  Então nenhum deles é "deps:check", "deps:unused", "deps:require", nem chama composer-unused ou composer-require-checker
+```
+
 ## Índice de Cenários
 
 | ID | Cenário | Regra | Técnica | Grupo | Costura | Arquivo | Mata |
@@ -376,6 +395,7 @@ Se a triagem tiver zero linhas desses dois vereditos, o cenário passa vácuo: o
 | CT-06 | todo excluído é "usado por outro caminho" na triagem | R6 | EP | Triagem na documentação de qualidade | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M18, M19, M20 |
 | CT-07 | a triagem tem veredito do domínio e evidência | R7 | EP | Triagem na documentação de qualidade | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M21, M22, M23 |
 | CT-08 | achado real tem recomendação registrada | R8 | EP | Triagem na documentação de qualidade | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M24, M25 |
+| CT-09 | o deps:check fica fora do gate local | R2 | EP | Arquivos de ferramental do kit | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M26 (`composer test` chama `@deps:check`) |
 
 O arquivo é proposta (nome do domínio do `00`, padrão `{Assunto}Test.php` dos irmãos); `->group('kit')` como em `QualidadeDeCodigoTest`.
 
