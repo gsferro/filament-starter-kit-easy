@@ -139,7 +139,7 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
 
-**v0.55.0 has no migration**, but the development install now needs the PHP `sodium` extension (on Windows, uncomment `extension=sodium` in `php.ini` before `composer require`): it adds the declared × used dependencies report (see
+**v0.55.0 has no migration**, but the development install now needs the PHP `sodium` extension and PHP 8.4 or 8.5 (on Windows, uncomment `extension=sodium` in `php.ini` before `composer require`): it adds the declared × used dependencies report (see
 [Code quality](../../referencia/qualidade-de-codigo/#declared--used-dependencies)). Run
 `composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` and copy
 the `deps:*` scripts from the kit's `composer.json` — `kit:update` brings `composer-unused.php`, but only

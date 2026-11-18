@@ -25,6 +25,8 @@
 | P-04 | Triagem registrada | 6 | — |
 | P-05 | Nenhuma dependência de produção muda | — | recomendação na triagem |
 | P-06 | Configuração viaja com o kit | 5 | — |
+| P-07 | `deps:check` fora do `composer test` | 3 | CT-09 *(alterado em 2026-11-18: QA-07 do quality gate, ciclo 2)* |
+| P-08 | `ext-sodium` e PHP 8.4–8.5 na instalação com dev, documentados | 1, 6 | CT-10 *(alterado em 2026-11-18: QA-07 do quality gate, ciclo 2)* |
 
 ## Objetivo
 

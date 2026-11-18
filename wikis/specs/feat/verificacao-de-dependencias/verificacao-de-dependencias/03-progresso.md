@@ -1,6 +1,6 @@
 # Progresso — Roadmap item 8.2: `composer-require-checker` + `composer-unused`
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-11-18
 
 **Base do PR**: `main`
 
@@ -23,7 +23,7 @@
 - [x] Triagem registrada — `wikis/qualidade-de-codigo.md` (seção nova, tabela e recomendações), `docs/{pt,en}/referencia/qualidade-de-codigo.md`, roadmap 8.2 FEITO, READMEs (`composer deps:check`), 2026-11-18
 
 ## Testes
-- [x] `tests/Kit/VerificacaoDeDependenciasTest.php` (CT-01..CT-09) — `vendor/bin/pest tests/Kit/VerificacaoDeDependenciasTest.php`: 12/12, 171 asserções, ~4,4 s; falsificabilidade: com a entrega revertida (scripts, passo do CI, lista do `kit:update`, `composer-unused.php`) 7 de 10 vermelhos — os 3 verdes leem só a triagem, que ficou; CT-06 vermelho com um nome da lista trocado, 2026-11-18
+- [x] `tests/Kit/VerificacaoDeDependenciasTest.php` (CT-01..CT-10) — `vendor/bin/pest tests/Kit/VerificacaoDeDependenciasTest.php`: 13/13, 173 asserções (QA-06 do ciclo 2: o "171 asserções" anterior caiu com a lista de 5 → 4); falsificabilidade medida em 2026-11-18 antes do CT-09, dos datasets do CT-04 e do CT-10 (eram 10 testes): com a entrega revertida 7 de 10 vermelhos — os 3 verdes leem só a triagem; CT-06 vermelho com um nome da lista trocado; CT-41.. n/a, 2026-11-18
 
 ## Tickets
 Não fatiado — 2026-11-18: 6 RQ, ferramental sem tela; nenhum sinal de fatiamento
@@ -69,7 +69,9 @@ Passe manual pela skill `ponytail-review`:
 ## Quality Gate
 
 - **Ciclo**: 1 · **Veredito**: REPROVADO → especificação (QA-01, QA-02, QA-03 Major; QA-04 Minor; QA-05 Cosmético) · **Data**: 2026-11-18 — QA-01: `livewire/blaze` reclassificado como sem uso e fora da configuração (em todas as cópias dos números); QA-02: P-08 e a pergunta Q3 ao solicitante; QA-03: CT-04 do `04` reescrito com a fixture de ferramentas falsas e os três `Exemplos`, e os `Então` da revisão adversarial levados aos cenários; QA-04: saída real do PHPStan; QA-05: contagens e frases do `04`, M26, docblock do teste
-- **Relatório**: `06-relatorio-qa.md` (ciclo 1)
+- **Ciclo**: 2 · **Veredito**: REPROVADO → especificação (QA-06 Major; QA-07, QA-08 Minor) · **Data**: 2026-11-18 — teto do perfil padrão (2 ciclos) atingido; os três corrigidos em seguida pela sessão, sob a autorização "prossiga até finalizar", e escalados ao usuário no relatório final: QA-06 (número do `03` pela saída real), QA-07 (CT-10 com Origem = P-08; faixa PHP 8.4–8.5 no README pt/en, nas páginas de atualização e no roteiro; P-07/P-08 no §Cobertura do `01`), QA-08 (Fakes, taxonomia, Índice e Fronteira do `04` alinhados; `Então` do ADV-10 no CT-07)
+- **Débito** (aceito): K2 fora do perfil; Q3 aberta ao solicitante (P-08 vigente); execução do job `qualidade` no runner só no PR
+- **Relatório**: `06-relatorio-qa.md` (ciclo 2; o do ciclo 1 está no histórico do git, commit `c2908360`) — gravado do texto devolvido pelo gate; três citações de linha sem símbolo foram reescritas em prosa para o `citacoes.sh` passar
 
 ## Revisão do Diff (step 9)
 

@@ -329,7 +329,7 @@ exists so you don't spend an afternoon re-evaluating something that already has 
 
 ## Requirements
 
-- PHP 8.4+ and Composer 2 — with the `sodium` extension enabled, because `composer create-project` also installs the development dependencies and `composer-require-checker` needs it (on Windows it ships commented out in `php.ini`: `extension=sodium`). Installing with `--no-dev` does not need it
+- PHP 8.4+ and Composer 2 (8.4 or 8.5 to install with the development dependencies, the `create-project` default) — with the `sodium` extension enabled, because `composer create-project` also installs the development dependencies and `composer-require-checker` needs it (on Windows it ships commented out in `php.ini`: `extension=sodium`). Installing with `--no-dev` does not need it
 - Node 20+ (optional — without it the installation still goes through and tells you how to build later)
 - Docker (optional — only for Postgres/MySQL, Redis, local AI and e-mail)
 

@@ -328,7 +328,7 @@ para você não gastar uma tarde reavaliando do zero algo que já tem número re
 
 ## Requisitos
 
-- PHP 8.4+ e Composer 2 — com a extensão `sodium` ligada, porque o `composer create-project` instala também as dependências de desenvolvimento e o `composer-require-checker` a exige (no Windows ela vem comentada no `php.ini`: `extension=sodium`). Quem instala com `--no-dev` não precisa dela
+- PHP 8.4+ e Composer 2 (8.4 ou 8.5 para instalar com as dependências de desenvolvimento, o padrão do `create-project`) — com a extensão `sodium` ligada, porque o `composer create-project` instala também as dependências de desenvolvimento e o `composer-require-checker` a exige (no Windows ela vem comentada no `php.ini`: `extension=sodium`). Quem instala com `--no-dev` não precisa dela
 - Node 20+ (opcional — sem ele a instalação segue e avisa como fazer o build depois)
 - Docker (opcional — só para Postgres/MySQL, Redis, IA local e e-mail)
 

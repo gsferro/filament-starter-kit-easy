@@ -3,7 +3,7 @@
 /**
  * Dependências declaradas × usadas (`composer-unused` + `composer-require-checker`).
  *
- * Casos CT-01..CT-09 de `wikis/specs/feat/verificacao-de-dependencias/verificacao-de-dependencias/
+ * Casos CT-01..CT-10 de `wikis/specs/feat/verificacao-de-dependencias/verificacao-de-dependencias/
  * 04-casos-de-teste.md`. O oráculo é o Gherkin, não o código.
  */
 
@@ -407,3 +407,21 @@ it('[CT-09] o deps:check fica fora do gate local', function (): void {
         expect(str_starts_with($referencia, 'deps:'))->toBeFalse("o script test chama @{$referencia}");
     }
 })->group('kit');
+
+it('[CT-10] enquanto o lock exigir ext-sodium nas dependências de desenvolvimento, a instalação e a atualização o dizem', function (): void {
+    $exigeSodio = collect(vdJson('composer.lock')['packages-dev'] ?? [])
+        ->contains(static fn (array $pacote): bool => array_key_exists('ext-sodium', $pacote['require'] ?? []));
+
+    if (! $exigeSodio) {
+        expect($exigeSodio)->toBeFalse();
+
+        return;
+    }
+
+    foreach (['README.md', 'README.en.md', 'docs/pt/comecar/atualizando-o-projeto.md', 'docs/en/comecar/atualizando-o-projeto.md'] as $pagina) {
+        expect((string) file_get_contents(base_path($pagina)))->toContain('sodium');
+    }
+
+    expect((string) file_get_contents(base_path('README.md')))->toContain('8.4 ou 8.5')
+        ->and((string) file_get_contents(base_path('README.en.md')))->toContain('8.4 or 8.5');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'lê docs/, que não viaja no create-project')->group('kit');

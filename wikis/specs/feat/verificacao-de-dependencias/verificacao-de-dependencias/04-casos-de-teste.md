@@ -16,7 +16,7 @@
 - Impacto 2 no CI e na configuração: um passo que reprova deixa todo PR vermelho, e uma configuração que não viaja faz o relatório do projeto derivado acusar o que é falso (retrabalho manual, reversível). Nenhuma área toca dinheiro, dado de terceiro, autorização ou algo irreversível.
 - Passos rodados: 1, 2 (com as costuras), 5, 6; o 3 só com EP e o 7 só para alocar e conferir costuras. Sem BVA, sem tabela de decisão, sem matriz de estado (não há entidade com ciclo de vida).
 - Técnicas aplicadas: EP; rastreio de efeito na R4 (o relatório publicado é o efeito; ver a nota da R4).
-- Cenários: 9 · Regras: 8 · Mutantes previstos: 26 · Sem matador: 0 *(alterado em 2026-11-18: QA-05 do quality gate, ciclo 1)*
+- Cenários: 10 · Regras: 8 · Mutantes previstos: 27 · Sem matador: 0 *(alterado em 2026-11-18: QA-05 do quality gate, ciclo 1)*
 <!-- derivado do arquivo por grep -c (comandos da reference template-04, "Contagem do cabeçalho") -->
 
 ## Varredura SFDIPOT
@@ -35,7 +35,7 @@
 
 | Regra | Área (perfil herdado) | Origem (`RQ`/`P-nn`) | Técnica | Cenários |
 |---|---|---|---|---|
-| R1 — As duas ferramentas são dependência de desenvolvimento, declaradas e travadas no lock | require-dev (mínimo) | RQ-01, RQ-02, RQ-03, P-08 | EP (seção do `composer.json`/`composer.lock`) | CT-01 |
+| R1 — As duas ferramentas são dependência de desenvolvimento, declaradas e travadas no lock | require-dev (mínimo) | RQ-01, RQ-02, RQ-03, P-08 | EP (seção do `composer.json`/`composer.lock`) | CT-01, CT-10 |
 | R2 — Um comando só do composer, `deps:check`, roda as duas ferramentas | require-dev (mínimo) | P-01, RQ-01, RQ-02, P-07 | EP (ferramenta alcançada pelo comando) | CT-02, CT-09 |
 | R3 — O CI roda as duas ferramentas pelo `vendor/bin`, depois de instalar as dependências | CI (mínimo) | RQ-04 | EP (origem do binário) | CT-03 |
 | R4 — O CI publica o relatório das duas no resumo do job e o job continua verde com achados | CI (mínimo) | RQ-05, P-02 | rastreio de efeito (publicado / sem reprovar) | CT-04 |
@@ -76,7 +76,7 @@
 | nomes `deps:unused` e `deps:require` | escolha de implementação; o `00` só nomeia `deps:check` (P-01) | detalhe; o CT-02 resolve as referências `@script` sem exigir esses nomes |
 | flag `--ignore-exit-code` do `composer-unused` | um dos mecanismos possíveis de "não reprovar" (RQ-05) | detalhe; CT-04 é agnóstico ao mecanismo |
 | `continue-on-error` × `\|\| true` × flag da ferramenta | mecanismo; o `00` fixa o resultado (job verde com achado), não o meio | Q?1 (raia desenho); CT-04 aceita qualquer mecanismo que produza o resultado |
-| os cinco pacotes excluídos (`anselmokossa/filament-sentinel`, `laravel/pulse`, …) | só o PRD determina a lista; o `00` fixa o critério (P-03) | o CT-06 cruza a lista com a triagem, sem fixar nomes |
+| os quatro pacotes excluídos (`anselmokossa/filament-sentinel`, `laravel/pulse`, …) *(alterado em 2026-11-18: QA-08: eram cinco até o QA-01 do ciclo 1 do quality gate, ciclo 2)* | só o PRD determina a lista; o `00` fixa o critério (P-03) | o CT-06 cruza a lista com a triagem, sem fixar nomes |
 | título do passo e nome do job `qualidade` | escolha de implementação | o CT-03/CT-04 acham o passo pela ferramenta que ele roda |
 | "181 símbolos" | medição do momento; muda com qualquer `composer update` | não vira asserção |
 | "roadmap 8.2 marcado FEITO" | gestão do roadmap, não comportamento pedido | não vira CT |
@@ -100,7 +100,7 @@
 - Nenhuma situação de partida com ciclo de vida.
 
 ### Fakes
-- Nenhum. O CT-04 roda processo real (`Illuminate\Support\Facades\Process`), como `configuracaoEfetivaDoPhpstan()`; sem `Process::fake()`, que esvaziaria o oráculo.
+- O CT-04 roda o `run` real do passo do CI (`Illuminate\Support\Facades\Process`), mas com as duas ferramentas substituídas por binários falsos de saída controlada num diretório temporário (CX-03 do step 9); o CT-06 roda o `composer-unused` real (RD-04). Nenhum `Process::fake()`, que esvaziaria o oráculo *(alterado em 2026-11-18: QA-08 do quality gate, ciclo 2)*.
 
 ### Estratégia de DB
 - Não se aplica: nenhum caso toca o banco.
@@ -127,6 +127,14 @@ Funcionalidade: Verificação de dependências declaradas × usadas
         | ferramenta               | pacote                           |
         | composer-unused          | icanhazstring/composer-unused    |
         | composer-require-checker | maglnet/composer-require-checker |
+
+    Cenário: [CT-10] enquanto o lock exigir ext-sodium nas dependências de desenvolvimento, a instalação e a atualização o dizem
+      Dado o composer.lock do kit, em que um pacote de "packages-dev" exige "ext-sodium"
+      Quando o mantenedor lê os requisitos do README (pt e en) e a página de atualização (pt e en)
+      Então as quatro páginas citam a extensão "sodium"
+      E os dois READMEs dizem que a instalação com as dependências de desenvolvimento pede PHP 8.4 ou 8.5
+
+    *(alterado em 2026-11-18: QA-07: CT novo com Origem = P-08 do quality gate, ciclo 2)*
 ```
 
 O nome Packagist de cada ferramenta é fato do registro, não oráculo do plano; o oráculo é a seção.
@@ -138,6 +146,7 @@ O nome Packagist de cada ferramenta é fato do registro, não oráculo do plano;
 | M1 | pacote declarado no `require` (viaja para produção) | CT-01 | "não está no `require`": o mutante tem a chave em `require` |
 | M2 | só uma das duas ferramentas instalada | CT-01 (linha da ausente) | "está no `require-dev`": a linha da ferramenta esquecida não acha a chave |
 | M3 | `composer.json` editado à mão sem `composer update` (lock defasado: `composer install` do CI não instala) | CT-01 | "está em `packages-dev` do lock": o mutante não tem o pacote no lock |
+| M27 | o pré-requisito `ext-sodium` sai do README ou da página de atualização enquanto o lock o exige | CT-10 | página sem "sodium" *(alterado em 2026-11-18: QA-07 do quality gate, ciclo 2)* |
 
 ---
 
@@ -306,6 +315,7 @@ Se a implementação versionar também um arquivo de configuração do `composer
       Então a tabela tem ao menos uma linha
       E o veredito de cada linha é "usado por outro caminho", "sem uso" ou "uso direto de dependência só transitiva"
       E a evidência de cada linha não está vazia
+      E a evidência de cada linha não é só marcador ("—", "-", "N/A", "?") (ADV-10) *(alterado em 2026-11-18: QA-08 do quality gate, ciclo 2)*
 ```
 
 #### Mutantes previstos
@@ -368,7 +378,7 @@ Se a triagem tiver zero linhas desses dois vereditos, o cenário passa vácuo: o
 | IDOR por entidade | não se aplica: nenhuma tabela persistida | — |
 | Escopo com discriminante nulo | não se aplica: sem filtro de escopo | — |
 | Saída do estado de erro | não se aplica: sem 4xx/5xx/redirect | — |
-| Efeito com destinatário variável (0/1/N) | CT-04 — o `Dado` mede que há achado (código ≠ 0 em ao menos uma ferramenta), nunca mundo vazio; os dois relatórios (N = 2) são afirmados | Passo do CI executado |
+| Efeito com destinatário variável (0/1/N) | CT-04 — as ferramentas falsas têm achado ou erro em toda linha de dataset (nunca mundo vazio); os dois relatórios (N = 2) são afirmados *(alterado em 2026-11-18: QA-08 do quality gate, ciclo 2)* | Passo do CI executado |
 | Completude da triagem (todo pacote acusado pela ferramenta tem linha) | lacuna declarada: exige casar a saída do `composer-unused` com a tabela, e o formato da saída é do vendor; tentado reaproveitar a execução do CT-04, recusado para não somar um segundo oráculo a um CT do perfil mínimo. Fica para a conferência manual do quality gate | Triagem na documentação de qualidade |
 | Dependência de produção alterada nesta entrega (P-05) | lacuna declarada: CT permanente sobre o `require` expira quando o mantenedor acatar a recomendação; conferência do diff (`composer.json` `require` antes × depois) no quality gate | — |
 
@@ -406,11 +416,12 @@ Cenário: [CT-09] o deps:check fica fora do gate local
 | CT-01 | a ferramenta é dependência de desenvolvimento travada no lock | R1 | EP | Arquivos de ferramental do kit | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M1, M2, M3 |
 | CT-02 | `deps:check` alcança as duas ferramentas | R2 | EP | Arquivos de ferramental do kit | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M4, M5, M6 |
 | CT-03 | o passo do CI roda as duas do `vendor/bin`, depois do `composer install` | R3 | EP | Arquivos de ferramental do kit | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M7, M8, M9 |
-| CT-04 | com achado, o passo publica os dois relatórios e não reprova | R4 | rastreio de efeito | Passo do CI executado | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M10…M14 |
+| CT-04 | com achado ou ferramenta quebrada, o passo publica os dois relatórios e não reprova | R4 | rastreio de efeito | Passo do CI executado | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M10…M14 |
 | CT-05 | a configuração está nas duas rotas de entrega | R5 | EP | Arquivos de ferramental do kit | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M15, M16, M17 |
 | CT-06 | todo excluído é "usado por outro caminho" na triagem | R6 | EP | Triagem na documentação de qualidade | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M18, M19, M20 |
 | CT-07 | a triagem tem veredito do domínio e evidência | R7 | EP | Triagem na documentação de qualidade | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M21, M22, M23 |
 | CT-08 | achado real tem recomendação registrada | R8 | EP | Triagem na documentação de qualidade | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M24, M25 |
+| CT-10 | enquanto o lock exigir ext-sodium, a instalação e a atualização o dizem | R1 | EP | Arquivos de ferramental do kit | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M27 (o pré-requisito some das páginas) |
 | CT-09 | o deps:check fica fora do gate local | R2 | EP | Arquivos de ferramental do kit | Pest feature HTTP | `tests/Kit/VerificacaoDeDependenciasTest.php` | M26 (`composer test` chama `@deps:check`) |
 
 O arquivo é proposta (nome do domínio do `00`, padrão `{Assunto}Test.php` dos irmãos); `->group('kit')` como em `QualidadeDeCodigoTest`.

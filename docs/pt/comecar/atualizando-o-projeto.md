@@ -138,7 +138,7 @@ que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
 
-**Na v0.55.0 não há migration**, mas a instalação de desenvolvimento passa a exigir a extensão PHP `sodium` (no Windows, descomente `extension=sodium` no `php.ini` antes do `composer require`): entra o relatório de dependências declaradas × usadas (ver
+**Na v0.55.0 não há migration**, mas a instalação de desenvolvimento passa a exigir a extensão PHP `sodium` e PHP 8.4 ou 8.5 (no Windows, descomente `extension=sodium` no `php.ini` antes do `composer require`): entra o relatório de dependências declaradas × usadas (ver
 [Qualidade de código](../../referencia/qualidade-de-codigo/#dependências-declaradas--usadas)). Rode
 `composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` e copie
 do kit os scripts `deps:*` do `composer.json` — o `kit:update` traz o `composer-unused.php`, mas só relata a
