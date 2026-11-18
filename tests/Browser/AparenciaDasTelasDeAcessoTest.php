@@ -644,14 +644,6 @@ it('[CT-B11] a largura escolhida divide a tela entre painel e formulário', func
     'largo, formulário à esquerda'   => [70, 'esquerda'],
 ]);
 
-/** A mesma visita com "reduzir movimento" no sistema: o plugin repassa as opções ao contexto do Playwright. */
-function visitaComMovimentoReduzido(string $url): mixed
-{
-    $pendente = visit($url);
-
-    return (fn () => new self($this->browserType, $this->device, $this->url, ['reducedMotion' => 'reduce', ...$this->options]))->call($pendente);
-}
-
 it('[CT-B13] com "reduzir movimento" no sistema a rede fica parada e sem botão', function (): void {
     definirAparenciaGlobal(aparenciaCheiaDoAdendo());
 

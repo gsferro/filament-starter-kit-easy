@@ -3451,6 +3451,18 @@ function aparenciaDeTeste(string $qual): array
     };
 }
 
+/**
+ * A mesma visita do `pest-plugin-browser` com "reduzir movimento" no sistema: o plugin repassa as
+ * opções ao contexto do Playwright. Usado pelos CT-B13 da aparência das telas e pela verificação da
+ * transição entre telas (wiki `feat/debitos-da-aparencia-das-telas`).
+ */
+function visitaComMovimentoReduzido(string $url): mixed
+{
+    $pendente = visit($url);
+
+    return (fn () => new self($this->browserType, $this->device, $this->url, ['reducedMotion' => 'reduce', ...$this->options]))->call($pendente);
+}
+
 /** A padrão da instalação, no banco (lida pela tela) e na config (lida pelo request). */
 function definirAparenciaGlobal(?array $valor): void
 {
