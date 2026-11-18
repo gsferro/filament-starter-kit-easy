@@ -227,6 +227,30 @@ final class ConfiguracoesDoKit extends Settings
     public string $densidade_do_layout;
 
     /**
+     * O tamanho da fonte dos três painéis: `pequena`, `normal`, `grande` ou `muito-grande` — o
+     * padrão de quem não escolheu no próprio perfil (wiki `preferencias-de-aparencia`, RQ-06).
+     *
+     * `string` pelo mesmo motivo da densidade; o vocabulário é garantido no consumo
+     * (`App\Support\TamanhoDaFonte::coagir()`). Lida por request, no mesmo render hook.
+     */
+    public string $tamanho_da_fonte;
+
+    /**
+     * Como o menu lateral recolhe: `icones` (o de sempre) ou `oculto` — o padrão de quem não
+     * escolheu no próprio perfil (RQ-06). Lido por request, nas Closures de
+     * `->sidebarCollapsibleOnDesktop()`/`->sidebarFullyCollapsibleOnDesktop()` dos três painéis.
+     */
+    public string $modo_do_menu;
+
+    /**
+     * A chave da instalação que libera a aparência pessoal (RQ-07). Desligada, a seção some do
+     * Meu perfil e o que cada pessoa gravou é ignorado, não apagado (P-05). Com organizações, cada
+     * uma ainda precisa liberar a dela (`tenants.aparencia_por_usuario`, RQ-09). Lida por request
+     * em `App\Support\AparenciaDoUsuario::liberada()`.
+     */
+    public bool $aparencia_por_usuario;
+
+    /**
      * Mostrar também a versão do KIT ao lado da versão do sistema, no rodapé.
      *
      * Default `false`: versão do kit é métrica interna do starter, e quem entrega o produto a um
@@ -534,7 +558,11 @@ final class ConfiguracoesDoKit extends Settings
              * silencioso que o docblock da classe e `.ai/rules/settings.md` descrevem.
              */
             'densidade_do_layout'  => 'kit.densidade_do_layout',
-            'exibir_versao_do_kit' => 'kit.exibir_versao',
+            // Os padrões de fonte e de menu e a chave da aparência pessoal: mesmo regime da densidade.
+            'tamanho_da_fonte'      => 'kit.tamanho_da_fonte',
+            'modo_do_menu'          => 'kit.modo_do_menu',
+            'aparencia_por_usuario' => 'kit.aparencia_por_usuario',
+            'exibir_versao_do_kit'  => 'kit.exibir_versao',
             /*
              * O interruptor do dashboard dinâmico é lido por request — `mount()` e
              * `shouldRegisterNavigation()` das páginas consultam

@@ -22,12 +22,14 @@ use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Http\Middleware\ExigeTutorialGuiadoLigado;
 use App\Http\Middleware\ExigirEmailVerificado;
 use App\Livewire\DefinirSenhaPorEmail;
+use App\Livewire\PreferenciasDeAparencia;
 use App\Models\Tenant;
+use App\Support\AparenciaDoUsuario;
 use App\Support\AvatarDeIniciais;
 use App\Support\CabecalhoDoPainel;
 use App\Support\CorPrimaria;
-use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
+use App\Support\ModoDoMenu;
 use App\Support\SeletorDeOrganizacao;
 use App\Support\TutorialGuiado;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
@@ -126,7 +128,14 @@ class AppPanelProvider extends PanelProvider
              * que faz /admin/configuracoes-da-aplicacao governar de verdade. Ver ADR-02.
              */
             ->unsavedChangesAlerts(fn (): bool => (bool) config('kit.alerta_alteracoes_nao_salvas'))
-            ->sidebarCollapsibleOnDesktop()
+            /*
+             * Como o menu recolhe: mantendo os ícones (o de sempre) ou sumindo inteiro — o padrão da
+             * instalação ou a escolha da pessoa (`App\Support\AparenciaDoUsuario`, wiki
+             * `preferencias-de-aparencia`). Closures, e mutuamente exclusivas: o Filament as avalia no
+             * render do layout (`vendor/filament/filament/resources/views/components/layout/index.blade.php`).
+             */
+            ->sidebarCollapsibleOnDesktop(fn (): bool => AparenciaDoUsuario::modoDoMenu() === ModoDoMenu::Icones)
+            ->sidebarFullyCollapsibleOnDesktop(fn (): bool => AparenciaDoUsuario::modoDoMenu() === ModoDoMenu::Oculto)
             /*
              * A largura do menu acompanha a densidade do layout — a quarta superfície do escopo
              * de `wikis/specs/feat/layout-compact/`.
@@ -139,7 +148,7 @@ class AppPanelProvider extends PanelProvider
              * Aqui e não no render hook de `--spacing`: a largura vem de `--sidebar-width`, que o
              * Filament emite inline em `vendor/filament/filament/resources/views/components/layout/base.blade.php:getSidebarWidth:88`, fora do alcance de qualquer layer.
              */
-            ->sidebarWidth(fn (): string => DensidadeDoLayout::deConfig()->larguraDaSidebar())
+            ->sidebarWidth(fn (): string => AparenciaDoUsuario::densidade()->larguraDaSidebar())
             ->maxContentWidth(Width::Full)
             ->subNavigationPosition(SubNavigationPosition::Top)
             ->databaseNotifications()
@@ -227,6 +236,14 @@ class AppPanelProvider extends PanelProvider
                     return $paleta;
                 });
 
+                /*
+                 * A cor que a PESSOA escolheu no Meu perfil, quando a aparência pessoal vale aqui
+                 * (wiki `preferencias-de-aparencia`, P-02). Pelo mesmo motivo da cor da organização
+                 * acima (só no render do `<head>` a sessão e a organização existem) e DEPOIS dela,
+                 * porque no `ColorManager` quem registra por último vence. `[]` é o neutro: a cor da
+                 * organização ou a da instalação sobrevive.
+                 */
+                FilamentColor::register(fn (): array => AparenciaDoUsuario::paletaDaPessoa());
                 // "Bloquear sessão" logo abaixo do "Meu perfil" — ver
                 // TelaBloqueio::itemDeMenu(). A guarda espelha a do plugin: com o
                 // kill-switch desligado a rota não existe e o item estouraria no render.
@@ -353,7 +370,11 @@ class AppPanelProvider extends PanelProvider
                     ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
                     // Quem entrou por login social não tem senha atual — e a troca de senha, o 2FA e o
                     // desbloqueio da sessão pedem uma. O bloco manda o link de definição por e-mail.
-                    ->myProfileComponents(['definir_senha_por_email' => DefinirSenhaPorEmail::class])
+                    ->myProfileComponents([
+                        'definir_senha_por_email'   => DefinirSenhaPorEmail::class,
+                        // A seção "Aparência" — some sozinha com a chave da instalação desligada.
+                        'preferencias_de_aparencia' => PreferenciasDeAparencia::class,
+                    ])
                     /*
                      * A tela de perfil do KIT no lugar da do pacote, e o motivo e' so' um: a do
                      * pacote nao declara `canAccess()`, entao `View:MyProfilePage` existia no banco
@@ -533,7 +554,7 @@ class AppPanelProvider extends PanelProvider
              * recém-registrados. Numa instalação limpa isso não atinge ninguém — cinco dos sete
              * caminhos que criam usuário gravam a coluna (`UsuarioAdminSeeder.php:email_verified_at:45`,
              * `UserFactory.php:email_verified_at:30`, `DemoTenancySeeder.php:email_verified_at:95`,
-             * `Convite.php:email_verified_at:634`, `KitAdmin.php:email_verified_at:204`);
+             * `Convite.php:email_verified_at:647`, `KitAdmin.php:email_verified_at:204`);
              * os dois que não gravam são a tela de usuários do /admin e a do /app. Numa base
              * legada, atinge quem foi criado por ali, e o README traz o reparo.
              *

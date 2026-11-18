@@ -115,7 +115,7 @@ it('[CT-20] o retorno do Google com convite cujo papel não existe mais falha fe
     $bruno = usuarioDoKit('infra', 'bruno@example.com');
 
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::findByName('admin')->delete();
+    apagarPapelPelaQuery('admin');
     $convite->refresh();
 
     $antesUsuarios = User::count();

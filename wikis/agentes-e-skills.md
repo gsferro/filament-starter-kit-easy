@@ -183,20 +183,19 @@ Abaixo, a cópia do roteiro da versão instalada, para consulta depois da atuali
 versão; o roteiro que vale para a próxima atualização é sempre o do link.
 
 <!-- roteiro-de-atualizacao:inicio -->
-
-# Roteiro de atualização — v0.52.1 → v0.53.1
+# Roteiro de atualização — v0.53.2 → v0.54.0
 
 Leia o roteiro inteiro antes de alterar um arquivo do projeto.
 
 ## Identificação
 
-Origem: v0.52.1
+Origem: v0.53.2
 
-Destino: v0.53.1
+Destino: v0.54.0
 
-Data: 2026-11-15
+Data: 2026-11-18
 
-Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.53.1/wikis/atualizacoes/v0.53.1.md
+Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.54.0/wikis/atualizacoes/v0.54.0.md
 
 Padrão do link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 
@@ -206,7 +205,7 @@ Leia também o mesmo arquivo na `main`. Se o arquivo da `main` trouxer a linha `
 
 ## Antes de começar
 
-O pedido que dispara este roteiro é: “Atualize meu projeto da v0.52.1 para a v0.53.1 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão do link com a versão destino `v0.53.1` e confira que o endereço montado é o mesmo da Identificação.
+O pedido que dispara este roteiro é: “Atualize meu projeto da v0.53.2 para a v0.54.0 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão com a versão destino `v0.54.0` e confira que é o mesmo endereço da Identificação. O agente segue os passos abaixo usando o `kit:update` para aplicar os arquivos.
 
 Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e PowerShell, exceto onde aparecem as duas formas. Guarde as saídas para o relatório final.
 
@@ -225,237 +224,187 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan tinker --execute 'echo config("kit.version");'
    ```
 
-   Esperado: `0.52.1`. Outro valor encerra este roteiro sem aplicar arquivos: `0.53.1` indica que o marcador já está no destino; `0.53.0` não encerra: o projeto recebeu o código da v0.53.0 pelo `kit:update` antes de a tag ser retirada (veja O que muda nesta versão) e segue este roteiro com a mesma origem `0.52.1` nos comandos, com o cuidado do passo 6; uma versão anterior a `0.52.1` exige primeiro as atualizações intermediárias, em ordem; uma versão posterior a `0.53.1` exige outro roteiro. Informe ao dono o valor encontrado.
+   Esperado: `0.53.2`. Outro valor encerra este roteiro sem aplicar arquivos: `0.54.0` indica marcador já no destino; uma versão anterior exige as atualizações intermediárias, em ordem; uma versão posterior exige outro roteiro. Informe ao dono o valor encontrado.
 
-3. **O banco está acessível, e a impressão dos dados foi guardada.**
+3. **O banco está acessível e a impressão dos dados foi guardada.**
+
+   Confirme com o dono que há backup recuperável antes de aplicar os arquivos.
 
    ```bash
    php artisan migrate:status
    php artisan tinker --execute 'echo config("kit.tenancy.enabled") ? "SIM" : "NAO";'
-   php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map(fn ($tenant) => md5($tenant->makeHidden("aparencia_das_telas")->toJson()))->all(), "configuracoes" => md5(json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->except("aparencia_das_telas")->all()))]);'
+   php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => array_map("md5", App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "configuracoes" => md5(json_encode(app(App\Settings\ConfiguracoesDoKit::class)->toArray()))]);'
    ```
 
-   Esperado: migrations consultadas sem erro e nenhuma `Pending`. Se houver pendência, informe ao dono quais são e pare: o passo 4 roda `php artisan migrate --force`, que executaria junto as migrations pendentes do dono.
-
-   Anote o estado da multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário, um por organização e um das Configurações da aplicação. Essa é a **impressão dos dados**, que deve ser idêntica ao final. A comparação exclui só o campo novo `aparencia_das_telas`, que esta versão acrescenta vazio às Configurações e à tabela de organizações; com a multi-organização desligada, a lista de organizações costuma vir vazia, e vazia deve continuar.
+   Esperado: consulta sem erro e nenhuma migration `Pending`. Havendo pendência do projeto, informe os nomes e pare: o migrate executaria essas pendências junto com as três migrations desta versão. Anote a multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário, um por organização e um das Configurações da aplicação. Essa **impressão dos dados** deve ser idêntica ao final, excluindo na consulta final somente os campos acrescentados nesta versão: `users.aparencia`, `tenants.aparencia_por_usuario` e os três settings novos. Confira os valores novos separadamente, antes de qualquer escolha manual.
 
 4. **Os nomes reservados pelo comando estão livres.**
 
    ```bash
    git remote
    git tag -l "kit-*"
-   git branch --list kit-update/v0.53.1
+   git branch --list kit-update/v0.54.0
    ```
 
-   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.53.1`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
+   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.54.0`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
 
-5. **O dry-run corresponde à release, sem dependência nova.**
+5. **O dry-run corresponde à release.**
 
    ```bash
-   php artisan kit:update --from=0.52.1 --tag=v0.53.1 --dry-run --keep-remote --no-interaction
-   git diff --stat kit-v0.52.1 kit-v0.53.1 -- composer.json composer.lock package.json package-lock.json
-   git diff --name-status kit-v0.52.1 kit-v0.53.1 -- database/migrations database/settings tests/Kit tests/Tenancy
+   php artisan kit:update --from=0.53.2 --tag=v0.54.0 --dry-run --keep-remote --no-interaction
+   git diff --stat kit-v0.53.2 kit-v0.54.0 -- composer.json composer.lock package.json package-lock.json
+   git diff --name-status kit-v0.53.2 kit-v0.54.0 -- database/migrations database/settings resources public
+   git diff --name-status kit-v0.53.2 kit-v0.54.0 -- app/Providers app/Models/User.php app/Models/Tenant.php app/Filament/Admin app/Settings app/Livewire app/Support config/kit.php .env.example tests/Kit tests/Tenancy
    ```
 
-   Esperado:
+   Esperado: resumo entre `kit-v0.53.2` e `kit-v0.54.0`, sem tocar arquivos; diff de dependências vazio; exatamente as três migrations listadas em **O que muda nesta versão**, o componente e sua view novos, sem asset publicado novo. Confira todos os arquivos da entrega relacionados abaixo. O dry-run mantém o remote `kit` e as tags para as comparações seguintes.
 
-   - resumo entre `kit-v0.52.1` e `kit-v0.53.1`, com os caminhos rotulados `novo no kit`, `modificado` ou `removido do kit`, e a informação de que nenhum arquivo foi tocado;
-   - diff dos quatro arquivos de dependências **vazio**: esta versão não traz pacote novo nem bump, e não há install a fazer;
-   - exatamente duas migrations novas: `database/migrations/2026_11_13_100000_add_aparencia_das_telas_to_tenants_table.php` e `database/settings/2026_11_13_100000_add_aparencia_das_telas_to_kit_settings.php`;
-   - os arquivos novos `tests/Kit/AparenciaDasTelasDeAcessoTest.php`, `tests/Kit/AparenciaDasTelasAdendoTest.php`, `tests/Kit/AparenciaDasTelasDeAcessoEntregaTest.php`, `tests/Kit/fixtures/ComponenteDeRascunhoDeTeste.php` e `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php`;
-   - no resumo, entre outros, os novos `app/Filament/Pages/Auth/TelaRedefinirSenha.php`, `app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php`, `app/Filament/Pages/Auth/PreviewDasTelasDeAcesso.php`, `app/Support/AparenciaDasTelasDeAcesso.php` e `resources/views/filament/auth/painel-de-marca.blade.php`.
+   Se a tag ainda não estiver disponível, pare e informe ao dono. Não substitua a tag pela `main`. Dependência alterada, migration além das três previstas, asset publicado novo ou ausência de parte da entrega exige parada com o diff encontrado.
 
-   O dry-run mantém o remote `kit` e as tags com prefixo `kit-`, usados nas comparações seguintes.
-
-   Se a tag ainda não estiver disponível, pare e informe isso ao dono. Não substitua a tag pela `main`. Se o resumo ou os diffs não corresponderem às evidências acima, pare e mostre a divergência.
-
-6. **As edições do dono foram identificadas antes de qualquer aplicação.**
+6. **As edições do dono foram identificadas.**
 
    Para cada arquivo do resumo que existe no projeto, compare com a origem quando for `modificado`, ou com o destino quando for `novo no kit`:
 
    ```bash
-   git diff --name-only kit-v0.52.1 HEAD -- caminho/do/modificado
-   git diff --name-only kit-v0.53.1 HEAD -- caminho/do/novo
+   git diff --name-only kit-v0.53.2 HEAD -- caminho/do/modificado
+   git diff --name-only kit-v0.54.0 HEAD -- caminho/do/novo
    ```
 
-   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos. Repita sem `--name-only` para descrever a edição ao dono.
-
-   Com o marcador em `0.53.0`, o projeto já tem os arquivos da v0.53.0, e a comparação com `kit-v0.52.1` acusa todos eles. Para esses caminhos, compare também com o commit da v0.53.0 (que chega junto com a tag `kit-v0.53.1`); saída vazia aqui significa que o arquivo é o da v0.53.0, sem edição do dono, e ele sai da lista de conflitos:
-
-   ```bash
-   git diff --name-only bfce1edd90e568afe4ef0944480160ce04317a55 HEAD -- caminho/do/modificado
-   ```
-
-   Confira especialmente, porque esta versão os altera e são os lugares onde o dono costuma mexer:
-
-   - os providers dos painéis `app/Providers/Filament/AdminPanelProvider.php`, `app/Providers/Filament/AppPanelProvider.php` e `app/Providers/Filament/InfraPanelProvider.php`, em especial o bloco `AuthDesignerPlugin` de cada um;
-   - `app/Providers/KitServiceProvider.php`, que registra a rota nova do preview;
-   - `resources/views/vendor/filament-auth-designer/components/partials/media.blade.php`, a cópia do kit do partial de mídia do Auth Designer;
-   - as páginas de autenticação `app/Filament/Pages/Auth/TelaLogin.php`, `TelaRecuperarSenha.php`, `TelaBloqueio.php`, `TelaDoisFatores.php` e `RegistroPorConvite.php`, na mesma pasta;
-   - `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`, `app/Settings/ConfiguracoesDoKit.php` e `app/Models/Tenant.php`;
-   - os arquivos de `app/Filament/Admin/Resources/Tenants/` que aparecerem no resumo;
-   - `resources/css/filament/kit.css` e `public/css/kit/kit-correcoes.css`;
-   - `tests/Pest.php`, que recebe os helpers dos testes novos;
-   - `config/kit.php`, incluindo as credenciais e configurações do dono.
+   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente os três providers de painel, o render hook do `KitServiceProvider`, a página e a classe de settings, os models `User` e `Tenant`, o `TenantForm`, `config/kit.php` e `.env.example`. Os pontos de integração estão detalhados abaixo.
 
 ## O que muda nesta versão
 
-A v0.53.1 é a entrega da v0.53.0. A tag `v0.53.0` foi publicada por engano no commit da v0.52.1 e o Packagist, que não deixa uma versão estável mudar de conteúdo, guardou essa referência: quem instalou a v0.53.0 pelo `composer create-project` recebeu o código da v0.52.1, com o marcador `0.52.1`. A tag `v0.53.0` voltou a esse commit e não deve ser usada; este roteiro vai direto da v0.52.1 para a v0.53.1.
+A v0.54.0 traz **preferências de aparência por usuário**. O Meu perfil dos três painéis ganha a seção **Aparência**, com densidade do layout, tamanho da fonte, cor primária da lista do kit e modo do menu lateral ao recolher. Cada campo começa em **Padrão**; a escolha é uma só por pessoa e vale nos três painéis onde estiver liberada.
 
-A v0.53.1 traz a **aparência das telas de acesso**, escolhida na própria aplicação. A aba **Telas de acesso** de *Configurações da aplicação*, no `/admin`, troca o layout das telas de autenticação dos três painéis (login, cadastro, recuperação e redefinição de senha, confirmação de e-mail, dois fatores e bloqueio de sessão) entre o **clássico**, que é o de sempre e continua o default, e o **painel de marca**: o formulário de um lado e, do outro, um painel arredondado de largura escolhida (30% a 70%), com cor ou arte de fundo, a logo num selo claro, um destaque central (a logo grande ou uma imagem PNG, JPEG ou WebP enviada), uma ilustração de rede de pontos parada ou em movimento, com botão de pausar e respeito a "reduzir movimento", e duas frases opcionais com negrito, itálico, tachado e link (Markdown seguro). O fundo pode ser a cor primária, uma cor própria, um **gradiente** ou a arte. No celular o painel vira uma faixa curta acima do formulário, só com a logo ou o nome da aplicação. Login, cadastro e "esqueci a senha" podem ter **cada um a sua aparência**, e a troca entre eles é animada (**transição entre as telas**: o painel desliza para o lado da outra tela e o formulário aparece aos poucos, só em computador e sem "reduzir movimento"). Login social e desafio anti-robô continuam no formulário em qualquer layout. Um **preview** mostra login, recuperação de senha e cadastro com as alterações ainda não salvas, em largura de computador e de celular, sem autenticar nem enviar nada.
+A chave da instalação `aparencia_por_usuario` nasce **LIGADA**: logo após atualizar, todo usuário vê a seção **Aparência** no Meu perfil. Nada muda na tela de ninguém até escolher, além dessa seção nova. A fonte `normal` e o menu `icones` reproduzem o comportamento anterior; a densidade e a cor já configuradas continuam sendo o padrão. A aba **Aplicação** de *Configurações da aplicação* ganha **Aparência dos painéis**, reunindo a densidade, os dois padrões novos e **Cada pessoa pode escolher a própria aparência**.
 
-Com a multi-organização ligada, o formulário de cada organização ganha a seção **Telas de acesso**: usar a aparência padrão ou ter a sua, que vale no login com `?org=`, no cadastro e no bloqueio de sessão dela.
+Para não oferecer a escolha, desligue esse interruptor em *Configurações da aplicação* → **Aplicação** → **Aparência dos painéis**, ou configure `KIT_APARENCIA_POR_USUARIO=false` no `.env` **antes do migrate**, limpando o cache de configuração. As chaves `KIT_TAMANHO_DA_FONTE`, `KIT_MODO_DO_MENU` e `KIT_APARENCIA_POR_USUARIO` só semeiam os valores: depois da migration, governa a tela. Desligar ignora as escolhas, sem apagá-las; religar volta a aplicá-las.
 
-**Nada muda na tela de quem atualiza** até um administrador escolher o painel de marca. As duas migrations novas nascem vazias: a configuração `aparencia_das_telas` no grupo `kit` das Configurações, com valor nulo, e a coluna JSON anulável `aparencia_das_telas` na tabela `tenants`. Nulo significa layout clássico. O `config/kit.php` ganha, além do marcador `0.53.1`, a chave `aparencia_das_telas` com valor `null` no bloco `identidade`.
+Com organizações (tenancy), **Liberar a aparência pessoal**, no cadastro da organização, nasce **desligado**, inclusive nas organizações existentes. Só aparece com a chave da instalação ligada. Dentro de `/app/{organização}`, a escolha pessoal exige as duas chaves ligadas; quando liberada, a cor pessoal vence a da organização. Sem liberação, continuam a cor da organização e os padrões da instalação. O Meu perfil do `/app`, fora de uma organização no endereço, segue somente a chave da instalação.
 
-O que chega em arquivos:
+Confira estes arquivos que o `kit:update` traz e os pontos de conflito em projeto que mexeu à mão:
 
-- as páginas de **redefinição de senha** (o link do e-mail) e de **confirmação de e-mail** passam a ser do kit, `TelaRedefinirSenha` e `TelaVerificacaoDeEmail`, só para receberem a aparência. A redefinição fica registrada nos três providers, pelo `usingResetPage` dentro do bloco `AuthDesignerPlugin`; a confirmação de e-mail, só no provider do `/app`, o único painel com ela no ar. Antes, as duas eram as páginas do pacote;
-- o partial de mídia do Auth Designer que o kit sobrescreve ganha um ramo novo para o painel de marca; o clássico segue pelos ramos de sempre;
-- a rota nova `/admin/preview-das-telas-de-acesso`, registrada pelo `KitServiceProvider`, protegida pelo acesso ao `/admin`;
-- o CSS do kit (`resources/css/filament/kit.css` e o publicado `public/css/kit/kit-correcoes.css`) ganha as regras do painel de marca, com classes próprias: não há rebuild do front-end;
-- a imagem do destaque, quando enviada, é gravada no disco `public`, em `storage/app/public/telas-de-acesso/`, e servida pelo link `public/storage`;
-- os testes da feature em `tests/Kit` e `tests/Tenancy`, os helpers deles em `tests/Pest.php` e um teste de browser em `tests/Browser`.
+- `app/Providers/Filament/AdminPanelProvider.php`, `app/Providers/Filament/AppPanelProvider.php` e `app/Providers/Filament/InfraPanelProvider.php`: menu lateral com `sidebarCollapsibleOnDesktop` e `sidebarFullyCollapsibleOnDesktop`, `sidebarWidth` pela densidade pessoal, inclusão do componente em `myProfileComponents` sem perder os componentes próprios e `bootUsing` para a cor pessoal; no `/app`, preserve a cor da organização e aplique a pessoal depois;
+- `app/Providers/KitServiceProvider.php`: render hook de densidade e fonte, lendo `AparenciaDoUsuario`;
+- `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`: seção nova, densidade movida e campos de fonte, menu e liberação;
+- `app/Settings/ConfiguracoesDoKit.php`: propriedades e mapa de configuração para `tamanho_da_fonte`, `modo_do_menu` e `aparencia_por_usuario`;
+- `app/Models/User.php`: cast de `aparencia` para array e campo oculto, mantendo-o fora do `$fillable`; `app/Models/Tenant.php`: cast booleano e `$fillable` de `aparencia_por_usuario`;
+- `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php`: interruptor da organização;
+- `config/kit.php`: marcador `0.54.0`, imports de `TamanhoDaFonte` e `ModoDoMenu`, as três chaves novas e suas sementes do ambiente;
+- `.env.example`: exemplos comentados das três variáveis; não substitui o `.env` do dono;
+- novos `app/Livewire/PreferenciasDeAparencia.php`, `resources/views/livewire/preferencias-de-aparencia.blade.php`, `app/Support/AparenciaDoUsuario.php`, `app/Support/TamanhoDaFonte.php` e `app/Support/ModoDoMenu.php`;
+- `app/Console/Commands/KitUpdate.php`, com a entrega da view nova, e os ajustes em `tests/Kit/KitInfoTest.php`.
 
-Não há dependência nova nem bump de composer ou npm, jornada nova a semear, permissão nova a gerar nem default de configuração alterado.
+As três migrations são:
+
+- `database/migrations/2026_11_18_100000_add_aparencia_to_users_table.php`: JSON anulável `users.aparencia`, nulo nas contas existentes;
+- `database/migrations/2026_11_18_100001_add_aparencia_por_usuario_to_tenants_table.php`: booleano `tenants.aparencia_por_usuario`, falso;
+- `database/settings/2026_11_18_100000_add_aparencia_por_usuario_to_kit_settings.php`: adiciona ao grupo `kit` os settings `tamanho_da_fonte` (`normal`), `modo_do_menu` (`icones`) e `aparencia_por_usuario` (`true`), salvo semente explícita do ambiente.
+
+Não há dependência nova, instalação de pacotes, build, publicação de assets, semeadura ou geração de permissões a executar. Há alteração de esquema: os arquivos sozinhos não concluem a atualização.
 
 ## Cuidados
 
-- **Não use a tag `v0.53.0`.** Ela foi retirada e aponta para o código da v0.52.1; o `kit:update` interativo ainda a lista como `kit-v0.53.0`. Rode sempre com `--tag=v0.53.1`, como nos passos.
-- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. As duas migrations desta versão só acrescentam; não as desfaça para "testar de novo".
-- **Preserve o modo de multi-organização.** Não rode `php artisan kit:tenancy` nem `php artisan kit:install`, pois recriam o banco.
-- **Não escolha o painel de marca pelo dono.** A atualização entrega o layout clássico. Não grave aparência nas Configurações nem em organização, não envie imagem e não salve a aba **Telas de acesso**: isso mudaria as telas de acesso do projeto e a impressão dos dados.
-- **Os arquivos da feature trabalham juntos.** Manter a versão do dono num provider de painel deixa a redefinição de senha (e, no `/app`, a confirmação de e-mail) na página do pacote, sem a aparência. Manter o partial de mídia faz o painel de marca nunca aparecer, mesmo escolhido. Manter o `KitServiceProvider` sem a rota nova quebra o preview da aba **Telas de acesso**. Manter o `app/Models/Tenant.php` impede a organização de gravar a sua aparência. Manter o `tests/Pest.php` deixa os testes novos sem os helpers. Em todos esses casos, registre a entrega como parcial.
-- **A suíte pode recriar tabelas no banco que receber.** Execute-a somente com as três variáveis de banco forçadas no próprio comando do passo 6, depois de limpar o cache de configuração.
-- **O `--all` substitui arquivos existentes.** Resolva previamente a decisão de conflito e restaure ou reaplique as edições conforme o passo 2 antes de executar os demais passos.
-- **O marcador não prova a entrega.** O comando pode marcar `0.53.1` depois de aplicar apenas parte dos arquivos. Confira o branch, os arquivos novos, as migrations e a rota.
-- **Não crie o link de storage por conta própria.** Se o passo 5 mostrar que `public/storage` não existe, registre e recomende ao dono; não rode comandos que mexam em `public/` além dos deste roteiro.
-- **O `.env` e os canais de log são do dono.** Esta versão não exige alterar o `.env` nem o `config/logging.php`.
-- **As mudanças ficam para revisão.** O comando aplica arquivos no índice. Use `git status` e `git diff --cached`; não commite, não faça merge e não apague o branch por conta própria.
-- **Desfazer exige pedido do dono.** `git reset --hard HEAD` desfaz alterações de arquivos e do índice, incluindo arquivos novos adicionados pelo update. Arquivos não rastreados precisam ser avaliados e removidos um a um. Isso não reverte o banco: a configuração e a coluna novas continuam lá, vazias.
+- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. As três migrations só acrescentam campos; confirme backup recuperável.
+- **Preserve a multi-organização.** Não rode `php artisan kit:tenancy` nem `php artisan kit:install`, pois recriam o banco.
+- **A liberação da instalação é ligada.** Informe ao dono antes do migrate; não confunda visual preservado com seção escondida. Não escolha preferências pelos usuários nem ligue organizações do dono para demonstrar a feature.
+- **Os arquivos trabalham juntos.** Provider antigo pode deixar menu, largura, cor ou seção do perfil sem efeito; render hook antigo perde fonte e densidade pessoais. Settings, models e formulário antigos podem impedir persistência ou liberação. Ausência do componente, sua view ou helpers novos impede a entrega completa. Registre cada limitação.
+- **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 5, depois de limpar o cache de configuração. Faça escolhas manuais somente em ambiente de testes com dados descartáveis.
+- **O `--all` substitui arquivos existentes.** Resolva a decisão de conflito antes e restaure ou integre as edições do dono antes de validar. O marcador `0.54.0` sozinho não prova que toda a entrega chegou.
+- **Preserve `.env`, canais de log e customizações.** Não copie `.env.example` sobre `.env`. A única edição opcional do ambiente é a semente explicitamente escolhida pelo dono antes do migrate; registre o diff. Preserve `config/logging.php`.
+- **As mudanças ficam para revisão.** Use `git status` e `git diff --cached`; não commite, não faça merge nem apague o branch por conta própria. Desfazer exige pedido do dono: `git reset --hard HEAD` desfaz arquivos e índice; avalie arquivos não rastreados um a um. Isso não reverte as migrations nem os dados do banco.
 
 ## Decisões do dono do projeto
 
-Apresente a lista de conflitos do pré-voo antes do passo 1. Faça a pergunta com os diffs e a recomendação. Sem resposta, aplique o default abaixo e registre as limitações. Com a lista vazia, registre “nenhum conflito” e siga.
-
-Nenhuma outra decisão do dono nesta versão.
+Apresente a lista de conflitos do pré-voo, com os diffs, antes do passo 1. Sem conflitos, registre “nenhum conflito” e siga. Apresente também a liberação da aparência pessoal, antes do migrate.
 
 ### Conflito em arquivo do kit que você editou
 
-Pergunta: Estes arquivos do kit têm edição sua e a v0.53.1 também os altera (em especial o bloco AuthDesignerPlugin dos providers dos painéis e o partial de mídia do Auth Designer): para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
+Pergunta: Estes arquivos têm edição sua e a v0.54.0 também os altera; manter providers, render hook, settings, models ou formulário antigos deixa parte da aparência sem efeito: para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
 
-Recomendação da release: receber a versão do kit com suas mudanças reaplicadas, depois de revisar os diffs; nos providers, preservar as suas configurações do `AuthDesignerPlugin` e acrescentar o `usingResetPage(TelaRedefinirSenha::class)` e, no `/app`, a `TelaVerificacaoDeEmail` na confirmação de e-mail; no partial de mídia, acrescentar o ramo do painel de marca antes dos seus ramos.
+Recomendação da release: receber a versão do kit com suas mudanças reaplicadas após revisar os diffs, preservando componentes próprios do Meu perfil, menu, largura e cor customizados junto com a leitura de `AparenciaDoUsuario`. Em `config/kit.php`, preservar as configurações do dono e integrar o marcador e as três chaves novas com seus imports.
 
 Sem resposta: mantém a versão do dono e registra no relatório, arquivo a arquivo, o que deixou de chegar.
 
-Explique junto da pergunta a dependência entre os arquivos: manter um provider, o partial de mídia, o `KitServiceProvider`, o `app/Models/Tenant.php` ou o `tests/Pest.php` na versão do dono deixa parte da aparência das telas de acesso sem efeito, como descrito em `## Cuidados`, e a entrega fica parcial mesmo com o marcador em `0.53.1`. Com o `tests/Pest.php` mantido, os casos dos testes novos da aparência falham por falta dos helpers: diga isso na pergunta, porque o passo 6 vai parar nesse caso. No `config/kit.php`, preservar o conteúdo do dono inclui mudar o marcador para `0.53.1` e acrescentar a chave `aparencia_das_telas` com valor `null` no bloco `identidade`, sem substituir suas configurações.
+### Liberação da aparência pessoal
+
+Pergunta: Considerando que não há alteração de visual por padrão — nenhum para quem não escolhe nada: fonte `normal` e menu `icones` reproduzem o comportamento anterior —, mas a chave `aparencia_por_usuario` nasce ligada e todo usuário verá a seção Aparência no Meu perfil, deseja manter essa liberação ou iniciar com ela desligada?
+
+Recomendação da release: manter ligada, com todas as escolhas em Padrão e todas as organizações desligadas. Para iniciar desligada, definir `KIT_APARENCIA_POR_USUARIO=false` antes do migrate e limpar o cache; depois da migration, desligar pela tela de Configurações da aplicação.
+
+Sem resposta: mantém o default da release, ligada, sem editar o `.env`, sem escolher aparência e sem liberar organização nenhuma; registra a decisão e o default aplicado.
 
 ## Passos
 
-Cada passo tem condição, ação e evidência. Se a evidência não aparecer, pare e informe ao dono conforme `## Quando parar`.
+Cada passo tem condição, ação e evidência. Se a evidência não aparecer, pare e informe ao dono.
 
-### 1. Aplicar os arquivos entregues pelo comando
+### 1. Aplicar os arquivos
 
-Condição: as seis conferências do pré-voo passaram, e a decisão de conflito foi respondida ou registrada com o default seguro.
+Condição: as seis conferências do pré-voo passaram, e cada conflito tem resposta ou default seguro registrado.
 
 Ação:
 
 ```bash
-php artisan kit:update --from=0.52.1 --tag=v0.53.1 --all --keep-remote --no-interaction
+php artisan kit:update --from=0.53.2 --tag=v0.54.0 --all --keep-remote --no-interaction
 ```
 
-Evidência: os arquivos aparecem como `aplicado:`, a saída contém `config/kit.php: versão marcada como 0.53.1` e o branch criado é `kit-update/v0.53.1`. As tags ficam disponíveis para resolver conflitos.
-
-Se o comando recusar a árvore, pedir nova execução ou anunciar outra versão, pare. Não faça commit para tentar uma segunda rodada.
+Evidência: arquivos anunciados como `aplicado:`, saída `config/kit.php: versão marcada como 0.54.0` e branch `kit-update/v0.54.0`. Se o comando recusar a árvore, pedir segunda execução ou anunciar outra versão, pare; não faça commit para tentar outra rodada.
 
 ### 2. Resolver os conflitos conforme a decisão
 
-Condição: existem arquivos em conflito. Sem conflitos, siga para o passo 3.
+Condição: há conflitos; sem eles, siga para o passo 3.
 
-Ação, arquivo a arquivo:
-
-- **Manter a versão do dono:** restaure com `git checkout HEAD -- caminho/do/arquivo`.
-- **Receber a versão do kit:** mantenha o que o passo 1 aplicou.
-- **Receber a versão do kit com as mudanças do dono:** consulte o diff guardado no pré-voo e reaplique somente as mudanças do dono com a ferramenta de edição. Se a integração não for clara, pare e mostre o ponto ao dono.
-
-Quando preservar o `config/kit.php`, troque `'version' => '0.52.1',` por `'version' => '0.53.1',` e acrescente, no bloco `identidade`, logo depois da chave `arte_do_login`, a linha `'aparencia_das_telas' => null,`. Nada mais muda nesse arquivo.
-
-Revise e adicione ao índice cada arquivo integrado:
+Ação, arquivo a arquivo: para manter a versão do dono, use `git checkout HEAD -- caminho/do/arquivo`; para receber a do kit, mantenha o aplicado; para integrar, reaplique somente as mudanças do dono conforme o diff guardado. Integração incerta exige parada. No `config/kit.php` preservado, troque `'version' => '0.53.2',` por `'version' => '0.54.0',` e integre os imports e as chaves `tamanho_da_fonte`, `modo_do_menu` e `aparencia_por_usuario` conforme o destino, preservando as configurações existentes.
 
 ```bash
 git diff HEAD -- caminho/do/arquivo
 git add -- caminho/do/arquivo
-```
-
-Inclua o `config/kit.php` no índice depois de conferir que as demais configurações foram preservadas:
-
-```bash
 git diff HEAD -- config/kit.php
 git add -- config/kit.php
 ```
 
-Evidência: arquivos mantidos integralmente têm `git diff HEAD -- caminho/do/arquivo` vazio. No `config/kit.php` preservado, as únicas diferenças são a versão e a chave nova. Arquivos integrados contêm a mudança do kit e as customizações do dono, com o resultado revisado no índice. Registre o que ficou pendente.
+Evidência: arquivos mantidos têm diff vazio contra `HEAD`, integrações contêm ambas as mudanças revisadas e o config preserva as demais configurações. Registre cada parte da aparência que não chegou; defaults divergentes devem estar explicados pela decisão do dono.
 
-### 3. Conferir o branch, o marcador e os arquivos novos
+### 3. Conferir marcador e arquivos
 
-Condição: aplicação e resolução dos conflitos concluídas.
+Condição: aplicação e conflitos concluídos.
 
 Ação:
 
 ```bash
-php artisan config:clear
+php artisan optimize:clear
 php artisan tinker --execute 'echo config("kit.version");'
 git branch --show-current
 git status --short
 git diff --cached --name-status
-git ls-files --error-unmatch app/Filament/Pages/Auth/TelaRedefinirSenha.php app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php app/Filament/Pages/Auth/PreviewDasTelasDeAcesso.php app/Support/AparenciaDasTelasDeAcesso.php resources/views/filament/auth/painel-de-marca.blade.php database/migrations/2026_11_13_100000_add_aparencia_das_telas_to_tenants_table.php database/settings/2026_11_13_100000_add_aparencia_das_telas_to_kit_settings.php tests/Kit/AparenciaDasTelasDeAcessoTest.php tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php
+git diff HEAD -- app/Providers app/Settings app/Models/User.php app/Models/Tenant.php app/Filament/Admin app/Livewire/PreferenciasDeAparencia.php app/Support resources/views/livewire/preferencias-de-aparencia.blade.php database/migrations database/settings config/kit.php .env.example
 ```
 
-Evidência: versão `0.53.1`, branch `kit-update/v0.53.1` e os nove caminhos novos impressos pelo `git ls-files`. O índice corresponde ao resumo do dry-run, consideradas as escolhas de conflito. Os arquivos que o dono manteve aparecem no relatório como exceções.
+Evidência: versão `0.54.0`, branch `kit-update/v0.54.0` e arquivos da aparência presentes, com o conteúdo do destino ou a integração aprovada. Compare cada caminho listado em **O que muda nesta versão** com `git diff kit-v0.54.0 -- caminho/do/arquivo`; diferenças devem corresponder somente às decisões registradas. O índice corresponde ao dry-run. Confira também os cinco arquivos novos de aplicação e as três migrations com `git ls-files --error-unmatch caminho/do/arquivo`. Ainda não abra os painéis antes do migrate. Não há publicação de assets nesta atualização.
 
-A ausência de arquivo novo só pode corresponder a uma escolha explícita de conflito, que deixa a entrega incompleta e deve ser registrada. Ausência sem essa explicação exige parada.
+### 4. Rodar as três migrations da versão
 
-### 4. Rodar as duas migrations da versão
+Condição: arquivos conferidos, backup confirmado, nenhuma pendência anterior e decisão sobre a liberação registrada.
 
-Condição: o passo 3 passou, e o pré-voo não mostrou migration pendente do dono.
-
-Ação:
+Ação: se o dono escolheu iniciar desligada, defina `KIT_APARENCIA_POR_USUARIO=false` no `.env` agora. Sem essa escolha, preserve o ambiente. Rode:
 
 ```bash
+php artisan config:clear
 php artisan migrate --force
-php artisan migrate:status
-php artisan tinker --execute 'var_export(app(App\Settings\ConfiguracoesDoKit::class)->aparencia_das_telas);'
-php artisan tinker --execute 'echo App\Models\Tenant::whereNotNull("aparencia_das_telas")->count();'
-```
-
-Evidência: a saída do `migrate` lista como executadas exatamente `2026_11_13_100000_add_aparencia_das_telas_to_tenants_table` e `2026_11_13_100000_add_aparencia_das_telas_to_kit_settings`, e nenhuma outra; o `migrate:status` não mostra `Pending`; a configuração responde `NULL` (layout clássico); a contagem de organizações com aparência própria responde `0`.
-
-Qualquer outra migration executada, erro de coluna ou configuração diferente de `NULL` exige parada.
-
-### 5. Publicar os assets, limpar os caches e conferir a rota
-
-Condição: as migrations terminaram sem erro.
-
-Ação:
-
-```bash
-php artisan filament:assets
 php artisan optimize:clear
-php artisan route:list --name=kit.preview-das-telas-de-acesso
-php artisan tinker --execute 'echo file_exists(public_path("storage")) ? "SIM" : "NAO";'
+php artisan migrate:status
+php artisan tinker --execute 'echo json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->only(["tamanho_da_fonte", "modo_do_menu", "aparencia_por_usuario"])->all());'
+php artisan tinker --execute 'echo App\Models\User::whereNotNull("aparencia")->count();'
+php artisan tinker --execute 'echo App\Models\Tenant::where("aparencia_por_usuario", true)->count();'
 ```
 
-Evidência: os dois primeiros comandos terminam sem erro; o `route:list` mostra a rota `admin/preview-das-telas-de-acesso` com o nome `kit.preview-das-telas-de-acesso`; a última linha responde `SIM`. Confira `git status --short` e revise eventuais arquivos gerados em `public/` antes de adicioná-los ao índice. Não inclua artefatos inesperados.
+O comando de atualização do banco é `php artisan migrate`; acima, `--force` permite executá-lo também em produção sem pergunta interativa.
 
-Com `NAO`, o link `public/storage` não existe: a imagem do destaque, quando o dono enviar uma, não vai aparecer nas telas. Registre e recomende ao dono rodar `php artisan storage:link`; não rode por conta própria.
+Evidência: executadas exatamente `2026_11_18_100000_add_aparencia_to_users_table`, `2026_11_18_100001_add_aparencia_por_usuario_to_tenants_table` e `2026_11_18_100000_add_aparencia_por_usuario_to_kit_settings`; `migrate:status` sem `Pending`. Os settings respondem `normal`, `icones` e `true`, salvo sementes explícitas registradas; ambas as contagens respondem `0`. Erro ou migration adicional exige parada, sem rollback.
 
-Rota ausente só é aceitável se o dono manteve o `KitServiceProvider` na versão dele; registre como entrega parcial. Sem essa escolha, pare.
+### 5. Rodar a suíte Kit,Tenancy com banco descartável
 
-Não há `composer install`, `npm install`, build do front-end, semeadura de jornadas ou geração de permissões nesta atualização.
-
-### 6. Rodar a suíte Kit,Tenancy com banco descartável
-
-Condição: arquivos, migrations e assets foram conferidos e os caches foram limpos.
+Condição: arquivos e migrations conferidos, caches limpos e valores novos verificados antes de escolhas manuais.
 
 Ação, no Git Bash:
 
@@ -464,7 +413,7 @@ php artisan config:clear
 DB_CONNECTION=sqlite DB_DATABASE=:memory: DB_URL=sqlite:///:memory: php artisan test --testsuite=Kit,Tenancy --parallel --compact
 ```
 
-Ação equivalente no PowerShell, preservando os valores anteriores das variáveis da sessão:
+Ação equivalente no PowerShell, preservando as variáveis da sessão:
 
 ```powershell
 php artisan config:clear
@@ -488,54 +437,48 @@ finally {
 $codigoDaSuite
 ```
 
-O `DB_URL` também precisa apontar para o banco em memória. Deixá-lo vazio pode permitir que o valor do `.env` decida o banco usado pela suíte.
+O `DB_URL` também precisa apontar para o banco em memória; vazio pode permitir que o `.env` decida o banco usado.
 
-Evidência: código de saída zero, zero erro, zero falha e **no máximo 1161 pulados** fora da árvore do kit. Os pulados permitidos são os casos que leem arquivos exclusivos do repositório do kit; os cinco a mais que na versão anterior são do `tests/Kit/AparenciaDasTelasDeAcessoEntregaTest.php`, que confere a documentação e o site, ausentes do projeto. Se houver mais, liste os casos adicionais e pare sem modificar os testes.
+Evidência: código zero, zero erro, zero falha e no máximo **1161 pulados** fora da árvore do kit, o teto recebido da origem. Os pulados permitidos leem arquivos exclusivos do repositório do kit. Registre a quantidade efetiva; aumento exige listar as causas e parar, sem alterar os testes para passar.
 
-Os testes da aparência gravam imagens de teste num disco falso, não em `storage/app/public/telas-de-acesso/`. Se essa pasta aparecer com arquivos depois da suíte, pare e informe.
-
-Depois da suíte:
+Depois da suíte, confira as policies que ela pode gerar ao semear permissões para Resources do dono:
 
 ```bash
 git status --porcelain app/Policies
 ```
 
-Os testes semeiam permissões no banco descartável e podem gerar policies no disco para Resources do dono. Registre cada caminho com `??` e remova esses arquivos não rastreados:
+Registre os caminhos com `??` gerados pela suíte e remova somente esses arquivos não rastreados:
 
 ```bash
 git clean -f -- app/Policies
 git status --porcelain app/Policies
 ```
 
-Evidência: nenhum arquivo não rastreado gerado pela suíte permanece em `app/Policies`. Os arquivos rastreados, inclusive os recebidos pelo update, continuam preservados. Alteração em policy rastreada exige parada e análise.
+Evidência: nenhuma policy não rastreada gerada pela suíte permanece; policies rastreadas continuam preservadas. Alteração rastreada exige parada e análise. Depois desta validação, peça ao dono que rode a suíte completa com `php artisan test --compact` em ambiente de testes com banco descartável.
 
-Depois dessa validação, peça ao dono que rode a suíte completa com `php artisan test --compact` em ambiente de testes com banco descartável.
+### 6. Conferir a preservação dos dados e do projeto
 
-### 7. Conferir os dados e a preservação do projeto
+Condição: suíte concluída e variáveis PowerShell restauradas, quando aplicável.
 
-Condição: a suíte terminou e as variáveis da sessão PowerShell foram restauradas, quando aplicável.
-
-Ação:
+Ação: repita a consulta da multi-organização do pré-voo e compare a impressão dos dados com a consulta abaixo, que exclui somente os campos novos:
 
 ```bash
 php artisan config:clear
 php artisan tinker --execute 'echo config("kit.version");'
-php artisan tinker --execute 'echo config("kit.tenancy.enabled") ? "SIM" : "NAO";'
-php artisan tinker --execute 'var_export(config("kit.identidade.aparencia_das_telas"));'
 php artisan migrate:status
-php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map(fn ($tenant) => md5($tenant->makeHidden("aparencia_das_telas")->toJson()))->all(), "configuracoes" => md5(json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->except("aparencia_das_telas")->all()))]);'
+php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map(fn ($tenant) => md5($tenant->makeHidden("aparencia_por_usuario")->toJson()))->all(), "configuracoes" => md5(json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->except(["tamanho_da_fonte", "modo_do_menu", "aparencia_por_usuario"])->all()))]);'
 git diff HEAD -- .env config/logging.php
 git status --short
 git diff --cached --stat
 ```
 
-Evidência: `kit.version` responde `0.53.1`; a multi-organização tem o mesmo valor do pré-voo; `kit.identidade.aparencia_das_telas` responde `NULL`; as migrations têm o estado do pré-voo mais as duas desta versão, sem pendências; a impressão dos usuários, das organizações e das Configurações é exatamente igual à inicial; o diff de `.env` e `config/logging.php` é vazio.
+O model User oculta `aparencia` na serialização; por isso sua impressão continua comparável sem exclusão adicional. Os campos novos foram conferidos separadamente no passo 4.
 
-Confira também cada arquivo que ficou com a versão do dono e cada integração aprovada. Qualquer diferença de dados ou customização não explicada exige parada.
+Evidência: `0.54.0`, mesma multi-organização, migrations anteriores mais as três novas, nenhuma pendente e impressão dos dados idêntica. Diff vazio de `.env` e `config/logging.php`, salvo a semente opcional explicitamente escolhida; customizações preservadas conforme as decisões. Abra também o Meu perfil e execute as conferências de **Como conferir**, registrando o resultado antes de encerrar.
 
-### 8. Remover o remote e as tags temporários
+### 7. Remover o remote e as tags temporários
 
-Condição: ao terminar ou ao parar depois que o dry-run tiver criado o remote e as tags. Este passo não autoriza apagar nomes que já existiam no pré-voo.
+Condição: ao terminar ou parar depois da criação dos nomes temporários; o pré-voo confirmou que não existiam.
 
 Ação, no Git Bash:
 
@@ -551,90 +494,70 @@ git tag -l "kit-*" | ForEach-Object { git tag -d $_ }
 git remote remove kit
 ```
 
-Se uma tentativa anterior já removeu algum desses nomes, confira o estado e remova somente o que ainda existir.
-
-Evidência:
-
-```bash
-git remote
-git tag -l "kit-*"
-```
-
-Nenhum remote `kit` e nenhuma tag `kit-*`. O branch `kit-update/v0.53.1` permanece com as mudanças para revisão, sem commit.
+Se uma tentativa anterior já removeu algum nome, confira e remova somente o que ainda existir. Evidência: `git remote` não lista `kit` e `git tag -l "kit-*"` tem saída vazia. O branch `kit-update/v0.54.0` permanece, com as mudanças para revisão e sem commit.
 
 ## Como conferir
 
-O estado esperado é o mesmo dos cenários 3 e 4 de atualização: versão, arquivos e migrations conferidos, com ou sem multi-organização, telas de acesso idênticas às de antes, preservando as customizações e os dados do dono.
+O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-organização, versão, arquivos e migrations conferidos, dados e customizações preservados.
 
 | O que | Esperado |
 |---|---|
-| Versão do kit | `0.53.1`, depois de limpar o cache de configuração |
-| Arquivos novos que provam a entrega | `TelaRedefinirSenha`, `TelaVerificacaoDeEmail`, `PreviewDasTelasDeAcesso`, `AparenciaDasTelasDeAcesso` e o partial `painel-de-marca` presentes e rastreados |
-| Testes novos | `tests/Kit/AparenciaDasTelasDeAcessoTest.php` e `tests/Tenancy/AparenciaDasTelasDeAcessoTenancyTest.php` presentes e rastreados |
-| Multi-organização | O mesmo `SIM` ou `NAO` do pré-voo |
-| Migrations | As duas da versão executadas, nenhuma outra, nenhuma pendente |
-| Aparência | Configuração `aparencia_das_telas` nula, nenhuma organização com aparência própria, `kit.identidade.aparencia_das_telas` nulo: layout clássico |
-| Rota do preview | `kit.preview-das-telas-de-acesso` registrada, ou a limitação da decisão registrada |
-| Providers e partial de mídia | Recebidos ou integrados, ou a limitação da decisão registrada |
-| Dependências | Nenhuma mudança; nenhum install executado |
-| Link de storage | `public/storage` presente, ou a recomendação registrada |
-| Suíte Kit,Tenancy | Zero erro, zero falha, no máximo 1161 pulados |
-| Policies geradas pelos testes | Não rastreadas removidas e listadas no relatório; rastreadas preservadas |
-| Arquivos do dono | Mantidos ou integrados conforme a decisão, sem mudanças inesperadas |
-| `.env` | Intacto |
-| Canais de log | `config/logging.php` intacto, incluindo os canais próprios do projeto |
-| Dados do banco | Impressão final idêntica à inicial: mesmos usuários, mesmas organizações e mesmas Configurações, fora o campo novo vazio |
-| Branch e índice | `kit-update/v0.53.1`, mudanças revisáveis e sem commit |
-| Remote e tags temporários | Remote `kit` e tags `kit-*` removidos |
+| Marcador | `0.54.0` depois de limpar o cache de configuração |
+| Arquivos da aparência | Providers, hook, settings, models, formulário, componente, view e helpers conferidos contra o destino ou a integração aprovada |
+| Migrations | As três desta versão executadas; `php artisan migrate:status` sem pendências |
+| Instalação | `aparencia_por_usuario=true`, ou a decisão explícita de iniciar desligada registrada |
+| Defaults visuais | Fonte `normal`, menu `icones`, densidade e cor anteriores preservadas, salvo sementes explícitas |
+| Organizações | Todas com o interruptor desligado; mesmo modo de tenancy do pré-voo |
+| Meu perfil | Seção Aparência presente, quatro campos em Padrão, quando a instalação libera |
+| Suíte Kit,Tenancy | Zero erro, zero falha, até 1161 pulados fora da árvore do kit |
+| Testes do projeto | Pedido para rodar `php artisan test --compact` em banco descartável registrado |
+| Policies | Não rastreadas geradas pela suíte removidas e listadas; rastreadas preservadas |
+| Arquivos e dados do dono | Impressão anterior preservada, fora os campos novos; customizações e canais de log intactos |
+| Revisão | Branch `kit-update/v0.54.0`, índice revisável, sem commit; remote e tags temporários removidos |
 
-Uma escolha de manter arquivo antigo deve aparecer como entrega parcial. O marcador `0.53.1` sozinho não permite declarar que a aparência das telas de acesso chegou inteira.
+Abra **Meu perfil** em cada painel a que a conta tenha acesso: a seção **Aparência** deve aparecer com densidade, fonte, cor e menu em Padrão; o visual anterior deve continuar igual. Se o dono iniciou desligada, a seção deve estar ausente. Não salve escolhas no banco do dono.
+
+Faça as demais conferências **em ambiente de testes com banco descartável**:
+
+1. Escolha fonte, densidade, cor e menu numa conta de teste, salve e confira a aplicação nos três painéis autorizados. Outra conta mantém seu padrão. Voltar os quatro campos a Padrão restaura a aparência da instalação.
+2. Desligue a chave da instalação na tela: a seção some e as escolhas deixam de valer; religue e confira que voltam, sem terem sido apagadas.
+3. Com tenancy, confira primeiro a organização desligada: vale a cor dela e os padrões da instalação. Ligue **Liberar a aparência pessoal** somente nessa organização de teste: a escolha da pessoa passa a valer, inclusive a cor. Outra organização desligada continua no padrão. Com a instalação desligada, a chave da organização não libera sozinha e o interruptor não aparece no cadastro.
+
+Registre os resultados e os dados de teste. Sem ambiente ou permissão para conferir as telas, registre como não executado e explique o motivo; não declare validação manual concluída. Arquivo antigo mantido é entrega parcial, mesmo com marcador `0.54.0`.
 
 ## Quando parar
 
-Pare sem tentar contornar e informe ao dono a condição encontrada, a saída relevante e o que falta para continuar:
+Pare e entregue ao dono a condição, a saída relevante e o que falta para continuar:
 
-- **Roteiro indisponível ou cópias divergentes sem marca de revisão:** diga qual leitura falhou ou qual divergência encontrou.
-- **Árvore suja no início:** liste os caminhos e peça que o dono resolva o trabalho em andamento.
-- **Versão instalada diferente de `0.52.1`:** informe o valor encontrado e a origem exigida.
-- **Nomes reservados já existentes:** informe o remote, as tags ou o branch encontrados; não os remova.
-- **Banco inacessível ou migrations pendentes do dono:** mostre o erro ou os nomes pendentes; o `migrate --force` deste roteiro as executaria junto.
-- **Tag destino indisponível:** informe que a atualização depende da publicação de `v0.53.1`.
-- **Dry-run diferente do previsto:** mostre os arquivos divergentes. Qualquer mudança nos arquivos de dependências entre as tags, ou migration além das duas esperadas, não é esperada.
-- **Arquivo novo esperado ausente na tag:** informe o caminho; não substitua a tag por outra referência.
-- **Aplicação incompleta, árvore recusada ou pedido de segunda execução:** informe que o projeto pode estar entre versões e que nenhuma nova rodada ou commit foi feito.
-- **Integração de conflito inviável:** mostre o trecho e preserve a decisão segura, sem inventar uma solução.
-- **Migration com erro, migration inesperada executada ou aparência diferente de nula depois dela:** entregue a saída; não tente desfazer a migration.
-- **Branch, marcador, rota ou arquivos fora do esperado:** informe os valores e caminhos encontrados.
-- **Suíte com erro, falha ou mais de 1161 pulados:** entregue a saída e os casos envolvidos, sem alterar os testes. Com o `tests/Pest.php` mantido na versão do dono, diga que as falhas dos testes novos da aparência decorrem dessa escolha.
-- **Arquivos criados em `storage/app/public/telas-de-acesso/` pela suíte:** informe os caminhos.
-- **Policy rastreada alterada pela suíte:** informe o caminho e o diff antes de qualquer restauração.
-- **Impressão dos dados diferente, mudança na multi-organização, no `.env` ou nos canais de log:** informe exatamente qual conferência divergiu.
-- **Um passo exigiria ação proibida em `## Cuidados`:** informe a necessidade encontrada e aguarde orientação.
+- Roteiro indisponível, cópias divergentes sem marca de revisão ou dúvida de interpretação.
+- Árvore suja no início, versão instalada diferente de `0.53.2`, banco inacessível, backup não confirmado ou migrations pendentes do projeto: liste os valores e caminhos encontrados.
+- Remote, tags ou branch reservados já existentes: informe os nomes, sem removê-los.
+- Tag `v0.54.0` indisponível ou dry-run divergente: mostre os diffs, principalmente dependências, migrations além das três previstas ou parte da entrega ausente.
+- Comando recusado, pedido de segunda rodada, aplicação incompleta, integração incerta ou marcador, branch e arquivos fora do previsto: descreva o estado parcial, sem commit ou nova rodada.
+- Migration com erro, migration adicional executada ou valores novos fora do default ou da semente registrada: entregue as saídas, sem tentar desfazer o banco.
+- Suíte com erro, falha ou mais de 1161 pulados: entregue a saída e os casos envolvidos, sem alterar testes para passar.
+- Policy rastreada alterada, impressão de dados diferente, multi-organização alterada ou mudança inesperada em `.env`, canais de log ou customizações: mostre a diferença antes de restaurar qualquer coisa.
+- Seção ausente com a instalação ligada, aparência mudada sem escolha, liberação indevida numa organização desligada ou escolha pessoal aplicada a outra conta: registre conta de teste, contexto e resultado.
+- Um passo exigiria ação proibida em **Cuidados**: informe a necessidade e aguarde orientação.
 
-Ao parar depois da criação dos nomes temporários, execute ainda o passo 8 para remover somente o remote e as tags criados por este roteiro. Preserve o branch e as mudanças para revisão.
-
-Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
+Ao parar depois de criar os nomes temporários, execute ainda o passo 7 para remover somente o remote e as tags deste roteiro. Preserve o branch e as mudanças para revisão. Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
 
 ## Relatório final
 
 Entregue ao dono, ao terminar ou ao parar:
 
-- versões de partida e chegada, com a saída de `config('kit.version')`;
-- branch atual e confirmação de que nada foi commitado nem integrado por merge;
-- arquivos aplicados, arquivos novos conferidos e integrações realizadas;
-- cada decisão de conflito, com a pergunta, a resposta ou “sem resposta” e o default aplicado; sem conflitos, registre isso;
-- arquivos mantidos na versão do dono e o que deixou de chegar em cada um, em especial nos providers, no partial de mídia, no `KitServiceProvider`, no `app/Models/Tenant.php` e no `tests/Pest.php`;
-- saída do `migrate --force`, com as duas migrations executadas, e a confirmação de que a aparência ficou nula nas Configurações e nas organizações, ou seja, telas de acesso no layout clássico;
-- saída do `filament:assets`, a rota do preview conferida e o estado do link `public/storage`, com a recomendação quando ausente;
-- confirmação de que não havia dependência nova nem necessidade de install, build, semeadura de jornadas ou geração de permissões;
-- saída da suíte Kit,Tenancy, quantidade efetiva de pulados e pedido para o dono rodar a suíte completa em ambiente de testes;
-- cada policy não rastreada removida depois da suíte;
-- impressões dos dados antes e depois, resultado da comparação e estado da multi-organização;
-- confirmação de preservação do `.env`, dos canais de log e das customizações;
-- confirmação de remoção do remote `kit` e das tags `kit-*`;
-- como o dono escolhe o painel de marca, se quiser: no `/admin`, *Configurações da aplicação*, aba **Telas de acesso**, com o preview antes de salvar;
-- se houve parada: passo, saída relevante, estado parcial e condição necessária para continuar.
+- versões de partida e chegada, saída de `config('kit.version')`, branch e confirmação de que nada foi commitado nem integrado por merge;
+- arquivos aplicados e conferidos, arquivos novos e integrações;
+- cada decisão de conflito e de liberação, pergunta e resposta ou “sem resposta”, default aplicado e limitações por arquivo; sem conflitos, registre isso;
+- saída do migrate com os três nomes e do `php artisan migrate:status`, mais os valores novos e as duas contagens conferidas;
+- confirmação de que a instalação nasce ligada e mostra Aparência no Meu perfil, ou a decisão explícita de desligar, com a semente e seu diff quando usados; organizações continuam desligadas;
+- confirmação de que não houve dependência nova, instalação, build, publicação de assets, semeadura ou geração de permissões;
+- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados e pedido para rodar os testes do projeto com `php artisan test --compact` em ambiente de testes com banco descartável;
+- policies não rastreadas removidas, impressões dos dados antes e depois e resultado da comparação;
+- preservação de `.env` (salvo a semente escolhida), canais de log, customizações e estado da multi-organização;
+- conferências manuais do Meu perfil, dos padrões e das duas chaves com organizações, ou o motivo de não execução;
+- remoção do remote `kit` e das tags `kit-*`;
+- em caso de parada, passo, saída relevante, estado parcial e condição necessária para continuar.
 
-Explique como revisar: `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Lembre que isso não reverte o banco: a configuração e a coluna novas continuam lá, vazias.
-
+Explique como revisar com `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Isso não reverte o banco: as colunas e os settings novos permanecem, com seus valores.
 <!-- roteiro-de-atualizacao:fim -->

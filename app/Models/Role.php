@@ -3,7 +3,12 @@
 namespace App\Models;
 
 use App\Traits\TemUuid;
+use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role as SpatieRole;
+use Throwable;
 
 /**
  * O papel do spatie com a coluna que o kit acrescentou.
@@ -38,8 +43,96 @@ use Spatie\Permission\Models\Role as SpatieRole;
  */
 class Role extends SpatieRole
 {
-    // Fora da trait, nada: a coluna `painel` é `$guarded = []` no spatie, então mass
-    // assignment, casts e queries já funcionam. Scope e helper entram quando houver um
-    // segundo chamador.
+    // A coluna `painel` é `$guarded = []` no spatie, então mass assignment, casts e
+    // queries já funcionam sem nada aqui.
     use TemUuid;
+
+    /**
+     * Excluir o papel de um convite.
+     *
+     * A FK `convites.role_id` não tem cascade de propósito: o convite pendente não pode
+     * aceitar com papel nulo. Então, com convite PENDENTE, a exclusão é recusada (`false`
+     * cancela o `delete()`, e as ações do Filament mostram o aviso antes — RoleResource).
+     * Os encerrados (aceitos, recusados, expirados) já não abrem a porta e saem junto, um
+     * a um, para a auditoria registrar cada remoção — um `delete()` pela query não audita.
+     *
+     * É `delete()` e não um listener de `deleting` porque o `deleting` do spatie
+     * (`HasPermissions::bootHasPermissions()`) roda antes e já desliga permissões e
+     * usuários do papel: recusar depois dele deixaria o papel de pé, mas vazio.
+     *
+     * Tudo numa transação, com o papel e os convites dele travados até o fim: se qualquer
+     * passo falhar — inclusive o `DELETE` do papel, barrado pela FK por um convite criado
+     * no meio —, nada muda. Cada convite é relido antes de sair, porque um reenvio no meio
+     * da limpeza o devolve a Pendente; aí a exclusão inteira é desfeita e recusada.
+     */
+    public function delete(): ?bool
+    {
+        DB::beginTransaction();
+
+        try {
+            // MySQL/Postgres: um convite novo para este papel lê a linha do papel pela FK e
+            // espera o commit; um reenvio espera a trava da linha do convite.
+            static::query()->whereKey($this->id)->lockForUpdate()->first();
+            $convites = $this->convites()->lockForUpdate()->get();
+
+            // A regra de "pendente" é a do scope (SQL), a mesma da caixa de entrada e do aviso.
+            $pendentes = $this->convites()->pendentes()->count();
+
+            if ($pendentes > 0) {
+                DB::rollBack();
+
+                return $this->recusarExclusao($pendentes);
+            }
+
+            foreach ($convites as $convite) {
+                if ($this->convites()->pendentes()->whereKey($convite->getKey())->exists()) {
+                    DB::rollBack();
+
+                    return $this->recusarExclusao(1);
+                }
+
+                $convite->delete();
+            }
+
+            $excluido = parent::delete();
+
+            DB::commit();
+        } catch (Throwable $erro) {
+            DB::rollBack();
+
+            throw $erro;
+        }
+
+        if ($convites->isNotEmpty()) {
+            Log::channel('autenticacao')->info(
+                "[Role@delete] Convites encerrados apagados com o papel | papel: {$this->id}",
+                ['role_id' => $this->id, 'convites' => $convites->count()],
+            );
+        }
+
+        return $excluido;
+    }
+
+    private function recusarExclusao(int $pendentes): false
+    {
+        Log::channel('autenticacao')->warning(
+            "[Role@delete] Exclusão recusada: papel com convite pendente | papel: {$this->id}",
+            ['role_id' => $this->id, 'pendentes' => $pendentes],
+        );
+
+        return false;
+    }
+
+    /**
+     * Os convites que concedem este papel, de qualquer organização: o escopo de tenancy
+     * do painel /app (ver `Convite::pendentesPara()`) esconderia os das outras, e a FK
+     * recusa por qualquer um.
+     *
+     * @return HasMany<Convite, $this>
+     */
+    public function convites(): HasMany
+    {
+        return $this->hasMany(Convite::class, 'role_id')
+            ->withoutGlobalScope(Filament::getPanel('app')->getTenancyScopeName());
+    }
 }
