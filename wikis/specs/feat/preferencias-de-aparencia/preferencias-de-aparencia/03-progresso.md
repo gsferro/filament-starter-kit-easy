@@ -37,7 +37,7 @@
 - [x] `tests/Tenancy/AparenciaEfetivaTenancyTest.php` (CT-12..CT-14, CT-18) — 14/14 depois de as linhas D5/D6 virarem `@obsoleto` (P-13), 2026-11-18
 - [x] `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` (CT-19, CT-22..CT-24, CT-26, CT-28, CT-42) — 16/16, 2026-11-18
 - [x] `tests/Tenancy/PreferenciasDeAparenciaTenancyTest.php` (CT-30) — 4/4, 2026-11-18
-- [x] `tests/Browser/PreferenciasDeAparenciaTest.php` (CT-B01, CT-B02) — 5/5 em série, 54 asserções, 2026-11-18
+- [x] `tests/Browser/PreferenciasDeAparenciaTest.php` (CT-B01, CT-B02) — 5/5 em série, 54 asserções; depois do BP-37, 7/7 (89 asserções); suíte Browser inteira em série: 261 testes, 209 passaram, 52 pulados, 0 falhas, 2026-11-18
 - [x] Ajustes em testes existentes — âncora de `tests/Kit/KitInfoTest.php` (73 → 76); citações deslocadas em `tests/Kit/{ChecklistDeRelease,CitacoesDeCodigo,DeployDockerLocal,DiagramasDaArquitetura,KitArte,LinkDoPainelSemTenancy}Test.php` e `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php`; `phpunit.xml` fixa as três chaves novas (CX-01), 2026-11-18
 
 ## Tickets
