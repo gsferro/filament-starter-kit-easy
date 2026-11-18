@@ -100,6 +100,8 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
         // Preferências pessoais do dock: não saem na serialização do registro (ex.: `getPageHeaderRecord`).
         'dock_atalhos',
         'dock_layout',
+        // Preferências de aparência: mesmo motivo (wiki `preferencias-de-aparencia`).
+        'aparencia',
     ];
 
     /**
@@ -139,6 +141,12 @@ class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar
             'aprovacao_pendente' => 'boolean',
             // Mesmo regime: fora do `$fillable`, só `forceFill` em `desativar()`/`reativar()`.
             'ativo'              => 'boolean',
+            /*
+             * Preferências de aparência da pessoa: fora do `$fillable`, escritas só por
+             * `forceFill` em `App\Livewire\PreferenciasDeAparencia::salvar()`, e lidas sempre
+             * coagidas por `App\Support\AparenciaDoUsuario` (wiki `preferencias-de-aparencia`).
+             */
+            'aparencia'          => 'array',
             /*
              * Favoritos e layout do dock de atalhos: fora do `$fillable`, escritos só por
              * `forceFill` — a chave do favorito vira nome de classe na leitura, então nunca entra

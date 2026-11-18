@@ -329,6 +329,7 @@ class KitUpdate extends Command
         'wikis/README.md',
         'wikis/agentes-e-skills.md',
         'wikis/arquitetura.md',
+        'wikis/candidatas-a-pacote.md',
         'wikis/checklist-de-release.md',
         'wikis/convencoes.md',
         'wikis/glossario.md',

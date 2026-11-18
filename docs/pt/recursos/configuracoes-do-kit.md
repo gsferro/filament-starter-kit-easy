@@ -21,7 +21,7 @@ Filament (`?tab=…::data::tab`); um link antigo nesse formato não quebra, só 
 | **Registro** | cadastro sem convite no `/app`, aprovação manual e validação de e-mail ([detalhes](../../autenticacao/registro-aberto/)) | Cadastro sem convite (cadastro e aprovação); E-mail verificado (validação de e-mail) |
 | **Login** | a página única de login em `/login` ([detalhes](../../autenticacao/login-unificado/)), os quatro provedores de login social, cada um com interruptor, painéis permitidos, *Client ID* e *Client Secret* (cifrado), além do rodapé da tela de login ([detalhes](../../autenticacao/login-social/)) | Página única de login; Login social (com uma seção por provedor); Proteção anti-robô; Rodapé da tela de login |
 | **Telas de acesso** | o **layout** das telas de autenticação — o clássico de sempre ou o painel de marca (lado do formulário, fundo de cor ou arte, cor, frase de destaque, texto de apoio, logo e alternador de tema) —, com um **preview** das alterações ainda não salvas ([detalhes](../../autenticacao/aparencia-das-telas/)) | Aparência; Pré-visualização |
-| **Aplicação** | hub de navegação em cartões, aviso de alterações não salvas, **densidade do layout**, exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), os **agentes de IA** (o interruptor do uso e os painéis do chat do Assistente), o **tutorial guiado** (checklist, tours e autoria), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível | Comportamento dos painéis; Dashboard dinâmico; Dock de atalhos; Agentes de IA; Tutorial guiado; Organizações |
+| **Aplicação** | hub de navegação em cartões, aviso de alterações não salvas, a **aparência dos painéis** (densidade do layout, tamanho da fonte, menu ao recolher e se cada pessoa pode escolher a própria), exibição da versão do kit no rodapé, **dashboard dinâmico** — e em quais painéis ele vale —, o **dock de atalhos** (painéis, layout padrão e estilo), os **agentes de IA** (o interruptor do uso e os painéis do chat do Assistente), o **tutorial guiado** (checklist, tours e autoria), como o seu negócio chama cada organização (singular e plural) e **ocultar o seletor** quando só uma está acessível | Comportamento dos painéis; Aparência dos painéis; Dashboard dinâmico; Dock de atalhos; Agentes de IA; Tutorial guiado; Organizações |
 
 Tudo é gravado pelo `spatie/laravel-settings` na tabela `settings`, com a tela vindo do `filament/spatie-laravel-settings-plugin` — os dois já estavam instalados no kit e sem uso até esta versão.
 
@@ -73,7 +73,7 @@ aceita Markdown — negrito, itálico e link — e descarta HTML cru, porque a t
 As telas de **registro** e de **recuperação de senha** recebem só a assinatura, não o recado.
 
 Se o interruptor estiver ligado e o campo vazio, o rodapé mostra a assinatura e, ao lado, **a versão do kit rotulada**
-(`kit 0.53.1`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
+(`kit 0.54.0`). Ela nunca é apresentada como se fosse a do seu produto: o rótulo é justamente o que
 impede essa leitura, e é requisito do kit, não detalhe de tela.
 
 **`APP_VERSION` semeia UMA vez, na instalação. Depois dela, quem manda é a tela.**
@@ -112,7 +112,7 @@ o padrão a preservar. Desligar é um clique, sem deploy.
 
 ## Layout compacto: uma escala, não um interruptor
 
-Ainda na aba **Aplicação**, seção *Comportamento dos painéis*, *Densidade do layout* aperta de uma vez os **cartões de estatística**, as
+Ainda na aba **Aplicação**, seção *Aparência dos painéis*, *Densidade do layout* aperta de uma vez os **cartões de estatística**, as
 **tabelas**, o **menu lateral** e os **botões** dos três painéis. São três degraus:
 
 | Nível | `--spacing` | Linha da tabela | Tabela de 10 linhas | Largura do menu |
@@ -168,6 +168,58 @@ suficiente.
 > projeto único e um starter kit é distribuído — o estudo com os números está na wiki
 > `layout-compact`. O degrau **denso** chega praticamente ao mesmo ganho, com a distorção como
 > contrapartida.
+
+## Aparência de cada pessoa: fonte, menu e a escolha no Meu perfil
+
+A seção *Aparência dos painéis* da aba **Aplicação** reúne a densidade (acima) e mais dois padrões da
+instalação, e decide se cada pessoa pode trocar os quatro para si:
+
+| Campo | Opções | Padrão de fábrica |
+|---|---|---|
+| **Cada pessoa pode escolher a própria aparência** | ligado / desligado | **ligado** |
+| **Densidade do layout** | confortável, compacto, denso | confortável |
+| **Tamanho da fonte** | pequena (87,5%), normal, grande (112,5%), muito grande (125%) | normal |
+| **Menu lateral ao recolher** | manter os ícones, esconder tudo | manter os ícones |
+
+**O tamanho da fonte** usa o mesmo mecanismo da densidade: o Filament mede todo texto por variáveis
+`--text-*`, e o kit as redeclara fora de cascade layer, no mesmo `<style>` do `--spacing`. Escala o
+texto e não o espaçamento — quem quer as duas coisas combina com a densidade. No *normal* nada é
+emitido.
+
+**O menu ao recolher** é a única das quatro que não sai de CSS: *manter os ícones* é o comportamento
+de sempre (o menu recolhido vira uma faixa de ícones); *esconder tudo* faz o menu sumir inteiro, com
+o botão para reabrir no topo.
+
+### A escolha de cada pessoa
+
+Com a chave ligada, a tela **Meu perfil** dos três painéis ganha a seção **Aparência**: densidade,
+fonte, cor primária (da mesma lista de cores da instalação) e menu. Cada campo começa em *Padrão*, e
+deixar em *Padrão* é seguir a instalação — usar é opcional. A escolha é uma só por pessoa e vale nos
+três painéis.
+
+Quem vence, em cada tela:
+
+1. a escolha da pessoa, **se a aparência pessoal vale ali**;
+2. senão, a da organização (só a cor existe por organização);
+3. senão, a da instalação.
+
+**Desligar a chave não apaga nada.** A seção some do perfil e todo mundo passa a ver o padrão; o que
+cada pessoa escolheu volta a valer quando a chave é religada.
+
+### Com organizações (multi-tenancy)
+
+Dentro de `/app/{organização}`, a escolha da pessoa só vale se **as duas** chaves estiverem ligadas:
+a da instalação e a da organização. A da organização é o interruptor **Liberar a aparência
+pessoal**, no cadastro da organização em `/admin/organizacoes`, e só aparece com a chave da
+instalação ligada.
+
+Ela **nasce desligada** em toda organização, inclusive nas que já existiam: ligar a chave da
+instalação não muda a aparência de organização nenhuma sem alguém decidir. Numa organização que não
+liberou, a pessoa vê a cor da organização e os padrões da instalação — e a escolha dela continua
+valendo no `/admin`, no `/infra` e nas organizações que liberaram.
+
+As chaves `KIT_APARENCIA_POR_USUARIO`, `KIT_TAMANHO_DA_FONTE` e `KIT_MODO_DO_MENU` do `.env` só semeiam
+os valores na instalação; depois disso, quem governa é esta tela.
 
 ## O dashboard dinâmico é um interruptor, não uma migração
 
@@ -281,12 +333,12 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:655`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:683`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:468`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:483`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:418`) não está nesse mapa, então o banco nunca a sobrescreve.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:507`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:452`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:
 

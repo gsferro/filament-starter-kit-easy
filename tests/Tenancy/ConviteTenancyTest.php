@@ -158,7 +158,7 @@ it('[CT-21] com tenancy, aceitar convite cujo papel não existe mais falha fecha
     [$convite] = conviteTenancyCom('admin', $acme, 'carla@example.com');
 
     DB::statement('PRAGMA defer_foreign_keys = ON');
-    Role::findByName('admin')->delete();
+    apagarPapelPelaQuery('admin');
     $convite->refresh();
 
     Notification::fake();

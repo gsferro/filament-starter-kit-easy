@@ -28,7 +28,7 @@ final class PerfilEDoisFatoresSeeder extends SeederDeOnboarding
                     self::parada(
                         "filament.{$painel}.pages.meu-perfil",
                         ['Seu perfil', 'Your profile'],
-                        ['Aqui você atualiza sua foto, seu nome e sua senha.', 'Here you update your photo, name and password.'],
+                        ['Aqui você atualiza sua foto, seu nome e sua senha — e, quando a aplicação permite, a sua aparência: densidade, fonte, cor e menu.', 'Here you update your photo, name and password — and, when the application allows it, your appearance: density, font, colour and sidebar.'],
                     ),
                     self::parada(
                         "filament.{$painel}.pages.meu-perfil",

@@ -12,9 +12,11 @@ use App\Support\CustomizadorDaInstalacao;
 use App\Support\DensidadeDoLayout;
 use App\Support\DetalheDoUsuario;
 use App\Support\DockDeAtalhos;
+use App\Support\ModoDoMenu;
 use App\Support\Paineis;
 use App\Support\ProvedorAntiRobo;
 use App\Support\ProvedorSocial;
+use App\Support\TamanhoDaFonte;
 use App\Support\TetoDeUpload;
 use BackedEnum;
 use Filament\Forms\Components\ColorPicker;
@@ -168,6 +170,15 @@ class ConfiguracoesDoKit extends SettingsPage
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['tabela_carregamento']             = CarregamentoDaTabela::coagir($data['tabela_carregamento'] ?? null)->value;
+        /*
+         * Densidade, fonte e menu também entram coagidos na GRAVAÇÃO, e não só ao abrir a tela: um
+         * valor de tipo errado forjado no estado (`["grande"]`) passa pelo `in()` do Select, chega
+         * nulo ao `fill()` do spatie e estoura `TypeError` na propriedade `string` — erro 500 ao
+         * salvar a tela inteira (CT-25 da wiki `preferencias-de-aparencia`).
+         */
+        $data['densidade_do_layout']             = DensidadeDoLayout::coagir($data['densidade_do_layout'] ?? null)->value;
+        $data['tamanho_da_fonte']                = TamanhoDaFonte::coagir($data['tamanho_da_fonte'] ?? null)->value;
+        $data['modo_do_menu']                    = ModoDoMenu::coagir($data['modo_do_menu'] ?? null)->value;
         // O clássico grava `null`, o default de sempre; o resto passa pelo vocabulário (P-04).
         $data['aparencia_das_telas']             = EditorDeAparenciaDasTelas::paraGravar($data['aparencia_das_telas'] ?? null, propria: false);
         $data['visoes_de_tabela_compartilhadas'] = (bool) ($data['visoes_de_tabela'] ?? false)
@@ -229,6 +240,11 @@ class ConfiguracoesDoKit extends SettingsPage
          * render.
          */
         $data['densidade_do_layout'] = DensidadeDoLayout::coagir($data['densidade_do_layout'] ?? null)->value;
+
+        // Fonte e menu: vocabulário fechado como a densidade, pelo mesmo motivo (P-12 da wiki
+        // `preferencias-de-aparencia`).
+        $data['tamanho_da_fonte'] = TamanhoDaFonte::coagir($data['tamanho_da_fonte'] ?? null)->value;
+        $data['modo_do_menu']     = ModoDoMenu::coagir($data['modo_do_menu'] ?? null)->value;
 
         // O carregamento da tabela é vocabulário fechado como a densidade: o ilegível gravado
         // (`scroll`, `xpto`) entra coagido para `paginacao` e o Select nunca segura lixo (P-24).
@@ -1028,6 +1044,28 @@ class ConfiguracoesDoKit extends SettingsPage
                         ->helperText('Ao sair de um formulário com alteração pendente, o navegador pede confirmação antes de descartar. Vale para as telas de cadastro e edição dos três painéis, inclusive as dos plugins.'),
 
                     /*
+                         * Desligado por padrão: a versão do kit é métrica interna do starter, e quem
+                         * entrega o produto a um cliente final não tem por que anunciar de qual kit ele
+                         * nasceu. A versão do SISTEMA fica na aba Identidade.
+                         */
+                    Toggle::make('exibir_versao_do_kit')
+                        ->label('Mostrar também a versão do kit no rodapé')
+                        ->helperText('Acrescenta a versão do starter kit ao lado da versão do sistema. Desligado, o rodapé só mostra a sua. A versão do kit continua disponível em `php artisan kit:info`.'),
+                ]),
+
+            /*
+                 * A aparência dos três painéis: os padrões da instalação e a chave que deixa cada
+                 * pessoa escolher a dela no Meu perfil (wiki `preferencias-de-aparencia`). Tudo
+                 * lido por REQUEST — render hook e Closures do painel —, então salvar vale no
+                 * próximo F5. A densidade morava em "Comportamento dos painéis" até esta feature.
+                 */
+            $this->secao('aplicacao', 'aparencia', 'Aparência dos painéis', 'heroicon-o-adjustments-vertical')
+                ->schema([
+                    Toggle::make('aparencia_por_usuario')
+                        ->label('Cada pessoa pode escolher a própria aparência')
+                        ->helperText('Mostra a seção "Aparência" no Meu perfil: densidade, fonte, cor e menu de cada um. Os campos abaixo continuam sendo o padrão de quem não escolheu. Com organizações, cada uma também precisa liberar no cadastro dela. Desligar não apaga o que as pessoas escolheram: só deixa de valer.'),
+
+                    /*
                          * Select de NÍVEIS e não Toggle, e a diferença não é estética: apertar por
                          * `--spacing` distorce proporções (ícone e caixa de seleção encolhem junto), a
                          * distorção escala com a intensidade e ela é questão de gosto e de tela. Um
@@ -1052,14 +1090,20 @@ class ConfiguracoesDoKit extends SettingsPage
                         ->selectablePlaceholder(false)
                         ->required(),
 
-                    /*
-                         * Desligado por padrão: a versão do kit é métrica interna do starter, e quem
-                         * entrega o produto a um cliente final não tem por que anunciar de qual kit ele
-                         * nasceu. A versão do SISTEMA fica na aba Identidade.
-                         */
-                    Toggle::make('exibir_versao_do_kit')
-                        ->label('Mostrar também a versão do kit no rodapé')
-                        ->helperText('Acrescenta a versão do starter kit ao lado da versão do sistema. Desligado, o rodapé só mostra a sua. A versão do kit continua disponível em `php artisan kit:info`.'),
+                    // Mesmo molde da densidade: opções do enum, coagidas ao abrir a tela (`mutateFormDataBeforeFill()`).
+                    Select::make('tamanho_da_fonte')
+                        ->label('Tamanho da fonte')
+                        ->helperText('O texto dos três painéis, sem mexer no espaçamento. "Normal" é o padrão do Filament e não muda nada.')
+                        ->options(TamanhoDaFonte::opcoes())
+                        ->selectablePlaceholder(false)
+                        ->required(),
+
+                    Select::make('modo_do_menu')
+                        ->label('Menu lateral ao recolher')
+                        ->helperText('Recolhido, o menu pode continuar mostrando os ícones (o de sempre) ou sumir inteiro, com o botão para reabrir no topo.')
+                        ->options(ModoDoMenu::opcoes())
+                        ->selectablePlaceholder(false)
+                        ->required(),
                 ]),
 
             /*

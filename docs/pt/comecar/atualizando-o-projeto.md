@@ -37,7 +37,7 @@ O que ele faz, em ordem:
 
 O fluxo é **não interativo** quando não há terminal (CI, `--no-interaction`) — nunca "sem TTY": ele
 vira relatório e sai sem aplicar nada, a menos que `--all` ou `--only-new` já tenham dado a
-aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:457`).
+aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:458`).
 
 ```mermaid
 flowchart TD
@@ -66,7 +66,7 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:405`): pré-voo (`:preVoo:486`), remote temporário
+(`app/Console/Commands/KitUpdate.php:handle:406`): pré-voo (`:preVoo:486`), remote temporário
 (`:vincularKit:545`), diff restrito (`:arquivosAlterados:651`), resumo (`:mostrarResumo:827`), a
 checagem de terminal (`:isInteractive:449`), o branch temporário (`:prepararBranch:847`), a revisão
 por arquivo (`:revisarEAplicar:896`), o relatório do `composer.json`
@@ -137,6 +137,19 @@ colapsáveis, abas carregadas ao abrir, aba "Kit" renomeada "Aplicação" — ve
 que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas para dentro de `aba()`.
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
+
+**Na v0.54.0 há três migrations** (`php artisan migrate`): as preferências de aparência por usuário (ver
+[Configurações do kit](../../recursos/configuracoes-do-kit/#aparência-de-cada-pessoa-fonte-menu-e-a-escolha-no-meu-perfil)).
+A chave da instalação nasce **ligada**, então todo mundo passa a ver a seção "Aparência" no Meu perfil —
+nada muda na tela de ninguém até a pessoa escolher. Com organizações, cada uma precisa liberar no cadastro
+dela (nasce desligado). Quem mudou à mão o menu lateral, a largura dele ou o `bootUsing` dos providers de
+painel revisa o diff.
+
+**Na v0.53.2 não há nada a instalar nem migrar**: excluir um papel que tem convite deixa de responder 500
+(ver [Convites](../../autenticacao/convites/#excluir-um-papel-que-tem-convites)). Teste do projeto que simula
+"o papel do convite sumiu" com `$papel->delete()` passa a apagar pela query — `Role::delete()` agora recusa
+papel com convite pendente. Quem mudou à mão `app/Models/Role.php` ou as ações de exclusão da tela de
+papéis revisa o diff.
 
 **Na v0.53.1 há duas migrations, e as telas de acesso continuam idênticas.** Rode `php artisan migrate`
 (a configuração `aparencia_das_telas` e a coluna `tenants.aparencia_das_telas`, as duas vazias) e
@@ -247,7 +260,7 @@ viaja no `create-project`, mas no `kit:update` é **só relatório**, nunca apli
 
 Caminho que **entrou** em `CAMINHOS_DO_KIT` depois da sua versão — como as pastas autorais de
 `resources/views/vendor` — é comparado com a **sua árvore**, e não só tag com tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:702`): o arquivo que você não tem aparece como
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:703`): o arquivo que você não tem aparece como
 "novo no kit" mesmo que o kit não o tenha mudado desde a sua versão, e arquivo que o seu projeto não tem
 aparece como "novo no kit" ainda que o kit o tenha mudado entre as tags — é o rótulo que o `--only-new`
 aplica. Esse comportamento vale a partir da versão em que ele entrou (a classe que roda é a instalada):

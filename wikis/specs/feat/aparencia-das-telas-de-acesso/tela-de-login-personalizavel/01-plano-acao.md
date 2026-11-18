@@ -101,7 +101,7 @@ própria, no mesmo formulário da organização. Nada muda para quem atualiza o 
 ## Análise do Existente
 
 - O plugin é configurado com valores fixos nos três providers
-  (`app/Providers/Filament/AppPanelProvider.php:AuthDesignerPlugin:262`); o layout lê
+  (`app/Providers/Filament/AppPanelProvider.php:AuthDesignerPlugin:279`); o layout lê
   `$livewire->getAuthDesignerConfig()` no render
   (`vendor/caresome/filament-auth-designer/resources/views/components/layouts/auth.blade.php:getAuthDesignerConfig:6`)
 - `AuthDesignerConfig` é `final readonly`

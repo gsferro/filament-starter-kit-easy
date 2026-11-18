@@ -586,7 +586,7 @@ qualquer janela, e é CT-108.
 
 ❓ Q?2 · raia: desenho · afeta: RQ-10, RQ-26 · depende de: —
 Como o DG-20 mostra que o `master_global` entra, sem vínculo, numa organização ativa
-(`app/Models/User.php:isMasterGlobal:826`)? O `alt` publicado — "organização inativa ou sem vínculo" — cobre
+(`app/Models/User.php:isMasterGlobal:834`)? O `alt` publicado — "organização inativa ou sem vínculo" — cobre
 essa situação, que o código permite.
 ➡️ Recomendação: a condição do `alt` nomeia os motivos do código, e a de sem vínculo leva a ressalva —
 "organização inativa, ou sem vínculo e não é master_global" (en: "inactive organization, or no link and not
@@ -1990,7 +1990,7 @@ e os únicos matadores de M8–M13, vindos da revisão — o gate vence o teto.
 
 ## Regra R13 — DG-09: estados do convite
 
-> `RQ-22` · perfil **padrão** · técnica: **tabela estado × evento executada** + **2-switch**. Matriz única do convite: **4 estados** (Pendente, Aceito, Recusado, Expirado — `app/Models/Convite.php:situacao:587`, não há coluna de status) × **6 eventos** (reenviar, lembrar, aceitar, recusar, prazo vence, revogar/excluir) = **24 células**. Precedência verificada: Aceito vence tudo (`app/Models/Convite.php:'Aceito':590`), Recusado vence Expirado (`app/Models/Convite.php:'Recusado':591`); `enviar()` zera `aceito_em` e **não** zera `recusado_em` (`app/Models/Convite.php:'aceito_em' => null:161`); a ação Reenviar só aparece em Pendente e Expirado (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:situacao() === 'Pendente':89`); aceite exige prazo (`app/Models/Convite.php:'expira_em', '>':480`) e não recusado (`app/Models/Convite.php:'recusado_em':479`). A revogação é exclusão física (sem SoftDeletes no model) — fim, não estado
+> `RQ-22` · perfil **padrão** · técnica: **tabela estado × evento executada** + **2-switch**. Matriz única do convite: **4 estados** (Pendente, Aceito, Recusado, Expirado — `app/Models/Convite.php:situacao:600`, não há coluna de status) × **6 eventos** (reenviar, lembrar, aceitar, recusar, prazo vence, revogar/excluir) = **24 células**. Precedência verificada: Aceito vence tudo (`app/Models/Convite.php:'Aceito':603`), Recusado vence Expirado (`app/Models/Convite.php:'Recusado':604`); `enviar()` zera `aceito_em` e **não** zera `recusado_em` (`app/Models/Convite.php:'aceito_em' => null:161`); a ação Reenviar só aparece em Pendente e Expirado (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:situacao() === 'Pendente':89`); aceite exige prazo (`app/Models/Convite.php:'expira_em', '>':480`) e não recusado (`app/Models/Convite.php:'recusado_em':513`). A revogação é exclusão física (sem SoftDeletes no model) — fim, não estado
 
 ```gherkin
 # language: pt
@@ -4097,7 +4097,7 @@ Funcionalidade: Diagramas da arquitetura no README e no site
 > `app/Providers/Filament/AppPanelProvider.php` (linha 508, que citava `Convite.php` linha 591) — duas delas apontavam linha errada:
 > `DemoTenancySeeder.php` linha 103 (o `email_verified_at` está em
 > `database/seeders/DemoTenancySeeder.php:'email_verified_at':95`) e `Convite.php` linha 591 (está em
-> `app/Models/Convite.php:'email_verified_at':634`)
+> `app/Models/Convite.php:'email_verified_at':647`)
 
 `@premissa` P-22 (de comportamento, falha fechado): RQ-29 corrige afirmação falsa, e citação que aponta
 a linha errada é afirmação falsa — entram as citações de arquivos do kit (`app/`, `database/`, `config/`,
@@ -4316,12 +4316,12 @@ vermelha — é isso que CT-11 não fazia. O `admin_app` tem a sua em CT-12 (Ten
 > (`app/Filament/Pages/Auth/RegistroPorConvite.php:desviarParaAceite:191`,
 > `app/Filament/Pages/Auth/RegistroPorConvite.php:aceitarComoUsuarioExistente:290`),
 > ou mandada entrar (`app/Filament/Pages/Auth/RegistroPorConvite.php:'Entre para aceitar o convite':270`), com
-> consumo atômico (`app/Models/Convite.php:public function aceitarComoUsuarioExistente:674`,
-> `app/Models/Convite.php:Este convite já foi usado.:699`). A conta nova nasce verificada
-> (`app/Models/Convite.php:'email_verified_at' => now():634`), ligada à organização
-> (`app/Models/Convite.php:syncWithoutDetaching:637`) e com o papel
-> (`app/Models/Convite.php:$this->atribuirPapel($user, $papel);:640`); a existente, idem
-> (`app/Models/Convite.php:syncWithoutDetaching:709`, `app/Models/Convite.php:atribuirPapel:712`).
+> consumo atômico (`app/Models/Convite.php:public function aceitarComoUsuarioExistente:687`,
+> `app/Models/Convite.php:Este convite já foi usado.:712`). A conta nova nasce verificada
+> (`app/Models/Convite.php:'email_verified_at' => now():647`), ligada à organização
+> (`app/Models/Convite.php:syncWithoutDetaching:650`) e com o papel
+> (`app/Models/Convite.php:$this->atribuirPapel($user, $papel);:653`); a existente, idem
+> (`app/Models/Convite.php:syncWithoutDetaching:722`, `app/Models/Convite.php:atribuirPapel:725`).
 > Até a v0.11.0 o ramo da conta existente era a recusa "E-mail já cadastrado" — é o diagrama velho plausível
 
 ```gherkin
@@ -4809,7 +4809,7 @@ bloco, não do cenário: Q?2)*
 > antes da inativa" de "depois", o mesmo motivo de R7 — + **controles contra a tabela literal**, no molde de
 > CT-79 e CT-81. Mundo: `app/Models/User.php:canAccessTenant:789` — a organização inativa nega para todos
 > (`app/Models/User.php:ativo:813`), antes do `master_global`, que entra sem vínculo
-> (`app/Models/User.php:isMasterGlobal:826`; `tests/Tenancy/TenancyTest.php:deixa o master_global acessar qualquer tenant:108`);
+> (`app/Models/User.php:isMasterGlobal:834`; `tests/Tenancy/TenancyTest.php:deixa o master_global acessar qualquer tenant:108`);
 > os demais precisam do vínculo (`app/Models/User.php:whereKey:830`); a recusa é 404, nunca 403
 > (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:abort:41`;
 > `tests/Tenancy/TenancyTest.php:assertNotFound:216`). O bloco: `docs/pt/recursos/multi-tenancy.md:alt organização inativa ou sem vínculo:154`,
@@ -5565,7 +5565,7 @@ Nos Exemplos, `\|` é a barra vertical e `\\` uma barra invertida, como nas linh
 > tem porta na caixa de convites recebidos, que responde `false` sem a tenancy
 > (`app/Filament/App/Pages/ConvitesRecebidos.php:regraLocalDeAcesso:75`,
 > `app/Filament/App/Pages/ConvitesRecebidos.php:'kit.tenancy.enabled':77`); o aceite só liga a organização quando o
-> convite tem uma (`app/Models/Convite.php:tenant_id:636`, `app/Models/Convite.php:tenant_id:708`), e convite com
+> convite tem uma (`app/Models/Convite.php:tenant_id:649`, `app/Models/Convite.php:tenant_id:721`), e convite com
 > organização só existe com a tenancy (`config/kit.php:KIT_TENANCY:351`); a conta só nasce pendente com a aprovação
 > manual (`app/Support/RegistroAberto.php:aprovacao_manual:81`, `app/Support/RegistroAberto.php:aprovacao_pendente:182`),
 > desligada por padrão (`config/kit.php:KIT_REGISTRO_APROVACAO_MANUAL:404`). Hoje o DG-02 desenha o caso de uso sem

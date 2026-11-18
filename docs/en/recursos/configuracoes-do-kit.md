@@ -21,7 +21,7 @@ Filament (`?tab=…::data::tab`); an old link in that format does not break, it 
 | **Registro** (sign-up) | registration without an invitation on `/app`, manual approval and e-mail verification ([details](../../autenticacao/registro-aberto/)) | Cadastro sem convite (registration and approval); E-mail verificado (e-mail verification) |
 | **Login** | the single login page at `/login` ([details](../../autenticacao/login-unificado/)), the four social login providers, each with its switch, allowed panels, *Client ID* and encrypted *Client Secret*, plus the login screen footer ([details](../../autenticacao/login-social/)) | Página única de login (single login page); Login social (with a section per provider); Proteção anti-robô (bot protection); Rodapé da tela de login (login footer) |
 | **Telas de acesso** (sign-in screens) | the **layout** of the authentication screens — the classic or the brand panel (form side, color or artwork background, color, headline, supporting text, logo and theme switcher) —, with a **preview** of the changes not saved yet ([details](../../autenticacao/aparencia-das-telas/)) | Aparência (appearance); Pré-visualização (preview) |
-| **Aplicação** (application) | card navigation hub, unsaved-changes alert, **layout density**, whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), the **AI agents** (the usage switch and the panels of the Assistant chat), the **guided tutorial** (checklist, tours and authoring), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable | Comportamento dos painéis (panel behaviour); Dashboard dinâmico (dynamic dashboard); Dock de atalhos (shortcut dock); Agentes de IA (AI agents); Tutorial guiado (guided tutorial); Organizações (organisations) |
+| **Aplicação** (application) | card navigation hub, unsaved-changes alert, the **panel appearance** (layout density, font size, collapsed sidebar and whether each person can choose their own), whether the kit version shows in the footer, the **dynamic dashboard** — and which panels it applies to —, the **shortcut dock** (panels, default layout and style), the **AI agents** (the usage switch and the panels of the Assistant chat), the **guided tutorial** (checklist, tours and authoring), what your business calls each organisation (singular and plural), and **hiding the selector** when only one is reachable | Comportamento dos painéis (panel behaviour); Aparência dos painéis (panel appearance); Dashboard dinâmico (dynamic dashboard); Dock de atalhos (shortcut dock); Agentes de IA (AI agents); Tutorial guiado (guided tutorial); Organizações (organisations) |
 
 Everything is stored by `spatie/laravel-settings` in the `settings` table, with the screen coming from `filament/spatie-laravel-settings-plugin` — both were already installed in the kit and unused until this version.
 
@@ -75,7 +75,7 @@ public.
 The **registration** and **password reset** screens get the signature only, not the notice.
 
 If the switch is on and the field is empty, the footer shows the signature and, beside it, **the kit version, labelled**
-(`kit 0.53.1`). It is never presented as if it were your product's: the label is precisely what
+(`kit 0.54.0`). It is never presented as if it were your product's: the label is precisely what
 prevents that reading, and it is a kit requirement, not a screen detail.
 
 **`APP_VERSION` seeds ONCE, at install time. After that, the screen wins.**
@@ -115,7 +115,7 @@ default worth preserving. Turning it off is one click, no deploy.
 
 ## Compact layout: a scale, not a switch
 
-In the *Comportamento dos painéis* section on the **Aplicação** tab, *Densidade do layout* tightens the **stat cards**, the **tables**, the
+In the *Aparência dos painéis* section on the **Aplicação** tab, *Densidade do layout* tightens the **stat cards**, the **tables**, the
 **sidebar** and the **buttons** of all three panels at once. There are three steps:
 
 | Level | `--spacing` | Table row | 10-row table | Sidebar width |
@@ -173,6 +173,60 @@ screen is enough.
 > its licence is per project and a starter kit is distributed — the study, with the numbers, is in
 > the `layout-compact` wiki. The **denso** step reaches practically the same gain, with the
 > distortion as the trade-off.
+
+## Each person's appearance: font, sidebar and the choice in My profile
+
+The *Aparência dos painéis* (panel appearance) section of the **Aplicação** tab gathers density
+(above) and two more installation defaults, and decides whether each person can change all four
+for themselves:
+
+| Field | Options | Factory default |
+|---|---|---|
+| **Cada pessoa pode escolher a própria aparência** (each person can choose their own appearance) | on / off | **on** |
+| **Densidade do layout** (layout density) | confortável, compacto, denso | confortável |
+| **Tamanho da fonte** (font size) | pequena (87.5%), normal, grande (112.5%), muito grande (125%) | normal |
+| **Menu lateral ao recolher** (sidebar when collapsed) | keep the icons, hide everything | keep the icons |
+
+**Font size** uses the same mechanism as density: Filament sizes all text through `--text-*`
+variables, and the kit redeclares them outside any cascade layer, in the same `<style>` as
+`--spacing`. It scales text, not spacing — combine it with density if you want both. At *normal*
+nothing is emitted.
+
+**The collapsed sidebar** is the only one of the four that does not come from CSS: *keep the
+icons* is the usual behaviour (the collapsed sidebar becomes an icon strip); *hide everything*
+makes it disappear entirely, with the button to reopen it in the top bar.
+
+### Each person's choice
+
+With the switch on, the **Meu perfil** (My profile) page of all three panels gains an **Aparência**
+(appearance) section: density, font, primary colour (from the same colour list as the
+installation) and sidebar. Every field starts at *Padrão* (default), and leaving it there means
+following the installation — using it is optional. There is one choice per person, and it applies
+across the three panels.
+
+Who wins, on each screen:
+
+1. the person's choice, **if personal appearance applies there**;
+2. otherwise, the organisation's (only colour exists per organisation);
+3. otherwise, the installation's.
+
+**Turning the switch off deletes nothing.** The section disappears from the profile and everyone
+sees the default; what each person chose applies again when the switch is turned back on.
+
+### With organisations (multi-tenancy)
+
+Inside `/app/{organisation}`, the person's choice only applies if **both** switches are on: the
+installation's and the organisation's. The organisation's is the **Liberar a aparência pessoal**
+(allow personal appearance) toggle in the organisation form at `/admin/organizacoes`, and it only
+shows when the installation switch is on.
+
+It **starts off** in every organisation, including existing ones: turning on the installation
+switch changes no organisation's appearance without someone deciding to. In an organisation that
+has not allowed it, the person sees the organisation's colour and the installation defaults — and
+their choice still applies in `/admin`, in `/infra` and in organisations that allowed it.
+
+The `.env` keys `KIT_APARENCIA_POR_USUARIO`, `KIT_TAMANHO_DA_FONTE` and `KIT_MODO_DO_MENU` only seed
+the values at install time; after that, this page is in charge.
 
 ## The dynamic dashboard is a switch, not a migration
 
@@ -290,12 +344,12 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:655`), called at boot by
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:683`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:468`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:483`) — `KIT_TENANCY`
-(`config/kit.php:KIT_TENANCY:418`) is not in that map, so the database never overrides it.
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:507`) — `KIT_TENANCY`
+(`config/kit.php:KIT_TENANCY:452`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:
 
