@@ -5,6 +5,48 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.54.0] - 2026-11-18
+
+Item 1 do roadmap: **preferências de aparência por usuário**. Três migrations (duas de tabela, uma de
+settings); a aparência de quem não escolhe nada não muda. Wiki: `wikis/specs/feat/preferencias-de-aparencia/`.
+
+### Adicionado
+
+- Seção **Aparência** no Meu perfil dos três painéis: cada pessoa escolhe densidade do layout, tamanho da
+  fonte, cor primária (da lista de cores do kit) e o modo do menu lateral ao recolher. Cada campo começa
+  em "Padrão", e a escolha é uma só por pessoa, valendo nos três painéis. Gravada em `users.aparencia`
+  (JSON, fora do `$fillable`); lida sempre reduzida ao vocabulário — valor ilegível cai no padrão, sem erro.
+- Na aba **Aplicação** de *Configurações da aplicação*, a seção nova **Aparência dos painéis**: a chave
+  *Cada pessoa pode escolher a própria aparência* (`aparencia_por_usuario`, ligada) e dois padrões novos
+  da instalação — **tamanho da fonte** (`pequena`, `normal`, `grande`, `muito-grande`; redeclara as
+  variáveis `--text-*` no mesmo `<style>` do `--spacing`) e **menu lateral ao recolher** (`icones`, o de
+  sempre, ou `oculto`, que esconde tudo e põe o botão de reabrir no topo). A densidade do layout mudou de
+  *Comportamento dos painéis* para esta seção.
+- Com organizações: interruptor **Liberar a aparência pessoal** no cadastro da organização
+  (`tenants.aparencia_por_usuario`, **desligado**), visível só com a chave da instalação ligada. Dentro de
+  `/app/{organização}`, a escolha da pessoa só vale com as duas chaves ligadas; onde vale, a cor da pessoa
+  vence a da organização.
+- `wikis/candidatas-a-pacote.md`: o que o kit implementou no próprio código e pode virar plugin Filament
+  independente, com arquivos, acoplamento ao kit e esforço de extrair. As preferências de aparência são
+  a primeira candidata.
+- `App\Support\AparenciaDoUsuario` (o decisor único: "a escolha pessoal vale aqui?" e o valor efetivo
+  de cada preferência), `App\Support\TamanhoDaFonte` e `App\Support\ModoDoMenu`.
+
+### Atualizando
+
+- `php artisan migrate` (três migrations: `users.aparencia`, `tenants.aparencia_por_usuario` e os três
+  campos novos do settings).
+- **A chave da instalação nasce ligada**: logo depois da atualização, todo mundo vê a seção "Aparência"
+  no Meu perfil. Nada muda na tela de ninguém até a pessoa escolher. Para não oferecer a escolha,
+  desligue em *Configurações da aplicação* → *Aplicação* → *Aparência dos painéis*, ou
+  `KIT_APARENCIA_POR_USUARIO=false` antes do `migrate`.
+- Projeto que mudou à mão `->sidebarCollapsibleOnDesktop()`, `->sidebarWidth()` ou o `bootUsing` dos
+  providers de painel revisa o diff: as três linhas passaram a ler `AparenciaDoUsuario`.
+
+### Defaults mudados
+
+- nenhum para quem não escolhe nada: fonte `normal` e menu `icones` reproduzem o comportamento anterior
+
 ## [0.53.2] - 2026-11-17
 
 Correção do item 9 do roadmap: excluir pela tela um papel que tinha convite respondia **500**. Sem

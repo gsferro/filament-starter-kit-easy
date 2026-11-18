@@ -67,6 +67,10 @@
         <env name="KIT_AGENTES_IA" value="false" force="true"/>
         <env name="KIT_AGENTES_IA_PAINEIS" value="" force="true"/>
         <env name="KIT_ONBOARDING" value="false" force="true"/>
+        <!-- Os padrões de aparência da instalação (wiki preferencias-de-aparencia, CX-01 do step 9). -->
+        <env name="KIT_TAMANHO_DA_FONTE" value="normal" force="true"/>
+        <env name="KIT_MODO_DO_MENU" value="icones" force="true"/>
+        <env name="KIT_APARENCIA_POR_USUARIO" value="true" force="true"/>
         <env name="KIT_TENANCY_LABEL" value="Organização" force="true"/>
         <env name="KIT_TENANCY_LABEL_PLURAL" value="Organizações" force="true"/>
         <env name="KIT_TENANCY_SLUG" value="organizacoes" force="true"/>

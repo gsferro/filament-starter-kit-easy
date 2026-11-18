@@ -17,11 +17,13 @@ use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Http\Middleware\ExigeTutorialGuiadoLigado;
 use App\Livewire\DefinirSenhaPorEmail;
+use App\Livewire\PreferenciasDeAparencia;
+use App\Support\AparenciaDoUsuario;
 use App\Support\AvatarDeIniciais;
 use App\Support\CabecalhoDoPainel;
 use App\Support\CorPrimaria;
-use App\Support\DensidadeDoLayout;
 use App\Support\IdentidadeDoKit;
+use App\Support\ModoDoMenu;
 use App\Support\TutorialGuiado;
 use Asmit\ResizedColumn\ResizedColumnPlugin;
 use BezhanSalleh\FilamentExceptions\FilamentExceptionsPlugin;
@@ -37,6 +39,7 @@ use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
+use Filament\Support\Facades\FilamentColor;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
@@ -113,7 +116,14 @@ class AdminPanelProvider extends PanelProvider
              * que faz /admin/configuracoes-da-aplicacao governar de verdade. Ver ADR-02.
              */
             ->unsavedChangesAlerts(fn (): bool => (bool) config('kit.alerta_alteracoes_nao_salvas'))
-            ->sidebarCollapsibleOnDesktop()
+            /*
+             * Como o menu recolhe: mantendo os ícones (o de sempre) ou sumindo inteiro — o padrão da
+             * instalação ou a escolha da pessoa (`App\Support\AparenciaDoUsuario`, wiki
+             * `preferencias-de-aparencia`). Closures, e mutuamente exclusivas: o Filament as avalia no
+             * render do layout (`vendor/filament/filament/resources/views/components/layout/index.blade.php`).
+             */
+            ->sidebarCollapsibleOnDesktop(fn (): bool => AparenciaDoUsuario::modoDoMenu() === ModoDoMenu::Icones)
+            ->sidebarFullyCollapsibleOnDesktop(fn (): bool => AparenciaDoUsuario::modoDoMenu() === ModoDoMenu::Oculto)
             /*
              * A largura do menu acompanha a densidade do layout — a quarta superfície do escopo
              * de `wikis/specs/feat/layout-compact/`.
@@ -126,7 +136,7 @@ class AdminPanelProvider extends PanelProvider
              * Aqui e não no render hook de `--spacing`: a largura vem de `--sidebar-width`, que o
              * Filament emite inline em `vendor/filament/filament/resources/views/components/layout/base.blade.php:getSidebarWidth:88`, fora do alcance de qualquer layer.
              */
-            ->sidebarWidth(fn (): string => DensidadeDoLayout::deConfig()->larguraDaSidebar())
+            ->sidebarWidth(fn (): string => AparenciaDoUsuario::densidade()->larguraDaSidebar())
             ->maxContentWidth(Width::Full)
             ->subNavigationPosition(SubNavigationPosition::Top)
             // Com Reverb o sininho reage ao evento Echo (sem polling); sem ele,
@@ -151,6 +161,14 @@ class AdminPanelProvider extends PanelProvider
                 // Registra as sugestões "Criar X" no request, com auth já resolvido.
                 AcoesDeCriacao::registrar();
 
+                /*
+                 * A cor que a PESSOA escolheu no Meu perfil, quando a aparência pessoal vale aqui
+                 * (wiki `preferencias-de-aparencia`, P-02). No `bootUsing`, e não em `->colors()`:
+                 * só no render do `<head>` a sessão já existe (o motivo completo está na cor da
+                 * organização, no `AppPanelProvider`). Registrada depois da cor do painel, e no
+                 * `ColorManager` quem registra por último vence; `[]` é o neutro.
+                 */
+                FilamentColor::register(fn (): array => AparenciaDoUsuario::paletaDaPessoa());
                 // "Bloquear sessão" logo abaixo do "Meu perfil" — ver
                 // TelaBloqueio::itemDeMenu(). A guarda espelha a do plugin: com o
                 // kill-switch desligado a rota não existe e o item estouraria no render.
@@ -241,7 +259,11 @@ class AdminPanelProvider extends PanelProvider
                     ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')
                     // Quem entrou por login social não tem senha atual — e a troca de senha, o 2FA e o
                     // desbloqueio da sessão pedem uma. O bloco manda o link de definição por e-mail.
-                    ->myProfileComponents(['definir_senha_por_email' => DefinirSenhaPorEmail::class])
+                    ->myProfileComponents([
+                        'definir_senha_por_email'   => DefinirSenhaPorEmail::class,
+                        // A seção "Aparência" — some sozinha com a chave da instalação desligada.
+                        'preferencias_de_aparencia' => PreferenciasDeAparencia::class,
+                    ])
                     /*
                      * A tela de perfil do KIT no lugar da do pacote, e o motivo e' so' um: a do
                      * pacote nao declara `canAccess()`, entao `View:MyProfilePage` existia no banco

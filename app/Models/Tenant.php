@@ -49,6 +49,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property ?string $logo_dark
  * @property bool $unifica_logo
  * @property array<string, mixed>|null $aparencia_das_telas
+ * @property bool $aparencia_por_usuario
  */
 class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
 {
@@ -98,6 +99,10 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
         // Lida por `App\Support\AparenciaDasTelasDeAcesso::daOrganizacao()`, que a reduz ao
         // vocabulário a cada leitura.
         'aparencia_das_telas',
+        // A organização libera a aparência pessoal das pessoas dela — só com a chave da instalação
+        // ligada (`App\Support\AparenciaDoUsuario::liberada()`). Fillable pelo mesmo motivo do
+        // `registro_habilitado`: é a decisão de quem administra, tomada no formulário.
+        'aparencia_por_usuario',
     ];
 
     /** Rótulo exibido acima do nome no seletor de tenant do painel. */
@@ -131,10 +136,11 @@ class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName
     protected function casts(): array
     {
         return [
-            'ativo'               => 'boolean',
-            'registro_habilitado' => 'boolean',
-            'unifica_logo'        => 'boolean',
-            'aparencia_das_telas' => 'array',
+            'ativo'                 => 'boolean',
+            'registro_habilitado'   => 'boolean',
+            'unifica_logo'          => 'boolean',
+            'aparencia_das_telas'   => 'array',
+            'aparencia_por_usuario' => 'boolean',
         ];
     }
 

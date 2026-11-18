@@ -15,7 +15,18 @@ Companheiro de [`pacotes-candidatos.md`](pacotes-candidatos.md), que responde à
 
 ---
 
-## 1. Preferências de usuário — densidade, fonte, cor e modo do menu
+## 1. ~~Preferências de usuário — densidade, fonte, cor e modo do menu~~ — FEITO
+
+> **Fechado em 2026-11-18, na v0.54.0**, em `wikis/specs/feat/preferencias-de-aparencia/`.
+>
+> **Como ficou**: cada pessoa escolhe as quatro na seção "Aparência" do Meu perfil, e a instalação
+> ganhou padrão para as quatro (fonte e menu são novos). Uma chave da instalação libera a escolha
+> pessoal; com organizações, cada uma também precisa liberar a dela no cadastro da organização. A
+> escolha da pessoa vence a cor da organização onde ela liberou.
+>
+> **A hipótese do pacote externo** ficou registrada em [`candidatas-a-pacote.md`](candidatas-a-pacote.md),
+> como a primeira candidata: por ora o código fica no kit. A análise original fica abaixo, como
+> registro.
 
 **Estado**: analisado, não implementado · **Origem**: `wikis/specs/feat/layout-compact/`
 

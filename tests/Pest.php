@@ -9,12 +9,14 @@ use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\DashboardClassico;
 use App\Livewire\ChecklistDoOnboarding;
+use App\Livewire\PreferenciasDeAparencia;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\KitServiceProvider;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\CustomizadorDaInstalacao;
 use App\Support\ProvedorSocial;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
@@ -26,7 +28,9 @@ use Filament\Panel;
 use Filament\PanelRegistry;
 use Filament\Resources\Resource;
 use Filament\Support\Assets\AssetManager;
+use Filament\Support\Colors\Color;
 use Filament\Support\Colors\ColorManager;
+use Filament\Support\Facades\FilamentColor;
 use HoceineEl\QuickActionDock\Livewire\QuickActionDock;
 use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -2635,7 +2639,7 @@ function resultadoDoFluxo(array $grafo, callable $avaliar): string
 
 /**
  * O avaliador das perguntas de DG-03 — a MESMA ordem de `User::canAccessPanel()`
- * (`app/Models/User.php:canAccessPanel:166`): indisponibilidade, pendência, master_global,
+ * (`app/Models/User.php:canAccessPanel:174`): indisponibilidade, pendência, master_global,
  * contexto do painel (tenancy), papel do painel.
  */
 function avaliadorDoDG03(User $user, Panel $painel): Closure
@@ -3541,4 +3545,206 @@ function rascunhoDe(string $escopo, ?array $aparencia, ?string $id = null): stri
 function urlDoPreviewDe(?string $rascunho, string $tela = 'login', array $extra = []): string
 {
     return route('kit.preview-das-telas-de-acesso', array_filter(['rascunho' => $rascunho, 'tela' => $tela, ...$extra], fn ($v) => $v !== null));
+}
+
+/*
+|--------------------------------------------------------------------------
+| Aparência por usuário (wiki `feat/preferencias-de-aparencia`)
+|--------------------------------------------------------------------------
+| Aqui, e não nos arquivos de teste, porque mais de um usa
+| (`tests/Kit/AparenciaEfetivaTest.php`, `tests/Kit/PreferenciasDeAparenciaTest.php`,
+| `tests/Tenancy/AparenciaEfetivaTenancyTest.php`, ...) — `.ai/rules/testes.md`.
+*/
+
+/**
+ * Grava, pela TABELA `settings`, a aparência da instalação e alinha a config (o boot do teste roda
+ * antes das migrations; ver `DensidadeDoLayoutTest`). Os padrões são os da "instalação de
+ * referência" do 04: chave ligada, densidade Compacto, fonte Grande, menu Esconder tudo, cor Teal e
+ * cor livre `#0ea5e9`, todos diferentes da fábrica.
+ *
+ * `null` em `$porUsuario`, `$densidade`, `$fonte` e `$menu` = não mexe na propriedade (elas não são
+ * anuláveis). `null` em `$cor` e `$corHex` = grava nulo ("sem cor livre", "sem cor da paleta").
+ */
+function aparenciaDaInstalacao(
+    ?bool $porUsuario = true,
+    ?string $densidade = 'compacto',
+    ?string $fonte = 'grande',
+    ?string $menu = 'oculto',
+    ?string $cor = 'Teal',
+    ?string $corHex = '#0ea5e9',
+): void {
+    $propriedades = [
+        'aparencia_por_usuario' => $porUsuario,
+        'densidade_do_layout'   => $densidade,
+        'tamanho_da_fonte'      => $fonte,
+        'modo_do_menu'          => $menu,
+    ];
+
+    foreach ($propriedades as $propriedade => $valor) {
+        if ($valor !== null) {
+            gravarConfiguracao($propriedade, $valor);
+        }
+    }
+
+    gravarConfiguracao('cor_primaria', $cor);
+    gravarConfiguracao('cor_primaria_hex', $corHex);
+
+    alinharConfiguracoesDoKit();
+}
+
+/**
+ * Grava a coluna `users.aparencia` CRUA — sem cast, sem componente (fixture de LEITURA). O `$bruto`
+ * passa por `json_encode`: use `json_decode($json)` (sem `true`) para gravar `{}` como objeto.
+ */
+function aparenciaDe(User $usuario, mixed $bruto): void
+{
+    DB::table('users')->where('id', $usuario->getKey())->update(['aparencia' => json_encode($bruto)]);
+
+    // a instância que o actingAs() guarda é a mesma que o request lê: sem o refresh ela traria a coluna antiga
+    $usuario->refresh();
+}
+
+/**
+ * O que a pessoa autenticada vê numa página: GET real e os quatro observáveis, lidos de forma literal
+ * (nunca do código da feature).
+ *
+ * - densidade: `--spacing` do `<style>:root{…}</style>` do kit (`0.2rem` Compacto, `0.175rem` Denso,
+ *   nenhum Confortável);
+ * - fonte: `--text-base` do mesmo bloco (`0.875rem` Pequena, `1.125rem` Grande, `1.25rem` Muito
+ *   grande, nenhum Normal). O número em pixel é provado no navegador;
+ * - cor: a paleta `primary` registrada em `FilamentColor` depois do GET, devolvida pelo NOME
+ *   (`Red`) ou pelo hexadecimal (`#0ea5e9`) que a gerou;
+ * - menu: a classe do `<body>`.
+ *
+ * `$fronteira = false` NÃO chama `fronteiraDeRequest()`: o cenário mede o estado que sobra no processo
+ * entre dois requests. Só o cache de cores do `ColorManager` é descartado, porque ele existe só no
+ * teste (cada request real nasce sem ele) e esconderia qualquer cor nova.
+ *
+ * @return array{densidade: string, fonte: string, cor: string, menu: string, html: string}
+ */
+function aparenciaEfetiva(string $url, bool $fronteira = true): array
+{
+    if ($fronteira) {
+        fronteiraDeRequest();
+    } else {
+        $manager = app(ColorManager::class);
+
+        (function (): void {
+            unset($this->cachedColors);
+        })->call($manager);
+    }
+
+    $html = test()->get($url)->assertOk()->getContent();
+
+    $bloco = preg_match('~<style>:root\{([^}]*)\}</style>~', $html, $achado) === 1 ? $achado[1] : '';
+
+    $densidade = match (preg_match('~--spacing:([0-9.]+)rem~', $bloco, $e) === 1 ? $e[1] : null) {
+        '0.2'    => 'Compacto',
+        '0.175'  => 'Denso',
+        null     => 'Confortável',
+        default  => 'declaração desconhecida: '.($e[1] ?? ''),
+    };
+
+    $fonte = match (preg_match('~--text-base:([0-9.]+)rem~', $bloco, $e) === 1 ? $e[1] : null) {
+        '0.875'  => 'Pequena',
+        '1.125'  => 'Grande',
+        '1.25'   => 'Muito grande',
+        null     => 'Normal',
+        default  => 'declaração desconhecida: '.($e[1] ?? ''),
+    };
+
+    $classesDoBody = preg_match('~<body[^>]*class="([^"]*)"~', $html, $achado) === 1 ? preg_split('/\s+/', $achado[1]) : [];
+
+    $menu = match (true) {
+        in_array('fi-body-has-sidebar-fully-collapsible-on-desktop', $classesDoBody, true)   => 'Esconder tudo',
+        in_array('fi-body-has-sidebar-collapsible-on-desktop', $classesDoBody, true)         => 'Manter os ícones',
+        default                                                                              => 'nenhuma classe de menu',
+    };
+
+    return [
+        'densidade' => $densidade,
+        'fonte'     => $fonte,
+        'cor'       => rotuloDaPaletaPrimaria(),
+        'menu'      => $menu,
+        'html'      => $html,
+    ];
+}
+
+/** O nome (`Red`) ou o hexadecimal conhecido (`#0ea5e9`, `#7c3aed`, `#059669`) da paleta `primary` registrada agora. */
+function rotuloDaPaletaPrimaria(): string
+{
+    $registrada = FilamentColor::getColors()['primary'];
+
+    foreach (CustomizadorDaInstalacao::CORES as $nome) {
+        if ($registrada === constant(Color::class.'::'.$nome)) {
+            return $nome;
+        }
+    }
+
+    foreach (['#0ea5e9', '#7c3aed', '#059669', '#ff0000'] as $hex) {
+        if ($registrada === Color::generatePalette($hex)) {
+            return $hex;
+        }
+    }
+
+    return 'paleta desconhecida';
+}
+
+/**
+ * A "escolha de referência" do 04: os quatro valores diferem da instalação de referência. Os valores
+ * são os gravados na coluna (`denso`, `muito-grande`, `Red`, `icones`).
+ *
+ * @return array{densidade: string, fonte: string, cor: string, menu: string}
+ */
+function escolhaDeReferencia(): array
+{
+    return ['densidade' => 'denso', 'fonte' => 'muito-grande', 'cor' => 'Red', 'menu' => 'icones'];
+}
+
+/**
+ * Grava uma escolha PELA seção Aparência do Meu perfil (transição real): GET do Meu perfil do painel,
+ * que boota o painel, e o componente Livewire. Quem chama já autenticou a pessoa.
+ *
+ * Sem `$escolha`, grava a de referência. Os campos fora de `$escolha` ficam como a seção os abriu.
+ *
+ * `$url` troca o endereço do Meu perfil (com organizações, o do `/app` é `/app/{slug}/meu-perfil`).
+ *
+ * @param  array<string, string|null>|null  $escolha
+ */
+function gravarAparenciaPelaSecao(?array $escolha = null, string $painel = 'app', ?string $url = null): void
+{
+    test()->get($url ?? "/{$painel}/meu-perfil")->assertOk();
+
+    Filament::setCurrentPanel($painel);
+
+    Livewire::test(PreferenciasDeAparencia::class)
+        ->fillForm($escolha ?? escolhaDeReferencia())
+        ->call('salvar')
+        ->assertHasNoFormErrors();
+}
+
+/** A Ana do Kit: master_global, entra nos três painéis pelo `Gate::before`. */
+function anaDoKit(): User
+{
+    return usuarioDoKit('master_global', 'ana@example.com');
+}
+
+/**
+ * A Ana da suíte Tenancy: membro da Acme (`#7c3aed`), da Globex (`#059669`) e da Initech (sem cor),
+ * `panel_user` nas três e `admin` global (`duasOrganizacoes()`), rebatizada `ana@example.com`.
+ *
+ * @return array{ana: User, acme: Tenant, globex: Tenant, initech: Tenant}
+ */
+function anaComTresOrganizacoes(): array
+{
+    ['acme' => $acme, 'globex' => $globex, 'usuario' => $ana] = duasOrganizacoes();
+
+    $ana->update(['email' => 'ana@example.com']);
+
+    $initech = tenant('Initech', 'initech');
+
+    papelNaOrganizacao($ana, 'panel_user', $initech);
+    $ana->tenants()->attach($initech->getKey());
+
+    return compact('ana', 'acme', 'globex', 'initech');
 }

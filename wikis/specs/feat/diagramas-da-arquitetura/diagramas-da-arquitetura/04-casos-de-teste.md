@@ -586,7 +586,7 @@ qualquer janela, e é CT-108.
 
 ❓ Q?2 · raia: desenho · afeta: RQ-10, RQ-26 · depende de: —
 Como o DG-20 mostra que o `master_global` entra, sem vínculo, numa organização ativa
-(`app/Models/User.php:isMasterGlobal:826`)? O `alt` publicado — "organização inativa ou sem vínculo" — cobre
+(`app/Models/User.php:isMasterGlobal:834`)? O `alt` publicado — "organização inativa ou sem vínculo" — cobre
 essa situação, que o código permite.
 ➡️ Recomendação: a condição do `alt` nomeia os motivos do código, e a de sem vínculo leva a ressalva —
 "organização inativa, ou sem vínculo e não é master_global" (en: "inactive organization, or no link and not
@@ -4809,7 +4809,7 @@ bloco, não do cenário: Q?2)*
 > antes da inativa" de "depois", o mesmo motivo de R7 — + **controles contra a tabela literal**, no molde de
 > CT-79 e CT-81. Mundo: `app/Models/User.php:canAccessTenant:789` — a organização inativa nega para todos
 > (`app/Models/User.php:ativo:813`), antes do `master_global`, que entra sem vínculo
-> (`app/Models/User.php:isMasterGlobal:826`; `tests/Tenancy/TenancyTest.php:deixa o master_global acessar qualquer tenant:108`);
+> (`app/Models/User.php:isMasterGlobal:834`; `tests/Tenancy/TenancyTest.php:deixa o master_global acessar qualquer tenant:108`);
 > os demais precisam do vínculo (`app/Models/User.php:whereKey:830`); a recusa é 404, nunca 403
 > (`vendor/filament/filament/src/Http/Middleware/IdentifyTenant.php:abort:41`;
 > `tests/Tenancy/TenancyTest.php:assertNotFound:216`). O bloco: `docs/pt/recursos/multi-tenancy.md:alt organização inativa ou sem vínculo:154`,
