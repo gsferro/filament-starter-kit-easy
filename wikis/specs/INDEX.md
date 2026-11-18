@@ -52,6 +52,7 @@
 | `feat/permissoes-de-telas-e-acoes` | `permissoes-de-telas-e-acoes` | 40/40 itens | não fatiada | `[██████████] 100 %` do 03 | — | APROVADO COM DÉBITO (ciclo 1) | [03](feat/permissoes-de-telas-e-acoes/permissoes-de-telas-e-acoes/03-progresso.md) |
 | `feat/phpstan-nivel-8` | `phpstan-nivel-8` | 39/40 itens | não fatiada | `[█████████░] 97 %` do 03 | — | REPROVADO → especificação (0 Blocker, 5 Major, 4 Minor) (no 03; sem 06) | [03](feat/phpstan-nivel-8/phpstan-nivel-8/03-progresso.md) |
 | `feat/plumb-e-dividas-tecnicas` | `plumb-e-dividas-tecnicas` | 22/22 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/plumb-e-dividas-tecnicas/plumb-e-dividas-tecnicas/03-progresso.md) |
+| `feat/preferencias-de-aparencia` | `preferencias-de-aparencia` | 33/35 itens · concluída — 2026-11-18 | não fatiada | `[█████████░] 94 %` do 03 | — | APROVADO COM DÉBITO (ciclo 2) | [03](feat/preferencias-de-aparencia/preferencias-de-aparencia/03-progresso.md) |
 | `feat/recaptcha-nas-telas-publicas` | `recaptcha-nas-telas-publicas` | 28/28 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/recaptcha-nas-telas-publicas/recaptcha-nas-telas-publicas/03-progresso.md) |
 | `feat/registro-e-aprovacao` | `registro-e-aprovacao` | 61/61 itens | não fatiada | `[██████████] 100 %` do 03 | — | — | [03](feat/registro-e-aprovacao/registro-e-aprovacao/03-progresso.md) |
 | `feat/rodape-coerente` | `rodape-coerente` | 42/44 itens | não fatiada | `[█████████░] 95 %` do 03 | — | — | [03](feat/rodape-coerente/rodape-coerente/03-progresso.md) |
