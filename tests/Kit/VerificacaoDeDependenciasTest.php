@@ -424,4 +424,4 @@ it('[CT-10] enquanto o lock exigir ext-sodium nas dependências de desenvolvimen
 
     expect((string) file_get_contents(base_path('README.md')))->toContain('8.4 ou 8.5')
         ->and((string) file_get_contents(base_path('README.en.md')))->toContain('8.4 or 8.5');
-})->skip(fn (): bool => ! naArvoreDoKit(), 'lê docs/, que não viaja no create-project')->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'lê o diretório do site, que não viaja no create-project')->group('kit');

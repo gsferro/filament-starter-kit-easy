@@ -59,7 +59,7 @@ jobs:
             echo
             echo '### composer-unused — declaradas e não usadas'
             echo '```'
-            vendor/bin/composer-unused --no-progress --no-ansi --ignore-exit-code || true
+            vendor/bin/composer-unused --no-progress --no-ansi --output-format=default --ignore-exit-code || true
             echo '```'
             echo '### composer-require-checker — usadas e não declaradas'
             echo '```'
