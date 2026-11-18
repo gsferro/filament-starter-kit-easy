@@ -5,6 +5,35 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.55.0] - 2026-11-18
+
+Item 8.2 do roadmap: **dependências declaradas × usadas**, como relatório. Duas dependências de
+desenvolvimento novas; nada muda em runtime. Wiki: `wikis/specs/feat/verificacao-de-dependencias/`.
+
+### Adicionado
+
+- `maglnet/composer-require-checker` e `icanhazstring/composer-unused` no `require-dev`, e os scripts
+  `composer deps:check` (as duas), `deps:unused` e `deps:require`. Ficam FORA do `composer test`.
+- No CI, o job `qualidade` roda as duas e publica a saída no resumo do job, **sem reprovar** (decisão do
+  mantenedor: só relatório).
+- `composer-unused.php` na raiz: exclui só os 5 pacotes que o kit usa por um caminho que a ferramenta não
+  enxerga (`anselmokossa/filament-sentinel`, `laravel/pulse`, `laravel/reverb`, `livewire/blaze`,
+  `spatie/laravel-backup`), cada um com o motivo. Viaja com o `kit:update`.
+- A triagem de 2026-11-18 em `wikis/qualidade-de-codigo.md`: **3 pacotes sem uso**
+  (`awcodes/filament-badgeable-column`, `lara-zeus/progress`, `syriable/filament-activitylog`) e **181
+  símbolos** de dependências só transitivas usadas direto e de oito extensões PHP não declaradas, com as
+  recomendações. Nenhuma dependência de produção mudou.
+
+### Atualizando
+
+- `composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` —
+  o `kit:update` traz o `composer-unused.php` e relata a diferença do `composer.json`, sem aplicá-la. Os
+  três scripts `deps:*` entram à mão no `composer.json` do projeto (copie do kit).
+
+### Defaults mudados
+
+- nenhum
+
 ## [0.54.0] - 2026-11-18
 
 Item 1 do roadmap: **preferências de aparência por usuário**. Três migrations (duas de tabela, uma de

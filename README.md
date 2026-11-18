@@ -430,6 +430,7 @@ composer lint:check   # só verifica a formatação, sem alterar nada (o que a C
 composer filament:check   # só o lint específico de Filament (FilaCheck)
 composer refactor:preview # o que o Rector reescreveria (dry-run) — FORA do composer test
 composer refactor:apply   # aplica a reescrita do Rector — FORA do composer test
+composer deps:check      # relatório de dependências declaradas × usadas (composer-unused + composer-require-checker)
 composer upgrade:filament # roda o vendor/bin/filament-v5 (filament/upgrade já está no require-dev)
 php artisan kit:install --force   # reinstala do zero (APAGA o SQLite) e refaz as perguntas
 php artisan kit:install --custom   # refaz só nome e cor, sem tocar no banco
@@ -494,7 +495,7 @@ O que muda separa-se em três camadas, e cada uma tem um caminho próprio:
 Atualize este projeto seguindo o roteiro em https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 ```
 
-`{versão}` é a versão destino, com o `v` (ex.: `v0.54.0`). Um roteiro cobre uma passagem só; quem está várias versões atrás segue um por vez, em ordem. As mudanças ficam no branch `kit-update/v{versão}`, sem commit, para você revisar. O passo a passo, o caminho manual e os detalhes: [Atualizando o projeto](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/atualizando-o-projeto.html).
+`{versão}` é a versão destino, com o `v` (ex.: `v0.55.0`). Um roteiro cobre uma passagem só; quem está várias versões atrás segue um por vez, em ordem. As mudanças ficam no branch `kit-update/v{versão}`, sem commit, para você revisar. O passo a passo, o caminho manual e os detalhes: [Atualizando o projeto](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/atualizando-o-projeto.html).
 
 ## Solução de problemas
 

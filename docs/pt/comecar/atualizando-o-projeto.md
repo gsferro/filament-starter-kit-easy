@@ -138,6 +138,12 @@ que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
 
+**Na v0.55.0 não há migration**: entra o relatório de dependências declaradas × usadas (ver
+[Qualidade de código](../../referencia/qualidade-de-codigo/#dependências-declaradas--usadas)). Rode
+`composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` e copie
+do kit os scripts `deps:*` do `composer.json` — o `kit:update` traz o `composer-unused.php`, mas só relata a
+diferença do `composer.json`.
+
 **Na v0.54.0 há três migrations** (`php artisan migrate`): as preferências de aparência por usuário (ver
 [Configurações do kit](../../recursos/configuracoes-do-kit/#aparência-de-cada-pessoa-fonte-menu-e-a-escolha-no-meu-perfil)).
 A chave da instalação nasce **ligada**, então todo mundo passa a ver a seção "Aparência" no Meu perfil —

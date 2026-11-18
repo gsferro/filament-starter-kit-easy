@@ -183,19 +183,19 @@ Abaixo, a cópia do roteiro da versão instalada, para consulta depois da atuali
 versão; o roteiro que vale para a próxima atualização é sempre o do link.
 
 <!-- roteiro-de-atualizacao:inicio -->
-# Roteiro de atualização — v0.53.2 → v0.54.0
+# Roteiro de atualização — v0.54.0 → v0.55.0
 
 Leia o roteiro inteiro antes de alterar um arquivo do projeto.
 
 ## Identificação
 
-Origem: v0.53.2
+Origem: v0.54.0
 
-Destino: v0.54.0
+Destino: v0.55.0
 
 Data: 2026-11-18
 
-Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.54.0/wikis/atualizacoes/v0.54.0.md
+Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.55.0/wikis/atualizacoes/v0.55.0.md
 
 Padrão do link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 
@@ -205,7 +205,7 @@ Leia também o mesmo arquivo na `main`. Se o arquivo da `main` trouxer a linha `
 
 ## Antes de começar
 
-O pedido que dispara este roteiro é: “Atualize meu projeto da v0.53.2 para a v0.54.0 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão com a versão destino `v0.54.0` e confira que é o mesmo endereço da Identificação. O agente segue os passos abaixo usando o `kit:update` para aplicar os arquivos.
+O pedido que dispara este roteiro é: “Atualize meu projeto da v0.54.0 para a v0.55.0 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão com a versão destino `v0.55.0` e confira que é o mesmo endereço da Identificação. O agente segue os passos abaixo usando o `kit:update` para aplicar os arquivos.
 
 Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e PowerShell, exceto onde aparecem as duas formas. Guarde as saídas para o relatório final.
 
@@ -224,7 +224,7 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan tinker --execute 'echo config("kit.version");'
    ```
 
-   Esperado: `0.53.2`. Outro valor encerra este roteiro sem aplicar arquivos: `0.54.0` indica marcador já no destino; uma versão anterior exige as atualizações intermediárias, em ordem; uma versão posterior exige outro roteiro. Informe ao dono o valor encontrado.
+   Esperado: `0.54.0`. Outro valor encerra este roteiro sem aplicar arquivos: `0.55.0` indica marcador já no destino; uma versão anterior exige as atualizações intermediárias, em ordem; uma versão posterior exige outro roteiro. Informe ao dono o valor encontrado.
 
 3. **O banco está acessível e a impressão dos dados foi guardada.**
 
@@ -236,103 +236,82 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => array_map("md5", App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "configuracoes" => md5(json_encode(app(App\Settings\ConfiguracoesDoKit::class)->toArray()))]);'
    ```
 
-   Esperado: consulta sem erro e nenhuma migration `Pending`. Havendo pendência do projeto, informe os nomes e pare: o migrate executaria essas pendências junto com as três migrations desta versão. Anote a multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário, um por organização e um das Configurações da aplicação. Essa **impressão dos dados** deve ser idêntica ao final, excluindo na consulta final somente os campos acrescentados nesta versão: `users.aparencia`, `tenants.aparencia_por_usuario` e os três settings novos. Confira os valores novos separadamente, antes de qualquer escolha manual.
+   Esperado: consulta sem erro e nenhuma migration `Pending`. Havendo pendência do projeto, informe os nomes e pare: esta versão não tem migration e não deve executar pendências alheias. Anote a multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário, um por organização e um das Configurações da aplicação. Essa **impressão dos dados** deve ser idêntica ao final, sem excluir campos.
 
 4. **Os nomes reservados pelo comando estão livres.**
 
    ```bash
    git remote
    git tag -l "kit-*"
-   git branch --list kit-update/v0.54.0
+   git branch --list kit-update/v0.55.0
    ```
 
-   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.54.0`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
+   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.55.0`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
 
 5. **O dry-run corresponde à release.**
 
    ```bash
-   php artisan kit:update --from=0.53.2 --tag=v0.54.0 --dry-run --keep-remote --no-interaction
-   git diff --stat kit-v0.53.2 kit-v0.54.0 -- composer.json composer.lock package.json package-lock.json
-   git diff --name-status kit-v0.53.2 kit-v0.54.0 -- database/migrations database/settings resources public
-   git diff --name-status kit-v0.53.2 kit-v0.54.0 -- app/Providers app/Models/User.php app/Models/Tenant.php app/Filament/Admin app/Settings app/Livewire app/Support config/kit.php .env.example tests/Kit tests/Tenancy
+   php artisan kit:update --from=0.54.0 --tag=v0.55.0 --dry-run --keep-remote --no-interaction
+   git diff --stat kit-v0.54.0 kit-v0.55.0 -- composer.json composer.lock package.json package-lock.json
+   git diff --name-status kit-v0.54.0 kit-v0.55.0 -- database/migrations database/settings resources public
+   git diff --name-status kit-v0.54.0 kit-v0.55.0 -- app/Console/Commands/KitUpdate.php config/kit.php composer-unused.php .github/workflows/ci.yml tests/Kit tests/Tenancy
+   git diff kit-v0.54.0 kit-v0.55.0 -- composer.json .github/workflows/ci.yml
    ```
 
-   Esperado: resumo entre `kit-v0.53.2` e `kit-v0.54.0`, sem tocar arquivos; diff de dependências vazio; exatamente as três migrations listadas em **O que muda nesta versão**, o componente e sua view novos, sem asset publicado novo. Confira todos os arquivos da entrega relacionados abaixo. O dry-run mantém o remote `kit` e as tags para as comparações seguintes.
+   Esperado: resumo entre `kit-v0.54.0` e `kit-v0.55.0`, sem tocar arquivos; duas dependências novas no `require-dev`, suas dependências de desenvolvimento no lock e os três scripts abaixo; nenhuma mudança em `require`, pacotes de produção, dependências JS, migrations, settings, resources ou assets publicados. Confira o novo `composer-unused.php`, a inclusão dele na entrega em `KitUpdate.php`, o marcador e o passo de relatório do CI. O dry-run mantém o remote `kit` e as tags para as comparações seguintes.
 
-   Se a tag ainda não estiver disponível, pare e informe ao dono. Não substitua a tag pela `main`. Dependência alterada, migration além das três previstas, asset publicado novo ou ausência de parte da entrega exige parada com o diff encontrado.
+   Se a tag ainda não estiver disponível, pare e informe ao dono. Não substitua a tag pela `main`. Migration, mudança de runtime, dependência além das previstas ou ausência de parte da entrega exige parada com o diff encontrado.
 
 6. **As edições do dono foram identificadas.**
 
    Para cada arquivo do resumo que existe no projeto, compare com a origem quando for `modificado`, ou com o destino quando for `novo no kit`:
 
    ```bash
-   git diff --name-only kit-v0.53.2 HEAD -- caminho/do/modificado
-   git diff --name-only kit-v0.54.0 HEAD -- caminho/do/novo
+   git diff --name-only kit-v0.54.0 HEAD -- caminho/do/modificado
+   git diff --name-only kit-v0.55.0 HEAD -- caminho/do/novo
    ```
 
-   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente os três providers de painel, o render hook do `KitServiceProvider`, a página e a classe de settings, os models `User` e `Tenant`, o `TenantForm`, `config/kit.php` e `.env.example`. Os pontos de integração estão detalhados abaixo.
+   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente `app/Console/Commands/KitUpdate.php`, `config/kit.php` e eventual `composer-unused.php` próprio. Compare também os scripts do `composer.json` e o job `qualidade` do CI do projeto, que serão integrados manualmente: esses arquivos não são aplicados pelo comando.
 
 ## O que muda nesta versão
 
-A v0.54.0 traz **preferências de aparência por usuário**. O Meu perfil dos três painéis ganha a seção **Aparência**, com densidade do layout, tamanho da fonte, cor primária da lista do kit e modo do menu lateral ao recolher. Cada campo começa em **Padrão**; a escolha é uma só por pessoa e vale nos três painéis onde estiver liberada.
+A v0.55.0 acrescenta o relatório de **dependências declaradas × usadas**. Nada muda em runtime, nenhuma dependência de produção é alterada e não há default mudado. Não há migration, alteração de esquema ou de settings, build, publicação de assets, semeadura ou geração de permissões.
 
-A chave da instalação `aparencia_por_usuario` nasce **LIGADA**: logo após atualizar, todo usuário vê a seção **Aparência** no Meu perfil. Nada muda na tela de ninguém até escolher, além dessa seção nova. A fonte `normal` e o menu `icones` reproduzem o comportamento anterior; a densidade e a cor já configuradas continuam sendo o padrão. A aba **Aplicação** de *Configurações da aplicação* ganha **Aparência dos painéis**, reunindo a densidade, os dois padrões novos e **Cada pessoa pode escolher a própria aparência**.
+Entram duas dependências novas de desenvolvimento: `maglnet/composer-require-checker:^4.16` e `icanhazstring/composer-unused:^0.9`. O `composer-unused` aponta dependências declaradas e não usadas; o `composer-require-checker` aponta símbolos usados de pacotes transitivos e extensões PHP não declarados diretamente.
 
-Para não oferecer a escolha, desligue esse interruptor em *Configurações da aplicação* → **Aplicação** → **Aparência dos painéis**, ou configure `KIT_APARENCIA_POR_USUARIO=false` no `.env` **antes do migrate**, limpando o cache de configuração. As chaves `KIT_TAMANHO_DA_FONTE`, `KIT_MODO_DO_MENU` e `KIT_APARENCIA_POR_USUARIO` só semeiam os valores: depois da migration, governa a tela. Desligar ignora as escolhas, sem apagá-las; religar volta a aplicá-las.
+Confira os arquivos e pontos de integração:
 
-Com organizações (tenancy), **Liberar a aparência pessoal**, no cadastro da organização, nasce **desligado**, inclusive nas organizações existentes. Só aparece com a chave da instalação ligada. Dentro de `/app/{organização}`, a escolha pessoal exige as duas chaves ligadas; quando liberada, a cor pessoal vence a da organização. Sem liberação, continuam a cor da organização e os padrões da instalação. O Meu perfil do `/app`, fora de uma organização no endereço, segue somente a chave da instalação.
+- `composer.json`: as duas entradas de `require-dev` e os scripts `deps:check`, `deps:unused` e `deps:require`, copiados no passo 4. Eles ficam fora do `composer test`. O `kit:update` NÃO aplica o `composer.json`, só relata a diferença; a instalação e os scripts exigem integração manual, preservando as dependências do projeto. O lock do projeto é resolvido pelo Composer, sem copiar o do kit.
+- Novo `composer-unused.php` na raiz, trazido pelo `kit:update`: exclui somente cinco pacotes usados por caminhos que a análise não enxerga, cada um com seu motivo: `anselmokossa/filament-sentinel` (auto-discovery do provider), `laravel/pulse` (configuração, dashboard e daemon), `laravel/reverb` (serviço opt-in), `livewire/blaze` (compilação do Blade por auto-discovery) e `spatie/laravel-backup` (configuração e comando de backup).
+- `app/Console/Commands/KitUpdate.php`: inclui `composer-unused.php` nos caminhos entregues; a atualização já lê os caminhos do destino para trazer o arquivo nesta rodada.
+- `config/kit.php`: somente o marcador passa a `0.55.0`; as demais configurações continuam iguais.
+- `.github/workflows/ci.yml`: novo passo **Dependências declaradas × usadas (relatório)** no job `qualidade`, após a análise estática. Roda as duas ferramentas, grava a saída no resumo do job e só relata, sem reprovar por achados. `.github` não viaja pelo `kit:update`: integre o passo manualmente se o projeto tem esse workflow; se não tem, registre a ausência, sem criar CI inteiro.
 
-Confira estes arquivos que o `kit:update` traz e os pontos de conflito em projeto que mexeu à mão:
-
-- `app/Providers/Filament/AdminPanelProvider.php`, `app/Providers/Filament/AppPanelProvider.php` e `app/Providers/Filament/InfraPanelProvider.php`: menu lateral com `sidebarCollapsibleOnDesktop` e `sidebarFullyCollapsibleOnDesktop`, `sidebarWidth` pela densidade pessoal, inclusão do componente em `myProfileComponents` sem perder os componentes próprios e `bootUsing` para a cor pessoal; no `/app`, preserve a cor da organização e aplique a pessoal depois;
-- `app/Providers/KitServiceProvider.php`: render hook de densidade e fonte, lendo `AparenciaDoUsuario`;
-- `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`: seção nova, densidade movida e campos de fonte, menu e liberação;
-- `app/Settings/ConfiguracoesDoKit.php`: propriedades e mapa de configuração para `tamanho_da_fonte`, `modo_do_menu` e `aparencia_por_usuario`;
-- `app/Models/User.php`: cast de `aparencia` para array e campo oculto, mantendo-o fora do `$fillable`; `app/Models/Tenant.php`: cast booleano e `$fillable` de `aparencia_por_usuario`;
-- `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php`: interruptor da organização;
-- `config/kit.php`: marcador `0.54.0`, imports de `TamanhoDaFonte` e `ModoDoMenu`, as três chaves novas e suas sementes do ambiente;
-- `.env.example`: exemplos comentados das três variáveis; não substitui o `.env` do dono;
-- novos `app/Livewire/PreferenciasDeAparencia.php`, `resources/views/livewire/preferencias-de-aparencia.blade.php`, `app/Support/AparenciaDoUsuario.php`, `app/Support/TamanhoDaFonte.php` e `app/Support/ModoDoMenu.php`;
-- `app/Console/Commands/KitUpdate.php`, com a entrega da view nova, e os ajustes em `tests/Kit/KitInfoTest.php`.
-
-As três migrations são:
-
-- `database/migrations/2026_11_18_100000_add_aparencia_to_users_table.php`: JSON anulável `users.aparencia`, nulo nas contas existentes;
-- `database/migrations/2026_11_18_100001_add_aparencia_por_usuario_to_tenants_table.php`: booleano `tenants.aparencia_por_usuario`, falso;
-- `database/settings/2026_11_18_100000_add_aparencia_por_usuario_to_kit_settings.php`: adiciona ao grupo `kit` os settings `tamanho_da_fonte` (`normal`), `modo_do_menu` (`icones`) e `aparencia_por_usuario` (`true`), salvo semente explícita do ambiente.
-
-Não há dependência nova, instalação de pacotes, build, publicação de assets, semeadura ou geração de permissões a executar. Há alteração de esquema: os arquivos sozinhos não concluem a atualização.
+A linha de base do kit em 2026-11-18 tem três pacotes sem uso: `awcodes/filament-badgeable-column`, `lara-zeus/progress` e `syriable/filament-activitylog`; e 181 símbolos usados sem declaração direta: 137 de pacotes transitivos e 44 de oito extensões PHP (`ext-ctype`, `ext-dom`, `ext-filter`, `ext-gd`, `ext-libxml`, `ext-mbstring`, `ext-SimpleXML` e `ext-tokenizer`). Os achados do projeto podem diferir conforme seu código. Esta atualização entrega o diagnóstico; não remove pacotes, não declara transitivos ou extensões em produção e não esconde achados reais nas exclusões.
 
 ## Cuidados
 
-- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. As três migrations só acrescentam campos; confirme backup recuperável.
+- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. Não há migration nesta versão; não execute atualização de esquema.
 - **Preserve a multi-organização.** Não rode `php artisan kit:tenancy` nem `php artisan kit:install`, pois recriam o banco.
-- **A liberação da instalação é ligada.** Informe ao dono antes do migrate; não confunda visual preservado com seção escondida. Não escolha preferências pelos usuários nem ligue organizações do dono para demonstrar a feature.
-- **Os arquivos trabalham juntos.** Provider antigo pode deixar menu, largura, cor ou seção do perfil sem efeito; render hook antigo perde fonte e densidade pessoais. Settings, models e formulário antigos podem impedir persistência ou liberação. Ausência do componente, sua view ou helpers novos impede a entrega completa. Registre cada limitação.
-- **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 5, depois de limpar o cache de configuração. Faça escolhas manuais somente em ambiente de testes com dados descartáveis.
-- **O `--all` substitui arquivos existentes.** Resolva a decisão de conflito antes e restaure ou integre as edições do dono antes de validar. O marcador `0.54.0` sozinho não prova que toda a entrega chegou.
-- **Preserve `.env`, canais de log e customizações.** Não copie `.env.example` sobre `.env`. A única edição opcional do ambiente é a semente explicitamente escolhida pelo dono antes do migrate; registre o diff. Preserve `config/logging.php`.
-- **As mudanças ficam para revisão.** Use `git status` e `git diff --cached`; não commite, não faça merge nem apague o branch por conta própria. Desfazer exige pedido do dono: `git reset --hard HEAD` desfaz arquivos e índice; avalie arquivos não rastreados um a um. Isso não reverte as migrations nem os dados do banco.
+- **Dependências exigem integração manual.** Não substitua o `composer.json` nem o `composer.lock` do dono pelos do kit. Instale só as duas ferramentas em ambiente de desenvolvimento e revise o lock gerado; conflito de resolução ou alteração inesperada de produção exige parada.
+- **Achado não é defeito da execução.** Localmente, `deps:require` e, por consequência, `deps:check` podem retornar código diferente de zero por símbolos não declarados. Guarde a saída e o código; falha para iniciar, configuração inválida ou ferramenta ausente exige análise. No CI, preserve o caráter de relatório, sem converter em gate ou incluir no `composer test`.
+- **Não esconda dependência realmente sem uso.** As cinco exclusões representam uso indireto comprovado; não acrescente os três pacotes sem uso à configuração para zerar a saída.
+- **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 6, depois de limpar o cache de configuração.
+- **O `--all` substitui arquivos existentes.** Resolva a decisão de conflito antes e restaure ou integre as edições do dono antes de validar. O marcador `0.55.0` sozinho não prova que o arquivo novo, as ferramentas e os scripts chegaram.
+- **Preserve `.env`, canais de log e customizações.** Não copie `.env.example` sobre `.env`; esta versão não pede variável de ambiente nem configuração de runtime.
+- **As mudanças ficam para revisão.** Use `git status` e `git diff --cached`; não commite, não faça merge nem apague o branch por conta própria. Desfazer exige pedido do dono: `git reset --hard HEAD` desfaz arquivos e índice; avalie arquivos não rastreados um a um. Isso não desfaz o banco nem restaura os pacotes instalados em `vendor`.
 
 ## Decisões do dono do projeto
 
-Apresente a lista de conflitos do pré-voo, com os diffs, antes do passo 1. Sem conflitos, registre “nenhum conflito” e siga. Apresente também a liberação da aparência pessoal, antes do migrate.
+Apresente a lista de conflitos do pré-voo, com os diffs, antes do passo 1. Sem conflitos, registre “nenhum conflito” e siga. Nenhuma outra decisão do dono nesta versão.
 
 ### Conflito em arquivo do kit que você editou
 
-Pergunta: Estes arquivos têm edição sua e a v0.54.0 também os altera; manter providers, render hook, settings, models ou formulário antigos deixa parte da aparência sem efeito: para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
+Pergunta: Estes arquivos têm edição sua e a v0.55.0 também os altera; manter o comando ou a configuração de análise antigos pode deixar parte do relatório sem chegar: para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
 
-Recomendação da release: receber a versão do kit com suas mudanças reaplicadas após revisar os diffs, preservando componentes próprios do Meu perfil, menu, largura e cor customizados junto com a leitura de `AparenciaDoUsuario`. Em `config/kit.php`, preservar as configurações do dono e integrar o marcador e as três chaves novas com seus imports.
+Recomendação da release: receber a versão do kit com suas mudanças reaplicadas após revisar os diffs, preservando configurações e integrações do projeto; no `config/kit.php`, integrar somente o marcador. Para scripts e CI editados pelo dono, integrar somente os trechos desta versão.
 
 Sem resposta: mantém a versão do dono e registra no relatório, arquivo a arquivo, o que deixou de chegar.
-
-### Liberação da aparência pessoal
-
-Pergunta: Considerando que não há alteração de visual por padrão — nenhum para quem não escolhe nada: fonte `normal` e menu `icones` reproduzem o comportamento anterior —, mas a chave `aparencia_por_usuario` nasce ligada e todo usuário verá a seção Aparência no Meu perfil, deseja manter essa liberação ou iniciar com ela desligada?
-
-Recomendação da release: manter ligada, com todas as escolhas em Padrão e todas as organizações desligadas. Para iniciar desligada, definir `KIT_APARENCIA_POR_USUARIO=false` antes do migrate e limpar o cache; depois da migration, desligar pela tela de Configurações da aplicação.
-
-Sem resposta: mantém o default da release, ligada, sem editar o `.env`, sem escolher aparência e sem liberar organização nenhuma; registra a decisão e o default aplicado.
 
 ## Passos
 
@@ -345,16 +324,16 @@ Condição: as seis conferências do pré-voo passaram, e cada conflito tem resp
 Ação:
 
 ```bash
-php artisan kit:update --from=0.53.2 --tag=v0.54.0 --all --keep-remote --no-interaction
+php artisan kit:update --from=0.54.0 --tag=v0.55.0 --all --keep-remote --no-interaction
 ```
 
-Evidência: arquivos anunciados como `aplicado:`, saída `config/kit.php: versão marcada como 0.54.0` e branch `kit-update/v0.54.0`. Se o comando recusar a árvore, pedir segunda execução ou anunciar outra versão, pare; não faça commit para tentar outra rodada.
+Evidência: arquivos anunciados como `aplicado:`, incluindo `composer-unused.php`, saída `config/kit.php: versão marcada como 0.55.0` e branch `kit-update/v0.55.0`. A diferença do `composer.json` foi apenas relatada. Se o comando recusar a árvore, pedir segunda execução ou anunciar outra versão, pare; não faça commit para tentar outra rodada.
 
 ### 2. Resolver os conflitos conforme a decisão
 
 Condição: há conflitos; sem eles, siga para o passo 3.
 
-Ação, arquivo a arquivo: para manter a versão do dono, use `git checkout HEAD -- caminho/do/arquivo`; para receber a do kit, mantenha o aplicado; para integrar, reaplique somente as mudanças do dono conforme o diff guardado. Integração incerta exige parada. No `config/kit.php` preservado, troque `'version' => '0.53.2',` por `'version' => '0.54.0',` e integre os imports e as chaves `tamanho_da_fonte`, `modo_do_menu` e `aparencia_por_usuario` conforme o destino, preservando as configurações existentes.
+Ação, arquivo a arquivo: para manter a versão do dono, use `git checkout HEAD -- caminho/do/arquivo`; para receber a do kit, mantenha o aplicado; para integrar, reaplique somente as mudanças do dono conforme o diff guardado. Integração incerta exige parada. No `config/kit.php` preservado, troque `'version' => '0.54.0',` por `'version' => '0.55.0',`, preservando todas as demais configurações.
 
 ```bash
 git diff HEAD -- caminho/do/arquivo
@@ -363,7 +342,7 @@ git diff HEAD -- config/kit.php
 git add -- config/kit.php
 ```
 
-Evidência: arquivos mantidos têm diff vazio contra `HEAD`, integrações contêm ambas as mudanças revisadas e o config preserva as demais configurações. Registre cada parte da aparência que não chegou; defaults divergentes devem estar explicados pela decisão do dono.
+Evidência: arquivos mantidos têm diff vazio contra `HEAD`, integrações contêm ambas as mudanças revisadas e o config preserva as demais configurações. Registre cada parte do relatório que não chegou.
 
 ### 3. Conferir marcador e arquivos
 
@@ -377,34 +356,86 @@ php artisan tinker --execute 'echo config("kit.version");'
 git branch --show-current
 git status --short
 git diff --cached --name-status
-git diff HEAD -- app/Providers app/Settings app/Models/User.php app/Models/Tenant.php app/Filament/Admin app/Livewire/PreferenciasDeAparencia.php app/Support resources/views/livewire/preferencias-de-aparencia.blade.php database/migrations database/settings config/kit.php .env.example
+git ls-files --error-unmatch composer-unused.php
+git diff kit-v0.55.0 -- composer-unused.php app/Console/Commands/KitUpdate.php config/kit.php
+git diff HEAD -- database/migrations database/settings resources public
 ```
 
-Evidência: versão `0.54.0`, branch `kit-update/v0.54.0` e arquivos da aparência presentes, com o conteúdo do destino ou a integração aprovada. Compare cada caminho listado em **O que muda nesta versão** com `git diff kit-v0.54.0 -- caminho/do/arquivo`; diferenças devem corresponder somente às decisões registradas. O índice corresponde ao dry-run. Confira também os cinco arquivos novos de aplicação e as três migrations com `git ls-files --error-unmatch caminho/do/arquivo`. Ainda não abra os painéis antes do migrate. Não há publicação de assets nesta atualização.
+Evidência: versão `0.55.0`, branch `kit-update/v0.55.0`, arquivo novo presente e rastreado, com as cinco exclusões justificadas. Diferenças contra o destino correspondem somente às decisões registradas; o índice corresponde ao dry-run. Nenhuma migration ou asset alterado. Não rode migrate: não há migration nesta atualização.
 
-### 4. Rodar as três migrations da versão
+### 4. Instalar as ferramentas e copiar os scripts
 
-Condição: arquivos conferidos, backup confirmado, nenhuma pendência anterior e decisão sobre a liberação registrada.
+Condição: arquivos conferidos, ambiente de desenvolvimento com Composer e eventuais conflitos dos scripts resolvidos.
 
-Ação: se o dono escolheu iniciar desligada, defina `KIT_APARENCIA_POR_USUARIO=false` no `.env` agora. Sem essa escolha, preserve o ambiente. Rode:
+Ação:
 
 ```bash
-php artisan config:clear
-php artisan migrate --force
-php artisan optimize:clear
-php artisan migrate:status
-php artisan tinker --execute 'echo json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->only(["tamanho_da_fonte", "modo_do_menu", "aparencia_por_usuario"])->all());'
-php artisan tinker --execute 'echo App\Models\User::whereNotNull("aparencia")->count();'
-php artisan tinker --execute 'echo App\Models\Tenant::where("aparencia_por_usuario", true)->count();'
+composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"
 ```
 
-O comando de atualização do banco é `php artisan migrate`; acima, `--force` permite executá-lo também em produção sem pergunta interativa.
+Copie estas três entradas para o objeto `scripts` do `composer.json` do projeto, preservando todos os outros scripts:
 
-Evidência: executadas exatamente `2026_11_18_100000_add_aparencia_to_users_table`, `2026_11_18_100001_add_aparencia_por_usuario_to_tenants_table` e `2026_11_18_100000_add_aparencia_por_usuario_to_kit_settings`; `migrate:status` sem `Pending`. Os settings respondem `normal`, `icones` e `true`, salvo sementes explícitas registradas; ambas as contagens respondem `0`. Erro ou migration adicional exige parada, sem rollback.
+```json
+"deps:unused": [
+    "composer-unused --no-progress --ignore-exit-code"
+],
+"deps:require": [
+    "composer-require-checker check composer.json"
+],
+"deps:check": [
+    "@deps:unused",
+    "@deps:require"
+]
+```
 
-### 5. Rodar a suíte Kit,Tenancy com banco descartável
+O trecho é parte do objeto `scripts`; ajuste a vírgula de separação conforme as entradas vizinhas. Não acrescente as ferramentas ao `composer test`.
 
-Condição: arquivos e migrations conferidos, caches limpos e valores novos verificados antes de escolhas manuais.
+```bash
+composer validate --no-check-publish
+git diff HEAD -- composer.json composer.lock
+git add -- composer.json composer.lock
+```
+
+Evidência: as duas ferramentas instaladas em `require-dev`, os três scripts iguais aos acima e demais dependências e scripts preservados. Lock atualizado pelo Composer, sem mudança inesperada em pacotes de produção. Se a resolução falhar, entregue o erro; não amplie versões nem remova dependências para forçar a instalação.
+
+### 5. Integrar o relatório no CI e executar a análise
+
+Condição: ferramentas e scripts instalados; conflito no CI resolvido quando houver workflow próprio.
+
+Ação: se existir `.github/workflows/ci.yml` com job `qualidade`, copie o passo abaixo após a análise estática, preservando os demais passos. Ele depende de instalação prévia das dependências de desenvolvimento. Se não houver esse workflow ou job, registre a integração como não aplicável e siga com o relatório local.
+
+```yaml
+      - name: Dependências declaradas × usadas (relatório)
+        continue-on-error: true
+        run: |
+          {
+            echo '## Dependências declaradas × usadas'
+            echo
+            echo '### composer-unused — declaradas e não usadas'
+            echo '```'
+            vendor/bin/composer-unused --no-progress --no-ansi --ignore-exit-code
+            echo '```'
+            echo '### composer-require-checker — usadas e não declaradas'
+            echo '```'
+            vendor/bin/composer-require-checker check composer.json --no-ansi || true
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+```
+
+Execute localmente, tanto em Git Bash quanto em PowerShell:
+
+```bash
+composer deps:check
+git diff HEAD -- .github/workflows/ci.yml
+```
+
+Guarde a saída literal de `composer deps:check` e seu código de saída antes do comando seguinte (`echo $?` no Git Bash; `$LASTEXITCODE` no PowerShell). Se houve integração no workflow, coloque somente o arquivo alterado no índice com `git add -- .github/workflows/ci.yml`.
+
+Evidência: `composer deps:check` roda as duas ferramentas e lista os achados do projeto. A linha de base do kit é três pacotes sem uso e 181 símbolos; diferenças do projeto são descritas, sem exigir essas contagens como meta. Código não zero causado pelos achados do checker é esperado; erro de execução é condição de parada. O passo do CI usa `--ignore-exit-code`, `|| true` e `continue-on-error: true` para só relatar no resumo; confira o resumo na próxima execução, sem publicar ou disparar workflow por conta própria.
+
+### 6. Rodar a suíte Kit,Tenancy com banco descartável
+
+Condição: arquivos, ferramentas, scripts e relatório conferidos; nenhuma migration a executar.
 
 Ação, no Git Bash:
 
@@ -456,27 +487,24 @@ git status --porcelain app/Policies
 
 Evidência: nenhuma policy não rastreada gerada pela suíte permanece; policies rastreadas continuam preservadas. Alteração rastreada exige parada e análise. Depois desta validação, peça ao dono que rode a suíte completa com `php artisan test --compact` em ambiente de testes com banco descartável.
 
-### 6. Conferir a preservação dos dados e do projeto
+### 7. Conferir a preservação dos dados e do projeto
 
 Condição: suíte concluída e variáveis PowerShell restauradas, quando aplicável.
 
-Ação: repita a consulta da multi-organização do pré-voo e compare a impressão dos dados com a consulta abaixo, que exclui somente os campos novos:
+Ação: repita as consultas da multi-organização e da impressão dos dados do pré-voo, sem excluir campos. Rode também:
 
 ```bash
 php artisan config:clear
 php artisan tinker --execute 'echo config("kit.version");'
 php artisan migrate:status
-php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map(fn ($tenant) => md5($tenant->makeHidden("aparencia_por_usuario")->toJson()))->all(), "configuracoes" => md5(json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->except(["tamanho_da_fonte", "modo_do_menu", "aparencia_por_usuario"])->all()))]);'
-git diff HEAD -- .env config/logging.php
+git diff HEAD -- .env config/logging.php database/migrations database/settings
 git status --short
 git diff --cached --stat
 ```
 
-O model User oculta `aparencia` na serialização; por isso sua impressão continua comparável sem exclusão adicional. Os campos novos foram conferidos separadamente no passo 4.
+Evidência: `0.55.0`, mesma multi-organização, mesmas migrations, nenhuma pendente e impressão dos dados idêntica. Diff vazio de `.env`, canais de log e esquema; customizações preservadas conforme as decisões. A suíte do projeto continua verde: em ambiente de testes, rode também `php artisan test --compact` com as três variáveis de banco descartável do passo 6, preservando e restaurando a sessão no PowerShell. Registre a saída; sem execução, registre a pendência e não declare a suíte do projeto validada.
 
-Evidência: `0.54.0`, mesma multi-organização, migrations anteriores mais as três novas, nenhuma pendente e impressão dos dados idêntica. Diff vazio de `.env` e `config/logging.php`, salvo a semente opcional explicitamente escolhida; customizações preservadas conforme as decisões. Abra também o Meu perfil e execute as conferências de **Como conferir**, registrando o resultado antes de encerrar.
-
-### 7. Remover o remote e as tags temporários
+### 8. Remover o remote e as tags temporários
 
 Condição: ao terminar ou parar depois da criação dos nomes temporários; o pré-voo confirmou que não existiam.
 
@@ -494,7 +522,7 @@ git tag -l "kit-*" | ForEach-Object { git tag -d $_ }
 git remote remove kit
 ```
 
-Se uma tentativa anterior já removeu algum nome, confira e remova somente o que ainda existir. Evidência: `git remote` não lista `kit` e `git tag -l "kit-*"` tem saída vazia. O branch `kit-update/v0.54.0` permanece, com as mudanças para revisão e sem commit.
+Se uma tentativa anterior já removeu algum nome, confira e remova somente o que ainda existir. Evidência: `git remote` não lista `kit` e `git tag -l "kit-*"` tem saída vazia. O branch `kit-update/v0.55.0` permanece, com as mudanças para revisão e sem commit.
 
 ## Como conferir
 
@@ -502,62 +530,56 @@ O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-or
 
 | O que | Esperado |
 |---|---|
-| Marcador | `0.54.0` depois de limpar o cache de configuração |
-| Arquivos da aparência | Providers, hook, settings, models, formulário, componente, view e helpers conferidos contra o destino ou a integração aprovada |
-| Migrations | As três desta versão executadas; `php artisan migrate:status` sem pendências |
-| Instalação | `aparencia_por_usuario=true`, ou a decisão explícita de iniciar desligada registrada |
-| Defaults visuais | Fonte `normal`, menu `icones`, densidade e cor anteriores preservadas, salvo sementes explícitas |
-| Organizações | Todas com o interruptor desligado; mesmo modo de tenancy do pré-voo |
-| Meu perfil | Seção Aparência presente, quatro campos em Padrão, quando a instalação libera |
+| Marcador | `0.55.0` depois de limpar o cache de configuração |
+| Arquivo novo | `composer-unused.php` presente, com as cinco exclusões justificadas ou integração registrada |
+| Entrega | `KitUpdate.php` inclui o arquivo novo; demais diferenças correspondem às decisões |
+| Dependências | Duas ferramentas novas em `require-dev`, lock resolvido no projeto e dependências de produção preservadas |
+| Scripts | `deps:check`, `deps:unused` e `deps:require` copiados; fora de `composer test` |
+| Relatório local | `composer deps:check` executado, achados e código de saída registrados |
+| CI | Passo no job `qualidade` só relata no resumo, ou ausência do workflow/job registrada |
+| Migrations | Nenhuma nova e nenhuma executada; `php artisan migrate:status` sem pendências |
+| Runtime e defaults | Sem mudança de comportamento, configuração ou liberação de recurso |
+| Multi-organização | Mesmo modo de tenancy do pré-voo |
 | Suíte Kit,Tenancy | Zero erro, zero falha, até 1161 pulados fora da árvore do kit |
-| Testes do projeto | Pedido para rodar `php artisan test --compact` em banco descartável registrado |
+| Testes do projeto | Suíte continua verde em banco descartável; saída ou pendência explícita registrada |
 | Policies | Não rastreadas geradas pela suíte removidas e listadas; rastreadas preservadas |
-| Arquivos e dados do dono | Impressão anterior preservada, fora os campos novos; customizações e canais de log intactos |
-| Revisão | Branch `kit-update/v0.54.0`, índice revisável, sem commit; remote e tags temporários removidos |
+| Arquivos e dados do dono | Impressão anterior idêntica; `.env`, customizações e canais de log intactos |
+| Revisão | Branch `kit-update/v0.55.0`, índice revisável, sem commit; remote e tags temporários removidos |
 
-Abra **Meu perfil** em cada painel a que a conta tenha acesso: a seção **Aparência** deve aparecer com densidade, fonte, cor e menu em Padrão; o visual anterior deve continuar igual. Se o dono iniciou desligada, a seção deve estar ausente. Não salve escolhas no banco do dono.
-
-Faça as demais conferências **em ambiente de testes com banco descartável**:
-
-1. Escolha fonte, densidade, cor e menu numa conta de teste, salve e confira a aplicação nos três painéis autorizados. Outra conta mantém seu padrão. Voltar os quatro campos a Padrão restaura a aparência da instalação.
-2. Desligue a chave da instalação na tela: a seção some e as escolhas deixam de valer; religue e confira que voltam, sem terem sido apagadas.
-3. Com tenancy, confira primeiro a organização desligada: vale a cor dela e os padrões da instalação. Ligue **Liberar a aparência pessoal** somente nessa organização de teste: a escolha da pessoa passa a valer, inclusive a cor. Outra organização desligada continua no padrão. Com a instalação desligada, a chave da organização não libera sozinha e o interruptor não aparece no cadastro.
-
-Registre os resultados e os dados de teste. Sem ambiente ou permissão para conferir as telas, registre como não executado e explique o motivo; não declare validação manual concluída. Arquivo antigo mantido é entrega parcial, mesmo com marcador `0.54.0`.
+Não há tela nova ou escolha visual para validar. Arquivo antigo mantido que impeça a análise é entrega parcial, mesmo com marcador `0.55.0`. Não declare o relatório do CI observado se ele ainda não executou.
 
 ## Quando parar
 
 Pare e entregue ao dono a condição, a saída relevante e o que falta para continuar:
 
 - Roteiro indisponível, cópias divergentes sem marca de revisão ou dúvida de interpretação.
-- Árvore suja no início, versão instalada diferente de `0.53.2`, banco inacessível, backup não confirmado ou migrations pendentes do projeto: liste os valores e caminhos encontrados.
+- Árvore suja no início, versão instalada diferente de `0.54.0`, banco inacessível, backup não confirmado ou migrations pendentes do projeto: liste os valores e caminhos encontrados.
 - Remote, tags ou branch reservados já existentes: informe os nomes, sem removê-los.
-- Tag `v0.54.0` indisponível ou dry-run divergente: mostre os diffs, principalmente dependências, migrations além das três previstas ou parte da entrega ausente.
+- Tag `v0.55.0` indisponível ou dry-run divergente: mostre os diffs, principalmente migration, mudança de produção, dependência além das previstas ou arquivo novo ausente.
 - Comando recusado, pedido de segunda rodada, aplicação incompleta, integração incerta ou marcador, branch e arquivos fora do previsto: descreva o estado parcial, sem commit ou nova rodada.
-- Migration com erro, migration adicional executada ou valores novos fora do default ou da semente registrada: entregue as saídas, sem tentar desfazer o banco.
-- Suíte com erro, falha ou mais de 1161 pulados: entregue a saída e os casos envolvidos, sem alterar testes para passar.
+- Resolução do Composer com erro, script conflitante sem integração definida, ferramenta ausente ou configuração de análise inválida: entregue a saída, sem ampliar dependências ou esconder achados para passar. Achados reportados pelas ferramentas, por si só, não interrompem o roteiro.
+- Suíte com erro, falha ou mais de 1161 pulados na Kit,Tenancy: entregue a saída e os casos envolvidos, sem alterar testes para passar.
 - Policy rastreada alterada, impressão de dados diferente, multi-organização alterada ou mudança inesperada em `.env`, canais de log ou customizações: mostre a diferença antes de restaurar qualquer coisa.
-- Seção ausente com a instalação ligada, aparência mudada sem escolha, liberação indevida numa organização desligada ou escolha pessoal aplicada a outra conta: registre conta de teste, contexto e resultado.
 - Um passo exigiria ação proibida em **Cuidados**: informe a necessidade e aguarde orientação.
 
-Ao parar depois de criar os nomes temporários, execute ainda o passo 7 para remover somente o remote e as tags deste roteiro. Preserve o branch e as mudanças para revisão. Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
+Ao parar depois de criar os nomes temporários, execute ainda o passo 8 para remover somente o remote e as tags deste roteiro. Preserve o branch e as mudanças para revisão. Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
 
 ## Relatório final
 
 Entregue ao dono, ao terminar ou ao parar:
 
 - versões de partida e chegada, saída de `config('kit.version')`, branch e confirmação de que nada foi commitado nem integrado por merge;
-- arquivos aplicados e conferidos, arquivos novos e integrações;
-- cada decisão de conflito e de liberação, pergunta e resposta ou “sem resposta”, default aplicado e limitações por arquivo; sem conflitos, registre isso;
-- saída do migrate com os três nomes e do `php artisan migrate:status`, mais os valores novos e as duas contagens conferidas;
-- confirmação de que a instalação nasce ligada e mostra Aparência no Meu perfil, ou a decisão explícita de desligar, com a semente e seu diff quando usados; organizações continuam desligadas;
-- confirmação de que não houve dependência nova, instalação, build, publicação de assets, semeadura ou geração de permissões;
-- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados e pedido para rodar os testes do projeto com `php artisan test --compact` em ambiente de testes com banco descartável;
+- arquivos aplicados e conferidos, presença de `composer-unused.php` e integrações;
+- cada decisão de conflito, pergunta e resposta ou “sem resposta”, default aplicado e limitações por arquivo; sem conflitos, registre isso; nenhuma outra decisão e nenhum default mudado;
+- comando de instalação executado, ferramentas em `require-dev`, scripts copiados e diferenças de `composer.json` e `composer.lock`, preservando as dependências do projeto;
+- integração manual do passo no job `qualidade`, caráter de relatório e resultado do resumo do CI, ou ausência do workflow/job e validação ainda pendente;
+- saída literal de `composer deps:check`, achados, diferenças em relação à linha de base e código de saída; nenhuma remoção ou declaração de dependência de produção feita para zerar o relatório;
+- saída de `php artisan migrate:status` e confirmação de que não há migration, execução de alteração de esquema, build, publicação de assets, semeadura ou geração de permissões nesta atualização;
+- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados, pedido para rodar `php artisan test --compact` em banco descartável e resultado da suíte do projeto ou pendência explícita;
 - policies não rastreadas removidas, impressões dos dados antes e depois e resultado da comparação;
-- preservação de `.env` (salvo a semente escolhida), canais de log, customizações e estado da multi-organização;
-- conferências manuais do Meu perfil, dos padrões e das duas chaves com organizações, ou o motivo de não execução;
+- preservação de `.env`, canais de log, customizações e estado da multi-organização; runtime e defaults preservados;
 - remoção do remote `kit` e das tags `kit-*`;
 - em caso de parada, passo, saída relevante, estado parcial e condição necessária para continuar.
 
-Explique como revisar com `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Isso não reverte o banco: as colunas e os settings novos permanecem, com seus valores.
+Explique como revisar com `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Isso não reverte o banco nem restaura `vendor`; após restaurar os manifests, os pacotes instalados precisam corresponder novamente ao lock restaurado.
 <!-- roteiro-de-atualizacao:fim -->

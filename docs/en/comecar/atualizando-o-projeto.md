@@ -139,6 +139,12 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
 
+**v0.55.0 has no migration**: it adds the declared × used dependencies report (see
+[Code quality](../../referencia/qualidade-de-codigo/#declared--used-dependencies)). Run
+`composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` and copy
+the `deps:*` scripts from the kit's `composer.json` — `kit:update` brings `composer-unused.php`, but only
+reports the `composer.json` difference.
+
 **v0.54.0 adds three migrations** (`php artisan migrate`): per-user appearance preferences (see
 [Kit settings](../../recursos/configuracoes-do-kit/#each-persons-appearance-font-sidebar-and-the-choice-in-my-profile)).
 The installation switch starts **on**, so everyone sees the new "Aparência" section in My profile —
