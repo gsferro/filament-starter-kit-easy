@@ -47,8 +47,10 @@ jobs:
       # RELATÓRIO, não gate (wiki `feat/verificacao-de-dependencias`, Q2: "Só relatório"): o
       # resultado das duas ferramentas vai para o resumo do job e o job continua verde com achados.
       # `|| true` nas duas segura o achado E a ferramenta que quebrar (sem ele, a primeira falha
-      # cortava a segunda); `2>&1` leva também o erro ao resumo; `continue-on-error` é a última
-      # rede (CX-01/CX-02 do step 9). Localmente: `composer deps:check`. Triagem: `wikis/qualidade-de-codigo.md`.
+      # cortava a segunda); `2>&1` leva também o erro ao resumo; a tolerância a erro declarada no
+      # próprio passo é a última rede (CX-01/CX-02 do step 9). Este comentário fica entre o passo
+      # do PHPStan e este, e o CT-02 do QualidadeDeCodigoTest lê esse trecho: não citar ali a
+      # chave literal da tolerância. Localmente: `composer deps:check`. Triagem: `wikis/qualidade-de-codigo.md`.
       - name: Dependências declaradas × usadas (relatório)
         continue-on-error: true
         run: |
