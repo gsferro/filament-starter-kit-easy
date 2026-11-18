@@ -5,7 +5,9 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Event;
 use Jeffgreco13\FilamentBreezy\Livewire\PersonalInfo;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -269,3 +271,48 @@ it('[CT-31] sem organizações, a seção não mostra o aviso em nenhum painel',
 
     expect(preg_match('/organiza[çc][ãa]o\s+liber/iu', $texto))->toBe(0);
 })->with(['admin', 'app', 'infra']);
+
+it('[CT-43] a gravação e a recusa ficam no log só com os valores do vocabulário', function (): void {
+    $ana = anaDoKit();
+    $this->actingAs($ana);
+
+    $registros = [];
+    Event::listen(
+        MessageLogged::class,
+        function (MessageLogged $evento) use (&$registros): void {
+            if (str_starts_with($evento->message, '[PreferenciasDeAparencia@salvar]')) {
+                $registros[] = [$evento->level, $evento->message, $evento->context];
+            }
+        },
+    );
+
+    abrirSecaoDeAparencia()->fillForm(escolhaDeReferencia() + ['extra' => "x\nforjado"])->call('salvar');
+
+    $secao = abrirSecaoDeAparencia();
+    gravarConfiguracao('aparencia_por_usuario', false);
+    alinharConfiguracoesDoKit();
+    $secao->fillForm(['densidade' => 'denso'])->call('salvar');
+
+    expect($registros)->toHaveCount(2)
+        ->and($registros[0][0])->toBe('info')
+        ->and($registros[0][1])->toStartWith('[PreferenciasDeAparencia@salvar] Aparência pessoal salva')
+        ->and($registros[0][2])->toBe(['user_id' => $ana->getKey(), 'aparencia' => escolhaDeReferencia()])
+        ->and($registros[1][0])->toBe('warning')
+        ->and($registros[1][1])->toStartWith('[PreferenciasDeAparencia@salvar] Gravação recusada')
+        ->and($registros[1][2])->toBe(['user_id' => $ana->getKey()]);
+});
+
+it('[CT-46] o "Padrão" de cada campo diz qual é o padrão vigente da aplicação', function (): void {
+    $this->actingAs(anaDoKit());
+
+    $secao = abrirSecaoDeAparencia();
+
+    $placeholder = fn (string $campo): string => (string) $secao->instance()->form->getComponent(
+        fn ($c): bool => $c instanceof Select && $c->getName() === $campo,
+    )?->getPlaceholder();
+
+    expect($placeholder('densidade'))->toContain('Compacto')
+        ->and($placeholder('fonte'))->toContain('Grande')
+        ->and($placeholder('cor'))->toContain('#0ea5e9')
+        ->and($placeholder('menu'))->toContain('Esconder tudo');
+});

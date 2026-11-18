@@ -384,6 +384,10 @@ Notas: CT-09 grava pela seção do `/app` (transição real) e lê nos três pai
 | M72 | layout das telas de cadastro/recuperação (Auth Designer) sem o render hook da instalação | CT-11 (linhas cadastro, recuperação) | densidade Confortável / sem declaração; esperado Compacto |
 | M73 | escolha gravada com o painel como chave (preferência por painel) | CT-09 (linhas ligada /admin, /infra) | densidade Compacto no /admin; esperado Denso |
 | M74 | aparência efetiva guardada em cache por usuário sem invalidar ao salvar (ADV-06) | CT-42 | nulo forjado numa chave grava desligado, sem erro 500 | R10 | EP | G3 | componente Livewire/Filament | `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` | — (regressão do RD-02) |
+| CT-43 | a gravação e a recusa ficam no log só com os valores do vocabulário | R3 | EP | G1 | componente Livewire/Filament | `tests/Kit/PreferenciasDeAparenciaTest.php` | — (BP-23/BP-33) |
+| CT-44 | os quatro campos de aparência moram na seção "Aparência dos painéis", sem "Padrão" selecionável | R8 | EP | G3 | componente Livewire/Filament | `tests/Kit/ConfiguracoesDeAparenciaTest.php` | — (BP-35) |
+| CT-45 | a largura do menu acompanha a densidade da pessoa nos três painéis | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | — (BP-36) |
+| CT-46 | o "Padrão" de cada campo diz qual é o padrão vigente da aplicação | R1 | EP | G1 | componente Livewire/Filament | `tests/Kit/PreferenciasDeAparenciaTest.php` | — (BP-19) |
 | CT-41 | a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | M86 |
 | CT-37 | a página seguinte mostra Denso/Red; esperado Confortável/Amber |
 
@@ -1038,6 +1042,34 @@ Rodada 2 — `fw-adversario-ct`, mesma entrada. **Última pelo teto de 2 rodadas
 | CT-B01, CT-B02 | ver `05-casos-de-teste-browser.md` | R13 | EP | G5 | browser | `tests/Browser/PreferenciasDeAparenciaTest.php` | ver `05` |
 
 Estouro de teto: R3, R4 e R7 com 4 cenários cada (justificados nas regras: M14/M16/M70/M82/M84, M74 e M85 só morrem nos cenários excedentes); as demais com no máximo 3. R1/R2/R3 dividem a superfície Livewire em três regras para respeitar o teto `padrão`. Nenhuma lacuna declarada.
+
+### CT-43 a CT-46 (revisão contra o Filament Blueprint)
+
+> Acrescentados pela sessão depois da revisão `reviewing-filament-plans` contra o Blueprint derivado da wiki (BP-19, BP-23/BP-33, BP-35, BP-36). Origem: `P-06`, `P-12`, `RQ-01`, `RQ-06`, `RQ-10` e a `## Superfície Livewire` (log do `salvar()`).
+
+```gherkin
+Cenário: [CT-43] a gravação e a recusa ficam no log só com os valores do vocabulário
+  Dado a Ana com a seção Aparência aberta
+  Quando ela salva a escolha de referência com um campo extra forjado no estado
+  E, com a chave da instalação desligada depois, tenta salvar de novo
+  Então o log registra uma gravação com a escolha de referência e o id dela, sem o campo forjado
+  E uma recusa só com o id dela
+
+Cenário: [CT-44] os quatro campos de aparência moram na seção "Aparência dos painéis", sem "Padrão" selecionável
+  Dado a administradora na aba Aplicação das Configurações
+  Então a chave, a densidade, a fonte e o menu estão na seção "Aparência dos painéis"
+  E nenhum dos três seletores deixa escolher o vazio
+
+Cenário: [CT-45] a largura do menu acompanha a densidade da pessoa nos três painéis
+  Dado a instalação de referência (Compacto, menu de 17rem)
+  Quando a Ana grava densidade Denso pela seção Aparência
+  Então /admin, /app e /infra emitem o menu com 16.5rem
+
+Cenário: [CT-46] o "Padrão" de cada campo diz qual é o padrão vigente da aplicação
+  Dado a instalação de referência (Compacto, Grande, cor #0ea5e9, Esconder tudo)
+  Quando a Ana abre a seção Aparência
+  Então o "Padrão" de cada campo nomeia esse valor
+```
 
 ### CT-42 (step 9 — RD-02, regressão)
 

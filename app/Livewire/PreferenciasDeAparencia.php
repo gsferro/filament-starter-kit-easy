@@ -7,6 +7,7 @@ namespace App\Livewire;
 use App\Filament\Pages\MyProfilePage;
 use App\Models\User;
 use App\Support\AparenciaDoUsuario;
+use App\Support\CorPrimaria;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\DensidadeDoLayout;
 use App\Support\ModoDoMenu;
@@ -92,7 +93,7 @@ class PreferenciasDeAparencia extends MyProfileComponent
                 Select::make('cor')
                     ->label('Cor primária')
                     ->options(array_combine(CustomizadorDaInstalacao::CORES, CustomizadorDaInstalacao::CORES))
-                    ->placeholder('Padrão — a cor da organização ou da aplicação'),
+                    ->placeholder('Padrão — '.self::corPadraoDaAplicacao().' (ou a da organização, dentro dela)'),
 
                 Select::make('menu')
                     ->label('Menu lateral ao recolher')
@@ -146,6 +147,23 @@ class PreferenciasDeAparencia extends MyProfileComponent
 
         // Densidade, fonte e cor saem do `<head>`: só um carregamento novo da página as aplica.
         $this->redirect(MyProfilePage::getUrl());
+    }
+
+    /**
+     * A cor da aplicação que vale para quem deixa em "Padrão": o hexadecimal livre, senão o nome da
+     * paleta, senão a do Filament — a mesma precedência de `CorPrimaria::paleta()` (BP-19 da revisão
+     * contra o Blueprint). A da organização não entra: o Meu perfil serve as organizações todas.
+     */
+    private static function corPadraoDaAplicacao(): string
+    {
+        $hex  = config('kit.cor_primaria_hex');
+        $nome = config('kit.cor_primaria');
+
+        return match (true) {
+            is_string($hex) && CorPrimaria::resolver($hex, null) !== []   => $hex,
+            is_string($nome) && CorPrimaria::resolver(null, $nome) !== [] => $nome,
+            default                                                       => 'Amber, a do Filament',
+        };
     }
 
     /** "Confortável — o padrão do Filament, nada muda" → "Confortável". */

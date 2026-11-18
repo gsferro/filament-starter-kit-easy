@@ -298,3 +298,13 @@ it('[CT-29] a seção Aparência, com os quatro campos, acompanha a chave da ins
     'desligada /app'   => ['desligada', 'app'],
     'desligada /infra' => ['desligada', 'infra'],
 ]);
+
+it('[CT-45] a largura do menu acompanha a densidade da pessoa nos três painéis', function (string $painel): void {
+    $this->actingAs(anaDoKit());
+
+    expect($this->get("/{$painel}")->assertOk()->getContent())->toContain('--sidebar-width: 17rem');
+
+    gravarAparenciaPelaSecao(null, 'admin');
+
+    expect($this->get("/{$painel}")->assertOk()->getContent())->toContain('--sidebar-width: 16.5rem');
+})->with(['admin', 'app', 'infra']);

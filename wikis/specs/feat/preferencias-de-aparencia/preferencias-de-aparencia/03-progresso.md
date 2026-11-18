@@ -121,6 +121,23 @@ Ponytail indisponível como plugin com namespace — passe manual pela skill `po
 | RD-02 | `fw-revisor-diff` | `null` forjado nas chaves booleanas daria 500 (por leitura) | CT de regressão | CT-42 | refutado por execução: forjado pelo estado do Livewire, a gravação responde sem erro e grava desligado, com ou sem coerção; a coerção defensiva foi retirada por não ser falsificável |
 | CX-01 | `codex` | CT-21 dependia do `.env` local | correção (fixar as três chaves no `phpunit.xml`) | CT-21 | — |
 
+### Revisão contra o Filament Blueprint (pedido do usuário: "use o blueprint para validar o filament")
+
+Blueprint derivado pelo `codex` com a skill `planning-filament` só a partir de `00`/`01`/`02` (BP-01..BP-40; o pacote `filament/blueprint` não está instalado — limite declarado); conferência pela skill `reviewing-filament-plans` em sub-agente: 30 atendidos, 9 divergentes (1 Major, 8 Minor), 1 não verificável, nenhum defeito de comportamento.
+
+| BP | Achado | Destino |
+|---|---|---|
+| BP-37 (Major) | CT-B01 só recolhia no `/admin`, sem reabrir | CT-B01 ampliado: reabre pelo botão do topo e roda em `/admin`, `/app` e `/infra` |
+| BP-03 | `TamanhoDaFonte::declaracoes(): ?string` em vez de `variaveis(): ?array` | aceito como emenda: o nome e o tipo eram do Blueprint, não do `01`; o render hook monta uma declaração só e a string pronta evita uma segunda junção |
+| BP-19 | o "Padrão" da cor não dizia qual cor | correção: o placeholder nomeia a cor da aplicação (hex, senão o nome, senão a do Filament); CT-46 |
+| BP-23 / BP-33 | log da gravação e da recusa sem teste | CT-43 (também prova que o campo forjado não entra no log) |
+| BP-32 | a cor é lida do `ColorManager` depois do GET, não do CSS | mantido: o `ColorManager` é a fonte que o `<head>` serializa no mesmo render; o CSS final já é medido no navegador pelo Playwright da sessão (`--primary-500`) |
+| BP-34 / BP-10 | CT-25 aceita coagir em vez de recusar | mantido: o `00` não determina recusa para fonte e menu (ADV-23 da revisão adversarial limitou o CT ao invariante "∈ vocabulário e ≠ enviado") |
+| BP-35 | a seção nova e o vazio não selecionável sem teste | CT-44 |
+| BP-36 | a largura do menu com a densidade pessoal sem teste | CT-45 |
+| BP-39 | sem teste de consultas por página nem de rollback | mantido: zero consulta nova vem de ler o usuário e a organização já carregados (medido 23 µs por chamada, CR-03); os `down()` das três migrations existem e o padrão do kit testa rollback só de settings com valor semeado |
+| BP-40 | processo não rodado pelo revisor | rodado pela sessão: Pint, filacheck, PHPStan e suíte (ver Verificação Final) |
+
 ## Conformidade com Rules
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
@@ -162,5 +179,6 @@ Ponytail indisponível como plugin com namespace — passe manual pela skill `po
 | 11 | 9 | `codex exec --yolo` (revisão independente) | não exposto pelo host | diff | 1 achado (CX-01) | — | reproduzido pelo próprio codex com `KIT_TAMANHO_DA_FONTE=grande` |
 | 12 | 10 | `codex exec --yolo` (roteiro de atualização v0.54.0) | não exposto pelo host | CHANGELOG, diff, docs | `wikis/atualizacoes/v0.54.0.md` + cópia em `agentes-e-skills.md`; `RoteiroDeAtualizacaoTest` 212/212 | — | conferido: chave ligada, três migrations, como iniciar desligada |
 | 13 | 10 | `codex exec --yolo` (Filament Blueprint, skill `planning-filament`) | não exposto pelo host | só `00`, `01`, `02` + vendor | 40 requisitos BP-01..BP-40 | — | pedido do usuário ("use o blueprint para validar o filament") |
+| 14 | 10 | `reviewing-filament-plans` (sub-agente) | `opus` | Blueprint + diff | 30 atendidos, 9 divergentes, 1 não verificável | 165k tokens · 10 min | BP-37 e BP-19 reproduzidos pela leitura do teste e do placeholder; destino de cada um na seção acima |
 
 ## Candidatos a Rule

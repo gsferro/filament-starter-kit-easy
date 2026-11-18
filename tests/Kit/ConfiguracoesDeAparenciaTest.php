@@ -87,3 +87,23 @@ it('[CT-27] quem não administra a instalação não chega às Configurações',
     'Ivo (infra)'      => ['infra', 'ivo@example.com', '/infra'],
     'Bia (panel_user)' => ['panel_user', 'bia@example.com', '/app'],
 ]);
+
+it('[CT-44] os quatro campos de aparência moram na seção "Aparência dos painéis", sem "Padrão" selecionável', function (): void {
+    $this->actingAs(usuarioDoKit('admin', 'adm-secao@example.com'));
+
+    $tela = carregarAba(Livewire::test(ConfiguracoesDoKit::class), 'aplicacao')->refresh();
+
+    foreach (['aparencia_por_usuario', 'densidade_do_layout', 'tamanho_da_fonte', 'modo_do_menu'] as $campo) {
+        $componente = $tela->instance()->form->getComponent(
+            fn ($c): bool => method_exists($c, 'getName') && $c->getName() === $campo,
+            withHidden: true,
+        );
+
+        expect($componente)->not->toBeNull("o campo {$campo} não existe")
+            ->and($componente->getContainer()->getParentComponent()?->getId())->toBe('configuracoes-aplicacao-aparencia');
+
+        if ($campo !== 'aparencia_por_usuario') {
+            expect($componente->canSelectPlaceholder())->toBeFalse("{$campo} deixa escolher o vazio");
+        }
+    }
+});

@@ -34,19 +34,38 @@ const MEDIDA_DA_BARRA_LATERAL = <<<'JS'
 JS;
 
 /**
- * CT-B01 — recolhido, o menu segue o modo da Ana (a instalação é o oposto).
+ * Espera a largura visível da barra parar de mudar (fim da transição), sem `wait()` fixo.
  */
-it('[CT-B01] recolhido, o menu segue o modo escolhido pela Ana', function (string $menuDaInstalacao, string $menuDaAna, bool $manterIcones): void {
+const ESTABILIZA_A_BARRA_LATERAL = <<<'JS'
+    new Promise(resolve => {
+        const medir = () => { const s = document.querySelector('.fi-sidebar').getBoundingClientRect();
+            return Math.max(0, Math.min(s.right, innerWidth) - Math.max(s.left, 0)); };
+        let anterior = medir(), estaveis = 0;
+        const id = setInterval(() => {
+            const atual = medir();
+            estaveis = atual === anterior ? estaveis + 1 : 0;
+            anterior = atual;
+            if (estaveis >= 3) { clearInterval(id); resolve(true); }
+        }, 100);
+    })
+JS;
+
+/**
+ * CT-B01 — recolhido, o menu segue o modo da Ana (a instalação é o oposto). "Esconder tudo" roda
+ * nos três painéis e, depois de recolher, a barra reabre: volta à largura aberta e um item de
+ * navegação fica visível e clicável (BP-37).
+ */
+it('[CT-B01] recolhido, o menu segue o modo escolhido pela Ana', function (string $painel, string $papel, string $menuDaInstalacao, string $menuDaAna, bool $manterIcones): void {
     aparenciaDaInstalacao(porUsuario: true, menu: $menuDaInstalacao);
 
-    $ana = usuarioDoKit('admin', 'ana@example.com');
+    $ana = usuarioDoKit($papel, 'ana@example.com');
     aparenciaDe($ana, ['menu' => $menuDaAna]);
 
-    $this->actingAs($ana)->get('/admin')->assertOk();
+    $this->actingAs($ana)->get("/{$painel}")->assertOk();
 
-    $pagina = visit('/admin')->resize(1280, 800);
+    $pagina = visit("/{$painel}")->resize(1280, 800);
 
-    $pagina->assertPathIs('/admin')
+    $pagina->assertPathIs("/{$painel}")
         ->assertPresent('.fi-sidebar-item-icon');
 
     $aberta = json_decode((string) $pagina->script(MEDIDA_DA_BARRA_LATERAL), true, flags: JSON_THROW_ON_ERROR);
@@ -65,19 +84,7 @@ it('[CT-B01] recolhido, o menu segue o modo escolhido pela Ana', function (strin
     );
 
     // Fim da transição: a largura visível parou de mudar.
-    $pagina->assertScript(<<<'JS'
-        new Promise(resolve => {
-            const medir = () => { const s = document.querySelector('.fi-sidebar').getBoundingClientRect();
-                return Math.max(0, Math.min(s.right, innerWidth) - Math.max(s.left, 0)); };
-            let anterior = medir(), estaveis = 0;
-            const id = setInterval(() => {
-                const atual = medir();
-                estaveis = atual === anterior ? estaveis + 1 : 0;
-                anterior = atual;
-                if (estaveis >= 3) { clearInterval(id); resolve(true); }
-            }, 100);
-        })
-    JS);
+    $pagina->assertScript(ESTABILIZA_A_BARRA_LATERAL);
 
     $recolhida = json_decode((string) $pagina->script(MEDIDA_DA_BARRA_LATERAL), true, flags: JSON_THROW_ON_ERROR);
 
@@ -87,12 +94,40 @@ it('[CT-B01] recolhido, o menu segue o modo escolhido pela Ana', function (strin
     } else {
         expect($recolhida['largura'])->toEqual(0)
             ->and($recolhida['iconeVisivel'])->toBeFalse();
+
+        // Reabre pelo botão do topo: volta à largura aberta, com item de navegação visível e clicável.
+        $pagina->click('.fi-topbar-open-sidebar-btn');
+
+        $pagina->assertScript(
+            "(() => { const s = document.querySelector('.fi-sidebar').getBoundingClientRect();"
+            ."return Math.max(0, Math.min(s.right, innerWidth) - Math.max(s.left, 0)) >= {$larguraAberta} - 1; })()"
+        );
+        $pagina->assertScript(ESTABILIZA_A_BARRA_LATERAL);
+
+        $reaberta = json_decode((string) $pagina->script(MEDIDA_DA_BARRA_LATERAL), true, flags: JSON_THROW_ON_ERROR);
+
+        expect($reaberta['largura'])->toEqualWithDelta($larguraAberta, 1)
+            ->and($reaberta['iconeVisivel'])->toBeTrue();
+
+        // Clicável: o elemento no centro do item é o próprio item (nada o cobre) e o clique funciona.
+        $pagina->assertScript(<<<'JS'
+            (() => {
+                const a = document.querySelector('.fi-sidebar-item a, .fi-sidebar-item-btn');
+                const r = a.getBoundingClientRect();
+                const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+                return r.width > 0 && r.height > 0 && r.bottom <= innerHeight && a.contains(topo);
+            })()
+        JS);
+
+        $pagina->click('.fi-sidebar-item-btn >> nth=0');
     }
 
     $pagina->assertNoJavaScriptErrors();
 })->with([
-    'instalação Esconder tudo, Ana Manter os ícones' => ['oculto', 'icones', true],
-    'instalação Manter os ícones, Ana Esconder tudo' => ['icones', 'oculto', false],
+    'admin: instalação Esconder tudo, Ana Manter os ícones' => ['admin', 'admin', 'oculto', 'icones', true],
+    'admin: instalação Manter os ícones, Ana Esconder tudo' => ['admin', 'admin', 'icones', 'oculto', false],
+    'app: instalação Manter os ícones, Ana Esconder tudo'   => ['app', 'panel_user', 'icones', 'oculto', false],
+    'infra: instalação Manter os ícones, Ana Esconder tudo' => ['infra', 'infra', 'icones', 'oculto', false],
 ])->group('browser');
 
 /**
