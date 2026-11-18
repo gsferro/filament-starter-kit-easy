@@ -36,7 +36,7 @@
 | Regra | Área (perfil herdado) | Origem (`RQ`/`P-nn`) | Técnica | Cenários |
 |---|---|---|---|---|
 | R1 — As duas ferramentas são dependência de desenvolvimento, declaradas e travadas no lock | require-dev (mínimo) | RQ-01, RQ-02, RQ-03 | EP (seção do `composer.json`/`composer.lock`) | CT-01 |
-| R2 — Um comando só do composer, `deps:check`, roda as duas ferramentas | require-dev (mínimo) | P-01, RQ-01, RQ-02 | EP (ferramenta alcançada pelo comando) | CT-02 |
+| R2 — Um comando só do composer, `deps:check`, roda as duas ferramentas | require-dev (mínimo) | P-01, RQ-01, RQ-02, P-07 | EP (ferramenta alcançada pelo comando) | CT-02, CT-09 |
 | R3 — O CI roda as duas ferramentas pelo `vendor/bin`, depois de instalar as dependências | CI (mínimo) | RQ-04 | EP (origem do binário) | CT-03 |
 | R4 — O CI publica o relatório das duas no resumo do job e o job continua verde com achados | CI (mínimo) | RQ-05, P-02 | rastreio de efeito (publicado / sem reprovar) | CT-04 |
 | R5 — A configuração das ferramentas viaja nas duas rotas de entrega | configuração (mínimo) | P-06 | EP (rota de entrega) | CT-05 |

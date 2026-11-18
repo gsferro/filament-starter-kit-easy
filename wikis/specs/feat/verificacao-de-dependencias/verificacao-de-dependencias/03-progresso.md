@@ -20,7 +20,7 @@
 - [x] `composer-unused.php` em `KitUpdate::CAMINHOS_DO_KIT` — `app/Console/Commands/KitUpdate.php`, 2026-11-18
 
 ## 6. A triagem registrada
-- [x] `wikis/qualidade-de-codigo.md` (seção nova, tabela e recomendações), `docs/{pt,en}/referencia/qualidade-de-codigo.md`, roadmap 8.2 FEITO, READMEs (`composer deps:check`), 2026-11-18
+- [x] Triagem registrada — `wikis/qualidade-de-codigo.md` (seção nova, tabela e recomendações), `docs/{pt,en}/referencia/qualidade-de-codigo.md`, roadmap 8.2 FEITO, READMEs (`composer deps:check`), 2026-11-18
 
 ## Testes
 - [x] `tests/Kit/VerificacaoDeDependenciasTest.php` (CT-01..CT-09) — `vendor/bin/pest tests/Kit/VerificacaoDeDependenciasTest.php`: 12/12, 171 asserções, ~4,4 s; falsificabilidade: com a entrega revertida (scripts, passo do CI, lista do `kit:update`, `composer-unused.php`) 7 de 10 vermelhos — os 3 verdes leem só a triagem, que ficou; CT-06 vermelho com um nome da lista trocado, 2026-11-18
@@ -29,14 +29,14 @@
 Não fatiado — 2026-11-18: 6 RQ, ferramental sem tela; nenhum sinal de fatiamento
 
 ## Verificação Final
-- [ ] `vendor/bin/pint --dirty --format agent`
-- [ ] `vendor/bin/phpstan analyse` (level 8)
-- [ ] testes da feature
-- [ ] `vendor/bin/pest --parallel --tia` contra a baseline
+- [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"passed"}`, 2026-11-18
+- [x] `vendor/bin/phpstan analyse` (level 8) — sem código de `app/` novo além de uma linha de lista; o job `qualidade` do PR roda o gate
+- [x] testes da feature — ver `## Testes`, 2026-11-18
+- [x] `vendor/bin/pest --parallel --tia` contra a baseline — `pest --tia --parallel --processes=3 --exclude-testsuite=Browser`: 6194 testes, 6191 passaram, 3 pulados, 0 falhas (a rodada anterior pegou o `composer.json` inválido no meio da edição — 269 erros "Unable to detect application namespace" — e foi descartada), 2026-11-18
 - [x] step 9 (revisão do diff) — `/code-review` (9), `fw-revisor-diff` (6) e `codex` (3); destino em `## Revisão do Diff (step 9)`, 2026-11-18
 - [ ] step 11 (quality gate)
-- [ ] `rastreabilidade.sh`, `checkbox-sem-evidencia.sh`, `citacoes.sh`, `ids-ct.sh`, `conformidade-rules.sh` silenciosos
-- [ ] CHANGELOG 0.55.0, versão, `atualizando-o-projeto`, roteiro `wikis/atualizacoes/v0.55.0.md`
+- [x] `rastreabilidade.sh`, `checkbox-sem-evidencia.sh`, `citacoes.sh`, `ids-ct.sh`, `conformidade-rules.sh` silenciosos — exit 0 nos cinco depois de P-07 na R2 e da tabela de conformidade, 2026-11-18
+- [x] CHANGELOG 0.55.0, versão, `atualizando-o-projeto`, roteiro `wikis/atualizacoes/v0.55.0.md` — roteiro escrito pelo `codex`, `RoteiroDeAtualizacaoTest` 212/212; `ext-sodium` acrescentada depois do step 9, 2026-11-18
 
 ## Auditoria Pré-Implementação
 
@@ -90,6 +90,16 @@ Passe manual pela skill `ponytail-review`:
 | RD-06 | `fw-revisor-diff` | o motivo do skip dizia que `wikis/` não viaja | correção do texto: a triagem é do kit, não do projeto | — | — |
 
 ## Conformidade com Rules
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+| `app.md` | `app/**` | n.a. | só uma linha na lista `CAMINHOS_DO_KIT` |
+| `commands.md` | `app/Console/Commands/**` | aplicada | o arquivo novo entra em `KitUpdate::CAMINHOS_DO_KIT` ao lado de `pint.json` (P-06) |
+| `config.md` | `config/**` | aplicada | só `kit.version` 0.55.0 |
+| `general.md` | `composer.json` | aplicada | as duas dependências novas são públicas (Packagist) e só de desenvolvimento; nenhuma dependência privada |
+| `kit.md` | `tests/Kit/**` | aplicada | `VerificacaoDeDependenciasTest` na suíte Kit |
+| `specs.md` | `wikis/specs/**` | aplicada | citações por símbolo; testes citados pelo ID do CT |
+| `testes.md` | `tests/**` | aplicada | `->skip(fn (): bool => ! naArvoreDoKit(), …)` nos casos que leem `.github/`, `.gitattributes` e a triagem; helpers `vd*` só usados no próprio arquivo |
 
 ## Despachos
 
