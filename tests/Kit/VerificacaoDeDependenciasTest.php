@@ -7,6 +7,7 @@
  * 04-casos-de-teste.md`. O oráculo é o Gherkin, não o código.
  */
 
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Symfony\Component\Yaml\Yaml;
 
@@ -40,7 +41,8 @@ function vdExpandirScript(array $scripts, string $nome, array &$inexistentes, in
     $finais = [];
 
     foreach ((array) $scripts[$nome] as $comando) {
-        if (is_string($comando) && str_starts_with($comando, '@') && ! str_starts_with($comando, '@php')) {
+        // `@php`, `@putenv`, `@composer` e `@additional_args` são comandos do próprio composer, não scripts (CR-05 do step 9).
+        if (is_string($comando) && preg_match('~^@(?!php|putenv|composer|additional_args)~', $comando) === 1) {
             $referencia = preg_split('/\s+/', substr($comando, 1))[0];
             array_push($finais, ...vdExpandirScript($scripts, $referencia, $inexistentes, $profundidade + 1));
 
@@ -137,16 +139,7 @@ function vdPacotesExcluidos(): array
     return array_values(array_unique($m[1]));
 }
 
-/** Roda um comando bash e devolve [código, saída]. @return array{0: int, 1: string} */
-function vdBash(string $script, array $env = [], int $timeout = 600): array
-{
-    $resultado = Process::path(base_path())->timeout($timeout)->env($env)
-        ->run(['bash', '-eo', 'pipefail', '-c', $script]);
-
-    return [$resultado->exitCode(), $resultado->output().$resultado->errorOutput()];
-}
-
-it('[CT-01] a ferramenta é dependência de desenvolvimento travada no lock', function (string $ferramenta, string $pacote): void {
+it('[CT-01] a ferramenta é dependência de desenvolvimento travada no lock', function (string $pacote): void {
     $composer = vdJson('composer.json');
     $lock     = vdJson('composer.lock');
     $nomes    = static fn (array $lista): array => array_column($lista, 'name');
@@ -156,8 +149,8 @@ it('[CT-01] a ferramenta é dependência de desenvolvimento travada no lock', fu
         ->and($nomes($lock['packages-dev'] ?? []))->toContain($pacote)
         ->and($nomes($lock['packages'] ?? []))->not->toContain($pacote);
 })->with([
-    'composer-unused'          => ['composer-unused', 'icanhazstring/composer-unused'],
-    'composer-require-checker' => ['composer-require-checker', 'maglnet/composer-require-checker'],
+    'composer-unused'          => ['icanhazstring/composer-unused'],
+    'composer-require-checker' => ['maglnet/composer-require-checker'],
 ])->group('kit');
 
 it('[CT-02] deps:check alcança composer-unused e composer-require-checker', function (): void {
@@ -217,7 +210,7 @@ it('[CT-03] o passo do CI roda as duas do vendor/bin, depois do composer install
     }
 })->skip(fn (): bool => ! naArvoreDoKit(), 'lê .github/, que não viaja no create-project')->group('kit');
 
-it('[CT-04] com achado, o passo publica os dois relatórios no resumo e não reprova o job', function (): void {
+it('[CT-04] com achado ou ferramenta quebrada, o passo publica o que as duas dizem no resumo e não reprova o job', function (array $unused, array $checker, array $esperado): void {
     $passos = array_values(array_filter(
         vdPassosDasFerramentas(),
         static fn (array $a): bool => str_contains((string) $a['passo']['run'], 'composer-unused')
@@ -228,34 +221,56 @@ it('[CT-04] com achado, o passo publica os dois relatórios no resumo e não rep
     $passo = $passos[0]['passo'];
     $run   = str_replace('${{ github.workspace }}', base_path(), (string) $passo['run']);
 
-    // Precondição medida: ao menos uma ferramenta, sozinha, sai com código diferente de 0.
-    [$codigoUnused]  = vdBash('vendor/bin/composer-unused --no-progress --no-ansi');
-    [$codigoChecker] = vdBash('vendor/bin/composer-require-checker check composer.json --no-ansi');
-    expect($codigoUnused !== 0 || $codigoChecker !== 0)->toBeTrue(
-        "precondição: nenhuma ferramenta saiu com código diferente de 0 (unused={$codigoUnused}, checker={$codigoChecker})",
-    );
+    // Ferramentas FALSAS num diretório temporário: a saída e o código de cada uma são controlados.
+    $raiz = sys_get_temp_dir().DIRECTORY_SEPARATOR.'vd-ct04-'.bin2hex(random_bytes(4));
+    mkdir($raiz.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'bin', 0777, true);
 
-    $resumo = tempnam(sys_get_temp_dir(), 'resumo');
+    foreach (['composer-unused' => $unused, 'composer-require-checker' => $checker] as $nome => $falsa) {
+        $corpo = "#!/usr/bin/env bash\n";
+        $corpo .= $falsa['stdout'] !== '' ? 'echo '.escapeshellarg($falsa['stdout'])."\n" : '';
+        $corpo .= $falsa['stderr'] !== '' ? 'echo '.escapeshellarg($falsa['stderr'])." >&2\n" : '';
+        $corpo .= 'exit '.$falsa['codigo']."\n";
+        $arquivo = $raiz.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'bin'.DIRECTORY_SEPARATOR.$nome;
+        file_put_contents($arquivo, $corpo);
+        chmod($arquivo, 0755);
+    }
+
+    $resumo = $raiz.DIRECTORY_SEPARATOR.'resumo.md';
     file_put_contents($resumo, '');
-    $caminho = str_replace('\\', '/', $resumo);
 
     try {
-        [$codigo] = vdBash($run, ['GITHUB_STEP_SUMMARY' => $caminho]);
+        $resultado = Process::path($raiz)->timeout(60)
+            ->env(['GITHUB_STEP_SUMMARY' => strtr($resumo, [chr(92) => '/'])])
+            ->run(['bash', '-eo', 'pipefail', '-c', $run]);
+        $codigo   = $resultado->exitCode();
         $conteudo = (string) file_get_contents($resumo);
     } finally {
-        @unlink($resumo);
+        File::deleteDirectory($raiz);
     }
 
     expect($codigo === 0 || ($passo['continue-on-error'] ?? false) === true)
-        ->toBeTrue("o passo saiu com {$codigo} e não declara continue-on-error: true (precondição: unused={$codigoUnused}, checker={$codigoChecker})")
-        ->and($conteudo)->toContain('Used packages')
-        ->and($conteudo)->toContain('unknown symbols');
+        ->toBeTrue("o passo saiu com {$codigo} e não declara continue-on-error: true");
 
-    $semUso  = array_column(array_filter(vdLinhasDaTriagem(), static fn (array $l): bool => $l['veredito'] === 'sem uso'), 'pacote');
-    $semUso  = $semUso ?: ['awcodes/filament-badgeable-column'];
-    $citados = array_filter($semUso, static fn (string $p): bool => str_contains($conteudo, $p));
-    expect($citados)->not->toBeEmpty('o resumo não cita nenhum pacote sem uso ('.implode(', ', $semUso).')');
-})->skip(fn (): bool => ! naArvoreDoKit(), 'lê .github/, que não viaja no create-project')->group('kit');
+    foreach ($esperado as $trecho) {
+        expect(str_contains($conteudo, $trecho))->toBeTrue("o resumo não contém '{$trecho}':\n{$conteudo}");
+    }
+})->with([
+    'as duas com achado' => [
+        ['stdout' => "Used packages\nawcodes/filament-badgeable-column", 'stderr' => '', 'codigo' => 1],
+        ['stdout' => "unknown symbols\nFoo\Bar\Simbolo", 'stderr' => '', 'codigo' => 1],
+        ['Used packages', 'awcodes/filament-badgeable-column', 'unknown symbols', 'Foo\Bar\Simbolo'],
+    ],
+    'a primeira ausente e a segunda ainda roda' => [
+        ['stdout' => '', 'stderr' => 'composer-unused: erro-da-primeira', 'codigo' => 127],
+        ['stdout' => "unknown symbols\nFoo\Bar\Simbolo", 'stderr' => '', 'codigo' => 1],
+        ['erro-da-primeira', 'unknown symbols', 'Foo\Bar\Simbolo'],
+    ],
+    'a segunda escreve o erro só em stderr' => [
+        ['stdout' => "Used packages\nawcodes/filament-badgeable-column", 'stderr' => '', 'codigo' => 1],
+        ['stdout' => '', 'stderr' => 'erro-da-segunda', 'codigo' => 1],
+        ['Used packages', 'awcodes/filament-badgeable-column', 'erro-da-segunda'],
+    ],
+])->skip(fn (): bool => ! naArvoreDoKit(), 'lê .github/, que não viaja no create-project')->group('kit');
 
 it('[CT-05] o arquivo de configuração do composer-unused está nas duas rotas de entrega', function (): void {
     $arquivo = 'composer-unused.php';

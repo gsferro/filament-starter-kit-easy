@@ -143,9 +143,11 @@
             "filacheck"
         ],
         "deps:unused": [
+            "Composer\\Config::disableProcessTimeout",
             "composer-unused --no-progress --ignore-exit-code"
         ],
         "deps:require": [
+            "Composer\\Config::disableProcessTimeout",
             "composer-require-checker check composer.json"
         ],
         "deps:check": [

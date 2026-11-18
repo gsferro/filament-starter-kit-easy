@@ -46,8 +46,9 @@ jobs:
 
       # RELATÓRIO, não gate (wiki `feat/verificacao-de-dependencias`, Q2: "Só relatório"): o
       # resultado das duas ferramentas vai para o resumo do job e o job continua verde com achados.
-      # `--ignore-exit-code` e `|| true` seguram o achado; `continue-on-error` segura a ferramenta
-      # que quebrar. Localmente: `composer deps:check`. Triagem: `wikis/qualidade-de-codigo.md`.
+      # `|| true` nas duas segura o achado E a ferramenta que quebrar (sem ele, a primeira falha
+      # cortava a segunda); `2>&1` leva também o erro ao resumo; `continue-on-error` é a última
+      # rede (CX-01/CX-02 do step 9). Localmente: `composer deps:check`. Triagem: `wikis/qualidade-de-codigo.md`.
       - name: Dependências declaradas × usadas (relatório)
         continue-on-error: true
         run: |
@@ -56,13 +57,13 @@ jobs:
             echo
             echo '### composer-unused — declaradas e não usadas'
             echo '```'
-            vendor/bin/composer-unused --no-progress --no-ansi --ignore-exit-code
+            vendor/bin/composer-unused --no-progress --no-ansi --ignore-exit-code || true
             echo '```'
             echo '### composer-require-checker — usadas e não declaradas'
             echo '```'
             vendor/bin/composer-require-checker check composer.json --no-ansi || true
             echo '```'
-          } | tee -a "$GITHUB_STEP_SUMMARY"
+          } 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Seleção de suíte, e NÃO `--exclude-group=browser`: o grupo é filtrado na EXECUÇÃO,
       # mas o pest-plugin-browser sobe o Playwright já na COLETA — ao parsear qualquer

@@ -26,6 +26,7 @@ desenvolvimento novas; nada muda em runtime. Wiki: `wikis/specs/feat/verificacao
 
 ### Atualizando
 
+- **A instalação de desenvolvimento passa a exigir a extensão PHP `sodium`**: o `composer-require-checker` 4.24 depende do `php-standard-library`, que a exige, e limita o PHP a 8.4 e 8.5. No Windows, descomente `extension=sodium` no `php.ini`. A versão 4.17 (sem essa dependência) foi testada e recusada: ela rebaixaria o `symfony/console` de produção de 8.1 para 7.4. Quem instala com `--no-dev` não é afetado.
 - `composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` —
   o `kit:update` traz o `composer-unused.php` e relata a diferença do `composer.json`, sem aplicá-la. Os
   três scripts `deps:*` entram à mão no `composer.json` do projeto (copie do kit).
