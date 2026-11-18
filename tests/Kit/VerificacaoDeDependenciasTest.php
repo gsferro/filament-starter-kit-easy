@@ -42,7 +42,7 @@ function vdExpandirScript(array $scripts, string $nome, array &$inexistentes, in
 
     foreach ((array) $scripts[$nome] as $comando) {
         // `@php`, `@putenv`, `@composer` e `@additional_args` são comandos do próprio composer, não scripts (CR-05 do step 9).
-        if (is_string($comando) && preg_match('~^@(?!php|putenv|composer|additional_args)~', $comando) === 1) {
+        if (is_string($comando) && preg_match('~^@(?!(?:php|putenv|composer|additional_args)\b)~', $comando) === 1) {
             $referencia = preg_split('/\s+/', substr($comando, 1))[0];
             array_push($finais, ...vdExpandirScript($scripts, $referencia, $inexistentes, $profundidade + 1));
 
