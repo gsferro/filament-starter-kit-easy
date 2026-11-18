@@ -93,7 +93,7 @@ class PreferenciasDeAparencia extends MyProfileComponent
                 Select::make('cor')
                     ->label('Cor primária')
                     ->options(array_combine(CustomizadorDaInstalacao::CORES, CustomizadorDaInstalacao::CORES))
-                    ->placeholder('Padrão — '.self::corPadraoDaAplicacao().' (ou a da organização, dentro dela)'),
+                    ->placeholder('Padrão — '.self::corPadraoDaAplicacao().(config('kit.tenancy.enabled') ? ' (ou a da organização, dentro dela)' : '')),
 
                 Select::make('menu')
                     ->label('Menu lateral ao recolher')

@@ -123,5 +123,5 @@ Dívida conhecida: o kit não tem `data-testid`; seletores de classe do vendor s
 
 | # | O que o PRD desenhou | O que foi implementado | Confere? | Evidência |
 |---|---|---|---|---|
-| 1 | Painéis — layout: recolher do menu por Alpine do Filament | | | CT-B01 |
-| 2 | Painéis — layout: fonte efetiva em toda tela autenticada | | | CT-B02 |
+| 1 | Painéis — layout: recolher do menu por Alpine do Filament | `->sidebarCollapsibleOnDesktop()`/`->sidebarFullyCollapsibleOnDesktop()` por Closure nos três providers, lendo `AparenciaDoUsuario::modoDoMenu()` | sim | CT-B01: 4 linhas (`/admin` nos dois modos; `/app` e `/infra` em Esconder tudo, recolhendo e reabrindo pelo botão do topo), 7/7 do arquivo em série |
+| 2 | Painéis — layout: fonte efetiva em toda tela autenticada | variáveis `--text-*` redeclaradas no `<style>` do render hook `STYLES_BEFORE` | sim | CT-B02: razões 0,875 / 1,125 / 1,25 medidas no título e no menu, delta 0,01 |

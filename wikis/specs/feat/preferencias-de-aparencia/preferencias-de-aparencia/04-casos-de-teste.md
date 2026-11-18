@@ -16,7 +16,7 @@
 | A6 — documento de candidatas a pacote | 1 | 1 | 1 | mínimo |
 
 - Técnicas aplicadas: EP (partições válidas e inválidas isoladas), tabela de decisão (escalada na A1, ver Mapa), tabela estado × operação (chaves), 2-switch (desligar e religar), matriz papel × ação, sequência de requests (ler → mudar → ler), BVA não se aplica (nenhuma faixa ordenável: os quatro domínios são listas fechadas)
-- Cenários: 39 · Regras: 16 · Mutantes previstos: 85 · Sem matador: 0
+- Cenários: 45 · Regras: 16 · Mutantes previstos: 86 · Sem matador: 0 *(alterado em 2026-11-18: QA-06 do quality gate, ciclo 1)*
 <!-- derivado do arquivo por grep -c (comandos em references/template-04.md, "Contagem do cabeçalho"); CT-B e seus mutantes estão no 05 -->
 
 ## Varredura SFDIPOT
@@ -40,7 +40,7 @@ Operações: O1 ver a aparência efetiva dentro da organização · O2 abrir a s
 | | O1 ver | O2 seção | O3 gravar |
 |---|---|---|---|
 | E1 | ✅ CT-12 (linha D1) | ✅ CT-30 (linha `/app` liberada) | ✅ CT-30 (linha `/app` liberada) |
-| E2 | ❌ padrão — CT-12 (linhas D2, D8, D9) | ✅ CT-30 (linhas não liberada) — o Meu perfil não está em organização (P-06, P-13) | ✅ CT-30 (linhas não liberada) |
+| E2 | ❌ padrão — CT-12 (linhas D2, D8, D9) | ✅ CT-30 (linhas não liberada) — a seção aparece com a chave da instalação; dentro de uma organização que não liberou, a escolha não vale (P-06, P-13 corrigida) *(alterado em 2026-11-18: QA-03 do quality gate, ciclo 1)* | ✅ CT-30 (linhas não liberada) |
 | E3 | ❌ padrão — CT-12 (linhas D3, D4, D10) | ❌ seção ausente — CT-29 (linhas desligada) | ❌ recusa — CT-08 (perfil intacto, vazio ou com escolha; aviso; sem "Aparência salva") e CT-39 (religar não traz o enviado) |
 
 Legenda conferida célula a célula: O1 não tem efeito colateral além da página; O3 tem um efeito (a escrita no registro da pessoa), afirmado presente em CT-30 (✅) e ausente em CT-08 (❌, com a Ana existente e a seção aberta — o alvo da escrita existe no `Dado`).
@@ -49,14 +49,14 @@ Legenda conferida célula a célula: O1 não tem efeito colateral além da pági
 
 | Regra | Área (perfil herdado) | Origem (`RQ`/`P-nn`) | Técnica | Cenários |
 |---|---|---|---|---|
-| R1 — A pessoa grava qualquer valor do vocabulário de cada preferência, ou "Padrão", uma preferência independente da outra | A2 (padrão) | RQ-01, RQ-02, RQ-03, RQ-04, RQ-10, P-07, P-08, P-09 | EP (partição válida por caso do enum) | CT-01, CT-02, CT-03 |
+| R1 — A pessoa grava qualquer valor do vocabulário de cada preferência, ou "Padrão", uma preferência independente da outra | A2 (padrão) | RQ-01, RQ-02, RQ-03, RQ-04, RQ-10, P-07, P-08, P-09 | EP (partição válida por caso do enum) | CT-01, CT-02, CT-03, CT-46 |
 | R2 — Valor fora do vocabulário ou de tipo errado, enviado pela seção, não é gravado | A2 (padrão) | P-12, P-07, `## Superfície Livewire` (`$data`) | EP (inválidas isoladas) | CT-04, CT-05 |
-| R3 — A gravação atinge só a própria pessoa, só as quatro preferências, e é recusada com a chave desligada | A2 (padrão) | RQ-01..RQ-04 ("guardada no perfil dela"), P-01, P-15, `## Superfície Livewire` (`salvar()`, `_startUpload`) | matriz papel × ação; EP; estado × operação | CT-06, CT-35, CT-07, CT-08 |
-| R4 — Fora de organização, a escolha vale com a chave da instalação ligada; desligada ou sem escolha, vale o padrão da instalação | A1 (padrão) | RQ-05, RQ-07, RQ-10, P-01, P-02, P-10, P-13, P-17 | tabela de decisão; sequência de requests | CT-09, CT-10, CT-11, CT-37, CT-41 |
+| R3 — A gravação atinge só a própria pessoa, só as quatro preferências, e é recusada com a chave desligada | A2 (padrão) | RQ-01..RQ-04 ("guardada no perfil dela"), P-01, P-15, `## Superfície Livewire` (`salvar()`, `_startUpload`) | matriz papel × ação; EP; estado × operação | CT-06, CT-35, CT-07, CT-08, CT-43 |
+| R4 — Fora de organização, a escolha vale com a chave da instalação ligada; desligada ou sem escolha, vale o padrão da instalação | A1 (padrão) | RQ-05, RQ-07, RQ-10, P-01, P-02, P-10, P-13, P-17 | tabela de decisão; sequência de requests | CT-09, CT-10, CT-11, CT-37, CT-41, CT-45 |
 | R5 — Dentro de organização, a escolha só vale com as duas chaves; senão, a cor da organização e, depois, o padrão da instalação — para qualquer papel | A1 (padrão) | RQ-08, RQ-09, P-02, P-04, P-10, P-13, P-01 | tabela de decisão | CT-12, CT-13, CT-14 |
 | R6 — Valor gravado fora do vocabulário cai no padrão na leitura, sem erro e sem derrubar as preferências válidas | A1 (padrão) | P-12, `## Superfície Livewire` (`users.aparencia` lido no render) | EP (inválidas isoladas) | CT-15, CT-16, CT-38 |
 | R7 — Desligar uma chave não apaga a escolha; religada, ela volta a valer | A1 (padrão) | P-05, P-11 | 2-switch | CT-17, CT-18, CT-19, CT-39 |
-| R8 — A instalação define o padrão das quatro preferências e a chave, e o gravado governa a página | A3 (padrão) | RQ-06, RQ-07, P-03, P-08, P-09 | EP; valor de fábrica literal; sequência (outro ator) | CT-20, CT-21, CT-40 |
+| R8 — A instalação define o padrão das quatro preferências e a chave, e o gravado governa a página | A3 (padrão) | RQ-06, RQ-07, P-03, P-08, P-09 | EP; valor de fábrica literal; sequência (outro ator) | CT-20, CT-21, CT-40, CT-44 |
 | R9 — A organização libera pelo interruptor no cadastro do `/admin`, que nasce desligado e só aparece com a chave da instalação ligada | A4 (padrão) | RQ-08, P-04, P-11 | EP; tabela de decisão (visibilidade) | CT-22, CT-23, CT-24 |
 | R10 — Os formulários de administração recusam valor fora do domínio e mantêm o anterior | A3, A4 (padrão) | `## Superfície Livewire` (`ConfiguracoesDoKit`, `TenantForm`), P-12, P-04 | EP (inválidas isoladas) | CT-25, CT-26, CT-42 |
 | R11 — Só quem administra a instalação liga a chave, define os padrões e libera organizações | A3, A4 (padrão) | RQ-07, RQ-08, P-11 | matriz papel × ação (por fora do componente) | CT-27, CT-28 |
@@ -68,7 +68,7 @@ Legenda conferida célula a célula: O1 não tem efeito colateral além da pági
 
 - Técnica escalada: A1 é `padrão`, mas R4/R5 usam **tabela de decisão completa** (não colapsada) — a regra tem cinco condições (contexto, chave da instalação, chave da organização, escolha, cor da organização) e o colapso esconderia justamente o `E`→`OU` entre as duas chaves.
 - RQ-11 — sem cenário, justificado: é restrição de entrega (sem pacote externo agora); nenhuma implementação errada plausível muda comportamento observável da aplicação. Conferência pelo quality gate no diff de `composer.json`/`composer.lock` (nenhuma dependência nova).
-- Nenhuma `RQ` aberta no `00`; nenhum recorte bloqueado. As perguntas desta derivação foram fechadas pela sessão: gravar com a chave desligada → Q5/P-15; booleano forjado → fato do vendor (Toggle); aviso nos três painéis → Q6/P-16; rótulos → decisão de desenho; cor pela lista do kit → `02` corrigido.
+- Nenhuma `RQ` aberta no `00`; nenhum recorte bloqueado. As perguntas desta derivação viraram premissa vigente ou fato: gravar com a chave desligada → Q5 (aberta ao solicitante, premissa P-15 vigente); booleano forjado → fato do vendor (Toggle); aviso nos três painéis → Q6 (aberta, premissa P-16 vigente); rótulos → decisão de desenho; cor pela lista do kit → `02` corrigido.
 
 ## Costuras de Teste
 
@@ -100,7 +100,7 @@ Legenda conferida célula a célula: O1 não tem efeito colateral além da pági
 | fonte de fábrica = Normal (CT-21) | **não** recusado: vem do `00` — P-08 chama Normal de "o padrão do Filament, nada muda" e o roadmap diz que a fonte "não existe" hoje | cenário com o valor literal |
 | classes do `<body>` para o modo do menu | **não** vem do plano: é o observável do vendor (`vendor/filament/filament/resources/views/components/layout/index.blade.php:$isSidebarCollapsibleOnDesktop:27`, `:$isSidebarFullyCollapsibleOnDesktop:28`) | observável do menu na camada HTTP |
 
-**Perguntas geradas pela derivação**: nenhuma aberta. As cinco da rodada anterior foram fechadas pela sessão (ver Mapa de Regras).
+**Perguntas geradas pela derivação**: nenhuma pendente no `04`. Das cinco da rodada anterior, Q5 e Q6 seguem abertas ao solicitante no `00`, com as premissas P-15 e P-16 vigentes; as outras três viraram fato ou decisão de desenho (ver Mapa de Regras) *(alterado em 2026-11-18: QA-03 do quality gate, ciclo 1)*.
 
 ## Setup Global
 
@@ -301,7 +301,7 @@ Notas: a "paleta do kit" é `CustomizadorDaInstalacao::CORES` (a mesma lista do 
         | a escolha de referência gravada   | Confortável | não vazio (ADV-19; P-05)        |
 ```
 
-Notas: CT-35 existe porque a coluna da aparência entra no `$fillable` do usuário e outra tela de escrita do mesmo usuário passa a alcançá-la. CT-08 segue P-15 (Q5 do `00`): o aviso se afirma pelo **conteúdo** (texto do aviso com `avisosDoFilament()`, que fala da personalização desligada), e a ausência de "Aparência salva" pelo mesmo helper — `assertNotified()` sozinho passaria com a notificação de sucesso (ADV-21). A religação da chave depois da recusa é o CT-39 (R7), separado para o `Então` não carregar um segundo evento (ADV-24). **Estouro de teto justificado** (R3 com 4 cenários no perfil `padrão`): o gate vence o teto — M14 só morre em CT-35, e M16/M70/M82/M84 só em CT-08.
+Notas: CT-35 existe porque a coluna da aparência é escrita pelo cliente e outra tela de escrita do mesmo usuário (os dados pessoais) poderia alcançá-la se ela entrasse no `$fillable` — e ela fica fora dele *(alterado em 2026-11-18: QA-03 do quality gate, ciclo 1)*. CT-08 segue P-15 (Q5 do `00`): o aviso se afirma pelo **conteúdo** (texto do aviso com `avisosDoFilament()`, que fala da personalização desligada), e a ausência de "Aparência salva" pelo mesmo helper — `assertNotified()` sozinho passaria com a notificação de sucesso (ADV-21). A religação da chave depois da recusa é o CT-39 (R7), separado para o `Então` não carregar um segundo evento (ADV-24). **Estouro de teto justificado** (R3 com 4 cenários no perfil `padrão`): o gate vence o teto — M14 só morre em CT-35, e M16/M70/M82/M84 só em CT-08.
 
 #### Mutantes previstos
 
@@ -383,13 +383,7 @@ Notas: CT-09 grava pela seção do `/app` (transição real) e lê nos três pai
 | M71 | cor pessoal registrada em `FilamentColor` e nunca desfeita (o registro de um request vale para o seguinte) | CT-10 | cor Red para a Ana; esperado `#0ea5e9` |
 | M72 | layout das telas de cadastro/recuperação (Auth Designer) sem o render hook da instalação | CT-11 (linhas cadastro, recuperação) | densidade Confortável / sem declaração; esperado Compacto |
 | M73 | escolha gravada com o painel como chave (preferência por painel) | CT-09 (linhas ligada /admin, /infra) | densidade Compacto no /admin; esperado Denso |
-| M74 | aparência efetiva guardada em cache por usuário sem invalidar ao salvar (ADV-06) | CT-42 | nulo forjado numa chave grava desligado, sem erro 500 | R10 | EP | G3 | componente Livewire/Filament | `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` | — (regressão do RD-02) |
-| CT-43 | a gravação e a recusa ficam no log só com os valores do vocabulário | R3 | EP | G1 | componente Livewire/Filament | `tests/Kit/PreferenciasDeAparenciaTest.php` | — (BP-23/BP-33) |
-| CT-44 | os quatro campos de aparência moram na seção "Aparência dos painéis", sem "Padrão" selecionável | R8 | EP | G3 | componente Livewire/Filament | `tests/Kit/ConfiguracoesDeAparenciaTest.php` | — (BP-35) |
-| CT-45 | a largura do menu acompanha a densidade da pessoa nos três painéis | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | — (BP-36) |
-| CT-46 | o "Padrão" de cada campo diz qual é o padrão vigente da aplicação | R1 | EP | G1 | componente Livewire/Filament | `tests/Kit/PreferenciasDeAparenciaTest.php` | — (BP-19) |
-| CT-41 | a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | M86 |
-| CT-37 | a página seguinte mostra Denso/Red; esperado Confortável/Amber |
+| M74 | aparência efetiva guardada em cache por usuário sem invalidar ao salvar (ADV-06) | CT-37 | a página seguinte mostra Denso/Red; esperado Confortável/Amber |
 
 ---
 
@@ -1026,6 +1020,12 @@ Rodada 2 — `fw-adversario-ct`, mesma entrada. **Última pelo teto de 2 rodadas
 | CT-20 | o gravado nas Configurações governa a página | R8 | EP | G3 | componente Livewire/Filament | `tests/Kit/ConfiguracoesDeAparenciaTest.php` | M39, M40 |
 | CT-21 | valores de fábrica | R8 | valor literal | G7 | Pest feature HTTP | `tests/Kit/ConfiguracoesDeAparenciaTest.php` | M41, M42, M43 |
 | CT-40 | mudança de padrão pela administradora chega a quem já navegava | R8 | sequência (ler → outro ator muda → ler) | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | M83 |
+| CT-41 | a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | M86 |
+| CT-42 | nulo forjado numa chave grava desligado, sem erro 500 | R10 | EP | G3 | componente Livewire/Filament | `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` | — (regressão do RD-02) |
+| CT-43 | a gravação e a recusa ficam no log só com os valores do vocabulário | R3 | EP | G1 | componente Livewire/Filament | `tests/Kit/PreferenciasDeAparenciaTest.php` | — (BP-23/BP-33) |
+| CT-44 | os quatro campos de aparência moram na seção "Aparência dos painéis", sem "Padrão" selecionável | R8 | EP | G3 | componente Livewire/Filament | `tests/Kit/ConfiguracoesDeAparenciaTest.php` | — (BP-35) |
+| CT-45 | a largura do menu acompanha a densidade da pessoa nos três painéis | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | — (BP-36) |
+| CT-46 | o "Padrão" de cada campo diz qual é o padrão vigente da aplicação | R1 | EP | G1 | componente Livewire/Filament | `tests/Kit/PreferenciasDeAparenciaTest.php` | — (BP-19) |
 | CT-22 | interruptor ligado no cadastro libera | R9 | EP | G3 | componente Livewire/Filament | `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` | M44, M45 |
 | CT-23 | chave da organização nasce desligada | R9 | EP | G3 | componente Livewire/Filament | `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` | M46 |
 | CT-24 | interruptor só com a chave da instalação ligada | R9 | tabela de decisão | G3 | componente Livewire/Filament | `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` | M45, M47 |

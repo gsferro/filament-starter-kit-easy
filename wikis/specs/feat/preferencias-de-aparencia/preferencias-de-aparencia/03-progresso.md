@@ -15,7 +15,7 @@
 - [x] `AparenciaDoUsuario` — `app/Support/AparenciaDoUsuario.php`; CT-09..CT-18, CT-37..CT-41 verdes; guarda da pré-visualização (P-17) no step 9, 2026-11-18
 
 ## 4. Os quatro consumidores
-- [x] render hook (densidade + fonte), largura do menu, modo do menu e cor nos três painéis — `KitServiceProvider::configureDensidadeDoLayout()`, os três providers; `DensidadeDoLayoutTest` 100% verde, CT-B01/CT-B02 verdes, Playwright 17/17 (sem tenancy) e 22/23 (com tenancy, o aviso de sucesso expirou no servidor lento), 2026-11-18
+- [x] render hook (densidade + fonte), largura do menu, modo do menu e cor nos três painéis — `KitServiceProvider::configureDensidadeDoLayout()`, os três providers; `DensidadeDoLayoutTest` 100% verde, CT-B01/CT-B02 verdes, e o roteiro Playwright versionado em `wikis/specs/feat/preferencias-de-aparencia/preferencias-de-aparencia/roteiro-playwright/` (`prepara.sh` + `manual.cjs`, da raiz: `node …/manual.cjs http://127.0.0.1:8091 0 saida`), 2026-11-18
 
 ## 5. A tela de configurações
 - [x] seção "Aparência dos painéis" e coerção ao abrir e ao salvar — CT-20, CT-25, CT-26, CT-42 verdes; a coerção no save veio do vermelho do CT-25 (M49), 2026-11-18
@@ -30,18 +30,18 @@
 - [x] `wikis/candidatas-a-pacote.md` e links — roadmap item 1, `wikis/README.md`, `KitUpdate::CAMINHOS_DO_KIT`; CT-32..CT-34 verdes, 2026-11-18
 
 ## Testes
-- [x] `tests/Kit/PreferenciasDeAparenciaTest.php` (CT-01..CT-08, CT-31, CT-35) — 33/33, 2026-11-18
-- [x] `tests/Kit/AparenciaEfetivaTest.php` (CT-09..CT-11, CT-15..CT-17, CT-29, CT-37..CT-41) — 38/38, 2026-11-18
-- [x] `tests/Kit/ConfiguracoesDeAparenciaTest.php` (CT-20, CT-21, CT-25, CT-27) — 10/10 depois da coerção no save, 2026-11-18
-- [x] `tests/Kit/CandidatasAPacoteTest.php` (CT-32..CT-34) — 3/3, 2026-11-18
-- [x] `tests/Tenancy/AparenciaEfetivaTenancyTest.php` (CT-12..CT-14, CT-18) — 14/14 depois de as linhas D5/D6 virarem `@obsoleto` (P-13), 2026-11-18
-- [x] `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` (CT-19, CT-22..CT-24, CT-26, CT-28, CT-42) — 16/16, 2026-11-18
-- [x] `tests/Tenancy/PreferenciasDeAparenciaTenancyTest.php` (CT-30) — 4/4, 2026-11-18
-- [x] `tests/Browser/PreferenciasDeAparenciaTest.php` (CT-B01, CT-B02) — 5/5 em série, 54 asserções; depois do BP-37, 7/7 (89 asserções); suíte Browser inteira em série: 261 testes, 209 passaram, 52 pulados, 0 falhas, 2026-11-18
+- [x] `tests/Kit/PreferenciasDeAparenciaTest.php` (CT-01..CT-08, CT-31, CT-35, CT-43, CT-46) — `vendor/bin/pest tests/Kit/PreferenciasDeAparenciaTest.php --no-tia`: 35/35, 240 asserções, 2026-11-18
+- [x] `tests/Kit/AparenciaEfetivaTest.php` (CT-09..CT-11, CT-15..CT-17, CT-29, CT-37..CT-41, CT-45) — `--no-tia`: 41/41, 235 asserções, 2026-11-18
+- [x] `tests/Kit/ConfiguracoesDeAparenciaTest.php` (CT-20, CT-21, CT-25, CT-27, CT-44) — `--no-tia`: 11/11, 46 asserções (CT-25 vermelho até a coerção no save), 2026-11-18
+- [x] `tests/Kit/CandidatasAPacoteTest.php` (CT-32..CT-34) — `--no-tia`: 3/3, 42 asserções, 2026-11-18
+- [x] `tests/Tenancy/AparenciaEfetivaTenancyTest.php` (CT-12..CT-14, CT-18) — `--no-tia`: 14/14, 99 asserções (linhas D5/D6 do CT-12 `@obsoleto`, P-13), 2026-11-18
+- [x] `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` (CT-19, CT-22..CT-24, CT-26, CT-28, CT-42) — `--no-tia`: 16/16, 120 asserções, 2026-11-18
+- [x] `tests/Tenancy/PreferenciasDeAparenciaTenancyTest.php` (CT-30) — `--no-tia`: 4/4, 28 asserções, 2026-11-18
+- [x] `tests/Browser/PreferenciasDeAparenciaTest.php` (CT-B01, CT-B02) — em série, `--no-tia`: 7/7, 89 asserções (CT-B01 com 4 linhas depois do BP-37); suíte Browser inteira em série: 261 testes, 209 passaram, 52 pulados, 0 falhas, 2026-11-18
 - [x] Ajustes em testes existentes — âncora de `tests/Kit/KitInfoTest.php` (73 → 76); citações deslocadas em `tests/Kit/{ChecklistDeRelease,CitacoesDeCodigo,DeployDockerLocal,DiagramasDaArquitetura,KitArte,LinkDoPainelSemTenancy}Test.php` e `tests/Tenancy/LinkDoPainelDaOrganizacaoTest.php`; `phpunit.xml` fixa as três chaves novas (CX-01), 2026-11-18
 
 ## Tickets
-Não fatiado — 2026-11-18: 14 RQ vigentes (< 18), 41 CT (< 60), compactação: sim (a sessão vinha compactada da feature anterior), 4 perguntas de requisito — só o sinal de compactação; não fatiado porque a feature cabe numa sessão e a implementação já estava em curso
+Não fatiado — 2026-11-18: 14 RQ vigentes (< 18), 45 CT no `04` final (< 60; eram 39 no step 8), compactação: sim (a sessão vinha compactada da feature anterior), 4 perguntas de requisito — só o sinal de compactação; não fatiado porque a feature cabe numa sessão e a implementação já estava em curso
 
 ## Verificação Final
 - [ ] `/ponytail:ponytail-review` no diff
@@ -51,7 +51,7 @@ Não fatiado — 2026-11-18: 14 RQ vigentes (< 18), 41 CT (< 60), compactação:
 - [x] testes da feature (Kit e Tenancy) — ver `## Testes`, 2026-11-18
 - [x] `vendor/bin/pest --parallel --tia` contra a baseline — `pest --tia --parallel --processes=3 --exclude-testsuite=Browser`: rodada 1 (antes do step 9) 6058 testes, 4 falhas (citação deslocada e contagens do README, corrigidas); rodada 2 6182 testes, 6177 passaram, 3 pulados, 2 falhas de corrida (a rodada começou no meio da edição do CT-46 e dos testes novos: badge 2.668 → 2.672 e o placeholder antigo), depois `SiteDeDocumentacaoTest` + `PreferenciasDeAparenciaTest` 103/103; baseline em `main` (v0.53.2) sem falhas, 2026-11-18
 - [x] `/code-review high main...HEAD` + passe de eixos (step 9), antes da reconciliação — 10 achados do `/code-review`, 2 do `fw-revisor-diff`, 1 do `codex`; destino de cada um em `## Revisão do Diff (step 9)`, 2026-11-18
-- [x] Playwright nos três painéis, sem e com tenancy — roteiro da sessão (banco SQLite próprio): sem tenancy 17/17; com tenancy 22/23 (Acme liberada com a cor da pessoa, Globex não liberada com a cor dela, interruptor no cadastro, chave desligada e religada sem perder a escolha; o único vermelho foi o aviso "Aparência salva" já expirado no servidor lento, visto no roteiro sem tenancy), 2026-11-18
+- [x] Playwright nos três painéis, sem e com tenancy — roteiro versionado em `wikis/specs/feat/preferencias-de-aparencia/preferencias-de-aparencia/roteiro-playwright/` (`prepara.sh` + `manual.cjs`, da raiz: `node …/manual.cjs http://127.0.0.1:8091 0 saida`); resultado da sessão (2026-11-18, banco SQLite próprio): sem tenancy 17/17; com tenancy 22/23 — o único vermelho foi o aviso "Aparência salva", já expirado na tela quando o roteiro o procurou no servidor lento (no roteiro sem tenancy ele foi visto); o gate do ciclo 1 reproduziu os pontos principais pelo próprio script (QA-01: os números agora têm comando)
 - [x] Falsificabilidade — a fiação da feature nos 13 arquivos de `app/` já existentes revertida (`git diff --diff-filter=M main -- app` + `git apply -R`, reaplicado e conferido por `git status`), com as classes novas mantidas: Kit 59 de 81 vermelhos (PreferenciasDeAparencia + AparenciaEfetiva + ConfiguracoesDeAparencia) e Tenancy 32 de 34; os que passam sem a fiação são os de vocabulário e fábrica dos enums novos e as recusas que já eram do Filament (Toggle `boolean`). CT-41 e CT-25 também provados vermelhos isolados contra as respectivas correções, 2026-11-18
 - [x] Desvios propagados ao `01`/`02`/`04` de origem — marcas `*(alterado em 2026-11-18…)*` no `00` (P-06, P-13), no `01` (Análise, passo 5, passo 7, P-13) e no `02`; CT-12 D5/D6 `@obsoleto`, CT-41 e CT-42 acrescentados ao `04`, 2026-11-18
 - [x] `rastreabilidade.sh {wiki}` silencioso — exit 0 depois de P-17 entrar na origem da R4, 2026-11-18
@@ -103,6 +103,11 @@ Ponytail indisponível como plugin com namespace — passe manual pela skill `po
 - 2026-11-18 — **ordem**: a implementação dos passos 1 a 8 começou em paralelo com a derivação do `04` (step 7), e não depois dela. O derivador recebeu só o `00`, as rotas e a Superfície de UI do `01`, a Superfície Livewire do `02` e o glossário, com a ordem de ler `app/` só para nomes. Para conter o risco de o `04` confirmar o código em vez do requisito: o `04` é auditado por comportamento que só viria de `app/` (nomes de método, textos de log ou de tela que não estão no `01`), passa pelo `fw-adversario-ct`, e a falsificabilidade é provada revertendo o patch de `app/` (`git apply -R`) e vendo os CT ficarem vermelhos
 - 2026-11-18 — **erro de leitura do step 3**: a coerção da densidade na tela de configurações mora em `mutateFormDataBeforeFill()`, não em `mutateFormDataBeforeSave()`; corrigido no `01` (Análise e passo 5), no `02` e no comentário do código
 - 2026-11-18 — **consequências do documento novo em `wikis/`**: `wikis/candidatas-a-pacote.md` entrou em `KitUpdate::CAMINHOS_DO_KIT` (a varredura de `wikis/*.md` do `KitUpdateTest`), na contagem de documentos de referência dos dois READMEs (12 → 13) e na tabela de `wikis/README.md`
+
+## Quality Gate
+
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação (QA-01, QA-02 Major; QA-03, QA-04, QA-05 Minor; QA-06 Cosmético) · **Data**: 2026-11-18 — nenhum defeito de comportamento; QA-01: números do `03` sem comando (corrigidos pela saída real, roteiro Playwright versionado em `roteiro-playwright/`); QA-02: `01`/`02` contradiziam o código (`declaracoes()`, coerção no save, guarda da pré-visualização, texto do log, rota do perfil com tenancy; P-15..P-17 na Cobertura); QA-03: texto do `04` (P-13, `$fillable`, Q5/Q6) e CT-41..CT-46 no Índice e no Mapa (e a linha do M74, que uma inserção anterior tinha quebrado); QA-04: o "Padrão" da cor falava de organização sem tenancy — CT-31 fortalecido (vermelho), depois o sufixo condicionado a `kit.tenancy.enabled`; QA-05: Q7 ao solicitante (P-13 vigente); QA-06: contagens do `04` (45 · 16 · 86) e tipo `nova` no `01`
+- **Relatório**: `06-relatorio-qa.md` (ciclo 1)
 
 ## Revisão do Diff (step 9)
 
@@ -180,5 +185,6 @@ Blueprint derivado pelo `codex` com a skill `planning-filament` só a partir de 
 | 12 | 10 | `codex exec --yolo` (roteiro de atualização v0.54.0) | não exposto pelo host | CHANGELOG, diff, docs | `wikis/atualizacoes/v0.54.0.md` + cópia em `agentes-e-skills.md`; `RoteiroDeAtualizacaoTest` 212/212 | — | conferido: chave ligada, três migrations, como iniciar desligada |
 | 13 | 10 | `codex exec --yolo` (Filament Blueprint, skill `planning-filament`) | não exposto pelo host | só `00`, `01`, `02` + vendor | 40 requisitos BP-01..BP-40 | — | pedido do usuário ("use o blueprint para validar o filament") |
 | 14 | 10 | `reviewing-filament-plans` (sub-agente) | `opus` | Blueprint + diff | 30 atendidos, 9 divergentes, 1 não verificável | 165k tokens · 10 min | BP-37 e BP-19 reproduzidos pela leitura do teste e do placeholder; destino de cada um na seção acima |
+| 15 | 11 | `fw-qa-gate` — ciclo 1 | claude-opus-5-5 (informado no `06`) | conversa | `06` gravado verbatim; REPROVADO → especificação (2 Major de documentação) | 279k tokens · 38 min | `git status --porcelain` vazio antes e depois; bancos descartáveis 8091/8092 alterados e devolvidos ao estado inicial |
 
 ## Candidatos a Rule

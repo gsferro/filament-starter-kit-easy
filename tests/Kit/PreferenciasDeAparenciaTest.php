@@ -270,6 +270,17 @@ it('[CT-31] sem organizações, a seção não mostra o aviso em nenhum painel',
         ->toContain('Menu lateral ao recolher');
 
     expect(preg_match('/organiza[çc][ãa]o\s+liber/iu', $texto))->toBe(0);
+
+    // Nenhuma menção a organização em lugar nenhum da seção — nem no "Padrão" dos campos (QA-04 do gate).
+    $secao  = abrirSecaoDeAparencia($painel);
+    $textos = collect(['densidade', 'fonte', 'cor', 'menu'])
+        ->map(fn (string $campo): string => (string) $secao->instance()->form->getComponent(
+            fn ($c): bool => $c instanceof Select && $c->getName() === $campo,
+        )?->getPlaceholder())
+        ->push(preg_replace('/\s+/', ' ', strip_tags($secao->html())))
+        ->implode(' | ');
+
+    expect(preg_match('/organiza/iu', $textos))->toBe(0, $textos);
 })->with(['admin', 'app', 'infra']);
 
 it('[CT-43] a gravação e a recusa ficam no log só com os valores do vocabulário', function (): void {

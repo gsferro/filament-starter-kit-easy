@@ -80,6 +80,7 @@
 | Q3 | O administrador pode desligar a escolha pessoal? | RQ-07, RQ-08 | sim, uma chave | respondida no Texto Original (2026-11-18) |
 | Q4 | Pacote externo agora ou dentro do kit? | RQ-11..RQ-14 | dentro do kit | respondida no Texto Original (2026-11-18) |
 | Q5 | A chave da instalação é desligada depois que a pessoa abriu o Meu perfil, e ela ainda envia a seção Aparência: o sistema recusa (nada gravado, com aviso) ou grava e só ignora? | P-06, RQ-07 | recusar sem gravar, com aviso (falha fechada) | aberta — premissa P-15 vigente até a resposta (step 7, Q?1 da `feature-test-design`) |
+| Q7 | Com organizações ligadas, nos painéis sem organização (`/admin` e `/infra`), a escolha pessoal segue só a chave da instalação — mesmo para quem pertence só a organizações que não liberaram — ou também deve exigir alguma organização liberada? | RQ-09, P-13 | só a chave da instalação: fora de uma organização não há organização a consultar, e exigir "alguma" liberada tornaria a regra dependente da lista de organizações da pessoa | aberta — premissa P-13 vigente até a resposta (step 11, QA-05 do quality gate) |
 | Q6 | Com organizações ligadas, o aviso "numa organização que não liberou, vale o padrão dela" aparece só no Meu perfil do `/app` ou também no `/admin` e no `/infra`? | P-06 | nos três painéis, porque a escolha é uma só (P-01) | aberta — premissa P-16 vigente até a resposta (step 7, Q?3) |
 
 ## Premissas

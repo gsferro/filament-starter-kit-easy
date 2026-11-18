@@ -4,7 +4,7 @@
 
 ## Natureza da Wiki
 
-- **Tipo**: feature
+- **Tipo**: nova *(alterado em 2026-11-18: QA-06 do quality gate, ciclo 1)*
 - **Wiki ancestral**: `wikis/specs/feat/layout-compact/` (a densidade por instalação, que esta feature passa a ler por pessoa) e `wikis/specs/feat/paleta-do-filament-na-organizacao/` (a regra da cor)
 - **Motivo**: a aparência é decisão de quem administra e vale para todo mundo; a feature deixa cada pessoa escolher, sob duas chaves
 - **Toca infra compartilhada?**: sim — o render hook da densidade e a largura do menu dos três painéis passam a ler um decisor novo; o resultado só muda para quem escolheu algo
@@ -41,6 +41,9 @@
 | P-12 | Valor ilegível cai no padrão | 2, 3, 5, 6 | — |
 | P-13 | Tela sem organização corrente: só a chave da instalação | 3 | — |
 | P-14 | Documento em `wikis/` | 8 | — |
+| P-15 | Chave desligada depois de a tela abrir: salvar é recusado com aviso | 6 | *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1)* |
+| P-16 | Aviso sobre organizações nos três painéis | 6 | — |
+| P-17 | Pré-visualização das telas de acesso no padrão | 3 | step 9, CR-01 |
 
 ## Objetivo
 
@@ -99,7 +102,7 @@ Nenhuma rota nova.
 
 | Tela / Componente | Tipo | Rota | Interação do usuário | Depende de JS? |
 |---|---|---|---|---|
-| Meu perfil — seção "Aparência" | Livewire (componente do Breezy) | `/admin/meu-perfil`, `/app/meu-perfil`, `/infra/meu-perfil` | escolhe densidade, fonte, cor e menu (cada um com "Padrão") e salva | Não |
+| Meu perfil — seção "Aparência" | Livewire (componente do Breezy) | `/admin/meu-perfil`, `/infra/meu-perfil` e `/app/meu-perfil` (com tenancy, `/app/{organização}/meu-perfil`) *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1)* | escolhe densidade, fonte, cor e menu (cada um com "Padrão") e salva | Não |
 | Configurações da aplicação — aba Aplicação, seção "Aparência dos painéis" | Filament (página de settings) | `/admin/configuracoes-da-aplicacao?tab=aplicacao` | liga/desliga a personalização e escolhe densidade, fonte e menu padrão | Não |
 | Organização — cadastro e edição | Filament (Resource) | `/admin/organizacoes/create`, `/admin/organizacoes/{record}/edit` | liga/desliga "Liberar a aparência pessoal" (só com a chave da instalação ligada) | Não |
 | Painéis — layout | render hook + sidebar | toda tela autenticada dos três painéis | vê a densidade, fonte, cor e menu efetivos | Sim (o recolher do menu é Alpine do Filament) |
@@ -172,7 +175,7 @@ Canal padrão (`Log::info`/`Log::warning`), sem canal novo (D7).
 > Skills: `laravel-best-practices`
 
 - **Path**: `app/Support/TamanhoDaFonte.php`, `app/Support/ModoDoMenu.php`, `app/Settings/ConfiguracoesDoKit.php`, `config/kit.php`, `database/settings/2026_11_18_100000_add_aparencia_por_usuario_to_kit_settings.php`, `.env.example`
-- `TamanhoDaFonte` (`pequena`, `normal`, `grande`, `muito-grande`; P-08) com `variaveis(): ?array` (as `--text-*` escaladas; `null` no normal) e `ModoDoMenu` (`icones`, `oculto`; P-09), ambos com `opcoes()`, `coagir()` e `padrao()` (D4, P-12)
+- `TamanhoDaFonte` (`pequena`, `normal`, `grande`, `muito-grande`; P-08) com `declaracoes(): ?string` (as `--text-*` escaladas, já numa declaração; `null` no normal) *(alterado em 2026-11-18: QA-02, BP-03 do quality gate, ciclo 1)* e `ModoDoMenu` (`icones`, `oculto`; P-09), ambos com `opcoes()`, `coagir()` e `padrao()` (D4, P-12)
 - Settings: `aparencia_por_usuario` (bool), `tamanho_da_fonte`, `modo_do_menu`, cada um nos três lugares (propriedade, `mapaDeConfiguracao()`, migration de settings — `.ai/rules/settings.md`)
 - **Atende**: RQ-02, RQ-04, RQ-06, RQ-07, P-03, P-08, P-09, P-12
 - **Logs**: nenhum
@@ -182,7 +185,7 @@ Canal padrão (`Log::info`/`Log::warning`), sem canal novo (D7).
 > Skills: `laravel-best-practices`, `ponytail`
 
 - **Path**: `app/Support/AparenciaDoUsuario.php`
-- `liberada(): bool` — chave da instalação ligada, pessoa logada e, se houver organização corrente no `/app`, a chave dela ligada (RQ-07, RQ-09, P-10, P-13)
+- `liberada(): bool` — chave da instalação ligada, pessoa logada, a tela não é a pré-visualização das telas de acesso (P-17) e, se houver organização corrente no `/app`, a chave dela ligada (RQ-07, RQ-09, P-10, P-13) *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1)*
 - `densidade()`, `tamanhoDaFonte()`, `modoDoMenu()` — a escolha da pessoa (coagida) quando `liberada()` e preenchida; senão a da instalação (RQ-05, P-02, P-05, P-12)
 - `paletaDaPessoa(): array` — `CorPrimaria::resolver(null, $nome)` quando liberada e preenchida; senão `[]` (P-02, P-07)
 - **Atende**: RQ-01..RQ-05, RQ-07..RQ-09, P-01, P-02, P-05, P-10, P-12, P-13
@@ -206,7 +209,7 @@ Canal padrão (`Log::info`/`Log::warning`), sem canal novo (D7).
 
 - **Path**: `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`
 - Seção `secao('aplicacao', 'aparencia', 'Aparência dos painéis', …)` com: `Toggle aparencia_por_usuario`, `Select densidade_do_layout` (movido, D6), `Select tamanho_da_fonte`, `Select modo_do_menu` — `->options(Enum::opcoes())`, sem placeholder
-- `mutateFormDataBeforeFill()` coage fonte e menu como coage a densidade (P-12); na gravação, o `in()` que o `Select` acrescenta recusa o que não é opção *(alterado em 2026-11-18: era `mutateFormDataBeforeSave()`)*
+- `mutateFormDataBeforeFill()` coage fonte e menu como coage a densidade (P-12); `mutateFormDataBeforeSave()` coage densidade, fonte e menu de novo, porque o `in()` do `Select` aceita uma lista forjada (`["grande"]`), que chegaria nula ao `fill()` do spatie (CT-25) *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1)* *(alterado em 2026-11-18: era `mutateFormDataBeforeSave()`)*
 - **Atende**: RQ-06, RQ-07, P-12
 - **Logs**: nenhum (a gravação do settings já é auditada pela tela)
 
@@ -222,7 +225,7 @@ Canal padrão (`Log::info`/`Log::warning`), sem canal novo (D7).
 - **Atende**: RQ-01..RQ-04, RQ-07, RQ-10, P-05, P-06, P-07, P-12
 - **Logs**:
   - `Log::info("[PreferenciasDeAparencia@salvar] Aparência pessoal salva | user: {$user->getKey()}", ['user_id' => …, 'aparencia' => $valoresCoagidos])` — só os valores coagidos (vocabulário fechado), nunca o bruto do cliente (`.ai/rules/livewire.md`)
-  - `Log::warning("[PreferenciasDeAparencia@salvar] Gravação recusada: personalização desligada | user: {$user->getKey()}", ['user_id' => …])`
+  - `Log::warning("[PreferenciasDeAparencia@salvar] Gravação recusada: aparência pessoal desligada | user: {$user->getKey()}" *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1)*, ['user_id' => …])`
 
 ### 7. A chave da organização
 
