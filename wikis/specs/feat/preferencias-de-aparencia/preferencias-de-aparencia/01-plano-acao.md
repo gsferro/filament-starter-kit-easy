@@ -53,23 +53,23 @@ desligada, só ignorado.
 
 As quatro superfícies já são governáveis por request:
 
-- **densidade**: render hook `STYLES_BEFORE` em `app/Providers/KitServiceProvider.php:configureDensidadeDoLayout:731`, que lê `App\Support\DensidadeDoLayout::deConfig()`; a largura do menu sai do mesmo nível por `->sidebarWidth(fn …)` em `app/Providers/Filament/AdminPanelProvider.php:sidebarWidth:129`, `app/Providers/Filament/AppPanelProvider.php:sidebarWidth:142` e `app/Providers/Filament/InfraPanelProvider.php:sidebarWidth:151`
+- **densidade**: render hook `STYLES_BEFORE` em `app/Providers/KitServiceProvider.php:configureDensidadeDoLayout:742`, que lê `App\Support\DensidadeDoLayout::deConfig()`; a largura do menu sai do mesmo nível por `->sidebarWidth(fn …)` em `app/Providers/Filament/AdminPanelProvider.php:sidebarWidth:139`, `app/Providers/Filament/AppPanelProvider.php:sidebarWidth:151` e `app/Providers/Filament/InfraPanelProvider.php:sidebarWidth:161`
 - **fonte**: não existe; o CSS do Filament usa `font-size:var(--text-sm)` (125 vezes), `--text-base`, `--text-xs` e outros, declarados uma vez em `@layer theme` — a mesma técnica da densidade (redeclarar fora de layer) alcança tudo
-- **cor**: a da instalação vem de `->colors(fn …)`; a da organização é registrada no `bootUsing` do `/app` por `FilamentColor::register()` (`app/Providers/Filament/AppPanelProvider.php:FilamentColor::register:196`), avaliada no render do `<head>` e registrada depois, por isso vence
-- **menu**: `->sidebarCollapsibleOnDesktop()` fixo nos três painéis (`app/Providers/Filament/AdminPanelProvider.php:sidebarCollapsibleOnDesktop:116`, `app/Providers/Filament/AppPanelProvider.php:sidebarCollapsibleOnDesktop:129`, `app/Providers/Filament/InfraPanelProvider.php:sidebarCollapsibleOnDesktop:138`). `vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:isSidebarFullyCollapsibleOnDesktop:83` e o irmão fazem `evaluate()` e são lidos no render do layout (`vendor/filament/filament/resources/views/components/layout/index.blade.php:isSidebarFullyCollapsibleOnDesktop:12`), então aceitam Closure por request
+- **cor**: a da instalação vem de `->colors(fn …)`; a da organização é registrada no `bootUsing` do `/app` por `FilamentColor::register()` (`app/Providers/Filament/AppPanelProvider.php:register:205`), avaliada no render do `<head>` e registrada depois, por isso vence
+- **menu**: `->sidebarCollapsibleOnDesktop()` fixo nos três painéis (`app/Providers/Filament/AdminPanelProvider.php:sidebarCollapsibleOnDesktop:125`, `app/Providers/Filament/AppPanelProvider.php:sidebarCollapsibleOnDesktop:137`, `app/Providers/Filament/InfraPanelProvider.php:sidebarCollapsibleOnDesktop:147`). `vendor/filament/filament/src/Panel/Concerns/HasSidebar.php:isSidebarFullyCollapsibleOnDesktop:83` e o irmão fazem `evaluate()` e são lidos no render do layout (`vendor/filament/filament/resources/views/components/layout/index.blade.php:isSidebarFullyCollapsibleOnDesktop:12`), então aceitam Closure por request
 
 ## Análise dos Arquivos Existentes
 
 ### `app/Models/User.php` e `app/Models/Tenant.php`
 - `User` já guarda preferência pessoal fora do `$fillable` (o dock: `dock_atalhos`, `dock_layout`, escritos por `forceFill`, escondidos em `app/Models/User.php:$hidden:97`)
-- `Tenant` tem o precedente do interruptor por organização (`app/Models/Tenant.php:registro_habilitado:87`, cast em `:135`), com default `false` na migration
+- `Tenant` tem o precedente do interruptor por organização (`app/Models/Tenant.php:registro_habilitado:104`, cast em `:135`), com default `false` na migration
 
 ### `app/Settings/ConfiguracoesDoKit.php` e a tela
-- `densidade_do_layout` em `app/Settings/ConfiguracoesDoKit.php:$densidade_do_layout:227`, mapeada em `mapaDeConfiguracao()` (`:483`); campo na aba Aplicação (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaAplicacao:1012`), coagido ao abrir a tela em `mutateFormDataBeforeFill()` (`:195`) *(alterado em 2026-11-18: era `mutateFormDataBeforeSave()`, erro de leitura do step 3)*
-- Toda seção nasce pelo helper `secao()` (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:secao:312`; `.ai/rules/pages.md`)
+- `densidade_do_layout` em `app/Settings/ConfiguracoesDoKit.php:$densidade_do_layout:227`, mapeada em `mapaDeConfiguracao()` (`:483`); campo na aba Aplicação (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaAplicacao:1028`), coagido ao abrir a tela em `mutateFormDataBeforeFill()` (`:195`) *(alterado em 2026-11-18: era `mutateFormDataBeforeSave()`, erro de leitura do step 3)*
+- Toda seção nasce pelo helper `secao()` (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:secao:328`; `.ai/rules/pages.md`)
 
 ### Meu perfil
-- A tela é a do Breezy com a classe do kit; componentes extras entram por `->myProfileComponents([...])` (`app/Providers/Filament/AdminPanelProvider.php:myProfileComponents:244`, `app/Providers/Filament/AppPanelProvider.php:myProfileComponents:356`, `app/Providers/Filament/InfraPanelProvider.php:myProfileComponents:273`) e são filtrados por `canView()` estático (`vendor/jeffgreco13/filament-breezy/src/Concerns/Plugin/HasMyProfile.php:getRegisteredMyProfileComponents:96`)
+- A tela é a do Breezy com a classe do kit; componentes extras entram por `->myProfileComponents([...])` (`app/Providers/Filament/AdminPanelProvider.php:myProfileComponents:262`, `app/Providers/Filament/AppPanelProvider.php:myProfileComponents:373`, `app/Providers/Filament/InfraPanelProvider.php:myProfileComponents:291`) e são filtrados por `canView()` estático (`vendor/jeffgreco13/filament-breezy/src/Concerns/Plugin/HasMyProfile.php:getRegisteredMyProfileComponents:96`)
 - Precedente no kit: `app/Livewire/DefinirSenhaPorEmail.php` estende `MyProfileComponent`
 - `/app/meu-perfil` não tem organização no endereço **só sem tenancy**; com `KIT_TENANCY=true` a rota é `/app/{tenant}/meu-perfil` *(alterado em 2026-11-18: o `route:list` do step 3 foi rodado sem tenancy — CT-12)*
 

@@ -52,13 +52,13 @@ Legenda conferida célula a célula: O1 não tem efeito colateral além da pági
 | R1 — A pessoa grava qualquer valor do vocabulário de cada preferência, ou "Padrão", uma preferência independente da outra | A2 (padrão) | RQ-01, RQ-02, RQ-03, RQ-04, RQ-10, P-07, P-08, P-09 | EP (partição válida por caso do enum) | CT-01, CT-02, CT-03 |
 | R2 — Valor fora do vocabulário ou de tipo errado, enviado pela seção, não é gravado | A2 (padrão) | P-12, P-07, `## Superfície Livewire` (`$data`) | EP (inválidas isoladas) | CT-04, CT-05 |
 | R3 — A gravação atinge só a própria pessoa, só as quatro preferências, e é recusada com a chave desligada | A2 (padrão) | RQ-01..RQ-04 ("guardada no perfil dela"), P-01, P-15, `## Superfície Livewire` (`salvar()`, `_startUpload`) | matriz papel × ação; EP; estado × operação | CT-06, CT-35, CT-07, CT-08 |
-| R4 — Fora de organização, a escolha vale com a chave da instalação ligada; desligada ou sem escolha, vale o padrão da instalação | A1 (padrão) | RQ-05, RQ-07, RQ-10, P-01, P-02, P-10, P-13 | tabela de decisão; sequência de requests | CT-09, CT-10, CT-11, CT-37 |
+| R4 — Fora de organização, a escolha vale com a chave da instalação ligada; desligada ou sem escolha, vale o padrão da instalação | A1 (padrão) | RQ-05, RQ-07, RQ-10, P-01, P-02, P-10, P-13, P-17 | tabela de decisão; sequência de requests | CT-09, CT-10, CT-11, CT-37, CT-41 |
 | R5 — Dentro de organização, a escolha só vale com as duas chaves; senão, a cor da organização e, depois, o padrão da instalação — para qualquer papel | A1 (padrão) | RQ-08, RQ-09, P-02, P-04, P-10, P-13, P-01 | tabela de decisão | CT-12, CT-13, CT-14 |
 | R6 — Valor gravado fora do vocabulário cai no padrão na leitura, sem erro e sem derrubar as preferências válidas | A1 (padrão) | P-12, `## Superfície Livewire` (`users.aparencia` lido no render) | EP (inválidas isoladas) | CT-15, CT-16, CT-38 |
 | R7 — Desligar uma chave não apaga a escolha; religada, ela volta a valer | A1 (padrão) | P-05, P-11 | 2-switch | CT-17, CT-18, CT-19, CT-39 |
 | R8 — A instalação define o padrão das quatro preferências e a chave, e o gravado governa a página | A3 (padrão) | RQ-06, RQ-07, P-03, P-08, P-09 | EP; valor de fábrica literal; sequência (outro ator) | CT-20, CT-21, CT-40 |
 | R9 — A organização libera pelo interruptor no cadastro do `/admin`, que nasce desligado e só aparece com a chave da instalação ligada | A4 (padrão) | RQ-08, P-04, P-11 | EP; tabela de decisão (visibilidade) | CT-22, CT-23, CT-24 |
-| R10 — Os formulários de administração recusam valor fora do domínio e mantêm o anterior | A3, A4 (padrão) | `## Superfície Livewire` (`ConfiguracoesDoKit`, `TenantForm`), P-12 | EP (inválidas isoladas) | CT-25, CT-26 |
+| R10 — Os formulários de administração recusam valor fora do domínio e mantêm o anterior | A3, A4 (padrão) | `## Superfície Livewire` (`ConfiguracoesDoKit`, `TenantForm`), P-12, P-04 | EP (inválidas isoladas) | CT-25, CT-26, CT-42 |
 | R11 — Só quem administra a instalação liga a chave, define os padrões e libera organizações | A3, A4 (padrão) | RQ-07, RQ-08, P-11 | matriz papel × ação (por fora do componente) | CT-27, CT-28 |
 | R12 — A seção Aparência aparece no Meu perfil dos três painéis só com a chave da instalação ligada, com o aviso sobre organizações quando elas existem | A2 (padrão) | P-06, P-13, P-16 | EP; tabela de decisão | CT-29, CT-30, CT-31 |
 | R13 — O efeito no layout: "Esconder tudo" some com o menu inteiro ao recolher; os tamanhos de fonte escalam pelos percentuais | A5 (padrão) | RQ-02, RQ-04, P-08, P-09 | EP; valor literal do requisito | CT-B01, CT-B02 (no `05`) |
@@ -92,7 +92,7 @@ Legenda conferida célula a célula: O1 não tem efeito colateral além da pági
 | "`salvar()` recusa com a chave desligada" | **não** recusado: agora é P-15 (Q5 do `00`) — recusa, nada gravado, aviso | CT-08 |
 | "valor fora do vocabulário cai em `null`" na gravação (coluna Fronteira do `02`) | o `00` (P-12) fala da **leitura**; na gravação ele só determina que o valor inválido não vale | CT-04/CT-05 afirmam "não gravado como veio" + página no padrão, que vale para recusar ou coagir |
 | "`mutateFormDataBeforeSave()` coage fonte e menu" | mecanismo | CT-25 afirma o invariante (gravado ∈ vocabulário, ≠ valor enviado) |
-| recusa do booleano forjado | **não** é do plano: fato do vendor — `vendor/filament/forms/src/Components/Toggle.php:Toggle::setUp:37` (`$this->rule('boolean')`) | CT-25 (linha chave), CT-26: erro de validação no campo, valor anterior mantido |
+| recusa do booleano forjado | **não** é do plano: fato do vendor — `vendor/filament/forms/src/Components/Toggle.php:setUp:31` (`$this->rule('boolean')`) | CT-25 (linha chave), CT-26: erro de validação no campo, valor anterior mantido |
 | "auditado por `AuditsFillables`" | o `00` não pede trilha de auditoria (Proibição 12) | sem cenário |
 | forma da declaração de CSS da fonte (render hook, `--text-*`) | mecanismo | CT-B02 mede o tamanho calculado; o HTTP só identifica **qual** tamanho foi emitido |
 | rótulos "Aparência" (seção do perfil), "Salvar aparência" (botão), "Liberar a aparência pessoal" (organização), "Aparência dos painéis" (Configurações) | **não** recusados: decisão de desenho da sessão em 2026-11-18 (antes pergunta de rótulos) | CT-24, CT-29 usam os rótulos |
@@ -383,7 +383,8 @@ Notas: CT-09 grava pela seção do `/app` (transição real) e lê nos três pai
 | M71 | cor pessoal registrada em `FilamentColor` e nunca desfeita (o registro de um request vale para o seguinte) | CT-10 | cor Red para a Ana; esperado `#0ea5e9` |
 | M72 | layout das telas de cadastro/recuperação (Auth Designer) sem o render hook da instalação | CT-11 (linhas cadastro, recuperação) | densidade Confortável / sem declaração; esperado Compacto |
 | M73 | escolha gravada com o painel como chave (preferência por painel) | CT-09 (linhas ligada /admin, /infra) | densidade Compacto no /admin; esperado Denso |
-| M74 | aparência efetiva guardada em cache por usuário sem invalidar ao salvar (ADV-06) | CT-41 | a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | M86 |
+| M74 | aparência efetiva guardada em cache por usuário sem invalidar ao salvar (ADV-06) | CT-42 | nulo forjado numa chave grava desligado, sem erro 500 | R10 | EP | G3 | componente Livewire/Filament | `tests/Tenancy/ChaveDeAparenciaDaOrganizacaoTest.php` | — (regressão do RD-02) |
+| CT-41 | a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha | R4 | EP | G2 | Pest feature HTTP | `tests/Kit/AparenciaEfetivaTest.php` | M86 |
 | CT-37 | a página seguinte mostra Denso/Red; esperado Confortável/Amber |
 
 ---
@@ -944,7 +945,7 @@ Notas: as seções vêm de `secoesDoMarkdown()`; o propósito se afirma pelos te
 | Entidade removível ou desativável | não se aplica: a escolha não tem ciclo de vida; desligar as chaves é o "desativar" e está em CT-08, CT-17, CT-18, CT-19 | G1, G2, G3 |
 | CRUD combinado | não se aplica: nenhuma entidade nova com CRUD; editar sem alterar nada = CT-19 (linha nome) | G3 |
 | Mass assignment | `users`: CT-06 (linhas email, tema), CT-35 (formulário de dados pessoais) · `tenants`: CT-19 (interruptor oculto forjado), CT-26 · `settings`: CT-25 | G1, G3 |
-| Escrita da chave da organização por outra tela (ADV-10) | não se aplica: o `/app` não tem tela de edição nem de cadastro da organização — nenhum `tenantProfile()`/`tenantRegistration()` nos providers (`app/Providers/Filament/AppPanelProvider.php:AppPanelProvider::panel:651`, comentário "Sem `->tenantRegistration()` de propósito"; `grep -n tenantProfile app/Providers/Filament/*.php` vazio). A única escrita é o cadastro em `/admin/organizacoes`, coberta por CT-22…CT-28. Escrito como se fosse falso: CT-28 (quem administra a organização tenta pela única rota e recebe 403) | — |
+| Escrita da chave da organização por outra tela (ADV-10) | não se aplica: o `/app` não tem tela de edição nem de cadastro da organização — nenhum `tenantProfile()`/`tenantRegistration()` nos providers (`app/Providers/Filament/AppPanelProvider.php:panel:81`, comentário "Sem `->tenantRegistration()` de propósito"; `grep -n tenantProfile app/Providers/Filament/*.php` vazio). A única escrita é o cadastro em `/admin/organizacoes`, coberta por CT-22…CT-28. Escrito como se fosse falso: CT-28 (quem administra a organização tenta pela única rota e recebe 403) | — |
 | Upload | CT-07 (`_startUpload` recusado) | G1 |
 | Precisão monetária | não se aplica: sem valor monetário; os percentuais de fonte são provados por razão calculada em CT-B02 | — |
 | **Superfície Livewire** (método público, prop pública, estado do framework) | `$data`: CT-04, CT-05, CT-06 · `salvar()`: CT-06, CT-08 · `_startUpload`: CT-07 · `ConfiguracoesDoKit` (três campos): CT-25 · `TenantForm`: CT-26 · `users.aparencia` lido no render: CT-15, CT-38 | G1, G2, G3 |
@@ -1038,12 +1039,29 @@ Rodada 2 — `fw-adversario-ct`, mesma entrada. **Última pelo teto de 2 rodadas
 
 Estouro de teto: R3, R4 e R7 com 4 cenários cada (justificados nas regras: M14/M16/M70/M82/M84, M74 e M85 só morrem nos cenários excedentes); as demais com no máximo 3. R1/R2/R3 dividem a superfície Livewire em três regras para respeitar o teto `padrão`. Nenhuma lacuna declarada.
 
+### CT-42 (step 9 — RD-02, regressão)
+
+> `## Superfície Livewire` (`ConfiguracoesDoKit` e `TenantForm` — `aparencia_por_usuario`), `P-04` · perfil **padrão** · técnica: **EP** (partição "nulo forjado no estado") · acrescentado pela sessão no step 9: o RD-02 previa erro 500 por leitura; a execução o refutou e o cenário fica como regressão
+
+```gherkin
+Esquema do Cenário: [CT-42] nulo forjado numa chave grava desligado, sem erro 500
+  Dado a Ana com a escolha de referência e a Acme liberada
+  Quando a administradora forja o valor nulo na chave <chave> pelo estado do formulário e salva
+  Então a gravação termina sem erro e a chave fica desligada
+  E a Ana vê densidade Compacto em <página>
+
+  Exemplos:
+    | chave                         | página    |
+    | da instalação (Configurações) | /admin    |
+    | da Acme (cadastro)            | /app/acme |
+```
+
 ### CT-41 (step 9 — CR-01, P-17)
 
 > `P-17`, `P-10` · perfil **padrão** · técnica: **EP** (partição "tela de acesso servida a quem está logado") · acrescentado pela sessão no step 9, depois das duas rodadas da revisão adversarial
 
 ```gherkin
-Cenário: a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha
+Cenário: [CT-41] a pré-visualização das telas de acesso mostra o padrão, mesmo aberta por quem tem escolha
   Dado a instalação de referência (Compacto, Grande, cor #0ea5e9) com a chave da instalação ligada
   E a administradora com a escolha de referência gravada pela seção Aparência do /admin
   E o /admin dela mostrando densidade Denso

@@ -62,7 +62,7 @@ versão anterior, e o resultado entra no registro da publicação.
 Hoje a atualização assistida depende de quem pede saber o que ler: `docs/` e o `CHANGELOG.md` não
 viajam para o projeto (`.gitattributes:CHANGELOG.md:21`, `.gitattributes:/docs:40`), e os cuidados
 finos (canal de log não entregue, primeira rodada com a classe antiga, versão marcada mesmo em
-atualização parcial — `app/Console/Commands/KitUpdate.php:marcarVersao:1140`) vivem em wikis de spec
+atualização parcial — `app/Console/Commands/KitUpdate.php:marcarVersao:1141`) vivem em wikis de spec
 que também não viajam (`.gitattributes:/wikis/specs:32`). Um agente atualizando sozinho repete erros
 que o checklist já registrou.
 

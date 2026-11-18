@@ -635,7 +635,7 @@ Sem lógica nova — só correção de afirmações que o código já contradiz 
   master global `:206`, contexto `app/Models/User.php:contexto:217` (painel com tenancy → `null`,
   sem → `contextoGlobal()`), papel do painel `:219`; `User::canAccessTenant()`
   (`app/Models/User.php:canAccessTenant:789`: inativa `:813`, `master_global` `:826`, vínculo
-  `app/Models/User.php:tenants:830`).
+  `app/Models/User.php:tenants:838`).
 
   **Guarda**: dataset com uma conta por ramo exercitando `canAccessPanel()` — indisponível,
   pendente, `master_global`, com papel, sem papel (5 linhas; cada linha muda o veredito) — e
