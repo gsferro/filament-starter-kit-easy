@@ -307,6 +307,22 @@ asserted the first message without asserting the absence of the second.
 > mutate. There the instrument is not mutation — it is the assertion that each policy checks the
 > permission of its **own** model.
 
+## Declared × used dependencies
+
+Since v0.55.0, `composer deps:check` runs two **report** tools: `composer-unused` (declared and unused
+dependency) and `composer-require-checker` (symbol used from a package `composer.json` does not
+declare). In CI, the `qualidade` job publishes the output in the job summary and **does not fail**.
+
+The 2026-11-18 triage: of the 8 packages `composer-unused` flagged, **4 are used** through a path it
+cannot see (auto-discovery, config, a daemon or a command) and are excluded in `composer-unused.php`,
+each with its reason; **4 are not used at all** (`awcodes/filament-badgeable-column`, `livewire/blaze`,
+`lara-zeus/progress`, `syriable/filament-activitylog`). `composer-require-checker` flagged 181 symbols,
+all real: packages that only arrive as transitive dependencies and the kit uses directly, and eight PHP
+extensions that are not declared.
+
+The full table, with the evidence for each package and the recommendations, is in
+[`wikis/qualidade-de-codigo.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/qualidade-de-codigo.md).
+
 ## The quality levels the kit did **not** adopt, and why
 
 Survey of 2026-09-25. Every candidate was **run against this tree** before entering the table —
@@ -324,7 +340,7 @@ one that reports 48; it is one nobody will switch on.
 | `arch()->preset()->strict()` | **163 of 222** classes are not `final` | **no** — `AgenteBase` exists to be extended |
 | `arch()->preset()->relaxed()` | forbids `private` methods; **54** files use them | **no** — contradicts the kit's style |
 | `declare(strict_types=1)` | **98 of 240** files | roadmap — not a lack of rigour but **inconsistency**, and it requires picking a side |
-| `composer-require-checker` + `composer-unused` | not installed | roadmap, high priority — they answer *"of the 58 dependencies, which are used?"* |
+| `composer-require-checker` + `composer-unused` | 8 of 62 packages and 181 symbols flagged (2026-11-18) | **adopted as a report** in v0.55.0 — see the section above |
 | Branch coverage (Xdebug) | Xdebug 3.5.3 installed | roadmap — it is the only reason Xdebug exists here |
 | `pest-plugin-type-coverage` | not installed | roadmap |
 | Deptrac | not installed | **no** — the kit has no layer boundary to defend |

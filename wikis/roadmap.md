@@ -282,7 +282,7 @@ aqui — a tabela completa, com os que entraram e os que foram recusados, está 
 | # | Item | O que a medição mostrou | Por que não entrou agora |
 |---|---|---|---|
 | 8.1 | ~~**PHPStan level 8**~~ — **FEITO** em 2026-09-26 | **48 erros**, remedido e zerado pela causa | `wikis/specs/feat/phpstan-nivel-8/`. Level 9 (**474**) e `max` (**594**) continuam precipício, não degrau |
-| 8.2 | **`composer-require-checker` + `composer-unused`** | não instalados | respondem mecanicamente a *"das 58 dependências, quais são de fato usadas?"* — pergunta que a crítica externa fez e que hoje só tem a resposta *"não sabemos"*. Melhor razão valor/esforço da lista |
+| 8.2 | ~~**`composer-require-checker` + `composer-unused`**~~ — **FEITO** em 2026-11-18, na v0.55.0 | 8 de 62 pacotes acusados (4 usados por outro caminho, 4 sem uso) e 181 símbolos de transitivos e extensões | `wikis/specs/feat/verificacao-de-dependencias/`: `composer deps:check` e relatório no CI, sem reprovar; a triagem e as recomendações estão em `wikis/qualidade-de-codigo.md` |
 | 8.3 | **`declare(strict_types=1)`** | **98 de 240** arquivos de `app/` | não é falta de rigor, é **inconsistência**: metade roda com coerção estrita e metade não, e nada no CI diz de que lado um arquivo novo nasce. Exige decidir o lado, não rodar um `sed` |
 | 8.4 | **Branch coverage** (Xdebug) | Xdebug 3.5.3 já instalado localmente | é a única razão de o Xdebug existir nesta máquina. Mais lento que o PCOV; depende de o job de cobertura já estar estabilizado |
 | 8.5 | **`pest-plugin-type-coverage`** | não instalado | dependência nova; mede outra coisa que o PHPStan level 8 já cobre em parte |

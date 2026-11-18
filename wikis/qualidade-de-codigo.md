@@ -9,6 +9,7 @@ elas é o que decide qual roda sempre e qual roda quando você chama.
 | **PHPStan** + larastan | tipos e correção | reporta | sempre (gate), **level 8** |
 | **FilaCheck** | API do Filament | reporta | sempre (gate) |
 | **Rector** | reescrita de código | **muda semântica** | **sob demanda** |
+| **composer-unused** + **composer-require-checker** | dependências declaradas × usadas | reporta | **relatório** no CI, sem reprovar |
 
 ```bash
 composer test              # config:clear + pint + phpstan + filacheck + a suíte
@@ -18,6 +19,7 @@ composer types:check       # phpstan
 composer filament:check    # filacheck
 composer refactor:preview  # rector --dry-run   ← FORA do composer test
 composer refactor:apply    # rector             ← FORA do composer test
+composer deps:check        # composer-unused + composer-require-checker ← FORA do composer test
 ```
 
 ---
@@ -219,6 +221,73 @@ defeito esperando.
 
 O custo é triar 117 em 26 arquivos, e `types:check` é gate dentro do `composer test`: incluir sem
 pagar a triagem deixa o gate vermelho, e gate vermelho por ruído ensina a ignorar gate.
+
+## Dependências declaradas × usadas — `composer-unused` e `composer-require-checker`
+
+Duas ferramentas de **relatório** (não estão no gate; decisão do mantenedor, wiki
+`feat/verificacao-de-dependencias`): respondem *"das dependências, quais são de fato usadas?"*, que até a
+v0.54.0 só tinha a resposta *"não sabemos"*.
+
+```bash
+composer deps:check     # as duas
+composer deps:unused    # composer-unused: declarada no require e não usada no código
+composer deps:require   # composer-require-checker: usada no código e não declarada no require
+```
+
+No CI, o job `qualidade` roda as duas e põe a saída no resumo do job, **sem reprovar**.
+
+**A configuração** é o `composer-unused.php` da raiz, e ela só exclui pacote que o kit usa por um caminho
+que a ferramenta não enxerga (ela procura símbolos no código). Pacote realmente sem uso **não** entra
+nela — senão o relatório esconderia exatamente o que existe para mostrar.
+
+### A triagem de 2026-11-18 (a linha de base)
+
+**`composer-unused`** acusou 8 dos 62 pacotes do `require` — 4 usados por outro caminho e 4 sem uso —, e o **`composer-require-checker`** acusou
+**181 símbolos**, nenhum falso positivo: 137 de pacotes que só chegam como dependência transitiva e o kit
+usa direto, e 44 de oito extensões PHP que o `composer.json` não declara (`ext-ctype`, `ext-dom`,
+`ext-filter`, `ext-gd`, `ext-libxml`, `ext-mbstring`, `ext-SimpleXML` e `ext-tokenizer`).
+
+| Pacote | Veredito | Evidência | Recomendação |
+|---|---|---|---|
+| `anselmokossa/filament-sentinel` | usado por outro caminho | auto-discovery do provider registra middleware e o overlay de erros; `config/sentinel.php` | manter; excluído em `composer-unused.php` |
+| `laravel/pulse` | usado por outro caminho | recorders em `config/pulse.php`, dashboard em `resources/views/vendor/pulse`, daemon `pulse:check` no `docker-compose.yml` | manter; excluído |
+| `laravel/reverb` | usado por outro caminho | serviço opt-in `reverb:start` no `docker-compose.yml`; os painéis desligam o polling quando o broadcast é o Reverb | manter; excluído |
+| `livewire/blaze` | sem uso | o provider é descoberto e engancha a compilação do Blade, mas só transforma template com a diretiva `@blaze` ou caminho registrado em `Blaze::optimize()`, e nenhum dos dois existe no kit nem no vendor (`BlazeManager::compile`, `Config::isEnabled`) | usar de verdade (`@blaze` nos componentes ou `Blaze::optimize()->in(...)`) ou remover |
+| `spatie/laravel-backup` | usado por outro caminho | `config/backup.php` e o `backup:run` da Central de Comandos (`config/command-center.php`); o agendamento em `routes/console.php` está comentado | manter; excluído |
+| `awcodes/filament-badgeable-column` | sem uso | nenhum consumo em `app`, `config`, `resources`, `routes`, `database` ou `tests`; anunciado em `wikis/pacotes.md` e em `docs/pt/referencia/pacotes-instalados.md` | remover do `require` (ou usar de verdade) e corrigir as duas páginas que o anunciam |
+| `lara-zeus/progress` | sem uso | idem; anunciado nas mesmas duas páginas | remover (ou usar) e corrigir as duas páginas |
+| `syriable/filament-activitylog` | sem uso | idem (a única menção no código é um comentário em `resources/css/filament/kit.css`); anunciado nas mesmas duas páginas | remover (ou usar) e corrigir as duas páginas |
+| `filament/actions` | uso direto de dependência só transitiva | 82 símbolos dos oito componentes do Filament (`actions`, `forms`, `infolists`, `notifications`, `schemas`, `support`, `tables`, `widgets`), trazidos por `filament/filament` em `self.version` | pode ficar como está: o `filament/filament` fixa os componentes em lockstep |
+| `spatie/laravel-permission` | uso direto de dependência só transitiva | 5 símbolos (`Role`, `Permission`, `HasRoles`, `PermissionRegistrar`, `Support\Config`); chega por `bezhansalleh/filament-shield`, e o kit estende o `Role` dele | declarar no `require`: é API que o kit usa como própria |
+| `spatie/laravel-health` | uso direto de dependência só transitiva | 13 símbolos (checks e o `Health`); chega por `shuvroroy/filament-spatie-laravel-health` | declarar no `require` |
+| `spatie/laravel-medialibrary` | uso direto de dependência só transitiva | 3 símbolos (`HasMedia`, `InteractsWithMedia`, `Media`) e mais 2 de `spatie/image`; chegam por `filament/spatie-laravel-media-library-plugin` | declarar no `require` |
+| `livewire/livewire` | uso direto de dependência só transitiva | 6 símbolos (`Component`, atributos, `Livewire`); chega por `filament/support` | declarar no `require`: o kit tem componentes Livewire próprios |
+| `laravel/prompts` | uso direto de dependência só transitiva | 6 funções (`select`, `text`, `confirm`…) nos comandos do kit; chega por `laravel/framework` | pode ficar: o framework a fixa |
+| `rappasoft/laravel-authentication-log` | uso direto de dependência só transitiva | 2 símbolos (`AuthenticationLog`, `AuthenticationLoggable`); chega por `tapp/filament-authentication-log` | declarar no `require` |
+| `bezhansalleh/filament-plugin-essentials` | uso direto de dependência só transitiva | 5 traits de Resource; chega por `filament-shield` e `filament-exceptions` | declarar, ou trocar pelos traits equivalentes do próprio Filament |
+| `danharrin/livewire-rate-limiting` | uso direto de dependência só transitiva | 2 símbolos (`WithRateLimiting`); chega por `filament/support` e `filament-lockscreen` | pode ficar: vem com o Filament |
+| `brimham/backup-monitor` | uso direto de dependência só transitiva | `BackupRun`; chega por `brimham/filament-backup-monitor` (que tem outro namespace) | declarar no `require` |
+| `nesbot/carbon` | uso direto de dependência só transitiva | `Carbon`, `CarbonImmutable`; chega por `laravel/framework`, assim como três componentes do Symfony (`finder`, `http-foundation`, `process`) e `vlucas/phpdotenv` | pode ficar: o framework os fixa |
+
+As oito **extensões** não entram na tabela de pacotes; a recomendação para elas é declarar as `ext-*` no
+`require`, o que faz o `composer install` recusar um PHP sem elas em vez de falhar em runtime (o `ext-gd`
+é a que mais provavelmente falta).
+
+### O que a triagem recomenda, e por que nada disso foi feito agora
+
+Esta entrega é só o instrumento: dependência de produção não muda sem decisão do mantenedor
+(`CLAUDE.md`), e a resposta escolhida foi "só relatório". As recomendações, para quem decidir:
+
+1. **Os quatro sem uso**: remover do `require` — ou usar de verdade (o `livewire/blaze` pede só `@blaze` ou `Blaze::optimize()`) — e corrigir as duas páginas que os
+   anunciam como capacidade do kit. Hoje elas prometem o que nenhuma tela entrega;
+2. **As extensões**: declarar as oito `ext-*` no `require` faz o `composer install` recusar um PHP sem
+   elas, em vez de falhar em runtime (o `ext-gd` é o caso mais provável de faltar);
+3. **Os transitivos usados direto**: declarar os que o código do kit usa como API própria (o
+   `spatie/laravel-permission` é o mais exposto: o kit estende o `Role` dele). Os componentes do Filament
+   são o caso mais discutível — o `filament/filament` os fixa em lockstep — e podem ficar como estão.
+
+O próximo relatório se compara a esta tabela: pacote novo na lista de "sem uso" ou símbolo novo de
+transitivo é o que mudou.
 
 ## Medido e recusado — para não ser proposto de novo
 

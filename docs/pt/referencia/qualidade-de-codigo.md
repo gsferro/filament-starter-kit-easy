@@ -304,6 +304,21 @@ testes afirmavam a primeira mensagem sem afirmar a ausência da segunda.
 > porque código de pura delegação não tem operador para mutar. Ali o instrumento não é a mutação —
 > é a asserção de que cada policy confere a permissão do **próprio** modelo.
 
+## Dependências declaradas × usadas
+
+Desde a v0.55.0, `composer deps:check` roda duas ferramentas de **relatório**: o `composer-unused`
+(dependência declarada e não usada) e o `composer-require-checker` (símbolo usado de pacote que o
+`composer.json` não declara). No CI, o job `qualidade` publica a saída no resumo e **não reprova**.
+
+A triagem de 2026-11-18: dos 8 pacotes que o `composer-unused` acusou, **4 são usados** por um caminho
+que ele não enxerga (auto-discovery, config, daemon ou comando) e ficam excluídos em `composer-unused.php`,
+cada um com o motivo; **4 não têm uso nenhum** (`awcodes/filament-badgeable-column`, `lara-zeus/progress`, `livewire/blaze`,
+`syriable/filament-activitylog`). O `composer-require-checker` acusou 181 símbolos, todos reais: pacotes
+que só chegam como dependência transitiva e o kit usa direto, e oito extensões PHP não declaradas.
+
+A tabela completa, com a evidência de cada pacote e as recomendações, está em
+[`wikis/qualidade-de-codigo.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/qualidade-de-codigo.md).
+
 ## Os níveis de qualidade que o kit **não** adotou, e por quê
 
 Levantamento de 2026-09-25. Cada candidato foi **rodado contra esta arvore** antes de entrar na
@@ -321,7 +336,7 @@ que um que acusa 48; é um que ninguém vai ligar.
 | `arch()->preset()->strict()` | **163 de 222** classes não são `final` | **não** — `AgenteBase` existe para ser estendida |
 | `arch()->preset()->relaxed()` | proíbe método `private`; **54** arquivos usam | **não** — contraria o estilo do kit |
 | `declare(strict_types=1)` | **98 de 240** arquivos | roadmap — não é falta de rigor, é **inconsistência**, e exige decidir o lado |
-| `composer-require-checker` + `composer-unused` | não instalados | roadmap, prioridade alta — respondem *"das 58 dependências, quais são usadas?"* |
+| `composer-require-checker` + `composer-unused` | 8 de 62 pacotes e 181 símbolos acusados (2026-11-18) | **adotados como relatório** na v0.55.0 — ver a seção acima |
 | Branch coverage (Xdebug) | Xdebug 3.5.3 instalado | roadmap — é a única razão de o Xdebug existir aqui |
 | `pest-plugin-type-coverage` | não instalado | roadmap |
 | Deptrac | não instalado | **não** — o kit não tem fronteira de camada a defender |

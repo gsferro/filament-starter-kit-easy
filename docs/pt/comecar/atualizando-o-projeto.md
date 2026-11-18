@@ -37,7 +37,7 @@ O que ele faz, em ordem:
 
 O fluxo é **não interativo** quando não há terminal (CI, `--no-interaction`) — nunca "sem TTY": ele
 vira relatório e sai sem aplicar nada, a menos que `--all` ou `--only-new` já tenham dado a
-aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:458`).
+aprovação na linha de comando (`app/Console/Commands/KitUpdate.php:isInteractive:459`).
 
 ```mermaid
 flowchart TD
@@ -66,7 +66,7 @@ accDescr: O kit:update confere o terreno, vincula o kit como remote temporário,
 ```
 
 A ordem vem direto de `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:406`): pré-voo (`:preVoo:486`), remote temporário
+(`app/Console/Commands/KitUpdate.php:handle:407`): pré-voo (`:preVoo:486`), remote temporário
 (`:vincularKit:545`), diff restrito (`:arquivosAlterados:651`), resumo (`:mostrarResumo:827`), a
 checagem de terminal (`:isInteractive:449`), o branch temporário (`:prepararBranch:847`), a revisão
 por arquivo (`:revisarEAplicar:896`), o relatório do `composer.json`
@@ -137,6 +137,12 @@ colapsáveis, abas carregadas ao abrir, aba "Kit" renomeada "Aplicação" — ve
 que o `kit:update` mostra: os campos passaram para dentro de `secao()` e as abas para dentro de `aba()`.
 As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link ou favorito antigo com
 `?tab=…::data::tab` passa a abrir na primeira aba.
+
+**Na v0.55.0 não há migration**, mas a instalação de desenvolvimento passa a exigir a extensão PHP `sodium` e PHP 8.4 ou 8.5 (no Windows, descomente `extension=sodium` no `php.ini` antes do `composer require`): entra o relatório de dependências declaradas × usadas (ver
+[Qualidade de código](../../referencia/qualidade-de-codigo/#dependências-declaradas--usadas)). Rode
+`composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` e copie
+do kit os scripts `deps:*` do `composer.json` — o `kit:update` traz o `composer-unused.php`, mas só relata a
+diferença do `composer.json`.
 
 **Na v0.54.0 há três migrations** (`php artisan migrate`): as preferências de aparência por usuário (ver
 [Configurações do kit](../../recursos/configuracoes-do-kit/#aparência-de-cada-pessoa-fonte-menu-e-a-escolha-no-meu-perfil)).
@@ -260,7 +266,7 @@ viaja no `create-project`, mas no `kit:update` é **só relatório**, nunca apli
 
 Caminho que **entrou** em `CAMINHOS_DO_KIT` depois da sua versão — como as pastas autorais de
 `resources/views/vendor` — é comparado com a **sua árvore**, e não só tag com tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:703`): o arquivo que você não tem aparece como
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:704`): o arquivo que você não tem aparece como
 "novo no kit" mesmo que o kit não o tenha mudado desde a sua versão, e arquivo que o seu projeto não tem
 aparece como "novo no kit" ainda que o kit o tenha mudado entre as tags — é o rótulo que o `--only-new`
 aplica. Esse comportamento vale a partir da versão em que ele entrou (a classe que roda é a instalada):

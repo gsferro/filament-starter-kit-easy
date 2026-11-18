@@ -38,7 +38,7 @@ What it does, in order:
 The flow is **non-interactive** when there is no terminal (CI, `--no-interaction`) — never "no
 TTY": it turns into a report and exits without applying anything, unless `--all` or `--only-new`
 already gave the approval on the command line
-(`app/Console/Commands/KitUpdate.php:isInteractive:458`).
+(`app/Console/Commands/KitUpdate.php:isInteractive:459`).
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ accDescr: kit:update checks the ground, links the kit as a temporary remote, com
 ```
 
 The order comes straight from `KitUpdate::handle()`
-(`app/Console/Commands/KitUpdate.php:handle:406`): pre-flight (`:preVoo:486`), temporary remote
+(`app/Console/Commands/KitUpdate.php:handle:407`): pre-flight (`:preVoo:486`), temporary remote
 (`:vincularKit:545`), restricted diff (`:arquivosAlterados:651`), summary (`:mostrarResumo:827`),
 the terminal check (`:isInteractive:449`), the temporary branch (`:prepararBranch:847`), the
 file-by-file review (`:revisarEAplicar:896`), the `composer.json` report
@@ -138,6 +138,12 @@ off; turn them on in the Tables tab of `/admin/configuracoes-da-aplicacao`.
 `kit:update` shows: fields moved inside `secao()` and tabs inside `aba()`. Tabs got a fixed key in
 the URL (`?tab=identidade`, `?tab=tabelas`…); an old link or bookmark with `?tab=…::data::tab` now
 opens on the first tab.
+
+**v0.55.0 has no migration**, but the development install now needs the PHP `sodium` extension and PHP 8.4 or 8.5 (on Windows, uncomment `extension=sodium` in `php.ini` before `composer require`): it adds the declared × used dependencies report (see
+[Code quality](../../referencia/qualidade-de-codigo/#declared--used-dependencies)). Run
+`composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` and copy
+the `deps:*` scripts from the kit's `composer.json` — `kit:update` brings `composer-unused.php`, but only
+reports the `composer.json` difference.
 
 **v0.54.0 adds three migrations** (`php artisan migrate`): per-user appearance preferences (see
 [Kit settings](../../recursos/configuracoes-do-kit/#each-persons-appearance-font-sidebar-and-the-choice-in-my-profile)).
@@ -261,7 +267,7 @@ section above, "A new kit dependency").
 
 A path that **entered** `CAMINHOS_DO_KIT` after your version — such as the authored folders under
 `resources/views/vendor` — is compared against **your tree**, not only tag against tag
-(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:703`): the file you do not have shows up as
+(`app/Console/Commands/KitUpdate.php:caminhosNovosNaLista:704`): the file you do not have shows up as
 "novo no kit" even if the kit has not changed it since your version, and a file your project does not
 have shows up as "novo no kit" even if the kit changed it between the tags — that is the label `--only-new`
 applies. This behaviour holds from the version that introduced it (the class that runs is the installed

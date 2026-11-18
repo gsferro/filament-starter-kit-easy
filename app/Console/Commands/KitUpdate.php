@@ -355,6 +355,7 @@ class KitUpdate extends Command
         'phpstan.neon',
         'phpunit.xml',
         'pint.json',
+        'composer-unused.php',
         'pestw.cmd',
 
         /*

@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Tests](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=tests)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fmain%2F.github%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
-[![Test cases](https://img.shields.io/badge/test%20cases-2,672-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
+[![Test cases](https://img.shields.io/badge/test%20cases-2,682-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/en/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -213,7 +213,7 @@ The other two already come complete.
 | Foundation | |
 |---|---:|
 | Production packages | **61** |
-| Development packages | **21** |
+| Development packages | **23** |
 | Migrations | **67** |
 | Policies | **16** |
 | `kit:*` commands | **9** |
@@ -222,7 +222,7 @@ The other two already come complete.
 |---|---:|
 | Test cases (`Kit` + `Tenancy`, measured on 2026-09-26) | **2,990**, with **12,578 assertions** |
 | Screens swept in a real browser | **55** |
-| Test files | **224** in `Kit` + `Tenancy` (**263** in total) |
+| Test files | **225** in `Kit` + `Tenancy` (**264** in total) |
 | PHPStan | **level 8**, zero errors |
 | Test coverage (`app/`, line) | **86 %** — see [what the number leaves out](docs/en/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** rules, all passing |
@@ -230,7 +230,7 @@ The other two already come complete.
 | Documentation | |
 |---|---:|
 | Reference documents (`wikis/`) | **13** |
-| Specified features (`wikis/specs/`) | **93** |
+| Specified features (`wikis/specs/`) | **94** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **27** |
 
 > The details moved to the site: **[Reference](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/)** and **[Getting started](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/)**.
@@ -329,7 +329,7 @@ exists so you don't spend an afternoon re-evaluating something that already has 
 
 ## Requirements
 
-- PHP 8.4+ and Composer 2
+- PHP 8.4+ and Composer 2 (8.4 or 8.5 to install with the development dependencies, the `create-project` default) — with the `sodium` extension enabled, because `composer create-project` also installs the development dependencies and `composer-require-checker` needs it (on Windows it ships commented out in `php.ini`: `extension=sodium`). Installing with `--no-dev` does not need it
 - Node 20+ (optional — without it the installation still goes through and tells you how to build later)
 - Docker (optional — only for Postgres/MySQL, Redis, local AI and e-mail)
 
@@ -431,6 +431,7 @@ composer lint:check   # only checks the formatting, changing nothing (what CI ru
 composer filament:check   # only the Filament-specific lint (FilaCheck)
 composer refactor:preview # what Rector would rewrite (dry-run) — OUTSIDE composer test
 composer refactor:apply   # applies Rector's rewrite — OUTSIDE composer test
+composer deps:check      # declared × used dependencies report (composer-unused + composer-require-checker)
 composer upgrade:filament # runs vendor/bin/filament-v5 (filament/upgrade is already in require-dev)
 php artisan kit:install --force   # reinstalls from scratch (deletes the SQLite file) and asks again
 php artisan kit:install --custom   # redoes only name and colour, without touching the database
@@ -495,7 +496,7 @@ What changes splits into three layers, and each one has its own path:
 Atualize este projeto seguindo o roteiro em https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 ```
 
-`{versão}` is the target version, with the `v` (e.g. `v0.54.0`). One script covers a single step; a project several versions behind follows one at a time, in order. The changes stay on the `kit-update/v{versão}` branch, uncommitted, for you to review. Step by step, the manual path and the details: [Updating the project](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/atualizando-o-projeto.html).
+`{versão}` is the target version, with the `v` (e.g. `v0.55.0`). One script covers a single step; a project several versions behind follows one at a time, in order. The changes stay on the `kit-update/v{versão}` branch, uncommitted, for you to review. Step by step, the manual path and the details: [Updating the project](https://gsferro.github.io/filament-starter-kit-easy/en/comecar/atualizando-o-projeto.html).
 
 ## Troubleshooting
 

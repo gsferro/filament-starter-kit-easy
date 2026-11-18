@@ -5,6 +5,36 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.55.0] - 2026-11-18
+
+Item 8.2 do roadmap: **dependências declaradas × usadas**, como relatório. Duas dependências de
+desenvolvimento novas; nada muda em runtime. Wiki: `wikis/specs/feat/verificacao-de-dependencias/`.
+
+### Adicionado
+
+- `maglnet/composer-require-checker` e `icanhazstring/composer-unused` no `require-dev`, e os scripts
+  `composer deps:check` (as duas), `deps:unused` e `deps:require`. Ficam FORA do `composer test`.
+- No CI, o job `qualidade` roda as duas e publica a saída no resumo do job, **sem reprovar** (decisão do
+  mantenedor: só relatório).
+- `composer-unused.php` na raiz: exclui só os 4 pacotes que o kit usa por um caminho que a ferramenta não
+  enxerga (`anselmokossa/filament-sentinel`, `laravel/pulse`, `laravel/reverb`, `spatie/laravel-backup`), cada um com o motivo. Viaja com o `kit:update`.
+- A triagem de 2026-11-18 em `wikis/qualidade-de-codigo.md`: **4 pacotes sem uso**
+  (`awcodes/filament-badgeable-column`, `lara-zeus/progress`, `livewire/blaze` — instalado sem nenhum `@blaze` —,
+  `syriable/filament-activitylog`) e **181
+  símbolos** de dependências só transitivas usadas direto e de oito extensões PHP não declaradas, com as
+  recomendações. Nenhuma dependência de produção mudou.
+
+### Atualizando
+
+- **A instalação de desenvolvimento passa a exigir a extensão PHP `sodium`**: o `composer-require-checker` 4.24 depende do `php-standard-library`, que a exige, e limita o PHP a 8.4 e 8.5. No Windows, descomente `extension=sodium` no `php.ini`. A versão 4.17 (sem essa dependência) foi testada e recusada: ela rebaixaria o `symfony/console` de produção de 8.1 para 7.4. Quem instala com `--no-dev` não é afetado.
+- `composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"` —
+  o `kit:update` traz o `composer-unused.php` e relata a diferença do `composer.json`, sem aplicá-la. Os
+  três scripts `deps:*` entram à mão no `composer.json` do projeto (copie do kit).
+
+### Defaults mudados
+
+- nenhum
+
 ## [0.54.0] - 2026-11-18
 
 Item 1 do roadmap: **preferências de aparência por usuário**. Três migrations (duas de tabela, uma de
