@@ -4,8 +4,10 @@ use App\Support\BooleanoDoEnv;
 use App\Support\CarregamentoDaTabela;
 use App\Support\DensidadeDoLayout;
 use App\Support\DetalheDoUsuario;
+use App\Support\ModoDoMenu;
 use App\Support\NumeroDoEnv;
 use App\Support\SenhaDoAdministrador;
+use App\Support\TamanhoDaFonte;
 use App\Support\ValidadeDoConvite;
 
 return [
@@ -353,6 +355,38 @@ return [
     */
 
     'densidade_do_layout' => DensidadeDoLayout::coagir(env('KIT_DENSIDADE_DO_LAYOUT'))->value,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tamanho da fonte e modo do menu — os padrões da instalação
+    |--------------------------------------------------------------------------
+    | `tamanho_da_fonte`: `pequena`, `normal` (padrão do Filament), `grande` ou
+    | `muito-grande` — redeclara as variáveis `--text-*` no mesmo render hook da
+    | densidade. `modo_do_menu`: `icones` (o de sempre: recolhido, o menu mostra
+    | os ícones) ou `oculto` (recolhido, some inteiro).
+    |
+    | Vocabulário fechado e coagido como a densidade: fora dele, cai no padrão.
+    | São o padrão de quem não escolheu no próprio perfil. Editáveis em
+    | /admin/configuracoes-da-aplicacao, aba Aplicação, seção "Aparência dos
+    | painéis". Wiki `preferencias-de-aparencia`.
+    */
+
+    'tamanho_da_fonte' => TamanhoDaFonte::coagir(env('KIT_TAMANHO_DA_FONTE'))->value,
+
+    'modo_do_menu' => ModoDoMenu::coagir(env('KIT_MODO_DO_MENU'))->value,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Aparência pessoal — cada pessoa escolhe densidade, fonte, cor e menu
+    |--------------------------------------------------------------------------
+    | Ligada (o padrão), a tela Meu perfil ganha a seção "Aparência" e a escolha
+    | de cada pessoa vence os padrões acima. Desligada, todo mundo vê o padrão e
+    | o que cada pessoa gravou é ignorado, não apagado. Com organizações, cada
+    | uma ainda precisa liberar a dela, no cadastro da organização — a chave da
+    | organização só recorta o que esta já liberou.
+    */
+
+    'aparencia_por_usuario' => BooleanoDoEnv::comPadrao(env('KIT_APARENCIA_POR_USUARIO'), true),
 
     /*
     |--------------------------------------------------------------------------

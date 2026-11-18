@@ -229,7 +229,7 @@ The other two already come complete.
 
 | Documentation | |
 |---|---:|
-| Reference documents (`wikis/`) | **12** |
+| Reference documents (`wikis/`) | **13** |
 | Specified features (`wikis/specs/`) | **92** |
 | Project rules for AI agents (`.ai/rules/`, excluding the index) | **27** |
 

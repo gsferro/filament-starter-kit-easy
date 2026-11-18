@@ -19,8 +19,8 @@ use App\Models\User;
 use App\Observers\TenantObserver;
 use App\Providers\Concerns\ConfiguraFilamentGlobal;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\AparenciaDoUsuario;
 use App\Support\ConfiguracaoDoLogin;
-use App\Support\DensidadeDoLayout;
 use App\Support\DestinoAposLogin;
 use App\Support\DockDeAtalhos;
 use App\Support\PoliciesDeVendor;
@@ -726,18 +726,34 @@ class KitServiceProvider extends ServiceProvider
      * `FilamentView::registerRenderHook()` e não `$panel->renderHook()` pela mesma razão de
      * `configureOrdemDasCascadeLayers()`: uma registração cobre os três painéis.
      *
-     * Guarda: `tests/Kit/DensidadeDoLayoutTest.php`.
+     * ## O tamanho da fonte entra na MESMA declaração
+     *
+     * As variáveis `--text-*` do Filament moram na mesma `@layer theme` que o `--spacing`, então o
+     * mesmo `<style>` fora de layer as alcança (`App\Support\TamanhoDaFonte`). Uma declaração só,
+     * nada quando os dois estão no padrão do Filament.
+     *
+     * ## O nível vem de `AparenciaDoUsuario`, não da config direto
+     *
+     * A escolha da pessoa logada vence a da instalação quando a aparência pessoal está liberada
+     * (wiki `preferencias-de-aparencia`); sem escolha, o resultado é o mesmo de antes.
+     *
+     * Guarda: `tests/Kit/DensidadeDoLayoutTest.php` e os testes da `preferencias-de-aparencia`.
      */
     protected function configureDensidadeDoLayout(): void
     {
         FilamentView::registerRenderHook(
             PanelsRenderHook::STYLES_BEFORE,
             function (): string {
-                $espacamento = DensidadeDoLayout::deConfig()->espacamento();
+                $espacamento = AparenciaDoUsuario::densidade()->espacamento();
 
-                return $espacamento === null
+                $declaracoes = array_filter([
+                    $espacamento === null ? null : '--spacing:'.$espacamento,
+                    AparenciaDoUsuario::tamanhoDaFonte()->declaracoes(),
+                ]);
+
+                return $declaracoes === []
                     ? ''
-                    : '<style>:root{--spacing:'.$espacamento.'}</style>';
+                    : '<style>:root{'.implode(';', $declaracoes).'}</style>';
             },
         );
     }
