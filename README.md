@@ -494,7 +494,7 @@ O que muda separa-se em três camadas, e cada uma tem um caminho próprio:
 Atualize este projeto seguindo o roteiro em https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 ```
 
-`{versão}` é a versão destino, com o `v` (ex.: `v0.53.2`). Um roteiro cobre uma passagem só; quem está várias versões atrás segue um por vez, em ordem. As mudanças ficam no branch `kit-update/v{versão}`, sem commit, para você revisar. O passo a passo, o caminho manual e os detalhes: [Atualizando o projeto](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/atualizando-o-projeto.html).
+`{versão}` é a versão destino, com o `v` (ex.: `v0.54.0`). Um roteiro cobre uma passagem só; quem está várias versões atrás segue um por vez, em ordem. As mudanças ficam no branch `kit-update/v{versão}`, sem commit, para você revisar. O passo a passo, o caminho manual e os detalhes: [Atualizando o projeto](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/atualizando-o-projeto.html).
 
 ## Solução de problemas
 

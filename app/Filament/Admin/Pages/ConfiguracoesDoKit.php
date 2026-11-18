@@ -170,6 +170,15 @@ class ConfiguracoesDoKit extends SettingsPage
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data['tabela_carregamento']             = CarregamentoDaTabela::coagir($data['tabela_carregamento'] ?? null)->value;
+        /*
+         * Densidade, fonte e menu também entram coagidos na GRAVAÇÃO, e não só ao abrir a tela: um
+         * valor de tipo errado forjado no estado (`["grande"]`) passa pelo `in()` do Select, chega
+         * nulo ao `fill()` do spatie e estoura `TypeError` na propriedade `string` — erro 500 ao
+         * salvar a tela inteira (CT-25 da wiki `preferencias-de-aparencia`).
+         */
+        $data['densidade_do_layout']             = DensidadeDoLayout::coagir($data['densidade_do_layout'] ?? null)->value;
+        $data['tamanho_da_fonte']                = TamanhoDaFonte::coagir($data['tamanho_da_fonte'] ?? null)->value;
+        $data['modo_do_menu']                    = ModoDoMenu::coagir($data['modo_do_menu'] ?? null)->value;
         // O clássico grava `null`, o default de sempre; o resto passa pelo vocabulário (P-04).
         $data['aparencia_das_telas']             = EditorDeAparenciaDasTelas::paraGravar($data['aparencia_das_telas'] ?? null, propria: false);
         $data['visoes_de_tabela_compartilhadas'] = (bool) ($data['visoes_de_tabela'] ?? false)

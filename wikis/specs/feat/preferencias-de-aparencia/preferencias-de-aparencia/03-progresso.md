@@ -61,7 +61,7 @@
 | Premissa do plano | O que o código diz | Correção |
 |---|---|---|
 | sidebar recolhível por Closure no render | `HasSidebar::isSidebarFullyCollapsibleOnDesktop()` faz `evaluate()`; lido em `layout/index.blade.php:12` no render | nenhuma |
-| `/app/meu-perfil` sem organização no endereço | `route:list`: `app/meu-perfil` | P-13 escrita a partir disto |
+| `/app/meu-perfil` sem organização no endereço | `route:list`: `app/meu-perfil` — rodado **sem** tenancy; com `KIT_TENANCY=true` a rota é `/app/{tenant}/meu-perfil` (descoberto pelo CT-12 na implementação) | P-13 escrita a partir disto e corrigida em 2026-11-18 |
 | Breezy filtra por `canView()` estático | `HasMyProfile::getRegisteredMyProfileComponents():96` | nenhuma |
 | cor da organização no `bootUsing`, registrada depois da do painel | `AppPanelProvider.php:196`; a da pessoa precisa vir depois desta | D5 escrita a partir disto |
 | contagem de propriedades do settings travada num teste | `tests/Kit/KitInfoTest.php` âncora `toHaveCount(73)` | o passo 2 sobe para 76 (registrado em Impacto) |
@@ -84,6 +84,13 @@ Ponytail indisponível como plugin com namespace — passe manual pela skill `po
 
 ## Desvios do Plano
 
+- 2026-11-18 — **P-13 corrigida pelo CT-12**: com tenancy, o Meu perfil do `/app` está dentro de uma organização (`/app/{tenant}/meu-perfil`); as linhas D5 e D6 do CT-12 (que abriam `/app/meu-perfil` com tenancy) viraram `@obsoleto` no `04` e saíram do teste; a fronteira "sem organização corrente" continua coberta pela linha D7/D10 (`/admin`) e pelo CT-09 (Kit, `/app` sem tenancy). O código não muda: `AparenciaDoUsuario::liberada()` já decide pela organização corrente
+- 2026-11-18 — **defeito achado pelo CT-25 (M49)**: fonte e menu de tipo errado forjados no estado da tela de configurações (`["grande"]`) passavam pelo `in()` do Select, chegavam nulos ao `fill()` do spatie e davam `TypeError` (500) ao salvar. Corrigido coagindo densidade, fonte e menu também em `mutateFormDataBeforeSave()`
+
+- 2026-11-18 — **ordem**: a implementação dos passos 1 a 8 começou em paralelo com a derivação do `04` (step 7), e não depois dela. O derivador recebeu só o `00`, as rotas e a Superfície de UI do `01`, a Superfície Livewire do `02` e o glossário, com a ordem de ler `app/` só para nomes. Para conter o risco de o `04` confirmar o código em vez do requisito: o `04` é auditado por comportamento que só viria de `app/` (nomes de método, textos de log ou de tela que não estão no `01`), passa pelo `fw-adversario-ct`, e a falsificabilidade é provada revertendo o patch de `app/` (`git apply -R`) e vendo os CT ficarem vermelhos
+- 2026-11-18 — **erro de leitura do step 3**: a coerção da densidade na tela de configurações mora em `mutateFormDataBeforeFill()`, não em `mutateFormDataBeforeSave()`; corrigido no `01` (Análise e passo 5), no `02` e no comentário do código
+- 2026-11-18 — **consequências do documento novo em `wikis/`**: `wikis/candidatas-a-pacote.md` entrou em `KitUpdate::CAMINHOS_DO_KIT` (a varredura de `wikis/*.md` do `KitUpdateTest`), na contagem de documentos de referência dos dois READMEs (12 → 13) e na tabela de `wikis/README.md`
+
 ## Revisão do Diff (step 9)
 
 ## Conformidade com Rules
@@ -92,6 +99,7 @@ Ponytail indisponível como plugin com namespace — passe manual pela skill `po
 
 | # | Step | Rota | Modelo | Contexto | Resultado | Custo | Auditoria |
 |---|---|---|---|---|---|---|---|
-| 1 | 3 | `Explore` (revisão do código para RQ-14) | não exposto pelo host | contexto novo, só o objetivo e as pastas | — | — | — |
+| 1 | 3 | `Explore` (revisão do código para RQ-14) | não exposto pelo host | contexto novo, só o objetivo e as pastas | tabela de 20 candidatas com arquivos, acoplamento e esforço | 113k tokens · 2,5 min | amostragem: 8 arquivos citados conferidos por `ls` (todos existem); 2 chaves de config conferidas por grep e corrigidas no documento (`kit.exibir_versao`, `kit.tabelas.visoes_salvas`) |
+| 2 | 7 | `feature-test-design` (derivação do `04`) | `opus` | contexto novo: `00`, rotas e Superfície de UI do `01`, Superfície Livewire do `02`, glossário | — | — | — |
 
 ## Candidatos a Rule

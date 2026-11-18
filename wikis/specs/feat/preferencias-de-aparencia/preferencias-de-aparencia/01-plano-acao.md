@@ -39,7 +39,7 @@
 | P-10 | Sem login, vale o padrão | 3 | — |
 | P-11 | Interruptor no cadastro da organização | 7 | — |
 | P-12 | Valor ilegível cai no padrão | 2, 3, 5, 6 | — |
-| P-13 | Tela do `/app` sem organização: só a chave da instalação | 3 | — |
+| P-13 | Tela sem organização corrente: só a chave da instalação | 3 | — |
 | P-14 | Documento em `wikis/` | 8 | — |
 
 ## Objetivo
@@ -65,13 +65,13 @@ As quatro superfícies já são governáveis por request:
 - `Tenant` tem o precedente do interruptor por organização (`app/Models/Tenant.php:registro_habilitado:87`, cast em `:135`), com default `false` na migration
 
 ### `app/Settings/ConfiguracoesDoKit.php` e a tela
-- `densidade_do_layout` em `app/Settings/ConfiguracoesDoKit.php:$densidade_do_layout:227`, mapeada em `mapaDeConfiguracao()` (`:483`); campo na aba Aplicação (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaAplicacao:1012`), coagido em `mutateFormDataBeforeSave()` (`:168`)
+- `densidade_do_layout` em `app/Settings/ConfiguracoesDoKit.php:$densidade_do_layout:227`, mapeada em `mapaDeConfiguracao()` (`:483`); campo na aba Aplicação (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:abaAplicacao:1012`), coagido ao abrir a tela em `mutateFormDataBeforeFill()` (`:195`) *(alterado em 2026-11-18: era `mutateFormDataBeforeSave()`, erro de leitura do step 3)*
 - Toda seção nasce pelo helper `secao()` (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:secao:312`; `.ai/rules/pages.md`)
 
 ### Meu perfil
 - A tela é a do Breezy com a classe do kit; componentes extras entram por `->myProfileComponents([...])` (`app/Providers/Filament/AdminPanelProvider.php:myProfileComponents:244`, `app/Providers/Filament/AppPanelProvider.php:myProfileComponents:356`, `app/Providers/Filament/InfraPanelProvider.php:myProfileComponents:273`) e são filtrados por `canView()` estático (`vendor/jeffgreco13/filament-breezy/src/Concerns/Plugin/HasMyProfile.php:getRegisteredMyProfileComponents:96`)
 - Precedente no kit: `app/Livewire/DefinirSenhaPorEmail.php` estende `MyProfileComponent`
-- `/app/meu-perfil` não tem organização no endereço (`php artisan route:list`: `app/meu-perfil`)
+- `/app/meu-perfil` não tem organização no endereço **só sem tenancy**; com `KIT_TENANCY=true` a rota é `/app/{tenant}/meu-perfil` *(alterado em 2026-11-18: o `route:list` do step 3 foi rodado sem tenancy — CT-12)*
 
 ## Decisões de Desenho
 
@@ -206,7 +206,7 @@ Canal padrão (`Log::info`/`Log::warning`), sem canal novo (D7).
 
 - **Path**: `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`
 - Seção `secao('aplicacao', 'aparencia', 'Aparência dos painéis', …)` com: `Toggle aparencia_por_usuario`, `Select densidade_do_layout` (movido, D6), `Select tamanho_da_fonte`, `Select modo_do_menu` — `->options(Enum::opcoes())`, sem placeholder
-- `mutateFormDataBeforeSave()` coage fonte e menu como coage a densidade (P-12)
+- `mutateFormDataBeforeFill()` coage fonte e menu como coage a densidade (P-12); na gravação, o `in()` que o `Select` acrescenta recusa o que não é opção *(alterado em 2026-11-18: era `mutateFormDataBeforeSave()`)*
 - **Atende**: RQ-06, RQ-07, P-12
 - **Logs**: nenhum (a gravação do settings já é auditada pela tela)
 
