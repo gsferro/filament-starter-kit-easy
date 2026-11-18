@@ -289,7 +289,8 @@ it('[CT-05] o arquivo de configuração do composer-unused está nas duas rotas 
         )))),
         array_map(static fn (array $a): string => (string) $a['passo']['run'], vdPassosDasFerramentas()),
     ));
-    preg_match_all('~--config-file[= ]+([^\s"\']+)~', $comandos, $configs);
+    // `--config-file` é do composer-require-checker; `--configuration`/`-c`, do composer-unused (RD-05 do step 9).
+    preg_match_all('~(?:--config-file|--configuration|-c)[= ]+([^\s"\']+)~', $comandos, $configs);
 
     foreach ($configs[1] as $configurado) {
         expect(in_array(ltrim($configurado, './'), caminhosDoKit(), true))->toBeTrue("--config-file aponta para '{$configurado}', fora de caminhosDoKit()");
@@ -331,7 +332,24 @@ it('[CT-06] todo pacote excluído do composer-unused está na triagem como usado
             expect($excluidos)->not->toContain($linha['pacote']);
         }
     }
-})->skip(fn (): bool => ! naArvoreDoKit(), 'lê wikis/, que não viaja no create-project')->group('kit');
+
+    // A ferramenta de verdade LÊ a configuração: os excluídos saem como ignorados, nunca como sem uso
+    // (RD-04 do step 9). ~1,5 s; o composer-unused é dependência de desenvolvimento do kit.
+    $relatorio = json_decode(Process::path(base_path())->timeout(120)
+        ->run(['php', 'vendor/bin/composer-unused', '--no-progress', '--output-format=json', '--ignore-exit-code'])
+        ->output(), true);
+
+    expect($relatorio)->toBeArray()->toHaveKeys(['unused-packages', 'ignored-packages']);
+
+    $nomes     = static fn (array $lista): array => array_map(static fn ($p): string => is_array($p) ? (string) ($p['name'] ?? '') : (string) $p, $lista);
+    $semUso    = $nomes($relatorio['unused-packages']);
+    $ignorados = implode("\n", $nomes($relatorio['ignored-packages']));
+
+    foreach ($excluidos as $pacote) {
+        expect($semUso)->not->toContain($pacote);
+        expect($ignorados)->toContain($pacote);
+    }
+})->skip(fn (): bool => ! naArvoreDoKit(), 'a triagem em wikis/qualidade-de-codigo.md é do kit, não do projeto instalado')->group('kit');
 
 it('[CT-07] a documentação de qualidade traz a triagem com veredito e evidência em cada linha', function (): void {
     $triagem = vdLinhasDaTriagem();
@@ -343,7 +361,7 @@ it('[CT-07] a documentação de qualidade traz a triagem com veredito e evidênc
         expect($linha['evidencia'])->not->toBe('', "evidência de {$linha['pacote']}");
         expect(in_array($linha['evidencia'], ['—', '-', 'N/A', 'n/a', '?'], true))->toBeFalse("evidência de {$linha['pacote']} é só marcador");
     }
-})->skip(fn (): bool => ! naArvoreDoKit(), 'lê wikis/, que não viaja no create-project')->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'a triagem em wikis/qualidade-de-codigo.md é do kit, não do projeto instalado')->group('kit');
 
 it('[CT-08] cada linha da triagem com veredito diferente de "usado por outro caminho" tem recomendação registrada', function (): void {
     $achados = array_filter(
@@ -366,7 +384,7 @@ it('[CT-08] cada linha da triagem com veredito diferente de "usado por outro cam
         ->and($triagem)->toMatch('~transitiv~iu')
         ->and($triagem)->toContain('ext-')
         ->and($triagem)->toMatch('~recomenda~iu');
-})->skip(fn (): bool => ! naArvoreDoKit(), 'lê wikis/, que não viaja no create-project')->group('kit');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'a triagem em wikis/qualidade-de-codigo.md é do kit, não do projeto instalado')->group('kit');
 
 it('[CT-09] o deps:check fica fora do gate local', function (): void {
     $scripts      = vdJson('composer.json')['scripts'] ?? [];

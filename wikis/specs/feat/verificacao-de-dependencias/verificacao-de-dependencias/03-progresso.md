@@ -1,6 +1,6 @@
 # Progresso — Roadmap item 8.2: `composer-require-checker` + `composer-unused`
 
-**Estado**: em implementação
+**Estado**: em revisão
 
 **Base do PR**: `main`
 
@@ -23,6 +23,7 @@
 - [x] `wikis/qualidade-de-codigo.md` (seção nova, tabela e recomendações), `docs/{pt,en}/referencia/qualidade-de-codigo.md`, roadmap 8.2 FEITO, READMEs (`composer deps:check`), 2026-11-18
 
 ## Testes
+- [x] `tests/Kit/VerificacaoDeDependenciasTest.php` (CT-01..CT-09) — `vendor/bin/pest tests/Kit/VerificacaoDeDependenciasTest.php`: 12/12, 171 asserções, ~4,4 s; falsificabilidade: com a entrega revertida (scripts, passo do CI, lista do `kit:update`, `composer-unused.php`) 7 de 10 vermelhos — os 3 verdes leem só a triagem, que ficou; CT-06 vermelho com um nome da lista trocado, 2026-11-18
 
 ## Tickets
 Não fatiado — 2026-11-18: 6 RQ, ferramental sem tela; nenhum sinal de fatiamento
@@ -32,7 +33,8 @@ Não fatiado — 2026-11-18: 6 RQ, ferramental sem tela; nenhum sinal de fatiame
 - [ ] `vendor/bin/phpstan analyse` (level 8)
 - [ ] testes da feature
 - [ ] `vendor/bin/pest --parallel --tia` contra a baseline
-- [ ] step 9 (revisão do diff) e step 11 (quality gate)
+- [x] step 9 (revisão do diff) — `/code-review` (9), `fw-revisor-diff` (6) e `codex` (3); destino em `## Revisão do Diff (step 9)`, 2026-11-18
+- [ ] step 11 (quality gate)
 - [ ] `rastreabilidade.sh`, `checkbox-sem-evidencia.sh`, `citacoes.sh`, `ids-ct.sh`, `conformidade-rules.sh` silenciosos
 - [ ] CHANGELOG 0.55.0, versão, `atualizando-o-projeto`, roteiro `wikis/atualizacoes/v0.55.0.md`
 
@@ -65,6 +67,27 @@ Passe manual pela skill `ponytail-review`:
 - 2026-11-18 — **ordem**: a implementação (passos 1 a 6) foi feita antes da derivação do `04`, porque a pergunta do requisito (RQ-06) só tem resposta medindo: a triagem é o dado que o plano precisava. O derivador recebe só o `00` e os paths do `01`; a falsificabilidade dos CT é provada revertendo o diff
 
 ## Revisão do Diff (step 9)
+
+| ID | Passe | Achado | Destino | `P-nn` / CT | Rejeitado — motivo |
+|---|---|---|---|---|---|
+| CX-01 / RD (eixo correção) | `codex`, `fw-revisor-diff` | o passo do CI parava no primeiro erro (`bash -e` sem pipefail): a segunda ferramenta não rodava | correção (`\|\| true` nas duas) | CT-04 dataset "primeira quebrada" | — |
+| CX-02 | `codex` | o stderr não chegava ao resumo | correção (`} 2>&1 \| tee`) | CT-04 dataset "segunda só com erro" | — |
+| CX-03 | `codex` | o CT-04 dependia de achado real e rodava as ferramentas (~24 s) | CT-04 reescrito com ferramentas falsas (2,9 s) | CT-04 | — |
+| CR-01 | `/code-review` | o `composer-require-checker` 4.24 traz `php-standard-library`, que exige `ext-sodium`, e limita o PHP a 8.4–8.5 | documentado (README pt/en, CHANGELOG, `atualizando-o-projeto`) | — | rebaixar para a 4.17 (sem a dependência) foi medido e recusado: rebaixaria o `symfony/console` de produção 8.1 → 7.4 (P-05) |
+| CR-02 | `/code-review` | execução quebrada fica igual a execução com achado | — | — | o erro agora chega ao resumo (CX-02); reprovar seria contrariar Q2 |
+| CR-03 | `/code-review` | helper `vdBash()` sem uso | removido | — | — |
+| CR-04 | `/code-review` | o CI repete as linhas de comando em vez de chamar os scripts `deps:*` | — | — | RQ-04 pede o CI rodando pelo `vendor/bin`; os scripts locais saem com o código da ferramenta, e o passo do CI precisa engolir |
+| CR-05 | `/code-review` | o helper do CT-02 tratava `@putenv`/`@composer` como script | correção | CT-02 | — |
+| CR-06 | `/code-review` | scripts `deps:*` sem `disableProcessTimeout` | correção | — | — |
+| CR-07 | `/code-review` | o `kit:update` sobrescreveria a lista de exclusão do projeto | — | — | mesmo regime de `pint.json` e `phpstan.neon` (P-06): arquivo do kit editado pelo dono vira conflito que o roteiro pergunta |
+| CR-08 | `/code-review` | parâmetro do dataset do CT-01 sem uso | removido | — | — |
+| CR-09 | `/code-review` | os números da triagem repetidos em várias páginas | — | — | são números datados ("triagem de 2026-11-18"), linha de base histórica, não estado corrente |
+| RD-01 | `fw-revisor-diff` | "oito extensões" seriam sete | — | — | refutado: o grep do revisor era minúsculo e perdeu `ext-SimpleXML`; são oito |
+| RD-02 | `fw-revisor-diff` | "ver a seção abaixo" apontava para cima | correção (pt/en) | — | — |
+| RD-03 | `fw-revisor-diff` | `atualizando-o-projeto` sem o `ext-sodium` | correção (pt/en) | — | — |
+| RD-04 | `fw-revisor-diff` | nenhum teste provava que a ferramenta lê o `composer-unused.php` | CT-06 roda o `composer-unused` real em JSON (~1,5 s) e confere os excluídos como ignorados | CT-06 (vermelho medido trocando um nome na lista) | — |
+| RD-05 | `fw-revisor-diff` | a guarda do CT-05 procurava só `--config-file` | correção (`--configuration`/`-c` também) | CT-05 | — |
+| RD-06 | `fw-revisor-diff` | o motivo do skip dizia que `wikis/` não viaja | correção do texto: a triagem é do kit, não do projeto | — | — |
 
 ## Conformidade com Rules
 

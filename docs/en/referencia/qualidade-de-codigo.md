@@ -340,7 +340,7 @@ one that reports 48; it is one nobody will switch on.
 | `arch()->preset()->strict()` | **163 of 222** classes are not `final` | **no** — `AgenteBase` exists to be extended |
 | `arch()->preset()->relaxed()` | forbids `private` methods; **54** files use them | **no** — contradicts the kit's style |
 | `declare(strict_types=1)` | **98 of 240** files | roadmap — not a lack of rigour but **inconsistency**, and it requires picking a side |
-| `composer-require-checker` + `composer-unused` | 8 of 62 packages and 181 symbols flagged (2026-11-18) | **adopted as a report** in v0.55.0 — see the section below |
+| `composer-require-checker` + `composer-unused` | 8 of 62 packages and 181 symbols flagged (2026-11-18) | **adopted as a report** in v0.55.0 — see the section above |
 | Branch coverage (Xdebug) | Xdebug 3.5.3 installed | roadmap — it is the only reason Xdebug exists here |
 | `pest-plugin-type-coverage` | not installed | roadmap |
 | Deptrac | not installed | **no** — the kit has no layer boundary to defend |

@@ -336,7 +336,7 @@ que um que acusa 48; é um que ninguém vai ligar.
 | `arch()->preset()->strict()` | **163 de 222** classes não são `final` | **não** — `AgenteBase` existe para ser estendida |
 | `arch()->preset()->relaxed()` | proíbe método `private`; **54** arquivos usam | **não** — contraria o estilo do kit |
 | `declare(strict_types=1)` | **98 de 240** arquivos | roadmap — não é falta de rigor, é **inconsistência**, e exige decidir o lado |
-| `composer-require-checker` + `composer-unused` | 8 de 62 pacotes e 181 símbolos acusados (2026-11-18) | **adotados como relatório** na v0.55.0 — ver a seção abaixo |
+| `composer-require-checker` + `composer-unused` | 8 de 62 pacotes e 181 símbolos acusados (2026-11-18) | **adotados como relatório** na v0.55.0 — ver a seção acima |
 | Branch coverage (Xdebug) | Xdebug 3.5.3 instalado | roadmap — é a única razão de o Xdebug existir aqui |
 | `pest-plugin-type-coverage` | não instalado | roadmap |
 | Deptrac | não instalado | **não** — o kit não tem fronteira de camada a defender |
