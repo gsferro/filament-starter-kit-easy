@@ -1,132 +1,117 @@
 # Relatório de QA — Roadmap item 1: preferências de aparência por usuário
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
-> Perfil de esforço: completo (a UI tem JS: o recolher do menu é Alpine; o domínio inclui autorização por duas chaves)
-> Natureza da wiki: `feature`, fora do vocabulário da skill; lida como evolução, porque declara ancestrais · Toca infra compartilhada: sim → render hook de densidade/fonte, largura e modo do menu e cor nos três painéis · Regressão: sim
+> Perfil de esforço: completo. A UI tem JS (o recolher do menu é Alpine) e o domínio inclui autorização por duas chaves
+> Natureza da wiki: `nova` · Toca infra compartilhada: sim → render hook de densidade/fonte, largura e modo do menu e cor nos três painéis · Regressão: sim
 > Independência: sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa
-> Cobertura: 8 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
+> Cobertura: 10 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
 
-## Veredito — Ciclo 1
+## Veredito — Ciclo 2
 
-**REPROVADO → especificação**
+**APROVADO COM DÉBITO**
 
-- Blocker: 0 · Major: 2 · Minor: 3 · Cosmético: 1
-- Não verificadas: E (contagem de queries), H (axe), K (K2), L (parte de julgamento da L4). As causas estão em *Não Verificado*
-- `RQ` abertas: nenhuma. Perguntas ao solicitante ainda abertas: Q5 e Q6, cobertas pelas premissas vigentes P-15 e P-16. Ambas estão implementadas como premissa, e isso conta como débito, não como Major
+- Blocker: 0 · Major: 0 · Minor: 3 · Cosmético: 1. Os quatro achados são novos neste ciclo: QA-07..QA-10
+- Não verificadas: E (contagem de queries) e K (K2). As causas estão em *Não Verificado*
+- `RQ` abertas: nenhuma. Perguntas ao solicitante abertas: Q5, Q6 e Q7, cobertas pelas premissas vigentes P-15, P-16 e P-13. Entram como débito
 - Ambiente: app em `http://127.0.0.1:8091` (sem tenancy) e `http://127.0.0.1:8092` (com tenancy) · Pest 5.0.5 · Boost MCP indisponível (falhou ao conectar) · Playwright MCP indisponível. Usei o Playwright de `node_modules` por script headless, só contra o localhost
 
-O comportamento confere com o requisito em todos os pontos que reproduzi. Os dois Major são de documentação: um número do `03` que não se reproduz e um plano/ADR que contradizem o código. Pela taxonomia da skill, os dois reprovam.
+Os dois Major do ciclo 1 foram corrigidos e conferidos. Não há defeito de comportamento. Os achados novos são de texto: um comentário de código falso, asserções sem `Então` no `04`/`05` e marcas de alteração mal postas.
+
+## Ciclo 1 — situação dos achados
+
+| ID | Sev. | Situação no ciclo 2 |
+|---|---|---|
+| QA-01 | Major | **Fechado.** Os números da `## Testes` se reproduzem: 35/240, 41/235, 11/46, 3/42, 14/99, 16/120, 4/28 e Browser 7/89. O roteiro versionado `roteiro-playwright/` dá 17/17 (8091) e 23/23 (8092) com o banco limpo. A suíte Browser inteira e o "59 de 81" seguem em *Não Verificado* |
+| QA-02 | Major | **Fechado** no `01` e no `02`. Uma cópia da frase falsa sobrevive no código: QA-07 |
+| QA-03 | Minor | **Fechado.** Texto do `04` (P-13, `$fillable`, Q5/Q6), CT-41..CT-46 no Índice e no Mapa, e roteiro do `05` preenchido |
+| QA-04 | Minor | **Código fechado.** No 8091 o placeholder é "Padrão — Amber, a do Filament"; no 8092 ele leva o sufixo da organização. Falta o `Então` no `04` (QA-08) |
+| QA-05 | Minor | **Encaminhado.** Q7 registrada no `00`, P-13 vigente. Fica como débito até a resposta |
+| QA-06 | Cosm. | **Fechado.** `grep -c` dá 45 · 16 · 86 · 0, igual ao cabeçalho do `04`. O `01` declara `Tipo: nova` |
 
 ## Achados
 
-### QA-01 — Números da `## Testes` e da `## Verificação Final` do `03` não se reproduzem · Major · destino 1
+### QA-07 — Docblock do componente repete a afirmação que o QA-02 corrigiu na wiki · Minor · destino 2
 
-- **Dimensão**: L6
-- **Relacionado a**: `03-progresso.md:18`, `:33`, `:34`, `:35`, `:40`, `:44`, `:54`
-- **Esperado**: todo `[x]` com número é reproduzível pelo comando que o gera.
-- **Observado**:
-  - `PreferenciasDeAparenciaTest` diz 33/33 e hoje dá 35/35 (CT-43 e CT-46 entraram depois). `AparenciaEfetivaTest` diz 38/38 e dá 41/41 (CT-45). `ConfiguracoesDeAparenciaTest` diz 10/10 e dá 11/11 (CT-44).
-  - As faixas de CT listadas nessas linhas não incluem CT-43..CT-46.
-  - O browser diz "5/5 em série, 54 asserções" e hoje dá 7/7 com 89 asserções (o CT-B01 foi ampliado aos três painéis).
-  - `:44` fala em "41 CT"; o `04` tem 45.
-  - "Playwright 17/17 … 22/23" (`:18`, `:54`) não tem comando nem roteiro versionado que o reproduza.
+- **Dimensão**: L3. É a cópia do QA-02, item 2
+- **Relacionado a**: P-12, CT-05, `## Superfície Livewire` do `02`
+- **Esperado**: o `02`, já corrigido, diz que o `Select` aceita uma lista forjada e que a barreira é `salvar()`.
+- **Observado**: o docblock de `App\Livewire\PreferenciasDeAparencia`, na seção *O que chega do navegador*, ainda diz "O `Select` recusa valor fora das opções na validação".
 - **Repro**:
-  1. `vendor/bin/pest tests/Kit/PreferenciasDeAparenciaTest.php --no-tia` → `"tests":35,"passed":35`. O mesmo para `AparenciaEfetivaTest` (41) e `ConfiguracoesDeAparenciaTest` (11).
-  2. `vendor/bin/pest tests/Browser/PreferenciasDeAparenciaTest.php --no-tia` → `"tests":7,"passed":7,"assertions":89`.
-- **Evidência**: `grep -rn "33/33\|38/38\|10/10\|59 de 81\|17/17\|22/23" wikis/specs/feat/preferencias-de-aparencia/preferencias-de-aparencia/` → só `03-progresso.md:18,33,34,35,54`. O "41 CT" aparece só em `03-progresso.md:44`.
-- **Destino**: 1
-- **Ação exigida**: no `03`, trocar cada número pela saída real e completar as faixas de CT. O "17/17 / 22/23" vira um roteiro reproduzível ou sai como número. Arquivo afetado: só o `03`.
+  1. No 8091, logado como master, abrir `/admin/meu-perfil`.
+  2. No console: `Livewire.all().find(c => c.name.includes('aparencia')).$wire.$set('data.densidade', ['compacto'], false)` e depois `salvar()`.
+  3. Resultado: notificação "Aparência salva", e o log `[PreferenciasDeAparencia@salvar]` grava sem a chave `densidade`. O valor passou pela validação e foi coagido para o padrão.
+- **Evidência**: `grep -n "recusa valor fora das opções" app/Livewire/PreferenciasDeAparencia.php` acha a frase. No `storage/logs/laravel.log`: `"aparencia":{"fonte":"grande","cor":"Purple","menu":"oculto"}`. O comportamento está certo (CT-05, linha `["denso"]`); só o comentário está errado.
+- **Destino**: 2
+- **Ação exigida**: corrigir o comentário para dizer que o `in()` aceita lista e que a redução por `AparenciaDoUsuario::escolhas()` é a barreira.
 
-### QA-02 — `01` e `02` afirmam o que o código não faz, e o desvio só aparece no `03` · Major · destino 1
-
-- **Dimensão**: L3
-- **Relacionado a**: passos 2, 3, 5 e 6 e `## Cobertura do Requisito` do `01`; `## Superfície Livewire` do `02`; P-15, P-17
-- **Esperado**: o PRD e a ADR batem com o código, ou o trecho traz a marca `*(alterado em …)*`.
-- **Observado**:
-  1. `01:175` diz `variaveis(): ?array`. O código tem `TamanhoDaFonte::declaracoes(): ?string`. O aceite (BP-03) só existe no `03:131`.
-  2. `01:209` e `02:12` dizem que, na gravação, o `in()` do Select recusa o que não é opção. Na verdade `ConfiguracoesDoKit::mutateFormDataBeforeSave()` coage densidade, fonte e menu. O motivo está em `03:101`: o `in()` aceita uma lista forjada como `["grande"]`. Reproduzi o mesmo com `data.densidade = ['denso']` na seção do perfil: passou pela validação.
-  3. O `liberada()` do passo 3 (`01:185`) não tem a guarda da pré-visualização. O código tem `request()->routeIs(self::ROTA_DA_PREVIEW)` (P-17, CR-01). A `## Cobertura do Requisito` não traz P-15, P-16 nem P-17.
-  4. O log de recusa em `01:225` diz "personalização desligada". O código (`app/Livewire/PreferenciasDeAparencia.php:117`) diz "aparência pessoal desligada".
-  5. A `## Superfície de UI` (`01:102`) lista `/app/meu-perfil`. Com tenancy, a rota é `/app/{organização}/meu-perfil`; a correção existe só na Análise (`01:74`).
-- **Repro**: abrir cada linha citada e o arquivo de código correspondente. Para o item 2, no 8091 logado, `Livewire.all().find(c => c.name === 'preferencias_de_aparencia').$wire.$set('data.densidade', ['denso'])` e depois `salvar()` → "Aparência salva".
-- **Evidência**: `grep -n "personalização desligada\|aparência pessoal desligada"` na wiki e em `app/Livewire/PreferenciasDeAparencia.php`. O "personalização desligada" do `04` (`:304`, `:316`, `:994`) descreve o aviso, não o texto do log.
-- **Destino**: 1
-- **Ação exigida**: corrigir `01` (passos 2, 3, 5 e 6, Cobertura e Superfície de UI) e `02` (linha `ConfiguracoesDoKit` e a frase sobre o `in()` na linha `$data`) com a marca `*(alterado em …)*`.
-
-### QA-03 — O `04` ainda descreve o desenho antigo em quatro pontos e não indexa CT-41..CT-46 · Minor · destino 1
-
-- **Dimensão**: L3 / L1
-- **Relacionado a**: P-13, Q5, Q6, CT-41..CT-46
-- **Observado**:
-  - `04:43`: a célula E2/O2 diz que "o Meu perfil não está em organização (P-06, P-13)", o que contradiz a P-13 corrigida.
-  - `04:304` diz que "a coluna da aparência entra no `$fillable` do usuário". O código (`app/Models/User.php`) a mantém fora do `$fillable`.
-  - `04:71` e `:103` dizem que as perguntas foram "fechadas pela sessão", mas o `00` lista Q5 e Q6 como `aberta`.
-  - CT-41..CT-46 não estão no `## Índice de Cenários`, e CT-43..CT-46 não estão em regra nenhuma do `## Mapa de Regras`.
-  - A tabela "Desenhado × Implementado" do `05` está vazia.
-- **Repro**: ler as linhas citadas; `grep -n "CT-4[1-6]" 04-casos-de-teste.md`.
-- **Destino**: 1
-- **Ação exigida**: alinhar o texto do `04` à P-13 e ao código, indexar CT-41..CT-46 em regra e no Índice, e preencher o roteiro do `05`.
-
-### QA-04 — O placeholder da cor cita organização em instalação sem organizações · Minor · destino 3 → 2
-
-- **Dimensão**: F (UX), P-16 / CT-31
-- **Esperado**: sem tenancy, a seção não fala de organização (CT-31: "sem organizações: sem aviso nos três painéis").
-- **Observado**: no 8091, sem tenancy, o placeholder é "Padrão — Amber, a do Filament (ou a da organização, dentro dela)". O sufixo é incondicional em `app/Livewire/PreferenciasDeAparencia.php:96`. O oráculo do CT-31 (`/organiza[çc][ãa]o\s+liber/`) não pega essa frase.
-- **Repro**: 1) entrar no 8091; 2) abrir `/admin/meu-perfil`; 3) olhar o "Padrão" do campo Cor primária.
-- **Destino**: 3, depois 2
-- **Ação exigida**: fortalecer o CT-31 pela `feature-test-design` para que nenhuma menção a organização apareça sem tenancy. Ele deve falhar primeiro; só então condicionar o sufixo a `kit.tenancy.enabled`.
-
-### QA-05 — P-13 estende a resposta de Q2 sem pergunta ao solicitante · Minor · destino 1
-
-- **Dimensão**: A (auditoria do requisito)
-- **Esperado**: Q2 diz "desde que os settings (principal e, se o tenant tiver sendo usado, também liberado naquela organização)".
-- **Observado**: com tenancy, a escolha pessoal vale no `/admin` e no `/infra` mesmo para quem pertence só a organizações que não liberaram. No 8092, `/admin` e `/infra` mostram Purple, Denso, Grande e Oculto, enquanto `/app/globex` (não liberada) mostra Rose e o padrão. É a decisão do dev (P-13, "step 3"), não do solicitante.
-- **Repro**: 1) entrar no 8092; 2) visitar `/admin`, `/infra` e `/app/globex`; 3) comparar `--primary-500` e a declaração `:root{…}`.
-- **Destino**: 1
-- **Ação exigida**: registrar em `## Perguntas ao Solicitante` se, com tenancy, os painéis sem organização seguem só a chave da instalação. P-13 continua vigente até a resposta.
-
-### QA-06 — Contagens do cabeçalho do `04` e tipo da natureza fora do vocabulário · Cosmético · destino 1
+### QA-08 — Asserções sem `Então` no `04`/`05`: CT-B01 ampliado e CT-31 fortalecido só no teste · Minor · destino 3
 
 - **Dimensão**: L1
+- **Relacionado a**: CT-B01 (BP-37), CT-31 (QA-04 do ciclo 1), P-16, RQ-04
+- **Esperado**: toda linha de dataset e toda asserção têm Exemplo e `Então` no Gherkin, e um mutante previsto que ela mata.
 - **Observado**:
-  - O cabeçalho do `04` diz `Cenários: 39 · Mutantes previstos: 85`. Os `grep -c` da `template-04.md` dão 45 cenários, 16 regras, 86 mutantes e 0 sem matador.
-  - O `01` diz `Tipo: feature`; o vocabulário da skill é nova · evolução · correção · ajuste · refatoração.
-- **Evidência**: `grep -rn "Cenários: \|39 CT\|85 mutantes"` na wiki → `04:19` e `03:174` (registro histórico do despacho, que fica como está).
-- **Ação exigida**: recalcular `04:19` pelos comandos e trocar o tipo no `01`.
+  - **CT-B01.** O teste tem 4 linhas de dataset: `/admin` nos dois modos, e `/app` e `/infra` em "Esconder tudo". Ele também reabre o menu pelo botão do topo e confere que o item continua visível e clicável. O Gherkin do `05` tem 2 Exemplos, só `/admin`, sem o passo de reabrir. A tabela de mutantes (MB1–MB4) não prevê o "não reabre".
+  - **CT-31.** O teste agora afirma que a palavra "organiza" não aparece em nenhum lugar da seção, placeholders inclusive. O `Então` do `04` continua só "não mostra o aviso sobre organizações", e o único mutante é o M59. O ciclo 1 pediu o fortalecimento pela `feature-test-design`, e o `04` não mudou nesse cenário (diff de `cb615687`).
+- **Repro**: comparar o `[CT-B01]` de `tests/Browser/PreferenciasDeAparenciaTest.php` com o Gherkin do CT-B01 no `05`. Depois, `tests/Kit/PreferenciasDeAparenciaTest.php`, cenário `[CT-31]`, com o Esquema do CT-31 no `04`.
+- **Evidência**: `ids-ct.sh` dá exit 0, porque só confere IDs. O descompasso é do dataset contra os Exemplos (leitura da L1).
+- **Destino**: 3
+- **Ação exigida**: pela `feature-test-design`, acrescentar ao CT-B01 os Exemplos de `/app` e `/infra` e o `Então` de reabrir, com um mutante "botão do topo não reabre". No CT-31, acrescentar o `Então` "nenhuma menção a organização, placeholders inclusive" e um mutante "sufixo da organização incondicional". Os testes já existem; o vermelho do CT-31 contra o código antigo é alegado pelo `03` e não foi reproduzido por mim (ver *Não Verificado*).
+
+### QA-09 — `## Impacto` do `01` prevê ação nova no `PermissoesDeAcoesTest`; a feature não cria Action · Minor · destino 1
+
+- **Dimensão**: J (previsto × medido) e L3
+- **Relacionado a**: `## Impacto em Features Existentes` do `01` (linha "Inventários"); `## Conformidade com Rules` do `03` (linha `filament.md`)
+- **Esperado**: o impacto previsto bate com o medido.
+- **Observado**: o `01` diz "`PermissoesDeAcoesTest` (ação nova de salvar)". O `03` diz "nenhuma Action nova (o salvar é método do componente)". `tests/Kit/PermissoesDeAcoesTest.php` não está no diff e não menciona aparência.
+- **Repro**: `grep -n "PermissoesDeAcoes" wikis/specs/feat/preferencias-de-aparencia/preferencias-de-aparencia/*.md` e `git diff --name-only main...HEAD | grep PermissoesDeAcoes` (vazio).
+- **Destino**: 1
+- **Ação exigida**: corrigir a linha do `01` com a marca `*(alterado em …)*`. Nenhum outro arquivo da wiki repete a afirmação.
+
+### QA-10 — Marcas de alteração mal postas no `01` e célula ambígua em `## Despachos` · Cosmético · destino 1
+
+- **Dimensão**: L3 / L6
+- **Observado**:
+  1. No passo 5 do `01` ficaram duas marcas. A segunda, "*(alterado em 2026-11-18: era `mutateFormDataBeforeSave()`)*", contradiz o texto atual, que agora nomeia `mutateFormDataBeforeSave()` de propósito.
+  2. Na linha de log do passo 6 do `01`, a marca foi inserida dentro da chamada `Log::warning(...)` citada, e a citação deixou de ser código válido.
+  3. Na linha 15 de `## Despachos` do `03`, a coluna Contexto diz "conversa". O `06` do ciclo 1 declara "contexto novo sem a conversa".
+- **Repro**: `grep -n "era \`mutateFormDataBeforeSave()\`" 01-plano-acao.md`; `grep -n "QA-02 do quality gate, ciclo 1)\*, \['user_id'" 01-plano-acao.md`; `grep -n "^| 15 " 03-progresso.md`.
+- **Destino**: 1
+- **Ação exigida**: no passo 5, juntar as duas marcas numa só, que conte as duas mudanças. No passo 6, levar a marca para fora da citação do log. Na linha 15 do `03`, trocar "conversa" por "contexto novo, sem a conversa".
+
+## Matriz de Rastreabilidade
+
+Sem lacuna. `rastreabilidade.sh` exit 0. As 14 RQ e as P-01..P-17 têm passo, CT e código. `07-tickets/` não existe: feature não fatiada, e o `03` registra a decisão.
 
 ## Dimensões
 
 | # | Dimensão | Status | Observação |
 |---|----------|--------|------------|
-| A | Cobertura do requisito | ⚠️ | QA-05 — `rastreabilidade.sh` exit 0; `indice.sh --check` não se aplica (sem `07-tickets/`). As 14 RQ conferidas no diff e no app. RQ-11: `composer.json`/`lock` fora do diff. Testes da feature verdes: 35+41+11+3 (Kit), 14+16+4 (Tenancy), 7 (Browser) |
-| B | Fronteiras e dados | ✅ | Forjado no `$wire` no 8091: `cor` Gray e injeção `</style><script>` recusados por validação; `fonte` 12345 recusado; campo extra não gravado nem logado; `densidade` em lista passa pelo `in()` e é coagida para o padrão (só a própria pessoa, sem defeito; ver QA-02, item 2) |
-| C | Matriz de permissão | ✅ | Configurações só para quem administra (CT-27), chave da organização pela `TenantPolicy` (CT-28), `salvar()` grava só no usuário autenticado (CT-06). Todos verdes |
-| D | Observabilidade | ✅ | `storage/logs/laravel.log`: `[PreferenciasDeAparencia@salvar]` com context `user_id` e valores do vocabulário; a recusa sai em WARNING. Sem PII. Canal padrão (D7) |
-| E | Performance | ⏭️ | O decisor não tem I/O (leitura de `app/Support/AparenciaDoUsuario.php`); a contagem de queries não foi medida |
-| F | UX de erro | ⚠️ | Recusa: "A aparência pessoal foi desligada nesta aplicação. Nada foi gravado. Recarregue a página." Validação em pt_BR. Ver QA-04 |
-| G | Tema e cor | ✅ | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`); nível 1 exit 0 nos arquivos AM; nível 3: screenshot com `filament:theme:mode=dark`, seção legível; o aviso tem par `dark:text-gray-400` |
-| H | Acessibilidade | ⏭️ | Os quatro `<select>` com `<label for>`; ordem de Tab densidade → fonte → cor → menu → Salvar; "Esconder tudo" recolhe a 0 px com o botão "Expandir" visível. Sem `assertNoAccessibilityIssues` nem axe |
-| I | Segurança da superfície nova | ✅ | Coberto pelo step 9 (13 achados, 5 rejeitados). Além dele: nenhuma rota nova; nenhum `DB::raw`; `users.aparencia` fora do `$fillable` e em `$hidden`; o CSS sai do enum; nenhum id do cliente no `salvar()` |
-| J | Regressão adjacente | ✅ | `pest --tia --parallel --processes=3 --exclude-testsuite=Browser`: 6182 testes, 6179 passaram, 3 pulados, 0 falhas (o TIA rodou a seleção inteira). Ancestrais por ID: 247/247 (Kit) e 52/52 (Tenancy). Bate com o `## Impacto` do `01` |
-| K | Adequação da suíte | ⏭️ | K1 `k1-oraculo-fraco.sh` exit 1: `AparenciaEfetivaTest.php:169` (CT-16) rejeitado, porque `expect(...)->{$preferencia}->toBe($fabrica)` é assertion. K2 não verificado (ver *Não Verificado*). Revisão adversarial do `04` feita (2 rodadas). Amostragem manual: mutante sem a guarda da pré-visualização morto por CT-41; `&&`→`\|\|` e remoção da chave da organização (linha 134) mortos por CT-12 |
-| L | Consistência documental | ❌ | QA-01, QA-02, QA-03, QA-06 — L1 `ids-ct.sh` exit 0 (8 arquivos), L2 `citacoes.sh` exit 0, L4 `conformidade-rules.sh` exit 0, L6 `checkbox-sem-evidencia.sh` exit 0, L8 n/a (sem `08`; o `03` decidiu `Roteiro manual: não`). Prova negativa: `phpstan` 0 erros, `filacheck` 17/17, `filament/blueprint` ausente de `vendor/filament` (confere com o limite declarado) |
+| A | Cobertura do requisito | ✅ | `rastreabilidade.sh` exit 0; `indice.sh --check` não se aplica (sem `07-tickets/`). Q5, Q6 e Q7 estão abertas com premissa vigente e entram como débito. Nenhuma `RQ` aberta |
+| B | Fronteiras e dados | ✅ | Lista forjada `['compacto']` no `$wire`: passa pela validação, é coagida e só a densidade vira padrão, na própria pessoa. Não é defeito (CT-05); ver QA-07. Os forjados do ciclo 1 (Gray, `</style><script>`, 12345, campo extra) não foram refeitos: o código de gravação não mudou |
+| C | Matriz de permissão | ✅ | Desde o ciclo 1, o diff não toca autorização. CT-06, CT-27 e CT-28 seguem verdes, e a regressão inteira também |
+| D | Observabilidade | ✅ | `laravel.log`: `[PreferenciasDeAparencia@salvar]` com context `user_id` e valores do vocabulário. Sem PII. Canal padrão (D7) |
+| E | Performance | ⏭️ | Não verificada; ver *Não Verificado* |
+| F | UX de erro | ✅ | QA-04 corrigido: o placeholder sem tenancy não fala de organização (8091); com tenancy leva o sufixo e o aviso (8092) |
+| G | Tema e cor | ✅ | `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`); nível 1 exit 0 nos arquivos AM. Axe com tema escuro forçado (`dark` no `<html>` confirmado) em `/admin/meu-perfil` e nas Configurações: 0 violações |
+| H | Acessibilidade | ✅ | axe-core (o `axe.min.js` do `pest-plugin-browser`, injetado pelo Playwright): 0 violações no Meu perfil e nas Configurações, claro e escuro, no 8091. No 8092: perfil com aviso, edição da organização com o interruptor e `/admin` com o menu "Esconder tudo" recolhido (largura 0). Controle positivo: um `<img>` sem `alt` injetado é acusado (`image-alt`, critical). Não há CT-B versionado de acessibilidade |
+| I | Segurança da superfície nova | ✅ | O step 9 cobriu 13 achados, 5 deles rejeitados. Além dele: nenhuma rota nova, nenhum `DB::raw`; `users.aparencia` fora do `$fillable` e em `$hidden`; o `salvar()` usa o usuário autenticado; o toggle da organização some (não desidrata) com a chave da instalação desligada |
+| J | Regressão adjacente | ⚠️ | `pest --tia --parallel --processes=3 --exclude-testsuite=Browser`: 6182 testes, 6177 passaram, 3 pulados, 2 falhas. As duas são do `QualidadeDeCodigoTest` (CT-01, CT-04): timeout de 60 s do `phpstan dump-parameters` com a máquina carregada. O arquivo isolado dá 31/31 (destino 4). Previsto × medido: ver QA-09 |
+| K | Adequação da suíte | ⏭️ | K1 `k1-oraculo-fraco.sh` exit 1, uma linha: o `[CT-16]` de `tests/Kit/AparenciaEfetivaTest.php`. Rejeitada: o teste tem `expect(...)->{$preferencia}->toBe($fabrica)`. K2 não verificado (ver *Não Verificado*). Revisão adversarial do `04` feita em 2 rodadas |
+| L | Consistência documental | ⚠️ | QA-07, QA-08, QA-09, QA-10. L1 `ids-ct.sh` exit 0; os `grep -c` do cabeçalho conferem. L2 `citacoes.sh` exit 1, com 3 linhas, todas do `06` do ciclo 1 (citações sem símbolo); este relatório o substitui. L4 `conformidade-rules.sh` exit 0; conferi também contra o código `config.md`, `views.md`, `models.md`, `providers-filament.md`, `specs.md`, `livewire.md` e `settings.md` (cumpridas). L5: docs pt × en, CHANGELOG e glossário coerentes entre si e com P-13. L6 `checkbox-sem-evidencia.sh` exit 0. L8 n/a: sem `08`, e o `03` decidiu `Roteiro manual: não`. `roteiro-manual.sh` exit 0 |
 
 ## Débitos Aceitos
 
-- Nenhum ainda. QA-03, QA-04, QA-05 e QA-06 entram no `03` como débito se não forem corrigidos neste ciclo.
+- Q5, Q6 e Q7 abertas ao solicitante. P-15, P-16 e P-13 estão implementadas como premissa vigente, e as docs de usuário (pt/en) já descrevem a P-13 (a escolha vale no `/admin` e no `/infra`). Se a resposta de Q7 for outra, mudam o código, os CT-12/CT-09 e as docs.
+- QA-07, QA-08, QA-09 e QA-10, se não forem corrigidos neste ciclo. Replicar no `03`.
 
 ## Suspeitas Não Confirmadas
 
-- O Browser trouxe 2 warnings (`"warnings":2`, sem detalhe); a causa não foi investigada.
+- Rodado num banco já usado, o roteiro `manual.cjs` deu 14/17, porque o master tinha escolha gravada. Ele depende do `prepara.sh` (banco novo) a cada execução. Isso é pré-condição documentada no cabeçalho do `prepara.sh`, não defeito.
 
 ## Não Verificado
 
-- K2 — prova indispensável à K pendente. O `pest --mutate --path=app/Support/AparenciaDoUsuario.php --covered-only --no-cache`, lançado por `php pestw.cmd` e dividido em blocos, deu:
-  - 38 mutantes, 100 %, em 42 s;
-  - 37 mutantes, 100 %, em **1,53 s**.
-  
-  O mutante `Line 99: EmptyStringToNotEmpty` foi dado como morto, mas é equivalente: `CorPrimaria::resolver(null, 'PEST Mutator was here!')` devolve `[]`. Carregado por `-d auto_prepend_file`, ele passa os 41 testes do arquivo. O arnês conta mortes falsas no Windows, então nenhum score é certificável. Teto: débito.
-- E — contagem de queries por request não medida: sem `pest-plugin-agent` (`ls vendor/pestphp`) e sem o Boost MCP.
-- H — `assertNoAccessibilityIssues()`/axe não rodado. O CT-B não o usa, e não tenho como gravar teste.
-- L4 (julgamento) — conferi contra o código `livewire.md` e `settings.md`, que estão cumpridas. As outras 17 rules casadas ficaram aceitas pela linha do `03`, sem conferência própria.
-- Suíte Browser inteira não rodada; só o arquivo da feature (7/7).
+- **K2** — prova indispensável pendente. Rodei `XDEBUG_MODE=coverage cmd //c "$(cygpath -w …/pestw.cmd)" tests/Kit/AparenciaEfetivaTest.php --mutate --path=app/Support/AparenciaDoUsuario.php --covered-only --no-cache --parallel --processes=3 --no-tia`. Resultado: 38 mutantes, 100 %, `Duration` 0,86 s, num arquivo de testes que leva 31 s sozinho. A saída não lista mutante por mutante. No ciclo 1, o mutante equivalente `EmptyStringToNotEmpty` na linha do `paletaDaPessoa()` já tinha sido contado como morto. O arnês continua contando mortes falsas, e nenhum score é certificável.
+- **E** — sem `pest-plugin-agent` (`ls vendor/pestphp`: ausente), sem Boost MCP e sem Debugbar/Telescope. Pela leitura, o decisor não tem I/O (CR-03 mediu 23 µs por chamada), mas a contagem de queries não foi medida.
+- **L6, suíte Browser inteira** ("261 testes, 209 passaram, 52 pulados"): não rodada, por custo de tempo (em série). O arquivo da feature reproduz 7/7 e 89 asserções.
+- **L6, Falsificabilidade** ("Kit 59 de 81", "Tenancy 32 de 34"): reproduzir exige `git apply -R` em `app/`, que é vedado a este gate. O "81" é a contagem da época; hoje os três arquivos somam 87.
+- **QA-08, vermelho prévio do CT-31** contra o sufixo incondicional: o `03` o alega. A reprodução por `auto_prepend_file` precisava gravar a versão antiga num arquivo temporário, e o hook do gate negou.

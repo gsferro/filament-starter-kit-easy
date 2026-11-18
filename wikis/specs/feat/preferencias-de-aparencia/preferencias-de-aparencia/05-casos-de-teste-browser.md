@@ -34,15 +34,20 @@ Dívida conhecida: o kit não tem `data-testid`; seletores de classe do vendor s
 # language: pt
   Esquema do Cenário: [CT-B01] recolhido, o menu segue o modo escolhido pela Ana
     Dado a chave da instalação ligada e o menu da instalação em "<menu da instalação>"
-    E a Ana com o menu "<menu da Ana>" gravado e o /admin aberto numa janela de 1280 px, com a barra lateral expandida
+    E a Ana com o menu "<menu da Ana>" gravado e o <painel> aberto numa janela de 1280 px, com a barra lateral expandida
     Quando a Ana recolhe a barra lateral
     Então a barra lateral tem largura <largura>
     E o ícone do primeiro item do menu está <ícone>
+    E, em "Esconder tudo", o botão do topo reabre a barra na largura aberta, com o primeiro item visível e clicável
 
     Exemplos:
-      | menu da instalação | menu da Ana      | largura                        | ícone                                  |
-      | Esconder tudo      | Manter os ícones | maior que 0 e menor que a aberta | visível, com caixa dentro da viewport |
-      | Manter os ícones   | Esconder tudo    | 0, ou toda fora da viewport     | sem caixa visível                     |
+      | painel | menu da instalação | menu da Ana      | largura                        | ícone                                  |
+      | /admin | Esconder tudo      | Manter os ícones | maior que 0 e menor que a aberta | visível, com caixa dentro da viewport |
+      | /admin | Manter os ícones   | Esconder tudo    | 0, ou toda fora da viewport     | sem caixa visível                     |
+      | /app   | Manter os ícones   | Esconder tudo    | 0, ou toda fora da viewport     | sem caixa visível                     |
+      | /infra | Manter os ícones   | Esconder tudo    | 0, ou toda fora da viewport     | sem caixa visível                     |
+
+    *(alterado em 2026-11-18: QA-08 do quality gate, ciclo 2)* — linhas de `/app` e `/infra` e o reabrir, do BP-37 da revisão contra o Blueprint
 ```
 
 **Roteiro executável**
@@ -64,6 +69,7 @@ Dívida conhecida: o kit não tem `data-testid`; seletores de classe do vendor s
 | MB2 | o modo do menu lido da instalação, não da pessoa (decidido no registro do painel, antes do usuário) | CT-B01 (as duas linhas: a instalação é o oposto) | largura da linha invertida |
 | MB3 | "Esconder tudo" só oculta os rótulos (ícones ficam) | CT-B01 (linha Esconder tudo) | ícone com caixa visível |
 | MB4 | "Manter os ícones" mapeado para recolher tudo | CT-B01 (linha Manter os ícones) | largura 0; ícone sem caixa |
+| MB9 | em "Esconder tudo", nenhum botão visível reabre a barra (pessoa fica sem menu) | CT-B01 (linhas Esconder tudo) | depois do clique no botão do topo, largura ≠ aberta ou primeiro item fora da viewport *(alterado em 2026-11-18: QA-08 do quality gate, ciclo 2)* |
 
 ---
 

@@ -39,9 +39,9 @@ use Jeffgreco13\FilamentBreezy\Livewire\MyProfileComponent;
  *
  * ## O que chega do navegador
  *
- * `$data` é público e escrito pelo cliente. O `Select` recusa valor fora das opções na validação,
- * e mesmo assim o que é gravado passa por `AparenciaDoUsuario::escolhas()`, a mesma redução ao
- * vocabulário que a leitura usa (P-12). O log leva só esses valores reduzidos (`.ai/rules/livewire.md`).
+ * `$data` é público e escrito pelo cliente. O `in()` do `Select` recusa texto fora das opções, mas
+ * aceita uma lista forjada (`['denso']`): a barreira real é `AparenciaDoUsuario::escolhas()`, a mesma
+ * redução ao vocabulário que a leitura usa (P-12, CT-05) — o que não é dele vira "Padrão". O log leva só esses valores reduzidos (`.ai/rules/livewire.md`).
  *
  * @property-read Schema $form
  */

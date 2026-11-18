@@ -16,7 +16,7 @@
 | A6 — documento de candidatas a pacote | 1 | 1 | 1 | mínimo |
 
 - Técnicas aplicadas: EP (partições válidas e inválidas isoladas), tabela de decisão (escalada na A1, ver Mapa), tabela estado × operação (chaves), 2-switch (desligar e religar), matriz papel × ação, sequência de requests (ler → mudar → ler), BVA não se aplica (nenhuma faixa ordenável: os quatro domínios são listas fechadas)
-- Cenários: 45 · Regras: 16 · Mutantes previstos: 86 · Sem matador: 0 *(alterado em 2026-11-18: QA-06 do quality gate, ciclo 1)*
+- Cenários: 45 · Regras: 16 · Mutantes previstos: 87 · Sem matador: 0 *(alterado em 2026-11-18: QA-06 do quality gate, ciclo 1)*
 <!-- derivado do arquivo por grep -c (comandos em references/template-04.md, "Contagem do cabeçalho"); CT-B e seus mutantes estão no 05 -->
 
 ## Varredura SFDIPOT
@@ -822,6 +822,7 @@ Notas: CT-25 afirma só o que o `00` determina — o valor fora do vocabulário 
       Quando a Ana abre a seção Aparência de <meu perfil>
       Então a seção mostra os quatro campos
       E a seção não mostra o aviso sobre organizações
+      E nenhum texto da seção, o "Padrão" dos campos inclusive, menciona organização *(alterado em 2026-11-18: QA-08 do quality gate, ciclo 2)*
 
       Exemplos:
         | meu perfil        |
@@ -840,6 +841,7 @@ Notas: CT-29 é HTTP (G2): `assertSee` sobre o título "Aparência" num elemento
 | M57 | seção sempre visível (sem condição na chave) | CT-29 (linhas desligada) | seção presente com a chave desligada |
 | M58 | gravação recusada quando as organizações da pessoa não liberaram (chave da organização consultada fora da organização) | CT-30 (linhas desligada) | o perfil não guarda Denso |
 | M59 | aviso sempre visível, mesmo sem organizações | CT-31 | o aviso aparece |
+| M87 | o sufixo "(ou a da organização, dentro dela)" do "Padrão" da cor sem condição na tenancy | CT-31 | a palavra organização aparece no placeholder da cor (vermelho medido contra o código do ciclo 1) *(alterado em 2026-11-18: QA-08 do quality gate, ciclo 2)* |
 | M60 | aviso esquecido no modo com organizações | CT-30 | o aviso não aparece |
 | M79 | aviso só no Meu perfil do `/app` (condição pelo painel corrente) (ADV-03) | CT-30 (linhas /admin, /infra) | o aviso não aparece no /admin e no /infra |
 | M80 | seção com um campo a menos num painel (schema montado por painel) (ADV-13) | CT-29 (linhas ligadas) | falta o campo de menu/fonte no /infra |

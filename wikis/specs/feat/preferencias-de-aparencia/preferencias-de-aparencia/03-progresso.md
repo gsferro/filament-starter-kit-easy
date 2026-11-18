@@ -1,6 +1,6 @@
 # Progresso — Roadmap item 1: preferências de aparência por usuário
 
-**Estado**: em revisão
+**Estado**: concluída — 2026-11-18
 
 **Base do PR**: `main`
 
@@ -107,7 +107,9 @@ Ponytail indisponível como plugin com namespace — passe manual pela skill `po
 ## Quality Gate
 
 - **Ciclo**: 1 · **Veredito**: REPROVADO → especificação (QA-01, QA-02 Major; QA-03, QA-04, QA-05 Minor; QA-06 Cosmético) · **Data**: 2026-11-18 — nenhum defeito de comportamento; QA-01: números do `03` sem comando (corrigidos pela saída real, roteiro Playwright versionado em `roteiro-playwright/`); QA-02: `01`/`02` contradiziam o código (`declaracoes()`, coerção no save, guarda da pré-visualização, texto do log, rota do perfil com tenancy; P-15..P-17 na Cobertura); QA-03: texto do `04` (P-13, `$fillable`, Q5/Q6) e CT-41..CT-46 no Índice e no Mapa (e a linha do M74, que uma inserção anterior tinha quebrado); QA-04: o "Padrão" da cor falava de organização sem tenancy — CT-31 fortalecido (vermelho), depois o sufixo condicionado a `kit.tenancy.enabled`; QA-05: Q7 ao solicitante (P-13 vigente); QA-06: contagens do `04` (45 · 16 · 86) e tipo `nova` no `01`
-- **Relatório**: `06-relatorio-qa.md` (ciclo 1)
+- **Ciclo**: 2 · **Veredito**: APROVADO COM DÉBITO · **Data**: 2026-11-18 — 0 Blocker, 0 Major; QA-01..QA-06 fechados (QA-05 encaminhado como Q7); os quatro novos corrigidos em seguida: QA-07 (docblock do componente repetia a frase do `in()` que o QA-02 corrigiu na wiki), QA-08 (Gherkin do CT-B01 com `/app`, `/infra` e o reabrir, mutante MB9; `Então` do CT-31 sem menção a organização, mutante M87), QA-09 (`PermissoesDeAcoesTest` no Impacto do `01`), QA-10 (marcas do `01` e a coluna Contexto do despacho 15)
+- **Relatório**: `06-relatorio-qa.md` (ciclo 2; o do ciclo 1 está no histórico do git, commit `cb615687`) — gravado do texto devolvido pelo gate; duas citações de linha sem símbolo (`[CT-B01]` e `[CT-16]`) foram reescritas pelo ID do CT, como manda `.ai/rules/specs.md`, para o `citacoes.sh` passar
+- **Débito** (aceito, sem verificação possível nesta máquina ou dependente do solicitante): E — contagem de queries por request não medida (sem `pest-plugin-agent`; o decisor não tem I/O, 23 µs por chamada, CR-03); K2 — `pest --mutate` no Windows não certifica score (`.ai/rules/testes.md`); Q5, Q6 e Q7 abertas ao solicitante com P-15, P-16 e P-13 vigentes; J — 2 timeouts de 60 s do `phpstan dump-parameters` no `QualidadeDeCodigoTest` com a máquina carregada, 31/31 isolado (ambiente)
 
 ## Revisão do Diff (step 9)
 
@@ -185,6 +187,10 @@ Blueprint derivado pelo `codex` com a skill `planning-filament` só a partir de 
 | 12 | 10 | `codex exec --yolo` (roteiro de atualização v0.54.0) | não exposto pelo host | CHANGELOG, diff, docs | `wikis/atualizacoes/v0.54.0.md` + cópia em `agentes-e-skills.md`; `RoteiroDeAtualizacaoTest` 212/212 | — | conferido: chave ligada, três migrations, como iniciar desligada |
 | 13 | 10 | `codex exec --yolo` (Filament Blueprint, skill `planning-filament`) | não exposto pelo host | só `00`, `01`, `02` + vendor | 40 requisitos BP-01..BP-40 | — | pedido do usuário ("use o blueprint para validar o filament") |
 | 14 | 10 | `reviewing-filament-plans` (sub-agente) | `opus` | Blueprint + diff | 30 atendidos, 9 divergentes, 1 não verificável | 165k tokens · 10 min | BP-37 e BP-19 reproduzidos pela leitura do teste e do placeholder; destino de cada um na seção acima |
-| 15 | 11 | `fw-qa-gate` — ciclo 1 | claude-opus-5-5 (informado no `06`) | conversa | `06` gravado verbatim; REPROVADO → especificação (2 Major de documentação) | 279k tokens · 38 min | `git status --porcelain` vazio antes e depois; bancos descartáveis 8091/8092 alterados e devolvidos ao estado inicial |
+| 15 | 11 | `fw-qa-gate` — ciclo 1 | claude-opus-5-5 (informado no `06`) | contexto novo, sem a conversa | `06` gravado verbatim; REPROVADO → especificação (2 Major de documentação) | 279k tokens · 38 min | `git status --porcelain` vazio antes e depois; bancos descartáveis 8091/8092 alterados e devolvidos ao estado inicial |
+| 16 | 11 | `fw-qa-gate` — ciclo 2 | claude-opus-5-5 (informado no `06`) | contexto novo, sem a conversa | `06` gravado verbatim; APROVADO COM DÉBITO (QA-07..QA-09 Minor, QA-10 Cosmético, corrigidos depois) | 268k tokens · 39 min | `git status --porcelain` vazio antes e depois; bancos 8091/8092 devolvidos ao estado inicial |
+| 17 | 12 | Sem despacho — `requirement-to-rule` não invocada | — | — | os dois ciclos do gate: nenhum candidato que passe em *Vale virar rule* | — | a lição do QA-07 (procurar a cópia da frase corrigida) já está em `.ai/rules/specs.md` |
 
 ## Candidatos a Rule
+
+- 2026-11-18 — rota: sessão principal, sem invocar a `requirement-to-rule` — apresentados 0 · gravados 0 · recusados 0 · descartados no gate 0 · poda 0 (os dois ciclos do gate: nenhum candidato)

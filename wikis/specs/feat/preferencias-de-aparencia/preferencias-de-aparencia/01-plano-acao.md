@@ -137,7 +137,7 @@ Nenhum.
 - Densidade (`DensidadeDoLayoutTest`): o render hook e a largura do menu passam pelo decisor; sem escolha pessoal, o resultado é idêntico
 - Cor da organização (`IdentidadeVisualDaOrganizacao*`): continua vencendo a da instalação; só perde para a da pessoa onde a organização liberou
 - Tela de configurações (`ConfiguracoesSecoesColapsaveisTest`, `ConfiguracoesDoKitTelaTest`): seção nova, campos novos; densidade muda de seção
-- Inventários: `PermissoesDeAcoesTest` (ação nova de salvar), mapa do settings, `SemanticaDoVazio…` (não se aplica: não é lista de painéis), âncora de `tests/Kit/KitInfoTest.php` (73 → 76 propriedades)
+- Inventários: mapa do settings (`PermissoesDeAcoesTest` não muda: o salvar é método do componente do perfil, não Action *(alterado em 2026-11-18: QA-09 do quality gate, ciclo 2)*), `SemanticaDoVazio…` (não se aplica: não é lista de painéis), âncora de `tests/Kit/KitInfoTest.php` (73 → 76 propriedades)
 
 ## Rollback
 
@@ -209,7 +209,7 @@ Canal padrão (`Log::info`/`Log::warning`), sem canal novo (D7).
 
 - **Path**: `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`
 - Seção `secao('aplicacao', 'aparencia', 'Aparência dos painéis', …)` com: `Toggle aparencia_por_usuario`, `Select densidade_do_layout` (movido, D6), `Select tamanho_da_fonte`, `Select modo_do_menu` — `->options(Enum::opcoes())`, sem placeholder
-- `mutateFormDataBeforeFill()` coage fonte e menu como coage a densidade (P-12); `mutateFormDataBeforeSave()` coage densidade, fonte e menu de novo, porque o `in()` do `Select` aceita uma lista forjada (`["grande"]`), que chegaria nula ao `fill()` do spatie (CT-25) *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1)* *(alterado em 2026-11-18: era `mutateFormDataBeforeSave()`)*
+- `mutateFormDataBeforeFill()` coage fonte e menu como coage a densidade (P-12); `mutateFormDataBeforeSave()` coage densidade, fonte e menu de novo, porque o `in()` do `Select` aceita uma lista forjada (`["grande"]`), que chegaria nula ao `fill()` do spatie (CT-25) *(alterado em 2026-11-18: a coerção ao abrir era descrita como `mutateFormDataBeforeSave()` — erro de leitura do step 3 — e a da gravação foi acrescentada pelo CT-25; QA-02 do ciclo 1 e QA-10 do ciclo 2)*
 - **Atende**: RQ-06, RQ-07, P-12
 - **Logs**: nenhum (a gravação do settings já é auditada pela tela)
 
@@ -225,7 +225,7 @@ Canal padrão (`Log::info`/`Log::warning`), sem canal novo (D7).
 - **Atende**: RQ-01..RQ-04, RQ-07, RQ-10, P-05, P-06, P-07, P-12
 - **Logs**:
   - `Log::info("[PreferenciasDeAparencia@salvar] Aparência pessoal salva | user: {$user->getKey()}", ['user_id' => …, 'aparencia' => $valoresCoagidos])` — só os valores coagidos (vocabulário fechado), nunca o bruto do cliente (`.ai/rules/livewire.md`)
-  - `Log::warning("[PreferenciasDeAparencia@salvar] Gravação recusada: aparência pessoal desligada | user: {$user->getKey()}" *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1)*, ['user_id' => …])`
+  - `Log::warning("[PreferenciasDeAparencia@salvar] Gravação recusada: aparência pessoal desligada | user: {$user->getKey()}", ['user_id' => …])` *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1; marca fora da citação, QA-10 do ciclo 2)*
 
 ### 7. A chave da organização
 
