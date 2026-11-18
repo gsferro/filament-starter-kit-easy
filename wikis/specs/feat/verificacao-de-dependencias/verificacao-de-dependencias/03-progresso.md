@@ -8,10 +8,10 @@
 - [x] `composer require --dev` das duas — `composer.json` (`^4.16`, `^0.9`) e `composer.lock` (só pacotes novos; nenhuma versão existente mudou, conferido no diff do lock), 2026-11-18
 
 ## 2. A configuração do `composer-unused`
-- [x] `composer-unused.php` com as 5 exclusões comprovadas — triagem pelo `codex` (despacho 1), relatório cai de 8 para os 3 sem uso, 2026-11-18
+- [x] `composer-unused.php` com as exclusões comprovadas — triagem pelo `codex` (despacho 1) com 5; o QA-01 do gate tirou o `livewire/blaze` (sem uso efetivo): 4 exclusões, relatório com os 4 sem uso, 2026-11-18
 
 ## 3. Os scripts do composer
-- [x] `deps:unused`, `deps:require`, `deps:check` — `composer validate` "is valid"; `composer deps:check` lista os 3 sem uso e os 181 símbolos, 2026-11-18
+- [x] `deps:unused`, `deps:require`, `deps:check` — `composer validate` "is valid"; `composer deps:check` lista os 4 sem uso e os 181 símbolos (depois do QA-01), 2026-11-18
 
 ## 4. O relatório no CI
 - [x] passo "Dependências declaradas × usadas (relatório)" no job `qualidade` — `.github/workflows/ci.yml`, 2026-11-18
@@ -30,7 +30,7 @@ Não fatiado — 2026-11-18: 6 RQ, ferramental sem tela; nenhum sinal de fatiame
 
 ## Verificação Final
 - [x] `vendor/bin/pint --dirty --format agent` — `{"tool":"pint","result":"passed"}`, 2026-11-18
-- [x] `vendor/bin/phpstan analyse` (level 8) — sem código de `app/` novo além de uma linha de lista; o job `qualidade` do PR roda o gate
+- [x] `vendor/bin/phpstan analyse` (level 8) — `{"tool":"phpstan","result":"passed","errors":0}` (QA-04 do gate), 2026-11-18
 - [x] testes da feature — ver `## Testes`, 2026-11-18
 - [x] `vendor/bin/pest --parallel --tia` contra a baseline — `pest --tia --parallel --processes=3 --exclude-testsuite=Browser`: 6194 testes, 6191 passaram, 3 pulados, 0 falhas (a rodada anterior pegou o `composer.json` inválido no meio da edição — 269 erros "Unable to detect application namespace" — e foi descartada), 2026-11-18
 - [x] step 9 (revisão do diff) — `/code-review` (9), `fw-revisor-diff` (6) e `codex` (3); destino em `## Revisão do Diff (step 9)`, 2026-11-18
@@ -65,6 +65,11 @@ Passe manual pela skill `ponytail-review`:
 ## Desvios do Plano
 
 - 2026-11-18 — **ordem**: a implementação (passos 1 a 6) foi feita antes da derivação do `04`, porque a pergunta do requisito (RQ-06) só tem resposta medindo: a triagem é o dado que o plano precisava. O derivador recebe só o `00` e os paths do `01`; a falsificabilidade dos CT é provada revertendo o diff
+
+## Quality Gate
+
+- **Ciclo**: 1 · **Veredito**: REPROVADO → especificação (QA-01, QA-02, QA-03 Major; QA-04 Minor; QA-05 Cosmético) · **Data**: 2026-11-18 — QA-01: `livewire/blaze` reclassificado como sem uso e fora da configuração (em todas as cópias dos números); QA-02: P-08 e a pergunta Q3 ao solicitante; QA-03: CT-04 do `04` reescrito com a fixture de ferramentas falsas e os três `Exemplos`, e os `Então` da revisão adversarial levados aos cenários; QA-04: saída real do PHPStan; QA-05: contagens e frases do `04`, M26, docblock do teste
+- **Relatório**: `06-relatorio-qa.md` (ciclo 1)
 
 ## Revisão do Diff (step 9)
 

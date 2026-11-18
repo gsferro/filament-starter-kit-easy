@@ -16,11 +16,11 @@ desenvolvimento novas; nada muda em runtime. Wiki: `wikis/specs/feat/verificacao
   `composer deps:check` (as duas), `deps:unused` e `deps:require`. Ficam FORA do `composer test`.
 - No CI, o job `qualidade` roda as duas e publica a saída no resumo do job, **sem reprovar** (decisão do
   mantenedor: só relatório).
-- `composer-unused.php` na raiz: exclui só os 5 pacotes que o kit usa por um caminho que a ferramenta não
-  enxerga (`anselmokossa/filament-sentinel`, `laravel/pulse`, `laravel/reverb`, `livewire/blaze`,
-  `spatie/laravel-backup`), cada um com o motivo. Viaja com o `kit:update`.
-- A triagem de 2026-11-18 em `wikis/qualidade-de-codigo.md`: **3 pacotes sem uso**
-  (`awcodes/filament-badgeable-column`, `lara-zeus/progress`, `syriable/filament-activitylog`) e **181
+- `composer-unused.php` na raiz: exclui só os 4 pacotes que o kit usa por um caminho que a ferramenta não
+  enxerga (`anselmokossa/filament-sentinel`, `laravel/pulse`, `laravel/reverb`, `spatie/laravel-backup`), cada um com o motivo. Viaja com o `kit:update`.
+- A triagem de 2026-11-18 em `wikis/qualidade-de-codigo.md`: **4 pacotes sem uso**
+  (`awcodes/filament-badgeable-column`, `lara-zeus/progress`, `livewire/blaze` — instalado sem nenhum `@blaze` —,
+  `syriable/filament-activitylog`) e **181
   símbolos** de dependências só transitivas usadas direto e de oito extensões PHP não declaradas, com as
   recomendações. Nenhuma dependência de produção mudou.
 

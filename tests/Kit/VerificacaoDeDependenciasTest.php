@@ -3,7 +3,7 @@
 /**
  * Dependências declaradas × usadas (`composer-unused` + `composer-require-checker`).
  *
- * Casos CT-01..CT-08 de `wikis/specs/feat/verificacao-de-dependencias/verificacao-de-dependencias/
+ * Casos CT-01..CT-09 de `wikis/specs/feat/verificacao-de-dependencias/verificacao-de-dependencias/
  * 04-casos-de-teste.md`. O oráculo é o Gherkin, não o código.
  */
 

@@ -2,7 +2,7 @@
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md` (só os paths de `## Estrutura de Implementação`)
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação.
-> Revisão adversarial: não exigida — perfil mínimo em todas as áreas e nenhum Impacto 3.
+> Revisão adversarial: não exigida pelo perfil, mas feita (rodada 1, ver `## Revisão Adversarial`) *(alterado em 2026-11-18: QA-05 do quality gate, ciclo 1)*.
 
 ## Perfil de Derivação
 
@@ -16,7 +16,7 @@
 - Impacto 2 no CI e na configuração: um passo que reprova deixa todo PR vermelho, e uma configuração que não viaja faz o relatório do projeto derivado acusar o que é falso (retrabalho manual, reversível). Nenhuma área toca dinheiro, dado de terceiro, autorização ou algo irreversível.
 - Passos rodados: 1, 2 (com as costuras), 5, 6; o 3 só com EP e o 7 só para alocar e conferir costuras. Sem BVA, sem tabela de decisão, sem matriz de estado (não há entidade com ciclo de vida).
 - Técnicas aplicadas: EP; rastreio de efeito na R4 (o relatório publicado é o efeito; ver a nota da R4).
-- Cenários: 8 · Regras: 8 · Mutantes previstos: 25 · Sem matador: 0
+- Cenários: 9 · Regras: 8 · Mutantes previstos: 26 · Sem matador: 0 *(alterado em 2026-11-18: QA-05 do quality gate, ciclo 1)*
 <!-- derivado do arquivo por grep -c (comandos da reference template-04, "Contagem do cabeçalho") -->
 
 ## Varredura SFDIPOT
@@ -35,7 +35,7 @@
 
 | Regra | Área (perfil herdado) | Origem (`RQ`/`P-nn`) | Técnica | Cenários |
 |---|---|---|---|---|
-| R1 — As duas ferramentas são dependência de desenvolvimento, declaradas e travadas no lock | require-dev (mínimo) | RQ-01, RQ-02, RQ-03 | EP (seção do `composer.json`/`composer.lock`) | CT-01 |
+| R1 — As duas ferramentas são dependência de desenvolvimento, declaradas e travadas no lock | require-dev (mínimo) | RQ-01, RQ-02, RQ-03, P-08 | EP (seção do `composer.json`/`composer.lock`) | CT-01 |
 | R2 — Um comando só do composer, `deps:check`, roda as duas ferramentas | require-dev (mínimo) | P-01, RQ-01, RQ-02, P-07 | EP (ferramenta alcançada pelo comando) | CT-02, CT-09 |
 | R3 — O CI roda as duas ferramentas pelo `vendor/bin`, depois de instalar as dependências | CI (mínimo) | RQ-04 | EP (origem do binário) | CT-03 |
 | R4 — O CI publica o relatório das duas no resumo do job e o job continua verde com achados | CI (mínimo) | RQ-05, P-02 | rastreio de efeito (publicado / sem reprovar) | CT-04 |
@@ -83,7 +83,7 @@
 | `docs/{pt,en}/referencia/qualidade-de-codigo.md` | o `00` pede "documentação de qualidade", sem fixar quantas cópias | os CT leem `wikis/qualidade-de-codigo.md` (path do plano, como nome); as traduções ficam para a rede de documentação existente |
 | `composer-unused.php` como nome do arquivo | nome default da ferramenta (fato do vendor), usado só para localizar | detalhe do CT-05/CT-06 |
 
-**Perguntas geradas pela derivação**: fechadas pela sessão em 2026-11-18 — Q?1 (desenho): o CT-04 executa o `run` do passo do CI, como recomendado; Q?2: virou a premissa P-07 do `00` (o `deps:check` fica fora do `composer test`), sem cenário próprio além do que o `composer.json` já mostra.
+**Perguntas geradas pela derivação**: fechadas pela sessão em 2026-11-18 — Q?1 (desenho): o CT-04 executa o `run` do passo do CI, como recomendado; Q?2: virou a premissa P-07 do `00` (o `deps:check` fica fora do `composer test`), com o CT-09 *(alterado em 2026-11-18: QA-05 do quality gate, ciclo 1)*.
 
 ## Setup Global
 
@@ -163,6 +163,7 @@ O nome Packagist de cada ferramenta é fato do registro, não oráculo do plano;
 | M4 | `deps:check` roda só o `composer-unused` (o `require-checker` ficou num script à parte) | CT-02 | "inclui `composer-require-checker`": a expansão do mutante não o tem |
 | M5 | `deps:check` aponta `@deps:require` mas o script se chama outro nome (referência quebrada; `composer deps:check` falha) | CT-02 | "toda referência aponta para script que existe": o mutante tem referência sem destino |
 | M6 | o comando existe com outro nome (`check:deps`, `deps`) | CT-02 | `scripts['deps:check']` ausente: a expansão começa vazia e as duas inclusões falham |
+| M26 | o script `test` do composer passa a chamar `@deps:check` (o gate local reprova com achado, contra Q2) | CT-09 | a expansão do `test` alcança `deps:check` *(alterado em 2026-11-18: QA-05 do quality gate, ciclo 1)* |
 
 ---
 
@@ -179,6 +180,8 @@ O nome Packagist de cada ferramenta é fato do registro, não oráculo do plano;
       Então o passo chama "composer-unused" e "composer-require-checker" por "vendor/bin/" ou por um script do composer.json que as chama
       E o passo não usa "uses:", nem baixa ".phar", nem roda "composer global"
       E no mesmo job há um passo anterior que roda "composer install"
+      E o "composer install" que precede o passo no mesmo job não traz "--no-dev" (ADV-01)
+      E o passo está no job "qualidade" do workflow de CI, sem "if:" no passo (ADV-09)
 ```
 
 `@premissa` (mecanismo, raia desenho): as duas formas aceitas de "pelo `vendor/bin`" são o caminho literal e o script do composer, que põe `vendor/bin` no `PATH`. O cenário não escolhe entre elas.
@@ -200,16 +203,23 @@ O nome Packagist de cada ferramenta é fato do registro, não oráculo do plano;
 ```gherkin
   Regra: o CI relata e não reprova
 
-    Cenário: [CT-04] com achado, o passo publica os dois relatórios no resumo e não reprova o job
-      Dado que ao menos uma das duas ferramentas, rodada sozinha no kit, sai com código diferente de 0
+    Esquema do Cenário: [CT-04] com achado ou ferramenta quebrada, o passo publica os dois relatórios no resumo e não reprova o job
+      Dado as duas ferramentas substituídas por falsas de saída controlada (<caso>)
       E um arquivo vazio no lugar de GITHUB_STEP_SUMMARY
       Quando o passo do CI que roda as ferramentas é executado como o runner faz, em "bash -eo pipefail"
       Então o passo termina com código 0, ou o passo declara "continue-on-error: true"
-      E o arquivo do resumo contém a saída do composer-unused
-      E o arquivo do resumo contém a saída do composer-require-checker
+      E o arquivo do resumo contém <no resumo>
+
+      Exemplos:
+        | caso                                                   | no resumo                                          |
+        | as duas com achado (saem 1 e imprimem pacote e símbolo) | a saída das duas                                   |
+        | a primeira quebrada (sai 127, erro só no stderr)        | o erro da primeira e a saída da segunda, que roda  |
+        | a segunda só com erro no stderr (sai 1)                 | a saída da primeira e o erro da segunda            |
+
+    *(alterado em 2026-11-18: QA-03 do quality gate, ciclo 1)* — era "Dado que ao menos uma das duas ferramentas, rodada sozinha no kit, sai com código diferente de 0", com as ferramentas reais; o CX-03 do step 9 trocou a fixture para falsas (o CT dependia de achado real e levava ~24 s) e o CX-01/CX-02 acrescentaram as duas linhas de falha
 ```
 
-- O primeiro `Dado` é **precondição medida**, não suposta: sem achado, "não reprova" seria asserção em mundo vazio (gate, item 7). Se um dia o kit zerar os achados, o CT fica vermelho na precondição e precisa de uma fixture com achado — vermelho correto, não flake. O `Dado` não exige achado nas **duas**: o `composer-unused` pode legitimamente sair 0 depois da lista de exclusão (P-03) se nenhum pacote for `sem uso`. Consequência declarada: M11 e M12 só morrem enquanto a ferramenta que roda **primeiro** no passo tiver achado; se ela sair 0, a segunda roda de qualquer jeito e os dois mutantes ficam latentes (vivos sem efeito hoje). O CT registra, na mensagem da precondição, qual ferramenta saiu ≠ 0.
+- ~~O primeiro `Dado` é **precondição medida**~~ *(alterado em 2026-11-18: QA-03 do quality gate, ciclo 1)*: a fixture agora é de ferramentas falsas, e o achado é sempre presente nas linhas de dataset; M11 e M12 morrem nas linhas 2 e 1 sem depender do estado da árvore. Texto original, para registro: sem achado, "não reprova" seria asserção em mundo vazio (gate, item 7). Se um dia o kit zerar os achados, o CT fica vermelho na precondição e precisa de uma fixture com achado — vermelho correto, não flake. O `Dado` não exige achado nas **duas**: o `composer-unused` pode legitimamente sair 0 depois da lista de exclusão (P-03) se nenhum pacote for `sem uso`. Consequência declarada: M11 e M12 só morrem enquanto a ferramenta que roda **primeiro** no passo tiver achado; se ela sair 0, a segunda roda de qualquer jeito e os dois mutantes ficam latentes (vivos sem efeito hoje). O CT registra, na mensagem da precondição, qual ferramenta saiu ≠ 0.
 - "Contém a saída de X": um trecho fixo que a ferramenta imprime no relatório, confirmado no vendor (`arquivo:símbolo:linha`) na implementação — `@premissa` de mecanismo. Um título escrito pelo passo não basta: o mutante M11 escreve o título e perde a saída.
 - `@premissa`: o `run` é executado com `bash -eo pipefail` porque é o shell padrão do `run` no runner Linux do GitHub; `${{ }}` no `run`, se houver, é resolvido para o valor fixo do teste.
 
@@ -237,6 +247,7 @@ O nome Packagist de cada ferramenta é fato do registro, não oráculo do plano;
       Quando o mantenedor confere as duas rotas de entrega
       Então o caminho está na lista do kit:update
       E nenhuma linha "export-ignore" do .gitattributes, fora de comentário, cobre o caminho
+      E nenhum "--config-file", "--configuration" ou "-c" dos scripts deps:* ou do passo do CI aponta para arquivo fora da lista do kit:update (ADV-05, RD-05)
 ```
 
 Se a implementação versionar também um arquivo de configuração do `composer-require-checker`, ele entra como segunda linha deste cenário (`Esquema do Cenário`), sem CT novo.
@@ -264,6 +275,10 @@ Se a implementação versionar também um arquivo de configuração do `composer
       Quando o mantenedor cruza cada pacote excluído com a triagem
       Então cada pacote excluído tem linha na triagem com o veredito "usado por outro caminho" e evidência não vazia
       E nenhum pacote com veredito "sem uso" está na lista de exclusão
+      E nem os scripts deps:* nem o passo do CI trazem "--excludePackage" (ADV-03)
+      E a configuração exclui só por nome literal "vendor/pacote", sem padrão (ADV-04)
+      E a evidência de cada excluído não é só marcador ("—", "-", "N/A", "?") (ADV-10)
+      E o composer-unused rodado de verdade lista cada excluído como ignorado e nenhum como sem uso (RD-04)
 ```
 
 `@premissa`: "pacote excluído" = string `vendor/pacote` entre aspas no código do arquivo de configuração, depois de tirar comentário. O motivo de cada exclusão é a evidência da linha da triagem (o `00` não fixa se o motivo também mora no comentário do arquivo).
@@ -314,6 +329,7 @@ Se a implementação versionar também um arquivo de configuração do `composer
       Dado a tabela de triagem da documentação de qualidade
       Quando o mantenedor filtra as linhas com veredito "sem uso" ou "uso direto de dependência só transitiva"
       Então cada uma dessas linhas tem uma recomendação não vazia para decisão do mantenedor
+      E a triagem registra os achados do composer-require-checker — a contagem de símbolos, os pacotes só transitivos e as extensões "ext-*" — com recomendação (ADV-07, ADV-08)
 ```
 
 Se a triagem tiver zero linhas desses dois vereditos, o cenário passa vácuo: o CT afirma, como precondição, que a filtragem devolve ao menos uma linha; se a resposta real for "nenhum achado", o CT vira vermelho e volta à sessão como achado de requisito, não é afrouxado.

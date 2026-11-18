@@ -282,12 +282,12 @@ Entram duas dependências novas de desenvolvimento: `maglnet/composer-require-ch
 Confira os arquivos e pontos de integração:
 
 - `composer.json`: as duas entradas de `require-dev` e os scripts `deps:check`, `deps:unused` e `deps:require`, copiados no passo 4. Eles ficam fora do `composer test`. O `kit:update` NÃO aplica o `composer.json`, só relata a diferença; a instalação e os scripts exigem integração manual, preservando as dependências do projeto. O lock do projeto é resolvido pelo Composer, sem copiar o do kit.
-- Novo `composer-unused.php` na raiz, trazido pelo `kit:update`: exclui somente cinco pacotes usados por caminhos que a análise não enxerga, cada um com seu motivo: `anselmokossa/filament-sentinel` (auto-discovery do provider), `laravel/pulse` (configuração, dashboard e daemon), `laravel/reverb` (serviço opt-in), `livewire/blaze` (compilação do Blade por auto-discovery) e `spatie/laravel-backup` (configuração e comando de backup).
+- Novo `composer-unused.php` na raiz, trazido pelo `kit:update`: exclui somente quatro pacotes usados por caminhos que a análise não enxerga, cada um com seu motivo: `anselmokossa/filament-sentinel` (auto-discovery do provider), `laravel/pulse` (configuração, dashboard e daemon), `laravel/reverb` (serviço opt-in) e `spatie/laravel-backup` (configuração e comando de backup).
 - `app/Console/Commands/KitUpdate.php`: inclui `composer-unused.php` nos caminhos entregues; a atualização já lê os caminhos do destino para trazer o arquivo nesta rodada.
 - `config/kit.php`: somente o marcador passa a `0.55.0`; as demais configurações continuam iguais.
 - `.github/workflows/ci.yml`: novo passo **Dependências declaradas × usadas (relatório)** no job `qualidade`, após a análise estática. Roda as duas ferramentas, grava a saída no resumo do job e só relata, sem reprovar por achados. `.github` não viaja pelo `kit:update`: integre o passo manualmente se o projeto tem esse workflow; se não tem, registre a ausência, sem criar CI inteiro.
 
-A linha de base do kit em 2026-11-18 tem três pacotes sem uso: `awcodes/filament-badgeable-column`, `lara-zeus/progress` e `syriable/filament-activitylog`; e 181 símbolos usados sem declaração direta: 137 de pacotes transitivos e 44 de oito extensões PHP (`ext-ctype`, `ext-dom`, `ext-filter`, `ext-gd`, `ext-libxml`, `ext-mbstring`, `ext-SimpleXML` e `ext-tokenizer`). Os achados do projeto podem diferir conforme seu código. Esta atualização entrega o diagnóstico; não remove pacotes, não declara transitivos ou extensões em produção e não esconde achados reais nas exclusões.
+A linha de base do kit em 2026-11-18 tem quatro pacotes sem uso: `awcodes/filament-badgeable-column`, `lara-zeus/progress`, `livewire/blaze` (instalado sem nenhum `@blaze`) e `syriable/filament-activitylog`; e 181 símbolos usados sem declaração direta: 137 de pacotes transitivos e 44 de oito extensões PHP (`ext-ctype`, `ext-dom`, `ext-filter`, `ext-gd`, `ext-libxml`, `ext-mbstring`, `ext-SimpleXML` e `ext-tokenizer`). Os achados do projeto podem diferir conforme seu código. Esta atualização entrega o diagnóstico; não remove pacotes, não declara transitivos ou extensões em produção e não esconde achados reais nas exclusões.
 
 ## Cuidados
 
@@ -295,7 +295,7 @@ A linha de base do kit em 2026-11-18 tem três pacotes sem uso: `awcodes/filamen
 - **Preserve a multi-organização.** Não rode `php artisan kit:tenancy` nem `php artisan kit:install`, pois recriam o banco.
 - **Dependências exigem integração manual.** Não substitua o `composer.json` nem o `composer.lock` do dono pelos do kit. Instale só as duas ferramentas em ambiente de desenvolvimento e revise o lock gerado; conflito de resolução ou alteração inesperada de produção exige parada.
 - **Achado não é defeito da execução.** Localmente, `deps:require` e, por consequência, `deps:check` podem retornar código diferente de zero por símbolos não declarados. Guarde a saída e o código; falha para iniciar, configuração inválida ou ferramenta ausente exige análise. No CI, preserve o caráter de relatório, sem converter em gate ou incluir no `composer test`.
-- **Não esconda dependência realmente sem uso.** As cinco exclusões representam uso indireto comprovado; não acrescente os três pacotes sem uso à configuração para zerar a saída.
+- **Não esconda dependência realmente sem uso.** As quatro exclusões representam uso indireto comprovado; não acrescente os quatro pacotes sem uso à configuração para zerar a saída.
 - **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 6, depois de limpar o cache de configuração.
 - **O `--all` substitui arquivos existentes.** Resolva a decisão de conflito antes e restaure ou integre as edições do dono antes de validar. O marcador `0.55.0` sozinho não prova que o arquivo novo, as ferramentas e os scripts chegaram.
 - **Preserve `.env`, canais de log e customizações.** Não copie `.env.example` sobre `.env`; esta versão não pede variável de ambiente nem configuração de runtime.
@@ -361,7 +361,7 @@ git diff kit-v0.55.0 -- composer-unused.php app/Console/Commands/KitUpdate.php c
 git diff HEAD -- database/migrations database/settings resources public
 ```
 
-Evidência: versão `0.55.0`, branch `kit-update/v0.55.0`, arquivo novo presente e rastreado, com as cinco exclusões justificadas. Diferenças contra o destino correspondem somente às decisões registradas; o índice corresponde ao dry-run. Nenhuma migration ou asset alterado. Não rode migrate: não há migration nesta atualização.
+Evidência: versão `0.55.0`, branch `kit-update/v0.55.0`, arquivo novo presente e rastreado, com as quatro exclusões justificadas. Diferenças contra o destino correspondem somente às decisões registradas; o índice corresponde ao dry-run. Nenhuma migration ou asset alterado. Não rode migrate: não há migration nesta atualização.
 
 ### 4. Instalar as ferramentas e copiar os scripts
 
@@ -533,7 +533,7 @@ O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-or
 | O que | Esperado |
 |---|---|
 | Marcador | `0.55.0` depois de limpar o cache de configuração |
-| Arquivo novo | `composer-unused.php` presente, com as cinco exclusões justificadas ou integração registrada |
+| Arquivo novo | `composer-unused.php` presente, com as quatro exclusões justificadas ou integração registrada |
 | Entrega | `KitUpdate.php` inclui o arquivo novo; demais diferenças correspondem às decisões |
 | Dependências | Duas ferramentas novas em `require-dev`, lock resolvido no projeto e dependências de produção preservadas |
 | Scripts | `deps:check`, `deps:unused` e `deps:require` copiados; fora de `composer test` |

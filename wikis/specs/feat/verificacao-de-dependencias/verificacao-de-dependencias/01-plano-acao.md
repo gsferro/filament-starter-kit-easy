@@ -36,13 +36,13 @@ composer e no CI como relatório que não reprova, e registrar a triagem do que 
 - `composer.json`: scripts de qualidade `lint`, `lint:check`, `types:check`, `filament:check` (o molde de P-01); `require-dev` sem nenhuma das duas ferramentas
 - `.github/workflows/ci.yml`, job `qualidade`: Pint, PHPStan e Pest, cada um um passo
 - `app/Console/Commands/KitUpdate.php:CAMINHOS_DO_KIT`: lista com `rector.php`, `phpstan.neon`, `phpunit.xml`, `pint.json` (P-06); o `composer.json` não é sobrescrito pelo `kit:update`, só relatado
-- Medição de 2026-11-18 (antes de qualquer configuração): `composer-unused` acusa 8 de 62 pacotes; `composer-require-checker` acusa 181 símbolos
+- Medição de 2026-11-18 (antes de qualquer configuração): `composer-unused` acusa 8 de 62 pacotes (4 usados por outro caminho e 4 sem uso, depois da triagem e do QA-01); `composer-require-checker` acusa 181 símbolos
 
 ## Decisões de Desenho
 
 | # | Decisão | Pergunta | Portão que falta | Quem decidiu, data |
 |---|---|---|---|---|
-| D1 | Configuração do `composer-unused` em `composer-unused.php` na raiz (o nome que a ferramenta procura sozinha), só com os 5 pacotes usados por outro caminho, cada um com o motivo | P-03 | — | sessão, 2026-11-18 |
+| D1 | Configuração do `composer-unused` em `composer-unused.php` na raiz (o nome que a ferramenta procura sozinha), só com os 4 pacotes usados por outro caminho *(alterado em 2026-11-18: QA-01 do quality gate, ciclo 1)*, cada um com o motivo | P-03 | — | sessão, 2026-11-18 |
 | D2 | Sem arquivo de configuração para o `composer-require-checker`: a triagem não achou falso positivo, e um arquivo vazio seria cerimônia | P-03 | — | sessão, 2026-11-18 (Ponytail) |
 | D3 | Três scripts: `deps:unused`, `deps:require` e `deps:check` (os dois). O `deps:unused` usa `--ignore-exit-code` para o `deps:check` chegar ao segundo; o `deps:require` devolve o código da ferramenta | P-01 | — | sessão, 2026-11-18 |
 | D4 | No CI, um passo no job `qualidade` depois do PHPStan, com `continue-on-error`, `--ignore-exit-code`/`|| true` e a saída no `GITHUB_STEP_SUMMARY` | RQ-04, RQ-05, P-02 | — | sessão, 2026-11-18 |
@@ -83,7 +83,7 @@ Nenhum.
 
 ## Impacto em Features Existentes
 
-- `composer install` de quem instala o kit traz as duas ferramentas e as dependências delas (só `require-dev`)
+- `composer install` de quem instala o kit traz as duas ferramentas e as dependências delas (só `require-dev`) — e, por elas, passa a exigir a extensão PHP `sodium` e PHP 8.4–8.5 na instalação com dev (P-08) *(alterado em 2026-11-18: QA-02 do quality gate, ciclo 1)*
 - Nenhum código de `app/` muda além da lista do `kit:update`
 
 ## Rollback
@@ -113,7 +113,7 @@ Nenhum.
 ### 2. A configuração do `composer-unused`
 
 - **Path**: `composer-unused.php`
-- Exclui `anselmokossa/filament-sentinel`, `laravel/pulse`, `laravel/reverb`, `livewire/blaze`, `spatie/laravel-backup`, cada um com o motivo
+- Exclui `anselmokossa/filament-sentinel`, `laravel/pulse`, `laravel/reverb`, `spatie/laravel-backup`, cada um com o motivo *(alterado em 2026-11-18: QA-01: o `livewire/blaze` saiu — sem `@blaze` nem `Blaze::optimize()` ele não transforma template nenhum do quality gate, ciclo 1)*
 - **Atende**: RQ-01, RQ-06, P-03
 - **Logs**: nenhum
 

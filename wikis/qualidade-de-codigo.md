@@ -242,7 +242,7 @@ nela — senão o relatório esconderia exatamente o que existe para mostrar.
 
 ### A triagem de 2026-11-18 (a linha de base)
 
-**`composer-unused`** acusou 8 dos 62 pacotes do `require`, e o **`composer-require-checker`** acusou
+**`composer-unused`** acusou 8 dos 62 pacotes do `require` — 4 usados por outro caminho e 4 sem uso —, e o **`composer-require-checker`** acusou
 **181 símbolos**, nenhum falso positivo: 137 de pacotes que só chegam como dependência transitiva e o kit
 usa direto, e 44 de oito extensões PHP que o `composer.json` não declara (`ext-ctype`, `ext-dom`,
 `ext-filter`, `ext-gd`, `ext-libxml`, `ext-mbstring`, `ext-SimpleXML` e `ext-tokenizer`).
@@ -252,7 +252,7 @@ usa direto, e 44 de oito extensões PHP que o `composer.json` não declara (`ext
 | `anselmokossa/filament-sentinel` | usado por outro caminho | auto-discovery do provider registra middleware e o overlay de erros; `config/sentinel.php` | manter; excluído em `composer-unused.php` |
 | `laravel/pulse` | usado por outro caminho | recorders em `config/pulse.php`, dashboard em `resources/views/vendor/pulse`, daemon `pulse:check` no `docker-compose.yml` | manter; excluído |
 | `laravel/reverb` | usado por outro caminho | serviço opt-in `reverb:start` no `docker-compose.yml`; os painéis desligam o polling quando o broadcast é o Reverb | manter; excluído |
-| `livewire/blaze` | usado por outro caminho | auto-discovery do provider intercepta a compilação do Blade (nenhum `@blaze` próprio do kit) | manter; excluído |
+| `livewire/blaze` | sem uso | o provider é descoberto e engancha a compilação do Blade, mas só transforma template com a diretiva `@blaze` ou caminho registrado em `Blaze::optimize()`, e nenhum dos dois existe no kit nem no vendor (`BlazeManager::compile`, `Config::isEnabled`) | usar de verdade (`@blaze` nos componentes ou `Blaze::optimize()->in(...)`) ou remover |
 | `spatie/laravel-backup` | usado por outro caminho | `config/backup.php` e o `backup:run` da Central de Comandos (`config/command-center.php`); o agendamento em `routes/console.php` está comentado | manter; excluído |
 | `awcodes/filament-badgeable-column` | sem uso | nenhum consumo em `app`, `config`, `resources`, `routes`, `database` ou `tests`; anunciado em `wikis/pacotes.md` e em `docs/pt/referencia/pacotes-instalados.md` | remover do `require` (ou usar de verdade) e corrigir as duas páginas que o anunciam |
 | `lara-zeus/progress` | sem uso | idem; anunciado nas mesmas duas páginas | remover (ou usar) e corrigir as duas páginas |
@@ -278,7 +278,7 @@ As oito **extensões** não entram na tabela de pacotes; a recomendação para e
 Esta entrega é só o instrumento: dependência de produção não muda sem decisão do mantenedor
 (`CLAUDE.md`), e a resposta escolhida foi "só relatório". As recomendações, para quem decidir:
 
-1. **Os três sem uso**: remover do `require` — ou usar de verdade — e corrigir as duas páginas que os
+1. **Os quatro sem uso**: remover do `require` — ou usar de verdade (o `livewire/blaze` pede só `@blaze` ou `Blaze::optimize()`) — e corrigir as duas páginas que os
    anunciam como capacidade do kit. Hoje elas prometem o que nenhuma tela entrega;
 2. **As extensões**: declarar as oito `ext-*` no `require` faz o `composer install` recusar um PHP sem
    elas, em vez de falhar em runtime (o `ext-gd` é o caso mais provável de faltar);

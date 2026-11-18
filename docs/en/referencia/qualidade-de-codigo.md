@@ -313,9 +313,9 @@ Since v0.55.0, `composer deps:check` runs two **report** tools: `composer-unused
 dependency) and `composer-require-checker` (symbol used from a package `composer.json` does not
 declare). In CI, the `qualidade` job publishes the output in the job summary and **does not fail**.
 
-The 2026-11-18 triage: of the 8 packages `composer-unused` flagged, **5 are used** through a path it
+The 2026-11-18 triage: of the 8 packages `composer-unused` flagged, **4 are used** through a path it
 cannot see (auto-discovery, config, a daemon or a command) and are excluded in `composer-unused.php`,
-each with its reason; **3 are not used at all** (`awcodes/filament-badgeable-column`,
+each with its reason; **4 are not used at all** (`awcodes/filament-badgeable-column`, `livewire/blaze`,
 `lara-zeus/progress`, `syriable/filament-activitylog`). `composer-require-checker` flagged 181 symbols,
 all real: packages that only arrive as transitive dependencies and the kit uses directly, and eight PHP
 extensions that are not declared.

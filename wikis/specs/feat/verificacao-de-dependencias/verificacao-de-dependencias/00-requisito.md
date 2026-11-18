@@ -50,6 +50,7 @@
 |----|----------|-------|--------------|--------|
 | Q1 | Como as ferramentas entram no kit? | RQ-03, RQ-04 | só no CI, sem dependência | respondida no Texto Original (2026-11-18): `require-dev` |
 | Q2 | Achado reprova o CI ou só relata? | RQ-05 | reprovar | respondida no Texto Original (2026-11-18): só relatório |
+| Q3 | O `composer-require-checker` atual exige a extensão PHP `sodium` (por uma dependência dele) e limita o PHP a 8.4–8.5 em toda instalação COM dependências de desenvolvimento — o `create-project` padrão. Aceita esse pré-requisito, ou prefere outra via (ferramenta só no CI, por phar)? | RQ-03, P-08 | aceitar e documentar: a extensão vem ligada no Linux e no Docker; no Windows é uma linha do `php.ini`; quem instala com `--no-dev` não é afetado | aberta — premissa P-08 vigente até a resposta (step 11, QA-02 do quality gate) |
 
 ## Premissas
 
@@ -61,6 +62,7 @@
 | P-04 | A resposta de RQ-06 é uma triagem registrada na documentação de qualidade: cada pacote acusado, com o veredito (usado por outro caminho, sem uso, ou uso direto de dependência só transitiva) e a evidência | step 4 — "respondem mecanicamente" e "hoje só tem a resposta não sabemos" | 2026-11-18 | RQ-06 | vigente |
 | P-05 | Esta entrega não remove nem acrescenta dependência de produção: o que a triagem achar (pacote sem uso, dependência transitiva usada direto, extensão PHP não declarada) fica registrado como recomendação, para decisão do mantenedor | step 4 — `CLAUDE.md`: dependência só muda com aprovação; Q2 escolheu "só relatório" | 2026-11-18 | RQ-05, RQ-06 | vigente |
 | P-07 | O `composer deps:check` fica FORA do `composer test` (o gate local que reprova): um gate que reprova com achado contradiria o "só relatório" de Q2 para quem desenvolve | step 7 — Q?2 da `feature-test-design`; decorre da resposta a Q2 | 2026-11-18 | P-01, RQ-05 | vigente |
+| P-08 | A instalação com dependências de desenvolvimento passa a exigir a extensão PHP `sodium` e PHP 8.4 ou 8.5, documentado no README, no CHANGELOG, na página de atualização e no roteiro. A versão do `composer-require-checker` sem essa exigência (4.17) foi medida e recusada: rebaixaria o `symfony/console` de produção de 8.1 para 7.4, contra P-05 | step 9 — CR-01 do `/code-review`; registrada como premissa no step 11 (QA-02) | 2026-11-18 | RQ-03, P-05 | vigente |
 | P-06 | Os arquivos de configuração das ferramentas viajam com o kit (instalação e `kit:update`), como os de Pint, PHPStan e Rector | step 3 — os irmãos `pint.json`, `phpstan.neon`, `rector.php` | 2026-11-18 | RQ-01, RQ-02, RQ-03 | vigente |
 
 ## Fora de Escopo (declarado)
