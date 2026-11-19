@@ -15,7 +15,7 @@
 - Por que o Impacto é 2 e não 3: o `00` trata o bloqueio como "proteção extra" e diz que o "+" "não é um problema". Se o bloqueio falhar, nasce uma conta a mais, e o admin a resolve à mão. Se a recusa for indevida, o próprio admin a desfaz religando a opção. A falha não envolve dinheiro, dado de terceiro, autorização de painel nem perda irreversível.
 - Por que P é 3 em A2 e A3: são oito vias, três painéis, os dois estados da opção, as exceções da P-04 (conta existente) e da P-06 (convite já emitido), e uma integração externa (o provedor social).
 - Técnicas aplicadas: EP (partição do valor da opção e da parte local), BVA de posição do "+" na parte local, tabela de decisão (estado × e-mail × conta existente × via), rastreio de efeito (conta, convite, notificação, sessão), criação ≠ edição ≠ uso.
-- Cenários: 27 · Regras: 11 · Mutantes previstos: 37 · Sem matador: 2
+- Cenários: 27 · Regras: 11 · Mutantes previstos: 52 · Sem matador: 2
 <!-- derivado por grep -c (template-04.md §Contagem do cabeçalho) -->
 
 **Divergência declarada com uma Project Rule.** `.ai/rules/config.md` manda que um interruptor de env falhe **fechado**. Aqui vence a P-01 do `00`: a ausência de valor (chave ausente, vazia ou irreconhecível) **permite**, e só um "desligado" explícito bloqueia. A rule fala de interruptor que **abre** superfície pública. Esta opção liga uma proteção opcional, e o requisito escolheu a direção. Os CT-01 a CT-03 seguem a P-01.
@@ -83,7 +83,7 @@
 
 ❓ Q?1 · raia: requisito · afeta: P-05, RQ-03 · depende de: —
 Qual é o texto exato da mensagem que explica o bloqueio, no campo de e-mail e no aviso do login social?
-➡️ Recomendação: uma frase só, igual em todas as vias, citando o "+" e a parte antes do "@". Por exemplo: `Este sistema não aceita e-mail com "+" antes do "@".` — enquanto isso, os CT afirmam apenas que a mensagem cita o "+", que é a mesma no campo e no aviso social, e que não é a recusa genérica.
+➡️ Recomendação: uma frase só, igual em todas as vias, citando o "+" e a parte antes do "@". Por exemplo: `Este sistema não aceita e-mail com "+" antes do "@".` — enquanto isso, os CT afirmam apenas que a mensagem cita o "+" e que não é a recusa genérica; a igualdade entre vias e a redação ficam abertas.
 
 ❓ Q?2 · raia: desenho · afeta: P-01 · depende de: —
 Quais valores do `.env` são "desligado explícito"? Só `false` e `0`, ou também `off` e `no`?
@@ -109,6 +109,10 @@ Desvio declarado: a derivação roda em sub-agente e não edita o `00`. As pergu
 - `admin_app` da Acme (só em `tests/Tenancy`): `cenario()` de `tests/Tenancy/AdminDaOrganizacaoTest.php` (Ana), com `noPainelDa($acme)` e um GET real a `/app/acme/users` antes do primeiro `Livewire::test()`.
 - Conta existente com "+": `usuario('gsferroti+starter@gmail.com')`, com papel por `papelNaOrganizacao()` quando a via exige painel.
 - Visitante: `Filament::auth()->logout()` antes de cada cadastro (molde `registrarAberto()`).
+
+### Helpers dos irmãos e onde os CT moram
+- `registrarAberto()`, `conviteCom()` e `aceitarConvite()` são locais de `RegistroAbertoTest` e `ConviteTest`, e `conviteSocialPara()` é local de `CadastroSocialPorConviteTest`. Para o `tests/Kit/EmailComMaisTest.php` usá-los, eles **sobem para `tests/Pest.php`** no mesmo commit, sem clone com outro nome (`.ai/rules/testes.md`; prova: `tests/Kit/HelpersDeTesteTest.php`). Se a subida for recusada, o CT vai para o arquivo irmão do helper.
+- `cenario()` (de `AdminDaOrganizacaoTest`) e `registrarNaOrganizacao()` (de `RegistroAbertoTenancyTest`) **ficam** nos irmãos: CT-12 e CT-20 vão para `tests/Tenancy/AdminDaOrganizacaoTest.php`, e CT-06 para `tests/Tenancy/RegistroAbertoTenancyTest.php`. `cenario()` é genérico demais para ser global.
 
 ### Estado da opção
 - Helper novo **em `tests/Pest.php`**, porque Kit e Tenancy o usam: `opcaoDoMais(bool $permitido)`. Ele define a chave da opção na config do processo e, quando o settings existe, grava a propriedade com `gravarConfiguracao()` e chama `alinharConfiguracoesDoKit()`. Assim o estado fica igual nas duas fontes e não depende da precedência entre elas.
@@ -154,27 +158,31 @@ Funcionalidade: Opção de permitir ou bloquear o "+" no e-mail do cadastro
         | 0          | bloqueado | desligado explícito         |
 
     Cenário: [CT-02] o projeto que manteve o próprio config/kit.php sem a chave permite o "+"
-      Dado um projeto cuja configuração do kit não tem a chave da opção
+      Dado um projeto cuja configuração do kit não tem a chave da opção (o grupo removido da config, não gravado como null)
       E o registro aberto ligado
       Quando o visitante se registra com "gsferroti+starter@gmail.com"
       Então a conta "gsferroti+starter@gmail.com" existe
       E o campo de e-mail não tem erro
 
+    @premissa
     Esquema do Cenário: [CT-03] o settings ainda não migrado permite, e o gravado decide
-      Dado o registro aberto ligado e a variável de ambiente da opção "false"
+      Dado o registro aberto ligado e a variável de ambiente da opção "<env>"
       E a propriedade da opção no settings "<settings>"
       E o alinhamento do settings com a configuração executado
       Quando o visitante se registra com "gsferroti+starter@gmail.com"
       Então a conta "gsferroti+starter@gmail.com" "<conta>"
 
       Exemplos:
-        | settings          | conta      | # partição                         |
-        | (linha ausente)   | não existe | settings não migrado: o env decide  |
-        | true              | existe     | gravado permitindo                  |
-        | false             | não existe | gravado desligado                   |
+        | env       | settings        | conta      | # partição                                 |
+        | (ausente) | (linha ausente) | existe     | settings não migrado e env ausente: permite |
+        | false     | (linha ausente) | não existe | settings não migrado: o env explícito decide |
+        | false     | true            | existe     | gravado permitindo vence o env             |
+        | (ausente) | false           | não existe | gravado desligado bloqueia                 |
 ```
 
-Leitura do CT-03. A linha "linha ausente" afirma que o settings não migrado **não força** bloqueio nem permissão: vale o env (`false`). O "permitido" do settings não migrado está provado com o env ausente no CT-01. A linha `true` prova que o valor gravado vence o env, que é a condição para a tela governar (P-02).
+`@premissa` de mecanismo (raia desenho): o `00` não fixa quem vence entre settings e env. O CT-03 segue a convenção do kit provada pelo irmão "deixa o valor gravado no settings vencer o env" (`tests/Kit/RegistroAbertoTest.php`); se o desenho trocar a precedência, só a linha `false` + `true` muda.
+
+Leitura do CT-03. A linha ausente no settings **não força** nenhum dos dois estados: vale o env. A linha `true` contra o env `false` prova que o valor gravado vence o env, que é a condição para a tela governar (P-02).
 
 #### Mutantes previstos
 
@@ -184,7 +192,7 @@ Leitura do CT-03. A linha "linha ausente" afirma que o settings não migrado **n
 | M2 | `filter_var(env('X', false), FILTER_VALIDATE_BOOLEAN)` (molde "falha fechado" da rule): o irreconhecível bloqueia | CT-01 | linha `talvez`: "permitido"; o mutante responde "bloqueado" |
 | M3 | default `false` no `config/kit.php` | CT-01 | linha `(ausente)`: "permitido"; o mutante responde "bloqueado" |
 | M4 | o leitor usa `config('kit.email.permitir_mais', false)` ou trata `null` como falso | CT-02 | a conta `gsferroti+starter@gmail.com` existe; o mutante recusa com erro em `email` |
-| M5 | a migration do settings grava `false`, ou o alinhamento escreve `false` quando a linha falta | CT-03 | linha `true`: conta existe (o mutante da migration falha onde a linha é criada pela migration); linha ausente: o mutante que escreve `false` não muda o resultado, mas o M3 + CT-01 cobrem o default |
+| M5 | a falta da linha no settings é lida como `false` e sobrescreve um env que permite | CT-03 | linha `(ausente)` + `(linha ausente)`: "existe"; o mutante recusa |
 | M6 | o settings não entra na leitura (só o env vale) | CT-03 | linha `true`: "existe"; com o env `false`, o mutante recusa |
 
 ---
@@ -345,17 +353,18 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
         | bloqueado | uma conta existente | gsferroti+starter@gmail.com | existe     | foi enviada | não tem erro                         |
 
     Esquema do Cenário: [CT-12] a criação de convite no /app da organização segue a opção e a P-04
-      Dado a admin da Acme no /app da Acme, a opção bloqueada
+      Dado a admin da Acme no /app da Acme, a opção "<opcao>"
       E "<conta>" com o e-mail "<email>"
       Quando ela cria um convite para "<email>" com o papel panel_user
       Então o convite para "<email>" na Acme "<convite>"
       E a notificação de convite para "<email>" "<notificacao>"
 
       Exemplos:
-        | conta               | email                       | convite    | notificacao |
-        | nenhuma conta       | gsferroti+starter@gmail.com | não existe | não saiu    |
-        | uma conta existente | gsferroti+starter@gmail.com | existe     | foi enviada |
-        | nenhuma conta       | gsferroti@gmail.com         | existe     | foi enviada |
+        | opcao     | conta               | email                       | convite    | notificacao |
+        | permitido | nenhuma conta       | gsferroti+starter@gmail.com | existe     | foi enviada |
+        | bloqueado | nenhuma conta       | gsferroti+starter@gmail.com | não existe | não saiu    |
+        | bloqueado | uma conta existente | gsferroti+starter@gmail.com | existe     | foi enviada |
+        | bloqueado | nenhuma conta       | gsferroti@gmail.com         | existe     | foi enviada |
 ```
 
 #### Mutantes previstos
@@ -415,13 +424,18 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
 ```gherkin
   Regra: O convite com "+" emitido antes de a opção ser desligada é aceito, pela tela e pelo login social
 
-    Cenário: [CT-16] aceite pela tela do convite com "+" emitido antes de desligar
-      Dado um convite pendente para "gsferroti+starter@gmail.com", emitido com a opção permitindo
+    Esquema do Cenário: [CT-16] aceite pela tela do convite com "+" emitido antes de desligar
+      Dado um convite pendente para "gsferroti+starter@gmail.com", emitido com a opção permitindo, e o login unificado "<unificado>"
       E a opção desligada depois do envio
-      Quando a pessoa convidada aceita pelo link, preenchendo nome e senha
+      Quando a pessoa convidada aceita pelo link em "<tela>", preenchendo nome e senha
       Então a conta "gsferroti+starter@gmail.com" existe com o papel panel_user
       E o convite tem a data de aceite preenchida
       E o formulário não tem erro no campo de e-mail
+
+      Exemplos:
+        | tela                   | unificado |
+        | /app/register?token=…  | desligado |
+        | /cadastro?token=…      | ligado    |
 
     Cenário: [CT-17] aceite pelo login social do convite com "+" emitido antes de desligar
       Dado um convite pendente para "gsferroti+starter@gmail.com", emitido com a opção permitindo, e o registro aberto desligado
@@ -435,7 +449,7 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M1 | a regra entra no campo de e-mail do modo convite (desabilitado): o aceite falha num campo que a pessoa não pode corrigir | CT-16 | a conta existe e não há erro em `email`; o mutante recusa |
+| M1 | a regra entra no campo de e-mail do modo convite (desabilitado), numa das duas telas: o aceite falha num campo que a pessoa não pode corrigir | CT-16 | nas duas linhas, a conta existe e não há erro em `email`; o mutante recusa |
 | M2 | o `aceitar()` do model recusa o "+" com a opção desligada (a leitura antiga da P-06) | CT-16, CT-17 | a conta existe e `aceito_em` está preenchido; o mutante deixa o convite pendente |
 | M3 | o login social aplica a regra do "+" antes de olhar o convite da sessão | CT-17 | `assertAuthenticatedAs` com a conta nova; o mutante recusa com o aviso do "+" |
 
@@ -461,32 +475,35 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
         | bloqueado | gsferroti@gmail.com         | existe     | não tem erro                         |
 
     Esquema do Cenário: [CT-19] editar usuário no /admin com a opção desligada só olha o e-mail novo
-      Dado o administrador geral no /admin, a opção bloqueada
+      Dado o administrador geral no /admin, a opção "<opcao>"
       E o usuário existente com o e-mail "<atual>" e o nome "Antigo"
       Quando ele salva o usuário com o e-mail "<novo>" e o nome "Novo"
       Então o e-mail gravado é "<gravado>" e o nome gravado é "<nome>"
       E o campo de e-mail "<erro>"
 
       Exemplos:
-        | atual                       | novo                            | gravado                     | nome   | erro                                 | # partição                   |
-        | gsferroti+starter@gmail.com | gsferroti+starter@gmail.com     | gsferroti+starter@gmail.com | Novo   | não tem erro                         | sem trocar (P-04)            |
-        | gsferroti+starter@gmail.com | gsferroti+starter-kit@gmail.com | gsferroti+starter@gmail.com | Antigo | tem erro com mensagem que cita o "+" | troca de "+" para outro "+"  |
-        | gsferroti+starter@gmail.com | gsferroti@gmail.com             | gsferroti@gmail.com         | Novo   | não tem erro                         | troca para sem "+"           |
-        | gsferroti@gmail.com         | gsferroti+starter@gmail.com     | gsferroti@gmail.com         | Antigo | tem erro com mensagem que cita o "+" | troca de sem "+" para "+"    |
+        | opcao     | atual                       | novo                            | gravado                     | nome   | erro                                 | # partição                   |
+        | bloqueado | gsferroti+starter@gmail.com | gsferroti+starter@gmail.com     | gsferroti+starter@gmail.com | Novo   | não tem erro                         | sem trocar (P-04)            |
+        | bloqueado | gsferroti+starter@gmail.com | gsferroti+starter-kit@gmail.com | gsferroti+starter@gmail.com | Antigo | tem erro com mensagem que cita o "+" | troca de "+" para outro "+"  |
+        | bloqueado | gsferroti+starter@gmail.com | gsferroti@gmail.com             | gsferroti@gmail.com         | Novo   | não tem erro                         | troca para sem "+"           |
+        | bloqueado | gsferroti@gmail.com         | gsferroti+starter@gmail.com     | gsferroti@gmail.com         | Antigo | tem erro com mensagem que cita o "+" | troca de sem "+" para "+"    |
+        | permitido | gsferroti@gmail.com         | gsferroti+starter@gmail.com     | gsferroti+starter@gmail.com | Novo   | não tem erro                         | permitido: troca para "+"    |
 
     Esquema do Cenário: [CT-20] criar e editar usuário no /app da organização seguem a opção
-      Dado a admin da Acme no /app da Acme, a opção bloqueada
+      Dado a admin da Acme no /app da Acme, a opção "<opcao>"
       E, na edição, o usuário da Acme com o e-mail "<atual>"
       Quando ela "<operacao>" o usuário com o e-mail "<email>"
       Então o e-mail "<email>" "<gravado>"
       E o campo de e-mail "<erro>"
 
       Exemplos:
-        | operacao | atual                       | email                       | gravado          | erro                                 |
-        | cria     | —                           | gsferroti+starter@gmail.com | não foi gravado  | tem erro com mensagem que cita o "+" |
-        | cria     | —                           | gsferroti@gmail.com         | foi gravado      | não tem erro                         |
-        | salva    | gsferroti+starter@gmail.com | gsferroti+starter@gmail.com | continua gravado | não tem erro                         |
-        | salva    | gsferroti@gmail.com         | gsferroti+starter@gmail.com | não foi gravado  | tem erro com mensagem que cita o "+" |
+        | opcao     | operacao | atual                       | email                       | gravado          | erro                                 |
+        | bloqueado | cria     | —                           | gsferroti+starter@gmail.com | não foi gravado  | tem erro com mensagem que cita o "+" |
+        | bloqueado | cria     | —                           | gsferroti@gmail.com         | foi gravado      | não tem erro                         |
+        | bloqueado | salva    | gsferroti+starter@gmail.com | gsferroti+starter@gmail.com | continua gravado | não tem erro                         |
+        | bloqueado | salva    | gsferroti@gmail.com         | gsferroti+starter@gmail.com | não foi gravado  | tem erro com mensagem que cita o "+" |
+        | permitido | cria     | —                           | gsferroti+starter@gmail.com | foi gravado      | não tem erro                         |
+        | permitido | salva    | gsferroti@gmail.com         | gsferroti+starter@gmail.com | foi gravado      | não tem erro                         |
 ```
 
 #### Mutantes previstos
@@ -497,7 +514,7 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
 | M2 | a regra é ignorada sempre que o e-mail **atual** tem "+" (em vez de quando o novo é igual ao atual) | CT-19 | linha "de '+' para outro '+'": erro e e-mail mantido; o mutante grava `+starter-kit` |
 | M3 | a regra só existe na criação (`->required(fn …)`/`visibleOn('create')`) | CT-19, CT-20 | linha "de sem '+' para '+'": erro; o mutante grava |
 | M4 | a regra entra no `/admin` e esquece o `/app` | CT-20 | linha `cria` + "+": "não foi gravado"; o mutante grava |
-| M5 | a regra sempre bloqueia (ignora o estado) | CT-18 | linha `permitido` + "+": "existe"; o mutante recusa |
+| M5 | a regra sempre bloqueia (ignora o estado), na criação ou na edição | CT-18, CT-19, CT-20 | linhas `permitido` com "+": "existe" / "foi gravado"; o mutante recusa |
 
 ---
 
@@ -513,7 +530,7 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
       E nenhuma conta nem convite para "gsferroti+starter@gmail.com"
       Quando o Google devolve a pessoa com o e-mail "gsferroti+starter@gmail.com"
       Então ela não está autenticada, nenhuma conta "gsferroti+starter@gmail.com" existe e nenhum vínculo social foi gravado
-      E o aviso exibido cita o "+", é o mesmo texto do erro do campo de e-mail do registro e não é "O acesso a este sistema é por convite."
+      E o aviso exibido cita o "+" e não é "O acesso a este sistema é por convite."
 
     Cenário: [CT-22] a mesma volta do Google com a opção permitindo cria a conta
       Dado o registro aberto ligado, a opção permitindo, o login com Google ligado
@@ -563,18 +580,21 @@ O registro aberto **ligado** no `Dado` do CT-21 é o que torna a recusa discrimi
         | bloqueado | gsferroti@gmail.com         | gsferroti2@gmail.com            | gsferroti2@gmail.com            | Novo   | não tem erro                         |
         | permitido | gsferroti@gmail.com         | gsferroti+1@gmail.com           | gsferroti+1@gmail.com           | Novo   | não tem erro                         |
 
-    Esquema do Cenário: [CT-25] a troca para "+" com a opção desligada é recusada no perfil de cada painel
-      Dado a pessoa com acesso ao painel "<painel>", o e-mail "gsferroti@gmail.com", e a opção bloqueada
+    Esquema do Cenário: [CT-25] a troca para "+" no perfil de cada painel segue a opção
+      Dado a pessoa com acesso ao painel "<painel>", o e-mail "gsferroti@gmail.com", e a opção "<opcao>"
       E a página "/<painel>/meu-perfil" aberta (GET real, que boota o painel)
       Quando ela salva as informações pessoais desse painel com o e-mail "gsferroti+1@gmail.com" e a senha atual correta
-      Então o e-mail gravado continua "gsferroti@gmail.com"
-      E o campo de e-mail tem erro com mensagem que cita o "+"
+      Então o e-mail gravado é "<gravado>"
+      E o campo de e-mail "<erro>"
 
       Exemplos:
-        | painel |
-        | admin  |
-        | app    |
-        | infra  |
+        | painel | opcao     | gravado               | erro                                 |
+        | admin  | bloqueado | gsferroti@gmail.com   | tem erro com mensagem que cita o "+" |
+        | app    | bloqueado | gsferroti@gmail.com   | tem erro com mensagem que cita o "+" |
+        | infra  | bloqueado | gsferroti@gmail.com   | tem erro com mensagem que cita o "+" |
+        | admin  | permitido | gsferroti+1@gmail.com | não tem erro                         |
+        | app    | permitido | gsferroti+1@gmail.com | não tem erro                         |
+        | infra  | permitido | gsferroti+1@gmail.com | não tem erro                         |
 
     Esquema do Cenário: [CT-26] cada painel serve, em meu-perfil, as informações pessoais com a regra
       Dado a pessoa com acesso ao painel "<painel>"
@@ -652,7 +672,7 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 |---|---|---|
 | IDOR / autorização horizontal | não se aplica: a feature não recebe `{id}` novo nem muda quem edita qual usuário; o `EditUser` já tem barreira própria (`tests/Tenancy/AdminDaOrganizacaoTest.php`) | — |
 | Autorização exercida na ação | não se aplica: a opção não muda quem pode convidar, criar ou editar; a tela de configurações já tem CT de autorização (`ConfiguracoesDoKitTelaTest`) | — |
-| Idempotência (ancorada no agregado) | CT-27 (linha Google: uma única conta) | G7 |
+| Idempotência (ancorada no agregado) | não se aplica: a feature não cria operação de escrita nova; acrescenta uma recusa às existentes, cuja idempotência os irmãos já cobrem (`LoginSocialGoogleTest` "não cria segunda conta quando o mesmo e-mail volta do Google duas vezes") | — |
 | Concorrência | não se aplica: não há contador nem limite; a opção é lida a cada validação | — |
 | **Fronteira no ponto de entrada** (gravação) | CT-08, CT-09, CT-11, CT-12, CT-13, CT-18, CT-20, CT-21, CT-24 | G4, G5, G6, G7 |
 | **Domínio condicionado** (opção × e-mail × conta existente) | CT-07, CT-11, CT-13 | G3, G4, G5 |
@@ -663,13 +683,13 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | Unicode / texto livre | CT-07 (posições do "+"); o "＋" (U+FF0B) é recusado pela regra `email` antes da regra do "+" (medido), então não chega à regra | G3 |
 | Unicidade + soft delete | não se aplica: a feature não mexe na unicidade do e-mail | — |
 | CRUD combinado (editar sem alterar nada) | CT-19, CT-20, CT-24 (linhas "sem trocar") | G4, G6 |
-| Mass assignment | CT-16 (o aceite usa o e-mail do convite; o campo vem desabilitado) — e o irmão "ignora o email enviado pelo formulario" de `ConviteTest` continua valendo | G4 |
+| Mass assignment | não se aplica: nenhum campo novo é aceito de formulário; o e-mail do aceite já é travado pelo irmão "ignora o email enviado pelo formulario" de `ConviteTest` | — |
 | Upload | não se aplica: sem upload | — |
 | Precisão monetária | não se aplica: sem valor monetário | — |
 | **Superfície Livewire** (método público, prop pública) | CT-25 (o componente de perfil por painel é chamado com e-mail fora do domínio); o novo campo da tela de configurações é um toggle booleano, coberto por CT-04 | G4, G2 |
 | **Estado do framework usado sem validar** | não se aplica: nenhum `$filters`/`$tableSearch` novo | — |
-| **IDOR e mass assignment por entidade** | `users`: CT-19/CT-20 · `convites`: CT-11/CT-12 · `settings`: CT-04 | G4, G6, G2 |
-| **Escopo com discriminante nulo** | CT-02 (chave nula permite), CT-03 (linha ausente) | G1 |
+| **IDOR e mass assignment por entidade** | não se aplica: a feature não cria tabela nem rota com `{id}`; persiste só uma propriedade nova no settings, gravada pela tela de configurações (autorização coberta em `ConfiguracoesDoKitTelaTest`) | — |
+| **Escopo com discriminante nulo** | não se aplica: não há filtro de escopo novo; a ausência de valor da opção está na linha "Ausente ≠ null ≠ vazio" | — |
 | **Saída do estado de erro** | CT-10 (registro), CT-23 (login social) | G4, G7 |
 | Cardinalidade do destinatário (0/1/N) | CT-13 (3 de 4 notificados), CT-11 (1 / 0) | G5, G4 |
 
@@ -693,13 +713,13 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | CT-03 | settings não migrado e gravado | R1 | EP | G1 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R1-M5, M6 |
 | CT-04 | a tela desliga e o registro recusa | R2 | rastreio de efeito | G2 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R2-M1, M2 |
 | CT-05 | só o leitor lê a chave | R2 | EP (varredura) | G1 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R2-M3 |
-| CT-06 | a organização segue a opção da instalação | R2 | EP | G6 | componente Livewire/Filament | `tests/Tenancy/EmailComMaisTenancyTest.php` | R2-M4, M5 |
+| CT-06 | a organização segue a opção da instalação | R2 | EP | G6 | componente Livewire/Filament | `tests/Tenancy/RegistroAbertoTenancyTest.php` | R2-M4, M5 |
 | CT-07 | a regra decide pela parte local | R3 | EP + BVA de posição | G3 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R3-M1…M5 |
 | CT-08 | `/app/register` e `/cadastro` seguem a opção | R4 | tabela de decisão | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R4-M1, M3, M4 |
 | CT-09 | registro por fora da tela recusa | R4 | rastreio de efeito | G5 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R4-M2 |
 | CT-10 | recusa no registro tem saída | R4 | saída do erro | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R4-M5 |
 | CT-11 | convite no `/admin` segue a opção e a P-04 | R5 | tabela de decisão | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R5-M2, M3, M4 |
-| CT-12 | convite no `/app` segue a opção e a P-04 | R5 | tabela de decisão | G6 | componente Livewire/Filament | `tests/Tenancy/EmailComMaisTenancyTest.php` | R5-M1, M2 |
+| CT-12 | convite no `/app` segue a opção e a P-04 | R5 | tabela de decisão | G6 | componente Livewire/Filament | `tests/Tenancy/AdminDaOrganizacaoTest.php` | R5-M1, M2 |
 | CT-13 | lote misto: motivo próprio, os outros seguem | R6 | EP + rastreio | G5 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R6-M1, M2, M3 |
 | CT-14 | lote com a opção permitindo envia todos | R6 | EP | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R6-M4 |
 | CT-15 | "+" depois do "@" cai no formato | R6 | BVA de posição | G5 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R6-M5 |
@@ -707,7 +727,7 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | CT-17 | aceite social de convite já emitido | R7 | estado × evento | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R7-M2, M3 |
 | CT-18 | criar usuário no `/admin` | R8 | tabela de decisão | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R8-M5 |
 | CT-19 | editar usuário no `/admin` | R8 | criação ≠ edição | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R8-M1, M2, M3 |
-| CT-20 | criar e editar usuário no `/app` | R8 | criação ≠ edição | G6 | componente Livewire/Filament | `tests/Tenancy/EmailComMaisTenancyTest.php` | R8-M1, M3, M4 |
+| CT-20 | criar e editar usuário no `/app` | R8 | criação ≠ edição | G6 | componente Livewire/Filament | `tests/Tenancy/AdminDaOrganizacaoTest.php` | R8-M1, M3, M4 |
 | CT-21 | social com "+" bloqueado: nada nasce, aviso diz o motivo | R9 | rastreio de efeito | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R9-M1, M2, M3 |
 | CT-22 | social com "+" permitido cria | R9 | EP | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R9-M4 |
 | CT-23 | recusa social tem saída | R9 | saída do erro | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R9-M4, M5 |
@@ -716,7 +736,7 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | CT-26 | cada painel serve o componente do kit | R10 | EP por painel | G8 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R10-M3 |
 | CT-27 | conta existente com "+" entra | R11 | EP | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R11-M1, M2, M3 |
 
-Os arquivos `tests/Kit/EmailComMaisTest.php` e `tests/Tenancy/EmailComMaisTenancyTest.php` são propostos e podem ser repartidos por via na implementação. Todo helper usado pelos dois vai para `tests/Pest.php`.
+O arquivo `tests/Kit/EmailComMaisTest.php` é proposto. Os CT de Tenancy vão para os arquivos irmãos que já têm os helpers (Setup Global, "Helpers dos irmãos e onde os CT moram").
 
 ## Sem CT-B
 

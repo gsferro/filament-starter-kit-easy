@@ -30,6 +30,9 @@
 | Q2 | A troca de e-mail no perfil também segue a opção? Sem ela, quem se cadastrou como `fulano@` troca para `fulano+1@` e libera o `fulano@` para um segundo cadastro | RQ-03, P-03 | sim: é a mesma porta por outro caminho | aberta — implementada a recomendação (P-03) |
 | Q3 | Cada organização pode ter a própria opção, como o "cadastro aberto"? | RQ-01, P-02 | não: uma opção da instalação; a organização não cria contas fora das vias da instalação | aberta — implementada a recomendação (P-02) |
 | Q4 | Um convite com "+" criado antes de a opção ser desligada ainda pode ser aceito? | RQ-03, P-06 | sim: o admin escolheu o endereço quando a opção permitia; recusar no aceite deixaria a pessoa diante de um campo desabilitado que ela não pode corrigir, e o convite pendente seguraria a exclusão do papel | aberta — implementada a recomendação (P-06) |
+| Q5 | Qual é o texto da mensagem do bloqueio, no campo de e-mail e no aviso do login social? | P-05 | uma frase só, que cita o "+" antes do "@" e diz o que fazer: "Este sistema não aceita e-mail com "+" antes do "@". Use o endereço sem o "+"." | aberta — implementada a recomendação |
+| Q6 | Quais valores do `.env` contam como "desligado explícito"? | P-01 | os falsos que o PHP reconhece (`false`, `0`, `off`, `no`); o resto permite | aberta — implementada a recomendação |
+| Q7 | Com a opção desligada, o convite com "+" emitido antes pode ser reenviado e receber lembrete? | P-06 | sim: é o mesmo convite já emitido | aberta — implementada a recomendação |
 
 ## Premissas
 
