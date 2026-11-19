@@ -1,6 +1,6 @@
 # Progresso — Permitir ou bloquear o "+" no e-mail do cadastro
 
-**Estado**: em revisão — 2026-11-19
+**Estado**: concluída — 2026-11-19 (gate no teto, decisão do usuário: QA-10..QA-17 corrigidos, PR #207 sem ciclo 3)
 
 **Base do PR**: `main`
 
