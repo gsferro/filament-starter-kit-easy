@@ -557,7 +557,7 @@ class AppPanelProvider extends PanelProvider
              * recém-registrados. Numa instalação limpa isso não atinge ninguém — cinco dos sete
              * caminhos que criam usuário gravam a coluna (`UsuarioAdminSeeder.php:email_verified_at:45`,
              * `UserFactory.php:email_verified_at:30`, `DemoTenancySeeder.php:email_verified_at:95`,
-             * `Convite.php:email_verified_at:666`, `KitAdmin.php:email_verified_at:204`);
+             * `Convite.php:email_verified_at:680`, `KitAdmin.php:email_verified_at:204`);
              * os dois que não gravam são a tela de usuários do /admin e a do /app. Numa base
              * legada, atinge quem foi criado por ali, e o README traz o reparo.
              *

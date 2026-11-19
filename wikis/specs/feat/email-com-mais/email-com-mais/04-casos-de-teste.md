@@ -15,7 +15,7 @@
 - Por que o Impacto é 2 e não 3: o `00` trata o bloqueio como "proteção extra" e diz que o "+" "não é um problema". Se o bloqueio falhar, nasce uma conta a mais, e o admin a resolve à mão. Se a recusa for indevida, o próprio admin a desfaz religando a opção. A falha não envolve dinheiro, dado de terceiro, autorização de painel nem perda irreversível.
 - Por que P é 3 em A2 e A3: são oito vias, três painéis, os dois estados da opção, as exceções da P-04 (conta existente) e da P-06 (convite já emitido), e uma integração externa (o provedor social).
 - Técnicas aplicadas: EP (partição do valor da opção e da parte local), BVA de posição do "+" na parte local, tabela de decisão (estado × e-mail × conta existente × via), rastreio de efeito (conta, convite, notificação, sessão), criação ≠ edição ≠ uso.
-- Cenários: 28 · Regras: 11 · Mutantes previstos: 54 · Sem matador: 2 *(alterado em 2026-11-19: CT-28 e M53/M54 do step 9; as linhas `off`/`no` do CT-01 pela recomendação da Q6 — QA-06/QA-07 do gate)*
+- Cenários: 31 · Regras: 11 · Mutantes previstos: 58 · Sem matador: 2 *(alterado em 2026-11-19: CT-28 e M53/M54 do step 9; as linhas `off`/`no` do CT-01 pela recomendação da Q6 — QA-06/QA-07 do gate; a R7 reescrita pela resposta à Q4, com CT-29..CT-31 e sete mutantes no lugar de três)*
 <!-- derivado por grep -c (template-04.md §Contagem do cabeçalho) -->
 
 **Divergência declarada com uma Project Rule.** `.ai/rules/config.md` manda que um interruptor de env falhe **fechado**. Aqui vence a P-01 do `00`: a ausência de valor (chave ausente, vazia ou irreconhecível) **permite**, e só um "desligado" explícito bloqueia. A rule fala de interruptor que **abre** superfície pública. Esta opção liga uma proteção opcional, e o requisito escolheu a direção. Os CT-01 a CT-03 seguem a P-01.
@@ -42,7 +42,7 @@
 | R4 — Registro aberto (`/app/register`, `/cadastro`) segue a opção | A2 (padrão) | RQ-02, RQ-03, RQ-04, P-03, P-05 | tabela de decisão + rastreio de efeito | CT-08, CT-09, CT-10 |
 | R5 — Convite um a um segue a opção, exceto para conta existente | A2 (padrão) | RQ-02, RQ-03, RQ-04, P-03, P-04, P-06 | tabela de decisão | CT-11, CT-12 |
 | R6 — No convite em massa, o "+" sai com motivo próprio e os outros seguem | A2 (padrão) | RQ-03, P-04, P-05 | EP + rastreio de efeito | CT-13, CT-14, CT-15, CT-28 |
-| R7 — O convite já emitido vale | A2/A3 (padrão) | RQ-03, P-06 | tabela estado × evento (emitido antes × desligado depois) | CT-16, CT-17 |
+| R7 — Com a opção desligada, o convite para conta nova com "+" não se aceita | A2 (padrão) | RQ-03, P-06, Q7 | estado × evento | CT-16, CT-17, CT-29, CT-30, CT-31 |
 | R8 — CRUD de usuários: criar segue a opção; editar só olha o e-mail novo | A2 (padrão) | RQ-02, RQ-03, P-03, P-04 | criação ≠ edição + tabela de decisão | CT-18, CT-19, CT-20 |
 | R9 — O login social não cria conta com "+" bloqueado e diz o motivo | A3 (padrão) | RQ-03, P-03, P-05 | rastreio de efeito + EP | CT-21, CT-22, CT-23 |
 | R10 — A troca de e-mail no perfil segue a opção, nos três painéis | A2 (padrão) | RQ-03, P-03, P-04 (Q2) | criação ≠ edição + EP por painel | CT-24, CT-25, CT-26 |
@@ -419,41 +419,70 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
 
 ---
 
-## Regra R7 — O convite já emitido vale
+## Regra R7 — Com a opção desligada, o convite para conta nova com "+" não se aceita
 
-> `RQ-03`, `P-06` (Q4) · perfil **padrão** · técnica: **estado × evento** (convite pendente emitido com a opção permitindo × aceite depois de desligada, por tela e por social)
+> `RQ-03`, `P-06` (Q4, respondida "não" em 2026-11-19), `Q7` · perfil **padrão** · técnica: **estado × evento** (convite pendente emitido com a opção permitindo × aceite, reenvio e lembrete depois de desligada)
+> *(alterado em 2026-11-19: a Q4 foi respondida "não" pelo solicitante — esta regra dizia que o convite já emitido valia. Reescrita pela sessão, sem sub-agente da `feature-test-design`: a derivação cega anterior cobria a mesma superfície com o oráculo invertido.)*
 
 ```gherkin
-  Regra: O convite com "+" emitido antes de a opção ser desligada é aceito, pela tela e pelo login social
+  Regra: O convite com "+" para conta nova é recusado ao abrir o link e no login social; o admin revoga, e nada reenvia o link
 
-    Esquema do Cenário: [CT-16] aceite pela tela do convite com "+" emitido antes de desligar
+    Esquema do Cenário: [CT-16] o link do convite com "+" emitido antes de desligar é recusado ao abrir, com o motivo
       Dado um convite pendente para "gsferroti+starter@gmail.com", emitido com a opção permitindo, e o login unificado "<unificado>"
       E a opção desligada depois do envio
-      Quando a pessoa convidada aceita pelo link em "<tela>", preenchendo nome e senha
-      Então a conta "gsferroti+starter@gmail.com" existe com o papel panel_user
-      E o convite tem a data de aceite preenchida
-      E o formulário não tem erro no campo de e-mail
+      Quando a pessoa convidada abre o link em "<tela>"
+      Então ela é levada ao login
+      E vê o aviso "Este convite não pode ser aceito", com a mensagem do "+" e o pedido de um convite sem o "+"
+      E nenhuma conta "gsferroti+starter@gmail.com" existe
+      E o convite continua pendente
 
       Exemplos:
         | tela                   | unificado |
         | /app/register?token=…  | desligado |
         | /cadastro?token=…      | ligado    |
 
-    Cenário: [CT-17] aceite pelo login social do convite com "+" emitido antes de desligar
+    Cenário: [CT-17] o login social pelo convite com "+" emitido antes de desligar recusa com o motivo
       Dado um convite pendente para "gsferroti+starter@gmail.com", emitido com a opção permitindo, e o registro aberto desligado
       E a opção desligada depois do envio, com o token do convite na sessão do login social
       Quando o Google devolve a pessoa com o e-mail "gsferroti+starter@gmail.com"
-      Então a conta "gsferroti+starter@gmail.com" existe, com o papel panel_user, e está autenticada
-      E o convite tem a data de aceite preenchida
+      Então nenhuma conta nasce e ninguém está autenticado
+      E o aviso cita o "+", e não é a recusa genérica de convite
+      E o convite continua pendente
+
+    Cenário: [CT-29] o model recusa o aceite de conta nova com "+" e aceita a conta existente com "+"
+      Dado a opção desligada
+      E um convite pendente para "nova+1@example.com", sem conta
+      E um convite pendente para "velha+1@example.com", que já é de uma conta
+      Quando o aceite é chamado direto no model, para os dois
+      Então o primeiro lança a recusa com a mensagem do "+" e nenhuma conta nasce
+      E o segundo vincula a conta existente
+
+    Cenário: [CT-30] o admin não reenvia o convite que não se aceita, e revoga
+      Dado a opção desligada
+      E um convite pendente para "gsferroti+starter@gmail.com", sem conta
+      E um convite pendente para "gsferroti@gmail.com"
+      Quando o admin abre a lista de convites do /admin
+      Então a ação Reenviar não aparece para o convite com "+" e aparece para o outro
+      E a ação Revogar aparece para os dois, e revogar o convite com "+" o remove
+
+    Cenário: [CT-31] o lembrete automático pula o convite que não se aceita
+      Dado a opção desligada
+      E dois convites pendentes, com o lembrete devido: "gsferroti+starter@gmail.com" (sem conta) e "gsferroti@gmail.com"
+      Quando o comando de lembretes roda
+      Então só "gsferroti@gmail.com" recebe lembrete
 ```
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M1 | a regra entra no campo de e-mail do modo convite (desabilitado), numa das duas telas: o aceite falha num campo que a pessoa não pode corrigir | CT-16 | nas duas linhas, a conta existe e não há erro em `email`; o mutante recusa |
-| M2 | o `aceitar()` do model recusa o "+" com a opção desligada (a leitura antiga da P-06) | CT-16, CT-17 | a conta existe e `aceito_em` está preenchido; o mutante deixa o convite pendente |
-| M3 | o login social aplica a regra do "+" antes de olhar o convite da sessão | CT-17 | `assertAuthenticatedAs` com a conta nova; o mutante recusa com o aviso do "+" |
+| M1 | a tela aceita o convite com "+" (a leitura antiga da P-06) | CT-16 | a conta não existe e o convite segue pendente; o mutante cria |
+| M2 | a recusa da tela vira erro no campo desabilitado, sem redirecionar | CT-16 | o redirecionamento ao login com o aviso; o mutante fica na tela |
+| M3 | o login social pelo convite pula a conferência do "+" | CT-17 | ninguém autenticado e o aviso do "+"; o mutante cria a conta |
+| M4 | o `aceitar()` do model não recusa | CT-29 | a exceção e a contagem de contas; o mutante cria |
+| M5 | o `aceitar()` recusa também a conta existente com "+" | CT-29 | o vínculo da conta existente; o mutante lança |
+| M6 | o Reenviar continua visível para o convite com "+" | CT-30 | a ação oculta nessa linha |
+| M7 | o lembrete não pula o convite com "+" | CT-31 | uma notificação só, para o endereço sem "+" |
 
 ---
 
@@ -738,6 +767,9 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | CT-26 | cada painel serve o componente do kit | R10 | EP por painel | G8 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R10-M3 |
 | CT-27 | conta existente com "+" entra | R11 | EP | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R11-M1, M2, M3 |
 | CT-28 | lote pela tela: motivo do "+" e conta existente em qualquer caixa | R6 | EP + rastreio de efeito | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | M53, M54 |
+| CT-29 | o model recusa conta nova com "+" e aceita a existente | R7 | estado × evento | G5 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R7-M4, M5 |
+| CT-30 | Reenviar oculto para o convite que não se aceita; Revogar presente | R7 | estado × evento | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R7-M6 |
+| CT-31 | o lembrete pula o convite que não se aceita | R7 | estado × evento | G5 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R7-M7 |
 
 O arquivo `tests/Kit/EmailComMaisTest.php` é proposto. Os CT de Tenancy vão para os arquivos irmãos que já têm os helpers (Setup Global, "Helpers dos irmãos e onde os CT moram").
 

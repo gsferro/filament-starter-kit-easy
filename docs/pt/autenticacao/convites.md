@@ -102,7 +102,7 @@ comando agendado (`routes/console.php:40`,
 `app/Console/Commands/KitConvitesLembrar.php`), o único chamador de `lembrar()` em `app/`.
 `Convite::enviar()`, `::lembrar()`, `::aceitar()`, `::aceitarComoUsuarioExistente()` e `::recusar()`
 (`app/Models/Convite.php:enviar:145`, `:lembrar:209`, `:aceitar:638`,
-`:aceitarComoUsuarioExistente:706`, `:recusar:771`).
+`:aceitarComoUsuarioExistente:720`, `:recusar:785`).
 
 ## Excluir um papel que tem convites
 

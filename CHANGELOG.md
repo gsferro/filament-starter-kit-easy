@@ -26,7 +26,8 @@ Opção para **permitir ou bloquear o "+" no e-mail do cadastro** (`fulano+loja@
 ### Não muda
 
 - Conta que já tem "+" continua entrando e salvando o perfil; convite para um e-mail que já é de uma conta passa
-  (não cria conta, só vincula); convite já enviado continua valendo.
+  (não cria conta, só vincula).
+- Desligada, o convite para conta nova com "+" enviado antes de desligar não se aceita mais: quem abre o link vê o motivo, o Reenviar some e o lembrete o pula — revogue e convide o endereço sem o "+".
 - Só um "desligado" explícito bloqueia (`false`, `0`, `off`, `no`): a chave ausente ou vazia permite.
 - Os comandos `kit:install` e `kit:admin` ficam fora (são do operador da instalação).
 

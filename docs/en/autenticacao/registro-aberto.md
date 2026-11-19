@@ -166,7 +166,9 @@ it:
 
 What does **not** change: an account that already has a "+" keeps signing in and saving its profile;
 an invitation to an e-mail that already belongs to an account goes through (it creates no account,
-it only links); and an invitation already sent stays valid. Only an explicit "off" blocks (`false`,
+it only links). An invitation for a new account with "+" sent before the option was turned off can no
+longer be accepted: whoever opens the link sees why, Reenviar (resend) disappears and the reminder skips
+it — revoke it and invite the address without the "+". Only an explicit "off" blocks (`false`,
 `0`, `off`, `no`): a missing or empty key allows. The `kit:install` and `kit:admin` commands are out
 of scope — they belong to whoever operates the installation.
 

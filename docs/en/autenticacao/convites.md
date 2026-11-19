@@ -106,7 +106,7 @@ reminder only exists through the scheduled command
 `app/Console/Commands/KitConvitesLembrar.php`), the only caller of `lembrar()` in `app/`.
 `Convite::enviar()`, `::lembrar()`, `::aceitar()`, `::aceitarComoUsuarioExistente()` and
 `::recusar()` (`app/Models/Convite.php:enviar:145`, `:lembrar:209`, `:aceitar:638`,
-`:aceitarComoUsuarioExistente:706`, `:recusar:771`).
+`:aceitarComoUsuarioExistente:720`, `:recusar:785`).
 
 ## Deleting a role that has invitations
 

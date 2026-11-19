@@ -3,6 +3,7 @@
 namespace App\Filament\Admin\Resources\Convites\Tables;
 
 use App\Models\Convite;
+use App\Support\EmailComMais;
 use App\Support\Papeis;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
@@ -86,7 +87,10 @@ class ConvitesTable
                     ->authorize('Reenviar:Convite')
                     ->requiresConfirmation()
                     ->modalDescription('O link anterior deixa de funcionar e um novo é enviado.')
-                    ->visible(fn (Convite $record): bool => $record->situacao() === 'Pendente' || $record->situacao() === 'Expirado')
+                    // Com o "+" bloqueado, um link para conta nova com "+" não se aceita (wiki
+                    // email-com-mais, Q4): reenviar seria mandar um link morto. Resta Revogar.
+                    ->visible(fn (Convite $record): bool => ($record->situacao() === 'Pendente' || $record->situacao() === 'Expirado')
+                        && EmailComMais::aceitaNoConvite($record->email))
                     ->action(fn (Convite $record) => $record->enviar())
                     ->successNotificationTitle('Convite reenviado'),
 

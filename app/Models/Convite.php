@@ -648,6 +648,20 @@ class Convite extends Model implements Auditable
             return $this->aceitarComoUsuarioExistente($existente);
         }
 
+        /*
+         * Conta NOVA com "+" e a instalação o bloqueia: nem o convite emitido antes de a opção ser
+         * desligada cria a conta (Q4 da wiki email-com-mais). A tela e o login social recusam antes,
+         * com a mensagem; esta é a barreira para quem chama o model por fora deles.
+         */
+        if (! EmailComMais::aceita($this->email)) {
+            Log::channel('autenticacao')->warning(
+                "[Convite@aceitar] Aceite recusado: e-mail com \"+\" e a instalação o bloqueia | convite: {$this->id}",
+                ['convite_id' => $this->id, 'email' => Str::mask($this->email, '*', 3), 'motivo' => 'email_com_mais'],
+            );
+
+            throw new RuntimeException(EmailComMais::mensagem());
+        }
+
         // Antes do `create()`: convite sem papel não deixa conta órfã para trás.
         $papel = $this->papelOuFalha();
 

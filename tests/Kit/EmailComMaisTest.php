@@ -480,7 +480,7 @@ it('[CT-15] o "+" depois do "@" cai no formato, não no motivo do "+"', function
 |--------------------------------------------------------------------------
 */
 
-it('[CT-16] o aceite pela tela do convite com "+" emitido antes de desligar', function (string $tela, bool $unificado): void {
+it('[CT-16] o link do convite com "+" emitido antes de desligar é recusado ao abrir, com o motivo', function (string $tela, bool $unificado): void {
     Notification::fake();
     opcaoDoMais(true);
 
@@ -490,33 +490,23 @@ it('[CT-16] o aceite pela tela do convite com "+" emitido antes de desligar', fu
 
     if ($unificado) {
         ligarLoginUnificado();
-        Filament::auth()->logout();
-        Filament::setCurrentPanel('app');
-
-        $formulario = Livewire::withQueryParams(['token' => $token])
-            ->test(CadastroUnificado::class)
-            ->fillForm([
-                'name'                 => 'Pessoa Convidada',
-                'password'             => 'segredo-bem-longo-123',
-                'passwordConfirmation' => 'segredo-bem-longo-123',
-            ])
-            ->call('register');
-    } else {
-        $formulario = aceitarConvite($token, 'Pessoa Convidada');
     }
 
-    $conta = User::where('email', 'gsferroti+starter@gmail.com')->first();
+    $this->get("{$tela}?token={$token}")->assertRedirect();
 
-    expect($conta)->not->toBeNull()
-        ->and($conta?->hasRole('panel_user'))->toBeTrue()
-        ->and($convite->fresh()?->aceito_em)->not->toBeNull();
-    afirmarErroDoCampoEmail($formulario, comErro: false);
+    $aviso = collect(avisosDoFilament())->firstWhere('title', 'Este convite não pode ser aceito');
+
+    expect($aviso)->not->toBeNull()
+        ->and((string) ($aviso['body'] ?? ''))->toContain(EmailComMais::mensagem())
+        ->and((string) ($aviso['body'] ?? ''))->toContain('sem o "+"')
+        ->and(User::where('email', 'gsferroti+starter@gmail.com')->exists())->toBeFalse()
+        ->and($convite->fresh()?->situacao())->toBe('Pendente');
 })->with([
     '/app/register?token' => ['/app/register', false],
     '/cadastro?token'     => ['/cadastro', true],
 ])->group('kit');
 
-it('[CT-17] o aceite pelo login social do convite com "+" emitido antes de desligar', function (): void {
+it('[CT-17] o login social pelo convite com "+" emitido antes de desligar recusa com o motivo', function (): void {
     Notification::fake();
     opcaoDoMais(true);
 
@@ -536,13 +526,77 @@ it('[CT-17] o aceite pelo login social do convite com "+" emitido antes de desli
         ->get('/auth/google/callback')
         ->assertRedirect();
 
-    $conta = User::where('email', 'gsferroti+starter@gmail.com')->first();
+    $titulos = collect(avisosDoFilament())->pluck('title')->implode("\n");
 
-    expect($conta)->not->toBeNull()
-        ->and($conta?->hasRole('panel_user'))->toBeTrue()
-        ->and($convite->fresh()?->aceito_em)->not->toBeNull();
+    expect(User::where('email', 'gsferroti+starter@gmail.com')->exists())->toBeFalse()
+        ->and($titulos)->toContain(EmailComMais::mensagem())
+        ->and($titulos)->not->toContain('por convite')
+        ->and($convite->fresh()?->situacao())->toBe('Pendente');
 
-    $this->assertAuthenticatedAs($conta);
+    $this->assertGuest();
+})->group('kit');
+
+it('[CT-29] o model recusa o aceite de conta nova com "+" e aceita a conta existente com "+"', function (): void {
+    Notification::fake();
+    opcaoDoMais(true);
+
+    [$nova]    = conviteCom('panel_user', null, 'nova+1@example.com');
+    $velha     = usuario('velha+1@example.com');
+    [$deVelha] = conviteCom('panel_user', null, 'velha+1@example.com');
+
+    opcaoDoMais(false);
+
+    $antes = User::count();
+
+    expect(fn (): User => $nova->aceitar([
+        'name'     => 'Nova',
+        'email'    => 'nova+1@example.com',
+        'password' => 'segredo-bem-longo-123',
+    ]))->toThrow(RuntimeException::class, EmailComMais::mensagem());
+
+    expect(User::count())->toBe($antes)
+        ->and($deVelha->aceitar(['name' => 'Velha', 'email' => 'velha+1@example.com', 'password' => 'x'])->is($velha))->toBeTrue()
+        ->and($deVelha->fresh()?->aceito_em)->not->toBeNull();
+})->group('kit');
+
+it('[CT-30] o admin não reenvia o convite que não se aceita, e revoga', function (): void {
+    Notification::fake();
+    opcaoDoMais(true);
+
+    [$comMais] = conviteCom('panel_user', null, 'gsferroti+starter@gmail.com');
+    [$semMais] = conviteCom('panel_user', null, 'gsferroti@gmail.com');
+
+    opcaoDoMais(false);
+
+    $this->actingAs(usuarioDoKit('master_global', 'master@example.com'));
+    Filament::setCurrentPanel('admin');
+
+    Livewire::test(ListConvites::class)
+        ->assertActionHidden(TestAction::make('reenviar')->table($comMais))
+        ->assertActionVisible(TestAction::make('reenviar')->table($semMais))
+        ->assertActionVisible(TestAction::make('delete')->table($comMais))
+        ->callAction(TestAction::make('delete')->table($comMais));
+
+    expect(Convite::whereKey($comMais->getKey())->exists())->toBeFalse()
+        ->and(Convite::whereKey($semMais->getKey())->exists())->toBeTrue();
+})->group('kit');
+
+it('[CT-31] o lembrete automático pula o convite que não se aceita', function (): void {
+    Notification::fake();
+    config(['kit.convites.lembretes_dias' => [2]]);
+    opcaoDoMais(true);
+
+    [$comMais] = conviteCom('panel_user', null, 'gsferroti+starter@gmail.com');
+    [$semMais] = conviteCom('panel_user', null, 'gsferroti@gmail.com');
+
+    opcaoDoMais(false);
+    config(['kit.convites.lembretes_dias' => [2]]);
+
+    $this->travel(3)->days();
+    $this->artisan('kit:convites-lembrar')->assertSuccessful();
+
+    expect($comMais->fresh()?->lembretes_enviados)->toBe(0)
+        ->and($semMais->fresh()?->lembretes_enviados)->toBe(1);
 })->group('kit');
 
 /*

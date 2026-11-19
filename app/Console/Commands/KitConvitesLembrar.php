@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Convite;
+use App\Support\EmailComMais;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
@@ -77,6 +78,12 @@ class KitConvitesLembrar extends Command
                     ));
 
                     if ($devidos <= $convite->lembretes_enviados) {
+                        continue;
+                    }
+
+                    // Com o "+" bloqueado, o link não se aceitaria (wiki email-com-mais, Q4): lembrar
+                    // seria cobrar um convite morto. Ele fica pendente até alguém revogá-lo.
+                    if (! EmailComMais::aceitaNoConvite($convite->email)) {
                         continue;
                     }
 

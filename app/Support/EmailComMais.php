@@ -15,9 +15,9 @@ use Closure;
  *
  * É a dona única de `kit.email.permitir_mais` (`.ai/rules/config.md`): ninguém lê a chave direto.
  *
- * O que NÃO é recusado (P-04 e P-06 da wiki): conta que já tem "+" (a regra ignora o e-mail
- * atual), convite para um e-mail que já é de uma conta (não cria conta, só vincula) e convite já
- * emitido (o aceite não passa por aqui).
+ * O que NÃO é recusado (P-04 da wiki): conta que já tem "+" (a regra ignora o e-mail atual) e
+ * convite para um e-mail que já é de uma conta (não cria conta, só vincula). O convite para conta
+ * NOVA com "+", mesmo emitido antes de a opção ser desligada, é recusado no aceite (P-06, Q4).
  */
 class EmailComMais
 {

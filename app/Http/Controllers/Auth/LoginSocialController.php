@@ -278,9 +278,9 @@ final class LoginSocialController extends Controller
                  * O "+" bloqueado, conferido AQUI e não deixado para a guarda de
                  * `RegistroAberto::registrar()`: o `catch` logo abaixo trocaria o motivo pela
                  * mensagem do convite, e a pessoa nunca saberia que o problema é o "+" (P-05 da
-                 * wiki email-com-mais). O convite já emitido não passa por aqui (P-06).
+                 * wiki email-com-mais). Vale também para o convite já emitido: a conta seria nova (Q4).
                  */
-                if (! $convite instanceof Convite && ! EmailComMais::aceita($email)) {
+                if (! EmailComMais::aceita($email)) {
                     Log::channel('autenticacao')->warning(
                         "[LoginSocialController@retorno] Recusado: e-mail com \"+\" e a instalação o bloqueia | provedor: {$provedor->value} - email: ".$mascarado,
                         [

@@ -746,7 +746,7 @@ class ConfiguracoesDoKit extends SettingsPage
                 ->schema([
                     Toggle::make('email_permitir_mais')
                         ->label('Permitir "+" no e-mail ao cadastrar')
-                        ->helperText('fulano+loja@gmail.com cai na caixa de fulano@gmail.com, então uma caixa só rende cadastros sem fim. Desligado, registro, convite para conta nova, tela de usuários, login social e troca de e-mail no perfil recusam o "+" antes do "@". Quem já tem conta com "+" continua entrando, e convite já enviado continua valendo.'),
+                        ->helperText('fulano+loja@gmail.com cai na caixa de fulano@gmail.com, então uma caixa só rende cadastros sem fim. Desligado, registro, convite para conta nova, tela de usuários, login social e troca de e-mail no perfil recusam o "+" antes do "@". Quem já tem conta com "+" continua entrando; convite com "+" para conta nova, mesmo já enviado, deixa de se aceitar — revogue e convide o endereço sem o "+".'),
                 ]),
 
         ]);

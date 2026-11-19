@@ -28,8 +28,14 @@
 ## 8. Documentação
 - [x] `docs/{pt,en}/autenticacao/registro-aberto.md` (seção "E-mail com "+""), `docs/{pt,en}/recursos/configuracoes-do-kit.md` — o tutorial guiado da tela é por aba e não precisa de passo novo (`.ai/rules/onboarding.md`), 2026-11-19
 
+## 9. Resposta à Q4 (convite com "+" recusado no aceite)
+- [x] O solicitante respondeu Q1..Q4 em 2026-11-19 (QA-01 do gate): Q1, Q2 e Q3 como a recomendação; **Q4 "não, recusar no aceite"**. P-06 revista no `00`, Q7 decorre dela; R7 reescrita no `04` (CT-16, CT-17 invertidos; CT-29, CT-30, CT-31 novos) — 2026-11-19
+- [x] Código — a tela recusa ao abrir o link (`RegistroPorConvite::recusarPorMais()`: aviso e login, porque o campo do convite é desabilitado), o login social por convite recusa com a mensagem do "+", `Convite::aceitar()` recusa conta nova com "+", o Reenviar some para esse convite (`ConvitesTable`) e o lembrete o pula (`KitConvitesLembrar`); o Revogar já existia e libera o papel. Docs, CHANGELOG, helperText da tela e roteiro atualizados — `vendor/bin/pest tests/Kit/EmailComMaisTest.php --filter='CT-16|CT-17|CT-29|CT-30|CT-31'`: 6/6, 2026-11-19
+- [x] Falsificabilidade — cinco mutantes, um por ponto (tela, login social, model, Reenviar, lembrete): CT-16 0/2, CT-17 0/1, CT-29 0/1, CT-30 0/1, CT-31 0/1 sob o mutante; `git status` de `app/` só com a entrega depois de restaurar, 2026-11-19
+- [x] O RD-01 (convite de conta existente aceito depois de a conta trocar de e-mail) fica fechado pela mesma guarda: o aceite como conta nova recusa o "+" — 2026-11-19
+
 ## Testes
-- [x] `vendor/bin/pest tests/Kit/EmailComMaisTest.php` — 70/70 depois do step 9 (CT-01..CT-05, CT-07..CT-11, CT-13..CT-19, CT-21..CT-28)
+- [x] `vendor/bin/pest tests/Kit/EmailComMaisTest.php` — 70/70 depois do step 9 (CT-01..CT-05, CT-07..CT-11, CT-13..CT-19, CT-21..CT-28); com a Q4 e os CT-29..CT-31, o lote de oito arquivos (`EmailComMaisTest`, `ConviteTest`, `CadastroSocialPorConviteTest`, `ExclusaoDePapelComConviteTest`, `SiteDeDocumentacaoTest`, `RoteiroDeAtualizacaoTest`, `CitacoesDeCodigoTest`, `DiagramasDaArquiteturaTest`) passou 977 de 979 — as 2 falhas eram o badge e uma citação deslocada pela guarda nova, corrigidas (`CitacoesDeCodigoTest` + `DiagramasDaArquiteturaTest` + `SiteDeDocumentacaoTest` 599/599)
 - [x] `vendor/bin/pest tests/Tenancy/RegistroAbertoTenancyTest.php tests/Tenancy/AdminDaOrganizacaoTest.php` — 17/17 e 38/38 (CT-06, CT-12, CT-20)
 - [x] Irmãos com os helpers que subiram para o `tests/Pest.php` (`registrarAberto()`, `conviteCom()`, `aceitarConvite()`, `conviteSocialPara()`, `opcaoDoMais()`) — `ConviteTest` 49/49, `RegistroAbertoTest` 35/35, `CadastroSocialPorConviteTest` 5/5, `HelpersDeTesteTest` 1/1
 - [x] Falsificabilidade — seis mutantes, um por via, todos mortos pelo `fw-executor-ct` (registro por fora da tela CT-09, registro pela tela CT-08, convite um a um CT-11, CRUD CT-18/CT-19, login social CT-21 — o aviso virava a recusa genérica do convite —, lote CT-13); o lote sem `lower(email)` derruba o CT-28, 2026-11-19
@@ -86,6 +92,7 @@ Roteiro manual: não — a feature é validação de formulário e uma recusa do
 |---|---|---|---|
 | `app.md` | `app/**` | n.a. | nenhum papel atribuído, nenhum DTO novo (só o docblock de `FalhaDoConviteData`), nenhuma URL de painel ou de arquivo |
 | `auth.md` | `app/Filament/Pages/Auth/**` | n.a. | `RegistroPorConvite` só ganha uma regra no campo; `$layout`, `mount()` e resolução de painel intocados |
+| `commands.md` | `app/Console/Commands/**` | n.a. | `KitConvitesLembrar` só ganha um `continue` no laço; nenhuma chave gravada no `.env` |
 | `config.md` | `config/**` | aplicada, com divergência declarada | uma dona só (`EmailComMais`, CT-05); `env()` vazio tratado (a chave não usa `(bool) env(..., true)`). Não "falha fechado": a chave FECHA superfície, e a ausência de valor permite (P-01, `01` → Decisões de Desenho) |
 | `controllers-auth.md` | `app/Http/Controllers/Auth/**` | n.a. | a recusa do "+" acontece antes de qualquer sessão; nenhuma troca de conta |
 | `css-filament.md` | `app/Providers/**` | n.a. | nenhum CSS |
@@ -105,8 +112,8 @@ Roteiro manual: não — a feature é validação de formulário e uma recusa do
 | `testes.md` | `tests/**` | aplicada | helpers usados por mais de um arquivo subiram para o `tests/Pest.php`; CT-05 filtra comentário na varredura |
 
 ## Débitos
-- **RD-01**: o convite que passou pela exceção "conta existente" (P-04) é aceito como convite comum se a conta trocar de e-mail antes do aceite, e cria uma conta com "+" com a opção desligada. Exige uma ação deliberada de quem já tem conta; fechar pediria guardar no convite por que ele passou, ou recusar no aceite (o que a P-06 evita)
-- **Q1, Q2, Q3, Q4, Q5, Q6, Q7** abertas, com as recomendações implementadas
+- ~~**RD-01**~~ fechado pela resposta à Q4 (seção 9)
+- **Q5 e Q6** abertas, com as recomendações implementadas (texto da mensagem; `off`/`no` como desligado). Q1..Q4 respondidas em 2026-11-19; Q7 decorre da Q4
 
 ## Despachos
 
@@ -119,3 +126,25 @@ Roteiro manual: não — a feature é validação de formulário e uma recusa do
 | 5 | `fw-revisor-diff` | herdado | passe de eixos | RD-01..RD-05 (Minor) | 123.026 tokens · 571 s |
 | 6 | `/code-review` (fork) | sessão | revisão do diff | 9 achados | 100.711 tokens · 146 s |
 | 7 | `codex exec` | não exposto | revisão do diff | 4 achados | 90.271 tokens |
+
+## Quality Gate
+
+| Ciclo | Veredito | Data |
+|---|---|---|
+| 1 | REPROVADO → especificação (QA-01, QA-02 Major; QA-03..QA-06, QA-08 Minor; QA-07, QA-09 Cosmético); B, E, F, G, H, J, K não verificadas pelo gate | 2026-11-19 |
+
+Tratamento do ciclo 1:
+
+| QA | Destino | O que foi feito |
+|---|---|---|
+| QA-01 | 1 | Q1..Q4 levadas ao solicitante e respondidas; a Q4 divergiu ("recusar no aceite"): P-06 → R7 → CT-16, CT-17, CT-29..CT-31 → correção (seção 9) |
+| QA-02 | 1 | o `01` diz a fórmula real da chave, os dois métodos do convite e que o `aceitar()` não tinha guarda — depois da Q4, ele passou a ter (seção 9) |
+| QA-03 | 1 | as seis citações do `Convite.php` nas docs pt e en, e de novo depois da guarda nova |
+| QA-04 | 1 | a seção "E-mail com "+"" na tabela de abas das docs |
+| QA-05 | 1 | o CHANGELOG diz o que acontece sem o `migrate` (o boot lê TODAS as opções do `.env`) |
+| QA-06 | 3 | as linhas `off`/`no` do CT-01 entraram nos Exemplos do `04`, com a Q6; o rótulo "respondida" saiu do dataset |
+| QA-07 | 1 | cabeçalho, índice e mapa do `04` com o CT-28 (e depois com CT-29..CT-31) |
+| QA-08 | 1 | `## Verificação Final`, a decisão de roteiro manual e `## Impacto em Features Existentes` no `01` |
+| QA-09 | 2 | o comentário do lote diz `lower(email)` |
+
+No `06` do ciclo 1, as citações `arquivo:linha` sem símbolo foram reescritas como prosa ("`arquivo` (linha N no ciclo)") para o `citacoes.sh` passar; o conteúdo dos achados não mudou.

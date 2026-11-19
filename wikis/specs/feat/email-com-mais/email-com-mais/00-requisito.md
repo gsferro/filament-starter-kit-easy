@@ -26,13 +26,13 @@
 
 | ID | Pergunta | Afeta | Recomendação | Estado |
 |----|----------|-------|--------------|--------|
-| Q1 | A instalação nova nasce com o "+" permitido (como hoje) ou bloqueado? | RQ-01, P-01 | permitido: nada muda sem decisão do admin, e o texto trata o "+" como válido ("isso não é um problema") | aberta — implementada a recomendação (P-01) |
-| Q2 | A troca de e-mail no perfil também segue a opção? Sem ela, quem se cadastrou como `fulano@` troca para `fulano+1@` e libera o `fulano@` para um segundo cadastro | RQ-03, P-03 | sim: é a mesma porta por outro caminho | aberta — implementada a recomendação (P-03) |
-| Q3 | Cada organização pode ter a própria opção, como o "cadastro aberto"? | RQ-01, P-02 | não: uma opção da instalação; a organização não cria contas fora das vias da instalação | aberta — implementada a recomendação (P-02) |
-| Q4 | Um convite com "+" criado antes de a opção ser desligada ainda pode ser aceito? | RQ-03, P-06 | sim: o admin escolheu o endereço quando a opção permitia; recusar no aceite deixaria a pessoa diante de um campo desabilitado que ela não pode corrigir, e o convite pendente seguraria a exclusão do papel | aberta — implementada a recomendação (P-06) |
+| Q1 | A instalação nova nasce com o "+" permitido (como hoje) ou bloqueado? | RQ-01, P-01 | permitido: nada muda sem decisão do admin, e o texto trata o "+" como válido ("isso não é um problema") | respondida pelo solicitante em 2026-11-19: permitido (a recomendação) |
+| Q2 | A troca de e-mail no perfil também segue a opção? Sem ela, quem se cadastrou como `fulano@` troca para `fulano+1@` e libera o `fulano@` para um segundo cadastro | RQ-03, P-03 | sim: é a mesma porta por outro caminho | respondida pelo solicitante em 2026-11-19: sim, o perfil segue (a recomendação) |
+| Q3 | Cada organização pode ter a própria opção, como o "cadastro aberto"? | RQ-01, P-02 | não: uma opção da instalação; a organização não cria contas fora das vias da instalação | respondida pelo solicitante em 2026-11-19: não, só da instalação (a recomendação) |
+| Q4 | Um convite com "+" criado antes de a opção ser desligada ainda pode ser aceito? | RQ-03, P-06 | sim: o admin escolheu o endereço quando a opção permitia; recusar no aceite deixaria a pessoa diante de um campo desabilitado que ela não pode corrigir, e o convite pendente seguraria a exclusão do papel | respondida pelo solicitante em 2026-11-19: **não, recusar no aceite** — diverge da recomendação; P-06 revista (QA-01 do gate) |
 | Q5 | Qual é o texto da mensagem do bloqueio, no campo de e-mail e no aviso do login social? | P-05 | uma frase só, que cita o "+" antes do "@" e diz o que fazer: "Este sistema não aceita e-mail com "+" antes do "@". Use o endereço sem o "+"." | aberta — implementada a recomendação |
 | Q6 | Quais valores do `.env` contam como "desligado explícito"? | P-01 | os falsos que o PHP reconhece (`false`, `0`, `off`, `no`); o resto permite | aberta — implementada a recomendação |
-| Q7 | Com a opção desligada, o convite com "+" emitido antes pode ser reenviado e receber lembrete? | P-06 | sim: é o mesmo convite já emitido | aberta — implementada a recomendação |
+| Q7 | Com a opção desligada, o convite com "+" emitido antes pode ser reenviado e receber lembrete? | P-06 | sim: é o mesmo convite já emitido | decorre da resposta à Q4 (2026-11-19): não — com o aceite recusado, reenviar ou lembrar seria mandar um link morto; P-06 |
 
 ## Premissas
 
@@ -43,11 +43,10 @@
 | P-03 | "Cadastrar" cobre toda via que dá a uma conta um e-mail novo: o registro aberto (`/app/register` e `/cadastro`), o convite (criação, um a um e em massa, e aceite), o CRUD de usuários (`/admin` e `/app`, criar e editar), o login social que cria conta e a troca de e-mail no perfil (Q2). Os comandos `kit:install` e `kit:admin` ficam fora: são do operador da instalação, não de quem se cadastra | step 3 — o mapa das vias; o texto cita "convite, register ou crud direto" | 2026-11-18 | RQ-02, RQ-03 | vigente |
 | P-04 | O "+" que conta é o da parte local, antes do "@". Conta já existente com "+" continua entrando e pode salvar o perfil sem trocar o e-mail; a regra só olha um e-mail que está sendo dado a uma conta. Por isso o convite para um e-mail que já é de uma conta existente passa: ele não cria conta, só vincula (o convite para usuário existente) | step 4 — a proteção é contra novos cadastros, não contra quem já existe | 2026-11-18 | RQ-03, RQ-04 | vigente |
 | P-05 | O bloqueio aparece como erro de validação no campo de e-mail, com uma mensagem que diz o motivo; no convite em massa, o endereço com "+" sai com um motivo próprio e os outros seguem; no login social, a conta não é criada e a pessoa vê o motivo | step 4 — o padrão de cada via (erro de campo, motivo por endereço, recusa do login social) | 2026-11-18 | RQ-03 | vigente |
-| P-06 | O convite já emitido vale: o convite com "+" criado antes de a opção ser desligada é aceito, pela tela e pelo login social (Q4). Com a opção desligada, nenhum convite novo com "+" nasce para conta inexistente | step 4 e advisor — recusar no aceite deixa a pessoa num campo desabilitado e o convite pendente, que bloqueia a exclusão do papel | 2026-11-18 | RQ-03 | vigente |
+| P-06 | Com a opção desligada, o convite para conta nova com "+" não se aceita, nem o emitido antes de a opção ser desligada (Q4). A pessoa que abre o link é levada ao login com um aviso que diz o motivo e pede um convite para o endereço sem o "+" (o campo de e-mail do convite é desabilitado, então a recusa acontece ao abrir o link, não ao enviar); o login social por convite recusa com a mesma mensagem; o model recusa quem o chama por fora. O admin sai pelo **Revogar** (o convite pendente deixa de segurar a exclusão do papel); o **Reenviar** some para esse convite e o lembrete automático o pula (Q7). O convite para conta EXISTENTE com "+" continua aceito (P-04) | step 4; *(alterado em 2026-11-19: Q4 respondida "não" pelo solicitante — antes, o convite já emitido valia)* | 2026-11-19 | RQ-03 | vigente |
 
 ## Fora de Escopo (declarado)
 
 - Outras formas de multiplicar uma caixa de e-mail (pontos no Gmail, domínios descartáveis)
 - Os comandos `kit:install` e `kit:admin` (P-03)
 - Contas que já têm "+" no e-mail (P-04)
-- Convites já emitidos (P-06)
