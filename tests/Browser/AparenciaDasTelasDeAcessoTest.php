@@ -908,7 +908,7 @@ it('[CT-B20] entrar pelo login com transição não registra erro de JavaScript'
         });
     JS);
 
-    $pagina
+    comLivewirePronto($pagina)
         ->fill('#form\\.email', 'login@example.com')
         ->fill('#form\\.password', 'password')
         ->press('Login')

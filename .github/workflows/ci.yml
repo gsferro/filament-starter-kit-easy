@@ -159,6 +159,19 @@ jobs:
       - name: Testes de tela (Pest browser)
         run: php artisan test --testsuite=Browser
 
+      # O Pest grava a tela de todo cenario de navegador que falha, e sem este passo ela morria
+      # com o runner. O CT-B02 do `RegistroAbertoTest` falhou em 2 de 3 runs da `main` (preso em
+      # `/app/register` ate o teto de 45 s) e nao reproduz local -- so a tela separa throttle,
+      # erro de validacao e clique antes da hidratacao do Livewire.
+      - name: Guardar as telas dos cenarios que falharam
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: telas-que-falharam
+          path: tests/Browser/Screenshots
+          if-no-files-found: warn
+          retention-days: 7
+
   cobertura:
     # A cobertura de linha de `app/`, medida e confrontada com o badge versionado.
     #
@@ -216,13 +229,61 @@ jobs:
       # `--testsuite` nao desliga. Medir com a suite amostrada pelo diff daria um numero que
       # nao e a cobertura de nada.
       #
-      # Sem `--write`: aqui o comando VERIFICA. Ele reprova quando a cobertura cai abaixo do
-      # piso de 78% (ADR-06) e quando `.github/badges/cobertura.json` commitado diverge do
-      # medido -- que e a guarda contra o numero do README envelhecer em silencio.
-      - name: Medir a cobertura e conferir o badge
+      # O badge NASCE aqui, da medicao, e nao de um JSON commitado. O `.github/badges/` nao
+      # existe no repositorio: o `mkdir` o cria so neste runner, e o `--write` grava nele o
+      # inteiro medido. Abaixo do piso de 78% (ADR-06) o comando sai com erro, o passo reprova
+      # e o job `badge` (que depende deste) nao publica nada -- badge so sai de job verde.
+      #
+      # O JSON vira saida do passo para o job `badge`, que e o unico com permissao de escrita.
+      # A versao anterior conferia um JSON commitado e reprovava a `main` toda vez que a
+      # cobertura cruzava um ponto percentual sem alguem commitar o numero novo a mao.
+      - name: Medir a cobertura e gerar o badge
+        id: medir
         run: |
+          mkdir -p .github/badges
           php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
-          php artisan kit:cobertura cobertura.xml --min=78 --ansi
+          php artisan kit:cobertura cobertura.xml --min=78 --write --ansi
+          echo "badge=$(tr -d '\n' < .github/badges/cobertura.json)" >> "$GITHUB_OUTPUT"
+
+    outputs:
+      badge: ${{ steps.medir.outputs.badge }}
+
+  badge:
+    # Publica o JSON do shields.io no branch orfao `badges`, de um commit so. O README aponta
+    # o endpoint para `raw.githubusercontent.com/.../badges/cobertura.json`.
+    #
+    # So depois do `cobertura` VERDE (`needs`) e so na `main`: um `workflow_dispatch` num
+    # branch de feature mede o numero do branch, e ele nao pode virar o badge do projeto.
+    #
+    # `--force` num branch de um commit so: dois pushes seguidos na `main` (o merge e o
+    # "indice regenerado") terminam em ordem qualquer, e o ultimo a publicar vence sem
+    # conflito. Push com o `GITHUB_TOKEN` nao dispara workflow, entao nao ha laco.
+    #
+    # Sem action de terceiro: so `git`, para nao abrir mais uma origem de supply chain.
+    needs: cobertura
+    if: github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Publicar o badge no branch badges
+        env:
+          BADGE: ${{ needs.cobertura.outputs.badge }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -n "$BADGE"
+          mkdir badges
+          cd badges
+          git init -q
+          git checkout -q --orphan badges
+          printf '%s\n' "$BADGE" > cobertura.json
+          git add cobertura.json
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -qm "cobertura de app/ medida em ${GITHUB_SHA}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" badges
 
   instalacao:
     # Prova que `composer create-project` continua entregando o projeto pronto.

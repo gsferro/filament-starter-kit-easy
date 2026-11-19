@@ -769,7 +769,7 @@ it('[CT-B03] captura o login unificado e a escolha de painel', function (): void
     // Playwright — mesma razão do aquecimento em `arranjarPainelApp()`, acima.
     $this->get('/login');
 
-    $pagina = visit('/login')
+    $pagina = comLivewirePronto(visit('/login'))
         ->resize(1400, 875)
         ->assertPresent('.fi-auth-layout')
         ->assertNoJavaScriptErrors()
