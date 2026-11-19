@@ -3764,17 +3764,21 @@ function anaComTresOrganizacoes(): array
 /**
  * Espera o Livewire e o Alpine assumirem a página antes de o cenário digitar nela.
  *
- * O `visit()` do `pest-plugin-browser` volta no evento `load`, e o Livewire inicia DEPOIS. Num
- * runner frio, o `fill()` cai nesse intervalo e o valor digitado se perde: a tela do CI mostrou
- * o e-mail preenchido, a senha vazia e o balão nativo "Please fill out this field" — o submit
- * nem sai, e o `assertPathIs()` espera a navegação até o teto de 45 s. Foi a causa das falhas
- * intermitentes do `telas` na `main` (o CT-B02 do `RegistroAbertoTest` e os dois logins pela
- * tela), que levavam 1,5 s quando passavam e 46 s quando falhavam, e não reproduziam local.
+ * O campo de senha do Filament vive dentro de um componente Alpine ASSÍNCRONO
+ * (`x-data="passwordRevealFormComponent()" x-load`, que baixa o `password-reveal.js` sob demanda).
+ * O Alpine só inicializa esse trecho quando o script chega, e ao inicializar o `wire:model` aplica
+ * o estado do servidor — senha vazia — por cima do que o `fill()` já tinha digitado. Num runner
+ * frio o script chega depois do `fill()`: a tela do CI mostrou nome e e-mail preenchidos, as duas
+ * senhas vazias e o balão nativo "Please fill out this field" segurando o submit, e o
+ * `assertPathIs()` esperava a navegação até o teto de 45 s. Era a causa das falhas intermitentes
+ * do `telas` na `main` (o CT-B02 do `RegistroAbertoTest` e os logins pela tela), que levavam
+ * 1,5 s quando passavam e 46 s quando falhavam, e não reproduziam local.
  *
  * Espera por ESTADO, como `.ai/rules/testes-browser.md` manda, e não por segundos: todo
- * componente da página (`[wire:id]`) precisa ter o `__livewire` que o Livewire pendura nele ao
- * iniciar. O `script()` aguarda a Promise; o teto próprio de 30 s rejeita com mensagem, em vez
- * de deixar o cenário morrer no timeout genérico.
+ * componente Livewire (`wire:id`) com o `__livewire` que o Livewire pendura ao iniciar, e todo
+ * `x-load` com o `_x_dataStack` que o Alpine cria ao inicializá-lo. O `script()` aguarda a
+ * Promise; o teto próprio de 30 s rejeita com mensagem, em vez de deixar o cenário morrer no
+ * timeout genérico.
  *
  * Devolve a mesma página, para o encadeamento seguir: `comLivewirePronto(visit('/login'))->fill(...)`.
  *
@@ -3788,12 +3792,13 @@ function comLivewirePronto(object $pagina): object
             const limite = Date.now() + 30000;
             const pronto = () => window.Livewire !== undefined
                 && window.Alpine !== undefined
-                && [...document.querySelectorAll('*')].filter((el) => el.hasAttribute('wire:id')).every((el) => el.__livewire !== undefined);
+                && [...document.querySelectorAll('*')].filter((el) => el.hasAttribute('wire:id')).every((el) => el.__livewire !== undefined)
+                && [...document.querySelectorAll('*')].filter((el) => el.hasAttribute('x-load')).every((el) => el._x_dataStack !== undefined);
             const tentar = () => {
                 if (pronto()) {
                     resolve(true);
                 } else if (Date.now() > limite) {
-                    reject(new Error('o Livewire não iniciou a página em 30 s'));
+                    reject(new Error('o Livewire ou um x-load do Alpine não iniciou em 30 s'));
                 } else {
                     setTimeout(tentar, 50);
                 }
