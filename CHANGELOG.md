@@ -5,6 +5,44 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-11-19
+
+Opção para **permitir ou bloquear o "+" no e-mail do cadastro** (`fulano+loja@gmail.com` cai na caixa de
+`fulano@gmail.com`, então uma caixa só rende cadastros sem fim). Wiki: `wikis/specs/feat/email-com-mais/`.
+
+### Adicionado
+
+- Opção **Permitir "+" no e-mail ao cadastrar**, na aba Registro de `/admin/configuracoes-da-aplicacao`
+  (seção "E-mail com "+"") e em `KIT_EMAIL_PERMITIR_MAIS`. Nasce **ligada**: nada muda até o admin desligá-la.
+  Desligada, recusam o "+" antes do "@", com a mesma mensagem:
+  - o cadastro aberto (`/app/register` e `/cadastro`), também pela guarda de `RegistroAberto::registrar()`;
+  - o convite para conta nova, um a um e em massa (no lote, o endereço sai com o motivo próprio e os outros seguem);
+  - a tela de usuários do `/admin` e do `/app`, ao criar e ao trocar o e-mail;
+  - o login social que criaria uma conta (o aviso diz o motivo, e não a recusa genérica de convite);
+  - a troca de e-mail no perfil (`App\Livewire\InformacoesPessoais`, registrado como `personal_info` nos três painéis).
+- Leitor único `App\Support\EmailComMais`.
+- `tests/Kit/EmailComMaisTest.php` (CT-01..CT-28) e casos em `tests/Tenancy`.
+
+### Não muda
+
+- Conta que já tem "+" continua entrando e salvando o perfil; convite para um e-mail que já é de uma conta passa
+  (não cria conta, só vincula); convite já enviado continua valendo.
+- Só um "desligado" explícito bloqueia (`false`, `0`, `off`, `no`): a chave ausente ou vazia permite.
+- Os comandos `kit:install` e `kit:admin` ficam fora (são do operador da instalação).
+
+### Atualizando
+
+- **Rode `php artisan migrate`**: a migration de settings `2026_11_19_100000_add_email_permitir_mais_to_kit_settings`
+  cria a opção, semeada do `.env` (ausente = permitido). Sem ela, a tela de configurações não tem o campo e a opção
+  segue o `.env`.
+- Os helpers `registrarAberto()`, `conviteCom()`, `aceitarConvite()` e `conviteSocialPara()` passaram para o
+  `tests/Pest.php`: quem tinha cópia própria nos testes recebe o arquivo novo e remove a cópia.
+- Roteiro: `wikis/atualizacoes/v0.56.0.md`.
+
+### Defaults mudados
+
+- nenhum
+
 ## [0.55.1] - 2026-11-18
 
 Débitos de verificação G, H, J e K da aparência das telas de acesso (v0.53). Nada muda no comportamento, exceto

@@ -149,6 +149,12 @@ telas de acesso (`resources/views/vendor/filament-auth-designer/components/parti
 que corrige um erro de acessibilidade) e testes novos. Quem já sobrescreveu esse partial integra o `role="menu"`
 no wrapper.
 
+**Na v0.56.0 há uma migration de settings** (`php artisan migrate`): a opção "Permitir "+" no e-mail ao
+cadastrar", semeada do `.env` (`KIT_EMAIL_PERMITIR_MAIS`; ausente, permite). Nada muda até o admin desligá-la
+na aba Registro (ver [Registro aberto](../../autenticacao/registro-aberto/#e-mail-com--opcional)). Os helpers de
+teste `registrarAberto()`, `conviteCom()`, `aceitarConvite()` e `conviteSocialPara()` passaram para o
+`tests/Pest.php`: quem tinha cópia própria nos testes a remove.
+
 **Na v0.54.0 há três migrations** (`php artisan migrate`): as preferências de aparência por usuário (ver
 [Configurações do kit](../../recursos/configuracoes-do-kit/#aparência-de-cada-pessoa-fonte-menu-e-a-escolha-no-meu-perfil)).
 A chave da instalação nasce **ligada**, então todo mundo passa a ver a seção "Aparência" no Meu perfil —

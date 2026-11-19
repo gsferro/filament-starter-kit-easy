@@ -1,6 +1,6 @@
 # Progresso — Permitir ou bloquear o "+" no e-mail do cadastro
 
-**Estado**: em revisão — 2026-11-19
+**Estado**: em revisão — 2026-11-19 (step 10 feito)
 
 **Base do PR**: `main`
 
@@ -61,6 +61,30 @@ Três revisores sem o PRD: `fw-revisor-diff`, `/code-review` (fork) e o codex. N
 | Variável atribuída dentro do `config/kit.php` | code-review 9 | mantido: uma chave só; um helper para um uso seria camada sem segundo cliente |
 | Convite para conta existente com "+", aceito depois que a conta troca de e-mail, cria conta com "+" | RD-01 | débito (abaixo) |
 | `kit:admin` troca o e-mail do admin sem a regra | RD-05 | fora de escopo (P-03) |
+
+## Conformidade com Rules
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+| `app.md` | `app/**` | n.a. | nenhum papel atribuído, nenhum DTO novo (só o docblock de `FalhaDoConviteData`), nenhuma URL de painel ou de arquivo |
+| `auth.md` | `app/Filament/Pages/Auth/**` | n.a. | `RegistroPorConvite` só ganha uma regra no campo; `$layout`, `mount()` e resolução de painel intocados |
+| `config.md` | `config/**` | aplicada, com divergência declarada | uma dona só (`EmailComMais`, CT-05); `env()` vazio tratado (a chave não usa `(bool) env(..., true)`). Não "falha fechado": a chave FECHA superfície, e a ausência de valor permite (P-01, `01` → Decisões de Desenho) |
+| `controllers-auth.md` | `app/Http/Controllers/Auth/**` | n.a. | a recusa do "+" acontece antes de qualquer sessão; nenhuma troca de conta |
+| `css-filament.md` | `app/Providers/**` | n.a. | nenhum CSS |
+| `filament-resources.md` | `app/Filament/**/Resources/**` | n.a. | nenhum resource novo; só uma regra nos campos de e-mail |
+| `filament.md` | `app/Filament/**` | n.a. | nenhum papel, permissão, resource ou mídia novos |
+| `kit.md` | `tests/Kit/**` | aplicada | `Livewire::test` monta com a sessão e os cabeçalhos do teste, sem query na chamada seguinte |
+| `livewire.md` | `app/Livewire/**` | aplicada | `InformacoesPessoais` não registra log; o log do login social usa o e-mail mascarado |
+| `models.md` | `app/Models/**` | n.a. | `Convite` ganha um motivo no lote; nada de cache, papel, mídia ou soft delete |
+| `onboarding.md` | `app/Filament/**` | aplicada | o tutorial da tela de configurações é por aba (`ConfiguracoesDaAplicacaoSeeder`), sem passo por seção — nada a acrescentar |
+| `pages.md` | `app/Filament/Admin/Pages/**` | aplicada | a seção nova é colapsável pelo helper `secao()`, com ícone `heroicon-o-at-symbol` e id estável `email-com-mais` |
+| `providers-filament.md` | `app/Providers/Filament/**` | aplicada | `InformacoesPessoais` registrado nos TRÊS painéis (CT-25, CT-26) |
+| `providers.md` | `app/Providers/**` | n.a. | nenhuma rota nova |
+| `resources.md` | `app/Filament/App/Resources/**` | n.a. | o recorte por organização do `/app` não muda; CT-12 e CT-20 rodam com organização |
+| `settings.md` | `app/Settings/**` | aplicada | lida por request (validação), não no boot; os três lugares: propriedade, linha no mapa e migration |
+| `specs.md` | `wikis/specs/**` | aplicada | o Breezy foi lido antes de afirmar o merge do `myProfileComponents()` (`HasMyProfile::myProfileComponents()`); teste citado pelo ID |
+| `support.md` | `app/Support/**` | n.a. | nenhuma chave gravada no `.env` |
+| `testes.md` | `tests/**` | aplicada | helpers usados por mais de um arquivo subiram para o `tests/Pest.php`; CT-05 filtra comentário na varredura |
 
 ## Débitos
 - **RD-01**: o convite que passou pela exceção "conta existente" (P-04) é aceito como convite comum se a conta trocar de e-mail antes do aceite, e cria uma conta com "+" com a opção desligada. Exige uma ação deliberada de quem já tem conta; fechar pediria guardar no convite por que ele passou, ou recusar no aceite (o que a P-06 evita)

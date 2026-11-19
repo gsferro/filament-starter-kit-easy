@@ -150,6 +150,12 @@ switcher (`resources/views/vendor/filament-auth-designer/components/partials/the
 an accessibility error) and new tests. If you already override that partial, merge the wrapper's
 `role="menu"`.
 
+**v0.56.0 adds a settings migration** (`php artisan migrate`): the "Allow "+" in the e-mail when signing up"
+option, seeded from `.env` (`KIT_EMAIL_PERMITIR_MAIS`; missing means allowed). Nothing changes until the admin
+turns it off in the Registro tab (see [Open sign-up](../../autenticacao/registro-aberto/#e-mail-with--optional)).
+The test helpers `registrarAberto()`, `conviteCom()`, `aceitarConvite()` and `conviteSocialPara()` moved to
+`tests/Pest.php`: if you kept your own copy in your tests, remove it.
+
 **v0.54.0 adds three migrations** (`php artisan migrate`): per-user appearance preferences (see
 [Kit settings](../../recursos/configuracoes-do-kit/#each-persons-appearance-font-sidebar-and-the-choice-in-my-profile)).
 The installation switch starts **on**, so everyone sees the new "Aparência" section in My profile —

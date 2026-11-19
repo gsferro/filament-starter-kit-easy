@@ -59,12 +59,12 @@
 |---|---|---|---|---|---|
 | G1 — leitura da opção | R1, R2 (CT-05) | Pest feature HTTP | existente — `tests/Kit/RegistroAbertoTest.php` (CT-01 de varredura com filtro de comentário; "deixa o valor gravado no settings vencer o env"), `kitConfigCom()`, `configuracaoGravada()`, `alinharConfiguracoesDoKit()` de `tests/Pest.php` | o `Então` afirma um valor efetivo lido e uma via que aceita ou recusa, sem tela | |
 | G2 — tela de configurações | R2 (CT-04) | componente Livewire/Filament | existente — `tests/Kit/ConfiguracoesDoKitTelaTest.php` (gravação por componente), `carregarAba()`, `chaveDoCampo()` | gate de tela de escrita: a tela grava, e o efeito aparece numa via | |
-| G3 — regra da parte local | R3 | Pest feature HTTP | nova — a regra é avaliada pelo `Validator` do Laravel, com o container de pé, em `tests/Kit` (o `tests/Unit` não liga o `TestCase`, `tests/Pest.php:73-95`) | o `00` diz "adiciona essa Rule no validation": o observável é a regra passar ou falhar para cada valor | |
-| G4 — formulários das vias no `/admin` e sem tenancy | R4, R5 (CT-11), R7 (CT-16), R8 (CT-18, CT-19), R10, R11 | componente Livewire/Filament | existente — `registrarAberto()` de `tests/Kit/RegistroAbertoTest.php`; `[CT-55]` de `tests/Kit/LoginUnificadoTest.php` (`/cadastro`); `conviteCom()` e `aceitarConvite()` de `tests/Kit/ConviteTest.php`; `CreateUser` de `tests/Kit/PaineisTest.php:267`; `Livewire::test(DefinirSenhaPorEmail::class)` de `tests/Kit/DefinirSenhaPorEmailTest.php` (componente do perfil) | validação de formulário e gravação são `fillForm` → `call` → `assertHasFormErrors(['email'])` / `assertDatabaseHas` | |
+| G3 — regra da parte local | R3 | Pest feature HTTP | nova — a regra é avaliada pelo `Validator` do Laravel, com o container de pé, em `tests/Kit` (o `tests/Unit` não liga o `TestCase`, `tests/Pest.php`) | o `00` diz "adiciona essa Rule no validation": o observável é a regra passar ou falhar para cada valor | |
+| G4 — formulários das vias no `/admin` e sem tenancy | R4, R5 (CT-11), R7 (CT-16), R8 (CT-18, CT-19), R10, R11 | componente Livewire/Filament | existente — `registrarAberto()` de `tests/Kit/RegistroAbertoTest.php`; `[CT-55]` de `tests/Kit/LoginUnificadoTest.php` (`/cadastro`); `conviteCom()` e `aceitarConvite()` de `tests/Kit/ConviteTest.php`; `CreateUser` de `tests/Kit/PaineisTest.php`; `Livewire::test(DefinirSenhaPorEmail::class)` de `tests/Kit/DefinirSenhaPorEmailTest.php` (componente do perfil) | validação de formulário e gravação são `fillForm` → `call` → `assertHasFormErrors(['email'])` / `assertDatabaseHas` | |
 | G5 — vias por fora da UI | R4 (CT-09), R6 (CT-13…CT-15) | Pest feature HTTP | existente — "recusa o registro chamado fora da tela" de `tests/Kit/RegistroAbertoTest.php`; `Convite::convidarEmMassa()` em `tests/Kit/ConviteEmMassaTest.php` | gate de camada da regra: a regra precisa valer fora do formulário | |
 | G6 — `/app` com organizações | R2 (CT-06), R5 (CT-12), R8 (CT-20) | componente Livewire/Filament | existente — `cenario()` de `tests/Tenancy/AdminDaOrganizacaoTest.php` (CreateConvite e CreateUser/EditUser do `/app`); `registrarNaOrganizacao()` e `organizacaoComRegistro()` de `tests/Tenancy/RegistroAbertoTenancyTest.php` | `admin_app` e o UserResource do `/app` só existem em `tests/Tenancy` (`.ai/rules/testes.md`); GET real antes do primeiro `Livewire::test()` | |
 | G7 — login social | R7 (CT-17), R9, R11 (linha social) | Pest feature HTTP | existente — `tests/Kit/CadastroSocialPorConviteTest.php` (`conviteSocialPara()`), `tests/Kit/LoginSocialGoogleTest.php`; `ligarProvedor()`, `usuarioSocialFalso()`, `avisosDoFilament()` de `tests/Pest.php` | o retorno do provedor é uma rota HTTP; o aviso é uma notificação do Filament lida por `avisosDoFilament()` | |
-| G8 — perfil servido pelos três painéis | R10 (CT-26) | Pest feature HTTP | existente — GET de `/{painel}/meu-perfil` (`tests/Kit/PermissoesDeTelasTest.php:329`) | `Livewire::test` do componente novo não prova que os painéis o servem; o GET mede o que cada `/meu-perfil` entrega | |
+| G8 — perfil servido pelos três painéis | R10 (CT-26) | Pest feature HTTP | existente — GET de `/{painel}/meu-perfil` (`tests/Kit/PermissoesDeTelasTest.php`) | `Livewire::test` do componente novo não prova que os painéis o servem; o GET mede o que cada `/meu-perfil` entrega | |
 
 ## Fronteira com o Plano
 
@@ -741,3 +741,23 @@ O arquivo `tests/Kit/EmailComMaisTest.php` é proposto. Os CT de Tenancy vão pa
 ## Sem CT-B
 
 - Motivo: nenhum oráculo depende de JavaScript executado, de pixel ou de acessibilidade. O erro de campo, a gravação, o aviso do Filament (`avisosDoFilament()`), o redirect do login social e o componente servido por painel são observáveis por componente Livewire ou por HTTP. A troca de aba da tela de configurações não é oráculo desta feature, porque o CT-04 carrega a aba com `carregarAba()`.
+
+## Adendo do step 9 (2026-11-19)
+
+Vem do passe de eixos (RD-02, RD-04): nenhum caso lia o texto do motivo do lote na tela, e o lote
+comparava a coluna crua, recusando a conta existente gravada com caixa mista que o formulário
+individual aceita.
+
+```gherkin
+Cenário: [CT-28] Pela tela, o lote mostra o motivo do "+" e deixa passar a conta existente em qualquer caixa
+  Dado a opção desligada
+  E uma conta "C+1@Example.com"
+  Quando o admin convida em lote "a@example.com", "b+1@example.com" e "c+1@example.com" pela tela de convites
+  Então "c+1@example.com" recebe convite
+  E "b+1@example.com" não recebe
+  E o aviso do lote diz "b+1@example.com — este sistema não aceita e-mail com "+" antes do "@""
+```
+
+| CT | Regra | Técnica | Mata |
+|---|---|---|---|
+| CT-28 | R6 | EP (caixa da conta existente) e rastreio de efeito na tela | M53 (o lote sem `lower(email)`), M54 (o motivo sem texto em `motivoLegivel()`) |
