@@ -26,18 +26,27 @@ Cenário: [CT-114] A sobrescrita do alternador de tema é o partial do pacote ma
 Vem do `/code-review` do step 9: o M1 só era pego pela suíte Browser. Agora a suíte Kit também o pega,
 e uma mudança do partial no pacote deixa de ficar escondida atrás da cópia.
 
+## Índice de Cenários
+
+| ID | Regra | Técnica | Grupo | Costura | Destino proposto | Mata |
+|---|---|---|---|---|---|---|
+| CT-B21 | R1 | EP (layout × tela × tema) | G4 | browser | Browser | M1, M4 |
+| CT-B22 | R2 | rastreio de efeito | G4 | browser | Browser | M3 |
+| CT-B23 | R3 | rastreio de efeito | G4 | browser | Browser | M2 |
+| CT-114 | R4 | inspeção do arquivo | G1 | Pest | Kit | M5 |
+
 ## Mutantes Previstos -->
 
 ## Mapa de Regras
 
 | Regra | Área (perfil herdado) | Origem (`RQ`/`P-nn`) | Técnica | Cenários |
 |---|---|---|---|---|
-| R1 — As telas de acesso passam no axe, nos dois layouts e nos dois temas | acessibilidade (padrão) | RQ-02, P-02 | EP (layout × tela × tema) | CT-B21 |
+| R1 — As telas de acesso passam no axe, nos dois layouts e nos dois temas | acessibilidade (padrão) | RQ-01, RQ-02, P-02 | EP (layout × tela × tema) | CT-B21 |
 | R2 — No clássico, o teclado leva do e-mail ao botão de entrar | acessibilidade (padrão) | RQ-03 | rastreio de efeito | CT-B22 |
 | R3 — Com "reduzir movimento", a troca de tela não anima, mesmo com a transição ligada | transição (mínimo) | RQ-04 | rastreio de efeito | CT-B23 |
 | R4 — A sobrescrita do alternador é o partial do pacote mais o `role="menu"` | acessibilidade (padrão) | P-02 | inspeção do arquivo | CT-114 |
 
-- RQ-01 (G): não vira cenário, porque o visual não tem oráculo automático além do contraste, que o axe do CT-B21 já mede no tema escuro. A leitura das capturas está no `03`
+- RQ-01 (G): o oráculo automático é o contraste, que o axe do CT-B21 mede nas linhas "escuro"; a leitura das capturas está no `03`
 - RQ-05..RQ-08 (J, K): são execuções e revisões, não comportamento. A evidência fica no `03`
 
 ## Costuras de Teste

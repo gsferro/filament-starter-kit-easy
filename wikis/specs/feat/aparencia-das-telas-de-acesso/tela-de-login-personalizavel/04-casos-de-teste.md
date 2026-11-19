@@ -2371,3 +2371,13 @@ Esquema do Cenário: [CT-113] A recuperação e o cadastro levam o login na list
 | M151 | o cadastro sem a opção da instalação **e** sem a cópia do login (M136 junto) | CT-111 | 2 de 2 caem; cada metade sozinha sobrevive |
 | M152 | `booleano()` aceita só `1`/`'1'` | CT-112 | 2 de 5 caem |
 | M153 | a lista sem as rotas `login` dos painéis | CT-113 | 2 de 2 caem |
+
+```gherkin
+Cenário: [CT-114] A sobrescrita do alternador de tema é o partial do pacote mais o role="menu"
+  Dado a sobrescrita do kit e o partial do auth-designer instalado
+  Então o wrapper tem role="menu"
+  E, sem esse atributo e sem o comentário do kit, o arquivo é idêntico ao do pacote
+```
+
+O CT-114 vem do step 9 da wiki `feat/debitos-da-aparencia-das-telas` (`tests/Kit/AparenciaDasTelasDeAcessoTest.php`).
+

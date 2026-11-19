@@ -5,23 +5,23 @@
 **Base do PR**: `main`
 
 ## 1. G — tema escuro
-- [x] Login, cadastro e recuperação de senha, no clássico e no painel de marca, no tema escuro a 1440×900: seis capturas por um teste temporário (`visit()->inDarkMode()->screenshot()`), apagado depois, e lidas. Todas legíveis: texto claro sobre fundo escuro, campos e botões com borda visível, o laranja de ação com contraste. O contraste em si é medido pelo axe do CT-B21, linhas "escuro", 2026-11-18
-- [x] Achado da leitura: o `/app/register` saiu sem a arte e sem o alternador nos dois layouts. Sonda: o HTML de uma requisição nova tem os dois (`fi-auth-media` 4 vezes, `theme-switcher` 9 vezes). No navegador, sem o aquecimento, a arte aparece (`block 1008`); com o aquecimento (`$this->get()` em `/admin/...` antes), a página vem `no-media`. É estado do painel corrente vazando entre requisições do mesmo processo, o mesmo do QA-01 da origem; em produção cada requisição é um processo novo, e o kit não usa Octane (`grep -c "octane\|frankenphp" composer.json`: 0). A primeira versão do CT-B21 aquecia as três telas no `beforeEach` e rodava o axe do cadastro nessa página incompleta; o step 9 trocou pelo aquecimento só da tela visitada, e o CT-B21 agora exige o alternador presente (as 4 linhas do cadastro passam), 2026-11-18
+- [x] Login, cadastro e recuperação de senha, no clássico e no painel de marca, no tema escuro a 1440×900 — seis capturas por um teste temporário (`visit()->inDarkMode()->screenshot()`), apagado depois, e lidas. Todas legíveis: texto claro sobre fundo escuro, campos e botões com borda visível, o laranja de ação com contraste. O contraste em si é medido pelo axe do CT-B21, linhas "escuro", 2026-11-18
+- [x] Achado da leitura — o `/app/register` saiu sem a arte e sem o alternador nos dois layouts. Sonda: o HTML de uma requisição nova tem os dois (`fi-auth-media` 4 vezes, `theme-switcher` 9 vezes). No navegador, sem o aquecimento, a arte aparece (`block 1008`); com o aquecimento (`$this->get()` em `/admin/...` antes), a página vem `no-media`. É estado do painel corrente vazando entre requisições do mesmo processo, o mesmo do QA-01 da origem; em produção cada requisição é um processo novo, e o kit não usa Octane (`grep -c "octane\|frankenphp" composer.json`: 0). A primeira versão do CT-B21 aquecia as três telas no `beforeEach` e rodava o axe do cadastro nessa página incompleta; o step 9 trocou pelo aquecimento só da tela visitada, e o CT-B21 agora exige o alternador presente (as 4 linhas do cadastro passam), 2026-11-18
 
 ## 2. H — navegador
-- [x] `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`: CT-B21 (axe, 12 linhas), CT-B22 (teclado no clássico), CT-B23 (reduzir movimento). O helper `visitaComMovimentoReduzido()` foi para o `tests/Pest.php` (dois arquivos o usam), 2026-11-18
-- [x] Achado do axe (P-02): `aria-required-parent` crítico nos botões `menuitemradio` do alternador de tema, em todo login e recuperação, nos dois layouts e nos dois temas (8 de 12 vermelhos). Correção: a sobrescrita `resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php` com `role="menu"` no wrapper (o `aria-label` igual ao do grupo de dentro saiu no step 9, para não ser lido duas vezes). Depois dela, 12/12, 2026-11-18
-- [x] Falsificabilidade: sem o `role` (mutante H1), 8 de 12 caem na primeira versão e 12 de 12 depois do step 9 (com o cadastro completo), e o CT-114 cai; sem a condição de "reduzir movimento" na regra `@view-transition`, o CT-B23 cai, 2026-11-18
-- [x] CT-B13 da origem (que usa o helper movido): `vendor/bin/pest tests/Browser/AparenciaDasTelasDeAcessoTest.php --filter=CT-B13`: 1/1, 2026-11-18
+- [x] `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` — CT-B21 (axe, 12 linhas), CT-B22 (teclado no clássico), CT-B23 (reduzir movimento). O helper `visitaComMovimentoReduzido()` foi para o `tests/Pest.php` (dois arquivos o usam), 2026-11-18
+- [x] Achado do axe (P-02) — `aria-required-parent` crítico nos botões `menuitemradio` do alternador de tema, em todo login e recuperação, nos dois layouts e nos dois temas (8 de 12 vermelhos). Correção: a sobrescrita `resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php` com `role="menu"` no wrapper (o `aria-label` igual ao do grupo de dentro saiu no step 9, para não ser lido duas vezes). Depois dela, 12/12, 2026-11-18
+- [x] Falsificabilidade — sem o `role` (mutante H1), 8 de 12 caem na primeira versão e 12 de 12 depois do step 9 (com o cadastro completo), e o CT-114 cai; sem a condição de "reduzir movimento" na regra `@view-transition`, o CT-B23 cai, 2026-11-18
+- [x] CT-B13 da origem (que usa o helper movido) — `vendor/bin/pest tests/Browser/AparenciaDasTelasDeAcessoTest.php --filter=CT-B13`: 1/1, 2026-11-18
 
 ## 3. J — suíte
 - [x] `vendor/bin/pest --tia --parallel --processes=3 --exclude-testsuite=Browser --compact` sobre `276cdc21`: 6206 testes, 6200 passaram, 3 pulados, 3 falhas — as três do `SiteDeDocumentacaoTest` (badge e contagens do README, que a entrega mudou). Corrigidas (badge 2.689, 265 arquivos de teste, 95 features): `vendor/bin/pest tests/Kit/SiteDeDocumentacaoTest.php`: 68/68. O Pest avisou "TIA does not apply to partial runs": com `--exclude-testsuite`, o `--tia` roda tudo o que foi selecionado, sem seleção por impacto, 2026-11-18
-- [x] `vendor/bin/pest --testsuite=Browser --compact` sobre `c530039c`: 275 testes, 223 passaram, 52 pulados, 0 falhas, 556 s, 2026-11-18
-- [x] Depois das correções do step 9: `vendor/bin/pest tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`: 14/14; `vendor/bin/pest tests/Kit/AparenciaDasTelasPorTelaTest.php tests/Kit/AparenciaDasTelasDeAcessoTest.php tests/Kit/SiteDeDocumentacaoTest.php tests/Kit/RoteiroDeAtualizacaoTest.php tests/Kit/KitUpdateTest.php`: 630/630 depois do badge 2.690, 2026-11-18
+- [x] `vendor/bin/pest --testsuite=Browser --compact` sobre `c530039c` — 275 testes, 223 passaram, 52 pulados, 0 falhas, 556 s, 2026-11-18
+- [x] Depois das correções do step 9 — `vendor/bin/pest tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`: 14/14; `vendor/bin/pest tests/Kit/AparenciaDasTelasPorTelaTest.php tests/Kit/AparenciaDasTelasDeAcessoTest.php tests/Kit/SiteDeDocumentacaoTest.php tests/Kit/RoteiroDeAtualizacaoTest.php tests/Kit/KitUpdateTest.php`: 630/630 depois do badge 2.690, 2026-11-18
 - [x] Cenários 1–4: a rodada `f1`..`f4` de 2026-11-15 sobre o commit da v0.53.1 (P-01; registrada no `03` da origem) — esta entrega não muda comportamento além do `role` do alternador, coberto pelo CT-B21
 
 ## 4. K — mutação por amostragem
-- [x] Script de mutantes (um por vez, roda o CT esperado, restaura o arquivo; `git status` limpo depois), 2026-11-18:
+- [x] Script de mutantes — (um por vez, roda o CT esperado, restaura o arquivo; `git status` limpo depois), 2026-11-18:
 
 | Mutante | Arquivo | CT | Resultado |
 |---|---|---|---|
@@ -33,17 +33,17 @@
 | M145 — a página que participa não pula a transição | `painel-de-marca.blade.php` | CT-107 | cai |
 | H1 — o alternador sem `role="menu"` | `theme-toggle.blade.php` | CT-B21 | cai (8 de 12) |
 
-- [x] O M136 sobrevive porque a página também aplica a opção da instalação a toda tela (P-35, em `VesteAparenciaDasTelas::aparenciaDaTela()`): duas defesas da mesma regra. Com as duas fora juntas, o CT-111 (novo) cai, 2 de 2. Registrado como equivalente quando sozinho, 2026-11-18
+- [x] O M136 sobrevive porque a página também aplica a opção da instalação a toda tela (P-35, em `VesteAparenciaDasTelas::aparenciaDaTela()`) — duas defesas da mesma regra. Com as duas fora juntas, o CT-111 (novo) cai, 2 de 2. Registrado como equivalente quando sozinho, 2026-11-18
 
 ## 5. K — revisão adversarial do Adendo 4
-- [x] `fw-adversario-ct` com só o `00`, o `04` e o `05` do Adendo 4 da origem: insuficiente, 12 brechas. Triagem com o código à vista no `04` da origem (`## Revisão adversarial do Adendo 4`): 6 lacunas de teste viraram CT-110..CT-113 (verdes, 11 casos; os mutantes M149, M152, M153 e o par M151 caem), 5 refutadas pela leitura e o ADV-E5 como débito, 2026-11-18
+- [x] `fw-adversario-ct` com só o `00`, o `04` e o `05` do Adendo 4 da origem — insuficiente, 12 brechas. Triagem com o código à vista no `04` da origem (`## Revisão adversarial do Adendo 4`): 6 lacunas de teste viraram CT-110..CT-113 (verdes, 11 casos; os mutantes M149, M152, M153 e o par M151 caem), 5 refutadas pela leitura e o ADV-E5 como débito, 2026-11-18
 
 ## 6. Registro na origem
-- [x] `03` da origem, `## Débitos`; `04` da origem, contagens (113 cenários, 129 mutantes) e a seção da revisão, 2026-11-18
+- [x] `03` da origem, `## Débitos`; `04` da origem, contagens — (113 cenários, 129 mutantes) e a seção da revisão, 2026-11-18
 
 ## Testes
-- [x] `vendor/bin/pest tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`: 14/14 (12 do CT-B21, CT-B22, CT-B23)
-- [x] `vendor/bin/pest tests/Kit/AparenciaDasTelasPorTelaTest.php --filter='CT-11[0-3]'`: 11/11
+- [x] `vendor/bin/pest tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` — 14/14 (12 do CT-B21, CT-B22, CT-B23)
+- [x] `vendor/bin/pest tests/Kit/AparenciaDasTelasPorTelaTest.php --filter='CT-11[0-3]'` — 11/11
 
 ## Tickets
 Não fatiado — 2026-11-18: débitos de verificação, uma correção de uma linha
@@ -52,6 +52,24 @@ Não fatiado — 2026-11-18: débitos de verificação, uma correção de uma li
 - **ADV-E5**: a lista de destinos da transição é fixa e não olha o layout da tela de destino (detalhe no `03` da origem). Decisão do mantenedor
 - **Mutantes M3 e M4 do `04`** (tabindex na senha, contraste no escuro): previstos, não medidos
 - **CT-B21 no cadastro** roda sem a arte e o alternador, pelo vazamento do painel corrente no processo do teste (passo 1)
+
+## Verificação Final
+
+- `rastreabilidade.sh`: RQ-05..RQ-08 e P-01, P-03, P-04 saem "sem CT". É declarado: são execuções e registros (a suíte inteira, os cenários 1–4, a amostragem de mutantes, a revisão adversarial, o registro na origem), não comportamento. A evidência é o comando e a saída nos passos 3, 4, 5 e 6. Um CT para elas seria um teste do próprio teste. RQ-01..RQ-04 e P-02 estão no `## Mapa de Regras` do `04`
+- `ids-ct.sh` desta wiki com `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` acusa o CT-114, que mora em `tests/Kit/AparenciaDasTelasDeAcessoTest.php`, ao lado dos CT da origem; com os dois arquivos, acusaria os CT da origem como sem cenário aqui. Pela origem (`ids-ct.sh` com os arquivos da aparência e o de acessibilidade): limpo
+- `checkbox-sem-evidencia.sh`, `citacoes.sh`, `conformidade-rules.sh main`: limpos
+
+## Conformidade com Rules
+
+| Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
+|---|---|---|---|
+| `config.md` | `config/**` | n.a. | só `kit.version` 0.55.1 |
+| `kit.md` | `tests/Kit/**` | n.a. | nenhum `Livewire::test` novo; CT-110..CT-114 leem arquivo ou HTML |
+| `specs.md` | `wikis/specs/**` | aplicada | a sobrescrita foi escrita depois de ler o partial do vendor (o CT-114 compara os dois); citação de vendor por símbolo; teste citado pelo ID |
+| `testes-browser.md` | `tests/Browser/**` | aplicada, com uma exceção | aquecimento pelo kernel da tela visitada; `assertPathIs` antes do conteúdo; sem `--parallel`. Exceção: seletores por classe (`.fi-auth-theme-switcher-wrapper[role="menu"]`, `.kit-painel-de-marca[data-kit-transicao]`), porque o que se afirma é a estrutura e o papel ARIA, não um texto |
+| `testes.md` | `tests/**` | aplicada | `visitaComMovimentoReduzido()` vive no `tests/Pest.php` (dois arquivos o usam); a asserção de ausência no CSS (CT-110) filtra comentários; os `toContain()` não recebem mensagem |
+| `views.md` | `resources/views/**` | aplicada | o comentário `{{-- --}}` da sobrescrita não tem diretiva do Blade |
+| `vendor.md` | `resources/views/vendor/**` | aplicada | `resources/views/vendor/filament-auth-designer` já está em `KitUpdate::CAMINHOS_DO_KIT`; a view difere da do pacote (`KitUpdateTest` CT-06/CT-07 verdes) |
 
 ## Despachos
 

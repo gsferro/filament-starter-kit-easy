@@ -37,12 +37,42 @@ axe acusar nas telas do kit.
 
 ## Estrutura de Implementação
 
-1. **G, tema escuro**: capturar login, cadastro e recuperação, no clássico e no painel de marca, no tema escuro a 1440×900, e ler as capturas. Teste temporário, apagado depois
-2. **H, navegador**: o arquivo `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` com o CT-B21 (axe: layout × tela × tema), o CT-B22 (teclado no clássico) e o CT-B23 (reduzir movimento com a transição ligada). O que o axe acusar do kit é corrigido (P-02)
-3. **J, suíte**: `pest --tia --parallel --processes=3 --exclude-testsuite=Browser` e a suíte Browser sobre o commit desta entrega. Os cenários 1–4 fecham pela rodada registrada (P-01)
-4. **K, mutação**: um mutante por vez nos arquivos do Adendo 4 e na correção do passo 2. Roda o CT que deveria matá-lo e restaura o arquivo
-5. **K, revisão adversarial**: `fw-adversario-ct` sobre o `00` (Adendo 4) e o `04`/`05` (Adendo 4) da origem
-6. **Registro**: `## Débitos` e `## Quality Gate` do `03` da origem apontam para esta wiki
+### 1. G, tema escuro
+
+- **Path**: teste temporário em `tests/Browser/` (apagado depois)
+- **Atende**: RQ-01
+- **Logs**: nenhum
+- **O quê**: capturar login, cadastro e recuperação, no clássico e no painel de marca, no tema escuro a 1440×900, e ler as capturas. Teste temporário, apagado depois
+### 2. H, navegador
+
+- **Path**: `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`, `tests/Pest.php`, `resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php`
+- **Atende**: RQ-02, RQ-03, RQ-04, P-02
+- **Logs**: nenhum
+- **O quê**: o arquivo `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` com o CT-B21 (axe: layout × tela × tema), o CT-B22 (teclado no clássico) e o CT-B23 (reduzir movimento com a transição ligada). O que o axe acusar do kit é corrigido (P-02)
+### 3. J, suíte
+
+- **Path**: nenhum arquivo
+- **Atende**: RQ-05, RQ-06, P-01
+- **Logs**: nenhum
+- **O quê**: `pest --tia --parallel --processes=3 --exclude-testsuite=Browser` e a suíte Browser sobre o commit desta entrega. Os cenários 1–4 fecham pela rodada registrada (P-01)
+### 4. K, mutação
+
+- **Path**: arquivos do Adendo 4 da origem, restaurados depois de cada mutante
+- **Atende**: RQ-07, P-03
+- **Logs**: nenhum
+- **O quê**: um mutante por vez nos arquivos do Adendo 4 e na correção do passo 2. Roda o CT que deveria matá-lo e restaura o arquivo
+### 5. K, revisão adversarial
+
+- **Path**: nenhum arquivo
+- **Atende**: RQ-08
+- **Logs**: nenhum
+- **O quê**: `fw-adversario-ct` sobre o `00` (Adendo 4) e o `04`/`05` (Adendo 4) da origem
+### 6. Registro
+
+- **Path**: `03` e `04` da wiki de origem
+- **Atende**: P-04
+- **Logs**: nenhum
+- **O quê**: `## Débitos` e `## Quality Gate` do `03` da origem apontam para esta wiki
 
 ## Decisões de Desenho
 

@@ -111,7 +111,7 @@ própria, no mesmo formulário da organização. Nada muda para quem atualiza o 
   (`resources/views/vendor/filament-auth-designer/components/partials/media.blade.php`) e só é incluído
   quando há mídia (`auth.blade.php:hasMedia:30`)
 - Settings: propriedade + linha em `mapaDeConfiguracao()` + migration nova
-  (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao():483`); a página monta abas pelos helpers
+  (`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao():507`); a página monta abas pelos helpers
   `aba()`/`secao()` (`app/Filament/Admin/Pages/ConfiguracoesDoKit.php:aba():328`)
 - Organização: colunas nulas herdam a instalação (`app/Support/IdentidadeDoKit.php:logosPara():98`,
   `app/Support/CorPrimaria.php:resolver():80`); formulário em
