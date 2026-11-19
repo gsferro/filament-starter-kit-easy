@@ -21,13 +21,16 @@ Opção para **permitir ou bloquear o "+" no e-mail do cadastro** (`fulano+loja@
   - o login social que criaria uma conta (o aviso diz o motivo, e não a recusa genérica de convite);
   - a troca de e-mail no perfil (`App\Livewire\InformacoesPessoais`, registrado como `personal_info` nos três painéis).
 - Leitor único `App\Support\EmailComMais`.
-- `tests/Kit/EmailComMaisTest.php` (CT-01..CT-28) e casos em `tests/Tenancy`.
+- `tests/Kit/EmailComMaisTest.php` (CT-01..CT-31) e casos em `tests/Tenancy`.
+
+### Alterado
+
+- Desligada, o convite para conta nova com "+" enviado antes de desligar não se aceita mais: quem abre o link (ou entra pelo login social com ele) vê o motivo e o pedido de um convite sem o "+", o Reenviar some e o lembrete o pula — revogue e convide o endereço sem o "+".
 
 ### Não muda
 
 - Conta que já tem "+" continua entrando e salvando o perfil; convite para um e-mail que já é de uma conta passa
   (não cria conta, só vincula).
-- Desligada, o convite para conta nova com "+" enviado antes de desligar não se aceita mais: quem abre o link vê o motivo, o Reenviar some e o lembrete o pula — revogue e convide o endereço sem o "+".
 - Só um "desligado" explícito bloqueia (`false`, `0`, `off`, `no`): a chave ausente ou vazia permite.
 - Os comandos `kit:install` e `kit:admin` ficam fora (são do operador da instalação).
 
