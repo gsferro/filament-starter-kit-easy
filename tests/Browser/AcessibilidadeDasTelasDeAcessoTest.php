@@ -29,8 +29,8 @@ it('[CT-B21] as telas de acesso passam no axe, no clássico e no painel de marca
 
     $pagina = $tema === 'escuro' ? visit($url)->inDarkMode() : visit($url)->inLightMode();
 
-    $pagina->resize(1440, 900)
-        ->assertPathIs($url)
+    comTelaAssentada($pagina->resize(1440, 900)
+        ->assertPathIs($url))
         ->assertPresent('.fi-auth-theme-switcher-wrapper[role="menu"]')
         ->assertScript("document.documentElement.classList.contains('dark') === ".($tema === 'escuro' ? 'true' : 'false'))
         ->assertNoAccessibilityIssues();

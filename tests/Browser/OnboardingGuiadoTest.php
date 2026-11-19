@@ -147,7 +147,7 @@ it('[CT-B03] a página "Primeiros passos" com o checklist aberto não tem proble
             ->assertScript("(() => { const r = document.querySelector('{$rotulo}'); r.scrollIntoView({block: 'center'}); const c = r.getBoundingClientRect(); return r.contains(document.elementFromPoint(c.left + c.width / 2, c.top + c.height / 2)); })()", true);
     }
 
-    $pagina->assertNoAccessibilityIssues();
+    comTelaAssentada($pagina)->assertNoAccessibilityIssues();
 })->with('onboarding-contraste');
 
 it('[CT-B04] a tecla Esc fecha o checklist aberto, sem concluir nem dispensar nada', function (string $foco, int $teclas): void {

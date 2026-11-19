@@ -81,7 +81,7 @@ it('abre em tema escuro, com conteudo, e sem erro de javascript', function (): v
 it('nao tem problema de acessibilidade nos dois temas', function (string $tema): void {
     $pagina = visit('/');
 
-    ($tema === 'escuro' ? $pagina->inDarkMode() : $pagina->inLightMode())
-        ->assertSee('Bem-vindo ao Starter Kit Easy')
+    comTelaAssentada(($tema === 'escuro' ? $pagina->inDarkMode() : $pagina->inLightMode())
+        ->assertSee('Bem-vindo ao Starter Kit Easy'))
         ->assertNoAccessibilityIssues();
 })->with(['claro', 'escuro']);

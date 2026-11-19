@@ -3902,3 +3902,40 @@ function comLivewirePronto(object $pagina): object
 
     return $pagina;
 }
+
+/**
+ * Espera as animações e transições FINITAS da página terminarem antes de o axe medir cor.
+ *
+ * O `.fi-main-ctn` do Filament entra com uma transição de opacidade de 150 ms. O axe calcula o
+ * contraste com a opacidade do momento, e no começo do fade o texto escuro dos painéis sai como
+ * `#d0d0d0` sobre `#fafafa` (1,47:1) — todo o texto da página em cinza-claro ao mesmo tempo, que
+ * é o sintoma que o `TemaEscuroTest` e o `BoasVindasTest` atribuíam ao tema. Medido com
+ * `document.getAnimations()` no instante do axe: `DIV.fi-main-ctn`, `opacity`, `currentTime=0`,
+ * com `<html>` sem `dark` e `localStorage.theme` nulo. Falhava 1 vez em 3 local e no CI.
+ *
+ * Animação infinita (o `pulse` dos esqueletos de carregamento) não conta: ela nunca termina e
+ * não é o que muda a cor do texto. Espera por estado, com teto próprio de 10 s.
+ */
+function comTelaAssentada(object $pagina): object
+{
+    $pagina->script(<<<'JS'
+        () => new Promise((resolve, reject) => {
+            const limite = Date.now() + 10000;
+            const assentada = () => document.getAnimations().every(
+                (a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity,
+            );
+            const tentar = () => {
+                if (assentada()) {
+                    resolve(true);
+                } else if (Date.now() > limite) {
+                    reject(new Error('a página não parou de animar em 10 s'));
+                } else {
+                    requestAnimationFrame(tentar);
+                }
+            };
+            tentar();
+        })
+        JS);
+
+    return $pagina;
+}
