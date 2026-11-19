@@ -101,7 +101,7 @@ worker, nada sai (`app/Notifications/ConviteDeAcesso.php:ShouldQueue:27`). O lem
 comando agendado (`routes/console.php:40`,
 `app/Console/Commands/KitConvitesLembrar.php`), o único chamador de `lembrar()` em `app/`.
 `Convite::enviar()`, `::lembrar()`, `::aceitar()`, `::aceitarComoUsuarioExistente()` e `::recusar()`
-(`app/Models/Convite.php:enviar:143`, `:lembrar:207`, `:aceitar:619`,
+(`app/Models/Convite.php:enviar:145`, `:lembrar:207`, `:aceitar:619`,
 `:aceitarComoUsuarioExistente:687`, `:recusar:752`).
 
 ## Excluir um papel que tem convites
@@ -149,7 +149,7 @@ accDescr: Do Pendente, o convite vai a Aceito, Recusado (só com KIT_TENANCY) ou
 ```
 
 `Convite::situacao()` tem a precedência Aceito &gt; Recusado &gt; Expirado &gt; Pendente
-(`app/Models/Convite.php:situacao:600`, `:'Aceito':603`, `:'Recusado':604`); a ação Reenviar só é
+(`app/Models/Convite.php:situacao:619`, `:'Aceito':603`, `:'Recusado':604`); a ação Reenviar só é
 visível em Pendente ou Expirado
 (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:Action::make('reenviar'):73`,
 `:situacao() === 'Pendente':89`); a revogação é o `DeleteAction` nativo, visível em todo estado

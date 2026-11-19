@@ -154,8 +154,8 @@ invited user never receives that e-mail.
 The **Allow "+" in the e-mail when signing up** option (Registro tab of
 `/admin/configuracoes-da-aplicacao`, or `KIT_EMAIL_PERMITIR_MAIS` in `.env`) starts **on** — the
 usual behavior. Turned off, every path that gives an account a new e-mail refuses a "+" before the
-"@", with the message *"Este sistema não aceita e-mail com "+" antes do "@". Use o endereço sem o
-"+"."*:
+"@", with one message (in the app's language) that names the "+" and asks for the address without
+it:
 
 - open sign-up (`/app/register` and `/cadastro`);
 - invitations for a new account, one at a time and in bulk (in a batch, the address comes back with

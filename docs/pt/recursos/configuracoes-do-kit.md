@@ -333,11 +333,11 @@ accDescr: O .env semeia config/*.php no boot; o banco sobrepõe as chaves do map
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` é quem executa a segunda seta
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:683`), chamado no boot por
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:688`), chamado no boot por
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:468`); as chaves sobrepostas são
 exatamente as de `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:507`) — `KIT_TENANCY`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:510`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:452`) não está nesse mapa, então o banco nunca a sobrescreve.
 
 Como isso funciona sem que nenhum consumidor saiba que o settings existe:

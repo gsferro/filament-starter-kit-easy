@@ -344,11 +344,11 @@ accDescr: .env seeds config/*.php at boot; the database overrides mapaDeConfigur
 ```
 
 `ConfiguracoesDoKit::aplicarNaConfig()` runs the second arrow
-(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:683`), called at boot by
+(`app/Settings/ConfiguracoesDoKit.php:aplicarNaConfig:688`), called at boot by
 `KitServiceProvider::configureSettingsDoKit()`
 (`app/Providers/KitServiceProvider.php:configureSettingsDoKit:468`); the overridden keys are exactly
 the ones in `mapaDeConfiguracao()`
-(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:507`) — `KIT_TENANCY`
+(`app/Settings/ConfiguracoesDoKit.php:mapaDeConfiguracao:510`) — `KIT_TENANCY`
 (`config/kit.php:KIT_TENANCY:452`) is not in that map, so the database never overrides it.
 
 How that works without any consumer knowing the settings exist:

@@ -81,9 +81,9 @@ accDescr: After login, the session moves between authenticated, awaiting 2FA, lo
 The 2FA challenge only exists for whoever already confirmed it before — it is the same
 `MustTwoFactor` from the diagram above. The idle lock uses `config('lockscreen.idle_timeout')` =
 1800 (`config/lockscreen.php:idle_timeout:16`); the three panels share the same attempt limit with
-forced logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:297`,
-`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:404`,
-`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:321`).
+forced logout (`app/Providers/Filament/AdminPanelProvider.php:enableRateLimit:300`,
+`app/Providers/Filament/AppPanelProvider.php:enableRateLimit:407`,
+`app/Providers/Filament/InfraPanelProvider.php:enableRateLimit:324`).
 
 Unlocking takes the person back to the page the lock intercepted, like Laravel's login *intended*: the
 requested URL (with its query) when idleness locked the session, or the last one they tried to open
