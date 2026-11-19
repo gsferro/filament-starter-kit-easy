@@ -8,15 +8,18 @@ use App\Filament\App\Resources\Users\Pages\CreateUser;
 use App\Filament\App\Resources\Users\Pages\EditUser;
 use App\Filament\App\Resources\Users\Pages\ListUsers;
 use App\Filament\App\Resources\Users\UserResource;
+use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\ConviteDeAcesso;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Database\Seeders\UsuarioAdminSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Psr\Log\LoggerInterface;
 use Spatie\Permission\PermissionRegistrar;
@@ -610,3 +613,98 @@ it('nao concede permissao de excecao ao usuario comum da organizacao', function 
         // O oráculo vivo, como no caso acima: o usuário comum enxerga o negócio.
         ->and($beto->can('ViewAny:Projeto'))->toBeTrue();
 });
+
+/*
+|--------------------------------------------------------------------------
+| "+" no e-mail — convite e CRUD de usuários do /app
+|--------------------------------------------------------------------------
+| Wiki `wikis/specs/feat/email-com-mais/email-com-mais/` (CT-12 e CT-20).
+*/
+
+it('[CT-12] a criação de convite no /app da organização segue a opção e a conta existente', function (bool $permitido, bool $contaExistente, string $email, bool $convite): void {
+    Notification::fake();
+    opcaoDoMais($permitido);
+
+    ['acme' => $acme, 'ana' => $ana] = cenario();
+
+    if ($contaExistente) {
+        usuario($email);
+    }
+
+    noPainelDa($acme);
+    $this->actingAs($ana);
+
+    Livewire::test(CreateConvite::class)
+        ->fillForm(['email' => $email, 'role_id' => Role::findByName('panel_user')->getKey()])
+        ->call('create');
+
+    expect(Convite::where('email', $email)->where('tenant_id', $acme->id)->exists())->toBe($convite);
+
+    if ($convite) {
+        Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 1);
+        Notification::assertSentOnDemand(
+            ConviteDeAcesso::class,
+            fn ($notificacao, array $canais, $notificavel): bool => $notificavel->routes['mail'] === $email,
+        );
+    } else {
+        Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 0);
+    }
+})->with([
+    'permitido, sem conta, com "+"'   => [true, false, 'gsferroti+starter@gmail.com', true],
+    'bloqueado, sem conta, com "+"'   => [false, false, 'gsferroti+starter@gmail.com', false],
+    'bloqueado, conta existente, "+"' => [false, true, 'gsferroti+starter@gmail.com', true],
+    'bloqueado, sem conta, sem "+"'   => [false, false, 'gsferroti@gmail.com', true],
+]);
+
+it('[CT-20] criar e editar usuário no /app da organização seguem a opção', function (bool $permitido, string $operacao, ?string $atual, string $email, bool $gravado, bool $erro): void {
+    opcaoDoMais($permitido);
+
+    ['acme' => $acme, 'ana' => $ana] = cenario();
+
+    $existente = null;
+
+    if ($atual !== null) {
+        $existente = papelNaOrganizacao(usuario($atual), 'panel_user', $acme);
+        $existente->tenants()->attach($acme);
+    }
+
+    noPainelDa($acme);
+    $this->actingAs($ana);
+
+    $tela = $operacao === 'cria'
+        ? Livewire::test(CreateUser::class)
+            ->fillForm([
+                'name'     => 'Fulano',
+                'email'    => $email,
+                'password' => 'password1234',
+                'roles'    => [Role::findByName('panel_user')->getKey()],
+            ])
+            ->call('create')
+        : Livewire::test(EditUser::class, ['record' => $existente?->uuid])
+            ->fillForm(['email' => $email])
+            ->call('save');
+
+    $erros = collect($tela->errors()->toArray())
+        ->filter(fn (mixed $mensagens, string $chave): bool => str_ends_with($chave, 'email'))
+        ->flatten()
+        ->values()
+        ->all();
+
+    expect(User::where('email', $email)->exists())->toBe($gravado);
+
+    if ($erro) {
+        expect($erros)->not->toBe([])
+            ->and($erros[0])->toContain('"+"')
+            ->and($erros[0])->not->toContain('por convite')
+            ->and($erros[0])->not->toContain('válido');
+    } else {
+        expect($erros)->toBe([]);
+    }
+})->with([
+    'bloqueado, cria com "+"'              => [false, 'cria', null, 'gsferroti+starter@gmail.com', false, true],
+    'bloqueado, cria sem "+"'              => [false, 'cria', null, 'gsferroti@gmail.com', true, false],
+    'bloqueado, salva sem trocar'          => [false, 'salva', 'gsferroti+starter@gmail.com', 'gsferroti+starter@gmail.com', true, false],
+    'bloqueado, salva trocando para "+"'   => [false, 'salva', 'gsferroti@gmail.com', 'gsferroti+starter@gmail.com', false, true],
+    'permitido, cria com "+"'              => [true, 'cria', null, 'gsferroti+starter@gmail.com', true, false],
+    'permitido, salva trocando para "+"'   => [true, 'salva', 'gsferroti@gmail.com', 'gsferroti+starter@gmail.com', true, false],
+]);

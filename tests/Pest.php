@@ -6,6 +6,7 @@ use App\Filament\Admin\Resources\Users\UserResource;
 use App\Filament\Admin\Schemas\EditorDeAparenciaDasTelas;
 use App\Filament\Admin\Widgets\ProgressoOnboarding;
 use App\Filament\App\Resources\Projetos\ProjetoResource;
+use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\DashboardClassico;
 use App\Livewire\ChecklistDoOnboarding;
@@ -41,6 +42,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -3759,4 +3761,95 @@ function anaComTresOrganizacoes(): array
     $ana->tenants()->attach($initech->getKey());
 
     return compact('ana', 'acme', 'globex', 'initech');
+}
+
+/**
+ * O estado da opção do "+" no e-mail (`kit.email.permitir_mais`), igual nas duas fontes.
+ *
+ * Define a chave na config do processo e, quando a propriedade existe no settings, grava o mesmo
+ * valor e chama o alinhamento — assim o estado não depende de quem vence entre settings e env.
+ * Aqui e não num arquivo de teste porque Kit e Tenancy a usam (`.ai/rules/testes.md`).
+ */
+function opcaoDoMais(bool $permitido): void
+{
+    config()->set('kit.email.permitir_mais', $permitido);
+
+    if (Schema::hasTable('settings')
+        && SettingsProperty::query()->where('group', ConfiguracoesDoKit::group())->where('name', 'email_permitir_mais')->exists()) {
+        gravarConfiguracao('email_permitir_mais', $permitido);
+        alinharConfiguracoesDoKit();
+    }
+}
+
+/**
+ * O cadastro completo pelo formulário, no modo ABERTO — sem token na query string.
+ *
+ * Desloga antes: `Register::mount()` do Filament redireciona quem já está autenticado, e um
+ * cadastro bem-sucedido termina autenticado; sem o logout a segunda chamada no mesmo caso monta um
+ * componente que já redirecionou. Cada chamada é um visitante novo.
+ */
+function registrarAberto(string $email = 'novo@example.com', string $nome = 'Fulano'): Testable
+{
+    Filament::setCurrentPanel('app');
+    Filament::auth()->logout();
+
+    return Livewire::test(RegistroPorConvite::class)
+        ->fillForm([
+            'name'                 => $nome,
+            'email'                => $email,
+            'password'             => 'segredo-bem-longo-123',
+            'passwordConfirmation' => 'segredo-bem-longo-123',
+        ])
+        ->call('register');
+}
+
+/**
+ * Cria um convite pendente e devolve o par [convite, token em claro].
+ *
+ * `enviar()` é o único ponto em que o token em claro é acessível fora do e-mail.
+ *
+ * @return array{0: Convite, 1: string}
+ */
+function conviteCom(string $papel, ?Tenant $tenant = null, ?string $email = null): array
+{
+    $convite = Convite::factory()->create([
+        'email'     => $email ?? 'convidado@example.com',
+        'role_id'   => Role::findByName($papel)->getKey(),
+        'tenant_id' => $tenant?->getKey(),
+    ]);
+
+    return [$convite, $convite->enviar()];
+}
+
+/**
+ * O aceite completo, pela tela. O token vai pela QUERY STRING: quem o lê é `mount()`.
+ */
+function aceitarConvite(string $token, string $nome = 'Fulano', ?string $email = null): Testable
+{
+    Filament::setCurrentPanel('app');
+
+    return Livewire::withQueryParams(['token' => $token])
+        ->test(RegistroPorConvite::class)
+        ->fillForm(array_filter([
+            'name'                 => $nome,
+            'email'                => $email,
+            'password'             => 'segredo-bem-longo-123',
+            'passwordConfirmation' => 'segredo-bem-longo-123',
+        ]))
+        ->call('register');
+}
+
+/**
+ * Convite pendente para o login social (papel `panel_user`): o par [convite, token em claro].
+ *
+ * @return array{0: Convite, 1: string}
+ */
+function conviteSocialPara(string $email): array
+{
+    $convite = Convite::factory()->create([
+        'email'   => $email,
+        'role_id' => Role::query()->where('name', 'panel_user')->value('id'),
+    ]);
+
+    return [$convite, $convite->enviar()];
 }

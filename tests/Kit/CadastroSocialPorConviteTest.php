@@ -22,15 +22,7 @@ beforeEach(function (): void {
     ligarProvedor(ProvedorSocial::Google);
 });
 
-function conviteSocialPara(string $email): array
-{
-    $convite = Convite::factory()->create([
-        'email'   => $email,
-        'role_id' => Role::query()->where('name', 'panel_user')->value('id'),
-    ]);
-
-    return [$convite, $convite->enviar()];
-}
+/* `conviteSocialPara()` vive em `tests/Pest.php` (usado também por `tests/Kit/EmailComMaisTest.php`). */
 
 /** CT-C01 — a tela de registro aberto oferece os botões sociais. */
 it('oferece os botoes sociais na tela de registro aberto', function (): void {
