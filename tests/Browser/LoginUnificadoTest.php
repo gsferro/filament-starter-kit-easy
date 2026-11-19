@@ -22,7 +22,7 @@ it('CT-B01: quem tem dois painéis entra por /login, escolhe Administração e c
 
     $this->get('/login');
 
-    $pagina = visit('/login')
+    $pagina = comLivewirePronto(visit('/login'))
         ->assertPresent('.fi-auth-layout')
         ->assertNoJavaScriptErrors()
         ->fill('#form\.email', 'dois@example.com')

@@ -45,7 +45,7 @@ it('recorta os paineis por papel na tela', function (string $papel, string $perm
 it('faz login pela tela e entra no painel', function (): void {
     usuarioDoKit('master_global', 'login@example.com');
 
-    visit('/app/login')
+    comLivewirePronto(visit('/app/login'))
         ->assertSee('Faça login')
         ->fill('#form\\.email', 'login@example.com')
         ->fill('#form\\.password', 'password')

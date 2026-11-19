@@ -3760,3 +3760,47 @@ function anaComTresOrganizacoes(): array
 
     return compact('ana', 'acme', 'globex', 'initech');
 }
+
+/**
+ * Espera o Livewire e o Alpine assumirem a página antes de o cenário digitar nela.
+ *
+ * O `visit()` do `pest-plugin-browser` volta no evento `load`, e o Livewire inicia DEPOIS. Num
+ * runner frio, o `fill()` cai nesse intervalo e o valor digitado se perde: a tela do CI mostrou
+ * o e-mail preenchido, a senha vazia e o balão nativo "Please fill out this field" — o submit
+ * nem sai, e o `assertPathIs()` espera a navegação até o teto de 45 s. Foi a causa das falhas
+ * intermitentes do `telas` na `main` (o CT-B02 do `RegistroAbertoTest` e os dois logins pela
+ * tela), que levavam 1,5 s quando passavam e 46 s quando falhavam, e não reproduziam local.
+ *
+ * Espera por ESTADO, como `.ai/rules/testes-browser.md` manda, e não por segundos: todo
+ * componente da página (`[wire:id]`) precisa ter o `__livewire` que o Livewire pendura nele ao
+ * iniciar. O `script()` aguarda a Promise; o teto próprio de 30 s rejeita com mensagem, em vez
+ * de deixar o cenário morrer no timeout genérico.
+ *
+ * Devolve a mesma página, para o encadeamento seguir: `comLivewirePronto(visit('/login'))->fill(...)`.
+ *
+ * O tipo é `object` porque o `visit()` devolve `PendingAwaitablePage` (que repassa as chamadas à
+ * página real) e o cenário pode passar também uma `Webpage` já resolvida — padrão de `rolarPaginaDaPilha()`.
+ */
+function comLivewirePronto(object $pagina): object
+{
+    $pagina->script(<<<'JS'
+        () => new Promise((resolve, reject) => {
+            const limite = Date.now() + 30000;
+            const pronto = () => window.Livewire !== undefined
+                && window.Alpine !== undefined
+                && [...document.querySelectorAll('*')].filter((el) => el.hasAttribute('wire:id')).every((el) => el.__livewire !== undefined);
+            const tentar = () => {
+                if (pronto()) {
+                    resolve(true);
+                } else if (Date.now() > limite) {
+                    reject(new Error('o Livewire não iniciou a página em 30 s'));
+                } else {
+                    setTimeout(tentar, 50);
+                }
+            };
+            tentar();
+        })
+        JS);
+
+    return $pagina;
+}
