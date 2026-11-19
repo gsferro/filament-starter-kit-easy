@@ -3,7 +3,9 @@
 namespace App\Filament\Admin\Resources\Convites\Schemas;
 
 use App\Support\AdministradorDaInstalacao;
+use App\Support\EmailComMais;
 use App\Support\Papeis;
+use Closure;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
@@ -43,7 +45,12 @@ class ConviteForm
                              * multi-tenant. Agora o endereço com conta vira OFERTA DE
                              * ACESSO: nenhuma conta nova é criada, a pessoa confirma
                              * autenticada e é vinculada à organização com este papel.
+                             *
+                             * Pela mesma razão a regra do "+" é a do convite: com o "+"
+                             * bloqueado, recusa só o endereço que criaria conta nova
+                             * (wiki `email-com-mais`, P-04).
                              */
+                            ->rule(fn (): Closure => EmailComMais::regraDeConvite())
                             ->helperText('Se o endereço já tiver conta, ninguém é cadastrado de novo: a pessoa recebe uma oferta para entrar nesta organização e escolhe aceitar ou recusar. Com MAIL_MAILER=log o e-mail só é escrito em storage/logs.')
                             ->columnSpanFull(),
 

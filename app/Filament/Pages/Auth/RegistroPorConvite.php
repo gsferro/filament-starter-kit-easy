@@ -8,8 +8,10 @@ use App\Models\Convite;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\EmailComMais;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
+use Closure;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Register;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Actions\Action;
@@ -391,9 +393,13 @@ class RegistroPorConvite extends Register
         // que impede cadastro duplicado.
         $campo = parent::getEmailFormComponent();
 
-        // No modo aberto o campo é normal: a pessoa escolhe o próprio endereço.
+        // No modo aberto o campo é normal: a pessoa escolhe o próprio endereço — e, com o "+"
+        // bloqueado, não escolhe um com "+" (wiki `email-com-mais`). O modo convite não ganha a
+        // regra: o convite já emitido vale, mesmo com "+" (P-06 daquela wiki).
         if (! $this->convite instanceof Convite) {
-            return $campo;
+            return $campo instanceof Field
+                ? $campo->rule(fn (): Closure => EmailComMais::regra())
+                : $campo;
         }
 
         $campo = $campo

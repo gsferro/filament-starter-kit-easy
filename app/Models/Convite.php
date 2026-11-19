@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Data\Convite\ResultadoDoConviteEmMassaData;
 use App\Notifications\ConviteDeAcesso;
 use App\Support\ContextoDePapeis;
+use App\Support\EmailComMais;
 use App\Traits\AuditsFillables;
 use App\Traits\ModeloCacheavel;
 use App\Traits\TemUuid;
@@ -360,7 +361,10 @@ class Convite extends Model implements Auditable
                 $pendentes->contains($email) => 'convite_pendente',
                 $recusaram->contains($email) => 'recusou_antes',
                 $membros->contains($email)   => 'ja_e_membro',
-                default                      => null,
+                // A mesma regra do convite individual: com o "+" bloqueado, só o endereço que
+                // criaria conta nova (wiki email-com-mais). Os outros do lote seguem.
+                ! EmailComMais::aceitaNoConvite($email) => 'email_com_mais',
+                default                                 => null,
             };
 
             if ($motivo !== null) {

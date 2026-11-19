@@ -155,11 +155,12 @@ class RegistroAberto
      *
      * @param  array<string, mixed>  $dados  o estado do formulário, já validado e com a senha hasheada
      *
-     * @throws RuntimeException quando a porta está fechada, ou quando falta a organização
+     * @throws RuntimeException quando a porta está fechada, quando falta a organização, ou quando o
+     *                          e-mail tem "+" e a instalação o bloqueia (`EmailComMais`)
      */
     public static function registrar(#[SensitiveParameter] array $dados, ?Tenant $organizacao = null): User
     {
-        self::exigirPortaAberta($organizacao);
+        self::exigirPortaAberta($organizacao, (string) ($dados['email'] ?? ''));
 
         $pendente = self::exigirAprovacao();
 
@@ -230,7 +231,7 @@ class RegistroAberto
      *
      * @throws RuntimeException
      */
-    private static function exigirPortaAberta(?Tenant $organizacao): void
+    private static function exigirPortaAberta(?Tenant $organizacao, string $email): void
     {
         $motivo = match (true) {
             ! self::habilitado() => 'desabilitado',
@@ -253,6 +254,8 @@ class RegistroAberto
              * acusa a ausência — checagem que não existe não gera mutante.
              */
             $organizacao instanceof Tenant && ! self::organizacaoAceitaRegistro($organizacao) => 'organizacao_fechada',
+            // A regra do campo recusa na tela; aqui, o chamador que não passou por ela (wiki email-com-mais).
+            ! EmailComMais::aceita($email) => 'email_com_mais',
             default                                                                           => null,
         };
 

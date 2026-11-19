@@ -12,8 +12,10 @@ use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Filament\Concerns\SituacaoDaConta;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\EmailComMais;
 use App\Support\Papeis;
 use BackedEnum;
+use Closure;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
@@ -297,7 +299,10 @@ class UserResource extends Resource
                 ->label('E-mail')
                 ->email()
                 ->required()
-                ->unique(),
+                ->unique()
+                // "+" bloqueado na instalação: recusa o e-mail NOVO com "+"; o atual da conta
+                // passa (wiki email-com-mais, P-04). `$record` por NOME, como o Filament injeta.
+                ->rule(fn (?Model $record): Closure => EmailComMais::regra($record?->getAttribute('email'))),
             TextInput::make('password')
                 ->label('Senha')
                 ->password()

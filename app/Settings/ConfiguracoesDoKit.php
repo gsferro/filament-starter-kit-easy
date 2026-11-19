@@ -337,6 +337,9 @@ final class ConfiguracoesDoKit extends Settings
      */
     public bool $registro_verificar_email;
 
+    /** O "+" antes do "@" no e-mail do cadastro (`App\Support\EmailComMais`). */
+    public bool $email_permitir_mais;
+
     // Login social e rodapé --------------------------------------------------
 
     /*
@@ -621,6 +624,8 @@ final class ConfiguracoesDoKit extends Settings
             'registro_habilitado'       => 'kit.registro.habilitado',
             'registro_aprovacao_manual' => 'kit.registro.aprovacao_manual',
             'registro_verificar_email'  => 'kit.registro.verificar_email',
+            // Lida por request, na validação de cada via de cadastro (`App\Support\EmailComMais`).
+            'email_permitir_mais'       => 'kit.email.permitir_mais',
             /*
              * Login social e rodapé — três chaves por provedor, mais o rodapé.
              *

@@ -175,6 +175,7 @@ trait ConvidaEmMassa
             'convite_pendente' => 'já tem convite pendente',
             'recusou_antes'    => 'recusou o convite anterior',
             'ja_e_membro'      => 'já faz parte desta '.mb_strtolower((string) config('kit.tenancy.label', 'Organização')),
+            'email_com_mais'   => 'este sistema não aceita "+" antes do "@"',
             default            => 'falha no envio — veja o log de autenticação',
         };
     }

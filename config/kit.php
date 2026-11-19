@@ -515,6 +515,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | "+" no e-mail do cadastro
+    |--------------------------------------------------------------------------
+    | `fulano+qualquer@gmail.com` cai na caixa de `fulano@gmail.com`. Desligada, toda
+    | via que dá um e-mail novo a uma conta (registro, convite, CRUD, login social,
+    | perfil) recusa o "+" antes do "@". Editável em /admin/configuracoes-da-aplicacao,
+    | aba Registro. Wiki `wikis/specs/feat/email-com-mais/`.
+    |
+    | Ligada por padrão, e só um "desligado" explícito (`false`, `0`, `off`, `no`)
+    | bloqueia: ausente, vazia (`KIT_EMAIL_PERMITIR_MAIS=`) ou irreconhecível permite —
+    | o `(bool) env(..., true)` faria da linha vazia um bloqueio por acidente.
+    |
+    | NÃO leia esta chave direto: a dona é `App\Support\EmailComMais`.
+    */
+
+    'email' => [
+        'permitir_mais' => in_array($permitirMais = env('KIT_EMAIL_PERMITIR_MAIS'), [null, ''], true)
+            ? true
+            : (filter_var($permitirMais, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cenário de demonstração
     |--------------------------------------------------------------------------
     | Ligado por `php artisan kit:tenancy --demo`, que cria duas organizações,

@@ -12,6 +12,7 @@ use App\Notifications\ConfirmarVinculoSocial;
 use App\Notifications\PrimeiroAcessoSocial;
 use App\Support\ConfiguracaoDoLogin;
 use App\Support\DestinoAposLogin;
+use App\Support\EmailComMais;
 use App\Support\Paineis;
 use App\Support\ProvedorSocial;
 use App\Support\RegistroAberto;
@@ -271,6 +272,25 @@ final class LoginSocialController extends Controller
                     );
 
                     return $this->recusar('Não há conta com este e-mail. O acesso a este sistema é por convite.');
+                }
+
+                /*
+                 * O "+" bloqueado, conferido AQUI e não deixado para a guarda de
+                 * `RegistroAberto::registrar()`: o `catch` logo abaixo trocaria o motivo pela
+                 * mensagem do convite, e a pessoa nunca saberia que o problema é o "+" (P-05 da
+                 * wiki email-com-mais). O convite já emitido não passa por aqui (P-06).
+                 */
+                if (! $convite instanceof Convite && ! EmailComMais::aceita($email)) {
+                    Log::channel('autenticacao')->warning(
+                        "[LoginSocialController@retorno] Recusado: e-mail com \"+\" e a instalação o bloqueia | provedor: {$provedor->value} - email: ".$mascarado,
+                        [
+                            'motivo'   => 'email_com_mais',
+                            'email'    => $mascarado,
+                            'provedor' => $provedor->value,
+                        ],
+                    );
+
+                    return $this->recusar(EmailComMais::mensagem());
                 }
 
                 try {
