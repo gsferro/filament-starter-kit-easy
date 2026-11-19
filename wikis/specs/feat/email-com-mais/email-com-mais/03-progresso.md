@@ -106,7 +106,7 @@ Roteiro manual: não — a feature é validação de formulário e uma recusa do
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
 | `app.md` | `app/**` | n.a. | nenhum papel atribuído, nenhum DTO novo (só o docblock de `FalhaDoConviteData`), nenhuma URL de painel ou de arquivo |
-| `auth.md` | `app/Filament/Pages/Auth/**` | n.a. | `RegistroPorConvite` só ganha uma regra no campo; `$layout`, `mount()` e resolução de painel intocados |
+| `auth.md` | `app/Filament/Pages/Auth/**` | aplicada | `RegistroPorConvite` ganha a regra no campo e, pela Q4, a recusa no `montarComoConvite()` (`recusarPorMais()`, saída por `HttpResponseException` para o login, sem `request()->routeIs()` nem redirect de volta ao link); `$layout` e resolução de painel intocados *(alterado em 2026-11-19 — pós-gate ciclo 2)* |
 | `commands.md` | `app/Console/Commands/**` | n.a. | `KitConvitesLembrar` só ganha um `continue` no laço; nenhuma chave gravada no `.env` |
 | `config.md` | `config/**` | aplicada, com divergência declarada | uma dona só (`EmailComMais`, CT-05); `env()` vazio tratado (a chave não usa `(bool) env(..., true)`). Não "falha fechado": a chave FECHA superfície, e a ausência de valor permite (P-01, `01` → Decisões de Desenho) |
 | `controllers-auth.md` | `app/Http/Controllers/Auth/**` | n.a. | a recusa do "+" acontece antes de qualquer sessão; nenhuma troca de conta |
@@ -115,7 +115,7 @@ Roteiro manual: não — a feature é validação de formulário e uma recusa do
 | `filament.md` | `app/Filament/**` | n.a. | nenhum papel, permissão, resource ou mídia novos |
 | `kit.md` | `tests/Kit/**` | aplicada | `Livewire::test` monta com a sessão e os cabeçalhos do teste, sem query na chamada seguinte |
 | `livewire.md` | `app/Livewire/**` | aplicada | `InformacoesPessoais` não registra log; o log do login social usa o e-mail mascarado |
-| `models.md` | `app/Models/**` | n.a. | `Convite` ganha um motivo no lote; nada de cache, papel, mídia ou soft delete |
+| `models.md` | `app/Models/**` | n.a. | `Convite` ganha um motivo no lote e, pela Q4, a guarda do `aceitar()` (conta nova com "+" e opção desligada); nada de cache, papel, mídia ou soft delete *(alterado em 2026-11-19 — pós-gate ciclo 2)* |
 | `onboarding.md` | `app/Filament/**` | aplicada | o tutorial da tela de configurações é por aba (`ConfiguracoesDaAplicacaoSeeder`), sem passo por seção — nada a acrescentar |
 | `pages.md` | `app/Filament/Admin/Pages/**` | aplicada | a seção nova é colapsável pelo helper `secao()`, com ícone `heroicon-o-at-symbol` e id estável `email-com-mais` |
 | `providers-filament.md` | `app/Providers/Filament/**` | aplicada | `InformacoesPessoais` registrado nos TRÊS painéis (CT-25, CT-26) |
