@@ -127,6 +127,30 @@ Roteiro manual: não — a feature é validação de formulário e uma recusa do
 | 6 | `/code-review` (fork) | sessão | revisão do diff | 9 achados | 100.711 tokens · 146 s |
 | 7 | `codex exec` | não exposto | revisão do diff | 4 achados | 90.271 tokens |
 
+## Revisão pelo blueprint (`reviewing-filament-plans`, 2026-11-19)
+
+Contrato: o `01` (Estrutura de Implementação e Superfície de UI) com as emendas do `00` (Q1..Q4 respondidas). Alvo: `0e8a7223`, árvore limpa, painéis `admin`, `app` e `infra`. Filament 5.10.
+
+**Resultado**: 13 obrigações; 12 conformes, 1 desvio de contrato (BP-13, corrigido) e nenhum defeito de comportamento. Nenhuma obrigação ficou sem verificar.
+
+| ID | Requisito do plano | Veredito | Evidência |
+|---|---|---|---|
+| BP-01 | Seção "E-mail com "+"" na aba Registro, colapsável, com ícone e id `email-com-mais` | conforma | `ConfiguracoesDoKit::abaRegistro()`; CT-04 (executado); captura do navegador (a seção aberta, o toggle e o texto de ajuda) |
+| BP-02 | Leitor único; ausência de valor permite | conforma | `EmailComMais::permitido()`, `config/kit.php`; CT-01, CT-02, CT-03, CT-05 (executados) |
+| BP-03 | Registro aberto: erro no campo, só no modo aberto | conforma | `RegistroPorConvite::getEmailFormComponent()`; CT-08, CT-10 (executados); captura (erro sob o campo, com a mensagem) |
+| BP-04 | Guarda no `registrar()` | conforma | `RegistroAberto::exigirPortaAberta()`; CT-09 com controle positivo (executado) |
+| BP-05 | Formulários de convite: regra do convite, conta existente passa | conforma | `ConviteForm`, `ConviteResource` do `/app`; CT-11, CT-12 (executados) |
+| BP-06 | Convite em massa: motivo próprio, os outros seguem, conta existente em qualquer caixa | conforma | `Convite::convidarEmMassa()`, `ConvidaEmMassa::motivoLegivel()`; CT-13..CT-15, CT-28 (executados) |
+| BP-07 | Aceite do convite com "+" para conta nova recusado ao abrir o link, com aviso e login (Q4) | conforma | `RegistroPorConvite::recusarPorMais()`; CT-16 (executado); captura (login com o aviso "Este convite não pode ser aceito") |
+| BP-08 | Model e login social por convite recusam a conta nova com "+" (Q4) | conforma | `Convite::aceitar()`, `LoginSocialController::retorno()`; CT-17, CT-29 (executados) |
+| BP-09 | Reenviar oculto para esse convite; Revogar continua | conforma | `ConvitesTable`; CT-30 (executado) |
+| BP-10 | Lembrete pula esse convite | conforma | `KitConvitesLembrar`; CT-31 (executado) |
+| BP-11 | CRUD de usuários: e-mail novo com "+" recusado, o atual passa | conforma | os dois `UserResource`; CT-18..CT-20 (executados; o CT-20 confere a gravação do nome) |
+| BP-12 | Perfil nos três painéis | conforma | `InformacoesPessoais` como `personal_info` nos três `PanelProvider`; CT-24..CT-26 (executados) |
+| BP-13 | O plano descreve a P-06 da Q4 | desvio de contrato: o `01` ainda dizia que o convite emitido valia e que o `aceitar()` não mudava | corrigido no `01` (Cobertura, passos 3, 4 e 6, Decisões e Superfície de UI) com a marca da Q4 |
+
+Execução: `vendor/bin/pest tests/Kit/EmailComMaisTest.php` (todos os CT acima) e um teste de navegador temporário (`tests/Browser/ZzBlueprintMaisTempTest.php`, 3/3, apagado depois) que abriu a aba Registro, o link de um convite com "+" e o registro aberto com "+", e capturou as três telas.
+
 ## Quality Gate
 
 | Ciclo | Veredito | Data |

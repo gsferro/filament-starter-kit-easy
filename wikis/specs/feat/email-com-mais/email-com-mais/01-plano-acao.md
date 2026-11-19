@@ -22,7 +22,7 @@
 | P-03 | Todas as vias que dão e-mail novo, menos os comandos | 3, 4, 5, 6, 7 | — |
 | P-04 | Só a parte local; conta existente intocada | 1, 5, 7 | — |
 | P-05 | Erro no campo, motivo no convite em massa, recusa explicada no login social | 3, 4, 6 | — |
-| P-06 | O convite já emitido vale | 3, 4, 6 | o modo convite e o login social por convite não ganham a regra |
+| P-06 | Desligada, o convite com "+" para conta nova não se aceita (nem o emitido antes); sem reenvio nem lembrete | 3, 4, 6 | recusa ao abrir o link, no login social e no model; Reenviar oculto; lembrete pula *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite)* |
 
 ## Objetivo
 
@@ -62,14 +62,14 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 - **Path**: `app/Filament/Pages/Auth/RegistroPorConvite.php`, `app/Support/RegistroAberto.php`
 - **Atende**: RQ-02, RQ-03, P-03, P-05
 - **Logs**: `warning` no `autenticacao`, motivo `email_com_mais`, quando a guarda do `registrar()` recusa
-- **O quê**: o campo de e-mail ganha a regra só no modo aberto (no modo convite vale a P-06); `exigirPortaAberta()` ganha o motivo `email_com_mais` (o chamador que não passou pela tela)
+- **O quê**: o campo de e-mail ganha a regra só no modo aberto; no modo convite, o convite com "+" para conta nova é recusado no `mount()` (`recusarPorMais()`: aviso com o motivo e login), porque o campo do convite é desabilitado *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite)*; `exigirPortaAberta()` ganha o motivo `email_com_mais` (o chamador que não passou pela tela)
 
 ### 4. Convite
 
-- **Path**: `app/Models/Convite.php`, `app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php`, `app/Filament/App/Resources/Convites/ConviteResource.php`, `app/Filament/Concerns/ConvidaEmMassa.php`
+- **Path**: `app/Models/Convite.php`, `app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php`, `app/Filament/App/Resources/Convites/ConviteResource.php`, `app/Filament/Concerns/ConvidaEmMassa.php`, `app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php`, `app/Console/Commands/KitConvitesLembrar.php`
 - **Atende**: RQ-02, RQ-03, P-03, P-05, P-06
 - **Logs**: nenhum novo (o convite em massa já registra os recusados)
-- **O quê**: os dois formulários com a regra, que deixa passar o e-mail de uma conta existente (P-04); `convidarEmMassa()` com o motivo `email_com_mais` e o texto em `motivoLegivel()`, com a mesma exceção; o `aceitar()` não muda (P-06)
+- **O quê**: os dois formulários com a regra, que deixa passar o e-mail de uma conta existente (P-04); `convidarEmMassa()` com o motivo `email_com_mais` e o texto em `motivoLegivel()`, com a mesma exceção; `aceitar()` recusa a conta nova com "+" (`RuntimeException` com a mensagem), o Reenviar some para esse convite (`ConvitesTable`) e o lembrete o pula (`KitConvitesLembrar`); o Revogar, que já existia, é a saída do admin (P-06) *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite)*
 
 ### 5. CRUD de usuários
 
@@ -83,7 +83,7 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 - **Path**: `app/Http/Controllers/Auth/LoginSocialController.php`
 - **Atende**: RQ-03, P-03, P-05
 - **Logs**: `warning` no `autenticacao`, motivo `email_com_mais`, e-mail mascarado
-- **O quê**: antes de criar conta pelo registro aberto, o e-mail com "+" e a opção desligada recusam com a mensagem do motivo — conferido no controller, antes do `criarConta()`, porque o `catch (RuntimeException)` do `retorno()` trocaria a mensagem pela do convite. Conta existente entra como hoje (P-04); o convite já emitido também (P-06)
+- **O quê**: antes de criar conta pelo registro aberto, o e-mail com "+" e a opção desligada recusam com a mensagem do motivo — conferido no controller, antes do `criarConta()`, porque o `catch (RuntimeException)` do `retorno()` trocaria a mensagem pela do convite. Conta existente entra como hoje (P-04); o convite com "+" para conta nova recusa com a mesma mensagem (P-06) *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite)*
 
 ### 7. Perfil
 
@@ -118,11 +118,13 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 - **Ausente ou vazia → `true` antes do `filter_var(..., FILTER_NULL_ON_FAILURE) ?? true`, e não `(bool) env(..., true)`**: o segundo argumento do `env()` só cobre a chave ausente (`.ai/rules/config.md`), e o `filter_var` devolve `false` para a string vazia; `KIT_EMAIL_PERMITIR_MAIS=` vazio bloquearia por acidente. A direção segura aqui é permitir (P-01) *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*
 - **A regra do Filament é ligada como `->rule(fn (): Closure => EmailComMais::regra(...))`**: o Filament avalia toda closure passada a `rule()`
 - **A regra é closure de método estático**, o padrão do projeto (`AdministradorDaInstalacao::regraDeNomeDePapel()`), e não classe em `app/Rules`, que não existe
-- **Guarda no servidor além da regra do campo** (`registrar()`): o chamador fora da tela não passa pelo formulário — o mesmo argumento de `exigirPortaAberta()`. O `aceitar()` não ganha guarda: o convite já emitido vale (P-06); o login social confere o "+" no controller, antes do `criarConta()` *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*
+- **Guarda no servidor além da regra do campo** (`registrar()`): o chamador fora da tela não passa pelo formulário — o mesmo argumento de `exigirPortaAberta()`. O `aceitar()` também ganha guarda, para a conta nova com "+" (P-06, Q4); o login social confere o "+" no controller, antes de criar conta por registro ou por convite *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*
 
 ## Superfície de UI
 
 - Configurações → aba Registro → seção nova "E-mail com +", um toggle
-- Erro no campo de e-mail: registro (`/app/register`, `/cadastro`), aceite de convite, criação de convite, criação e edição de usuário (`/admin`, `/app`), perfil
+- Erro no campo de e-mail: registro (`/app/register`, `/cadastro`), criação de convite, criação e edição de usuário (`/admin`, `/app`), perfil
+- Aceite de convite com "+" para conta nova: ao abrir o link, a pessoa vai ao login com o aviso "Este convite não pode ser aceito" e o motivo *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite)*
+- Lista de convites do `/admin`: a ação Reenviar some para esse convite; Revogar continua
 - Convite em massa: o endereço com "+" na lista de recusados, com o motivo
 - Login social: a tela de recusa com o motivo
