@@ -898,3 +898,19 @@ it('[CT-40] cor clara deixa o texto do painel escuro', function (?string $cor, b
     'primária Pink 600'    => [null, false, 'Pink'],
     'primária Sky 600'     => [null, true, 'Sky'],
 ])->group('kit');
+
+/**
+ * A sobrescrita do alternador de tema das telas de acesso (wiki `feat/debitos-da-aparencia-das-telas`):
+ * o kit copia o partial inteiro do auth-designer para dar ao wrapper o `role="menu"` que o axe cobra.
+ * Fora o comentário e esse atributo, ela tem de ser o partial do pacote instalado — senão uma
+ * mudança do pacote ficaria escondida atrás da cópia.
+ */
+it('[CT-114] a sobrescrita do alternador de tema é o partial do pacote mais o role="menu" no wrapper', function (): void {
+    $doKit    = (string) file_get_contents(resource_path('views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php'));
+    $doPacote = (string) file_get_contents(base_path('vendor/caresome/filament-auth-designer/resources/views/components/partials/theme-toggle.blade.php'));
+
+    $semComentario = preg_replace('/\{\{--.*?--\}\}\R/s', '', $doKit);
+
+    expect($semComentario)->toContain('<div class="fi-auth-theme-switcher-wrapper" role="menu" {!! $styles !!}>')
+        ->and(str_replace(' role="menu"', '', $semComentario))->toBe($doPacote);
+})->group('kit');

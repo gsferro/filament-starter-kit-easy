@@ -847,10 +847,13 @@ it('[CT-110] o painel desliza, o formulário novo espera o deslize, e o CSS glob
     $semComentarios = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(base_path($arquivo)));
     $css            = preg_replace('/\s+/', ' ', $semComentarios);
 
-    $painel = Str::betweenFirst($css, '::view-transition-group(kit-painel) {', '}');
+    // Todos os blocos do grupo do painel, não só o primeiro: uma regra posterior também anularia o deslize.
+    preg_match_all('/::view-transition-group\(kit-painel\) \{([^}]*)\}/', $css, $blocos);
+    $painel = implode(' ', $blocos[1]);
 
-    expect($painel)->toContain('animation-duration: 0.55s')
-        ->not->toContain('animation: none')
+    expect($blocos[1])->not->toBeEmpty()
+        ->and($painel)->toContain('animation-duration: 0.55s')
+        ->not->toMatch('/animation(-name)?: none/')
         ->and($css)->not->toMatch('/::view-transition-group\(\*\)/')
         ->and($css)->toContain('::view-transition-new(kit-formulario) { animation: kit-formulario-aparece 0.35s ease-out 0.2s both; }')
         ->and($css)->not->toContain('@view-transition');

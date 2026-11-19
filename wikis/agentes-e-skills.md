@@ -183,19 +183,19 @@ Abaixo, a cópia do roteiro da versão instalada, para consulta depois da atuali
 versão; o roteiro que vale para a próxima atualização é sempre o do link.
 
 <!-- roteiro-de-atualizacao:inicio -->
-# Roteiro de atualização — v0.54.0 → v0.55.0
+# Roteiro de atualização — v0.55.0 → v0.55.1
 
 Leia o roteiro inteiro antes de alterar um arquivo do projeto.
 
 ## Identificação
 
-Origem: v0.54.0
+Origem: v0.55.0
 
-Destino: v0.55.0
+Destino: v0.55.1
 
 Data: 2026-11-18
 
-Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.55.0/wikis/atualizacoes/v0.55.0.md
+Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.55.1/wikis/atualizacoes/v0.55.1.md
 
 Padrão do link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 
@@ -205,7 +205,7 @@ Leia também o mesmo arquivo na `main`. Se o arquivo da `main` trouxer a linha `
 
 ## Antes de começar
 
-O pedido que dispara este roteiro é: “Atualize meu projeto da v0.54.0 para a v0.55.0 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão com a versão destino `v0.55.0` e confira que é o mesmo endereço da Identificação. O agente segue os passos abaixo usando o `kit:update` para aplicar os arquivos.
+O pedido que dispara este roteiro é: “Atualize meu projeto da v0.55.0 para a v0.55.1 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão com a versão destino `v0.55.1` e confira que é o mesmo endereço da Identificação. O agente segue os passos abaixo usando o `kit:update` para aplicar os arquivos.
 
 Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e PowerShell, exceto onde aparecem as duas formas. Guarde as saídas para o relatório final.
 
@@ -224,7 +224,7 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan tinker --execute 'echo config("kit.version");'
    ```
 
-   Esperado: `0.54.0`. Outro valor encerra este roteiro sem aplicar arquivos: `0.55.0` indica marcador já no destino; uma versão anterior exige as atualizações intermediárias, em ordem; uma versão posterior exige outro roteiro. Informe ao dono o valor encontrado.
+   Esperado: `0.55.0`. Outro valor encerra este roteiro sem aplicar arquivos: `0.55.1` indica marcador já no destino; uma versão anterior exige as atualizações intermediárias, em ordem; uma versão posterior exige outro roteiro. Informe ao dono o valor encontrado.
 
 3. **O banco está acessível e a impressão dos dados foi guardada.**
 
@@ -236,70 +236,66 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => array_map("md5", App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "configuracoes" => md5(json_encode(app(App\Settings\ConfiguracoesDoKit::class)->toArray()))]);'
    ```
 
-   Esperado: consulta sem erro e nenhuma migration `Pending`. Havendo pendência do projeto, informe os nomes e pare: esta versão não tem migration e não deve executar pendências alheias. Anote a multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário, um por organização e um das Configurações da aplicação. Essa **impressão dos dados** deve ser idêntica ao final, sem excluir campos.
+   Esperado: consulta sem erro e nenhuma migration `Pending`. Havendo pendência do projeto, informe os nomes e pare; esta atualização não executa migrations. Anote a multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário, um por organização e um das Configurações da aplicação. Essa **impressão dos dados** deve ser idêntica ao final, sem excluir campos.
 
 4. **Os nomes reservados pelo comando estão livres.**
 
    ```bash
    git remote
    git tag -l "kit-*"
-   git branch --list kit-update/v0.55.0
+   git branch --list kit-update/v0.55.1
    ```
 
-   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.55.0`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
+   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.55.1`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
 
-5. **O dry-run corresponde à release.**
+5. **O dry-run corresponde à correção.**
 
    ```bash
-   php artisan kit:update --from=0.54.0 --tag=v0.55.0 --dry-run --keep-remote --no-interaction
-   git diff --stat kit-v0.54.0 kit-v0.55.0 -- composer.json composer.lock package.json package-lock.json
-   git diff --name-status kit-v0.54.0 kit-v0.55.0 -- database/migrations database/settings resources public
-   git diff --name-status kit-v0.54.0 kit-v0.55.0 -- app/Console/Commands/KitUpdate.php config/kit.php composer-unused.php .github/workflows/ci.yml tests/Kit tests/Tenancy
-   git diff kit-v0.54.0 kit-v0.55.0 -- composer.json .github/workflows/ci.yml
+   php artisan kit:update --from=0.55.0 --tag=v0.55.1 --dry-run --keep-remote --no-interaction
+   git diff --stat kit-v0.55.0 kit-v0.55.1 -- composer.json composer.lock package.json package-lock.json
+   git diff --name-status kit-v0.55.0 kit-v0.55.1 -- database/migrations database/settings public
+   git diff --name-status kit-v0.55.0 kit-v0.55.1 -- resources/views/vendor/filament-auth-designer tests/Browser tests/Pest.php tests/Kit/AparenciaDasTelasPorTelaTest.php config/kit.php
    ```
 
-   Esperado: resumo entre `kit-v0.54.0` e `kit-v0.55.0`, sem tocar arquivos; duas dependências novas no `require-dev`, suas dependências de desenvolvimento no lock e os três scripts abaixo; nenhuma mudança em `require`, pacotes de produção, dependências JS, migrations, settings, resources ou assets publicados. Confira o novo `composer-unused.php`, a inclusão dele na entrega em `KitUpdate.php`, o marcador e o passo de relatório do CI. O dry-run mantém o remote `kit` e as tags para as comparações seguintes.
+   Esperado: resumo entre `kit-v0.55.0` e `kit-v0.55.1`, sem tocar arquivos; diff de dependências vazio; nenhum arquivo de migration, settings ou asset publicado novo. O único arquivo novo sob `resources` é o partial do alternador de tema; confira a entrega nos caminhos relacionados em **O que muda nesta versão**. O dry-run mantém o remote `kit` e as tags para as comparações seguintes.
 
-   Se a tag ainda não estiver disponível, pare e informe ao dono. Não substitua a tag pela `main`. Migration, mudança de runtime, dependência além das previstas ou ausência de parte da entrega exige parada com o diff encontrado.
+   Se a tag ainda não estiver disponível, pare e informe ao dono. Não substitua a tag pela `main`. Dependência alterada, migration ou asset novo, ou ausência de parte da correção exige parada com o diff encontrado.
 
 6. **As edições do dono foram identificadas.**
 
    Para cada arquivo do resumo que existe no projeto, compare com a origem quando for `modificado`, ou com o destino quando for `novo no kit`:
 
    ```bash
-   git diff --name-only kit-v0.54.0 HEAD -- caminho/do/modificado
-   git diff --name-only kit-v0.55.0 HEAD -- caminho/do/novo
+   git diff --name-only kit-v0.55.0 HEAD -- caminho/do/modificado
+   git diff --name-only kit-v0.55.1 HEAD -- caminho/do/novo
    ```
 
-   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente `app/Console/Commands/KitUpdate.php`, `config/kit.php` e eventual `composer-unused.php` próprio. Compare também os scripts do `composer.json` e o job `qualidade` do CI do projeto, que serão integrados manualmente: esses arquivos não são aplicados pelo comando.
+   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente o partial `theme-toggle.blade.php` do `filament-auth-designer` (uma sobrescrita própria dele é conflito), `tests/Pest.php`, os dois testes de navegador de aparência e acessibilidade, `tests/Kit/AparenciaDasTelasPorTelaTest.php` e `config/kit.php`. Procure também testes próprios que definam um helper chamado `visitaComMovimentoReduzido()`: o kit passa a defini-lo no `tests/Pest.php`.
 
 ## O que muda nesta versão
 
-A v0.55.0 acrescenta o relatório de **dependências declaradas × usadas**. Nada muda em runtime, nenhuma dependência de produção é alterada e não há default mudado. Não há migration, alteração de esquema ou de settings, build, publicação de assets, semeadura ou geração de permissões.
+A v0.55.1 corrige a acessibilidade do alternador de tema (claro, escuro, sistema) das telas de login, recuperação de senha e cadastro. Os botões dele eram `menuitemradio` sem o `menu` pai, e o axe acusava a violação crítica `aria-required-parent` em todas elas. A sobrescrita do partial do `filament-auth-designer` dá ao wrapper `.fi-auth-theme-switcher-wrapper` o `role="menu"` que faltava; o rótulo “Tema” continua no grupo de dentro, do Filament. Nada mais muda no comportamento: o alternador continua visível e funcional.
 
-Entram duas dependências novas de desenvolvimento: `maglnet/composer-require-checker:^4.16` e `icanhazstring/composer-unused:^0.9`. O `composer-unused` aponta dependências declaradas e não usadas; o `composer-require-checker` aponta símbolos usados de pacotes transitivos e extensões PHP não declarados diretamente.
+Confira estes arquivos na entrega:
 
-Confira os arquivos e pontos de integração:
+- `resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php`, novo;
+- `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`, novo, com axe, percurso por teclado e redução de movimento;
+- `tests/Browser/AparenciaDasTelasDeAcessoTest.php` e `tests/Pest.php`, que trocam o helper `visitaComMovimentoReduzido()` de lugar: ele sai do primeiro e passa para o segundo, e os dois chegam juntos;
+- `tests/Kit/AparenciaDasTelasPorTelaTest.php`, com os casos CT-110 a CT-113;
+- `config/kit.php`, com o marcador `0.55.1`.
 
-- `composer.json`: as duas entradas de `require-dev` e os scripts `deps:check`, `deps:unused` e `deps:require`, copiados no passo 4. Eles ficam fora do `composer test`. O `kit:update` NÃO aplica o `composer.json`, só relata a diferença; a instalação e os scripts exigem integração manual, preservando as dependências do projeto. O lock do projeto é resolvido pelo Composer, sem copiar o do kit.
-- Novo `composer-unused.php` na raiz, trazido pelo `kit:update`: exclui somente quatro pacotes usados por caminhos que a análise não enxerga, cada um com seu motivo: `anselmokossa/filament-sentinel` (auto-discovery do provider), `laravel/pulse` (configuração, dashboard e daemon), `laravel/reverb` (serviço opt-in) e `spatie/laravel-backup` (configuração e comando de backup).
-- `app/Console/Commands/KitUpdate.php`: inclui `composer-unused.php` nos caminhos entregues; a atualização já lê os caminhos do destino para trazer o arquivo nesta rodada.
-- `config/kit.php`: somente o marcador passa a `0.55.0`; as demais configurações continuam iguais.
-- `.github/workflows/ci.yml`: novo passo **Dependências declaradas × usadas (relatório)** no job `qualidade`, após a análise estática. Roda as duas ferramentas, grava a saída no resumo do job e só relata, sem reprovar por achados. `.github` não viaja pelo `kit:update`: integre o passo manualmente se o projeto tem esse workflow; se não tem, registre a ausência, sem criar CI inteiro.
-
-A linha de base do kit em 2026-11-18 tem quatro pacotes sem uso: `awcodes/filament-badgeable-column`, `lara-zeus/progress`, `livewire/blaze` (instalado sem nenhum `@blaze`) e `syriable/filament-activitylog`; e 181 símbolos usados sem declaração direta: 137 de pacotes transitivos e 44 de oito extensões PHP (`ext-ctype`, `ext-dom`, `ext-filter`, `ext-gd`, `ext-libxml`, `ext-mbstring`, `ext-SimpleXML` e `ext-tokenizer`). Os achados do projeto podem diferir conforme seu código. Esta atualização entrega o diagnóstico; não remove pacotes, não declara transitivos ou extensões em produção e não esconde achados reais nas exclusões.
+Não há migration, alteração de settings, dependência PHP ou JS nova, asset publicado nem default mudado. Basta aplicar os arquivos e conferir o resultado; não há instalação de pacotes, build, semeadura ou geração de permissões a executar.
 
 ## Cuidados
 
-- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. Não há migration nesta versão; não execute atualização de esquema.
+- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. Esta correção não pede alteração de esquema.
 - **Preserve a multi-organização.** Não rode `php artisan kit:tenancy` nem `php artisan kit:install`, pois recriam o banco.
-- **Dependências exigem integração manual.** Não substitua o `composer.json` nem o `composer.lock` do dono pelos do kit. Instale só as duas ferramentas em ambiente de desenvolvimento e revise o lock gerado; conflito de resolução ou alteração inesperada de produção exige parada.
-- **Achado não é defeito da execução.** Localmente, `deps:require` e, por consequência, `deps:check` podem retornar código diferente de zero por símbolos não declarados. Guarde a saída e o código; falha para iniciar, configuração inválida ou ferramenta ausente exige análise. No CI, preserve o caráter de relatório, sem converter em gate ou incluir no `composer test`.
-- **Não esconda dependência realmente sem uso.** As quatro exclusões representam uso indireto comprovado; não acrescente os quatro pacotes sem uso à configuração para zerar a saída.
-- **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 6, depois de limpar o cache de configuração.
-- **O `--all` substitui arquivos existentes.** Resolva a decisão de conflito antes e restaure ou integre as edições do dono antes de validar. O marcador `0.55.0` sozinho não prova que o arquivo novo, as ferramentas e os scripts chegaram.
-- **Preserve `.env`, canais de log e customizações.** Não copie `.env.example` sobre `.env`; esta versão não pede variável de ambiente nem configuração de runtime.
-- **As mudanças ficam para revisão.** Use `git status` e `git diff --cached`; não commite, não faça merge nem apague o branch por conta própria. Desfazer exige pedido do dono: `git reset --hard HEAD` desfaz arquivos e índice; avalie arquivos não rastreados um a um. Isso não desfaz o banco nem restaura os pacotes instalados em `vendor`.
+- **Os arquivos de teste andam juntos.** O helper `visitaComMovimentoReduzido()` agora mora em `tests/Pest.php`. Manter o `tests/Pest.php` antigo com o teste de aparência novo, ou o contrário, perde a função ou a define duas vezes, e o PHP recusa a redeclaração. Registre cada limitação como entrega parcial.
+- **O partial é uma sobrescrita de vendor.** Se o projeto já tem a própria versão de `theme-toggle.blade.php`, não a troque às cegas: integre somente o `role="menu"` no wrapper `.fi-auth-theme-switcher-wrapper`, mantendo o resto da versão do dono.
+- **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 4, depois de limpar o cache de configuração. Os testes de navegador também usam banco próprio; rode-os somente em ambiente de testes com dados descartáveis.
+- **O `--all` substitui arquivos existentes.** Resolva a decisão de conflito antes e restaure ou integre as edições do dono antes de validar. O marcador `0.55.1` sozinho não prova que toda a correção chegou.
+- **Preserve `.env`, canais de log e customizações.** Esta versão não exige editar o `.env` ou o `config/logging.php`. Ao preservar `config/kit.php`, altere somente o marcador de versão.
+- **As mudanças ficam para revisão.** Use `git status` e `git diff --cached`; não commite, não faça merge nem apague o branch por conta própria. Desfazer exige pedido do dono: `git reset --hard HEAD` desfaz arquivos e índice; avalie arquivos não rastreados um a um. Isso não reverte operações feitas no banco.
 
 ## Decisões do dono do projeto
 
@@ -307,9 +303,9 @@ Apresente a lista de conflitos do pré-voo, com os diffs, antes do passo 1. Sem 
 
 ### Conflito em arquivo do kit que você editou
 
-Pergunta: Estes arquivos têm edição sua e a v0.55.0 também os altera; manter o comando ou a configuração de análise antigos pode deixar parte do relatório sem chegar: para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
+Pergunta: Estes arquivos têm edição sua e a v0.55.1 também os altera; manter o partial antigo deixa o alternador de tema com a violação de acessibilidade, e manter `tests/Pest.php` ou o teste de aparência antigos duplica ou perde o helper: para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
 
-Recomendação da release: receber a versão do kit com suas mudanças reaplicadas após revisar os diffs, preservando configurações e integrações do projeto; no `config/kit.php`, integrar somente o marcador. Para scripts e CI editados pelo dono, integrar somente os trechos desta versão.
+Recomendação da release: receber a versão do kit com suas mudanças reaplicadas após revisar os diffs, preservando o `role="menu"` no wrapper do partial e uma única definição do helper `visitaComMovimentoReduzido()`. Em `config/kit.php`, preservar suas configurações e alterar só a versão para `0.55.1`.
 
 Sem resposta: mantém a versão do dono e registra no relatório, arquivo a arquivo, o que deixou de chegar.
 
@@ -324,16 +320,16 @@ Condição: as seis conferências do pré-voo passaram, e cada conflito tem resp
 Ação:
 
 ```bash
-php artisan kit:update --from=0.54.0 --tag=v0.55.0 --all --keep-remote --no-interaction
+php artisan kit:update --from=0.55.0 --tag=v0.55.1 --all --keep-remote --no-interaction
 ```
 
-Evidência: arquivos anunciados como `aplicado:`, incluindo `composer-unused.php`, saída `config/kit.php: versão marcada como 0.55.0` e branch `kit-update/v0.55.0`. A diferença do `composer.json` foi apenas relatada. Se o comando recusar a árvore, pedir segunda execução ou anunciar outra versão, pare; não faça commit para tentar outra rodada.
+Evidência: arquivos anunciados como `aplicado:`, saída `config/kit.php: versão marcada como 0.55.1` e branch `kit-update/v0.55.1`. Se o comando recusar a árvore, pedir segunda execução ou anunciar outra versão, pare; não faça commit para tentar outra rodada.
 
 ### 2. Resolver os conflitos conforme a decisão
 
 Condição: há conflitos; sem eles, siga para o passo 3.
 
-Ação, arquivo a arquivo: para manter a versão do dono, use `git checkout HEAD -- caminho/do/arquivo`; para receber a do kit, mantenha o aplicado; para integrar, reaplique somente as mudanças do dono conforme o diff guardado. Integração incerta exige parada. No `config/kit.php` preservado, troque `'version' => '0.54.0',` por `'version' => '0.55.0',`, preservando todas as demais configurações.
+Ação, arquivo a arquivo: para manter a versão do dono, use `git checkout HEAD -- caminho/do/arquivo`; para receber a do kit, mantenha o aplicado; para integrar, reaplique somente as mudanças do dono conforme o diff guardado. Integração incerta exige parada. No `config/kit.php` preservado, troque apenas `'version' => '0.55.0',` por `'version' => '0.55.1',`.
 
 ```bash
 git diff HEAD -- caminho/do/arquivo
@@ -342,7 +338,7 @@ git diff HEAD -- config/kit.php
 git add -- config/kit.php
 ```
 
-Evidência: arquivos mantidos têm diff vazio contra `HEAD`, integrações contêm ambas as mudanças revisadas e o config preserva as demais configurações. Registre cada parte do relatório que não chegou.
+Evidência: arquivos mantidos têm diff vazio contra `HEAD`, integrações contêm ambas as mudanças revisadas e o config preserva as demais configurações. Registre cada parte da correção que não chegou. Se o partial foi mantido sem o `role`, registre que a violação de acessibilidade continua; se `tests/Pest.php` e o teste de aparência não ficaram na mesma versão, registre a limitação.
 
 ### 3. Conferir marcador e arquivos
 
@@ -356,88 +352,14 @@ php artisan tinker --execute 'echo config("kit.version");'
 git branch --show-current
 git status --short
 git diff --cached --name-status
-git ls-files --error-unmatch composer-unused.php
-git diff kit-v0.55.0 -- composer-unused.php app/Console/Commands/KitUpdate.php config/kit.php
-git diff HEAD -- database/migrations database/settings resources public
+git diff HEAD -- resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php tests/Pest.php tests/Browser tests/Kit/AparenciaDasTelasPorTelaTest.php config/kit.php
 ```
 
-Evidência: versão `0.55.0`, branch `kit-update/v0.55.0`, arquivo novo presente e rastreado, com as quatro exclusões justificadas. Diferenças contra o destino correspondem somente às decisões registradas; o índice corresponde ao dry-run. Nenhuma migration ou asset alterado. Não rode migrate: não há migration nesta atualização.
+Evidência: versão `0.55.1`, branch `kit-update/v0.55.1` e arquivos da correção presentes, com o conteúdo do destino ou a integração aprovada. Compare cada caminho listado em **O que muda nesta versão** com `git diff kit-v0.55.1 -- caminho/do/arquivo`; diferenças devem corresponder somente às decisões registradas. O índice corresponde ao dry-run. Não execute migrations nem publicação de assets nesta atualização.
 
-### 4. Instalar as ferramentas e copiar os scripts
+### 4. Rodar a suíte Kit,Tenancy com banco descartável
 
-Condição: arquivos conferidos, ambiente de desenvolvimento com Composer e eventuais conflitos dos scripts resolvidos. Confira também a extensão PHP `sodium`: `php -m | grep -i sodium` (no PowerShell, `php -m | Select-String sodium`). O `composer-require-checker` 4.24 depende do `php-standard-library`, que a exige, e aceita só PHP 8.4 ou 8.5; sem ela o `composer require` abaixo falha na resolução. No Windows ela vem comentada no `php.ini` (`;extension=sodium`): peça ao dono para descomentá-la antes de seguir — não edite o `php.ini` por conta própria.
-
-Ação:
-
-```bash
-composer require --dev "maglnet/composer-require-checker:^4.16" "icanhazstring/composer-unused:^0.9"
-```
-
-Copie estas três entradas para o objeto `scripts` do `composer.json` do projeto, preservando todos os outros scripts:
-
-```json
-"deps:unused": [
-    "Composer\\Config::disableProcessTimeout",
-    "composer-unused --no-progress --ignore-exit-code"
-],
-"deps:require": [
-    "Composer\\Config::disableProcessTimeout",
-    "composer-require-checker check composer.json"
-],
-"deps:check": [
-    "@deps:unused",
-    "@deps:require"
-]
-```
-
-O trecho é parte do objeto `scripts`; ajuste a vírgula de separação conforme as entradas vizinhas. Não acrescente as ferramentas ao `composer test`.
-
-```bash
-composer validate --no-check-publish
-git diff HEAD -- composer.json composer.lock
-git add -- composer.json composer.lock
-```
-
-Evidência: as duas ferramentas instaladas em `require-dev`, os três scripts iguais aos acima e demais dependências e scripts preservados. Lock atualizado pelo Composer, sem mudança inesperada em pacotes de produção. Se a resolução falhar, entregue o erro; não amplie versões nem remova dependências para forçar a instalação.
-
-### 5. Integrar o relatório no CI e executar a análise
-
-Condição: ferramentas e scripts instalados; conflito no CI resolvido quando houver workflow próprio.
-
-Ação: se existir `.github/workflows/ci.yml` com job `qualidade`, copie o passo abaixo após a análise estática, preservando os demais passos. Ele depende de instalação prévia das dependências de desenvolvimento. Se não houver esse workflow ou job, registre a integração como não aplicável e siga com o relatório local.
-
-```yaml
-      - name: Dependências declaradas × usadas (relatório)
-        continue-on-error: true
-        run: |
-          {
-            echo '## Dependências declaradas × usadas'
-            echo
-            echo '### composer-unused — declaradas e não usadas'
-            echo '```'
-            vendor/bin/composer-unused --no-progress --no-ansi --ignore-exit-code
-            echo '```'
-            echo '### composer-require-checker — usadas e não declaradas'
-            echo '```'
-            vendor/bin/composer-require-checker check composer.json --no-ansi || true
-            echo '```'
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-```
-
-Execute localmente, tanto em Git Bash quanto em PowerShell:
-
-```bash
-composer deps:check
-git diff HEAD -- .github/workflows/ci.yml
-```
-
-Guarde a saída literal de `composer deps:check` e seu código de saída antes do comando seguinte (`echo $?` no Git Bash; `$LASTEXITCODE` no PowerShell). Se houve integração no workflow, coloque somente o arquivo alterado no índice com `git add -- .github/workflows/ci.yml`.
-
-Evidência: `composer deps:check` roda as duas ferramentas e lista os achados do projeto. A linha de base do kit é três pacotes sem uso e 181 símbolos; diferenças do projeto são descritas, sem exigir essas contagens como meta. Código não zero causado pelos achados do checker é esperado; erro de execução é condição de parada. O passo do CI usa `--ignore-exit-code`, `|| true` e `continue-on-error: true` para só relatar no resumo; confira o resumo na próxima execução, sem publicar ou disparar workflow por conta própria.
-
-### 6. Rodar a suíte Kit,Tenancy com banco descartável
-
-Condição: arquivos, ferramentas, scripts e relatório conferidos; nenhuma migration a executar.
+Condição: arquivos conferidos, incluindo o helper no `tests/Pest.php`.
 
 Ação, no Git Bash:
 
@@ -474,6 +396,20 @@ O `DB_URL` também precisa apontar para o banco em memória; vazio pode permitir
 
 Evidência: código zero, zero erro, zero falha e no máximo **1161 pulados** fora da árvore do kit, o teto recebido da origem. Os pulados permitidos leem arquivos exclusivos do repositório do kit. Registre a quantidade efetiva; aumento exige listar as causas e parar, sem alterar os testes para passar.
 
+Para a parte nova, rode também o arquivo dos casos CT-110 a CT-113, com as mesmas variáveis de banco acima:
+
+```bash
+php artisan test --compact tests/Kit/AparenciaDasTelasPorTelaTest.php
+```
+
+Se o projeto roda testes de navegador, rode o teste de acessibilidade, que confirma que o axe não aponta mais `aria-required-parent`:
+
+```bash
+vendor/bin/pest tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php
+```
+
+Sem o ambiente de navegador, registre o teste como não executado e o motivo.
+
 Depois da suíte, confira as policies que ela pode gerar ao semear permissões para Resources do dono:
 
 ```bash
@@ -489,24 +425,23 @@ git status --porcelain app/Policies
 
 Evidência: nenhuma policy não rastreada gerada pela suíte permanece; policies rastreadas continuam preservadas. Alteração rastreada exige parada e análise. Depois desta validação, peça ao dono que rode a suíte completa com `php artisan test --compact` em ambiente de testes com banco descartável.
 
-### 7. Conferir a preservação dos dados e do projeto
+### 5. Conferir a preservação dos dados e do projeto
 
 Condição: suíte concluída e variáveis PowerShell restauradas, quando aplicável.
 
-Ação: repita as consultas da multi-organização e da impressão dos dados do pré-voo, sem excluir campos. Rode também:
+Ação: repita os três comandos de consulta do item 3 do pré-voo e compare as saídas guardadas. Confira também:
 
 ```bash
 php artisan config:clear
 php artisan tinker --execute 'echo config("kit.version");'
-php artisan migrate:status
-git diff HEAD -- .env config/logging.php database/migrations database/settings
+git diff HEAD -- .env config/logging.php
 git status --short
 git diff --cached --stat
 ```
 
-Evidência: `0.55.0`, mesma multi-organização, mesmas migrations, nenhuma pendente e impressão dos dados idêntica. Diff vazio de `.env`, canais de log e esquema; customizações preservadas conforme as decisões. A suíte do projeto continua verde: em ambiente de testes, rode também `php artisan test --compact` com as três variáveis de banco descartável do passo 6, preservando e restaurando a sessão no PowerShell. Registre a saída; sem execução, registre a pendência e não declare a suíte do projeto validada.
+Evidência: `0.55.1`, mesma multi-organização, mesmo estado das migrations e impressão dos dados idêntica. Diff vazio de `.env` e `config/logging.php`; customizações preservadas conforme as decisões. Nenhuma escrita no banco do dono foi necessária.
 
-### 8. Remover o remote e as tags temporários
+### 6. Remover o remote e as tags temporários
 
 Condição: ao terminar ou parar depois da criação dos nomes temporários; o pré-voo confirmou que não existiam.
 
@@ -524,64 +459,63 @@ git tag -l "kit-*" | ForEach-Object { git tag -d $_ }
 git remote remove kit
 ```
 
-Se uma tentativa anterior já removeu algum nome, confira e remova somente o que ainda existir. Evidência: `git remote` não lista `kit` e `git tag -l "kit-*"` tem saída vazia. O branch `kit-update/v0.55.0` permanece, com as mudanças para revisão e sem commit.
+Se uma tentativa anterior já removeu algum nome, confira e remova somente o que ainda existir. Evidência: `git remote` não lista `kit` e `git tag -l "kit-*"` tem saída vazia. O branch `kit-update/v0.55.1` permanece, com as mudanças para revisão e sem commit.
 
 ## Como conferir
 
-O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-organização, versão, arquivos e migrations conferidos, dados e customizações preservados.
+O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-organização, versão e arquivos conferidos, dados e customizações preservados.
 
 | O que | Esperado |
 |---|---|
-| Marcador | `0.55.0` depois de limpar o cache de configuração |
-| Arquivo novo | `composer-unused.php` presente, com as quatro exclusões justificadas ou integração registrada |
-| Entrega | `KitUpdate.php` inclui o arquivo novo; demais diferenças correspondem às decisões |
-| Dependências | Duas ferramentas novas em `require-dev`, lock resolvido no projeto e dependências de produção preservadas |
-| Scripts | `deps:check`, `deps:unused` e `deps:require` copiados; fora de `composer test` |
-| Relatório local | `composer deps:check` executado, achados e código de saída registrados |
-| CI | Passo no job `qualidade` só relata no resumo, ou ausência do workflow/job registrada |
-| Migrations | Nenhuma nova e nenhuma executada; `php artisan migrate:status` sem pendências |
-| Runtime e defaults | Sem mudança de comportamento, configuração ou liberação de recurso |
-| Multi-organização | Mesmo modo de tenancy do pré-voo |
+| Marcador | `0.55.1` depois de limpar o cache de configuração |
+| Arquivos da correção | Partial do alternador de tema, testes de navegador, `tests/Pest.php`, teste CT-110 a CT-113 e config conferidos contra o destino ou a integração aprovada |
+| Migrations, settings, assets e dependências | Nenhum novo; nenhuma execução necessária |
+| Defaults e multi-organização | Nenhum default mudado; mesmo `SIM` ou `NAO` do pré-voo |
 | Suíte Kit,Tenancy | Zero erro, zero falha, até 1161 pulados fora da árvore do kit |
-| Testes do projeto | Suíte continua verde em banco descartável; saída ou pendência explícita registrada |
+| Teste de acessibilidade | Verde, quando o projeto roda testes de navegador; senão, registrado como não executado |
 | Policies | Não rastreadas geradas pela suíte removidas e listadas; rastreadas preservadas |
-| Arquivos e dados do dono | Impressão anterior idêntica; `.env`, customizações e canais de log intactos |
-| Revisão | Branch `kit-update/v0.55.0`, índice revisável, sem commit; remote e tags temporários removidos |
+| Arquivos do dono | Customizações preservadas; `.env` e canais em `config/logging.php` intactos |
+| Dados do dono | Impressão final idêntica à inicial |
+| Revisão | Branch `kit-update/v0.55.1`, índice revisável, sem commit; remote e tags temporários removidos |
 
-Não há tela nova ou escolha visual para validar. Arquivo antigo mantido que impeça a análise é entrega parcial, mesmo com marcador `0.55.0`. Não declare o relatório do CI observado se ele ainda não executou.
+Faça a conferência visual em `/admin/login`, e, se quiser, na recuperação de senha e no cadastro:
+
+1. O alternador de tema continua visível e funcional: claro, escuro e sistema trocam o tema como antes.
+2. Um leitor de tela anuncia o grupo “Tema” ao chegar no alternador.
+
+Registre o resultado. Se não houver ambiente para conferir a tela, registre a conferência como não executada e o motivo; não declare validação visual concluída. Arquivo mantido antigo é entrega parcial, mesmo com marcador `0.55.1`.
 
 ## Quando parar
 
 Pare e entregue ao dono a condição, a saída relevante e o que falta para continuar:
 
 - Roteiro indisponível, cópias divergentes sem marca de revisão ou dúvida de interpretação.
-- Árvore suja no início, versão instalada diferente de `0.54.0`, banco inacessível, backup não confirmado ou migrations pendentes do projeto: liste os valores e caminhos encontrados.
+- Árvore suja no início, versão instalada diferente de `0.55.0`, banco inacessível, backup não confirmado ou migrations pendentes do projeto: liste os valores e caminhos encontrados.
 - Remote, tags ou branch reservados já existentes: informe os nomes, sem removê-los.
-- Tag `v0.55.0` indisponível ou dry-run divergente: mostre os diffs, principalmente migration, mudança de produção, dependência além das previstas ou arquivo novo ausente.
+- Tag `v0.55.1` indisponível ou dry-run divergente: mostre os diffs, principalmente dependências, migrations, assets ou parte da correção ausente.
 - Comando recusado, pedido de segunda rodada, aplicação incompleta, integração incerta ou marcador, branch e arquivos fora do previsto: descreva o estado parcial, sem commit ou nova rodada.
-- Resolução do Composer com erro, script conflitante sem integração definida, ferramenta ausente ou configuração de análise inválida: entregue a saída, sem ampliar dependências ou esconder achados para passar. Achados reportados pelas ferramentas, por si só, não interrompem o roteiro.
-- Suíte com erro, falha ou mais de 1161 pulados na Kit,Tenancy: entregue a saída e os casos envolvidos, sem alterar testes para passar.
+- Suíte com erro, falha ou mais de 1161 pulados: entregue a saída e os casos envolvidos. Se houver erro de função `visitaComMovimentoReduzido()` definida duas vezes ou ausente, registre a causa nos arquivos de teste e no `tests/Pest.php`, sem enfraquecer os testes.
 - Policy rastreada alterada, impressão de dados diferente, multi-organização alterada ou mudança inesperada em `.env`, canais de log ou customizações: mostre a diferença antes de restaurar qualquer coisa.
+- Conferência visual com o alternador de tema sumido ou sem função: registre a tela, o navegador e o resultado.
 - Um passo exigiria ação proibida em **Cuidados**: informe a necessidade e aguarde orientação.
 
-Ao parar depois de criar os nomes temporários, execute ainda o passo 8 para remover somente o remote e as tags deste roteiro. Preserve o branch e as mudanças para revisão. Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
+Ao parar depois de criar os nomes temporários, execute ainda o passo 6 para remover somente o remote e as tags deste roteiro. Preserve o branch e as mudanças para revisão. Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
 
 ## Relatório final
 
 Entregue ao dono, ao terminar ou ao parar:
 
 - versões de partida e chegada, saída de `config('kit.version')`, branch e confirmação de que nada foi commitado nem integrado por merge;
-- arquivos aplicados e conferidos, presença de `composer-unused.php` e integrações;
-- cada decisão de conflito, pergunta e resposta ou “sem resposta”, default aplicado e limitações por arquivo; sem conflitos, registre isso; nenhuma outra decisão e nenhum default mudado;
-- comando de instalação executado, ferramentas em `require-dev`, scripts copiados e diferenças de `composer.json` e `composer.lock`, preservando as dependências do projeto;
-- integração manual do passo no job `qualidade`, caráter de relatório e resultado do resumo do CI, ou ausência do workflow/job e validação ainda pendente;
-- saída literal de `composer deps:check`, achados, diferenças em relação à linha de base e código de saída; nenhuma remoção ou declaração de dependência de produção feita para zerar o relatório;
-- saída de `php artisan migrate:status` e confirmação de que não há migration, execução de alteração de esquema, build, publicação de assets, semeadura ou geração de permissões nesta atualização;
-- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados, pedido para rodar `php artisan test --compact` em banco descartável e resultado da suíte do projeto ou pendência explícita;
+- arquivos aplicados e conferidos, e a integração do partial ou dos testes, quando houve;
+- cada decisão de conflito, pergunta e resposta ou “sem resposta”, default aplicado e limitações por arquivo; sem conflitos, registre isso;
+- confirmação de que não houve migration, alteração de settings, dependência nova, asset publicado, default mudado, instalação, build, semeadura ou geração de permissões;
+- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados e pedido para rodar a suíte completa em ambiente de testes;
+- saída dos testes `AparenciaDasTelasPorTelaTest.php` e, se rodado, `AcessibilidadeDasTelasDeAcessoTest.php`, ou o motivo de não execução;
 - policies não rastreadas removidas, impressões dos dados antes e depois e resultado da comparação;
-- preservação de `.env`, canais de log, customizações e estado da multi-organização; runtime e defaults preservados;
+- preservação de `.env`, canais de log, customizações e estado da multi-organização;
+- conferência visual do alternador de tema em `/admin/login` e do anúncio do grupo “Tema”, ou o motivo de não execução;
 - remoção do remote `kit` e das tags `kit-*`;
 - em caso de parada, passo, saída relevante, estado parcial e condição necessária para continuar.
 
-Explique como revisar com `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Isso não reverte o banco nem restaura `vendor`; após restaurar os manifests, os pacotes instalados precisam corresponder novamente ao lock restaurado.
+Explique como revisar com `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Isso não reverte operações no banco; esta atualização não exigiu nenhuma no banco do dono.
 <!-- roteiro-de-atualizacao:fim -->

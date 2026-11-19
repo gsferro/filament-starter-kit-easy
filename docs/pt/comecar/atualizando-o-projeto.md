@@ -144,6 +144,11 @@ As abas ganharam chave fixa na URL (`?tab=identidade`, `?tab=tabelas`…); link 
 do kit os scripts `deps:*` do `composer.json` — o `kit:update` traz o `composer-unused.php`, mas só relata a
 diferença do `composer.json`.
 
+**Na v0.55.1 não há nada a instalar nem migrar**: o `kit:update` traz a sobrescrita do alternador de tema das
+telas de acesso (`resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php`,
+que corrige um erro de acessibilidade) e testes novos. Quem já sobrescreveu esse partial integra o `role="menu"`
+no wrapper.
+
 **Na v0.54.0 há três migrations** (`php artisan migrate`): as preferências de aparência por usuário (ver
 [Configurações do kit](../../recursos/configuracoes-do-kit/#aparência-de-cada-pessoa-fonte-menu-e-a-escolha-no-meu-perfil)).
 A chave da instalação nasce **ligada**, então todo mundo passa a ver a seção "Aparência" no Meu perfil —
