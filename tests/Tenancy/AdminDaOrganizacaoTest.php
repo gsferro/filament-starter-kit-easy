@@ -680,9 +680,14 @@ it('[CT-20] criar e editar usuário no /app da organização seguem a opção', 
                 'roles'    => [Role::findByName('panel_user')->getKey()],
             ])
             ->call('create')
+        // O nome muda junto: "salva sem trocar o e-mail" só prova algo se o salvamento gravar (step 9).
         : Livewire::test(EditUser::class, ['record' => $existente?->uuid])
-            ->fillForm(['email' => $email])
+            ->fillForm(['email' => $email, 'name' => 'Nome Novo'])
             ->call('save');
+
+    if ($operacao === 'salva') {
+        expect($existente->fresh()->name === 'Nome Novo')->toBe(! $erro);
+    }
 
     $erros = collect($tela->errors()->toArray())
         ->filter(fn (mixed $mensagens, string $chave): bool => str_ends_with($chave, 'email'))

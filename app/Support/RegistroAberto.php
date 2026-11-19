@@ -255,7 +255,7 @@ class RegistroAberto
              */
             $organizacao instanceof Tenant && ! self::organizacaoAceitaRegistro($organizacao) => 'organizacao_fechada',
             // A regra do campo recusa na tela; aqui, o chamador que não passou por ela (wiki email-com-mais).
-            ! EmailComMais::aceita($email) => 'email_com_mais',
+            ! EmailComMais::aceita($email)                                                    => 'email_com_mais',
             default                                                                           => null,
         };
 

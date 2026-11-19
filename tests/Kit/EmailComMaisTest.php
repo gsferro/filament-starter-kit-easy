@@ -392,8 +392,8 @@ it('[CT-13] lote misto com a opção desligada: três enviados, uma falha com mo
     expect($resultado->enviados)->toBe(['a@example.com', 'c+1@example.com', 'd@example.com'])
         ->and($falhas)->toHaveCount(1)
         ->and($falhas[0]['email'])->toBe('b+1@example.com')
-        ->and($falhas[0]['motivo'])->not->toBeIn(['formato_invalido', 'convite_pendente', 'recusou_antes', 'erro_no_envio'])
-        ->and($falhas[0]['motivo'])->not->toBeEmpty()
+        // O motivo próprio, e não o de outra recusa (step 9: "diferente dos outros" deixava passar `ja_e_membro`).
+        ->and($falhas[0]['motivo'])->toBe('email_com_mais')
         ->and(Convite::where('email', 'b+1@example.com')->exists())->toBeFalse();
 
     Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 3);
@@ -610,7 +610,7 @@ it('[CT-23] a recusa social leva ao login, de onde a pessoa ainda entra com outr
     ligarRegistroParaOMais();
     ligarProvedor(ProvedorSocial::Google);
 
-    retornoDoGoogleCom('gsferroti+starter@gmail.com', 'sub-mesma-pessoa');
+    retornoDoGoogleCom('gsferroti+starter@gmail.com', 'sub-mesma-pessoa')->assertRedirect();
     $this->assertGuest();
 
     retornoDoGoogleCom('gsferroti@gmail.com', 'sub-mesma-pessoa');

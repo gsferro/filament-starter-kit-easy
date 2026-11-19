@@ -350,6 +350,18 @@ class Convite extends Model implements Auditable
                 ->pluck('email')
                 ->map($normalizar);
 
+        /*
+         * O "+" bloqueado (wiki email-com-mais): a regra de `EmailComMais::aceitaNoConvite()`, com a
+         * busca das contas existentes feita UMA vez para o lote, como a dos membros acima — e com
+         * a mesma ressalva do `whereIn` sobre a coluna crua.
+         */
+        $comMais = EmailComMais::permitido()
+            ? collect()
+            : $validos->filter(fn (string $email): bool => EmailComMais::temMais($email));
+        $contasComMais = $comMais->isEmpty()
+            ? collect()
+            : User::query()->whereIn('email', $comMais->all())->pluck('email')->map($normalizar);
+
         $enviados = [];
         $falhas   = $tortos->map(fn (string $email): array => [
             'email'  => $email,
@@ -363,8 +375,8 @@ class Convite extends Model implements Auditable
                 $membros->contains($email)   => 'ja_e_membro',
                 // A mesma regra do convite individual: com o "+" bloqueado, só o endereço que
                 // criaria conta nova (wiki email-com-mais). Os outros do lote seguem.
-                ! EmailComMais::aceitaNoConvite($email) => 'email_com_mais',
-                default                                 => null,
+                $comMais->contains($email) && ! $contasComMais->contains($email) => 'email_com_mais',
+                default                                                          => null,
             };
 
             if ($motivo !== null) {
