@@ -17,6 +17,7 @@ use App\Filament\Spotlight\PagesAutorizadasCategory;
 use App\Filament\Spotlight\ResourcesAutorizadasCategory;
 use App\Http\Middleware\ExigeTutorialGuiadoLigado;
 use App\Livewire\DefinirSenhaPorEmail;
+use App\Livewire\InformacoesPessoais;
 use App\Livewire\PreferenciasDeAparencia;
 use App\Support\AparenciaDoUsuario;
 use App\Support\AvatarDeIniciais;
@@ -260,6 +261,8 @@ class AdminPanelProvider extends PanelProvider
                     // Quem entrou por login social não tem senha atual — e a troca de senha, o 2FA e o
                     // desbloqueio da sessão pedem uma. O bloco manda o link de definição por e-mail.
                     ->myProfileComponents([
+                        // O e-mail do perfil com a regra do "+" (wiki email-com-mais).
+                        'personal_info'             => InformacoesPessoais::class,
                         'definir_senha_por_email'   => DefinirSenhaPorEmail::class,
                         // A seção "Aparência" — some sozinha com a chave da instalação desligada.
                         'preferencias_de_aparencia' => PreferenciasDeAparencia::class,
