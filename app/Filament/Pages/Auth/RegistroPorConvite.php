@@ -447,20 +447,6 @@ class RegistroPorConvite extends Register
     }
 
     /**
-     * Sem convite válido não existe cadastro.
-     *
-     * Sai por `HttpResponseException`, e não por `redirect()` solto: dentro de `mount()`
-     * de página Livewire o `redirect()` devolve o Redirector do Livewire onde o Laravel
-     * espera um código HTTP, e o request morre em 500 — foi o bug de `TelaBloqueio` (ver
-     * a nota em `:74-85` dela). O `Register::mount()` do Filament faz exatamente isso em
-     * `:60`; aqui não.
-     *
-     * Resposta ÚNICA para os três motivos: quem tem o link não descobre se o token não
-     * existe, se expirou ou se já foi usado. E o destino é o LOGIN, não um 403: quem
-     * clica num convite vencido precisa ir para lá de qualquer forma — inclusive no caso
-     * "já tenho conta". Ver ADR-02 e ADR-03.
-     */
-    /**
      * O convite é válido, mas o e-mail dele tem "+" e a instalação o bloqueia (wiki email-com-mais).
      *
      * Sem throttle, ao contrário de `recusar()`: só chega aqui quem traz um token VÁLIDO, então
@@ -480,7 +466,7 @@ class RegistroPorConvite extends Register
 
         Notification::make()
             ->title('Este convite não pode ser aceito')
-            ->body(EmailComMais::mensagem().' Peça a quem convidou um convite para o endereço sem o "+".')
+            ->body(EmailComMais::mensagemDoConvite())
             ->danger()
             ->persistent()
             ->send();
@@ -490,6 +476,20 @@ class RegistroPorConvite extends Register
         );
     }
 
+    /**
+     * Sem convite válido não existe cadastro.
+     *
+     * Sai por `HttpResponseException`, e não por `redirect()` solto: dentro de `mount()`
+     * de página Livewire o `redirect()` devolve o Redirector do Livewire onde o Laravel
+     * espera um código HTTP, e o request morre em 500 — foi o bug de `TelaBloqueio` (ver
+     * a nota em `:74-85` dela). O `Register::mount()` do Filament faz exatamente isso em
+     * `:60`; aqui não.
+     *
+     * Resposta ÚNICA para os três motivos: quem tem o link não descobre se o token não
+     * existe, se expirou ou se já foi usado. E o destino é o LOGIN, não um 403: quem
+     * clica num convite vencido precisa ir para lá de qualquer forma — inclusive no caso
+     * "já tenho conta". Ver ADR-02 e ADR-03.
+     */
     private function recusar(): never
     {
         /*

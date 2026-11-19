@@ -498,7 +498,7 @@ it('[CT-16] o link do convite com "+" emitido antes de desligar é recusado ao a
 
     expect($aviso)->not->toBeNull()
         ->and((string) ($aviso['body'] ?? ''))->toContain(EmailComMais::mensagem())
-        ->and((string) ($aviso['body'] ?? ''))->toContain('sem o "+"')
+        ->and((string) ($aviso['body'] ?? ''))->toContain('Peça a quem convidou um convite para o endereço sem o "+".')
         ->and(User::where('email', 'gsferroti+starter@gmail.com')->exists())->toBeFalse()
         ->and($convite->fresh()?->situacao())->toBe('Pendente');
 })->with([
@@ -530,6 +530,7 @@ it('[CT-17] o login social pelo convite com "+" emitido antes de desligar recusa
 
     expect(User::where('email', 'gsferroti+starter@gmail.com')->exists())->toBeFalse()
         ->and($titulos)->toContain(EmailComMais::mensagem())
+        ->and($titulos)->toContain('Peça a quem convidou um convite para o endereço sem o "+".')
         ->and($titulos)->not->toContain('por convite')
         ->and($convite->fresh()?->situacao())->toBe('Pendente');
 

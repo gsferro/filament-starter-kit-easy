@@ -67,6 +67,16 @@ class EmailComMais
     }
 
     /**
+     * A recusa do convite com "+" para conta nova (P-06): a pessoa convidada não escolhe o endereço,
+     * então o que ela pode fazer é pedir outro convite. Uma fonte só para a tela do aceite
+     * (`RegistroPorConvite::recusarPorMais()`) e o login social por convite.
+     */
+    public static function mensagemDoConvite(): string
+    {
+        return self::mensagem().' Peça a quem convidou um convite para o endereço sem o "+".';
+    }
+
+    /**
      * Regra de validação do campo de e-mail.
      *
      * `$atual` é o e-mail que a conta já tem (edição no CRUD, perfil): repetido, ele passa, mesmo

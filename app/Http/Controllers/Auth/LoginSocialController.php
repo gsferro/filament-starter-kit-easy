@@ -278,7 +278,8 @@ final class LoginSocialController extends Controller
                  * O "+" bloqueado, conferido AQUI e não deixado para a guarda de
                  * `RegistroAberto::registrar()`: o `catch` logo abaixo trocaria o motivo pela
                  * mensagem do convite, e a pessoa nunca saberia que o problema é o "+" (P-05 da
-                 * wiki email-com-mais). Vale também para o convite já emitido: a conta seria nova (Q4).
+                 * wiki email-com-mais). Vale também para o convite já emitido: a conta seria nova (Q4),
+                 * e a recusa pede um convite sem o "+", como a tela do aceite.
                  */
                 if (! EmailComMais::aceita($email)) {
                     Log::channel('autenticacao')->warning(
@@ -290,7 +291,7 @@ final class LoginSocialController extends Controller
                         ],
                     );
 
-                    return $this->recusar(EmailComMais::mensagem());
+                    return $this->recusar($convite instanceof Convite ? EmailComMais::mensagemDoConvite() : EmailComMais::mensagem());
                 }
 
                 try {
