@@ -156,6 +156,7 @@ Execução: `vendor/bin/pest tests/Kit/EmailComMaisTest.php` (todos os CT acima)
 | Ciclo | Veredito | Data |
 |---|---|---|
 | 1 | REPROVADO → especificação (QA-01, QA-02 Major; QA-03..QA-06, QA-08 Minor; QA-07, QA-09 Cosmético); B, E, F, G, H, J, K não verificadas pelo gate | 2026-11-19 |
+| 2 | REPROVADO → especificação (QA-10 Major; QA-11, QA-13, QA-14, QA-15, QA-17 Minor; QA-12, QA-16 Cosmético); B, E, F, G, H, K não verificadas; teto de 2 ciclos atingido | 2026-11-19 |
 
 Tratamento do ciclo 1:
 
@@ -172,3 +173,5 @@ Tratamento do ciclo 1:
 | QA-09 | 2 | o comentário do lote diz `lower(email)` |
 
 No `06` do ciclo 1, as citações `arquivo:linha` sem símbolo foram reescritas como prosa ("`arquivo` (linha N no ciclo)") para o `citacoes.sh` passar; o conteúdo dos achados não mudou.
+
+**Blocker (ciclo 2)**: o perfil padrão permite 2 ciclos e o QA-10 (Major, destino 1: a tabela de impacto e os passos 3, 4 e 7 do `01` ainda descrevem a P-06 antiga) ficou aberto. Escalado ao usuário em 2026-11-19; o PR não abre até a decisão.

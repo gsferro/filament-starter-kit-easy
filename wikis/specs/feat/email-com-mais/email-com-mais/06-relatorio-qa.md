@@ -3,8 +3,8 @@
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
 > Perfil de esforço: padrão. Natureza `nova`. Superfície de UI presente, sem JS próprio: toggle e erros de campo do Filament. Domínio julgado comum: a feature acrescenta uma regra de validação, não mexe em dinheiro, não cria fluxo novo de PII, não muda autorização e não muda o contrato do provedor social.
 > Natureza da wiki: nova · Toca infra compartilhada: sim → `config/kit.php`, settings, `RegistroAberto`, `Convite`, os dois `UserResource`, os formulários de convite, login social, perfil do Breezy · Regressão: sim
-> Independência: sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa
-> Cobertura: 5 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
+> Independência: sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa (ciclo 2: comprometida — recebeu resumo do tratamento pós-ciclo 1)
+> Cobertura: ciclo 1, 5 de 12; ciclo 2, 6 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
 
 ## Veredito — Ciclo 1
 
@@ -161,3 +161,125 @@ O `rastreabilidade.sh` saiu com exit 0. Todo `RQ`/`P-nn` tem passo, CT e código
 - G e H — motivo: fora do perfil padrão.
 - J, passo 1 (`--parallel --tia`) — motivo: restrição do ambiente (um processo de teste por vez; a suíte Browser pode estar rodando).
 - K2 (`--mutate`) — motivo: fora do perfil padrão. A alegação "seis mutantes, um por via, todos mortos" (`03:35`) não tem comando que a reproduza e não foi certificada.
+
+## Ciclo 2
+
+> Independência (ciclo 2): sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa — **comprometida — recebeu resumo do tratamento pós-ciclo 1** (Q4 respondida divergindo, Reenviar oculto, lembrete pula, BP-01..BP-13, roteiro completado). O mesmo conteúdo está no `03`, que o gate lê por desenho; o resumo não foi usado como evidência.
+> Cobertura (ciclo 2): 6 de 12 dimensões verificadas ou provadas não aplicáveis (A, C, D, I, J, L) · teto: APROVADO COM DÉBITO
+> Alvo: HEAD `c6ba978b`, árvore limpa, base `main` (62 arquivos, +3379/-219)
+
+### Veredito — Ciclo 2
+
+**REPROVADO → especificação**
+
+- Blocker: 0 · Major: 1 · Minor: 5 · Cosmético: 2
+- Não verificadas: B, E, F, G, H, K. As causas estão em *Não Verificado (ciclo 2)*.
+- `RQ` abertas: nenhuma. Q5 e Q6 seguem `aberta — implementada a recomendação` (QA-11).
+- Teto de ciclos: o perfil padrão permite até 2 ciclos e este é o 2º. Com o Major aberto, o loop para aqui: o próximo passo é escalar ao usuário, não abrir um ciclo 3.
+- Ambiente:
+  - app em `http://127.0.0.1:8091` (200; `:8000` não responde);
+  - Pest 5 com PCOV e Xdebug, `pest-plugin-mutate` e `--tia`, sem `--agent`;
+  - Boost MCP **conectou** neste ciclo: `browser-logs` sem arquivo `browser.log`, `last-error` com um erro alheio à feature (`OnboardingGuiadoInstalacaoTest`);
+  - Playwright MCP indisponível.
+
+### Status dos achados do ciclo 1
+
+| QA | Status | Evidência |
+|---|---|---|
+| QA-01 | **parcialmente fechado** | Q1–Q4 respondidas e Q7 derivada da Q4. O recorte da Q4 foi reimplementado (CT-16, CT-17, CT-29..CT-31: 6/6 verdes no `--filter`). Q5 e Q6 seguem abertas com a recomendação implementada; o resíduo virou o QA-11. |
+| QA-02 | fechado | o passo 1 e as `## Decisões de Desenho` do `01` dizem a fórmula real (`in_array(…, [null, ''])` antes do `filter_var`), os dois métodos do convite e a guarda do `aceitar()`. Defasagem nova, em outra seção: QA-10. |
+| QA-03 | fechado | as citações de `app/Models/Convite.php` (`lembrar`, `aceitar`) batem com o código. `CitacoesDeCodigoTest` verde no lote de 858. |
+| QA-04 | fechado | a linha **Registro** de `docs/pt/recursos/configuracoes-do-kit.md` cita "+" no e-mail do cadastro (o en também). |
+| QA-05 | fechado | o `CHANGELOG.md` (`### Atualizando`) diz que, sem o `migrate`, o boot lê TODAS as opções do `.env`. |
+| QA-06 | **parcialmente fechado** | o rótulo "respondida" saiu (`'off (Q6)'`, `'no (Q6)'`) e os Exemplos entraram no `04`. A Q6 continua aberta: QA-11. |
+| QA-07 | **parcialmente fechado** | Cenários 31, Regras 11 e Sem matador 2 batem com o `grep -c`. CT-29..CT-31 no índice e no mapa. Mutantes previstos não batem: QA-12. |
+| QA-08 | fechado | `## Verificação Final`, a linha `Roteiro manual:` e `## Impacto em Features Existentes` existem. O conteúdo da tabela de impacto é o QA-10. |
+| QA-09 | fechado | o comentário do lote em `Convite::convidarEmMassa()` diz `lower(email)`, como o código. |
+
+### Achados novos
+
+#### QA-10 — A tabela de impacto do `01` contradiz a P-06 da Q4 · Major · destino 1
+- **Dimensão**: L3 (e J: previsto × medido)
+- **Relacionado a**: P-06, Q4, Q7; passos 3, 4 e 7 do PRD; CT-16, CT-17, CT-29..CT-31; BP-13
+- **Esperado**: nenhuma afirmação do `01` contradiz o código. A BP-13 do `03` declara o `01` corrigido para a P-06.
+- **Observado**:
+  - (a) `01`, `## Impacto em Features Existentes`, linha *Aceite de convite (tela e social)*: coluna "desligada" = "nada: o convite emitido vale". O código recusa (`RegistroPorConvite::recusarPorMais()`, a guarda de `Convite::aceitar()`, o `EmailComMais::aceita($email)` antes do `criarContaPorConvite()` em `LoginSocialController::retorno()`).
+  - (b) A mesma tabela não tem linha para a lista de convites do `/admin` (Reenviar oculto) nem para `kit:convites-lembrar` (pula o convite).
+  - (c) Passo 4: "Logs: nenhum novo". Passo 3: só o log do `registrar()`. O diff acrescenta `warning` em `[Convite@aceitar]` e em `[RegistroPorConvite@mount]`.
+  - (d) O passo 7 ainda diz "(Q2 aberta)". A Q2 foi respondida em 2026-11-19.
+- **Repro**: `grep -rn "convite emitido vale\|Q2 aberta" wikis/specs/feat/email-com-mais/email-com-mais/`; `git diff main...HEAD -- app/Models/Convite.php app/Filament/Pages/Auth/RegistroPorConvite.php | grep "warning("`; `vendor/bin/pest tests/Kit/EmailComMaisTest.php --filter='CT-16|CT-17|CT-29'`.
+- **Destino**: 1
+- **Ação exigida**: reescrever a linha *Aceite de convite* e acrescentar *Lista de convites (Reenviar)* e *Lembrete automático* (CT-30, CT-31); corrigir "Logs" dos passos 3 e 4 e o "(Q2 aberta)" do passo 7, com `*(alterado em …)*`; registrar na BP-13 que a seção de impacto tinha escapado.
+
+#### QA-11 — Q5 e Q6 continuam abertas com a recomendação implementada · Minor · destino 1
+- **Dimensão**: A
+- **Relacionado a**: Q5 → P-05; Q6 → P-01; CT-01 (Exemplos `off`/`no`); resíduo de QA-01 e QA-06
+- **Observado**: a Q6 nasceu como "Q?2 · raia: desenho" no `04`, mas está na tabela do solicitante do `00` como `aberta`. O `04`, `## Cogitado e cortado`, ainda diz que as linhas `off`/`no` "entram com a resposta", e elas já estão no CT-01. `KIT_EMAIL_PERMITIR_MAIS=nao` (ou `não`) **permite**; só `false`/`0`/`off`/`no` bloqueiam. A Q5 não podia ficar de fora (a P-05 exige uma mensagem): confirmação pendente.
+- **Repro**: `grep -n "aberta — implementada" .../00-requisito.md`; `php -r 'foreach (["nao","off","no"," false"] as $v) var_dump(filter_var($v, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true);'`
+- **Destino**: 1
+- **Ação exigida**: decidir a Q6 como desenho no `01` e marcá-la decidida no `00`, ou levá-la ao solicitante junto com a Q5; corrigir `## Cogitado e cortado` do `04`.
+
+#### QA-12 — Cabeçalho do `04` diz 58 mutantes previstos; o `grep -c` dá 56 · Cosmético · destino 1
+- **Dimensão**: L1
+- **Repro**: `grep -cE '^\| M-?[0-9]+' .../04-casos-de-teste.md` → `56`.
+- **Ação exigida**: recalcular; conferir a numeração da R7 (M1..M7), que repete IDs de outras regras.
+
+#### QA-13 — O `04` mantém o texto da P-06 antiga fora da R7 · Minor · destino 1
+- **Dimensão**: L3/L1
+- **Observado**: `## Mapa de Regras` ("Q1 a Q4 estão `aberta…`", "P-06 tem cobertura parcial … reenvio e lembrete (Q?3)"); `## Fronteira com o Plano` ("o aceite passa"); recomendação da Q?3 ("segue valendo"); `## Varredura SFDIPOT`, linhas F e T.
+- **Repro**: `grep -n "Q1 a Q4\|segue valendo\|o aceite passa\|convite já emitido (P-06)" .../04-casos-de-teste.md`
+- **Ação exigida**: alinhar à P-06 vigente, com a marca de data.
+
+#### QA-14 — O `03` diz que as citações sem símbolo do `06` foram reescritas; não foram · Minor · destino 1
+- **Dimensão**: L6
+- **Repro**: `bash .ai/skills/feature-wiki/scripts/citacoes.sh wikis/specs/feat/email-com-mais/email-com-mais` → exit 1, seis linhas do ciclo 1 do `06`.
+- **Ação exigida**: corrigir a alegação do `03` (declarar a exceção do `06`, gravado verbatim, ou reescrever e registrar); rodar de novo a `## Verificação Final` em HEAD.
+
+#### QA-15 — O login social por convite recusa sem dizer o que fazer · Minor · destino 3 → 2
+- **Dimensão**: F
+- **Observado**: na tela, `recusarPorMais()` usa `EmailComMais::mensagem()` mais "Peça a quem convidou um convite para o endereço sem o "+"". No login social, `LoginSocialController::retorno()` recusa só com `EmailComMais::mensagem()` ("Use o endereço sem o "+""), que a pessoa convidada não consegue seguir. O CT-17 afirma só `toContain(EmailComMais::mensagem())`.
+- **Ação exigida**: estender o Então do CT-17 no `04` pela `feature-test-design`; ver o teste falhar; ajustar a mensagem do ramo de convite do `retorno()`.
+
+#### QA-16 — Docblock de `recusar()` ficou órfão acima de `recusarPorMais()` · Cosmético · destino 2
+- **Repro**: `grep -n "function recusarPorMais\|function recusar()" app/Filament/Pages/Auth/RegistroPorConvite.php`
+- **Ação exigida**: devolver o docblock a `recusar()`.
+
+#### QA-17 — O CHANGELOG lista uma mudança em "Não muda" e diz CT-01..CT-28 · Minor · destino 1
+- **Dimensão**: L5
+- **Observado**: o item "Desligada, o convite para conta nova com "+" enviado antes de desligar não se aceita mais…" está sob `### Não muda`; `### Adicionado` diz CT-01..CT-28 (o arquivo vai até CT-31); a linha `Roteiro manual:` do `03` fala em "28 CT".
+- **Ação exigida**: mover o item, corrigir para CT-01..CT-31 e o "28 CT" do `03`.
+
+### Dimensões — Ciclo 2
+
+| # | Dimensão | Status | Observação |
+|---|---|---|---|
+| A | Cobertura do requisito | ⚠️ | QA-11. `rastreabilidade.sh` exit 0. Os passos 3, 4 e 6 estão no diff e fazem o que a P-06 diz. |
+| B | Fronteiras e dados | ⏭️ | `EmailComMais::temMais()` sondado estaticamente com `""`, `"+"`, `"a+b@c+d.com"`, `"a@b+c.com"`, `"\"a+b\"@x.com"`, U+FF0B, bordas com espaço, `%2B`, dois "@", 300+ caracteres; coerente com a P-04. Sondagem dinâmica não feita. |
+| C | Matriz de permissão | ✅ | Nenhuma permissão nova. O Reenviar oculto é recusado no servidor (`CanBeDisabled::isDisabled()` no `mountAction`). Revogar segue (CT-30). |
+| D | Observabilidade | ✅ | `[RegistroPorConvite@mount]`, `[Convite@aceitar]` e `[LoginSocialController@retorno]`: `warning` no `autenticacao`, e-mail por `Str::mask`. Emissão real das duas novas em *Não Verificado*. |
+| E | Performance | ⏭️ | `ConvitesTable` faz um `exists()` por linha no `visible()` do Reenviar, só nas linhas com "+" e opção desligada; limitado. Contagem mecânica não feita. |
+| F | UX de erro | ⏭️ | QA-15, por leitura. Tela servida não observada. |
+| G | Tema e cor | ⏭️ | Fora do perfil. Nível 1 nos arquivos do diff exit 0. |
+| H | Acessibilidade | ⏭️ | Fora do perfil; sem Playwright. |
+| I | Segurança da superfície nova | ✅ | Eixos do step 9 rodados na superfície da Q4 (`5c990052`): Reenviar oculto = desabilitado no mount; nenhuma propriedade pública Livewire nova; `desviarParaAceite()` é `never`; `recusarPorMais()` leva ao login sem redirect de volta; a guarda do model exclui a conta existente (CT-29). Sem achado. |
+| J | Regressão adjacente | ✅ | Vias: 292/292. Docs: 858/858. Feature: 73/73 (318 assertions). Previsto × medido: QA-10 (b). |
+| K | Adequação da suíte | ⏭️ | K1 exit 1 em dois testes que já existem na `main`. Revisão adversarial não exigida pelo perfil. A R7 foi reescrita sem a `feature-test-design` (declarado no `04`). K2 abaixo. |
+| L | Consistência documental | ⚠️ | QA-10, 12, 13, 14, 17. `ids-ct.sh`, `conformidade-rules.sh`, `checkbox-sem-evidencia.sh`, `roteiro-manual.sh` exit 0; `citacoes.sh` exit 1 (QA-14). |
+
+**K2 (`--mutate`), fora do perfil**: `--path=app/Support/EmailComMais.php --covered-only --no-cache` → 28 mutantes, 26 mortos, 2 sobreviventes (92,86 %), ambos em `EmailComMais::regraDeConvite()`: `UnwrapTrim` (equivalente comprovado: o `aceitaNoConvite()` faz `trim()` antes) e `RemoveStringCast` (equivalente no domínio: campo `required` e `email`). Classes da Q4 não mutadas: `Convite`, `LoginSocialController`, `ConvitesTable`, `KitConvitesLembrar`.
+
+### Débitos Aceitos (ciclo 2)
+
+- Nenhum aceito por este gate.
+
+### Suspeitas Não Confirmadas (ciclo 2)
+
+- Nenhuma.
+
+### Não Verificado (ciclo 2)
+
+- B, E, F, parte dinâmica — sem `--agent`, sem Playwright MCP, e emitir convite no `:8091` grava estado num ambiente não confirmado como descartável.
+- D, emissão real de `[RegistroPorConvite@mount]` e `[Convite@aceitar]` — `NullHandler` nos testes; conferidas por leitura.
+- G, H — fora do perfil padrão.
+- J com `--tia` — grava o grafo em cache; regressão feita por arquivo.
+- K2 — só `EmailComMais`; os "cinco mutantes" da seção 9 do `03` seguem sem certificação.
