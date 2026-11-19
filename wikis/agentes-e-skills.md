@@ -254,7 +254,7 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan kit:update --from=0.55.1 --tag=v0.56.0 --dry-run --keep-remote --no-interaction
    git diff --stat kit-v0.55.1 kit-v0.56.0 -- composer.json composer.lock package.json package-lock.json
    git diff --name-status kit-v0.55.1 kit-v0.56.0 -- database/migrations database/settings resources public
-   git diff --name-status kit-v0.55.1 kit-v0.56.0 -- app/Providers app/Filament app/Http app/Livewire app/Models app/Settings app/Support app/Data config/kit.php .env.example phpunit.xml tests/Pest.php tests/Kit tests/Tenancy
+   git diff --name-status kit-v0.55.1 kit-v0.56.0 -- app/Console/Commands app/Providers app/Filament app/Http app/Livewire app/Models app/Settings app/Support app/Data config/kit.php .env.example phpunit.xml tests/Pest.php tests/Kit tests/Tenancy
    ```
 
    Esperado: resumo entre `kit-v0.55.1` e `kit-v0.56.0`, sem tocar arquivos; diff de dependências vazio; exatamente a migration de settings listada em **O que muda nesta versão**, nenhuma migration de tabela nova, nada novo sob `resources` e nenhum asset publicado novo. Confira todos os arquivos da entrega relacionados abaixo. O dry-run mantém o remote `kit` e as tags para as comparações seguintes.
@@ -270,20 +270,21 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    git diff --name-only kit-v0.56.0 HEAD -- caminho/do/novo
    ```
 
-   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente os três providers de painel (`myProfileComponents()` próprio é o ponto de integração mais provável), a página e a classe de settings, os dois `UserResource`, `RegistroPorConvite`, `RegistroAberto`, `Convite`, `ConvidaEmMassa`, `LoginSocialController`, `config/kit.php`, `.env.example` e `tests/Pest.php`. Procure também testes próprios que definam helpers chamados `registrarAberto()`, `conviteCom()`, `aceitarConvite()`, `conviteSocialPara()` ou `opcaoDoMais()`: o kit passa a defini-los no `tests/Pest.php`.
+   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente os três providers de painel (`myProfileComponents()` próprio é o ponto de integração mais provável), a página e a classe de settings, os dois `UserResource`, `RegistroPorConvite`, `RegistroAberto`, `Convite`, `ConvidaEmMassa`, `ConvitesTable`, `KitConvitesLembrar`, `LoginSocialController`, `config/kit.php`, `.env.example` e `tests/Pest.php`. Procure também testes próprios que definam helpers chamados `registrarAberto()`, `conviteCom()`, `aceitarConvite()`, `conviteSocialPara()` ou `opcaoDoMais()`: o kit passa a defini-los no `tests/Pest.php`.
 
 ## O que muda nesta versão
 
 A v0.56.0 traz a opção **Permitir "+" no e-mail ao cadastrar**. Um endereço como `fulano+loja@gmail.com` cai na caixa de `fulano@gmail.com`, então uma caixa só rende cadastros sem fim. Desligada a opção, toda via que dá um e-mail novo a uma conta recusa o "+" antes do "@", com a mesma mensagem: o cadastro aberto (`/app/register` e `/cadastro`), o convite para conta nova, um a um e em massa (no lote, o endereço sai com o motivo `email_com_mais` e os outros seguem), a tela de usuários do `/admin` e do `/app`, o login social que criaria uma conta e a troca de e-mail no Meu perfil.
 
-A opção nasce **LIGADA**: nada muda para ninguém até o admin desligá-la, e esta atualização não muda nenhum default. Ela fica na aba **Registro** de *Configurações da aplicação*, na seção "E-mail com "+"", e a chave `KIT_EMAIL_PERMITIR_MAIS` só semeia o valor: depois da migration, governa a tela. Só um "desligado" explícito (`false`, `0`, `off`, `no`) bloqueia; a chave ausente, vazia ou irreconhecível permite. Conta que já tem "+" continua entrando e salvando o perfil; convite para um e-mail que já é de uma conta passa, pois só vincula; o convite para conta nova com "+" enviado antes de desligar deixa de se aceitar (revogue e convide sem o "+"). Os comandos `kit:install` e `kit:admin` ficam fora da regra.
+A opção nasce **LIGADA**: nada muda para ninguém até o admin desligá-la, e esta atualização não muda nenhum default. Ela fica na aba **Registro** de *Configurações da aplicação*, na seção "E-mail com "+"", e a chave `KIT_EMAIL_PERMITIR_MAIS` só semeia o valor: depois da migration, governa a tela. Só um "desligado" explícito (`false`, `0`, `off`, `no`) bloqueia; a chave ausente, vazia ou irreconhecível permite. Conta que já tem "+" continua entrando e salvando o perfil; convite para um e-mail que já é de uma conta passa, pois só vincula; o convite para conta nova com "+" enviado antes de desligar deixa de se aceitar, tanto pelo link e pelo login social quanto por `Convite::aceitar()` chamado direto (revogue e convide sem o "+"); nesse caso o admin deixa de ver **Reenviar**, que continua disponível para os demais convites, o lembrete automático pula o convite, que fica pendente até alguém revogá-lo, e **Revogar** segue disponível. Os comandos `kit:install` e `kit:admin` ficam fora da regra.
 
 Confira estes arquivos que o `kit:update` traz e os pontos de conflito em projeto que mexeu à mão:
 
 - `app/Providers/Filament/AdminPanelProvider.php`, `app/Providers/Filament/AppPanelProvider.php` e `app/Providers/Filament/InfraPanelProvider.php`: a linha `'personal_info' => InformacoesPessoais::class` em `myProfileComponents()`, sem perder os componentes próprios do dono;
 - `app/Settings/ConfiguracoesDoKit.php`: propriedade `email_permitir_mais` e a linha no mapa de configuração;
 - `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`: a seção "E-mail com "+"" na aba Registro;
-- `app/Filament/Pages/Auth/RegistroPorConvite.php`, `app/Support/RegistroAberto.php`, `app/Models/Convite.php`, `app/Filament/Concerns/ConvidaEmMassa.php`, `app/Data/Convite/FalhaDoConviteData.php` e os dois formulários de convite (`app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php` e `app/Filament/App/Resources/Convites/ConviteResource.php`): a regra do "+" no cadastro e no convite;
+- `app/Filament/Pages/Auth/RegistroPorConvite.php`, `app/Support/RegistroAberto.php`, `app/Models/Convite.php` (inclusive a guarda de `Convite::aceitar()`, que recusa a criação de conta nova com "+" mesmo chamado direto e preserva o aceite para conta existente), `app/Filament/Concerns/ConvidaEmMassa.php`, `app/Data/Convite/FalhaDoConviteData.php` e os dois formulários de convite (`app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php` e `app/Filament/App/Resources/Convites/ConviteResource.php`): a regra do "+" no cadastro e no convite;
+- `app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php`: oculta **Reenviar** quando o convite com "+" criaria conta nova e a opção está desligada. `app/Console/Commands/KitConvitesLembrar.php`: pula esses convites no lembrete automático, mantendo-os pendentes até a revogação. Preserve, ao integrar esses arquivos, as ações, permissões e o agendamento próprios do dono;
 - `app/Filament/Admin/Resources/Users/UserResource.php` e `app/Filament/App/Resources/Users/UserResource.php`: a regra ao criar e ao trocar o e-mail;
 - `app/Http/Controllers/Auth/LoginSocialController.php`: o login social que criaria uma conta, com o aviso do motivo;
 - `config/kit.php`: marcador `0.56.0` e a chave `email.permitir_mais`, lida de `KIT_EMAIL_PERMITIR_MAIS`;
@@ -295,13 +296,16 @@ A migration é uma só, de settings:
 
 - `database/settings/2026_11_19_100000_add_email_permitir_mais_to_kit_settings.php`: adiciona ao grupo `kit` o setting `email_permitir_mais` (`true`), semeado de `KIT_EMAIL_PERMITIR_MAIS`, salvo semente explícita `false`, `0`, `off` ou `no` no ambiente.
 
-Não há migration de tabela, dependência nova, instalação de pacotes, build, publicação de assets, semeadura ou geração de permissões a executar. Há alteração das configurações no banco: os arquivos sozinhos não concluem a atualização, e sem o `php artisan migrate` a tela de configurações fica sem o campo e a opção segue só o `.env`.
+Não há migration de tabela, dependência nova, instalação de pacotes, build, publicação de assets, semeadura ou geração de permissões a executar. Há alteração das configurações no banco: os arquivos sozinhos não concluem a atualização, e sem o `php artisan migrate` a propriedade ausente causa `MissingSettings`, a página de configurações pode falhar e o boot deixa de aplicar todas as opções de `ConfiguracoesDoKit` gravadas no banco, passando a usar a configuração dos arquivos e do `.env`. Execute a migration antes de usar os painéis.
+
+Os READMEs, a lista de mudanças e a cópia versionada deste roteiro não são aplicados pelo `kit:update`. Integre à documentação do projeto só o que o dono quiser, preservando o conteúdo próprio dele, e registre no relatório o que foi integrado ou considerado inaplicável. Os manifests de dependências não mudaram nesta versão.
 
 ## Cuidados
 
 - **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. A migration só acrescenta um setting; confirme backup recuperável.
 - **Preserve a multi-organização.** Não rode `php artisan kit:tenancy` nem `php artisan kit:install`, pois recriam o banco.
-- **A opção nasce ligada.** Nenhum e-mail com "+" passa a ser recusado por conta desta atualização; não desligue a opção por conta própria, nem faça escolha manual no banco do dono.
+- **A opção nasce ligada.** Na ausência de semente explícita de bloqueio, nenhum e-mail com "+" passa a ser recusado por conta desta atualização; não desligue a opção por conta própria, nem faça escolha manual no banco do dono. Se o ambiente já contiver `KIT_EMAIL_PERMITIR_MAIS` com `false`, `0`, `off` ou `no`, preserve e registre essa semente: o valor inicial esperado é desligado, e a tela deve refletir o valor conferido no passo 4, sem salvar alterações no banco do dono.
+- **A guarda do convite antigo não pode se perder.** `Convite::aceitar()` recusa a conta nova com "+" mesmo chamado direto, e o admin e o lembrete deixam de tratar esse convite como reenviável. Arquivo preservado que comprometa qualquer dessas proteções (`Convite`, `ConvitesTable` ou `KitConvitesLembrar` antigos) é entrega parcial.
 - **Os arquivos trabalham juntos.** Provider antigo deixa a troca de e-mail do perfil sem a regra; formulário, `UserResource`, `RegistroAberto`, `Convite` ou `LoginSocialController` antigos deixam uma via aceitando o "+" com a opção desligada; settings ou página antigos deixam a opção sem campo ou sem persistência. Ausência de `EmailComMais` ou de `InformacoesPessoais` impede a entrega completa. Registre cada limitação.
 - **Os arquivos de teste andam juntos.** Os helpers `registrarAberto()`, `conviteCom()`, `aceitarConvite()` e `conviteSocialPara()` agora moram em `tests/Pest.php`, e `opcaoDoMais()` nasceu lá. Manter o `tests/Pest.php` antigo com os testes novos, ou o contrário, perde as funções ou as define duas vezes, e o PHP recusa a redeclaração. Teste próprio com cópia desses helpers deve receber o arquivo novo e remover a cópia. Registre cada limitação como entrega parcial.
 - **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 5, depois de limpar o cache de configuração. Faça escolhas manuais somente em ambiente de testes com dados descartáveis.
@@ -364,10 +368,10 @@ php artisan tinker --execute 'echo config("kit.version");'
 git branch --show-current
 git status --short
 git diff --cached --name-status
-git diff HEAD -- app/Providers app/Settings app/Filament app/Http/Controllers/Auth/LoginSocialController.php app/Livewire/InformacoesPessoais.php app/Models/Convite.php app/Support/EmailComMais.php app/Support/RegistroAberto.php app/Data/Convite/FalhaDoConviteData.php database/settings config/kit.php .env.example phpunit.xml tests/Pest.php
+git diff HEAD -- app/Console/Commands/KitConvitesLembrar.php app/Providers app/Settings app/Filament app/Http/Controllers/Auth/LoginSocialController.php app/Livewire/InformacoesPessoais.php app/Models/Convite.php app/Support/EmailComMais.php app/Support/RegistroAberto.php app/Data/Convite/FalhaDoConviteData.php database/settings config/kit.php .env.example phpunit.xml tests/Pest.php
 ```
 
-Evidência: versão `0.56.0`, branch `kit-update/v0.56.0` e arquivos da entrega presentes, com o conteúdo do destino ou a integração aprovada. Compare cada caminho listado em **O que muda nesta versão** com `git diff kit-v0.56.0 -- caminho/do/arquivo`; diferenças devem corresponder somente às decisões registradas. O índice corresponde ao dry-run. Confira também os quatro arquivos novos e a migration com `git ls-files --error-unmatch caminho/do/arquivo`. Ainda não abra os painéis antes do migrate. Não há publicação de assets nesta atualização.
+Evidência: versão `0.56.0`, branch `kit-update/v0.56.0` e arquivos da entrega presentes, com o conteúdo do destino ou a integração aprovada. Compare cada caminho listado em **O que muda nesta versão** com `git diff kit-v0.56.0 -- caminho/do/arquivo`; diferenças devem corresponder somente às decisões registradas. O índice corresponde ao dry-run. Confira também os três arquivos novos (`app/Support/EmailComMais.php`, `app/Livewire/InformacoesPessoais.php` e `tests/Kit/EmailComMaisTest.php`) e a migration de settings com `git ls-files --error-unmatch caminho/do/arquivo`. Ainda não abra os painéis antes do migrate. Não há publicação de assets nesta atualização.
 
 ### 4. Rodar a migration da versão
 
@@ -496,24 +500,26 @@ O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-or
 | Marcador | `0.56.0` depois de limpar o cache de configuração |
 | Arquivos da entrega | Providers, settings, página, formulários, `UserResource`, registro, convite, login social, `EmailComMais`, `InformacoesPessoais` e testes conferidos contra o destino ou a integração aprovada |
 | Migration | A de settings desta versão executada; `php artisan migrate:status` sem pendências |
-| Instalação | `email_permitir_mais=true`, salvo semente explícita registrada |
-| Defaults | Nenhum default mudado; o "+" continua permitido |
+| Instalação | `email_permitir_mais=true`, salvo semente explícita de bloqueio registrada, caso em que o esperado é desligado |
+| Defaults | Nenhum default mudado; o "+" continua permitido, salvo a semente explícita registrada |
 | Multi-organização | Mesmo `SIM` ou `NAO` do pré-voo |
-| Configurações da aplicação | Aba Registro mostra a seção "E-mail com "+"" ligada |
+| Configurações da aplicação | Aba Registro mostra a seção "E-mail com "+"" com o valor conferido no passo 4 (ligada, salvo semente explícita registrada) |
 | Suíte Kit,Tenancy | Zero erro, zero falha, até 1161 pulados fora da árvore do kit |
-| Casos do "+" | `tests/Kit/EmailComMaisTest.php` verde |
+| Casos do "+" | `tests/Kit/EmailComMaisTest.php` verde, com os casos CT-16, CT-17 e CT-29 a CT-31 (convite antigo, login social, guarda de `Convite::aceitar()`, Reenviar e lembrete) registrados |
+| Convite antigo | `Convite::aceitar()` recusa conta nova com "+" e aceita conta existente; com a opção desligada, Reenviar oculto, lembrete pula o convite e Revogar disponível |
 | Testes do projeto | Pedido para rodar `php artisan test --compact` em banco descartável registrado |
 | Policies | Não rastreadas geradas pela suíte removidas e listadas; rastreadas preservadas |
 | Arquivos e dados do dono | Impressão anterior preservada, fora o setting novo; customizações e canais de log intactos |
 | Revisão | Branch `kit-update/v0.56.0`, índice revisável, sem commit; remote e tags temporários removidos |
 
-Abra `/admin/configuracoes-da-aplicacao`, aba **Registro**: a seção "E-mail com "+"" deve aparecer com a opção ligada. Não salve escolhas no banco do dono.
+Abra `/admin/configuracoes-da-aplicacao`, aba **Registro**: a seção "E-mail com "+"" deve aparecer com a opção no valor conferido no passo 4, ligada salvo semente explícita registrada. Não salve escolhas no banco do dono.
 
 Faça as demais conferências **em ambiente de testes com banco descartável**:
 
 1. Com a opção ligada, cadastre uma conta com e-mail com "+" no cadastro aberto: deve passar, como antes.
 2. Desligue a opção na tela: o cadastro aberto, o convite para conta nova (um a um e em massa), a criação e a troca de e-mail na tela de usuários e a troca de e-mail no Meu perfil recusam o "+" antes do "@", com a mesma mensagem; no lote, o endereço sai com o motivo próprio e os outros seguem.
 3. Com a opção desligada, uma conta que já tem "+" continua entrando e salvando o perfil; religue a opção e confira que o "+" volta a passar.
+4. Confira que `Convite::aceitar()` recusa a criação de conta nova com "+", mesmo chamado diretamente, e preserva o aceite para conta existente. Emita um convite para conta nova com "+" antes de desligar a opção; depois de desligá-la, o link e o aceite social devem informar o motivo, **Reenviar** deve ficar oculto, o lembrete (`php artisan kit:convites-lembrar`, se o dono o agenda) deve pular o convite e **Revogar** deve continuar disponível.
 
 Registre os resultados e os dados de teste. Sem ambiente ou permissão para conferir as telas, registre como não executado e explique o motivo; não declare validação manual concluída. Arquivo antigo mantido é entrega parcial, mesmo com marcador `0.56.0`.
 
@@ -530,6 +536,7 @@ Pare e entregue ao dono a condição, a saída relevante e o que falta para cont
 - Suíte com erro, falha ou mais de 1161 pulados: entregue a saída e os casos envolvidos. Se houver erro de função de teste definida duas vezes ou ausente, registre a causa nos arquivos de teste e no `tests/Pest.php`, sem enfraquecer os testes.
 - Policy rastreada alterada, impressão de dados diferente, multi-organização alterada ou mudança inesperada em `.env`, canais de log ou customizações: mostre a diferença antes de restaurar qualquer coisa.
 - Seção ausente na aba Registro, "+" recusado com a opção ligada ou aceito com ela desligada em alguma via, ou conta existente com "+" impedida de entrar: registre conta de teste, via, contexto e resultado.
+- Convite antigo com "+" que, com a opção desligada, ainda cria conta por `Convite::aceitar()`, aparece com **Reenviar** ou recebe lembrete: registre o arquivo que ficou antigo (`Convite`, `ConvitesTable` ou `KitConvitesLembrar`) e o resultado.
 - Um passo exigiria ação proibida em **Cuidados**: informe a necessidade e aguarde orientação.
 
 Ao parar depois de criar os nomes temporários, execute ainda o passo 7 para remover somente o remote e as tags deste roteiro. Preserve o branch e as mudanças para revisão. Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
@@ -545,7 +552,8 @@ Entregue ao dono, ao terminar ou ao parar:
 - confirmação de que a opção nasce ligada e nenhum default mudou, ou a semente explícita escolhida, com o diff do `.env`;
 - confirmação de que não houve migration de tabela, dependência nova, instalação, build, publicação de assets, semeadura ou geração de permissões;
 - saída literal da suíte Kit,Tenancy, contagem efetiva de pulados e pedido para rodar os testes do projeto com `php artisan test --compact` em ambiente de testes com banco descartável;
-- saída do teste `EmailComMaisTest.php`;
+- saída do teste `EmailComMaisTest.php`, com os resultados dos casos CT-16, CT-17 e CT-29 a CT-31 e das conferências manuais realizadas; arquivo preservado que comprometa qualquer dessas proteções caracteriza entrega parcial;
+- o destino dos READMEs, da lista de mudanças e da cópia deste roteiro: integrado ou considerado inaplicável;
 - policies não rastreadas removidas, impressões dos dados antes e depois e resultado da comparação;
 - preservação de `.env` (salvo a semente escolhida), canais de log, customizações e estado da multi-organização;
 - conferências manuais da aba Registro e das vias do "+", ou o motivo de não execução;
