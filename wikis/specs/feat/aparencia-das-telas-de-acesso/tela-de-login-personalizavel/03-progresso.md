@@ -255,6 +255,13 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 - **Organização no navegador**: as linhas de organização dos CT-B05/CT-B07 (editor da organização) não foram automatizadas em `tests/BrowserTenancy`; o comportamento está coberto por componente (CT-01, CT-10..CT-14, CT-41 em Tenancy)
 - **Positivo do painel em redefinir senha, confirmação de e-mail e 2FA** só por leitura de código e pelo CT-B06 (clássico); BP-51
 - **Preview sem a pilha do painel** (`MustTwoFactor`, `Locker`): sessão bloqueada ainda abriria o próprio rascunho (suspeita do gate, ciclo 2, não reproduzida); o rascunho só existe para quem acabou de editar no `/admin`
+- **G, H, J e K pagos em 2026-11-18** pela wiki `feat/debitos-da-aparencia-das-telas` (o `03` de lá tem os comandos e as saídas):
+  - G: as seis telas (login, cadastro, recuperação × clássico, painel) capturadas e lidas no tema escuro, legíveis; o contraste no escuro é medido pelo axe
+  - H: `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` — axe nas três telas × dois layouts × dois temas (12/12, depois de dar ao alternador de tema o `role="menu"` que faltava: o axe acusava `aria-required-parent` em todo login e recuperação), teclado no clássico, e "reduzir movimento" com a transição ligada
+  - J: a suíte e a rodada `f1`..`f4` (ver o `03` daquela wiki)
+  - K: amostragem manual de mutantes nos arquivos do Adendo 4 (M134, M135, M140, M142, M145 caem; o M136 sobrevive sozinho, ver o `04`, `## Revisão adversarial do Adendo 4`); a revisão adversarial dos CT do Adendo 4 rendeu CT-110..CT-113
+- **ADV-E5 (transição para um destino no clássico)**: a lista de destinos é fixa e não olha o layout da tela de destino. Com o login no clássico e a recuperação própria no painel, a recuperação começa a transição rumo ao login (`pageswap` com `viewTransition`), que não a declara — a situação que a P-36 mediu com o painel depois de entrar. O erro da página que sai não chega ao harness do Pest; não reproduzido. Correção possível: montar a lista pelo layout de cada família. Fica para decisão do mantenedor
+- **ADV-E7, ADV-E9, ADV-E10, ADV-E11** refutados pela leitura do código, sem teste próprio: no clássico o painel de marca (e a regra) não é renderizado; sem a API o `pageswap` não dispara; o nome `kit-painel` vai no wrapper que contém o painel inteiro; login → cadastro no navegador só pelo HTML (CT-106)
 
 ## Notas de Implementação
 
