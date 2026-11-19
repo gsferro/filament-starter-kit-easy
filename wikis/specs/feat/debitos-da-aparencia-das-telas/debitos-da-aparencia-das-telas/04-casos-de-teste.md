@@ -2,7 +2,7 @@
 
 > Requisito: `00-requisito.md` · Oráculo do comportamento: o `00` da wiki de origem (`feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel`), RQ-12 (acessibilidade) e RQ-34..RQ-36 com P-33 (transição)
 > **Escrito pela sessão, não por sub-agente da `feature-test-design`**. São três cenários de navegador, cujo comportamento esperado já está fixado no oráculo da origem; não há regra nova a derivar. Sem cegueira de derivação: a perda está declarada no `03`, em `## Despachos`.
-> Revisão adversarial: não exigida pelo perfil (mínimo). A revisão adversarial desta entrega (RQ-08) é a dos CT do Adendo 4 da origem, registrada no `03`.
+> Revisão adversarial: não exigida pelo perfil (padrão, sem Impacto 3). A revisão adversarial desta entrega (RQ-08) é a dos CT do Adendo 4 da origem, registrada no `03`.
 
 ## Perfil de Derivação
 
@@ -13,29 +13,7 @@
 
 - Técnicas: EP (layout × tela × tema no CT-B21), rastreio de efeito no navegador (CT-B22, CT-B23).
 - Cenários: 4 · Regras: 4 · Mutantes previstos: 5 · Sem matador: 0 *(alterado em 2026-11-18: step 9 — CT-114 e M5; os IDs CT-01..CT-03 viraram CT-B21..CT-B23, na numeração de CT-B da origem)*
-<!-- contado à mão: 4 blocos "Cenário", 4 linhas no Mapa de Regras, 5 linhas em ## Regra R4 — a sobrescrita acompanha o pacote
-
-```gherkin
-Cenário: [CT-114] A sobrescrita do alternador de tema é o partial do pacote mais o role="menu"
-  Dado a sobrescrita do kit e o partial do auth-designer instalado
-  Quando o comentário do kit é retirado
-  Então o wrapper tem role="menu"
-  E, sem esse atributo, o arquivo é idêntico ao do pacote
-```
-
-Vem do `/code-review` do step 9: o M1 só era pego pela suíte Browser. Agora a suíte Kit também o pega,
-e uma mudança do partial no pacote deixa de ficar escondida atrás da cópia.
-
-## Índice de Cenários
-
-| ID | Regra | Técnica | Grupo | Costura | Destino proposto | Mata |
-|---|---|---|---|---|---|---|
-| CT-B21 | R1 | EP (layout × tela × tema) | G4 | browser | Browser | M1, M4 |
-| CT-B22 | R2 | rastreio de efeito | G4 | browser | Browser | M3 |
-| CT-B23 | R3 | rastreio de efeito | G4 | browser | Browser | M2 |
-| CT-114 | R4 | inspeção do arquivo | G1 | Pest | Kit | M5 |
-
-## Mutantes Previstos -->
+<!-- contado pelos grep -cE de template-04.md §Contagem do cabeçalho: 4 cenários (3 "Cenário"/"Esquema" com [CT-B…] e o CT-114), 4 regras (## Regra R1..R4), 5 mutantes (M1..M5) -->
 
 ## Mapa de Regras
 
@@ -103,6 +81,28 @@ Cenário: [CT-B23] Com "reduzir movimento", a troca de tela não anima
   Então a página de destino é a recuperação
   E a navegação aconteceu sem transição de visualização
 ```
+
+## Regra R4 — a sobrescrita acompanha o pacote
+
+```gherkin
+Cenário: [CT-114] A sobrescrita do alternador de tema é o partial do pacote mais o role="menu"
+  Dado a sobrescrita do kit e o partial do auth-designer instalado
+  Quando o comentário do kit é retirado
+  Então o wrapper tem role="menu"
+  E, sem esse atributo, o arquivo é idêntico ao do pacote
+```
+
+Vem do `/code-review` do step 9: o M1 só era pego pela suíte Browser. Agora a suíte Kit também o pega,
+e uma mudança do partial no pacote deixa de ficar escondida atrás da cópia.
+
+## Índice de Cenários
+
+| ID | Regra | Técnica | Grupo | Costura | Destino proposto | Mata |
+|---|---|---|---|---|---|---|
+| CT-B21 | R1 | EP (layout × tela × tema) | G4 | browser | Browser | M1, M4 |
+| CT-B22 | R2 | rastreio de efeito | G4 | browser | Browser | M3 |
+| CT-B23 | R3 | rastreio de efeito | G4 | browser | Browser | M2 |
+| CT-114 | R4 | inspeção do arquivo | G1 | Pest | Kit | M5 |
 
 ## Mutantes Previstos
 

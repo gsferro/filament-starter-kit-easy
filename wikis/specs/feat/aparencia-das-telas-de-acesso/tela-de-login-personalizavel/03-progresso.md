@@ -318,7 +318,7 @@ Tratamento do ciclo 3 dos Adendos 2 e 3 e do ciclo 1 do Adendo 4:
 
 | QA | Destino | O que foi feito |
 |---|---|---|
-| QA-28 | 2 | rodada `f1`..`f4` sobre o commit final `e267f909`, depois destas correções (nenhuma mudança de `app/`/`resources/` depois dela): verde, registrada na Verificação Final — 2026-11-15 |
+| QA-28 | 2 | rodada `f1`..`f4` sobre o commit final `e267f909`, depois destas correções (nenhuma mudança de `app/`/`resources/` depois dela *(alterado em 2026-11-18: a afirmação deixou de valer com as correções da v0.53.1, 8 arquivos de `app/`/`resources/` depois de `e267f909`; QA-01 do gate da wiki `feat/debitos-da-aparencia-das-telas`, que registra os quatro cenários sobre a tag como débito)*): verde, registrada na Verificação Final — 2026-11-15 |
 | QA-36 | 1 | passo 12 do `01` (RD-D1, CT-102..106, `pagereveal`); P-32 com a regra da raiz clássica; aspas da `# Origem` do CT-102; badge; `## Testes`; despachos e Verificação Final em ordem; degradação do Adendo 4; oráculo do `04`/`05`; "Transição entre as telas" no glossário |
 | QA-37 | 1 | P-35: na organização vale a opção da instalação, sem interruptor no formulário dela; CT-104/CT-105 antes da correção; ajuda e docs pt/en |
 | QA-38 | 3 | CT-106 (aceite de convite, cadastro aberto, cadastro unificado) com M144; derivado pela sessão (degradação declarada) |

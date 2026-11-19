@@ -18,7 +18,7 @@
 - [x] `vendor/bin/pest --tia --parallel --processes=3 --exclude-testsuite=Browser --compact` sobre `276cdc21`: 6206 testes, 6200 passaram, 3 pulados, 3 falhas — as três do `SiteDeDocumentacaoTest` (badge e contagens do README, que a entrega mudou). Corrigidas (badge 2.689, 265 arquivos de teste, 95 features): `vendor/bin/pest tests/Kit/SiteDeDocumentacaoTest.php`: 68/68. O Pest avisou "TIA does not apply to partial runs": com `--exclude-testsuite`, o `--tia` roda tudo o que foi selecionado, sem seleção por impacto, 2026-11-18
 - [x] `vendor/bin/pest --testsuite=Browser --compact` sobre `c530039c` — 275 testes, 223 passaram, 52 pulados, 0 falhas, 556 s, 2026-11-18
 - [x] Depois das correções do step 9 — `vendor/bin/pest tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`: 14/14; `vendor/bin/pest tests/Kit/AparenciaDasTelasPorTelaTest.php tests/Kit/AparenciaDasTelasDeAcessoTest.php tests/Kit/SiteDeDocumentacaoTest.php tests/Kit/RoteiroDeAtualizacaoTest.php tests/Kit/KitUpdateTest.php`: 630/630 depois do badge 2.690, 2026-11-18
-- [x] Cenários 1–4: a rodada `f1`..`f4` de 2026-11-15 sobre o commit da v0.53.1 (P-01; registrada no `03` da origem) — esta entrega não muda comportamento além do `role` do alternador, coberto pelo CT-B21
+- [x] Cenários 1–4 — **corrigido no gate, QA-01**: a rodada `f1`..`f4` de 2026-11-15 foi sobre `e267f909`, anterior às correções da v0.53.1 (8 arquivos de `app/`/`resources/` mudaram até a tag), e não sobre a v0.53.1, como este item dizia. O que esta entrega acrescenta às rotas de entrega é um arquivo novo, a sobrescrita do alternador: `git archive HEAD | tar -t` lista `resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php` e `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` (rota do `create-project`, governada pelo `.gitattributes`), e `KitUpdate::CAMINHOS_DO_KIT` tem `resources/views/vendor/filament-auth-designer`, `tests/Browser`, `tests/Kit` e `tests/Pest.php` (rota do `kit:update`; `KitUpdateTest` CT-06/CT-07 verdes). Os quatro cenários completos sobre a tag publicada ficam como débito (`## Débitos`), 2026-11-18
 
 ## 4. K — mutação por amostragem
 - [x] Script de mutantes — (um por vez, roda o CT esperado, restaura o arquivo; `git status` limpo depois), 2026-11-18:
@@ -31,7 +31,7 @@
 | M140 — a raiz gravada sem a opção, com o login no clássico | `AparenciaDasTelasDeAcesso.php` | CT-102 | cai |
 | M142 — a organização sem a opção da instalação | `VesteAparenciaDasTelas.php` | CT-104 | cai (2 de 2) |
 | M145 — a página que participa não pula a transição | `painel-de-marca.blade.php` | CT-107 | cai |
-| H1 — o alternador sem `role="menu"` | `theme-toggle.blade.php` | CT-B21 | cai (8 de 12) |
+| H1 — o alternador sem `role="menu"` | `theme-toggle.blade.php` | CT-B21, CT-114 | cai (8 de 12 na primeira versão; 12 de 12 e o CT-114 depois do step 9) |
 
 - [x] O M136 sobrevive porque a página também aplica a opção da instalação a toda tela (P-35, em `VesteAparenciaDasTelas::aparenciaDaTela()`) — duas defesas da mesma regra. Com as duas fora juntas, o CT-111 (novo) cai, 2 de 2. Registrado como equivalente quando sozinho, 2026-11-18
 
@@ -39,7 +39,7 @@
 - [x] `fw-adversario-ct` com só o `00`, o `04` e o `05` do Adendo 4 da origem — insuficiente, 12 brechas. Triagem com o código à vista no `04` da origem (`## Revisão adversarial do Adendo 4`): 6 lacunas de teste viraram CT-110..CT-113 (verdes, 11 casos; os mutantes M149, M152, M153 e o par M151 caem), 5 refutadas pela leitura e o ADV-E5 como débito, 2026-11-18
 
 ## 6. Registro na origem
-- [x] `03` da origem, `## Débitos`; `04` da origem, contagens — (113 cenários, 129 mutantes) e a seção da revisão, 2026-11-18
+- [x] `03` da origem, `## Débitos`; `04` da origem, contagens — (114 cenários, 129 mutantes) e a seção da revisão, 2026-11-18
 
 ## Testes
 - [x] `vendor/bin/pest tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` — 14/14 (12 do CT-B21, CT-B22, CT-B23)
@@ -51,7 +51,8 @@ Não fatiado — 2026-11-18: débitos de verificação, uma correção de uma li
 ## Débitos
 - **ADV-E5**: a lista de destinos da transição é fixa e não olha o layout da tela de destino (detalhe no `03` da origem). Decisão do mantenedor
 - **Mutantes M3 e M4 do `04`** (tabindex na senha, contraste no escuro): previstos, não medidos
-- **CT-B21 no cadastro** roda sem a arte e o alternador, pelo vazamento do painel corrente no processo do teste (passo 1)
+- **Os quatro cenários de `wikis/checklist-de-release.md` sobre a v0.55.1 publicada** (QA-01 do gate): não rodaram nesta entrega nem nas v0.54.0 e v0.55.0. Nenhum cenário passou pelas correções da v0.53.1 (a última rodada é a `f1`..`f4` sobre `e267f909`). A entrega do arquivo novo desta versão está provada pelas duas rotas (passo 3); a rodada completa fica para depois da tag
+- **A arte do painel no cadastro** não é afirmada pelo CT-B21 (só o alternador); com o aquecimento por tela ela deve estar presente, mas não foi observada no navegador
 
 ## Verificação Final
 
@@ -104,4 +105,17 @@ Três revisores sem o PRD: `fw-revisor-diff` (eixos), `/code-review` (fork, nív
 
 ## Quality Gate
 
-Pendente.
+| Ciclo | Veredito | Data |
+|---|---|---|
+| 1 | REPROVADO → especificação (QA-01 Major; QA-02, QA-03 Minor; QA-04, QA-05 Cosmético); G nível 3 e K2 não verificadas pelo gate; independência parcial | 2026-11-18 |
+
+Tratamento do ciclo 1:
+
+| QA | Destino | O que foi feito |
+|---|---|---|
+| QA-01 | 1 | o item dos cenários diz o commit real (`e267f909`); P-01 revista no `00`; a entrega do arquivo novo provada pelas duas rotas; os quatro cenários sobre a tag como débito explícito |
+| QA-02 | 1 | o comentário de contagem fecha na mesma linha; a R4, o CT-114 e o índice voltam ao documento; um só `## Mutantes Previstos` |
+| QA-03 | 1 | o débito do cadastro virou o resíduo real (a arte não é afirmada); a linha do H1 diz 12 de 12 |
+| QA-04 | 1 | 114 cenários no cabeçalho do `04` da origem e aqui |
+| QA-05 | 1 | o motivo da revisão adversarial é o perfil padrão sem Impacto 3 |
+
