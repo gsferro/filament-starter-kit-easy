@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
@@ -360,7 +361,9 @@ class Convite extends Model implements Auditable
             : $validos->filter(fn (string $email): bool => EmailComMais::temMais($email));
         $contasComMais = $comMais->isEmpty()
             ? collect()
-            : User::query()->whereIn('email', $comMais->all())->pluck('email')->map($normalizar);
+            // `lower(email)` aqui, ao contrário do `whereIn` dos convites: a ressalva de lá gera um
+            // convite a mais; aqui geraria uma recusa que o formulário individual não faz.
+            : User::query()->whereIn(DB::raw('lower(email)'), $comMais->all())->pluck('email')->map($normalizar);
 
         $enviados = [];
         $falhas   = $tortos->map(fn (string $email): array => [

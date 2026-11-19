@@ -29,6 +29,7 @@ use Jeffgreco13\FilamentBreezy\Livewire\PersonalInfo;
 use Laravel\Socialite\Socialite;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use RuntimeException;
 use Spatie\LaravelSettings\Models\SettingsProperty;
 
 /**
@@ -301,10 +302,20 @@ it('[CT-09] o registro chamado por fora da tela também recusa o "+" bloqueado',
         'name'     => 'Direto',
         'email'    => 'gsferroti+starter@gmail.com',
         'password' => 'segredo-bem-longo-123',
-    ]))->toThrow(Exception::class);
+    ]))->toThrow(RuntimeException::class, 'Registro aberto indisponível.');
 
     expect(User::count())->toBe($antes)
         ->and(User::where('email', 'gsferroti+starter@gmail.com')->exists())->toBeFalse();
+
+    // Controle positivo (step 9): o mesmo payload passa com a opção permitindo — a recusa acima é do "+".
+    opcaoDoMais(true);
+    ligarRegistroParaOMais();
+
+    expect(RegistroAberto::registrar([
+        'name'     => 'Direto',
+        'email'    => 'gsferroti+starter@gmail.com',
+        'password' => 'segredo-bem-longo-123',
+    ])->email)->toBe('gsferroti+starter@gmail.com');
 })->group('kit');
 
 it('[CT-10] a recusa no registro diz o motivo, e a pessoa pode corrigir na mesma tela', function (): void {
@@ -419,6 +430,31 @@ it('[CT-14] o mesmo lote com a opção permitindo envia todos', function (): voi
     }
 
     Notification::assertSentOnDemandTimes(ConviteDeAcesso::class, 4);
+})->group('kit');
+
+/*
+ * Step 9 (RD-02 e RD-04 do passe de eixos): pela TELA, com a opção desligada, o lote mostra o
+ * motivo legível do "+"; e a conta existente gravada com caixa mista passa no lote como passa no
+ * formulário individual.
+ */
+it('[CT-28] pela tela, o lote mostra o motivo do "+" e deixa passar a conta existente em qualquer caixa', function (): void {
+    Notification::fake();
+    opcaoDoMais(false);
+    usuario('C+1@Example.com');
+
+    $this->actingAs(usuarioDoKit('master_global', 'master@example.com'));
+    Filament::setCurrentPanel('admin');
+
+    Livewire::test(ListConvites::class)->callAction(TestAction::make('convidarEmMassa'), [
+        'emails'  => "a@example.com\nb+1@example.com\nc+1@example.com",
+        'role_id' => Role::findByName('panel_user')->getKey(),
+    ]);
+
+    $corpo = collect(avisosDoFilament())->pluck('body')->implode("\n");
+
+    expect(Convite::where('email', 'c+1@example.com')->exists())->toBeTrue()
+        ->and(Convite::where('email', 'b+1@example.com')->exists())->toBeFalse()
+        ->and($corpo)->toContain('b+1@example.com — este sistema não aceita e-mail com "+" antes do "@"');
 })->group('kit');
 
 it('[CT-15] o "+" depois do "@" cai no formato, não no motivo do "+"', function (): void {
