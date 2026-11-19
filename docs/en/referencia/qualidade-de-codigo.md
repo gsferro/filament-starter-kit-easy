@@ -165,37 +165,40 @@ Your tests go in `tests/Feature` and `tests/Unit`, as usual — the kit never to
 
 ## Test coverage — and what the number leaves **out**
 
-**86 %** of the lines in `app/` — 9,866 of 11,366 statements (86.80%), measured on 2026-10-23, in the `cobertura` job on `main`. The README
-badge comes from here, and CI fails when it lies.
+The line percentage of `app/` lives in the README **coverage** badge, and no file in the repository
+writes it by hand: the `cobertura` job measures on every push to `main`, and only when it ends green does
+the `badge` job publish the JSON to the `badges` branch, which is where the shields.io endpoint points.
 
 > **The number moves slightly with the operating system**, and the badge was designed to absorb
 > that: in a 2026-09-25 measurement, the same tree gave **79.89 % on Windows and 79.82 % on Linux**
 > — 7 statements apart, from
-> code that only runs on one platform. Both truncate to `79%`, so the badge matches on either. Had
-> it stored the decimal, CI would fail every measurement taken on the other platform.
+> code that only runs on one platform. Both truncate to `79%`. The published badge is always the
+> one from the Linux runner on `main`; a local measurement is for the floor, and may land one point
+> off near the boundary.
 
 > The figures with decimals on this page are **dated**, not derived: they hold for the 2026-09-26
-> measurement and they age. The only one with an automatic guard is the whole percentage, pinned
-> against `.github/badges/cobertura.json` by `[CT-49]`.
+> measurement and they age. The whole percentage is the badge's, and it has
+> no written copy: `[CT-49]` fails if a README or this page
+> starts citing it by hand again.
 
 ```bash
-composer test:coverage    # measures, writes the badge and applies the floor — ~32 min, serial
+composer test:coverage    # measures and applies the floor — ~32 min, serial
 
 # the two halves, separately, when you already have the Clover:
 php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
-php artisan kit:cobertura cobertura.xml --min=78          # checks (this is what CI does)
-php artisan kit:cobertura cobertura.xml --min=78 --write  # writes the badge
+php artisan kit:cobertura cobertura.xml --min=78          # applies the floor
+php artisan kit:cobertura cobertura.xml --min=78 --write  # applies the floor and writes the JSON, if .github/badges/ exists (CI creates it)
 ```
 
 `kit:cobertura` **travels with the kit**: in your project it applies whatever floor you choose,
 over whatever `phpunit.xml` you have. The badge part is the only kit-only piece — outside the
-kit's tree `.github/badges/` does not exist, and the command simply leaves badges alone.
+kit's tree `.github/badges/` does not exist — nor inside the kit, where only the CI runner creates it —, and the command simply leaves badges alone.
 
 ### The three test badges in the README, and what each one guarantees
 
 | Badge | Where it comes from | What keeps it from ageing |
 |---|---|---|
-| **coverage** | `.github/badges/cobertura.json`, produced by `composer test:coverage` | the `cobertura` CI job, which re-measures and fails if the JSON lies |
+| **coverage** | the JSON on the `badges` branch, published by the CI `badge` job | it is rewritten on every green `cobertura` run on `main`; there is no committed copy to age |
 | **test cases** | count of `it()`/`test()` blocks under `tests/` | `[CT-50]`, which **recomputes it from the tree** on every suite run |
 | **PHPStan** | the `level:` in `phpstan.neon` | `[CT-50]`, by the same mechanism |
 

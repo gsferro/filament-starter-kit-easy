@@ -26,6 +26,19 @@ Opção para **permitir ou bloquear o "+" no e-mail do cadastro** (`fulano+loja@
 ### Alterado
 
 - Desligada, o convite para conta nova com "+" enviado antes de desligar não se aceita mais: quem abre o link (ou entra pelo login social com ele) vê o motivo e o pedido de um convite sem o "+", o Reenviar some e o lembrete o pula — revogue e convide o endereço sem o "+".
+- **O badge de cobertura nasce do CI, não de um JSON commitado.** O job `cobertura` grava o JSON a
+  partir da medição (`kit:cobertura --write`), e o job novo `badge` o publica no branch órfão
+  `badges` — só na `main` e só depois do `cobertura` verde. O `.github/badges/cobertura.json` saiu do
+  repositório, os READMEs apontam o endpoint do shields.io para o branch `badges`, e a tabela
+  "Qualidade" e a página de cobertura deixaram de escrever o percentual à mão. Antes, toda PR que
+  cruzava um ponto percentual deixava a `main` vermelha até alguém commitar o número novo.
+  `[CT-20]` e `[CT-49]` mudaram de contrato junto.
+- O job `telas` guarda as telas dos cenários de navegador que falharem (`actions/upload-artifact`,
+  pinada por SHA, 7 dias).
+- O job `telas` deixou de falhar de forma intermitente nos logins e no cadastro pela tela: o campo de
+  senha do Filament vive num componente Alpine assíncrono (`x-load`), e ao inicializar depois do
+  `fill()` ele apagava a senha digitada. `comLivewirePronto()` (`tests/Pest.php`) espera esse estado
+  antes de digitar.
 
 ### Não muda
 

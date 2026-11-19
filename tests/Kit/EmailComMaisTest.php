@@ -29,7 +29,6 @@ use Jeffgreco13\FilamentBreezy\Livewire\PersonalInfo;
 use Laravel\Socialite\Socialite;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
-use RuntimeException;
 use Spatie\LaravelSettings\Models\SettingsProperty;
 
 /**

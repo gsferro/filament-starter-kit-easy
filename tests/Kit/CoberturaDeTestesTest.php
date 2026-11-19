@@ -90,28 +90,44 @@ it('[CT-19] a documentação em inglês declara os mesmos quatro números que a 
     $this->assertStringContainsString($comandoEsperado, $en, 'a doc en não cita o mesmo comando de medição que a pt');
 })->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório do site é export-ignore: não existe em projeto nascido de create-project.')->group('kit');
 
-it('[CT-20] o badge do readme aponta para um alvo que existe, e não contradiz a meta documentada', function (): void {
-    $readme = (string) file_get_contents(base_path('README.md'));
+/**
+ * [CT-20] O badge do README aponta para o JSON que o CI publica, e o CI só publica de job verde.
+ *
+ * Contrato mudado em 2026-11-19: até então o alvo era `.github/badges/cobertura.json`
+ * COMMITADO, conferido pelo job `cobertura`, e a `main` ficava vermelha toda vez que a cobertura
+ * cruzava um ponto percentual sem alguém commitar o número à mão. Agora o número nasce da
+ * medição: o job `badge` publica no branch órfão `badges`, depende do `cobertura` e só roda na
+ * `main`. O que este caso trava é essa cadeia — o número em si não está na árvore para comparar
+ * com a meta, e quem impede que ele caia abaixo dela é o `--min` do próprio job.
+ */
+it('[CT-20] o badge do readme aponta para o json publicado pelo ci, e só job verde da main publica', function (): void {
+    foreach (['README.md' => 'Cobertura', 'README.en.md' => 'Coverage'] as $arquivo => $rotulo) {
+        $readme = (string) file_get_contents(base_path($arquivo));
 
-    preg_match('~!\[Cobertura\]\(https://img\.shields\.io/endpoint\?url=([^&)]+)~', $readme, $casado);
-    $this->assertNotEmpty($casado, 'não achei o badge de cobertura no README');
+        preg_match('~!\['.$rotulo.'\]\(https://img\.shields\.io/endpoint\?url=([^&)]+)~', $readme, $casado);
+        $this->assertNotEmpty($casado, "não achei o badge de cobertura no `{$arquivo}`");
 
-    $url = urldecode($casado[1]);
+        $this->assertMatchesRegularExpression(
+            '~^https://raw\.githubusercontent\.com/[^/]+/[^/]+/badges/cobertura\.json$~',
+            urldecode($casado[1]),
+            "o badge do `{$arquivo}` não aponta para o `cobertura.json` do branch `badges`",
+        );
+    }
 
-    preg_match('~githubusercontent\.com/[^/]+/[^/]+/main/(.+)$~', $url, $caminhoCasado);
-    $this->assertNotEmpty($caminhoCasado, 'a url do badge não aponta para um caminho reconhecível na árvore do repositório');
+    $this->assertFileDoesNotExist(base_path('.github/badges/cobertura.json'), 'voltou a existir um badge commitado — ele envelhece e deixa a `main` vermelha');
 
-    $caminho = $caminhoCasado[1];
-    $this->assertTrue(File::exists(base_path($caminho)), "o alvo do badge (`{$caminho}`) não existe na árvore do kit");
+    $ci = (string) file_get_contents(base_path('.github/workflows/ci.yml'));
 
-    $badge      = json_decode((string) File::get(base_path($caminho)), true);
-    $percentual = (int) rtrim((string) ($badge['message'] ?? '0%'), '%');
+    preg_match('~\n  badge:.*?(?=\n  [a-z][\w-]*:\n|\z)~s', $ci, $job);
+    $this->assertNotEmpty($job, 'não achei o job `badge` no `ci.yml`');
 
-    $doc = (string) file_get_contents(base_path('docs/pt/referencia/qualidade-de-codigo.md'));
-    preg_match('~### O piso é (\d{1,3}) %~', $doc, $metaCasado);
-    $meta = (int) ($metaCasado[1] ?? 0);
+    $codigo = semComentarioYaml($job[0]);
 
-    $this->assertGreaterThanOrEqual($meta, $percentual, "o badge do README exibe {$percentual}% e a meta documentada é {$meta}%");
+    $this->assertStringContainsString('needs: cobertura', $codigo, 'o job `badge` publica sem esperar o `cobertura` verde');
+    $this->assertStringContainsString("if: github.ref == 'refs/heads/main'", $codigo, 'o job `badge` publicaria o número de um branch de feature');
+    $this->assertStringContainsString('needs.cobertura.outputs.badge', $codigo, 'o job `badge` não publica o JSON que o `cobertura` mediu');
+    $this->assertStringContainsString('--orphan badges', $codigo, 'o job `badge` não publica no branch órfão `badges`');
+    $this->assertStringContainsString('--write', semComentarioYaml($ci), 'o job `cobertura` não grava o badge a partir da medição');
 })->skip(fn (): bool => ! naArvoreDoKit(), '.github/ e o diretório do site são export-ignore.')->group('kit');
 
 /**
@@ -141,10 +157,10 @@ it('[CT-21] cada item obrigatório está presente na seção do assunto, na form
         'en', ['manual dispatch', 'not on every PR'], 'when/where to measure is not documented in en',
     ],
     'pt: o tempo medido, pareado ao comando com cobertura' => [
-        'pt', ['composer test:coverage    # mede, grava o badge e aplica o piso'], 'o tempo publicado em pt não está pareado ao comando COM cobertura',
+        'pt', ['composer test:coverage    # mede e aplica o piso'], 'o tempo publicado em pt não está pareado ao comando COM cobertura',
     ],
     'en: o tempo medido, pareado ao comando com cobertura' => [
-        'en', ['composer test:coverage    # measures, writes the badge and applies the floor'], 'the published time in en is not paired with the WITH-coverage command',
+        'en', ['composer test:coverage    # measures and applies the floor'], 'the published time in en is not paired with the WITH-coverage command',
     ],
     'pt: a meta de cobertura, com justificativa' => [
         'pt', ['### O piso é', 'não é folclore'], 'não achei a meta rotulada com justificativa em pt',
@@ -218,7 +234,7 @@ it('[CT-23] nenhuma etapa da cadeia descarta o código de saída do verificador'
         'o job `cobertura`, ou algum dos seus passos, está marcado como tolerante a erro',
     );
 
-    preg_match('~Medir a cobertura e conferir o badge.*?run: \|\n(.*?)(?=\n  - name:|\n  [a-z][\w-]*:\n|\z)~s', $job[0], $passo);
+    preg_match('~Medir a cobertura e gerar o badge.*?run: \|\n(.*?)(?=\n  - name:|\n  [a-z][\w-]*:\n|\z)~s', $job[0], $passo);
     $this->assertNotEmpty($passo, 'não achei o passo que aplica o piso de cobertura');
 
     $comando = semComentarioYaml($passo[1]);

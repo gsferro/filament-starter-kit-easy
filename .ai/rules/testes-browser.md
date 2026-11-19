@@ -78,6 +78,28 @@ Não troque isto por `pest()->browser()->timeout()` maior: o `tests/Pest.php` re
 60 s reproduzem a falha igual — o problema é a conta estar dentro do cronômetro, não o teto ser
 baixo.
 
+## Digitar em formulário logo após o `visit()` passa por `comLivewirePronto()`
+
+O `visit()` volta no `load`, e o campo de senha do Filament vive num componente Alpine
+**assíncrono** (`x-data="passwordRevealFormComponent()" x-load`, que baixa o `password-reveal.js`
+sob demanda). Quando o Alpine o inicializa, o `wire:model` aplica o estado do servidor — senha
+vazia — por cima do que o `fill()` já digitou. Local o script chega antes e tudo passa; no runner
+frio do CI ele chega depois, a senha some, o balão nativo "Please fill out this field" segura o
+submit e o `assertPathIs()` morre no teto de 45 s. Medido: falhava em 2 de 3 runs da `main`
+(1,5 s verde contra 46 s vermelho); com a espera, 3 de 3 verdes no CI.
+
+```php
+comLivewirePronto(visit('/app/login'))
+    ->fill('#form\.email', 'login@example.com')
+    ->fill('#form\.password', 'password')
+    ->press('Login')
+    ->assertPathIs('/app');
+```
+
+A espera é por ESTADO (todo `wire:id` com `__livewire`, todo `x-load` com `_x_dataStack`), não por
+segundos. Vale para qualquer campo dentro de `x-load` — não só senha. Diagnóstico: o CI guarda as
+telas dos cenários que falham no artifact `telas-que-falharam` do job `telas`.
+
 ## `waitForEvent('networkidle')` não serve em painel do Filament
 
 Ele nunca resolve: o painel fica consultando as notificações, a rede não fica ociosa e o cenário

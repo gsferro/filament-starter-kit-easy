@@ -58,7 +58,7 @@ it('cria a conta pela tela de cadastro aberto e entra no painel', function (): v
         'kit.registro.verificar_email'  => false,
     ]);
 
-    visit('/app/register')
+    comLivewirePronto(visit('/app/register'))
         ->assertSee('Criar sua conta')
         ->fill('#form\\.name', 'Fulano da Silva')
         ->fill('#form\\.email', 'browser@example.com')
@@ -92,7 +92,7 @@ it('avisa na tela que o cadastro pendente aguarda aprovacao', function (): void 
         'kit.registro.verificar_email'  => false,
     ]);
 
-    visit('/app/register')
+    comLivewirePronto(visit('/app/register'))
         ->fill('#form\\.name', 'Pendente da Silva')
         ->fill('#form\\.email', 'pendente-browser@example.com')
         ->fill('#form\\.password', 'segredo-bem-longo-123')
