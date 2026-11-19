@@ -14,8 +14,10 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Support\AdministradorDaInstalacao;
 use App\Support\ContextoDePapeis;
+use App\Support\EmailComMais;
 use App\Support\Papeis;
 use BackedEnum;
+use Closure;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -65,7 +67,10 @@ class UserResource extends Resource
                 ->label('E-mail')
                 ->email()
                 ->required()
-                ->unique(),
+                ->unique()
+                // "+" bloqueado na instalação: recusa o e-mail NOVO com "+"; o atual da conta
+                // passa (wiki email-com-mais, P-04). `$record` por NOME, como o Filament injeta.
+                ->rule(fn (?Model $record): Closure => EmailComMais::regra($record?->getAttribute('email'))),
             TextInput::make('password')
                 ->label('Senha')
                 ->password()

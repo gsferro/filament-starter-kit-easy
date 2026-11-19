@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
-use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
 /**
@@ -38,46 +37,10 @@ beforeEach(function (): void {
     $this->seed([ShieldPermissionsSeeder::class, PapeisSeeder::class]);
 });
 
-/**
- * Cria um convite pendente e devolve o par [convite, token em claro].
- *
- * `enviar()` é o único ponto do sistema em que o token em claro é acessível fora do
- * e-mail, e os testes são o consumidor legítimo disso.
- *
- * @return array{0: Convite, 1: string}
+/*
+ * `conviteCom()` e `aceitarConvite()` vivem em `tests/Pest.php` (usados também por
+ * `tests/Kit/EmailComMaisTest.php`, `.ai/rules/testes.md`).
  */
-function conviteCom(string $papel, ?Tenant $tenant = null, ?string $email = null): array
-{
-    $convite = Convite::factory()->create([
-        'email'     => $email ?? 'convidado@example.com',
-        'role_id'   => Role::findByName($papel)->getKey(),
-        'tenant_id' => $tenant?->getKey(),
-    ]);
-
-    return [$convite, $convite->enviar()];
-}
-
-/**
- * O aceite completo, pela tela.
- *
- * O token vai pela QUERY STRING (`withQueryParams`), e não pelo construtor do componente:
- * quem o lê é `mount()`, por `request()->query('token')` — é assim que o link do e-mail
- * chega.
- */
-function aceitarConvite(string $token, string $nome = 'Fulano', ?string $email = null): Testable
-{
-    Filament::setCurrentPanel('app');
-
-    return Livewire::withQueryParams(['token' => $token])
-        ->test(RegistroPorConvite::class)
-        ->fillForm(array_filter([
-            'name'                 => $nome,
-            'email'                => $email,
-            'password'             => 'segredo-bem-longo-123',
-            'passwordConfirmation' => 'segredo-bem-longo-123',
-        ]))
-        ->call('register');
-}
 
 /**
  * Os tokens em claro dos lembretes já disparados, na ordem dos disparos.

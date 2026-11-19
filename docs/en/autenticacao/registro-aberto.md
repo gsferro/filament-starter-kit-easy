@@ -148,6 +148,30 @@ address, so possession is already proven, and asking for the same proof twice is
 gain. Filament only sends the confirmation request to users who have not verified yet, so an
 invited user never receives that e-mail.
 
+## E-mail with "+" (optional)
+
+`someone+shop@gmail.com` lands in the `someone@gmail.com` inbox: one inbox yields endless sign-ups.
+The **Allow "+" in the e-mail when signing up** option (Registro tab of
+`/admin/configuracoes-da-aplicacao`, or `KIT_EMAIL_PERMITIR_MAIS` in `.env`) starts **on** — the
+usual behavior. Turned off, every path that gives an account a new e-mail refuses a "+" before the
+"@", with one message (in the app's language) that names the "+" and asks for the address without
+it:
+
+- open sign-up (`/app/register` and `/cadastro`);
+- invitations for a new account, one at a time and in bulk (in a batch, the address comes back with
+  its own reason and the others go on);
+- the users screen of `/admin` and `/app`, when creating and when changing the e-mail;
+- a social login that would create an account;
+- changing the e-mail in the profile.
+
+What does **not** change: an account that already has a "+" keeps signing in and saving its profile;
+an invitation to an e-mail that already belongs to an account goes through (it creates no account,
+it only links). An invitation for a new account with "+" sent before the option was turned off can no
+longer be accepted: whoever opens the link sees why, Reenviar (resend) disappears and the reminder skips
+it — revoke it and invite the address without the "+". Only an explicit "off" blocks (`false`,
+`0`, `off`, `no`): a missing or empty key allows. The `kit:install` and `kit:admin` commands are out
+of scope — they belong to whoever operates the installation.
+
 ## The rate limit
 
 Submitting the form uses Filament's own limit: **2 attempts per IP** and 2 per e-mail address per
@@ -165,6 +189,7 @@ loop without changing what the person sees.
 | the release | `App\Models\User::aprovar()` |
 | column, filter and approve action | `app/Filament/Concerns/AprovacaoDeCadastro.php` |
 | the per-organization field | `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php` |
+| the "+" in the e-mail: the option and the rule | `app/Support/EmailComMais.php` |
 
 > **If you are wiring these options into a Settings screen**: `App\Support\RegistroAberto` is the
 > single read point. Swapping `config()` for Settings means rewriting the body of three methods in

@@ -181,11 +181,11 @@ accDescr: The outcomes of a social provider's return - refusals, unavailability,
 `LoginSocialController::retorno()` checks, in this order, missing e-mail, unverified e-mail, the
 invite/closed-registration barrier, account unavailability (before any link confirmation), and
 only then pending approval - it applies to a new OR an already existing account
-(`app/Http/Controllers/Auth/LoginSocialController.php:retorno:133`,
+(`app/Http/Controllers/Auth/LoginSocialController.php:retorno:134`,
 `:redirecionarSeIndisponivel:223`, `:pedirConfirmacaoDoVinculo:304`, `:aguardarAprovacao:330`,
 `:$novo = true:300`, `:urlDoPerfil:360`). The link (`VinculoSocial::vincular()`) runs after the
 whole chain, including for a just-created account (`:315`, `:560`). Link confirmation defaults to
-off (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:919`).
+off (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:941`).
 
 ## Linking to the provider: the first time, and the next ones
 

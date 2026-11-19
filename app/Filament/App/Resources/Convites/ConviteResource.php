@@ -8,8 +8,10 @@ use App\Filament\Concerns\BadgeContagemNavegacao;
 use App\Models\Convite;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Support\EmailComMais;
 use App\Support\Papeis;
 use BackedEnum;
+use Closure;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -111,7 +113,11 @@ class ConviteResource extends Resource
                  * trazer a consultora que já atende outro cliente. Agora o endereço com
                  * conta vira OFERTA DE ACESSO: ninguém é cadastrado de novo, a pessoa
                  * confirma autenticada e é vinculada a ESTA organização com o papel abaixo.
+                 *
+                 * Por isso a regra do "+" é a do convite: bloqueado, recusa só o endereço que
+                 * criaria conta nova (wiki `email-com-mais`, P-04).
                  */
+                ->rule(fn (): Closure => EmailComMais::regraDeConvite())
                 ->helperText('O convite sai por e-mail, com link de uso único. Se o endereço já tiver conta, ninguém é cadastrado de novo: a pessoa recebe uma oferta para entrar nesta '
                     .mb_strtolower((string) config('kit.tenancy.label', 'Organização')).' e escolhe aceitar ou recusar.')
                 ->columnSpanFull(),

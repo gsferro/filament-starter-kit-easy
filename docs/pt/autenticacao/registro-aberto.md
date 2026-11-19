@@ -142,6 +142,25 @@ php artisan tinker --execute 'App\Models\User::whereNull("email_verified_at")->u
 posse, e pedir a mesma prova duas vezes é atrito sem ganho. O Filament só envia o pedido de
 confirmação para quem ainda não validou, então o convidado nunca recebe esse e-mail.
 
+## E-mail com "+" (opcional)
+
+`fulano+loja@gmail.com` cai na caixa de `fulano@gmail.com`: uma caixa só rende cadastros sem fim.
+A opção **Permitir "+" no e-mail ao cadastrar** (aba Registro de `/admin/configuracoes-da-aplicacao`,
+ou `KIT_EMAIL_PERMITIR_MAIS` no `.env`) nasce **ligada** — o comportamento de sempre. Desligada,
+toda via que dá um e-mail novo a uma conta recusa o "+" antes do "@", com a mensagem *"Este sistema
+não aceita e-mail com "+" antes do "@". Use o endereço sem o "+"."*:
+
+- o cadastro aberto (`/app/register` e `/cadastro`);
+- o convite para conta nova, um a um e em massa (no lote, o endereço sai com o motivo próprio e os
+  outros seguem);
+- a tela de usuários do `/admin` e do `/app`, ao criar e ao trocar o e-mail;
+- o login social que criaria uma conta;
+- a troca de e-mail no perfil.
+
+O que **não** muda: conta que já tem "+" continua entrando e salvando o perfil; o convite para um
+e-mail que já é de uma conta passa (ele não cria conta, só vincula). Já o convite para conta nova com "+" enviado antes de desligar não se aceita mais: quem abre o link vê o motivo, o Reenviar some e o lembrete o pula — revogue e convide o endereço sem o "+". Só um "desligado" explícito bloqueia (`false`, `0`, `off`, `no`): a chave ausente ou vazia
+permite. Os comandos `kit:install` e `kit:admin` ficam de fora — são do operador da instalação.
+
 ## O limite de tentativas
 
 O envio do formulário usa o limite do próprio Filament: **2 tentativas por IP** e 2 por
@@ -159,6 +178,7 @@ laço anônimo, sem mudar o que a pessoa vê.
 | a liberação | `App\Models\User::aprovar()` |
 | coluna, filtro e ação de aprovar | `app/Filament/Concerns/AprovacaoDeCadastro.php` |
 | o campo por organização | `app/Filament/Admin/Resources/Tenants/Schemas/TenantForm.php` |
+| o "+" no e-mail: a opção e a regra | `app/Support/EmailComMais.php` |
 
 > **Para quem for ligar as opções numa tela de Settings**: `App\Support\RegistroAberto` é o ponto
 > único de leitura. Trocar `config()` pelo Settings é reescrever o corpo de três métodos naquele

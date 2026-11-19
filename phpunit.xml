@@ -107,6 +107,7 @@
         <env name="KIT_REGISTRO" value="false" force="true"/>
         <env name="KIT_REGISTRO_APROVACAO_MANUAL" value="false" force="true"/>
         <env name="KIT_REGISTRO_VERIFICAR_EMAIL" value="false" force="true"/>
+        <env name="KIT_EMAIL_PERMITIR_MAIS" value="true" force="true"/>
         <env name="KIT_TABELA_PAGINACAO" value="10" force="true"/>
         <env name="KIT_TABELA_LISTRADA" value="true" force="true"/>
         <env name="KIT_TABELA_PERSISTIR_FILTROS" value="true" force="true"/>

@@ -22,6 +22,7 @@ use App\Http\Middleware\DefinirTenantDePermissoes;
 use App\Http\Middleware\ExigeTutorialGuiadoLigado;
 use App\Http\Middleware\ExigirEmailVerificado;
 use App\Livewire\DefinirSenhaPorEmail;
+use App\Livewire\InformacoesPessoais;
 use App\Livewire\PreferenciasDeAparencia;
 use App\Models\Tenant;
 use App\Support\AparenciaDoUsuario;
@@ -371,6 +372,8 @@ class AppPanelProvider extends PanelProvider
                     // Quem entrou por login social não tem senha atual — e a troca de senha, o 2FA e o
                     // desbloqueio da sessão pedem uma. O bloco manda o link de definição por e-mail.
                     ->myProfileComponents([
+                        // O e-mail do perfil com a regra do "+" (wiki email-com-mais).
+                        'personal_info'             => InformacoesPessoais::class,
                         'definir_senha_por_email'   => DefinirSenhaPorEmail::class,
                         // A seção "Aparência" — some sozinha com a chave da instalação desligada.
                         'preferencias_de_aparencia' => PreferenciasDeAparencia::class,
@@ -554,7 +557,7 @@ class AppPanelProvider extends PanelProvider
              * recém-registrados. Numa instalação limpa isso não atinge ninguém — cinco dos sete
              * caminhos que criam usuário gravam a coluna (`UsuarioAdminSeeder.php:email_verified_at:45`,
              * `UserFactory.php:email_verified_at:30`, `DemoTenancySeeder.php:email_verified_at:95`,
-             * `Convite.php:email_verified_at:647`, `KitAdmin.php:email_verified_at:204`);
+             * `Convite.php:email_verified_at:680`, `KitAdmin.php:email_verified_at:204`);
              * os dois que não gravam são a tela de usuários do /admin e a do /app. Numa base
              * legada, atinge quem foi criado por ali, e o README traz o reparo.
              *

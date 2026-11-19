@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Data\Convite\ResultadoDoConviteEmMassaData;
 use App\Notifications\ConviteDeAcesso;
 use App\Support\ContextoDePapeis;
+use App\Support\EmailComMais;
 use App\Traits\AuditsFillables;
 use App\Traits\ModeloCacheavel;
 use App\Traits\TemUuid;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
@@ -349,6 +351,20 @@ class Convite extends Model implements Auditable
                 ->pluck('email')
                 ->map($normalizar);
 
+        /*
+         * O "+" bloqueado (wiki email-com-mais): a regra de `EmailComMais::aceitaNoConvite()`, com a
+         * busca das contas existentes feita UMA vez para o lote, como a dos membros acima — mas
+         * por `lower(email)`, e não pela coluna crua (ver logo abaixo).
+         */
+        $comMais = EmailComMais::permitido()
+            ? collect()
+            : $validos->filter(fn (string $email): bool => EmailComMais::temMais($email));
+        $contasComMais = $comMais->isEmpty()
+            ? collect()
+            // `lower(email)` aqui, ao contrário do `whereIn` dos convites: a ressalva de lá gera um
+            // convite a mais; aqui geraria uma recusa que o formulário individual não faz.
+            : User::query()->whereIn(DB::raw('lower(email)'), $comMais->all())->pluck('email')->map($normalizar);
+
         $enviados = [];
         $falhas   = $tortos->map(fn (string $email): array => [
             'email'  => $email,
@@ -360,7 +376,10 @@ class Convite extends Model implements Auditable
                 $pendentes->contains($email) => 'convite_pendente',
                 $recusaram->contains($email) => 'recusou_antes',
                 $membros->contains($email)   => 'ja_e_membro',
-                default                      => null,
+                // A mesma regra do convite individual: com o "+" bloqueado, só o endereço que
+                // criaria conta nova (wiki email-com-mais). Os outros do lote seguem.
+                $comMais->contains($email) && ! $contasComMais->contains($email) => 'email_com_mais',
+                default                                                          => null,
             };
 
             if ($motivo !== null) {
@@ -627,6 +646,20 @@ class Convite extends Model implements Auditable
          */
         if ($existente = $this->usuarioExistente()) {
             return $this->aceitarComoUsuarioExistente($existente);
+        }
+
+        /*
+         * Conta NOVA com "+" e a instalação o bloqueia: nem o convite emitido antes de a opção ser
+         * desligada cria a conta (Q4 da wiki email-com-mais). A tela e o login social recusam antes,
+         * com a mensagem; esta é a barreira para quem chama o model por fora deles.
+         */
+        if (! EmailComMais::aceita($this->email)) {
+            Log::channel('autenticacao')->warning(
+                "[Convite@aceitar] Aceite recusado: e-mail com \"+\" e a instalação o bloqueia | convite: {$this->id}",
+                ['convite_id' => $this->id, 'email' => Str::mask($this->email, '*', 3), 'motivo' => 'email_com_mais'],
+            );
+
+            throw new RuntimeException(EmailComMais::mensagem());
         }
 
         // Antes do `create()`: convite sem papel não deixa conta órfã para trás.

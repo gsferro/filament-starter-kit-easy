@@ -20,7 +20,6 @@ use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Notification;
-use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
 /**
@@ -55,36 +54,10 @@ function ligarRegistroAberto(bool $aprovacaoManual = false, bool $verificarEmail
     ]);
 }
 
-/**
- * O cadastro completo pelo formulário, no modo ABERTO — sem token na query string.
- *
- * Espelha o `aceitarConvite()` de `ConviteTest`, e a diferença é justamente o que se testa: lá
- * o token vai por `withQueryParams`, aqui não vai nada.
+/*
+ * `registrarAberto()` vive em `tests/Pest.php` (usado também por `tests/Kit/EmailComMaisTest.php`,
+ * `.ai/rules/testes.md`).
  */
-function registrarAberto(string $email = 'novo@example.com', string $nome = 'Fulano'): Testable
-{
-    Filament::setCurrentPanel('app');
-
-    /*
-     * Desloga antes, e isto não é higiene: `Register::mount()` do Filament começa com
-     * `if (Filament::auth()->check()) { redirect()->intended(...) }` (`Register.php:57-63`), e
-     * um cadastro bem-sucedido termina autenticado (`:108`). Sem o logout, a SEGUNDA chamada
-     * desta função no mesmo caso monta um componente que já redirecionou — `$this->form` nunca
-     * é preenchido e o `fillForm()` morre em `getDefaultTestingSchemaName() on null`, uma
-     * mensagem que não tem nada a ver com a causa. Cada chamada é um visitante novo, que é
-     * exatamente o que o caso do throttle (CT-13) quer dizer.
-     */
-    Filament::auth()->logout();
-
-    return Livewire::test(RegistroPorConvite::class)
-        ->fillForm([
-            'name'                 => $nome,
-            'email'                => $email,
-            'password'             => 'segredo-bem-longo-123',
-            'passwordConfirmation' => 'segredo-bem-longo-123',
-        ])
-        ->call('register');
-}
 
 /*
 |--------------------------------------------------------------------------

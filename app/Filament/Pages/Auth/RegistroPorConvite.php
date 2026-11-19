@@ -8,9 +8,11 @@ use App\Models\Convite;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Support\ConfiguracaoDoLogin;
+use App\Support\EmailComMais;
 use App\Support\RegistroAberto;
 use Caresome\FilamentAuthDesigner\Data\AuthDesignerConfig;
 use Caresome\FilamentAuthDesigner\Pages\Auth\Register;
+use Closure;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use Filament\Actions\Action;
 use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
@@ -215,6 +217,14 @@ class RegistroPorConvite extends Register
             $this->desviarParaAceite($existente);
         }
 
+        // Conta nova com "+" e a instalação o bloqueia: o convite não se aceita, nem o emitido
+        // antes de a opção ser desligada (Q4 da wiki email-com-mais, respondida em 2026-11-19).
+        // Recusar AQUI, e não no envio do formulário: o campo de e-mail do convite é desabilitado,
+        // e um erro nele seria um erro que a pessoa não tem como corrigir.
+        if (! EmailComMais::aceita($this->convite->email)) {
+            $this->recusarPorMais();
+        }
+
         parent::mount();
     }
 
@@ -391,9 +401,13 @@ class RegistroPorConvite extends Register
         // que impede cadastro duplicado.
         $campo = parent::getEmailFormComponent();
 
-        // No modo aberto o campo é normal: a pessoa escolhe o próprio endereço.
+        // No modo aberto o campo é normal: a pessoa escolhe o próprio endereço — e, com o "+"
+        // bloqueado, não escolhe um com "+" (wiki `email-com-mais`). O modo convite não ganha a
+        // regra no campo, que é desabilitado: o convite com "+" é recusado antes, no `mount()`.
         if (! $this->convite instanceof Convite) {
-            return $campo;
+            return $campo instanceof Field
+                ? $campo->rule(fn (): Closure => EmailComMais::regra())
+                : $campo;
         }
 
         $campo = $campo
@@ -430,6 +444,36 @@ class RegistroPorConvite extends Register
     private function convite(): Convite
     {
         return $this->convite ?? $this->recusar();
+    }
+
+    /**
+     * O convite é válido, mas o e-mail dele tem "+" e a instalação o bloqueia (wiki email-com-mais).
+     *
+     * Sem throttle, ao contrário de `recusar()`: só chega aqui quem traz um token VÁLIDO, então
+     * não há laço anônimo para amplificar o log. A saída de quem administra é revogar o convite
+     * (o pendente segura a exclusão do papel) e convidar o endereço sem o "+".
+     */
+    private function recusarPorMais(): never
+    {
+        Log::channel('autenticacao')->warning(
+            "[RegistroPorConvite@mount] Convite com \"+\" recusado no aceite | convite: {$this->convite?->getKey()}",
+            [
+                'motivo'     => 'email_com_mais',
+                'convite_id' => $this->convite?->getKey(),
+                'email'      => Str::mask((string) $this->convite?->email, '*', 3),
+            ],
+        );
+
+        Notification::make()
+            ->title('Este convite não pode ser aceito')
+            ->body(EmailComMais::mensagemDoConvite())
+            ->danger()
+            ->persistent()
+            ->send();
+
+        throw new HttpResponseException(
+            new RedirectResponse($this->urlDeLoginDoApp()),
+        );
     }
 
     /**

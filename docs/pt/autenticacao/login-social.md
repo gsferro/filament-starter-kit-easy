@@ -180,11 +180,11 @@ accDescr: Os desfechos do retorno de um provedor social — recusas, indisponibi
 `LoginSocialController::retorno()` checa, nesta ordem, e-mail ausente, e-mail não verificado, a
 barreira do convite/registro fechado, a indisponibilidade da conta (antes de qualquer confirmação
 de vínculo), e só então a aprovação pendente — vale para conta nova OU já existente
-(`app/Http/Controllers/Auth/LoginSocialController.php:retorno:133`,
+(`app/Http/Controllers/Auth/LoginSocialController.php:retorno:134`,
 `:redirecionarSeIndisponivel:223`, `:pedirConfirmacaoDoVinculo:304`, `:aguardarAprovacao:330`,
 `:$novo = true:300`, `:urlDoPerfil:360`). O vínculo (`VinculoSocial::vincular()`) roda depois de
 toda a cadeia, inclusive para conta recém-criada (`:315`, `:560`). A confirmação de vínculo
-default é desligada (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:919`).
+default é desligada (`config/kit.php:KIT_SOCIALITE_VINCULO_CONFIRMAR:941`).
 
 ## Vínculo com o provedor: a primeira vez, e as seguintes
 

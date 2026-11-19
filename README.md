@@ -5,7 +5,7 @@
 [![Plumb](https://plumbphp.dev/badges/gsferro/starter-kit-easy/composite.svg)](https://plumbphp.dev/gsferro/starter-kit-easy)
 [![Testes](https://img.shields.io/github/actions/workflow/status/gsferro/filament-starter-kit-easy/ci.yml?branch=main&style=flat-square&label=testes)](https://github.com/gsferro/filament-starter-kit-easy/actions/workflows/ci.yml)
 [![Cobertura](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fgsferro%2Ffilament-starter-kit-easy%2Fbadges%2Fcobertura.json&style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
-[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-2.690-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
+[![Casos de teste](https://img.shields.io/badge/casos%20de%20teste-2.721-0aa?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%208-4c1?style=flat-square)](https://github.com/gsferro/filament-starter-kit-easy/blob/main/docs/pt/referencia/qualidade-de-codigo.md)
 [![PHP](https://img.shields.io/packagist/php-v/gsferro/starter-kit-easy.svg?style=flat-square)](https://packagist.org/packages/gsferro/starter-kit-easy)
 [![Filament](https://img.shields.io/badge/Filament-5.x-FFAA00?style=flat-square)](https://filamentphp.com)
@@ -222,7 +222,7 @@ dois já vêm completos.
 |---|---:|
 | Casos de teste (`Kit` + `Tenancy`, medidos em 2026-09-26) | **2.990**, com **12.578 asserções** |
 | Telas varridas em navegador real | **55** |
-| Arquivos de teste | **225** em `Kit` + `Tenancy` (**265** no total) |
+| Arquivos de teste | **226** em `Kit` + `Tenancy` (**266** no total) |
 | PHPStan | **level 8**, zero erros |
 | Cobertura de testes (`app/`, linha) | no badge **cobertura** do topo, medida pelo CI a cada push na `main` — ver [o que o número não inclui](docs/pt/referencia/qualidade-de-codigo.md) |
 | FilaCheck | **17** regras, todas passando |
@@ -230,7 +230,7 @@ dois já vêm completos.
 | Documentação | |
 |---|---:|
 | Documentos de referência (`wikis/`) | **13** |
-| Features especificadas (`wikis/specs/`) | **95** |
+| Features especificadas (`wikis/specs/`) | **96** |
 | Project rules para agentes de IA (`.ai/rules/`, sem o índice) | **27** |
 
 > O detalhamento saiu daqui e está no site: **[Referência](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/)** e **[Começar](https://gsferro.github.io/filament-starter-kit-easy/pt/comecar/)**.
@@ -249,6 +249,7 @@ dois já vêm completos.
 - Auth Designer: tela de login em duas colunas — a arte **mostra o nome da aplicação**, lido de `APP_NAME` a cada carregamento; para usar a sua imagem, envie em `/admin/configuracoes-da-aplicacao`
 - **Aparência das telas de acesso escolhida na tela** (o clássico de sempre por default): em *Configurações da aplicação › Telas de acesso*, troque para o **painel de marca** — formulário de um lado (esquerda ou direita, largura de 30% a 70%), painel arredondado do outro com a cor primária, uma cor sua, **gradiente** ou arte, logo, destaque no meio (a logo grande ou uma imagem sua), rede de pontos parada ou em movimento e duas frases com negrito, itálico e link (até 80 e 160 caracteres); no celular, só a logo ou o nome —, com **preview** (pré-visualização) das alterações antes de salvar; login, cadastro e "esqueci a senha" podem ter **cada um a sua aparência**, e a troca entre elas é animada (o painel desliza de lado e o formulário aparece aos poucos) ([veja as variações](https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/main/art/telas-de-acesso.gif)); com organizações, cada uma usa a padrão ou a sua — a própria nasce como **cópia independente** da padrão, e voltar à padrão **descarta** a própria. Instalação existente que atualiza continua com as telas idênticas até alguém escolher ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/aparencia-das-telas.html))
 - **Registro aberto opcional** (desligado por default): cadastro sem convite no `/app`, com papel único, aprovação manual e validação de e-mail — cada um em sua chave ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/registro-aberto.html))
+- **"+" no e-mail do cadastro, permitido ou bloqueado** (permitido por default): `fulano+loja@gmail.com` cai na caixa de `fulano@gmail.com`, então uma caixa só rende cadastros sem fim. Desligue em *Configurações da aplicação › Registro › E-mail com "+"* (ou `KIT_EMAIL_PERMITIR_MAIS=false`) e o "+" antes do "@" passa a ser recusado, com uma mensagem só, no cadastro aberto, no convite para conta nova (um a um e em massa), na tela de usuários do `/admin` e do `/app`, no login social que criaria conta e na troca de e-mail do perfil. Conta que já tem "+" continua entrando, e convite para quem já tem conta passa; o convite com "+" para conta nova deixa de se aceitar, sem reenvio nem lembrete — revogue e convide o endereço sem o "+" ([detalhes](https://gsferro.github.io/filament-starter-kit-easy/pt/autenticacao/registro-aberto.html#e-mail-com--opcional))
 - Lockscreen: bloqueio de sessão por inatividade (30 min), registrado nos 3 painéis — a tela de bloqueio usa o mesmo layout do login (Auth Designer), não o layout simples do Filament
 - Impersonate, log de autenticação, auditoria de alterações (owen-it)
 - Panel Switch: troca de painel pelo menu do usuário

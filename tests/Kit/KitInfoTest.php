@@ -192,8 +192,9 @@ it('[CT-06] exibe uma linha para cada propriedade do settings, na ordem do mapa'
      * 72 → 73 na feature `aparencia-das-telas-de-acesso`: `aparencia_das_telas`.
      * 73 → 76 na feature `preferencias-de-aparencia`: `tamanho_da_fonte`, `modo_do_menu` e
      * `aparencia_por_usuario`.
+     * 76 → 77 na feature `email-com-mais`: `email_permitir_mais`.
      */
-    expect($propriedades)->toHaveCount(76);
+    expect($propriedades)->toHaveCount(77);
 
     foreach ($propriedades as $propriedade) {
         expect($saida)->toContain(Str::headline($propriedade));

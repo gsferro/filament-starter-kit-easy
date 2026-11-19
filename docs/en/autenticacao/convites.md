@@ -105,8 +105,8 @@ reminder only exists through the scheduled command
 (`routes/console.php:40`,
 `app/Console/Commands/KitConvitesLembrar.php`), the only caller of `lembrar()` in `app/`.
 `Convite::enviar()`, `::lembrar()`, `::aceitar()`, `::aceitarComoUsuarioExistente()` and
-`::recusar()` (`app/Models/Convite.php:enviar:143`, `:lembrar:207`, `:aceitar:619`,
-`:aceitarComoUsuarioExistente:687`, `:recusar:752`).
+`::recusar()` (`app/Models/Convite.php:enviar:145`, `:lembrar:209`, `:aceitar:638`,
+`:aceitarComoUsuarioExistente:720`, `:recusar:785`).
 
 ## Deleting a role that has invitations
 
@@ -158,7 +158,7 @@ accDescr: From Pending, an invitation goes to Accepted, Declined (only with KIT_
 ```
 
 `Convite::situacao()` has the precedence Accepted &gt; Declined &gt; Expired &gt; Pending
-(`app/Models/Convite.php:situacao:600`, `:'Aceito':603`, `:'Recusado':604`); the Resend action is
+(`app/Models/Convite.php:situacao:619`, `:'Aceito':622`, `:'Recusado':623`); the Resend action is
 only visible on Pending or Expired
 (`app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php:Action::make('reenviar'):73`,
 `:situacao() === 'Pendente':89`); revoking is the native `DeleteAction`, visible in every state

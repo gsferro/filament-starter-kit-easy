@@ -403,3 +403,27 @@ it('recusa registrar em organizacao que nao aceita cadastro', function (bool $at
     'registro desligado nela'      => [true, false],
     'inativa e com registro fora'  => [false, false],
 ]);
+
+/*
+|--------------------------------------------------------------------------
+| "+" no e-mail — a organização segue a opção da instalação
+|--------------------------------------------------------------------------
+| Wiki `wikis/specs/feat/email-com-mais/email-com-mais/` (CT-06).
+*/
+
+it('[CT-06] a organização segue a opção da instalação no cadastro aberto', function (bool $permitido): void {
+    opcaoDoMais($permitido);
+    ligarRegistroAbertoTenancy();
+
+    $acme = organizacaoComRegistro('acme');
+
+    registrarNaOrganizacao('acme', 'gsferroti+starter@gmail.com');
+
+    $conta = User::where('email', 'gsferroti+starter@gmail.com')->first();
+
+    expect($conta !== null)->toBe($permitido)
+        ->and($conta?->tenants()->whereKey($acme->getKey())->exists() ?? false)->toBe($permitido);
+})->with([
+    'permitido' => [true],
+    'bloqueado' => [false],
+]);
