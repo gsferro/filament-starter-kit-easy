@@ -108,6 +108,7 @@ Três revisores sem o PRD: `fw-revisor-diff` (eixos), `/code-review` (fork, nív
 | Ciclo | Veredito | Data |
 |---|---|---|
 | 1 | REPROVADO → especificação (QA-01 Major; QA-02, QA-03 Minor; QA-04, QA-05 Cosmético); G nível 3 e K2 não verificadas pelo gate; independência parcial | 2026-11-18 |
+| 2 | REPROVADO → especificação (QA-06 Major: a correção do QA-01 não chegou ao `01` nem ao `## Débitos` da origem; QA-07 Cosmético) — teto do perfil padrão, escalado ao solicitante | 2026-11-18 |
 
 Tratamento do ciclo 1:
 
@@ -119,3 +120,16 @@ Tratamento do ciclo 1:
 | QA-04 | 1 | 114 cenários no cabeçalho do `04` da origem e aqui |
 | QA-05 | 1 | o motivo da revisão adversarial é o perfil padrão sem Impacto 3 |
 
+Tratamento do ciclo 2 (depois do veredito, sem ciclo 3):
+
+| QA | Destino | O que foi feito |
+|---|---|---|
+| QA-06 | 1 | `01` (linha do RQ-06 na Cobertura e o passo 3) com a marca de alteração; `## Débitos` da origem diz que os cenários não foram pagos e ganhou o débito dos quatro cenários sobre a v0.55.1. O `grep` do repro não acha mais alegação sem marca |
+| QA-07 | 1 | o comentário de contagem do `04` diz o padrão adaptado para CT-B |
+
+## Blockers
+
+- **Gate no teto de ciclos** (2026-11-18): o ciclo 2 reprovou só por documentação (QA-06, QA-07), corrigida depois do veredito; o código não mudou desde o ciclo 1 (`git diff --stat a50089aa HEAD -- . ':!wikis'` vazio). Não há ciclo 3; o aceite final é do solicitante, no PR
+
+
+No `06` do ciclo 2, a citação `arquivo:linha` sem símbolo do CT-114 foi reescrita como prosa ("`tests/Kit/AparenciaDasTelasDeAcessoTest.php` (o CT-114)") para o `citacoes.sh` passar; o conteúdo do achado não mudou.

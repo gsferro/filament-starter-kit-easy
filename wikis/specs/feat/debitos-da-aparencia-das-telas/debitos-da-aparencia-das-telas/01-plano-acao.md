@@ -18,7 +18,7 @@
 | RQ-03 | H: percurso por teclado | 2 | CT-B22 (clássico); o painel de marca já é o CT-B03 da origem |
 | RQ-04 | H: "reduzir movimento" na transição | 2 | CT-B23 |
 | RQ-05 | J: suíte inteira e `--tia` | 3 | P-01 |
-| RQ-06 | J: cenários 1–4 | 3 | P-01, a rodada `f1`..`f4` de 2026-11-15 |
+| RQ-06 | J: cenários 1–4 | 3 | P-01, a rodada `f1`..`f4` de 2026-11-15 *(alterado em 2026-11-18: QA-01/QA-06 do gate — a rodada `f1`..`f4` foi sobre `e267f909`, anterior às correções da v0.53.1; o arquivo novo desta entrega está provado pelas duas rotas de entrega, e os quatro cenários sobre a tag são débito no `03`)* |
 | RQ-07 | K: mutação por amostragem manual | 4 | P-03 |
 | RQ-08 | K: revisão adversarial do Adendo 4 | 5 | `fw-adversario-ct` |
 | P-02 | achado do axe no kit é corrigido | 2 | sobrescrita do `theme-toggle` |
@@ -54,7 +54,7 @@ axe acusar nas telas do kit.
 - **Path**: nenhum arquivo
 - **Atende**: RQ-05, RQ-06, P-01
 - **Logs**: nenhum
-- **O quê**: `pest --tia --parallel --processes=3 --exclude-testsuite=Browser` e a suíte Browser sobre o commit desta entrega. Os cenários 1–4 fecham pela rodada registrada (P-01)
+- **O quê**: `pest --tia --parallel --processes=3 --exclude-testsuite=Browser` e a suíte Browser sobre o commit desta entrega. Os cenários 1–4 fecham pela rodada registrada (P-01) *(alterado em 2026-11-18: QA-01/QA-06 do gate — a rodada `f1`..`f4` foi sobre `e267f909`, anterior às correções da v0.53.1; o arquivo novo desta entrega está provado pelas duas rotas de entrega, e os quatro cenários sobre a tag são débito no `03`)*
 ### 4. K, mutação
 
 - **Path**: arquivos do Adendo 4 da origem, restaurados depois de cada mutante

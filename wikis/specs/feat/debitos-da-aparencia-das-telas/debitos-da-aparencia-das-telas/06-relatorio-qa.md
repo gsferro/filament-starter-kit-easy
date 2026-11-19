@@ -2,116 +2,116 @@
 
 > Requisito: `00-requisito.md` · Plano: `01-plano-acao.md`
 > Perfil de esforço: padrão
-> Natureza da wiki: débito de verificação (fecha débitos de `feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel`) · Toca infra compartilhada: sim → helper `visitaComMovimentoReduzido()` passa para `tests/Pest.php`; sobrescrita em `resources/views/vendor/filament-auth-designer/` · Regressão: sim
-> Independência: sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa · comprometida (parcial) — o despacho trouxe um resumo curto do conteúdo do diff e a alegação "a suíte inteira já rodou (registrada no 03)". Os dois foram conferidos contra o `git` e o `03`. O despacho não trouxe justificativa de decisão nem raciocínio da sessão
-> Cobertura: 10 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
+> Natureza da wiki: débito de verificação (fecha débitos de `feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel`) · Toca infra compartilhada: sim → o helper `visitaComMovimentoReduzido()` passa para `tests/Pest.php`; sobrescrita em `resources/views/vendor/filament-auth-designer/` · Regressão: sim
+> Independência: sub-agente fw-qa-gate/claude-opus-5-5, contexto novo sem a conversa
+> Cobertura: 9 de 12 dimensões verificadas ou provadas não aplicáveis · teto: APROVADO COM DÉBITO
 
-## Veredito — Ciclo 1
+## Veredito — Ciclo 2
 
 **REPROVADO → especificação**
 
-- Blocker: 0 · Major: 1 (QA-01) · Minor: 2 (QA-02, QA-03) · Cosmético: 2 (QA-04, QA-05)
-- Não verificadas: G (nível 3), K (K2). As causas estão em *Não Verificado*. Independência parcial
+- Blocker: 0 · Major: 1 (QA-06) · Minor: 0 · Cosmético: 1 (QA-07)
+- Não verificadas: G (nível 3), J (a suíte inteira não foi reexecutada), K (K2). As causas estão em *Não Verificado*
 - `RQ` abertas: nenhuma
-- Ambiente: app em `http://127.0.0.1:8091` (sondado por `curl`) · Pest v5.3.7 / PHPUnit 13.4.7 · MCP: Playwright indisponível; Boost MCP não conectou (timeout)
+- Ambiente: app em `http://127.0.0.1:8091` (sondado por `curl`) · Pest 5.3.7 · MCP: Playwright indisponível; o Boost MCP não conectou (timeout)
+- Convergência: o ciclo 2 é o teto do perfil padrão. O achado aberto escala ao usuário
+- Código igual ao do ciclo 1: `git diff --stat a50089aa HEAD -- . ':!wikis'` saiu vazio. Por isso as amostras de J e as medições do ciclo 1 continuam valendo
+
+## Ciclo 1 — resumo e tratamento conferido
+
+O ciclo 1 terminou em **REPROVADO → especificação**: 1 Major (QA-01), 2 Minor (QA-02, QA-03) e 2 Cosméticos (QA-04, QA-05). A independência foi parcial, porque o despacho trouxe um resumo do diff.
+
+| QA | Achado | Tratamento (`03` → `## Quality Gate`) | Conferência do ciclo 2 |
+|---|---|---|---|
+| QA-01 | os cenários 1–4 foram atribuídos à v0.53.1, mas a rodada foi sobre `e267f909` | `03:21` e `00:51` (P-01) corrigidos; `origem/03:321` marcado; débito em `03:54` | **em parte**: o `01` e `origem/03:261` mantêm a alegação antiga → QA-06 |
+| QA-02 | comentário HTML engolia a R4, o CT-114 e o índice | o comentário fecha na própria linha | ✅ `grep -n '<!--\|-->'` → só a `:16`; `grep -cE '^## Regra R[0-9]+'` → 4 |
+| QA-03 | débito do cadastro e linha do H1 desatualizados | `03:55` virou o resíduo (a arte); `03:34` diz "12 de 12" | ✅ |
+| QA-04 | cabeçalho da origem dizia 113 cenários | 114 em `origem/04:5` e em `03:42` | ✅ o `grep -cE` dá 114 |
+| QA-05 | motivo "mínimo" para dispensar a revisão adversarial | `04:5` diz "padrão, sem Impacto 3" | ✅ |
 
 ## Achados
 
-### QA-01 — Os cenários 1–4 do RQ-06 não rodaram sobre a v0.53.1, e sim sobre um commit anterior às correções dela · Major · destino 1
+### QA-06 — A correção do QA-01 não chegou ao `01` nem ao `## Débitos` da origem: os dois ainda dizem que o RQ-06 fecha pela rodada `f1`..`f4` · Major · destino 1
 
-- **Dimensão**: L (L6) e J
-- **Relacionado a**: RQ-06, P-01, passo 3 do PRD
-- **Esperado**: a alegação "a rodada `f1`..`f4` de 2026-11-15 sobre o commit da v0.53.1" (`03-progresso.md:21`) deveria ser reproduzível. A P-01 (`00-requisito.md:51`) fecha o RQ-06 por referência a essa rodada. O próprio gate da origem fixou a condição de validade: "Se `app/`, `resources/` ou `public/` mudarem […], a rodada precisa ser refeita" (`origem/06-relatorio-qa.md:14`).
-- **Observado**: o registro da origem mostra a rodada sobre `e267f909` (`origem/03-progresso.md:244`), e não sobre a v0.53.1 (`6721e912`). Entre os dois, 7 commits mudaram 8 arquivos de `app/` e `resources/`. Entre eles estão `painel-de-marca.blade.php`, `AparenciaDasTelasDeAcesso.php` e `VesteAparenciaDasTelas.php`: as correções da transição e das organizações (bc6c20ab, 25909224, 58c524c6, f7541fc5). A frase "nenhuma mudança de `app/`/`resources/` depois dela" (`origem/03:321`) ficou falsa quando a v0.53.1 saiu. Nenhuma rodada dos quatro cenários existe depois de `e267f909` em `wikis/specs/`. Esta entrega acrescenta um arquivo novo que o `kit:update` distribui (`resources/views/vendor/filament-auth-designer/…/theme-toggle.blade.php`), e isso é justamente o que os cenários 3 e 4 medem (`wikis/checklist-de-release.md:23`).
+- **Dimensão**: L (L3) e A
+- **Relacionado a**: RQ-06, P-01, P-04, passo 3 do PRD, QA-01 do ciclo 1
+- **Esperado**: depois do QA-01, toda afirmação de que os cenários 1–4 estão pagos pela rodada `f1`..`f4` deveria levar a marca `*(alterado em …)*` e apontar o débito. O `03:21`, o `03:54` e a P-01 (`00:51`) já fazem isso. A P-04 manda registrar na origem o resultado de cada débito.
+- **Observado**:
+  - `01-plano-acao.md:21` → `| RQ-06 | J: cenários 1–4 | 3 | P-01, a rodada \`f1\`..\`f4\` de 2026-11-15 |`
+  - `01-plano-acao.md:57` → "Os cenários 1–4 fecham pela rodada registrada (P-01)", sem marca de alteração
+  - `origem/03-progresso.md:258–261`, em `## Débitos`: "**G, H, J e K pagos em 2026-11-18** … J: a suíte e a rodada `f1`..`f4`". O débito dos quatro cenários sobre a tag não está na origem. O commit `d7ec68b7` só marcou a `origem/03:321`.
+  - O PRD e a origem afirmam um fechamento que o `03` desta wiki registra como desvio. É o padrão L3 "desvio que existe só no `03`", e é o que o próximo leitor da origem vai ler.
 - **Repro**:
-  1. `git merge-base --is-ancestor e267f909 v0.53.1 && echo ancestral` → `ancestral`
-  2. `git diff --stat e267f909 v0.53.1 -- app resources public` → `8 files changed, 126 insertions(+), 90 deletions(-)`
-  3. `git log --oneline e267f909..v0.53.1` → 10 commits, 4 deles `fix(auth)`/`refactor(auth)`
-- **Evidência**: `grep -rn "v0.53.1" wikis/specs/feat/debitos-da-aparencia-das-telas/` encontra a alegação só em `03-progresso.md:21`. A P-01 (`00:51`) repete a premissa "contêm a feature".
+  1. `grep -rn "f1\`\.\.\|rodada registrada" wikis/specs/feat/debitos-da-aparencia-das-telas/ wikis/specs/feat/aparencia-das-telas-de-acesso/tela-de-login-personalizavel/0[0-5]*.md`
+  2. Saída relevante: `debitos/01-plano-acao.md:21`, `debitos/01-plano-acao.md:57`, `origem/03-progresso.md:261` sem marca. As demais linhas (`00:24`, `00:37`, `00:51`, `03:21`, `03:54`, `03:116`, `origem/03:244`, `:290`, `:321`, `:332`) são texto original, histórico ou já corrigidas.
+  3. `git show --stat d7ec68b7` não traz o `01` entre os arquivos tocados.
+- **Evidência**: a saída do `grep` acima.
 - **Destino**: 1 especificação
-- **Ação exigida**: corrigir `03:21` com o commit real (`e267f909`) e revisar a P-01 no `00`. Depois, ou rodar os quatro cenários sobre o commit desta entrega (o `checklist-de-release.md` já exige isso para a tag 0.55.1, e a rodada fecha o RQ-06 de verdade), ou registrar como débito explícito que o código das correções da v0.53.1 e a sobrescrita nova nunca passaram pelos cenários. Atualizar também `origem/03:321`, se a decisão mudar o estado do QA-28.
+- **Ação exigida**: marcar `01:21` e `01:57` com `*(alterado em …: QA-01/QA-06 — rodada sobre `e267f909`; os cenários sobre a tag são débito, `03:54`)*`. Corrigir `origem/03:261` e acrescentar ao `## Débitos` da origem o débito dos quatro cenários sobre a v0.55.1, com a referência a `debitos/03:54` (P-04). Antes de fechar, rodar de novo o `grep` do passo 1.
 
-### QA-02 — O `04` desta wiki tem um comentário HTML não fechado que esconde o CT-114, a Regra R4 e o Índice de Cenários · Minor · destino 1
-
-- **Dimensão**: L (L1 e L3)
-- **Relacionado a**: P-02, CT-114, R4
-- **Esperado**: o cenário CT-114, o título `## Regra R4` e o `## Índice de Cenários` deveriam aparecer no documento renderizado. A contagem do cabeçalho deveria sair dos `grep -c` de `template-04.md` §*Contagem do cabeçalho*, e não de contagem à mão.
-- **Observado**: `04-casos-de-teste.md:16` abre `<!-- contado à mão: … 5 linhas em ## Regra R4 — a sobrescrita acompanha o pacote`, e o comentário só fecha em `:38` (`## Mutantes Previstos -->`). O título da Regra R4 foi engolido pela linha do comentário. O Gherkin do CT-114 e o Índice ficam invisíveis para o leitor, e `## Mutantes Previstos` aparece duas vezes (`:38` e `:107`). O cabeçalho (`:15`) diz `Regras: 4`, e o grep dá 3.
-- **Repro**:
-  1. `grep -n '<!--\|-->' 04-casos-de-teste.md` → `16:<!--`, `38:## Mutantes Previstos -->`
-  2. `grep -cE '^## Regra R[0-9]+' 04-casos-de-teste.md` → `3`
-- **Evidência**: as duas saídas acima. O `ids-ct.sh` não pega o problema, porque lê o texto cru, com o comentário.
-- **Destino**: 1
-- **Ação exigida**: fechar o comentário de contagem na própria linha, restaurar `## Regra R4 — …` como título, tirar o `## Mutantes Previstos` duplicado e recalcular o cabeçalho pelos quatro `grep -cE`.
-
-### QA-03 — O `03` desta wiki tem afirmações anteriores ao step 9 que o step 9 já invalidou · Minor · destino 1
-
-- **Dimensão**: L (L3)
-- **Relacionado a**: RQ-02, CT-B21, mutante H1
-- **Esperado**: o `## Débitos` e a tabela de mutantes deveriam refletir o estado final, como fazem os passos 1 e 2 do mesmo arquivo.
-- **Observado**: `03:54` mantém o débito "CT-B21 no cadastro roda sem a arte e o alternador, pelo vazamento…". Os itens `03:9` e `04:76-79` e o teste (`assertPresent('.fi-auth-theme-switcher-wrapper[role="menu"]')` em todas as linhas) dizem que isso foi corrigido. A tabela do passo 4 (`03:34`) diz que o H1 "cai (8 de 12)", e `03:14` diz "12 de 12 depois do step 9".
-- **Repro**: 1. `sed -n '9p;14p;34p;54p' 03-progresso.md`. 2. `vendor/bin/pest tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` → 14/14, com as 4 linhas do cadastro exigindo o alternador.
-- **Evidência**: execução do gate: `{"tests":14,"passed":14}`.
-- **Destino**: 1
-- **Ação exigida**: tirar o terceiro débito, ou reescrevê-lo como o resíduo que ainda vale: a arte no cadastro, que o CT-B21 não afirma. Alinhar a linha do H1 no passo 4 com "12 de 12".
-
-### QA-04 — O cabeçalho do `04` da origem diz 113 cenários, e há 114 · Cosmético · destino 1
+### QA-07 — O comentário de contagem do `04` diz que o grep do template dá 4 cenários, e o grep literal dá 1 · Cosmético · destino 1
 
 - **Dimensão**: L (L1)
-- **Relacionado a**: CT-114 (acrescentado ao `04` da origem, `:2376`)
-- **Esperado / Observado**: `origem/04-casos-de-teste.md:5` diz `Cenários: 113`. O `grep -cE '^[[:space:]]*(Cenário|Esquema do Cenário): \[CT-[0-9]+\]'` dá **114**.
-- **Repro**: o comando acima, na pasta da origem.
-- **Evidência**: `grep -rn "113 cenários\|Cenários: 113" wikis/specs/feat/` → `origem/04-casos-de-teste.md:5` e `debitos/03-progresso.md:42`
+- **Esperado / Observado**: `04:16` diz "contado pelos grep -cE de template-04.md … 4 cenários". O comando do template, `grep -cE '^[[:space:]]*(Cenário|Esquema do Cenário): \[CT-[0-9]+\]' 04-casos-de-teste.md`, dá **1**, porque não casa `[CT-B…]`. O 4 do cabeçalho está certo, mas só sai com `\[CT-(B)?[0-9]+\]`.
+- **Repro**: os dois `grep -cE` acima, na pasta da wiki → `1` e `4`
 - **Destino**: 1
-- **Ação exigida**: recalcular pelo `grep -c` e corrigir os **dois** arquivos.
-
-### QA-05 — O `04` declara o perfil "mínimo" para dispensar a revisão adversarial, mas a tabela de perfil dele tem uma área "padrão" · Cosmético · destino 1
-
-- **Dimensão**: L (L3)
-- **Observado**: `04:5` diz "não exigida pelo perfil (mínimo)", e `04:11` classifica a acessibilidade como `padrão` (P×I 4). Nenhum dos dois perfis exige revisão adversarial, então a conclusão se mantém. O motivo citado é que está errado.
-- **Repro**: `sed -n '5p;11p' 04-casos-de-teste.md`
-- **Destino**: 1
-- **Ação exigida**: trocar o motivo para "perfil padrão, sem Impacto 3".
+- **Ação exigida**: escrever no comentário o padrão realmente usado, `\[CT-(B)?[0-9]+\]`, ou registrar a adaptação do template para CT-B dentro do `04`.
 
 ## Matriz de Rastreabilidade
 
 | RQ/P | Cláusula ou premissa | Passo PRD | CT | CT-B | Código | Resultado | Veredito |
 |------|----------------------|-----------|----|------|--------|-----------|----------|
-| RQ-06 | cenários 1–4 sobre commit com a feature | 3 | — (processo) | — | — | rodada sobre `e267f909`, anterior às correções da v0.53.1 | ⚠️ QA-01 |
-| P-01 | débito pago por evidência posterior | 3 | — (processo) | — | — | a premissa cita "v0.53.1", que a evidência não confirma | ⚠️ QA-01 |
+| RQ-06 | cenários 1–4 sobre um commit com a feature | 3 | — (processo) | — | — | rodada `f1`..`f4` sobre `e267f909`, que contém o Adendo 4 mas não as correções da v0.53.1 nem a sobrescrita. Arquivo novo provado só pelas rotas estáticas (`git archive HEAD` o lista; `KitUpdate::CAMINHOS_DO_KIT`, `:93`–`:387`, tem `resources/views/vendor/filament-auth-designer` em `:245`). Cenários sobre a tag: débito (`03:54`) | ⚠️ débito declarado; o `01` contradiz → QA-06 |
+| P-01 | débito pago por evidência posterior | 3 | — (processo) | — | — | revista no `00:51`; o `01:21` e o `01:57` não acompanharam | ⚠️ QA-06 |
+| P-04 | resultado registrado na origem | 6 | — | — | — | `origem/03:261` dá J como pago | ⚠️ QA-06 |
 
-As demais linhas não têm lacuna. RQ-01..RQ-04 e P-02 vão para CT-B21..CT-B23 e CT-114, verdes na execução do gate. RQ-05, RQ-07, RQ-08, P-03 e P-04 são processo, com a evidência no `03`.
+As demais linhas não têm lacuna:
+
+- RQ-01..RQ-04 e P-02 vão para CT-B21..CT-B23 e CT-114, verdes no ciclo 2.
+- RQ-05, RQ-07, RQ-08 e P-03 são processo, com a evidência no `03`.
 
 ## Dimensões
 
 | # | Dimensão | Status | Observação |
 |---|----------|--------|------------|
-| A | Cobertura do requisito | ⚠️ | `rastreabilidade.sh` exit 1, com 7 linhas (RQ-05..08, P-01, P-03, P-04 "sem CT"), rejeitadas: são cláusulas de execução, com o comando e a saída no `03`. Sem `07-tickets/`. Diff por passo: passo 2 com os 3 arquivos no diff; passo 1 com o teste temporário fora da árvore; passo 6 com `03`/`04`/`05` da origem no diff. Achado: QA-01 |
-| B | Fronteiras e dados | ✅ | sem entrada nova. O diff não toca `app/`. O `$position` da sobrescrita vem de `->themeToggle()` nos providers, não do usuário |
-| C | Matriz de permissão | ✅ | nenhuma rota, policy ou ação nova. As telas tocadas são públicas (guest) |
-| D | Observabilidade | ✅ | o PRD declara "Logs: nenhum" nos 6 passos, e o diff não tem código PHP de aplicação. Não há ponto de log a conferir |
-| E | Performance | ✅ | a sobrescrita é Blade estática, sem query. Nada cresce com N |
-| F | UX de erro | ✅ | nenhum caminho de erro ou mensagem nova |
-| G | Tema e cor | ⏭️ não verificada | fora do perfil padrão. Mesmo assim rodou: `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`); nível 1 `dark-mode.sh {AM}` exit 0; nível 2: CT-B21, linhas "escuro", com axe e contraste, 6/6 verdes na execução do gate. O nível 3 (olhar a tela) não foi feito pelo gate: ver *Não Verificado* |
-| H | Acessibilidade | ✅ | executada além do perfil. `AcessibilidadeDasTelasDeAcessoTest` 14/14; `AparenciaDasTelasDeAcessoTest` (Browser) com CT-B03, CT-B13, CT-B19 e CT-B20: 8/8. O app servido tem `role="menu"` no wrapper em `/admin/login` e em `/admin/password-reset/request`, sem `aria-label` duplicado. O alternador fora do teclado (`tabindex="-1"` do Filament) é débito do vendor já registrado na origem |
-| I | Segurança da superfície nova | ✅ | coberto pelo step 9 (`## Revisão do Diff (step 9)` do `03`): 11 achados, 1 refutado por medição e 2 mantidos com motivo. Coberto além disso: nenhuma rota nova, nenhum model tocado, nenhum upload, `{!! $styles !!}` vindo de código. O `02` declara a Superfície Livewire sem propriedade pública |
-| J | Regressão adjacente | ⚠️ | a suíte (sem Browser) rodou sobre `276cdc21` e a Browser sobre `c530039c`, os dois antes do `a50089aa`, que só tocou a sobrescrita (`git diff 276cdc21 HEAD --stat -- app resources public tests/Pest.php`: 1 arquivo). RCRCRC por amostragem, no gate: `TelasDoKitTest` com o filtro das telas públicas e do 2FA, 2/2; `BrowserTenancy/IdentidadeVisualTest` 9/9; `KitUpdateTest` CT-06/CT-07 4/4; `RoteiroDeAtualizacaoTest` 212/212. Com `--exclude-testsuite`, o `--tia` rodou tudo, sem seleção por impacto (declarado no `03`). Achado: QA-01 |
-| K | Adequação da suíte | ⏭️ não verificada | K1 `k1-oraculo-fraco.sh` exit 1, com 2 linhas (CT-31 `:724` e CT-75 `:376`) rejeitadas: são testes antigos, fora das linhas que o diff acrescentou. K2 está fora do perfil padrão. A amostragem manual do RQ-07 (M134..M145, H1) não foi reproduzida pelo gate. M136 é sobrevivente triado como equivalente: plausível pela leitura (`VesteAparenciaDasTelas::aparenciaDaTela():58` aplica `transicaoDaInstalacao()` em todo render, e no preview também), mas a equivalência é argumentada, não medida. Cabeçalho do `04`: "Revisão adversarial: não exigida" (não é `NÃO FEITA`) |
-| L | Consistência documental | ⚠️ | 5 achados (QA-01..QA-05). L1 `ids-ct.sh` desta wiki com o arquivo Browser: exit 1 (CT-114 mora no arquivo Kit, como declarado). Com o arquivo Kit junto, acusa os CT da origem, como o `03` explica. Na origem, com `'tests/**/AparenciaDasTelas*.php' 'tests/**/AcessibilidadeDasTelasDeAcesso*.php'`: exit 0, reproduz o `03`. L2 `citacoes.sh` exit 0. L4 `conformidade-rules.sh {wiki} main` exit 0; a exceção de seletor por classe em `testes-browser.md` foi declarada e justificada (o que se afirma é o papel ARIA de um wrapper sem texto nem rótulo), e não é achado. L5: CHANGELOG, docs pt/en e roteiro coerentes entre si, e a sobrescrita está em `CAMINHOS_DO_KIT`. L6 `checkbox-sem-evidencia.sh` exit 0; números reproduzidos: CT-110..113 11/11, Browser 14/14, `SiteDeDocumentacaoTest` 68/68, CT-114 1/1, 265 arquivos de teste, 95 features; não reproduzidos: 113 cenários (QA-04) e "commit da v0.53.1" (QA-01). L7: glossário coerente ("Painel de marca", "Transição entre as telas", "Telas de acesso"). L8 n/a: sem `08`, `roteiro-manual.sh` exit 0, e o `03` não registra decisão de roteiro manual |
+| A | Cobertura do requisito | ⚠️ | `rastreabilidade.sh` exit 1, com 7 linhas (RQ-05..08, P-01, P-03, P-04 "sem CT"), rejeitadas: são cláusulas de execução, com o comando no `03`. Sem `07-tickets/`. Diff por passo como no ciclo 1. Achado: QA-06 |
+| B | Fronteiras e dados | ✅ | código igual ao do ciclo 1 (diff vazio). Sem entrada nova; `$position` vem dos providers |
+| C | Matriz de permissão | ✅ | nenhuma rota, policy ou ação nova; telas guest |
+| D | Observabilidade | ✅ | PRD com "Logs: nenhum" nos 6 passos; o diff não tem PHP de aplicação |
+| E | Performance | ✅ | sobrescrita Blade estática, sem query |
+| F | UX de erro | ✅ | nenhum caminho de erro novo |
+| G | Tema e cor | ⏭️ não verificada | fora do perfil padrão. `dark-mode.sh --mecanismo` exit 1 (Filament, classe `dark`); nível 1 `dark-mode.sh` exit 0 nos arquivos AM de `resources/`; nível 2: CT-B21 linhas "escuro" verdes. Nível 3 não feito |
+| H | Acessibilidade | ✅ | executada além do perfil. `AcessibilidadeDasTelasDeAcessoTest` 14/14 no ciclo 2 (sem os `warnings` do ciclo 1). No app servido, `/admin/login` e `/admin/password-reset/request` têm `role="menu"` no wrapper, 1 vez cada |
+| I | Segurança da superfície nova | ✅ | coberto pelo step 9 (`## Revisão do Diff (step 9)` do `03`: 11 achados, 1 refutado por medição, 2 mantidos com motivo). Além dele: nenhuma rota nova, nenhum model, nenhum upload; `{!! $styles !!}` vem de configuração em código. Código igual ao do ciclo 1 |
+| J | Regressão adjacente | ⏭️ não verificada | o gate não rodou a suíte inteira nem o `--tia` (restrição: um processo de teste por vez). Amostras: ciclo 1 (`TelasDoKitTest`, `IdentidadeVisualTest` 9/9, `RoteiroDeAtualizacaoTest` 212/212) e ciclo 2 (cinco arquivos Kit 630/630; CT-110..CT-114 12/12; Browser 14/14). O ciclo 1 contou a J como verificada; a reclassificação é de critério, não fato novo |
+| K | Adequação da suíte | ⏭️ não verificada | K1 `k1-oraculo-fraco.sh` exit 1, com 2 linhas (CT-31 `:724`, CT-75 `:376`) rejeitadas: testes antigos, fora das linhas do diff (o CT-114 é linha nova). K2 fora do perfil. A amostragem manual do RQ-07 não foi reproduzida. M136: equivalência argumentada, com CT-111 matando a remoção dupla. Cabeçalho do `04`: "não exigida (padrão, sem Impacto 3)" |
+| L | Consistência documental | ⚠️ | 2 achados (QA-06, QA-07); detalhes por checagem logo abaixo da tabela |
+
+**Checagens da dimensão L:**
+
+- **L1**: `ids-ct.sh` desta wiki com `'tests/**/AcessibilidadeDasTelasDeAcesso*.php'`: exit 1 (CT-114 mora em `tests/Kit/AparenciaDasTelasDeAcessoTest.php` (o CT-114), como declarado). Origem com os arquivos da aparência e o de acessibilidade: exit 0.
+- **L2**: `citacoes.sh` exit 0.
+- **L4**: `conformidade-rules.sh {wiki} main` exit 0.
+- **L5**: CHANGELOG 0.55.1 coerente.
+- **L6**: `checkbox-sem-evidencia.sh` exit 0. Números reproduzidos neste ciclo: 630/630 (`03:20`); badge 2.690 (`README.md:8`); "8 de 12 → 12 de 12" coerente entre `03:14` e `03:34`; 114 cenários e 129 mutantes da origem; `git archive HEAD` com os dois arquivos novos; `CAMINHOS_DO_KIT` com as quatro entradas (`:245`, `:252`, `:269`, `:271`, dentro do array `:93`–`:387`).
+- **L7**: sem mudança desde o ciclo 1.
+- **L8**: n/a. Não há `08`, o `roteiro-manual.sh` saiu com exit 0 e o `03` não registra decisão de roteiro.
 
 ## Débitos Aceitos
 
-- Nenhum neste ciclo: com o QA-01 aberto o veredito é REPROVADO. QA-02..QA-05 entram como débito se não forem corrigidos junto com ele.
+- Nenhum: com o QA-06 aberto o veredito é REPROVADO.
+- O QA-07 entra como débito se não for corrigido junto.
+- Seguem como débito declarado no `03` (`## Débitos`): ADV-E5, M3/M4 não medidos, cenários 1–4 sobre a v0.55.1, e a arte no cadastro não afirmada.
 
 ## Suspeitas Não Confirmadas
 
-- A execução de `AcessibilidadeDasTelasDeAcessoTest` reporta `warnings: 2`, sem detalhe na saída `--agent`. A natureza deles não foi identificada em 1 tentativa.
-- O CT-B21 não afirma a presença da arte (`fi-auth-media`) no cadastro. O teste só garante o alternador. Pela leitura do aquecimento por tela, a arte deve estar presente, mas não foi observada no navegador.
+- Os `warnings: 2` do ciclo 1 em `AcessibilidadeDasTelasDeAcessoTest` não reapareceram (14/14, sem warnings). A suspeita foi encerrada.
 
 ## Não Verificado
 
-- G nível 3 (captura e leitura no tema escuro): Playwright MCP indisponível. O gate não tem `Write` para um teste temporário de captura, e gravar capturas em `tests/Browser/Screenshots` alteraria a árvore. As seis capturas da sessão foram apagadas, e a única evidência é a leitura registrada no `03:8`.
+- G nível 3 (olhar a tela no tema escuro): fora do perfil padrão; Playwright MCP indisponível; o gate não tem `Write` para um teste temporário de captura. As capturas da sessão foram apagadas, e a evidência é a leitura do `03:8`.
+- J: a suíte inteira (6206 testes sem Browser, 275 com Browser) e o `--tia` não foram reexecutados, por causa da restrição de um processo de teste por vez. Os números do `03:18–19` são de `276cdc21`/`c530039c`, anteriores ao `a50089aa`. A regressão foi conferida por amostragem.
+- J / RQ-06: os quatro cenários de `wikis/checklist-de-release.md` sobre a tag. O checklist manda rodá-los a cada tag nova, via `create-project` "na tag nova", então "depois da tag" é coerente com ele. O débito está em `03:54`.
 - K2: fora do perfil padrão. A amostragem manual do RQ-07 não foi reproduzida, porque exigiria editar arquivos de aplicação. A equivalência do M136 é argumentada, não medida.
-- J: a suíte inteira, sem Browser (6206 testes), e a Browser (275 testes, 556 s) não foram reexecutadas pelo gate, por causa da restrição de memória e de tempo. A regressão foi conferida por amostragem.
-- Independência: parcial. O despacho trouxe um resumo do conteúdo do diff e a alegação de que a suíte já rodou.
-- Boost MCP (`browser-logs`, `database-*`): não conectou (timeout de 30 s). O console foi coberto pelos CT-B verdes, sem leitura de log do navegador.
+- Cadastro no app servido: `/app/register` responde 302 → `/app/login`, porque `kit.registro.habilitado` é `false` (`php artisan config:show kit.registro`). A arte no cadastro não foi observada; só os CT-B (com `config` própria) cobrem a tela.
+- Boost MCP (`browser-logs`, `database-*`): não conectou (timeout). O console foi coberto pelos CT-B verdes.

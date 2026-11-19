@@ -13,7 +13,7 @@
 
 - Técnicas: EP (layout × tela × tema no CT-B21), rastreio de efeito no navegador (CT-B22, CT-B23).
 - Cenários: 4 · Regras: 4 · Mutantes previstos: 5 · Sem matador: 0 *(alterado em 2026-11-18: step 9 — CT-114 e M5; os IDs CT-01..CT-03 viraram CT-B21..CT-B23, na numeração de CT-B da origem)*
-<!-- contado pelos grep -cE de template-04.md §Contagem do cabeçalho: 4 cenários (3 "Cenário"/"Esquema" com [CT-B…] e o CT-114), 4 regras (## Regra R1..R4), 5 mutantes (M1..M5) -->
+<!-- contado pelos grep -cE de template-04.md §Contagem do cabeçalho, com o padrão de cenário adaptado para `\[CT-(B)?[0-9]+\]` (o do template só casa CT sem B e dá 1): 4 cenários (3 "Cenário"/"Esquema" com [CT-B…] e o CT-114), 4 regras (## Regra R1..R4), 5 mutantes (M1..M5) -->
 
 ## Mapa de Regras
 
