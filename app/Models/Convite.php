@@ -353,8 +353,8 @@ class Convite extends Model implements Auditable
 
         /*
          * O "+" bloqueado (wiki email-com-mais): a regra de `EmailComMais::aceitaNoConvite()`, com a
-         * busca das contas existentes feita UMA vez para o lote, como a dos membros acima — e com
-         * a mesma ressalva do `whereIn` sobre a coluna crua.
+         * busca das contas existentes feita UMA vez para o lote, como a dos membros acima — mas
+         * por `lower(email)`, e não pela coluna crua (ver logo abaixo).
          */
         $comMais = EmailComMais::permitido()
             ? collect()

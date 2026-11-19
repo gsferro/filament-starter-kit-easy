@@ -48,7 +48,7 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 - **Path**: `app/Support/EmailComMais.php` (novo), `config/kit.php`, `.env.example`
 - **Atende**: RQ-01, RQ-03, RQ-04, P-01, P-02, P-04
 - **Logs**: nenhum (a classe só responde; quem recusa registra)
-- **O quê**: `config('kit.email.permitir_mais')` = `filter_var(env('KIT_EMAIL_PERMITIR_MAIS'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true` (ausente, vazia ou irreconhecível permite; P-01). A classe é a única que lê a chave, e trata o `null` da chave ausente (projeto com o próprio `config/kit.php`) como permitido: `permitido(): bool`, `temMais(string $email): bool` (o "+" na parte local, antes do último "@"), `aceita(string $email): bool`, `mensagem(): string` e `regra(?string $atual = null): Closure` — a closure de validação que recusa o e-mail com "+" quando a opção está desligada e ignora o valor igual ao `$atual` (P-04)
+- **O quê**: `config('kit.email.permitir_mais')`: ausente ou vazia → `true`; senão `filter_var(..., FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true` (o `filter_var` sozinho devolve `false` para a string vazia; irreconhecível permite; P-01) *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*. A classe é a única que lê a chave, e trata o `null` da chave ausente (projeto com o próprio `config/kit.php`) como permitido: `permitido(): bool`, `temMais(string $email): bool` (o "+" na parte local, antes do último "@"), `aceita(string $email): bool`, `aceitaNoConvite(string $email): bool` (também passa o e-mail de conta existente; P-04), `mensagem(): string`, `regra(?string $atual = null): Closure` e `regraDeConvite(): Closure` — a closure de validação que recusa o e-mail com "+" quando a opção está desligada e ignora o valor igual ao `$atual` (P-04)
 
 ### 2. A opção na tela de configurações
 
@@ -99,13 +99,26 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 - **Logs**: —
 - **O quê**: a opção, o padrão, as vias cobertas e o que fica de fora
 
+## Impacto em Features Existentes
+
+| Feature | O que muda com a opção permitindo (padrão) | O que muda com ela desligada | Prova |
+|---|---|---|---|
+| Registro aberto (`registro-e-aprovacao`) | nada | o "+" é recusado no campo e no `registrar()` | `RegistroAbertoTest`, `RegistroAbertoTenancyTest`, CT-06, CT-08..CT-10 |
+| Convites, um a um e em massa | nada | o "+" para conta nova é recusado; conta existente passa | `ConviteTest`, `ConviteEmMassaTest`, CT-11..CT-15, CT-28 |
+| Aceite de convite (tela e social) | nada | nada: o convite emitido vale | `ConviteTest`, `CadastroSocialPorConviteTest`, CT-16, CT-17 |
+| CRUD de usuários (`/admin`, `/app`) | nada | o e-mail novo com "+" é recusado; o atual passa | `PaineisTest`, `AdminDaOrganizacaoTest`, CT-18..CT-20 |
+| Login social | nada | a conta nova com "+" não nasce, com aviso próprio | `LoginSocialGoogleTest`, CT-21..CT-23, CT-27 |
+| Perfil (Breezy) | o bloco "Informações pessoais" passa a ser a classe do kit, com o mesmo formulário | a troca para um e-mail com "+" é recusada | `PreferenciasDeAparenciaTest` CT-35, CT-24..CT-26 |
+| Tela de configurações e `kit:info` | uma seção a mais na aba Registro; uma propriedade a mais (77) | — | `ConfiguracoesDoKitTest`, `KitInfoTest` CT-06 |
+| Testes de quem deriva o kit | os helpers do registro e do convite moram no `tests/Pest.php` | — | `HelpersDeTesteTest` |
+
 ## Decisões de Desenho
 
 - **Uma chave nova, `kit.email.permitir_mais`, e não `kit.registro.*`**: o docblock de `config/kit.php` reserva `kit.registro.*` ao `RegistroAberto`, e esta opção vale também para convite, CRUD e perfil. Dona única: `EmailComMais` (`.ai/rules/config.md`)
-- **`filter_var(..., FILTER_NULL_ON_FAILURE) ?? true`, e não `(bool) env(..., true)`**: o segundo argumento do `env()` só cobre a chave ausente (`.ai/rules/config.md`); `KIT_EMAIL_PERMITIR_MAIS=` vazio viraria `false` e bloquearia por acidente. A direção segura aqui é permitir (P-01)
+- **Ausente ou vazia → `true` antes do `filter_var(..., FILTER_NULL_ON_FAILURE) ?? true`, e não `(bool) env(..., true)`**: o segundo argumento do `env()` só cobre a chave ausente (`.ai/rules/config.md`), e o `filter_var` devolve `false` para a string vazia; `KIT_EMAIL_PERMITIR_MAIS=` vazio bloquearia por acidente. A direção segura aqui é permitir (P-01) *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*
 - **A regra do Filament é ligada como `->rule(fn (): Closure => EmailComMais::regra(...))`**: o Filament avalia toda closure passada a `rule()`
 - **A regra é closure de método estático**, o padrão do projeto (`AdministradorDaInstalacao::regraDeNomeDePapel()`), e não classe em `app/Rules`, que não existe
-- **Guardas no servidor além da regra do campo** (`registrar()`, `aceitar()`): o login social e qualquer chamador fora da tela não passam pelo formulário — o mesmo argumento de `exigirPortaAberta()`
+- **Guarda no servidor além da regra do campo** (`registrar()`): o chamador fora da tela não passa pelo formulário — o mesmo argumento de `exigirPortaAberta()`. O `aceitar()` não ganha guarda: o convite já emitido vale (P-06); o login social confere o "+" no controller, antes do `criarConta()` *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*
 
 ## Superfície de UI
 

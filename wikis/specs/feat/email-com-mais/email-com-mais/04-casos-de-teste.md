@@ -15,7 +15,7 @@
 - Por que o Impacto é 2 e não 3: o `00` trata o bloqueio como "proteção extra" e diz que o "+" "não é um problema". Se o bloqueio falhar, nasce uma conta a mais, e o admin a resolve à mão. Se a recusa for indevida, o próprio admin a desfaz religando a opção. A falha não envolve dinheiro, dado de terceiro, autorização de painel nem perda irreversível.
 - Por que P é 3 em A2 e A3: são oito vias, três painéis, os dois estados da opção, as exceções da P-04 (conta existente) e da P-06 (convite já emitido), e uma integração externa (o provedor social).
 - Técnicas aplicadas: EP (partição do valor da opção e da parte local), BVA de posição do "+" na parte local, tabela de decisão (estado × e-mail × conta existente × via), rastreio de efeito (conta, convite, notificação, sessão), criação ≠ edição ≠ uso.
-- Cenários: 27 · Regras: 11 · Mutantes previstos: 52 · Sem matador: 2
+- Cenários: 28 · Regras: 11 · Mutantes previstos: 54 · Sem matador: 2 *(alterado em 2026-11-19: CT-28 e M53/M54 do step 9; as linhas `off`/`no` do CT-01 pela recomendação da Q6 — QA-06/QA-07 do gate)*
 <!-- derivado por grep -c (template-04.md §Contagem do cabeçalho) -->
 
 **Divergência declarada com uma Project Rule.** `.ai/rules/config.md` manda que um interruptor de env falhe **fechado**. Aqui vence a P-01 do `00`: a ausência de valor (chave ausente, vazia ou irreconhecível) **permite**, e só um "desligado" explícito bloqueia. A rule fala de interruptor que **abre** superfície pública. Esta opção liga uma proteção opcional, e o requisito escolheu a direção. Os CT-01 a CT-03 seguem a P-01.
@@ -41,7 +41,7 @@
 | R3 — Só conta o "+" da parte local | A2 (padrão) | RQ-01, RQ-03, RQ-04, P-04 | EP + BVA de posição | CT-07 |
 | R4 — Registro aberto (`/app/register`, `/cadastro`) segue a opção | A2 (padrão) | RQ-02, RQ-03, RQ-04, P-03, P-05 | tabela de decisão + rastreio de efeito | CT-08, CT-09, CT-10 |
 | R5 — Convite um a um segue a opção, exceto para conta existente | A2 (padrão) | RQ-02, RQ-03, RQ-04, P-03, P-04, P-06 | tabela de decisão | CT-11, CT-12 |
-| R6 — No convite em massa, o "+" sai com motivo próprio e os outros seguem | A2 (padrão) | RQ-03, P-04, P-05 | EP + rastreio de efeito | CT-13, CT-14, CT-15 |
+| R6 — No convite em massa, o "+" sai com motivo próprio e os outros seguem | A2 (padrão) | RQ-03, P-04, P-05 | EP + rastreio de efeito | CT-13, CT-14, CT-15, CT-28 |
 | R7 — O convite já emitido vale | A2/A3 (padrão) | RQ-03, P-06 | tabela estado × evento (emitido antes × desligado depois) | CT-16, CT-17 |
 | R8 — CRUD de usuários: criar segue a opção; editar só olha o e-mail novo | A2 (padrão) | RQ-02, RQ-03, P-03, P-04 | criação ≠ edição + tabela de decisão | CT-18, CT-19, CT-20 |
 | R9 — O login social não cria conta com "+" bloqueado e diz o motivo | A3 (padrão) | RQ-03, P-03, P-05 | rastreio de efeito + EP | CT-21, CT-22, CT-23 |
@@ -156,6 +156,8 @@ Funcionalidade: Opção de permitir ou bloquear o "+" no e-mail do cadastro
         | true       | permitido | ligado explícito            |
         | false      | bloqueado | desligado explícito         |
         | 0          | bloqueado | desligado explícito         |
+        | off        | bloqueado | desligado explícito (Q6)    |
+        | no         | bloqueado | desligado explícito (Q6)    |
 
     Cenário: [CT-02] o projeto que manteve o próprio config/kit.php sem a chave permite o "+"
       Dado um projeto cuja configuração do kit não tem a chave da opção (o grupo removido da config, não gravado como null)
@@ -735,6 +737,7 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | CT-25 | recusa no perfil de cada painel | R10 | EP por painel | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R10-M3 |
 | CT-26 | cada painel serve o componente do kit | R10 | EP por painel | G8 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R10-M3 |
 | CT-27 | conta existente com "+" entra | R11 | EP | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R11-M1, M2, M3 |
+| CT-28 | lote pela tela: motivo do "+" e conta existente em qualquer caixa | R6 | EP + rastreio de efeito | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | M53, M54 |
 
 O arquivo `tests/Kit/EmailComMaisTest.php` é proposto. Os CT de Tenancy vão para os arquivos irmãos que já têm os helpers (Setup Global, "Helpers dos irmãos e onde os CT moram").
 

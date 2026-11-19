@@ -1,6 +1,6 @@
 # Progresso — Permitir ou bloquear o "+" no e-mail do cadastro
 
-**Estado**: em revisão — 2026-11-19 (step 10 feito)
+**Estado**: em revisão — 2026-11-19
 
 **Base do PR**: `main`
 
@@ -61,6 +61,24 @@ Três revisores sem o PRD: `fw-revisor-diff`, `/code-review` (fork) e o codex. N
 | Variável atribuída dentro do `config/kit.php` | code-review 9 | mantido: uma chave só; um helper para um uso seria camada sem segundo cliente |
 | Convite para conta existente com "+", aceito depois que a conta troca de e-mail, cria conta com "+" | RD-01 | débito (abaixo) |
 | `kit:admin` troca o e-mail do admin sem a regra | RD-05 | fora de escopo (P-03) |
+
+## Verificação Final
+
+Rodados em 2026-11-19, na raiz, sobre o branch (`bash .claude/skills/feature-wiki/scripts/{script}.sh wikis/specs/feat/email-com-mais/email-com-mais`):
+
+| Script | Saída |
+|---|---|
+| `rastreabilidade.sh` | silêncio, exit 0 |
+| `checkbox-sem-evidencia.sh` | silêncio, exit 0 |
+| `citacoes.sh` | silêncio, exit 0 (depois de tirar o número de três citações sem símbolo do `04`) |
+| `conformidade-rules.sh {wiki} main` | silêncio, exit 0 (depois da `## Conformidade com Rules`) |
+| `ids-ct.sh {wiki} 'tests/Kit/EmailComMaisTest.php' 'tests/Tenancy/RegistroAbertoTenancyTest.php' 'tests/Tenancy/AdminDaOrganizacaoTest.php'` | exit 0 com os três arquivos; com só o `EmailComMaisTest.php`, acusa CT-06, CT-12 e CT-20, que moram nos arquivos de Tenancy |
+
+Suítes:
+- `vendor/bin/pest --parallel --processes=3 --exclude-testsuite=Browser --compact` sobre `2fc89953`: 6289 testes, 6279 passaram, 7 falhas — citações de linha deslocadas pela feature (`CitacoesDeCodigoTest` CT-26, `DiagramasDaArquiteturaTest` CT-66), a página em inglês com a mensagem em português (`SiteDeDocumentacaoTest` CT-19), as contagens do README (3) e o CT-28, que rodou com a árvore no meio da edição. Corrigidas; os arquivos reexecutados: `CitacoesDeCodigoTest` + `DiagramasDaArquiteturaTest` 531/531, `SiteDeDocumentacaoTest` + `RedeDeDocumentacaoTest` 88/88, `EmailComMaisTest` 70/70
+- `vendor/bin/pest --testsuite=Browser --compact`: 275 testes, 221 passaram, 52 pulados, 2 falhas por timeout de 45 s sob carga (o gate rodava em paralelo): `ConfiguracoesSecoesColapsaveisTest` CT-B04 e `DockDeAtalhosTest` CT-B01, verdes isolados (4/4 e 1/1)
+
+Roteiro manual: não — a feature é validação de formulário e uma recusa do login social, todas medidas por componente e HTTP nos 28 CT; nenhum fluxo novo de tela.
 
 ## Conformidade com Rules
 

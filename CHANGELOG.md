@@ -33,8 +33,9 @@ Opção para **permitir ou bloquear o "+" no e-mail do cadastro** (`fulano+loja@
 ### Atualizando
 
 - **Rode `php artisan migrate`**: a migration de settings `2026_11_19_100000_add_email_permitir_mais_to_kit_settings`
-  cria a opção, semeada do `.env` (ausente = permitido). Sem ela, a tela de configurações não tem o campo e a opção
-  segue o `.env`.
+  cria a opção, semeada do `.env` (ausente = permitido). Sem ela, o settings do kit acusa a propriedade que falta
+  (`MissingSettings`) e o boot passa a ler TODAS as opções da tela do `.env`, não só esta — rode o `migrate` antes de
+  usar o painel.
 - Os helpers `registrarAberto()`, `conviteCom()`, `aceitarConvite()` e `conviteSocialPara()` passaram para o
   `tests/Pest.php`: quem tinha cópia própria nos testes recebe o arquivo novo e remove a cópia.
 - Roteiro: `wikis/atualizacoes/v0.56.0.md`.

@@ -147,8 +147,8 @@ it('[CT-01] o valor da variável de ambiente decide, e só o falso explícito bl
     'true'                     => ['true', 'permitido'],
     'false'                    => ['false', 'bloqueado'],
     '0'                        => ['0', 'bloqueado'],
-    'off (Q?2 respondida)'     => ['off', 'bloqueado'],
-    'no (Q?2 respondida)'      => ['no', 'bloqueado'],
+    'off (Q6)'                 => ['off', 'bloqueado'],
+    'no (Q6)'                  => ['no', 'bloqueado'],
 ])->group('kit');
 
 it('[CT-02] o projeto que manteve o próprio config/kit.php sem a chave permite o "+"', function (): void {
