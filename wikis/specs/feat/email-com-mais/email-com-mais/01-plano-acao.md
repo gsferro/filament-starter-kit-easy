@@ -48,7 +48,7 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 - **Path**: `app/Support/EmailComMais.php` (novo), `config/kit.php`, `.env.example`
 - **Atende**: RQ-01, RQ-03, RQ-04, P-01, P-02, P-04
 - **Logs**: nenhum (a classe só responde; quem recusa registra)
-- **O quê**: `config('kit.email.permitir_mais')`: ausente ou vazia → `true`; senão `filter_var(..., FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true` (o `filter_var` sozinho devolve `false` para a string vazia; irreconhecível permite; P-01) *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*. A classe é a única que lê a chave, e trata o `null` da chave ausente (projeto com o próprio `config/kit.php`) como permitido: `permitido(): bool`, `temMais(string $email): bool` (o "+" na parte local, antes do último "@"), `aceita(string $email): bool`, `aceitaNoConvite(string $email): bool` (também passa o e-mail de conta existente; P-04), `mensagem(): string`, `regra(?string $atual = null): Closure` e `regraDeConvite(): Closure` — a closure de validação que recusa o e-mail com "+" quando a opção está desligada e ignora o valor igual ao `$atual` (P-04)
+- **O quê**: `config('kit.email.permitir_mais')`: ausente ou vazia → `true`; senão `filter_var(..., FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true` (o `filter_var` sozinho devolve `false` para a string vazia; irreconhecível permite; P-01) *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*. A classe é a única que lê a chave, e trata o `null` da chave ausente (projeto com o próprio `config/kit.php`) como permitido: `permitido(): bool`, `temMais(string $email): bool` (o "+" na parte local, antes do último "@"), `aceita(string $email): bool`, `aceitaNoConvite(string $email): bool` (também passa o e-mail de conta existente; P-04), `mensagem(): string`, `mensagemDoConvite(): string` (a `mensagem()` mais o pedido de um convite sem o "+", fonte única da tela do aceite e do login social por convite; *alterado em 2026-11-19 — QA-15*), `regra(?string $atual = null): Closure` e `regraDeConvite(): Closure` — a closure de validação que recusa o e-mail com "+" quando a opção está desligada e ignora o valor igual ao `$atual` (P-04)
 
 ### 2. A opção na tela de configurações
 
@@ -61,14 +61,14 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 
 - **Path**: `app/Filament/Pages/Auth/RegistroPorConvite.php`, `app/Support/RegistroAberto.php`
 - **Atende**: RQ-02, RQ-03, P-03, P-05
-- **Logs**: `warning` no `autenticacao`, motivo `email_com_mais`, quando a guarda do `registrar()` recusa
+- **Logs**: `warning` no `autenticacao`, motivo `email_com_mais`, quando a guarda do `registrar()` recusa; e `warning` `[RegistroPorConvite@mount]` no `autenticacao`, motivo `email_com_mais`, com o id do convite e o e-mail por `Str::mask`, quando o convite com "+" para conta nova é recusado ao abrir o link *(alterado em 2026-11-19 — QA-10)*
 - **O quê**: o campo de e-mail ganha a regra só no modo aberto; no modo convite, o convite com "+" para conta nova é recusado no `mount()` (`recusarPorMais()`: aviso com o motivo e login), porque o campo do convite é desabilitado *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite)*; `exigirPortaAberta()` ganha o motivo `email_com_mais` (o chamador que não passou pela tela)
 
 ### 4. Convite
 
 - **Path**: `app/Models/Convite.php`, `app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php`, `app/Filament/App/Resources/Convites/ConviteResource.php`, `app/Filament/Concerns/ConvidaEmMassa.php`, `app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php`, `app/Console/Commands/KitConvitesLembrar.php`
 - **Atende**: RQ-02, RQ-03, P-03, P-05, P-06
-- **Logs**: nenhum novo (o convite em massa já registra os recusados)
+- **Logs**: `warning` `[Convite@aceitar]` no `autenticacao`, motivo `email_com_mais`, quando o `aceitar()` recusa a conta nova com "+"; o convite em massa já registrava os recusados; o lembrete pula sem log *(alterado em 2026-11-19 — QA-10)*
 - **O quê**: os dois formulários com a regra, que deixa passar o e-mail de uma conta existente (P-04); `convidarEmMassa()` com o motivo `email_com_mais` e o texto em `motivoLegivel()`, com a mesma exceção; `aceitar()` recusa a conta nova com "+" (`RuntimeException` com a mensagem), o Reenviar some para esse convite (`ConvitesTable`) e o lembrete o pula (`KitConvitesLembrar`); o Revogar, que já existia, é a saída do admin (P-06) *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite)*
 
 ### 5. CRUD de usuários
@@ -83,14 +83,14 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 - **Path**: `app/Http/Controllers/Auth/LoginSocialController.php`
 - **Atende**: RQ-03, P-03, P-05
 - **Logs**: `warning` no `autenticacao`, motivo `email_com_mais`, e-mail mascarado
-- **O quê**: antes de criar conta pelo registro aberto, o e-mail com "+" e a opção desligada recusam com a mensagem do motivo — conferido no controller, antes do `criarConta()`, porque o `catch (RuntimeException)` do `retorno()` trocaria a mensagem pela do convite. Conta existente entra como hoje (P-04); o convite com "+" para conta nova recusa com a mesma mensagem (P-06) *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite)*
+- **O quê**: antes de criar conta pelo registro aberto, o e-mail com "+" e a opção desligada recusam com a mensagem do motivo — conferido no controller, antes do `criarConta()`, porque o `catch (RuntimeException)` do `retorno()` trocaria a mensagem pela do convite. Conta existente entra como hoje (P-04); o convite com "+" para conta nova recusa com a mensagem do convite, que pede um convite sem o "+", a mesma da tela do aceite (P-06) *(alterado em 2026-11-19: Q4 respondida "não" — o convite com "+" para conta nova é recusado no aceite; a mensagem do convite pelo QA-15 do gate)*
 
 ### 7. Perfil
 
-- **Path**: `app/Livewire/InformacoesPessoais.php` (novo, estende o `PersonalInfo` do Breezy), os três `PanelProvider`. Feito por último, num commit próprio (Q2 aberta), depois de confirmar que a chave `personal_info` do `myProfileComponents()` substitui o componente padrão
+- **Path**: `app/Livewire/InformacoesPessoais.php` (novo, estende o `PersonalInfo` do Breezy), os três `PanelProvider`. Feito por último, num commit próprio, depois de confirmar que a chave `personal_info` do `myProfileComponents()` substitui o componente padrão
 - **Atende**: RQ-03, P-03, P-04
 - **Logs**: nenhum
-- **O quê**: `getEmailComponent()` do pai com a regra, ignorando o e-mail atual; registrado como `personal_info` no `myProfileComponents()` dos três painéis
+- **O quê**: `getEmailComponent()` do pai com a regra, ignorando o e-mail atual; registrado como `personal_info` no `myProfileComponents()` dos três painéis. A Q2 foi respondida em 2026-11-19: o perfil segue a opção *(alterado em 2026-11-19 — QA-10)*
 
 ### 8. Documentação
 
@@ -105,7 +105,9 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 |---|---|---|---|
 | Registro aberto (`registro-e-aprovacao`) | nada | o "+" é recusado no campo e no `registrar()` | `RegistroAbertoTest`, `RegistroAbertoTenancyTest`, CT-06, CT-08..CT-10 |
 | Convites, um a um e em massa | nada | o "+" para conta nova é recusado; conta existente passa | `ConviteTest`, `ConviteEmMassaTest`, CT-11..CT-15, CT-28 |
-| Aceite de convite (tela e social) | nada | nada: o convite emitido vale | `ConviteTest`, `CadastroSocialPorConviteTest`, CT-16, CT-17 |
+| Aceite de convite (tela, social e model) | nada | o convite com "+" para conta nova é RECUSADO, mesmo o emitido antes: a tela leva ao login com o aviso (`RegistroPorConvite::recusarPorMais()`), o login social recusa antes de criar a conta (`LoginSocialController::retorno()`) e o model lança (`Convite::aceitar()`); o convite para conta existente com "+" segue aceito (P-04) *(alterado em 2026-11-19 — QA-10)* | `ConviteTest`, `CadastroSocialPorConviteTest`, CT-16, CT-17, CT-29 |
+| Lista de convites do `/admin` (Reenviar oculto) | nada | a ação Reenviar some para o convite com "+" para conta nova; Revogar continua *(alterado em 2026-11-19 — QA-10)* | `ConviteTest`, CT-30 |
+| Lembrete automático (`kit:convites-lembrar`) | nada | o convite com "+" para conta nova é pulado, sem lembrete *(alterado em 2026-11-19 — QA-10)* | `ConviteTest`, CT-31 |
 | CRUD de usuários (`/admin`, `/app`) | nada | o e-mail novo com "+" é recusado; o atual passa | `PaineisTest`, `AdminDaOrganizacaoTest`, CT-18..CT-20 |
 | Login social | nada | a conta nova com "+" não nasce, com aviso próprio | `LoginSocialGoogleTest`, CT-21..CT-23, CT-27 |
 | Perfil (Breezy) | o bloco "Informações pessoais" passa a ser a classe do kit, com o mesmo formulário | a troca para um e-mail com "+" é recusada | `PreferenciasDeAparenciaTest` CT-35, CT-24..CT-26 |
@@ -116,6 +118,7 @@ e-mail novo a uma conta recusa o endereço com "+" na parte local, com uma mensa
 
 - **Uma chave nova, `kit.email.permitir_mais`, e não `kit.registro.*`**: o docblock de `config/kit.php` reserva `kit.registro.*` ao `RegistroAberto`, e esta opção vale também para convite, CRUD e perfil. Dona única: `EmailComMais` (`.ai/rules/config.md`)
 - **Ausente ou vazia → `true` antes do `filter_var(..., FILTER_NULL_ON_FAILURE) ?? true`, e não `(bool) env(..., true)`**: o segundo argumento do `env()` só cobre a chave ausente (`.ai/rules/config.md`), e o `filter_var` devolve `false` para a string vazia; `KIT_EMAIL_PERMITIR_MAIS=` vazio bloquearia por acidente. A direção segura aqui é permitir (P-01) *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*
+- **"Desligado explícito" é o falso que o `FILTER_VALIDATE_BOOLEAN` reconhece: `false`, `0`, `off` e `no`, em qualquer caixa e com espaço em volta; qualquer outro valor (`nao`, `não`, `talvez`) permite** (Q6, decidida aqui como desenho): é a P-01 levada ao fim — só um desligado inequívoco bloqueia, e o valor que o PHP não reconhece cai na ausência de valor, que permite. Ler `nao`/`não` como desligado exigiria uma lista própria de palavras numa chave que as outras do `config/kit.php` não têm, e o erro nessa direção é o barato (uma conta a mais, desfeita pelo admin; ver o Impacto 2 do `04`). Medido em 2026-11-19 com `filter_var(…, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true`: `off`, `OFF`, ` No `, `no`, `false`, `0` → `false`; `nao`, `não`, `talvez` → `true`. Coberto pelo CT-01 *(alterado em 2026-11-19 — QA-11)*
 - **A regra do Filament é ligada como `->rule(fn (): Closure => EmailComMais::regra(...))`**: o Filament avalia toda closure passada a `rule()`
 - **A regra é closure de método estático**, o padrão do projeto (`AdministradorDaInstalacao::regraDeNomeDePapel()`), e não classe em `app/Rules`, que não existe
 - **Guarda no servidor além da regra do campo** (`registrar()`): o chamador fora da tela não passa pelo formulário — o mesmo argumento de `exigirPortaAberta()`. O `aceitar()` também ganha guarda, para a conta nova com "+" (P-06, Q4); o login social confere o "+" no controller, antes de criar conta por registro ou por convite *(alterado em 2026-11-19: QA-02 do gate — o texto anterior não batia com o código)*

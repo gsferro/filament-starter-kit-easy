@@ -13,9 +13,9 @@
 | A3 — login social que cria conta ou entra | 3 | 2 | 6 | padrão |
 
 - Por que o Impacto é 2 e não 3: o `00` trata o bloqueio como "proteção extra" e diz que o "+" "não é um problema". Se o bloqueio falhar, nasce uma conta a mais, e o admin a resolve à mão. Se a recusa for indevida, o próprio admin a desfaz religando a opção. A falha não envolve dinheiro, dado de terceiro, autorização de painel nem perda irreversível.
-- Por que P é 3 em A2 e A3: são oito vias, três painéis, os dois estados da opção, as exceções da P-04 (conta existente) e da P-06 (convite já emitido), e uma integração externa (o provedor social).
+- Por que P é 3 em A2 e A3: são oito vias, três painéis, os dois estados da opção, a exceção da P-04 (conta existente), a recusa da P-06 (convite com "+" para conta nova, mesmo o emitido antes, sem reenvio nem lembrete) *(alterado em 2026-11-19 — QA-13: P-06 vigente)*, e uma integração externa (o provedor social).
 - Técnicas aplicadas: EP (partição do valor da opção e da parte local), BVA de posição do "+" na parte local, tabela de decisão (estado × e-mail × conta existente × via), rastreio de efeito (conta, convite, notificação, sessão), criação ≠ edição ≠ uso.
-- Cenários: 31 · Regras: 11 · Mutantes previstos: 58 · Sem matador: 2 *(alterado em 2026-11-19: CT-28 e M53/M54 do step 9; as linhas `off`/`no` do CT-01 pela recomendação da Q6 — QA-06/QA-07 do gate; a R7 reescrita pela resposta à Q4, com CT-29..CT-31 e sete mutantes no lugar de três)*
+- Cenários: 31 · Regras: 11 · Mutantes previstos: 57 · Sem matador: 1 *(alterado em 2026-11-19: CT-28 e M53/M54 do step 9; as linhas `off`/`no` do CT-01 pela recomendação da Q6 — QA-06/QA-07 do gate; a R7 reescrita pela resposta à Q4, com CT-29..CT-31 e sete mutantes no lugar de três)* *(alterado em 2026-11-19 — QA-12: recontado pelos `grep -c` abaixo — 56 linhas `| M` antes, mais o R7-M8 do QA-15 = 57; o M53/M54 do adendo do step 9 não é linha `| M` e fica fora da conta; a L2 fechou pelo CT-30/CT-31, então sem matador cai para 1. A numeração dos mutantes é por regra desde a derivação — cada regra recomeça em M1 e o Índice qualifica como `R7-M3` —, e a R7 segue essa convenção: não há colisão no ID qualificado, e nada foi renumerado)*
 <!-- derivado por grep -c (template-04.md §Contagem do cabeçalho) -->
 
 **Divergência declarada com uma Project Rule.** `.ai/rules/config.md` manda que um interruptor de env falhe **fechado**. Aqui vence a P-01 do `00`: a ausência de valor (chave ausente, vazia ou irreconhecível) **permite**, e só um "desligado" explícito bloqueia. A rule fala de interruptor que **abre** superfície pública. Esta opção liga uma proteção opcional, e o requisito escolheu a direção. Os CT-01 a CT-03 seguem a P-01.
@@ -25,12 +25,12 @@
 | Letra | O que existe nesta feature | Cenários gerados |
 |---|---|---|
 | S | a opção: chave de config, env, propriedade do settings e sua migration; o leitor único; a regra de validação; os campos de e-mail das vias; o componente de informações pessoais do perfil nos três painéis | CT-01…CT-06, CT-26 |
-| F | aceitar ou recusar o e-mail novo conforme a opção; dizer o motivo (erro de campo, motivo no lote, aviso no login social); deixar passar a conta existente (P-04) e o convite já emitido (P-06) | CT-07…CT-25, CT-27 |
+| F | aceitar ou recusar o e-mail novo conforme a opção; dizer o motivo (erro de campo, motivo no lote, aviso no login social); deixar passar a conta existente (P-04); recusar o convite com "+" para conta nova, mesmo o emitido antes, sem reenviá-lo nem lembrá-lo (P-06) *(alterado em 2026-11-19 — QA-13: P-06 vigente)* | CT-07…CT-25, CT-27, CT-29…CT-31 |
 | D | e-mail com e sem "+"; "+" no início, no fim e repetido na parte local; "+" depois do "@"; valor da opção (ausente, vazio, irreconhecível, `true`, `false`, `0`); conta existente com "+"; convite com "+" já emitido; lote misto | CT-01, CT-03, CT-07, CT-13, CT-15 |
 | I | `/app/register`, `/cadastro`, `/admin` e `/app` (convites, usuários, meu-perfil), `/infra/meu-perfil`, a ação de convite em massa, `RegistroAberto::registrar()` e `Convite::convidarEmMassa()` chamados direto, o retorno `/auth/{provedor}/callback`, a tela de configurações e o `.env` | CT-04, CT-08…CT-27 |
 | P | banco de teste SQLite. O "+" é ASCII e não depende de colação. Medido: a regra `email` do Laravel e o `filter_var` recusam `fulano@exem+plo.com` e `fulano＋a@exemplo.com` (U+FF0B), e aceitam `+fulano@`, `fulano+@` e `fulano+a+b@` | CT-07, CT-15 |
 | O | o admin da instalação liga e desliga a opção; o admin da organização (`admin_app`) cria convite e usuário no `/app`; o visitante se cadastra; a pessoa convidada aceita; quem já tem conta entra e edita o perfil; uso indevido: multiplicar contas com `fulano+N@` | CT-06, CT-12, CT-21, CT-22, CT-25, CT-27 |
-| T | a ordem importa: o convite emitido com a opção permitindo e aceito depois que ela foi desligada (P-06); o settings ainda não migrado (P-01). Não há concorrência relevante: a opção é lida na hora da validação | CT-03, CT-16, CT-17 |
+| T | a ordem importa: o convite emitido com a opção permitindo e aberto, reenviado ou lembrado depois que ela foi desligada, que é recusado (P-06, Q7) *(alterado em 2026-11-19 — QA-13: P-06 vigente)*; o settings ainda não migrado (P-01). Não há concorrência relevante: a opção é lida na hora da validação | CT-03, CT-16, CT-17, CT-29…CT-31 |
 
 ## Mapa de Regras
 
@@ -49,9 +49,9 @@
 | R11 — A conta existente com "+" continua entrando | A2/A3 (padrão) | P-04 | EP | CT-27 |
 
 - Técnica escalada: R3 usa BVA de **posição** (primeiro caractere, último antes do "@", repetido) e não só EP. "Contém '+'" e "contém '+' antes do '@'" só divergem em posições escolhidas a dedo.
-- Nenhuma `RQ` está aberta. Q1 a Q4 estão `aberta — implementada a recomendação`: o recorte é derivado da recomendação vigente (P-01, P-02, P-03, P-06), e a P vigente é a origem.
+- Nenhuma `RQ` está aberta. Q1 a Q4 foram respondidas pelo solicitante em 2026-11-19 (Q4 divergindo da recomendação: o convite com "+" para conta nova é recusado no aceite), Q7 decorre da Q4 e a Q6 foi decidida como desenho; só a Q5 (texto da mensagem) segue `aberta — implementada a recomendação`. A P vigente é a origem *(alterado em 2026-11-19 — QA-13: P-06 vigente)*.
 - RQ-03 tem **cobertura parcial**: CT-08 e CT-10 afirmam que a mensagem cita o "+" e não é a recusa genérica. A redação exata está aberta (Q?1).
-- P-06 tem **cobertura parcial**: CT-16 e CT-17 cobrem o aceite. Ficam abertos o reenvio e o lembrete do convite com "+" emitido antes, com a opção desligada (Q?3).
+- P-06 tem **cobertura completa**: CT-16 (tela), CT-17 (login social), CT-29 (model), CT-30 (Reenviar oculto, Revogar presente) e CT-31 (lembrete pulado) *(alterado em 2026-11-19 — QA-13: P-06 vigente)*.
 
 ## Costuras de Teste
 
@@ -77,7 +77,7 @@
 | logs `warning` no canal `autenticacao` com motivo `email_com_mais` | log não é cláusula (Proibição 12) | sem CT; fica para a dimensão D do quality gate |
 | seção colapsável "E-mail com +" na aba Registro | o `00` só fixa a aba (P-02); título e texto são da tela | o CT-04 entra pela aba `registro` e pelo campo; o título não é oráculo |
 | `InformacoesPessoais` estendendo o `PersonalInfo` do Breezy | escolha de implementação | detalhe do CT-26, que mede o que cada painel serve |
-| "o modo convite não ganha a regra; o `aceitar()` não muda" | mecanismo; o comportamento vem da P-06 | o CT-16 e o CT-17 afirmam o comportamento (o aceite passa), não o mecanismo |
+| "o modo convite não ganha a regra; o `aceitar()` não muda" | mecanismo; o comportamento vem da P-06 | o CT-16, o CT-17 e o CT-29 afirmam o comportamento (o aceite do convite com "+" para conta nova é recusado), não o mecanismo *(alterado em 2026-11-19 — QA-13: P-06 vigente)* |
 
 ### Perguntas geradas pela derivação
 
@@ -87,11 +87,11 @@ Qual é o texto exato da mensagem que explica o bloqueio, no campo de e-mail e n
 
 ❓ Q?2 · raia: desenho · afeta: P-01 · depende de: —
 Quais valores do `.env` são "desligado explícito"? Só `false` e `0`, ou também `off` e `no`?
-➡️ Recomendação: os falsos que o `FILTER_VALIDATE_BOOLEAN` reconhece (`false`, `0`, `off`, `no`). Vazio e qualquer outro valor contam como ausência e permitem (P-01). O CT-01 já fixa `false`, `0`, vazio e `talvez`. As linhas `off` e `no` entram com a resposta.
+➡️ Recomendação: os falsos que o `FILTER_VALIDATE_BOOLEAN` reconhece (`false`, `0`, `off`, `no`). Vazio e qualquer outro valor contam como ausência e permitem (P-01). O CT-01 já fixa `false`, `0`, vazio e `talvez`. As linhas `off` e `no` entram com a resposta. → *(alterado em 2026-11-19 — QA-11: a Q6 foi decidida como desenho, a recomendação, no `01`; as linhas `off` e `no` estão no CT-01)*
 
 ❓ Q?3 · raia: requisito · afeta: P-06 · depende de: —
 Com a opção desligada, o convite com "+" emitido antes pode ser **reenviado** (token novo) e continua recebendo **lembrete**? Ou o reenvio conta como "convite novo"?
-➡️ Recomendação: segue valendo. É o mesmo convite já emitido (P-06), e o reenvio não cria conta nem endereço novo. Sem cenário até a resposta.
+➡️ Recomendação: segue valendo. É o mesmo convite já emitido (P-06), e o reenvio não cria conta nem endereço novo. Sem cenário até a resposta. → *(alterado em 2026-11-19 — QA-13: virou a Q7 do `00`, que decorre da Q4 respondida "não": nem reenvio nem lembrete; CT-30 e CT-31)*
 
 ## Perguntas para o 00-requisito.md
 
@@ -99,8 +99,8 @@ Desvio declarado: a derivação roda em sub-agente e não edita o `00`. As pergu
 
 | ID | Pergunta | Afeta | Recomendação | Estado |
 |----|----------|-------|--------------|--------|
-| Q?1 | Qual é o texto exato da mensagem que explica o bloqueio do "+" (erro do campo e aviso do login social)? | P-05, RQ-03 | uma frase única para todas as vias, citando o "+" antes do "@" | aberta |
-| Q?3 | Com a opção desligada, o convite com "+" emitido antes pode ser reenviado e lembrado? | P-06 | sim — é o mesmo convite já emitido; não cria endereço novo | aberta |
+| Q?1 | Qual é o texto exato da mensagem que explica o bloqueio do "+" (erro do campo e aviso do login social)? | P-05, RQ-03 | uma frase única para todas as vias, citando o "+" antes do "@" | virou a Q5 do `00`: aberta, implementada a recomendação, pendente de confirmação *(alterado em 2026-11-19 — QA-11)* |
+| Q?3 | Com a opção desligada, o convite com "+" emitido antes pode ser reenviado e lembrado? | P-06 | sim — é o mesmo convite já emitido; não cria endereço novo | virou a Q7 do `00`: não, decorre da Q4 (2026-11-19) *(alterado em 2026-11-19 — QA-13: P-06 vigente)* |
 
 ## Setup Global
 
@@ -447,6 +447,7 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
       Quando o Google devolve a pessoa com o e-mail "gsferroti+starter@gmail.com"
       Então nenhuma conta nasce e ninguém está autenticado
       E o aviso cita o "+", e não é a recusa genérica de convite
+      E o aviso pede a quem convidou um convite para o endereço sem o "+", como a tela do aceite (CT-16)
       E o convite continua pendente
 
     Cenário: [CT-29] o model recusa o aceite de conta nova com "+" e aceita a conta existente com "+"
@@ -483,6 +484,7 @@ O CT-10 é o par de saída do estado de erro: a recusa tem destino. A pessoa cor
 | M5 | o `aceitar()` recusa também a conta existente com "+" | CT-29 | o vínculo da conta existente; o mutante lança |
 | M6 | o Reenviar continua visível para o convite com "+" | CT-30 | a ação oculta nessa linha |
 | M7 | o lembrete não pula o convite com "+" | CT-31 | uma notificação só, para o endereço sem "+" |
+| M8 | a recusa do login social pelo convite diz só "use o endereço sem o +", que a pessoa convidada não consegue seguir (QA-15 do gate, 2026-11-19) | CT-17 | o aviso contém o pedido de um convite sem o "+"; o mutante devolve só a mensagem do registro |
 
 ---
 
@@ -688,12 +690,12 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | # | Mutante | Por que sem matador |
 |---|---|---|
 | L1 — sem matador | a regra vive só nos formulários do CRUD (`/admin` e `/app`) e do perfil; por fora da UI, um `User::create`/`update` com "+" passa | o `00` exige a regra nas vias, não no model. `kit:install` e `kit:admin` estão fora de escopo (P-03) e criam contas pelo model, então um CT de model recusando "+" afirmaria um comportamento que o requisito exclui. O gate de camada é cumprido pelo registro (CT-09) e pelo lote (CT-13), e fica declarado para o CRUD e o perfil |
-| L2 — sem matador | o reenvio ou o lembrete de um convite com "+" emitido antes é recusado ou liberado, com a opção desligada | recorte aberto (Q?3); sem cenário da direção até a resposta |
+| ~~L2 — sem matador~~ fechada | o reenvio ou o lembrete de um convite com "+" emitido antes é recusado ou liberado, com a opção desligada | ~~recorte aberto (Q?3)~~ — a Q7 decorre da Q4: nem reenvio nem lembrete; o mutante é o R7-M6 e o R7-M7, mortos pelo CT-30 e pelo CT-31 *(alterado em 2026-11-19 — QA-13: P-06 vigente)* |
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M1 | regra do "+" só no formulário do CRUD e do perfil, sem prova por fora da UI | ⚠️ **sem matador** — L1 | — (lacuna declarada) |
-| M2 | reenvio/lembrete de convite com "+" emitido antes tratado como convite novo | ⚠️ **sem matador** — L2 (Q?3) | — (lacuna declarada) |
+| M2 | reenvio/lembrete de convite com "+" emitido antes tratado como convite válido | CT-30, CT-31 (o mesmo R7-M6 e R7-M7; L2 fechada *(alterado em 2026-11-19 — QA-13: P-06 vigente)*) | o Reenviar oculto e uma notificação só, para o endereço sem "+" |
 
 ---
 
@@ -707,7 +709,7 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | Concorrência | não se aplica: não há contador nem limite; a opção é lida a cada validação | — |
 | **Fronteira no ponto de entrada** (gravação) | CT-08, CT-09, CT-11, CT-12, CT-13, CT-18, CT-20, CT-21, CT-24 | G4, G5, G6, G7 |
 | **Domínio condicionado** (opção × e-mail × conta existente) | CT-07, CT-11, CT-13 | G3, G4, G5 |
-| **Estado × operação de escrita** (convite já emitido × aceite) | CT-16, CT-17 | G4, G7 |
+| **Estado × operação de escrita** (convite com "+" já emitido × aceite, reenvio e lembrete) *(alterado em 2026-11-19 — QA-13: P-06 vigente)* | CT-16, CT-17, CT-29, CT-30, CT-31 | G4, G5, G7 |
 | Ausente ≠ null ≠ vazio | CT-01 (env ausente × vazio × irreconhecível), CT-02 (chave ausente no config), CT-03 (settings sem a linha) | G1 |
 | Paginação / ordenação | não se aplica: nenhuma listagem nova | — |
 | Timezone / DST | não se aplica: a regra não depende de data; a ordem "emitido antes, desligado depois" é de evento, não de relógio (CT-16) | — |
@@ -729,7 +731,7 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | Cenário cogitado | Por que foi cortado |
 |---|---|
 | `kit:admin` / `kit:install` criando conta com "+" com a opção desligada | fora de escopo (P-03); vira lacuna L1 e não cenário |
-| linhas `off` e `no` no CT-01 | dependem de Q?2 (raia desenho); entram com a resposta |
+| ~~linhas `off` e `no` no CT-01~~ | ~~dependem de Q?2 (raia desenho); entram com a resposta~~ — não cortadas: estão nos Exemplos do CT-01 desde o QA-06, e a Q6 foi decidida como desenho no `01` *(alterado em 2026-11-19 — QA-11)* |
 | registro na organização com `/cadastro` | mata o mesmo M4/M5 de R2 que o CT-06 já mata |
 | aceite do convite com "+" com a opção **permitindo** | é o caminho feliz existente (`ConviteTest` "aceita o convite e cria o usuario com o papel"); não mata mutante novo |
 | convite em massa pela ação do `/app` (Tenancy) | o lote é o mesmo model (`Convite::convidarEmMassa`), já provado por CT-13 e CT-14 |
@@ -755,7 +757,7 @@ No CT-25, o componente testado é o que o plugin Breezy **daquele painel** regis
 | CT-14 | lote com a opção permitindo envia todos | R6 | EP | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R6-M4 |
 | CT-15 | "+" depois do "@" cai no formato | R6 | BVA de posição | G5 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R6-M5 |
 | CT-16 | aceite pela tela de convite já emitido | R7 | estado × evento | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R7-M1, M2 |
-| CT-17 | aceite social de convite já emitido | R7 | estado × evento | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R7-M2, M3 |
+| CT-17 | aceite social de convite já emitido | R7 | estado × evento | G7 | Pest feature HTTP | `tests/Kit/EmailComMaisTest.php` | R7-M3, M8 |
 | CT-18 | criar usuário no `/admin` | R8 | tabela de decisão | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R8-M5 |
 | CT-19 | editar usuário no `/admin` | R8 | criação ≠ edição | G4 | componente Livewire/Filament | `tests/Kit/EmailComMaisTest.php` | R8-M1, M2, M3 |
 | CT-20 | criar e editar usuário no `/app` | R8 | criação ≠ edição | G6 | componente Livewire/Filament | `tests/Tenancy/AdminDaOrganizacaoTest.php` | R8-M1, M3, M4 |

@@ -70,20 +70,20 @@
 
 ### QA-04 — A tabela de abas das docs omite a seção nova · Minor · destino 1
 - **Dimensão**: L5
-- **Observado**: a coluna "Seções" da linha **Registro** em `docs/pt/recursos/configuracoes-do-kit.md:21` e `docs/en/…:21` lista só "Cadastro sem convite; E-mail verificado". A aba tem uma terceira seção, `secao('registro', 'email-com-mais', 'E-mail com "+"', …)`, em `app/Filament/Admin/Pages/ConfiguracoesDoKit.php:745`.
+- **Observado**: a coluna "Seções" da linha **Registro** em `docs/pt/recursos/configuracoes-do-kit.md:21` e `docs/en/…:21` lista só "Cadastro sem convite; E-mail verificado". A aba tem uma terceira seção, `secao('registro', 'email-com-mais', 'E-mail com "+"', …)`, em `app/Filament/Admin/Pages/ConfiguracoesDoKit.php` (`abaRegistro()`, linha 745 no ciclo 1).
 - **Repro**: `grep -n "secao('registro'" app/Filament/Admin/Pages/ConfiguracoesDoKit.php` devolve 3 seções; a doc mostra 2.
 - **Destino**: 1 · **Ação exigida**: acrescentar "E-mail com "+"" à coluna, em pt e en.
 
 ### QA-05 — O CHANGELOG descreve errado a falta da migration · Minor · destino 1
 - **Dimensão**: L5
 - **Esperado**: o "Atualizando" diz o que acontece sem `migrate`.
-- **Observado**: `CHANGELOG.md:36` diz "Sem ela, a tela de configurações não tem o campo e a opção segue o .env". Na prática, sem a linha no settings, carregar `ConfiguracoesDoKit` lança `MissingSettings`. O boot então descarta o banco inteiro e volta ao `.env` para TODAS as opções, não só esta (`KitServiceProvider::configureSettingsDoKit`; o docblock de `app/Settings/ConfiguracoesDoKit.php:67-68` diz o mesmo).
+- **Observado**: `CHANGELOG.md:36` diz "Sem ela, a tela de configurações não tem o campo e a opção segue o .env". Na prática, sem a linha no settings, carregar `ConfiguracoesDoKit` lança `MissingSettings`. O boot então descarta o banco inteiro e volta ao `.env` para TODAS as opções, não só esta (`KitServiceProvider::configureSettingsDoKit`; o docblock de `app/Settings/ConfiguracoesDoKit.php` (linhas 67 e 68 no ciclo 1) diz o mesmo).
 - **Repro**: no banco SQLite local do `.env` (sem as migrations de settings recentes), `php artisan tinker --execute 'app(App\Settings\ConfiguracoesDoKit::class);'` → `MissingSettings … missing: tamanho_da_fonte, modo_do_menu, aparencia_por_usuario, email_permitir_mais`.
 - **Destino**: 1 · **Ação exigida**: reescrever a frase no `CHANGELOG.md` e conferir a mesma frase em `wikis/atualizacoes/v0.56.0.md` e em `wikis/agentes-e-skills.md`.
 
 ### QA-06 — Linhas do dataset do CT-01 sem Exemplo no Gherkin, citando uma resposta que não existe · Minor · destino 3
 - **Dimensão**: L1
-- **Observado**: `tests/Kit/EmailComMaisTest.php:151-152` tem as linhas `'off (Q?2 respondida)'` e `'no (Q?2 respondida)'`. Os Exemplos do CT-01 (`04:152-159`) não têm essas linhas, e `04:701` diz que elas "entram com a resposta". A Q?2 virou Q6 no `00`, que continua `aberta`. A docstring da chave e as docs anunciam `off` e `no` como bloqueio.
+- **Observado**: `tests/Kit/EmailComMaisTest.php` (dataset do `[CT-01]`, linhas 151 e 152 no ciclo 1) tem as linhas `'off (Q?2 respondida)'` e `'no (Q?2 respondida)'`. Os Exemplos do CT-01 (`04:152-159`) não têm essas linhas, e `04:701` diz que elas "entram com a resposta". A Q?2 virou Q6 no `00`, que continua `aberta`. A docstring da chave e as docs anunciam `off` e `no` como bloqueio.
 - **Repro**: `sed -n 144,153p tests/Kit/EmailComMaisTest.php` × `sed -n 152,159p wikis/specs/feat/email-com-mais/email-com-mais/04-casos-de-teste.md`
 - **Destino**: 3 · **Ação exigida**: o Exemplo nasce no `04` pela `feature-test-design`, depois da resposta à Q6 (ver QA-01). Até lá, o rótulo "respondida" sai.
 
@@ -123,7 +123,7 @@ O `rastreabilidade.sh` saiu com exit 0. Todo `RQ`/`P-nn` tem passo, CT e código
 |---|---|---|---|
 | A | Cobertura do requisito | ❌ | QA-01. `rastreabilidade.sh` exit 0; `git diff` por passo sem arquivo faltando; sem `07-tickets/`. A ambiguidade de "habilitada" no texto original (a proteção ou o "+") foi auditada e não gera achado: os dois estados existem e o padrão segue "proteção extra que pode ser habilitada". |
 | B | Fronteiras e dados | ⏭️ | Parte estática feita: `temMais` usa o último "@", `trim`, caixa, `+` no início, no fim, repetido e depois do "@" (datasets do CT-07 e do CT-15). Sondagem dinâmica não feita: este Pest não tem `--agent`. |
-| C | Matriz de permissão | ✅ | Nenhuma ação, rota ou permissão nova. A gravação da opção é guardada pelos testes de autorização existentes em `ConfiguracoesDoKitTelaTest.php:149,168,189,222`. Convite: CT-11 (`/admin`) e CT-12 (`/app`, `admin_app`). CRUD: CT-18–20. Perfil nos três painéis: CT-25. |
+| C | Matriz de permissão | ✅ | Nenhuma ação, rota ou permissão nova. A gravação da opção é guardada pelos testes de autorização existentes em `ConfiguracoesDoKitTelaTest.php` (linhas 149, 168, 189 e 222 no ciclo 1). Convite: CT-11 (`/admin`) e CT-12 (`/app`, `admin_app`). CRUD: CT-18–20. Perfil nos três painéis: CT-25. |
 | D | Observabilidade | ✅ | Log real: `[RegistroAberto@registrar] Registro aberto recusado \| motivo: email_com_mais {"motivo":"email_com_mais","ip":"127.0.0.1"}` em `autenticacao-2026-11-19.log`. Canal, prefixo e context corretos, sem PII. O log social usa `Str::mask`; o lote mascara o endereço. |
 | E | Performance | ⏭️ | Leitura do código: uma query por validação de convite e uma por lote (`whereIn lower(email)`), sem N+1. Contagem mecânica não feita (sem `--agent`). |
 | F | UX de erro | ⏭️ | A mensagem diz o quê e como corrigir, em pt-BR (CT-08, CT-10, CT-21, CT-28). A tela servida não foi observada (sem navegador). |
@@ -131,7 +131,7 @@ O `rastreabilidade.sh` saiu com exit 0. Todo `RQ`/`P-nn` tem passo, CT e código
 | H | Acessibilidade | ⏭️ | Fora do perfil padrão. |
 | I | Segurança da superfície nova | ✅ | Coberto pelo step 9 (`## Revisão do Diff (step 9)` do `03`: 17 linhas, 11 corrigidas e 6 mantidas, fora de escopo ou débito). Além do step 9: nenhuma rota nova; nenhum `fillable` mudou; `DB::raw`/`whereRaw` com bind; nenhum dado sensível em resposta. A exceção de conta existente da regra do convite não cria oráculo novo de enumeração: o `->unique()` do e-mail no `UserResource` do `/app` já responde existência global. |
 | J | Regressão adjacente | ⏭️ | `--parallel --tia` não rodado (restrição do ambiente: um processo de teste por vez). Rodados por arquivo, em série e todos verdes: 125 (Convite, RegistroAberto, CadastroSocialPorConvite, HelpersDeTeste, KitInfo), 453 (ConviteEmMassa, ConviteUsuarioExistente, ConfiguracoesDoKitTela, ConfiguracoesDoKit, LoginSocialGoogle, LoginSocialPorPainel, LoginUnificado, DefinirSenhaPorEmail, Paineis, CadastroNoPainelDoPapel, ExclusaoDePapelComConvite, VinculoDeProvedorSocial), 202 (ConfiguracoesSecoesColapsaveis, ConfiguracoesDoKitDocumentacao, TextoDoEnv, KitArte, LinkDoPainelSemTenancy, Tenancy ConviteEmMassa, LoginSocialGoogle, CadastroSocialPorOrganizacao, PermissoesDeTelas). O `01` não tem a seção de impacto para comparar (QA-08). |
-| K | Adequação da suíte | ⏭️ | K1 `k1-oraculo-fraco.sh` exit 1, 2 linhas rejeitadas: `ConviteTest.php:252` e `AdminDaOrganizacaoTest.php:554` já existiam na `main`. Testes da feature lidos: os oráculos afirmam efeito e mensagem. K2 fora do perfil. Revisão adversarial do `04`: "não exigida pelo perfil". |
+| K | Adequação da suíte | ⏭️ | K1 `k1-oraculo-fraco.sh` exit 1, 2 linhas rejeitadas: `ConviteTest.php` (linha 252 no ciclo 1) e `AdminDaOrganizacaoTest.php` (linha 554 no ciclo 1) já existiam na `main`. Testes da feature lidos: os oráculos afirmam efeito e mensagem. K2 fora do perfil. Revisão adversarial do `04`: "não exigida pelo perfil". |
 | L | Consistência documental | ⚠️ | QA-02 a QA-08. L1 `ids-ct.sh` (três arquivos da feature) exit 0, com a leitura de dataset e cabeçalho em QA-06 e QA-07; L2 `citacoes.sh` exit 0 na wiki, citações das docs em QA-03; L4 `conformidade-rules.sh main` exit 0, linhas "aplicada" conferidas, nenhuma rule violada (a divergência declarada com `config.md` é n.a.: a chave não abre superfície pública); L6 `checkbox-sem-evidencia.sh` exit 0 (vazio, QA-08); L7 sem termo novo divergente do glossário; L8 `roteiro-manual.sh` exit 0, n/a — sem 08. |
 
 **L6 — números reproduzidos**:
