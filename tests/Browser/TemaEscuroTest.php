@@ -116,6 +116,13 @@ it('alterna o tema pela tela de login', function (): void {
  * O que os denuncia como falsos é **todo** o texto da página estar em cinza-claro ao mesmo tempo:
  * título, subtítulo, parágrafo e botão. Paleta inteira trocada é sinal de tema, não de um
  * elemento com cor mal escolhida.
+ *
+ * **Corrigido de novo em 2026-11-19, agora medido: não é tema, é OPACIDADE.** Mesmo com o
+ * `inLightMode()` o caso falhava 1 vez em 3 (local e na `main`). `document.getAnimations()` no
+ * instante do axe mostrou `<html>` sem `dark`, `localStorage.theme` nulo e o `.fi-main-ctn` no
+ * começo da transição de opacidade de 150 ms com que o Filament o faz entrar. Texto escuro a
+ * opacidade baixa sobre `#fafafa` É `#d0d0d0` — daí "todo o texto em cinza-claro". O
+ * `comTelaAssentada()` (`tests/Pest.php`) espera a transição terminar; 6 de 6 verdes depois.
  */
 it('nao tem problema de acessibilidade no dashboard', function (string $painel): void {
     $this->actingAs(usuarioDoKit('master_global'));
@@ -123,8 +130,6 @@ it('nao tem problema de acessibilidade no dashboard', function (string $painel):
     // DT-06 — mesma razão do primeiro caso: compila o painel fora do cronômetro do Playwright.
     $this->get($painel);
 
-    visit($painel)
-        ->inLightMode()
-        ->waitForEvent('networkidle')
+    comTelaAssentada(visit($painel)->inLightMode()->waitForEvent('networkidle'))
         ->assertNoAccessibilityIssues();
 })->with(['/app', '/admin', '/infra']);

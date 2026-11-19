@@ -5,6 +5,13 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Corrigido
+
+- O job `telas` falhava de forma intermitente na varredura de acessibilidade do `/app`: o axe media
+  o contraste durante a transição de opacidade com que o Filament faz entrar o `.fi-main-ctn`, e o
+  texto escuro saía `#d0d0d0` sobre `#fafafa`. `comTelaAssentada()` (`tests/Pest.php`) espera as
+  animações finitas terminarem antes de cada `assertNoAccessibilityIssues()`.
+
 ## [0.56.0] - 2026-11-19
 
 Opção para **permitir ou bloquear o "+" no e-mail do cadastro** (`fulano+loja@gmail.com` cai na caixa de

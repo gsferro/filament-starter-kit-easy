@@ -100,6 +100,15 @@ A espera é por ESTADO (todo `wire:id` com `__livewire`, todo `x-load` com `_x_d
 segundos. Vale para qualquer campo dentro de `x-load` — não só senha. Diagnóstico: o CI guarda as
 telas dos cenários que falham no artifact `telas-que-falharam` do job `telas`.
 
+## `assertNoAccessibilityIssues()` passa por `comTelaAssentada()`
+
+O `.fi-main-ctn` do Filament entra com uma transição de opacidade de 150 ms, e o axe calcula
+contraste com a opacidade do momento: no começo do fade, o texto escuro sai `#d0d0d0` sobre
+`#fafafa` (1,47:1) — a página INTEIRA em cinza-claro, que parece defeito de tema e não é (medido
+com `document.getAnimations()`: `<html>` sem `dark`, `localStorage.theme` nulo, `opacity` em
+`currentTime=0`). Falhava 1 em 3. `comTelaAssentada($pagina)->assertNoAccessibilityIssues()`
+espera as animações finitas terminarem (o `pulse` infinito dos esqueletos não conta).
+
 ## `waitForEvent('networkidle')` não serve em painel do Filament
 
 Ele nunca resolve: o painel fica consultando as notificações, a rede não fica ociosa e o cenário
