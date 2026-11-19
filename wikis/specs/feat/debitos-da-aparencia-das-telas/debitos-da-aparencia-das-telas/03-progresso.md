@@ -1,6 +1,6 @@
 # Progresso — Débitos G, H, J e K da aparência das telas de acesso
 
-**Estado**: em revisão — 2026-11-18
+**Estado**: concluída — 2026-11-18 (gate no teto, aceite no PR)
 
 **Base do PR**: `main`
 
@@ -133,3 +133,10 @@ Tratamento do ciclo 2 (depois do veredito, sem ciclo 3):
 
 
 No `06` do ciclo 2, a citação `arquivo:linha` sem símbolo do CT-114 foi reescrita como prosa ("`tests/Kit/AparenciaDasTelasDeAcessoTest.php` (o CT-114)") para o `citacoes.sh` passar; o conteúdo do achado não mudou.
+
+## Candidatos a Rule
+
+Nenhum que passe em *Vale virar rule* (2026-11-18). Dois candidatos foram avaliados:
+
+- O vazamento do painel corrente entre `$this->get()` e o servidor do navegador no mesmo processo já está coberto pela rule de aquecimento de `testes-browser.md` ("aqueça pelo kernel") e pelo QA-01 da origem; aqui só ganhou o detalhe "aqueça a tela que vai visitar"
+- "Correção de alegação precisa chegar a todas as cópias" já está na skill do gate
