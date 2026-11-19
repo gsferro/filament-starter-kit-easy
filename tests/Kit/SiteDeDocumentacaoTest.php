@@ -1939,65 +1939,37 @@ it('[CT-48] mantem o roadmap presente, ligado nos READMEs e fora do export-ignor
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O kit:update não entrega os READMEs, que passam a ser do projeto.')->group('kit');
 
 /**
- * O percentual de cobertura dos READMEs sai do MESMO arquivo que alimenta o badge.
+ * Nenhum README nem a página de cobertura escreve o percentual à mão: ele só existe no badge.
  *
- * O badge do README é um *endpoint* do shields.io apontando para
- * `.github/badges/cobertura.json`, e o job `cobertura` do CI reprova quando esse JSON
- * diverge do medido. Isso trava **o badge**.
+ * Contrato mudado em 2026-11-19. Antes, a linha da tabela "Qualidade" e a página de docs citavam
+ * o número, e este caso os amarrava a um `.github/badges/cobertura.json` commitado. A cadeia
+ * envelhecia de propósito: toda PR que cruzasse um ponto percentual deixava a `main` vermelha
+ * até alguém commitar o JSON novo à mão.
  *
- * A linha da tabela "Qualidade" é outro número, escrito à mão, e sem esta guarda ela
- * poderia dizer `79 %` para sempre enquanto o badge mostrasse `85 %` — a mesma classe
- * de defeito que a linha *Telas navegáveis* cometeu por mais de um mês, e que o
- * `[CT-25]` existe para impedir na contagem de arquivos.
- *
- * ## O que esta guarda NÃO faz — dito porque a redação anterior prometia demais
- *
- * Ela compara README **contra o JSON**, não contra a realidade. O elo que liga o JSON à medição
- * é o job `cobertura`, e ele **não roda em pull request** (`ci.yml`, `if: github.event_name !=
- * 'pull_request'`), porque a medição é serial e custa ~52 min no runner.
- *
- * Consequência prática, nos dois sentidos:
- *
- * - uma PR que **derrube** a cobertura passa por aqui, porque README e JSON continuam coerentes
- *   entre si. O defeito aparece em `main`, depois do merge;
- * - uma PR que **suba** a cobertura cruzando o ponto percentual também passa, e deixa `main`
- *   vermelha até alguém rodar `composer test:coverage` e commitar o JSON novo.
- *
- * Isso é o preço declarado de não gastar 52 min de runner por PR (ADR-02 e ADR-06), e não um
- * descuido. O
- * que esta guarda fecha é o elo **barato**: o número escrito à mão no README envelhecendo em
- * silêncio, que é a classe de defeito da linha *Telas navegáveis*.
+ * Agora o JSON nasce no CI (job `badge`, branch `badges`, ver `[CT-20]`) e não há cópia na
+ * árvore para comparar. A classe de defeito que este caso fechava — número escrito à mão
+ * envelhecendo em silêncio, como a linha *Telas navegáveis* — continua fechada pelo caminho
+ * inverso: não pode haver número escrito à mão.
  */
-it('[CT-49] mantem o percentual de cobertura dos readmes igual ao do badge', function (): void {
-    $badge = json_decode((string) file_get_contents(base_path('.github/badges/cobertura.json')), true);
+it('[CT-49] nao escreve o percentual de cobertura a mao nos readmes nem na pagina de cobertura', function (): void {
+    $linhas = [
+        'README.md'    => '| Cobertura de testes (`app/`, linha) |',
+        'README.en.md' => '| Test coverage (`app/`, line) |',
+    ];
 
-    expect($badge)->toBeArray()
-        ->and($badge['message'] ?? null)->toMatch('~^\d{1,3}%$~', 'o badge precisa guardar o percentual inteiro, como `79%`');
+    foreach ($linhas as $arquivo => $inicio) {
+        preg_match('~^'.preg_quote($inicio, '~').'.*$~m', (string) file_get_contents(base_path($arquivo)), $linha);
 
-    $percentual = (int) rtrim((string) $badge['message'], '%');
+        $this->assertNotEmpty($linha, "a linha de cobertura sumiu da tabela do `{$arquivo}`");
+        $this->assertDoesNotMatchRegularExpression('~\d{1,3}\s?%~', $linha[0], "o `{$arquivo}` voltou a escrever o percentual de cobertura à mão");
+        $this->assertMatchesRegularExpression('~badge~i', $linha[0], "a linha de cobertura do `{$arquivo}` não manda ao badge");
+    }
 
-    expect((string) file_get_contents(base_path('README.md')))
-        ->toContain("| Cobertura de testes (`app/`, linha) | **{$percentual} %**")
-        ->and((string) file_get_contents(base_path('README.en.md')))
-        ->toContain("| Test coverage (`app/`, line) | **{$percentual} %**");
-
-    /*
-     * As páginas de docs também citam o percentual, e sem esta parte elas ficariam livres para
-     * envelhecer enquanto README e badge são atualizados juntos — exatamente a classe de defeito
-     * que este caso existe para impedir, só que num arquivo que esta mesma entrega criou.
-     *
-     * A frase é a mesma nas duas línguas de propósito, para uma asserção só travar as duas.
-     */
-    foreach (['pt', 'en'] as $lingua) {
-        /*
-         * `assertStringContainsString`, e NÃO `expect()->toContain($agulha, $mensagem)`: o
-         * `toContain` do Pest é variádico, e o segundo argumento vira OUTRA AGULHA — o caso
-         * passaria a exigir a mensagem dentro da página. Está em `.ai/rules/testes.md`.
-         */
-        $this->assertStringContainsString(
-            "**{$percentual} %** ",
+    foreach (['pt' => 'das linhas', 'en' => 'of the lines'] as $lingua => $sufixo) {
+        $this->assertDoesNotMatchRegularExpression(
+            '~\*\*\d{1,3}\s?%\*\* '.$sufixo.'~',
             (string) file_get_contents(base_path("docs/{$lingua}/referencia/qualidade-de-codigo.md")),
-            "a página de cobertura em `docs/{$lingua}/` cita um percentual diferente do badge",
+            "a página de cobertura em `docs/{$lingua}/` voltou a escrever o percentual à mão",
         );
     }
 })->skip(fn (): bool => ! naArvoreDoKit(), 'O `.github/` é `export-ignore`: não existe em projeto nascido de `create-project`.')->group('kit');

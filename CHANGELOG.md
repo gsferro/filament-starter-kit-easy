@@ -5,6 +5,18 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+### Alterado
+
+- **O badge de cobertura nasce do CI, não de um JSON commitado.** O job `cobertura` grava o JSON a
+  partir da medição (`kit:cobertura --write`), e o job novo `badge` o publica no branch órfão
+  `badges` — só na `main` e só depois do `cobertura` verde. O `.github/badges/cobertura.json` saiu do
+  repositório, os READMEs apontam o endpoint do shields.io para o branch `badges`, e a tabela
+  "Qualidade" e a página de cobertura deixaram de escrever o percentual à mão. Antes, toda PR que
+  cruzava um ponto percentual deixava a `main` vermelha até alguém commitar o número novo.
+  `[CT-20]` e `[CT-49]` mudaram de contrato junto.
+- O job `telas` guarda as telas dos cenários de navegador que falharem (`actions/upload-artifact`,
+  pinada por SHA, 7 dias).
+
 ## [0.55.1] - 2026-11-18
 
 Débitos de verificação G, H, J e K da aparência das telas de acesso (v0.53). Nada muda no comportamento, exceto

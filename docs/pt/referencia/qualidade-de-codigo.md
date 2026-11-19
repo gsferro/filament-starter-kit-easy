@@ -164,8 +164,9 @@ Seus testes vão em `tests/Feature` e `tests/Unit`, como de costume — o kit n�
 
 ## A cobertura de testes — e o que o número **não** inclui
 
-**86 %** das linhas de `app/` — 9.866 de 11.366 statements (86,80%), medido em 2026-10-23, no job `cobertura` da `main`. O badge do
-README vem daqui, e o CI reprova quando ele mente.
+O percentual de linhas de `app/` está no badge **cobertura** do README, e nenhum arquivo do repositório o
+escreve à mão: o job `cobertura` mede a cada push na `main`, e só quando ele termina verde o job `badge`
+publica o JSON no branch `badges`, que é para onde o endpoint do shields.io aponta.
 
 > **O número varia um pouco com o sistema operacional**, e o badge foi desenhado para absorver
 > isso: numa medição de 2026-09-25, a mesma árvore deu **79,89 % no Windows e 79,82 % no Linux**
@@ -175,27 +176,28 @@ README vem daqui, e o CI reprova quando ele mente.
 > plataforma.
 
 > Os números com casa decimal desta página são **datados**, não derivados: eles valem para a
-> medição de 2026-09-26 e envelhecem. O único que tem guarda automática é o percentual inteiro,
-> travado contra `.github/badges/cobertura.json` pelo `[CT-49]`.
+> medição de 2026-09-26 e envelhecem. O percentual inteiro é o do badge, e ele não tem
+> cópia escrita: o `[CT-49]` reprova se um README ou esta página
+> voltar a citá-lo à mão.
 
 ```bash
-composer test:coverage    # mede, grava o badge e aplica o piso — ~32 min, em série
+composer test:coverage    # mede e aplica o piso — ~32 min, em série
 
 # as duas metades, separadas, quando você já tem o Clover:
 php -d pcov.enabled=1 vendor/bin/pest --testsuite=Kit,Tenancy --no-tia --coverage-clover=cobertura.xml
-php artisan kit:cobertura cobertura.xml --min=78          # confere (é o que o CI faz)
-php artisan kit:cobertura cobertura.xml --min=78 --write  # grava o badge
+php artisan kit:cobertura cobertura.xml --min=78          # aplica o piso
+php artisan kit:cobertura cobertura.xml --min=78 --write  # aplica o piso e grava o JSON, se existir .github/badges/ (o CI cria)
 ```
 
 O `kit:cobertura` **viaja com o kit**: no seu projeto ele aplica o piso que você escolher, sobre o
 `phpunit.xml` que você tiver. A parte do badge é a única que é só do kit — fora da árvore dele o
-`.github/badges/` não existe, e o comando simplesmente não mexe em badge nenhum.
+`.github/badges/` não existe — nem no kit, onde só o runner do CI o cria —, e o comando simplesmente não mexe em badge nenhum.
 
 ### Os três badges de teste do README, e o que cada um garante
 
 | Badge | De onde sai | Quem impede de envelhecer |
 |---|---|---|
-| **cobertura** | `.github/badges/cobertura.json`, gerado por `composer test:coverage` | o job `cobertura` do CI, que remede e reprova se o JSON mentir |
+| **cobertura** | o JSON do branch `badges`, publicado pelo job `badge` do CI | ele é regravado a cada `cobertura` verde na `main`; não há cópia commitada para envelhecer |
 | **casos de teste** | contagem de blocos `it()`/`test()` em `tests/` | o `[CT-50]`, que **recalcula da árvore** a cada rodada da suíte |
 | **PHPStan** | o `level:` do `phpstan.neon` | o `[CT-50]`, pelo mesmo mecanismo |
 
