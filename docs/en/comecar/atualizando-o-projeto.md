@@ -145,6 +145,11 @@ opens on the first tab.
 the `deps:*` scripts from the kit's `composer.json` — `kit:update` brings `composer-unused.php`, but only
 reports the `composer.json` difference.
 
+**v0.55.1 has nothing to install or migrate**: `kit:update` brings the override of the access screens' theme
+switcher (`resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php`, which fixes
+an accessibility error) and new tests. If you already override that partial, merge the wrapper's
+`role="menu"`.
+
 **v0.54.0 adds three migrations** (`php artisan migrate`): per-user appearance preferences (see
 [Kit settings](../../recursos/configuracoes-do-kit/#each-persons-appearance-font-sidebar-and-the-choice-in-my-profile)).
 The installation switch starts **on**, so everyone sees the new "Aparência" section in My profile —

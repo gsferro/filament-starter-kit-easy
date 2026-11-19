@@ -2,7 +2,7 @@
 
 > Derivado do **requisito**, não do plano. Nenhuma implementação foi consultada.
 >
-> Cenários: 109 · Regras: 17 · Mutantes previstos: 124 · Sem matador: 0 *(2026-11-15, depois do teste manual da v0.53.1 (CT-107..CT-109, M145..M147); 2026-11-14, depois do Adendo 4, da revisão do diff dele e do gate (CT-98..CT-106, M134..M144); 2026-11-14, depois do CT-97 e do M133 (CX-C1); os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos cenários CT-80..CT-96 da revisão adversarial e dos mutantes M109..M132 (QA-34); antes: 79 cenários e 86 mutantes, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
+> Cenários: 114 · Regras: 17 · Mutantes previstos: 129 · Sem matador: 0 *(2026-11-18, depois da revisão adversarial do Adendo 4 (CT-110..CT-113, M149..M153; CT-114 do step 9 dela), wiki `feat/debitos-da-aparencia-das-telas`; 2026-11-15, depois do teste manual da v0.53.1 (CT-107..CT-109, M145..M147); 2026-11-14, depois do Adendo 4, da revisão do diff dele e do gate (CT-98..CT-106, M134..M144); 2026-11-14, depois do CT-97 e do M133 (CX-C1); os quatro `grep -cE` de `feature-test-design/references/template-04.md` §Contagem do cabeçalho, 2026-11-14, depois dos cenários CT-80..CT-96 da revisão adversarial e dos mutantes M109..M132 (QA-34); antes: 79 cenários e 86 mutantes, depois dos Adendos 2 e 3 e da P-31 (QA-30); CT-21, CT-27 e CT-35 `@obsoleto`; as regras R18..R30 dos Adendos estão no `## Mapa de Regras` e no `Regra:` do Gherkin das seções deles, sem `## Regra` próprio — por isso o grep conta 17; os mutantes M102..M108 dos CT-B estão no `05`, que tem contagem própria)*
 >
 > Revisão adversarial dos Adendos 2 e 3: feita (`fw-adversario-ct`, ADV-C1..C32) — fechamento na seção "Revisão adversarial dos Adendos 2 e 3"; os CT-80..CT-96 que a fecham têm cenário em "Cenários da revisão adversarial dos Adendos 2 e 3" *(QA-34)*
 >
@@ -2308,3 +2308,76 @@ Perfil padrão (teto 5).
 | M145 | A página que participa não pula a transição para um destino que não participa | CT-107 | a lista no `<head>` com `skipTransition()`; o mutante não a tem |
 | M146 | A lista de destinos chama `route()` em rota com parâmetro | CT-108 | as quatro telas respondem 200; o mutante responde 500 com organizações |
 | M147 | A cópia da padrão sai sem o auxiliar da cor | CT-109 | `origem_da_cor` no login e no cadastro; o mutante deixa `null` |
+
+## Revisão adversarial do Adendo 4 (2026-11-18)
+
+Feita na wiki `feat/debitos-da-aparencia-das-telas` (RQ-08), por `fw-adversario-ct`, com só o `00` (Adendo 4, P-32..P-36), este `04` (Adendo 4) e o `05` (Adendo 4). Veredito do revisor: insuficiente, com 12 brechas. A triagem, com o código à vista:
+
+| Brecha | Triagem | Destino |
+|---|---|---|
+| ADV-E1 — o painel pode não deslizar (grupo `kit-painel` anulado) | lacuna de teste; o CSS está certo | CT-110 |
+| ADV-E2 — o formulário antigo sai em fade | refutada: o CT-101 já exige `animation: none` no `::view-transition-old(kit-formulario)` | — |
+| ADV-E3 — atraso ou preenchimento do formulário novo | lacuna de teste; o CSS tem `0.2s both` | CT-110 |
+| ADV-E4 — a volta não está na lista de destinos | lacuna de teste; a lista é a mesma em toda página | CT-113 |
+| ADV-E5 — lista fixa: destino no clássico não pula a transição | **defeito provável, não reproduzido no harness** (a página que sai começa a transição, `pageswap` com `viewTransition`, rumo a um login clássico sem `@view-transition` — a situação da P-36; o erro da página que sai não chega ao harness) | débito no `03` |
+| ADV-E6 — o cadastro lê a opção da tela própria | lacuna de teste; o cadastro segue o login | CT-111 |
+| ADV-E7 — organização no clássico com a instalação no painel | refutada pela leitura: no clássico o painel de marca não é renderizado, e a regra mora na view dele; sem teste próprio | débito no `03` |
+| ADV-E8 — `0`/`""` gravados | lacuna de teste; `0`/`'0'` desligam (é o que o formulário grava), vazio volta ao padrão | CT-112 |
+| ADV-E9 — navegador sem a API | refutada pela leitura: sem a API o `pageswap` não dispara, e o script já sai em `! transicao`; sem teste (o Playwright do kit tem a API) | débito no `03` |
+| ADV-E10 — só a imagem tem o nome `kit-painel` | refutada pela leitura: o nome vai no `.fi-auth-media-wrapper`, que contém o painel inteiro; sem teste próprio | débito no `03` |
+| ADV-E11 — login → cadastro no navegador | lacuna de navegador; o CT-106 cobre o HTML | débito no `03` |
+| ADV-E12 — `@view-transition` no CSS global | lacuna de teste | CT-110 |
+
+O M136 (cópia da opção do login para as telas próprias) sobrevive sozinho porque a página também
+aplica a opção da instalação (P-35): são duas defesas da mesma regra. Com as duas fora juntas, o
+CT-111 cai (2 de 2), medido em 2026-11-18.
+
+```gherkin
+Esquema do Cenário: [CT-110] O painel desliza, o formulário novo espera o deslize, e o CSS global não declara a transição
+  Dado o CSS publicado (<arquivo>), sem comentários
+  Então o grupo "kit-painel" tem duração de animação e não tem "animation: none"
+  E nenhum seletor "::view-transition-group(*)" existe
+  E o formulário novo entra com "kit-formulario-aparece 0.35s ease-out 0.2s both"
+  E nenhum arquivo de CSS global contém "@view-transition"
+
+Esquema do Cenário: [CT-111] O cadastro segue a opção do login, não a da tela própria
+  Dado o login no painel com a transição <login> e o cadastro próprio no painel com a transição <propria>
+  Quando o visitante abre /app/register
+  Então a frase do painel é a do cadastro
+  E a página participa da transição se, e só se, a do login estiver ligada
+
+Esquema do Cenário: [CT-112] A opção gravada como 0 desliga, e um valor vazio volta ao padrão
+  Dado a transição gravada como <valor> (0, "0", "1", "", nulo)
+  Quando o visitante abre /admin/login
+  Então a página participa só com "1", "" e nulo
+
+Esquema do Cenário: [CT-113] A recuperação e o cadastro levam o login na lista de destinos
+  Dado a transição ligada
+  Quando o visitante abre <página>
+  Então a lista de destinos dela contém o login do mesmo painel
+```
+
+| CT | Título | Regra | Técnica | Mutante |
+|---|---|---|---|---|
+| CT-110 | O painel desliza, o formulário espera, o CSS global não declara a transição | R31 | inspeção do CSS publicado | M149, M150 |
+| CT-111 | O cadastro segue a opção do login | R31 | tabela de decisão | M151 |
+| CT-112 | 0 desliga, vazio volta ao padrão | R31 | BVA do valor gravado | M152 |
+| CT-113 | A volta está na lista de destinos | R31 | partição de destino | M153 |
+
+| ID | Mutante | Mata | Medido em 2026-11-18 |
+|---|---|---|---|
+| M149 | `::view-transition-group(kit-painel) { animation: none }` | CT-110 | 1 de 2 caem (o `kit.css`; o espelho publicado não foi mutado) |
+| M150 | `@view-transition` no CSS global | CT-110 | previsto |
+| M151 | o cadastro sem a opção da instalação **e** sem a cópia do login (M136 junto) | CT-111 | 2 de 2 caem; cada metade sozinha sobrevive |
+| M152 | `booleano()` aceita só `1`/`'1'` | CT-112 | 2 de 5 caem |
+| M153 | a lista sem as rotas `login` dos painéis | CT-113 | 2 de 2 caem |
+
+```gherkin
+Cenário: [CT-114] A sobrescrita do alternador de tema é o partial do pacote mais o role="menu"
+  Dado a sobrescrita do kit e o partial do auth-designer instalado
+  Então o wrapper tem role="menu"
+  E, sem esse atributo e sem o comentário do kit, o arquivo é idêntico ao do pacote
+```
+
+O CT-114 vem do step 9 da wiki `feat/debitos-da-aparencia-das-telas` (`tests/Kit/AparenciaDasTelasDeAcessoTest.php`).
+

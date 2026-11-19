@@ -255,6 +255,14 @@ Re-revisão: as correções tocaram fronteira (preview, `$wire`); não houve seg
 - **Organização no navegador**: as linhas de organização dos CT-B05/CT-B07 (editor da organização) não foram automatizadas em `tests/BrowserTenancy`; o comportamento está coberto por componente (CT-01, CT-10..CT-14, CT-41 em Tenancy)
 - **Positivo do painel em redefinir senha, confirmação de e-mail e 2FA** só por leitura de código e pelo CT-B06 (clássico); BP-51
 - **Preview sem a pilha do painel** (`MustTwoFactor`, `Locker`): sessão bloqueada ainda abriria o próprio rascunho (suspeita do gate, ciclo 2, não reproduzida); o rascunho só existe para quem acabou de editar no `/admin`
+- **G, H, J e K pagos em 2026-11-18** pela wiki `feat/debitos-da-aparencia-das-telas` (o `03` de lá tem os comandos e as saídas):
+  - G: as seis telas (login, cadastro, recuperação × clássico, painel) capturadas e lidas no tema escuro, legíveis; o contraste no escuro é medido pelo axe
+  - H: `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php` — axe nas três telas × dois layouts × dois temas (12/12, depois de dar ao alternador de tema o `role="menu"` que faltava: o axe acusava `aria-required-parent` em todo login e recuperação), teclado no clássico, e "reduzir movimento" com a transição ligada
+  - J: a suíte inteira sobre o commit daquela entrega. **Os cenários 1–4 não**: a rodada `f1`..`f4` foi sobre `e267f909`, anterior às correções da v0.53.1, e nenhum cenário passou por elas *(alterado em 2026-11-18: QA-06 do gate daquela wiki — dizia que a rodada `f1`..`f4` pagava o J)*
+  - K: amostragem manual de mutantes nos arquivos do Adendo 4 (M134, M135, M140, M142, M145 caem; o M136 sobrevive sozinho, ver o `04`, `## Revisão adversarial do Adendo 4`); a revisão adversarial dos CT do Adendo 4 rendeu CT-110..CT-113
+- **Os quatro cenários de `wikis/checklist-de-release.md` sobre a v0.55.1 publicada**: devidos desde a v0.53.1 (as v0.54.0 e v0.55.0 também não os rodaram). Registrado em `feat/debitos-da-aparencia-das-telas`, `03`, `## Débitos` (P-04 daquela wiki)
+- **ADV-E5 (transição para um destino no clássico)**: a lista de destinos é fixa e não olha o layout da tela de destino. Com o login no clássico e a recuperação própria no painel, a recuperação começa a transição rumo ao login (`pageswap` com `viewTransition`), que não a declara — a situação que a P-36 mediu com o painel depois de entrar. O erro da página que sai não chega ao harness do Pest; não reproduzido. Correção possível: montar a lista pelo layout de cada família. Fica para decisão do mantenedor
+- **ADV-E7, ADV-E9, ADV-E10, ADV-E11** refutados pela leitura do código, sem teste próprio: no clássico o painel de marca (e a regra) não é renderizado; sem a API o `pageswap` não dispara; o nome `kit-painel` vai no wrapper que contém o painel inteiro; login → cadastro no navegador só pelo HTML (CT-106)
 
 ## Notas de Implementação
 
@@ -311,7 +319,7 @@ Tratamento do ciclo 3 dos Adendos 2 e 3 e do ciclo 1 do Adendo 4:
 
 | QA | Destino | O que foi feito |
 |---|---|---|
-| QA-28 | 2 | rodada `f1`..`f4` sobre o commit final `e267f909`, depois destas correções (nenhuma mudança de `app/`/`resources/` depois dela): verde, registrada na Verificação Final — 2026-11-15 |
+| QA-28 | 2 | rodada `f1`..`f4` sobre o commit final `e267f909`, depois destas correções (nenhuma mudança de `app/`/`resources/` depois dela *(alterado em 2026-11-18: a afirmação deixou de valer com as correções da v0.53.1, 8 arquivos de `app/`/`resources/` depois de `e267f909`; QA-01 do gate da wiki `feat/debitos-da-aparencia-das-telas`, que registra os quatro cenários sobre a tag como débito)*): verde, registrada na Verificação Final — 2026-11-15 |
 | QA-36 | 1 | passo 12 do `01` (RD-D1, CT-102..106, `pagereveal`); P-32 com a regra da raiz clássica; aspas da `# Origem` do CT-102; badge; `## Testes`; despachos e Verificação Final em ordem; degradação do Adendo 4; oráculo do `04`/`05`; "Transição entre as telas" no glossário |
 | QA-37 | 1 | P-35: na organização vale a opção da instalação, sem interruptor no formulário dela; CT-104/CT-105 antes da correção; ajuda e docs pt/en |
 | QA-38 | 3 | CT-106 (aceite de convite, cadastro aberto, cadastro unificado) com M144; derivado pela sessão (degradação declarada) |

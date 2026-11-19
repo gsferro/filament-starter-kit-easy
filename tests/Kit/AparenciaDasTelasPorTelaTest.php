@@ -836,3 +836,75 @@ it('[CT-101] o formulário não desliza: só o painel tem a animação de posiç
         ->toContain('::view-transition-new(kit-formulario) { animation: kit-formulario-aparece')
         ->and($css)->toContain('@keyframes kit-formulario-aparece { from { opacity: 0; } to { opacity: 1; } }');
 })->with(['resources/css/filament/kit.css', 'public/css/kit/kit-correcoes.css'])->group('kit');
+
+/**
+ * ADV-E1, ADV-E3 e ADV-E12 da revisão adversarial do Adendo 4 (wiki
+ * `feat/debitos-da-aparencia-das-telas`): o painel desliza (o grupo dele tem duração e não é
+ * anulado), o formulário novo entra depois do início do deslize sem piscar antes, e a regra
+ * `@view-transition` não mora no CSS global — senão a opção desligada não desligaria nada.
+ */
+it('[CT-110] o painel desliza, o formulário novo espera o deslize, e o CSS global não declara a transição', function (string $arquivo): void {
+    $semComentarios = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(base_path($arquivo)));
+    $css            = preg_replace('/\s+/', ' ', $semComentarios);
+
+    // Todos os blocos do grupo do painel, não só o primeiro: uma regra posterior também anularia o deslize.
+    preg_match_all('/::view-transition-group\(kit-painel\) \{([^}]*)\}/', $css, $blocos);
+    $painel = implode(' ', $blocos[1]);
+
+    expect($blocos[1])->not->toBeEmpty()
+        ->and($painel)->toContain('animation-duration: 0.55s')
+        ->not->toMatch('/animation(-name)?: none/')
+        ->and($css)->not->toMatch('/::view-transition-group\(\*\)/')
+        ->and($css)->toContain('::view-transition-new(kit-formulario) { animation: kit-formulario-aparece 0.35s ease-out 0.2s both; }')
+        ->and($css)->not->toContain('@view-transition');
+})->with(['resources/css/filament/kit.css', 'public/css/kit/kit-correcoes.css'])->group('kit');
+
+/** ADV-E6: o cadastro também segue a opção do login, nunca a gravada na tela própria (P-32). */
+it('[CT-111] o cadastro segue a opção do login, não a da tela própria', function (bool $doLogin, bool $daPropria): void {
+    config(['kit.registro.habilitado' => true]);
+    definirAparenciaGlobal([
+        ...painelComFrase('direita', 'LOGIN', ['transicao_entre_telas' => $doLogin]),
+        'telas' => ['cadastro' => painelComFrase('esquerda', 'CAD', ['transicao_entre_telas' => $daPropria])],
+    ]);
+
+    $html = htmlDe('/app/register');
+
+    expect(textoDoPainelDeMarca($html, 'frase'))->toBe('CAD')
+        ->and(participaDaTransicao($html))->toBe($doLogin);
+})->with([
+    'login desligada, própria ligada' => [false, true],
+    'login ligada, própria desligada' => [true, false],
+])->group('kit');
+
+/**
+ * ADV-E8: só um booleano (ou 0/1, como o formulário grava) decide; o resto volta ao padrão, ligada
+ * (P-04 da origem).
+ */
+it('[CT-112] a opção gravada como 0 desliga, e um valor vazio volta ao padrão', function (mixed $valor, bool $participa): void {
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => $valor]);
+
+    expect(participaDaTransicao(htmlDe('/admin/login')))->toBe($participa);
+})->with([
+    'zero'        => [0, false],
+    'zero texto'  => ['0', false],
+    'um texto'    => ['1', true],
+    'vazio'       => ['', true],
+    'nulo'        => [null, true],
+])->group('kit');
+
+/** ADV-E4: a volta também anima — as páginas de destino levam o caminho do login (RQ-34, "e de volta"). */
+it('[CT-113] a recuperação e o cadastro levam o login na lista de destinos', function (string $caminho, string $login): void {
+    config(['kit.registro.habilitado' => true]);
+    definirAparenciaGlobal([...aparenciaDeTeste('P'), 'transicao_entre_telas' => true]);
+
+    $script = arvoreDoHtml(htmlDe($caminho))->query('//head/script[@data-kit-transicao-entre-telas-destinos]');
+
+    expect($script->length)->toBe(1)
+        ->and(preg_match("/JSON\\.parse\\('(.+?)'\\)/", $script->item(0)->textContent, $lista))->toBe(1);
+
+    // O `@js` escreve a lista como literal JavaScript de string: decodificada duas vezes, volta ao array.
+    expect(json_decode((string) json_decode('"'.$lista[1].'"'), true))->toContain($login);
+})->with([
+    'recuperação do admin' => ['/admin/password-reset/request', '/admin/login'],
+    'cadastro do app'      => ['/app/register', '/app/login'],
+])->group('kit');

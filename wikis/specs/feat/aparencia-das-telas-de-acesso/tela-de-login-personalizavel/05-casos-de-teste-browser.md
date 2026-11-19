@@ -656,3 +656,29 @@ Funcionalidade: Transição entre as telas no navegador
 |---|---|---|---|
 | M148 | A página que participa não pula a transição ao entrar no painel | CT-B20 | nenhuma rejeição registrada; o mutante registra "Transition was aborted because of invalid state" |
 | M139 | A regra e os nomes existem, mas só numa das pontas, e o navegador não faz a transição | CT-B19 | linha "ligada": `pageswap` na origem e `pagereveal` pronto no destino; o mutante falha um dos dois *(alterado em 2026-11-14: RD-D3/CX-D2 — antes só a origem era conferida)* |
+
+## Débitos G, H, J e K (2026-11-18)
+
+Escritos na wiki `feat/debitos-da-aparencia-das-telas` (o `04` de lá tem o desenho e os mutantes),
+na numeração de CT-B desta. Arquivo: `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`.
+
+```gherkin
+Esquema do Cenário: [CT-B21] As telas de acesso passam no axe
+  Dado a aparência global no <layout> (clássico, painel de marca)
+  E o navegador em 1440×900 no tema <tema> (claro, escuro)
+  Quando a pessoa abre <tela> (login, cadastro, recuperação de senha)
+  Então o alternador de tema está presente, com o papel de menu
+  E o axe não acusa nenhuma violação
+
+Cenário: [CT-B22] No clássico, o teclado leva do e-mail ao botão de entrar
+  Dado o foco no campo de e-mail do /admin/login no clássico
+  Quando a pessoa aperta Tab até oito vezes
+  Então o foco passa pela senha e depois pelo botão de enviar do mesmo formulário
+
+Cenário: [CT-B23] Com "reduzir movimento", a troca de tela não anima
+  Dado a transição ligada, o login e a recuperação no painel de marca, e o sistema com "reduzir movimento"
+  Quando a pessoa vai do login ao "Esqueceu sua senha?"
+  Então a página participa da transição, mas o painel não tem nome de transição
+  E a navegação acontece sem transição de visualização
+```
+

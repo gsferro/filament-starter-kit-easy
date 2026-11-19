@@ -5,6 +5,40 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.55.1] - 2026-11-18
+
+Débitos de verificação G, H, J e K da aparência das telas de acesso (v0.53). Nada muda no comportamento, exceto
+a correção de acessibilidade abaixo. Wiki: `wikis/specs/feat/debitos-da-aparencia-das-telas/`.
+
+### Corrigido
+
+- **Acessibilidade das telas de acesso**: o alternador de tema (claro/escuro/sistema) das telas de login, recuperação
+  de senha e cadastro tinha botões `menuitemradio` sem o `menu` pai, e o axe acusava `aria-required-parent`
+  (crítico) em todas elas. A sobrescrita
+  `resources/views/vendor/filament-auth-designer/components/partials/theme-toggle.blade.php` dá ao wrapper o
+  `role="menu"` (o rótulo "Tema" fica no grupo de dentro, do Filament). Viaja com o `kit:update`.
+
+### Adicionado
+
+- `tests/Browser/AcessibilidadeDasTelasDeAcessoTest.php`: axe nas três telas, nos dois layouts (clássico e painel de
+  marca) e nos dois temas; o percurso por teclado no clássico; e a transição entre as telas com "reduzir movimento"
+  no sistema, que não anima.
+- CT-110..CT-113 em `tests/Kit/AparenciaDasTelasPorTelaTest.php`, da revisão adversarial dos casos do Adendo 4
+  (transição entre as telas): o painel desliza e o formulário espera, o CSS global não declara a transição, o
+  cadastro segue a opção do login, o valor gravado `0`/vazio, e a volta para o login na lista de destinos.
+- CT-114 em `tests/Kit/AparenciaDasTelasDeAcessoTest.php`: a sobrescrita do alternador tem de ser o partial do
+  pacote instalado mais o `role="menu"` — uma mudança do pacote não fica escondida atrás da cópia.
+- O helper `visitaComMovimentoReduzido()` passa para o `tests/Pest.php`.
+
+### Atualizando
+
+- Só arquivos: a sobrescrita do partial, os testes e o `tests/Pest.php`. Sem migration, dependência ou asset novo.
+  Roteiro: `wikis/atualizacoes/v0.55.1.md`.
+
+### Defaults mudados
+
+- nenhum
+
 ## [0.55.0] - 2026-11-18
 
 Item 8.2 do roadmap: **dependências declaradas × usadas**, como relatório. Duas dependências de
