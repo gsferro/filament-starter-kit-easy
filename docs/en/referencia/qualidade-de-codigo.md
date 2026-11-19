@@ -172,8 +172,9 @@ the `badge` job publish the JSON to the `badges` branch, which is where the shie
 > **The number moves slightly with the operating system**, and the badge was designed to absorb
 > that: in a 2026-09-25 measurement, the same tree gave **79.89 % on Windows and 79.82 % on Linux**
 > — 7 statements apart, from
-> code that only runs on one platform. Both truncate to `79%`, so the badge matches on either. Had
-> it stored the decimal, CI would fail every measurement taken on the other platform.
+> code that only runs on one platform. Both truncate to `79%`. The published badge is always the
+> one from the Linux runner on `main`; a local measurement is for the floor, and may land one point
+> off near the boundary.
 
 > The figures with decimals on this page are **dated**, not derived: they hold for the 2026-09-26
 > measurement and they age. The whole percentage is the badge's, and it has

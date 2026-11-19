@@ -171,9 +171,9 @@ publica o JSON no branch `badges`, que é para onde o endpoint do shields.io apo
 > **O número varia um pouco com o sistema operacional**, e o badge foi desenhado para absorver
 > isso: numa medição de 2026-09-25, a mesma árvore deu **79,89 % no Windows e 79,82 % no Linux**
 > — 7 statements de diferença,
-> de código que só roda numa das plataformas. Os dois truncam para `79%`, então o badge confere
-> nos dois. Se ele guardasse a casa decimal, o CI reprovaria toda medição feita na outra
-> plataforma.
+> de código que só roda numa das plataformas. Os dois truncam para `79%`. O badge publicado é
+> sempre o do runner Linux da `main`; a medição local serve para o piso, e pode sair um ponto
+> diferente perto da fronteira.
 
 > Os números com casa decimal desta página são **datados**, não derivados: eles valem para a
 > medição de 2026-09-26 e envelhecem. O percentual inteiro é o do badge, e ele não tem
