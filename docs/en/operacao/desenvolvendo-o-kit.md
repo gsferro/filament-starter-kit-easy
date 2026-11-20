@@ -90,6 +90,35 @@ place, that is where to look.
 `docs/` and `site/` are `export-ignore`: the site is kit material and never reaches the project
 born from `create-project`. The guards for that live in `tests/Kit/SiteDeDocumentacaoTest.php`.
 
+## How the interactive map is generated
+
+The [interactive kit map](../../referencia/mapa-interativo/) is a set of **archify** diagrams generated in the site
+build from a versioned model — the decisions are in the ADRs of the `mapa-interativo-do-kit` wiki:
+
+- **The model** — `site/mapa/pecas.json` and `site/mapa/ligacoes.json`: every piece (resource, page, widget,
+  plugin, middleware, service, model, policy, command…) and every link between them, with the proof as a **snippet
+  anchor** `{arquivo, trecho}`, never as a line number. The build finds the snippet's line in the file at the
+  published revision.
+- **The diagrams** — one file per diagram in `site/mapa/diagramas/{slug}.json`. The registration tree and the
+  architecture maps only state the cut and the grid: pieces and links come from the model. The flows (sequence,
+  workflow, lifecycle, dataflow, ER, class, timeline and timings) are archify's own input, with texts as
+  `{pt, en}` and the proof of each link in the `prova` field.
+- **The generator** — `site/mapa/gerar.mjs` runs at the end of `npm run build`. It downloads archify at the commit
+  pinned in `site/mapa/archify.mjs` (the build needs `git` and access to github.com), projects each language and
+  writes `dist/mapa/{pt,en}/{slug}.html`. A link without proof, a snippet that is not in the file and a layout
+  that archify rejects stop the build, with the diagnostic.
+- **The placer** — `node mapa/posicionar.mjs <slug>` (in `site/`) searches for a grid archify accepts for an
+  architecture map and writes it into the file. Run it after changing the pieces of a map; it never runs in the
+  build.
+- **The checker** — `site/verifica-mapa.mjs` runs in CI after the accessibility one: a sample of one HTML per
+  type, language and theme, WCAG 2.1 AA through axe, with two defects of archify itself tolerated by rule and
+  element, and no console error.
+
+To check one diagram without rebuilding the whole site: `cd site && node mapa/gerar.mjs --saida /tmp/mapa <slug>`.
+
+A new kit piece enters the model with the F-nn it delivers — the rule `.ai/rules/catalogo-de-features.md` and the
+guards `tests/Kit/MapaInterativoTest.php` and `tests/Tenancy/MapaInterativoTenancyTest.php` enforce it.
+
 ## What runs in the background
 
 `composer dev` brings up **server + queue + vite + reverb** together, in a single terminal

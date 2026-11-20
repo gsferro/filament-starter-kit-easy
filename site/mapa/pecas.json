@@ -9,7 +9,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-53",
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Agents/AgenteBase.php",
@@ -27,7 +30,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-53",
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Agents/Assistente.php",
@@ -45,7 +51,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Agents/GuardaPrompt.php",
@@ -63,7 +71,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Exceptions/AgenteInativoException.php",
@@ -81,7 +91,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Exceptions/AgenteSemGuardrailsException.php",
@@ -99,7 +111,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Exceptions/PromptInjecaoBloqueadaException.php",
@@ -117,7 +131,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Guardrails/FiltroSaidaSensivelMiddleware.php",
@@ -135,7 +151,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
@@ -171,7 +189,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Guardrails/PiiRedactor.php",
@@ -189,7 +209,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Guardrails/PiiRedactorMiddleware.php",
@@ -207,7 +229,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Guardrails/PromptInjectionGuardMiddleware.php",
@@ -226,7 +250,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "spatie/laravel-health",
-    "features": [],
+    "features": [
+      "F-33",
+      "F-56"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Health/LocalAiCheck.php",
@@ -280,7 +307,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Middleware/BudgetGuardMiddleware.php",
@@ -526,7 +555,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "spatie/laravel-data",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Data/Ia/VeredictoDoGuardrailData.php",
@@ -608,7 +639,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "harvirsidhu/filament-cards",
-    "features": [],
+    "features": [
+      "F-68"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Pages/HubDeAdministracao.php",
@@ -629,7 +662,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-30"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php",
@@ -650,7 +685,12 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-15",
+      "F-16",
+      "F-18",
+      "F-20"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Resources/Convites/ConviteResource.php",
@@ -663,7 +703,9 @@
     "nome": "CondicaoResource",
     "tipo": "recurso",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -671,7 +713,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
-    "features": [],
+    "features": [
+      "F-31"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Resources/Onboarding/CondicaoResource.php",
@@ -684,7 +728,9 @@
     "nome": "JornadaResource",
     "tipo": "recurso",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -692,7 +738,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
-    "features": [],
+    "features": [
+      "F-31"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Resources/Onboarding/JornadaResource.php",
@@ -713,7 +761,12 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-09",
+      "F-12",
+      "F-62",
+      "F-63"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Resources/Roles/RoleResource.php",
@@ -734,7 +787,12 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-23",
+      "F-24",
+      "F-27",
+      "F-28"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Resources/Tenants/TenantResource.php",
@@ -755,7 +813,11 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-03b",
+      "F-08",
+      "F-29"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
@@ -1524,7 +1586,9 @@
     "nome": "RegistroPorConvite",
     "tipo": "pagina",
     "paineis": [
-      "app"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -1555,7 +1619,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "caresome/filament-auth-designer",
-    "features": [],
+    "features": [
+      "F-01"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
@@ -1578,7 +1644,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "caresome/filament-auth-designer",
-    "features": [],
+    "features": [
+      "F-02"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Pages/Auth/TelaRecuperarSenha.php",
@@ -1601,7 +1669,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "caresome/filament-auth-designer",
-    "features": [],
+    "features": [
+      "F-02"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Pages/Auth/TelaRedefinirSenha.php",
@@ -1645,7 +1715,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-32"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Pages/DashboardClassico.php",
@@ -1668,7 +1740,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "jeffgreco13/filament-breezy",
-    "features": [],
+    "features": [
+      "F-07"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Pages/MyProfilePage.php",
@@ -2061,7 +2135,9 @@
     "nome": "Convite",
     "tipo": "model",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -2082,7 +2158,8 @@
     "nome": "Projeto",
     "tipo": "model",
     "paineis": [
-      "app"
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -2124,7 +2201,9 @@
     "nome": "Tenant",
     "tipo": "model",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -2145,7 +2224,9 @@
     "nome": "User",
     "tipo": "model",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -2204,7 +2285,9 @@
     "nome": "ConviteDeAcesso",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -2758,7 +2841,9 @@
     "nome": "AparenciaDoUsuario",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -2814,14 +2899,17 @@
     "nome": "AvatarDeIniciais",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app"
     ],
     "registrada": [
       "sem",
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-71"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/AvatarDeIniciais.php",
@@ -2870,7 +2958,8 @@
     "nome": "CabecalhoDoPainel",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app"
     ],
     "registrada": [
       "sem",
@@ -2915,7 +3004,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/Casts/BooleanoFlexivelCast.php",
@@ -2950,7 +3041,9 @@
     "nome": "ContextoDePapeis",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -2970,7 +3063,9 @@
     "nome": "CorPrimaria",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -3010,7 +3105,9 @@
     "nome": "DashboardDinamico",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -3030,7 +3127,9 @@
     "nome": "DensidadeDoLayout",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -3072,7 +3171,8 @@
     "nome": "DetalheDoUsuario",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app"
     ],
     "registrada": [
       "sem",
@@ -3092,7 +3192,9 @@
     "nome": "DockDeAtalhos",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -3112,7 +3214,9 @@
     "nome": "EmailComMais",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -3187,7 +3291,9 @@
     "nome": "IdentidadeDoKit",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -3245,7 +3351,9 @@
     "nome": "ModoDoMenu",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -3283,7 +3391,9 @@
     "nome": "Paineis",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -3303,7 +3413,8 @@
     "nome": "Papeis",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app"
     ],
     "registrada": [
       "sem",
@@ -3557,7 +3668,8 @@
     "nome": "TetoDeUpload",
     "tipo": "servico",
     "paineis": [
-      "admin"
+      "admin",
+      "app"
     ],
     "registrada": [
       "sem",
@@ -3672,7 +3784,8 @@
     "nome": "BelongsToTenant",
     "tipo": "servico",
     "paineis": [
-      "app"
+      "app",
+      "infra"
     ],
     "registrada": [
       "sem",
@@ -4665,7 +4778,12 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-09",
+      "F-11",
+      "F-14"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",

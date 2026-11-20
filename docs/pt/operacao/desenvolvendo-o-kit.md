@@ -92,6 +92,33 @@ no lugar, é ali que se olha.
 `docs/` e `site/` são `export-ignore`: o site é material do kit e não chega ao projeto que nasce do
 `create-project`. As guardas disso ficam em `tests/Kit/SiteDeDocumentacaoTest.php`.
 
+## Como o mapa interativo é gerado
+
+O [mapa interativo do kit](../../referencia/mapa-interativo/) são diagramas do **archify** gerados no build do site
+a partir de um modelo versionado — as decisões estão nas ADRs da wiki `mapa-interativo-do-kit`:
+
+- **O modelo** — `site/mapa/pecas.json` e `site/mapa/ligacoes.json`: cada peça (recurso, página, widget, plugin,
+  middleware, serviço, model, policy, comando…) e cada ligação entre elas, com a prova como **âncora de trecho**
+  `{arquivo, trecho}`, nunca como número de linha. O build acha a linha do trecho no arquivo da revisão publicada.
+- **Os diagramas** — um arquivo por diagrama em `site/mapa/diagramas/{slug}.json`. A árvore de registro e os mapas
+  de arquitetura dizem só o recorte e a grade: as peças e as ligações saem do modelo. Os fluxos (sequência,
+  workflow, ciclo de vida, fluxo de dados, ER, classes, linha do tempo e tempos) são a própria entrada do archify,
+  com os textos em `{pt, en}` e a prova de cada ligação no campo `prova`.
+- **O gerador** — `site/mapa/gerar.mjs` roda no fim do `npm run build`. Baixa o archify pelo commit fixado em
+  `site/mapa/archify.mjs` (o build precisa de `git` e de acesso a github.com), projeta cada idioma e grava
+  `dist/mapa/{pt,en}/{slug}.html`. Ligação sem prova, trecho que não está no arquivo e layout que o archify recusa
+  param o build, com o diagnóstico.
+- **O posicionador** — `node mapa/posicionar.mjs <slug>` (em `site/`) busca uma grade que o archify aceite para um
+  mapa de arquitetura e a grava no arquivo. Rode depois de mudar as peças de um mapa; ele nunca roda no build.
+- **O conferidor** — `site/verifica-mapa.mjs` roda no CI depois do de acessibilidade: uma amostra de um HTML por
+  tipo, idioma e tema, WCAG 2.1 AA pelo axe, com dois defeitos do próprio archify tolerados por regra e elemento, e
+  nenhum erro de console.
+
+Para conferir um diagrama sem refazer o site inteiro: `cd site && node mapa/gerar.mjs --saida /tmp/mapa <slug>`.
+
+Peça nova do kit entra no modelo com as F-nn que entrega — a rule `.ai/rules/catalogo-de-features.md` e as guardas
+`tests/Kit/MapaInterativoTest.php` e `tests/Tenancy/MapaInterativoTenancyTest.php` cobram isso.
+
 ## O que roda em segundo plano
 
 `composer dev` sobe **servidor + fila + vite + reverb** juntos, num só terminal
