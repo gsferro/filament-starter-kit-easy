@@ -6,6 +6,9 @@ sidebar:
 ---
 Twenty Mermaid diagrams show how the kit works today: architecture, role-based access, authentication, AI, infrastructure, the data model and the kit's own lifecycle. Each one is guarded by an automated test (`tests/Kit/DiagramasDaArquiteturaTest.php`, `tests/Kit/GuardasDosDiagramasTest.php` and, under multi-tenancy, `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`) that fails the moment the code stops matching what the diagram describes — none of them describes planned functionality.
 
+The same panels, with tenancy off and on, and the kit flows are also available as interactive diagrams generated
+from the code, with the proof of every link, on the [Interactive kit map](../mapa-interativo/).
+
 ## DG-01 — Layered architecture
 
 From the browser to the three Filament panels (`app/Providers/Filament/AppPanelProvider.php:id:86`, `app/Providers/Filament/AdminPanelProvider.php:id:77`, `app/Providers/Filament/InfraPanelProvider.php:id:99`), through role-based access, down to the database, queue, cache and the optional services. It is the same block as the README — a single source.

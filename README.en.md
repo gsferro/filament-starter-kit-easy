@@ -168,6 +168,16 @@ accDescr: From the browser to the three Filament panels, through role-based acce
 
 See all the architecture diagrams → [gsferro.github.io/filament-starter-kit-easy/en/referencia/arquitetura-em-diagramas](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/arquitetura-em-diagramas.html)
 
+### Interactive map
+
+Each panel, with tenancy off and on, also has an **interactive map** generated from the code: what the panel registers, a summary by domain and the map of each domain. Every piece shows the catalog feature it delivers, and every link carries its proof — the file and the code snippet, linked to the line on GitHub. The flows (login, 2FA, invitations, AI and the `kit:*` commands), the data model, the classes and the release timeline are on the same page.
+
+| Panel | Tenancy off | Tenancy on |
+|---|---|---|
+| **App** | [registration, summary and domains](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/mapa-interativo.html) | [registration, summary, domains and what changes with tenancy](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/mapa-interativo.html) |
+| **Admin** | [registration, summary and domains](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/mapa-interativo.html) | [registration, summary and domains](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/mapa-interativo.html) |
+| **Infra** | [registration, summary and domains](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/mapa-interativo.html) | [registration, summary and domains](https://gsferro.github.io/filament-starter-kit-easy/en/referencia/mapa-interativo.html) |
+
 ### What each one looks like
 
 | Login | Administration |

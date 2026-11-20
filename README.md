@@ -168,6 +168,16 @@ accDescr: Do navegador aos três painéis Filament, pelo acesso por papel, até 
 
 Veja todos os diagramas da arquitetura → [gsferro.github.io/filament-starter-kit-easy/pt/referencia/arquitetura-em-diagramas](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/arquitetura-em-diagramas.html)
 
+### Mapa interativo
+
+Cada painel, sem e com o tenant ativo, também tem um **mapa interativo** gerado do código: o que o painel registra, um resumo por domínio e os mapas de cada domínio. Cada peça mostra a feature do catálogo que ela entrega, e cada ligação traz a prova — o arquivo e o trecho do código, com link para a linha no GitHub. Os fluxos (login, 2FA, convites, IA e os comandos `kit:*`), o modelo de dados, as classes e a linha do tempo das versões ficam na mesma página.
+
+| Painel | Sem tenant | Com tenant ativo |
+|---|---|---|
+| **App** | [registro, resumo e domínios](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/mapa-interativo.html) | [registro, resumo, domínios e o que muda com o tenant](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/mapa-interativo.html) |
+| **Admin** | [registro, resumo e domínios](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/mapa-interativo.html) | [registro, resumo e domínios](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/mapa-interativo.html) |
+| **Infra** | [registro, resumo e domínios](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/mapa-interativo.html) | [registro, resumo e domínios](https://gsferro.github.io/filament-starter-kit-easy/pt/referencia/mapa-interativo.html) |
+
 ### Como cada um se parece
 
 | Login | Administração |
