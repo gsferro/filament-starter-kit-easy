@@ -13,7 +13,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [laravel/framework](https://packagist.org/packages/laravel/framework) | o framework |
 | [filament/filament](https://packagist.org/packages/filament/filament) | os painéis, tabelas, formulários e widgets |
 | [laravel/tinker](https://packagist.org/packages/laravel/tinker) | REPL do Laravel |
-| [livewire/blaze](https://packagist.org/packages/livewire/blaze) | otimiza componentes Blade dobrando-os no template pai |
+| [livewire/blaze](https://packagist.org/packages/livewire/blaze) | otimiza componentes Blade dobrando-os no template pai — instalado, mas sem uso no código do kit hoje ([detalhes](../qualidade-de-codigo/)) |
 
 ## Administração e segurança
 
@@ -27,7 +27,7 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [tapp/filament-authentication-log](https://packagist.org/packages/tapp/filament-authentication-log) | histórico de logins, IP e dispositivo |
 | [owen-it/laravel-auditing](https://packagist.org/packages/owen-it/laravel-auditing) | trilha de alterações dos models |
 | [tapp/filament-auditing](https://packagist.org/packages/tapp/filament-auditing) | a tela dessa trilha no painel |
-| [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | log de atividades (spatie/laravel-activitylog) no Filament |
+| [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | log de atividades (spatie/laravel-activitylog) no Filament — instalado, mas sem uso no código do kit hoje |
 | [bezhansalleh/filament-panel-switch](https://packagist.org/packages/bezhansalleh/filament-panel-switch) | troca de painel pelo menu do usuário |
 | [laravel/socialite](https://packagist.org/packages/laravel/socialite) | login social (Google, GitHub, LinkedIn, X), opt-in por provedor |
 | [ddr/filament-captcha](https://packagist.org/packages/ddr/filament-captcha) | desafio anti-robô nas telas públicas (reCAPTCHA v2/v3, Turnstile, hCaptcha), opt-in; o kit embrulha com falha fechada e log ([detalhes](../../autenticacao/protecao-anti-robo/)) |
@@ -68,18 +68,19 @@ Tudo abaixo já vem instalado, publicado e registrado nos painéis — não exis
 | [gsferro/filament-odometer-easy](https://packagist.org/packages/gsferro/filament-odometer-easy) | contadores animados em tabelas, infolists, stats e badges |
 | [gsferro/odometer-easy](https://packagist.org/packages/gsferro/odometer-easy) | a base do odometer fora do Filament |
 | [gsferro/filament-stat-plus-easy](https://packagist.org/packages/gsferro/filament-stat-plus-easy) | stat cards com ícone de canto, borda colorida e skeleton |
-| [awcodes/filament-badgeable-column](https://packagist.org/packages/awcodes/filament-badgeable-column) | badges dentro de colunas de tabela |
+| [awcodes/filament-badgeable-column](https://packagist.org/packages/awcodes/filament-badgeable-column) | badges dentro de colunas de tabela — instalado, mas sem uso no código do kit hoje |
 | [asmit/resized-column](https://packagist.org/packages/asmit/resized-column) | colunas redimensionáveis pelo usuário |
 | [sehsah/filament-remember-table](https://packagist.org/packages/sehsah/filament-remember-table) | visões salvas de tabela (filtros, busca, ordenação, agrupamento e colunas com nome, por usuário e por organização), opt-in nas configurações ([detalhes](../../recursos/visoes-de-tabela-e-carregamento/)) |
 | [asignua/filament-infinite-scroll](https://packagist.org/packages/asignua/filament-infinite-scroll) | rolagem infinita ou botão "Carregar mais" em toda tabela, opt-in nas configurações ([detalhes](../../recursos/visoes-de-tabela-e-carregamento/)) |
 | [laboiteacode/filament-dashboard-widgets](https://packagist.org/packages/laboiteacode/filament-dashboard-widgets) | widgets prontos de métrica, meta, breakdown e tendência |
 | [mddev31/filament-dynamic-dashboard](https://packagist.org/packages/mddev31/filament-dynamic-dashboard) | dashboard configurável pelo usuário: arrastar e redimensionar widgets |
-| [lara-zeus/progress](https://packagist.org/packages/lara-zeus/progress) | barras de progresso em colunas e entries |
+| [lara-zeus/progress](https://packagist.org/packages/lara-zeus/progress) | barras de progresso em colunas e entries — instalado, mas sem uso no código do kit hoje |
 | [wallacemartinss/filament-onboarding](https://packagist.org/packages/wallacemartinss/filament-onboarding) | checklists e tours guiados, com autoria no `/admin` |
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | páginas de erro (403, 404, 419, 500, 503) com a cara do painel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | agregação por período para os gráficos dos widgets |
 | [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | seletor de idioma nos três painéis e nas telas de login |
 | [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | a grade de cartões dos [hubs de navegação](../../recursos/hub-de-navegacao/) |
+| [hoceineel/filament-quick-action-dock](https://packagist.org/packages/hoceineel/filament-quick-action-dock) | o botão flutuante do [dock de atalhos](../../recursos/dock-de-atalhos/): até 10 favoritos por usuário, de qualquer painel, opt-in por painel nas configurações |
 | [leandrocfe/filament-apex-charts](https://packagist.org/packages/leandrocfe/filament-apex-charts) | gráficos ApexCharts nos widgets dos dashboards |
 | [solution-forest/filament-simplelightbox](https://packagist.org/packages/solution-forest/filament-simplelightbox) | lightbox para ampliar imagem em tabela e infolist |
 | [mortalkiller/filament-page-header](https://packagist.org/packages/mortalkiller/filament-page-header) | o cabeçalho rico das telas de registro — avatar, situação e metadados. Receita em [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#cabeçalho-rico-num-resource-com-relations) |
@@ -118,9 +119,12 @@ php artisan modelCache:clear      # limpa o cache das models
 |---|---|
 | [pestphp/pest](https://packagist.org/packages/pestphp/pest) + [pest-plugin-laravel](https://packagist.org/packages/pestphp/pest-plugin-laravel) | a suíte de testes |
 | [phpunit/phpunit](https://packagist.org/packages/phpunit/phpunit) | o motor por baixo do Pest |
+| [brianium/paratest](https://packagist.org/packages/brianium/paratest) | os testes em paralelo (o `composer test:kit` roda com `--parallel`) |
 | [larastan/larastan](https://packagist.org/packages/larastan/larastan) | análise estática (`composer types:check`) |
 | [laravel/pint](https://packagist.org/packages/laravel/pint) | formatação (`composer lint`) |
 | [laraveldaily/filacheck](https://packagist.org/packages/laraveldaily/filacheck) | lint específico de Filament (`composer filament:check`) |
+| [icanhazstring/composer-unused](https://packagist.org/packages/icanhazstring/composer-unused) | acusa dependência declarada e não usada (`composer deps:unused`, parte do `composer deps:check`) — relatório, não reprova ([detalhes](../qualidade-de-codigo/)) |
+| [maglnet/composer-require-checker](https://packagist.org/packages/maglnet/composer-require-checker) | acusa símbolo usado de pacote que o `composer.json` não declara (`composer deps:require`, parte do `composer deps:check`) — relatório, não reprova |
 | [laravel-lang/common](https://packagist.org/packages/laravel-lang/common) | traduções pt-BR do Laravel |
 | [laravel/pail](https://packagist.org/packages/laravel/pail) | logs em tempo real no terminal |
 | [laravel/pao](https://packagist.org/packages/laravel/pao) | saída em JSON para testes e análise estática **quando um agente de IA roda os comandos**; humano não vê diferença. Desligue com `PAO_DISABLE=1` — ver [trabalhando com agentes](../../operacao/agentes-de-ia/) |
