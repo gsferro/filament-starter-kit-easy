@@ -411,3 +411,12 @@ jobs:
           npx astro preview &
           npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000
           node verifica-acessibilidade.mjs
+
+      - name: Conferir o mapa interativo (amostra de acessibilidade, nos dois temas)
+        if: steps.mudou.outputs.toca == 'true'
+        working-directory: site
+        # Conferidor próprio do mapa (D17 da wiki `mapa-interativo-do-kit`), sobre a prévia que o
+        # passo anterior deixou de pé — ver o mesmo passo no `pages.yml`.
+        run: |
+          npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000
+          node verifica-mapa.mjs

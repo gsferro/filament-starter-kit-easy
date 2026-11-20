@@ -1,0 +1,258 @@
+{
+  "slug": "conta",
+  "tipo": "lifecycle",
+  "titulo": {
+    "pt": "Conta de usuário: situação",
+    "en": "User account: status"
+  },
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "quality_profile": "showcase"
+  },
+  "mainPath": [
+    "criada",
+    "ativa"
+  ],
+  "states": [
+    {
+      "id": "criada",
+      "type": "start",
+      "label": {
+        "pt": "Criada",
+        "en": "New"
+      },
+      "sublabel": {
+        "pt": "convite, /admin ou cadastro",
+        "en": "invitation, /admin, sign-up"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "'ativo' => true,",
+          "label": "User.php"
+        },
+        {
+          "arquivo": "config/kit.php",
+          "trecho": "'aprovacao_manual' => (bool) env('KIT_REGISTRO_APROVACAO_MANUAL', false),",
+          "label": "kit.php"
+        }
+      ]
+    },
+    {
+      "id": "ativa",
+      "type": "success",
+      "label": {
+        "pt": "Ativa",
+        "en": "Live"
+      },
+      "sublabel": {
+        "pt": "entra se canAccessPanel",
+        "en": "entry if canAccessPanel"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "default                          => 'Ativo',",
+          "label": "rotuloDaSituacao"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "if ($this->isMasterGlobal()) {\n            return false;",
+          "label": "User@canBeImpersonated"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "$this->forceFill(['ativo' => false])->save();",
+          "label": "User@desativar"
+        }
+      ]
+    },
+    {
+      "id": "pendente",
+      "type": "waiting",
+      "label": {
+        "pt": "Pendente",
+        "en": "Pending"
+      },
+      "sublabel": "aprovacao_pendente = true",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "if ($this->aprovacao_pendente) {",
+          "label": "User@motivoDaNegativaDoPainel"
+        },
+        {
+          "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+          "trecho": "return redirect()->to($this->urlDeLoginDoPainel());",
+          "label": "LoginSocialController@aguardarAprovacao"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function aprovar(): void\n    {\n        if (! $this->aprovacao_pendente) {\n            return;\n        }\n\n        $this->forceFill(['aprovacao_pendente' => false])->save();",
+          "label": "aprovar"
+        }
+      ]
+    },
+    {
+      "id": "inativa",
+      "type": "failure",
+      "label": {
+        "pt": "Inativa",
+        "en": "Off"
+      },
+      "sublabel": "ativo = false",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "$this->forceFill(['ativo' => false])->save();",
+          "label": "User@desativar"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "! $this->ativo   => 'conta_inativa',",
+          "label": "User@motivoDeIndisponibilidade"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "$this->forceFill(['ativo' => true])->save();",
+          "label": "reativar"
+        }
+      ]
+    },
+    {
+      "id": "excluida",
+      "type": "neutral",
+      "label": {
+        "pt": "Excluída",
+        "en": "Deleted"
+      },
+      "sublabel": "deleted_at (SoftDeletes)",
+      "sources": [
+        {
+          "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+          "trecho": "DeleteAction::make(),\n                RestoreAction::make(),",
+          "label": "UserResource@table"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "use SoftDeletes;",
+          "label": "User.php"
+        },
+        {
+          "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+          "trecho": "RestoreAction::make(),",
+          "label": "UserResource@table"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "criada-ativa",
+      "from": "criada",
+      "to": "ativa",
+      "label": {
+        "pt": "sem aprovação",
+        "en": "no approval"
+      },
+      "note": {
+        "pt": "ativo = true por padrão",
+        "en": "ativo = true by default"
+      },
+      "variant": "emphasis"
+    },
+    {
+      "id": "criada-pendente",
+      "from": "criada",
+      "to": "pendente",
+      "label": {
+        "pt": "cadastro aberto",
+        "en": "open sign-up"
+      },
+      "note": {
+        "pt": "com kit.registro.aprovacao_manual",
+        "en": "with kit.registro.aprovacao_manual"
+      }
+    },
+    {
+      "id": "pendente-ativa",
+      "from": "pendente",
+      "to": "ativa",
+      "label": "aprovar()"
+    },
+    {
+      "id": "ativa-inativa",
+      "from": "ativa",
+      "to": "inativa",
+      "label": {
+        "pt": "Desativar",
+        "en": "Disable"
+      },
+      "note": {
+        "pt": "recusa a própria conta e o último master_global",
+        "en": "denies own account and last master_global"
+      },
+      "variant": "security"
+    },
+    {
+      "id": "inativa-ativa",
+      "from": "inativa",
+      "to": "ativa",
+      "label": {
+        "pt": "Reativar",
+        "en": "Enable"
+      }
+    },
+    {
+      "id": "ativa-excluida",
+      "from": "ativa",
+      "to": "excluida",
+      "label": {
+        "pt": "Excluir",
+        "en": "Delete"
+      },
+      "variant": "security"
+    },
+    {
+      "id": "excluida-ativa",
+      "from": "excluida",
+      "to": "ativa",
+      "label": {
+        "pt": "Restaurar",
+        "en": "Restore"
+      },
+      "note": {
+        "pt": "volta à situação anterior (ativo e aprovação preservados)",
+        "en": "returns to prior status (ativo and approval kept)"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Observações",
+        "en": "Notes"
+      },
+      "items": [
+        {
+          "pt": "rotuloDaSituacao() mostra só Pendente, Inativo ou Ativo; Excluído aparece pelo filtro Lixeira (User.php:546-565).",
+          "en": "rotuloDaSituacao() shows only Pending, Inactive or Active; Deleted appears via the Trash filter (User.php:546-565)."
+        },
+        {
+          "pt": "Excluir também existe para contas Inativas ou Pendentes; omitido do desenho.",
+          "en": "Delete also exists for Inactive or Pending accounts; omitted from the diagram."
+        },
+        {
+          "pt": "Restaurar não muda ativo nem aprovacao_pendente: a conta volta à situação que tinha.",
+          "en": "Restore keeps ativo and aprovacao_pendente: the account returns to its prior status."
+        }
+      ]
+    }
+  ]
+}

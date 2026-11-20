@@ -1,3 +1,5 @@
 node_modules/
 dist/
 .astro/
+# O archify é baixado pelo build num commit fixo (site/mapa/archify.mjs, ADR-02 da wiki mapa-interativo-do-kit).
+.archify/

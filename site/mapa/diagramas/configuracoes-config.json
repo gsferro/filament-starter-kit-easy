@@ -1,0 +1,435 @@
+{
+  "slug": "configuracoes-config",
+  "tipo": "dataflow",
+  "titulo": {
+    "pt": "Configuração: .env, settings e config() no boot",
+    "en": "Settings: .env, settings and config() at boot"
+  },
+  "painel": "admin",
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "default": {
+          "label": {
+            "pt": "valor de configuração",
+            "en": "config value"
+          }
+        },
+        "emphasis": {
+          "label": {
+            "pt": "origem dos valores",
+            "en": "value source"
+          }
+        },
+        "dashed": {
+          "label": {
+            "pt": "chaves que não passam pelo settings",
+            "en": "keys that bypass settings"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "trilha de auditoria",
+            "en": "audit trail"
+          }
+        },
+        "database": {
+          "label": {
+            "pt": "arquivo ou tabela",
+            "en": "file or table"
+          }
+        }
+      }
+    }
+  },
+  "stages": [
+    {
+      "label": {
+        "pt": "Origem",
+        "en": "Source"
+      }
+    },
+    {
+      "label": {
+        "pt": "Config e migrations",
+        "en": "Config & migrations"
+      }
+    },
+    {
+      "label": {
+        "pt": "Banco",
+        "en": "DB"
+      }
+    },
+    {
+      "label": "Boot"
+    },
+    {
+      "label": {
+        "pt": "Consumo",
+        "en": "Usage"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "env",
+      "type": "database",
+      "label": ".env",
+      "sublabel": {
+        "pt": "lido por env()",
+        "en": "read by env()"
+      },
+      "stage": 0,
+      "row": 1
+    },
+    {
+      "id": "config-kit-php",
+      "type": "backend",
+      "label": "config/kit.php",
+      "sublabel": {
+        "pt": "58 de 77; +19 só .env",
+        "en": "58/77; +19 .env only"
+      },
+      "stage": 1,
+      "row": 1,
+      "sources": [
+        {
+          "arquivo": "config/kit.php",
+          "trecho": "'version' => '0.56.0',",
+          "label": "kit.php"
+        },
+        {
+          "arquivo": "config/kit.php",
+          "trecho": "'repository' => env('KIT_REPOSITORY') ?: 'https://github.com/gsferro/filament-starter-kit-easy.git',",
+          "label": "kit.php"
+        },
+        {
+          "arquivo": "config/kit.php",
+          "trecho": "'remover_sufixo_public' => BooleanoDoEnv::ouNulo(env('KIT_URL_REMOVER_SUFIXO_PUBLIC')),",
+          "label": "kit.php"
+        }
+      ]
+    },
+    {
+      "id": "migration-de-settings",
+      "type": "backend",
+      "label": {
+        "pt": "migration de settings",
+        "en": "settings migration"
+      },
+      "sublabel": "22 migrations",
+      "stage": 1,
+      "row": 3,
+      "width": 143,
+      "sources": [
+        {
+          "arquivo": "database/settings/2026_08_24_000000_create_kit_settings.php",
+          "trecho": "$kit->add('nome_da_aplicacao', (string) config('app.name'));",
+          "label": "up"
+        },
+        {
+          "arquivo": "database/settings/2026_08_25_000000_add_provedores_sociais_to_kit_settings.php",
+          "trecho": "$kit->add(\n                    $provedor->propriedadeDeSettings('habilitado'),",
+          "label": "up"
+        },
+        {
+          "arquivo": "database/settings/2026_08_25_000000_add_registro_verificar_email_to_kit_settings.php",
+          "trecho": "$kit->add('registro_verificar_email', (bool) config('kit.registro.verificar_email', false));",
+          "label": "up"
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "database",
+      "label": {
+        "pt": "tabela settings",
+        "en": "settings table"
+      },
+      "sublabel": {
+        "pt": "77 props, 6 cifradas",
+        "en": "77 props/6 encrypted"
+      },
+      "stage": 2,
+      "row": 3,
+      "sources": [
+        {
+          "arquivo": "app/Settings/ConfiguracoesDoKit.php",
+          "trecho": "public string $nome_da_aplicacao;",
+          "label": "ConfiguracoesDoKit"
+        },
+        {
+          "arquivo": "app/Settings/ConfiguracoesDoKit.php",
+          "trecho": "return 'kit';",
+          "label": "group"
+        },
+        {
+          "arquivo": "app/Settings/ConfiguracoesDoKit.php",
+          "trecho": "return [\n            'mail_password',",
+          "label": "encrypted"
+        }
+      ]
+    },
+    {
+      "id": "aplicarnaconfig",
+      "type": "backend",
+      "label": "aplicarNaConfig",
+      "sublabel": "boot: mapaDeConfiguracao()",
+      "stage": 3,
+      "row": 3,
+      "width": 118,
+      "sources": [
+        {
+          "arquivo": "app/Providers/KitServiceProvider.php",
+          "trecho": "app(ConfiguracoesDoKit::class)->aplicarNaConfig();",
+          "label": "configureSettingsDoKit"
+        },
+        {
+          "arquivo": "app/Settings/ConfiguracoesDoKit.php",
+          "trecho": "config($novo);",
+          "label": "aplicarNaConfig"
+        },
+        {
+          "arquivo": "app/Settings/ConfiguracoesDoKit.php",
+          "trecho": "'nome_da_aplicacao'            => 'app.name',",
+          "label": "mapaDeConfiguracao"
+        }
+      ]
+    },
+    {
+      "id": "decisor",
+      "type": "backend",
+      "label": {
+        "pt": "decisor",
+        "en": "decider"
+      },
+      "sublabel": {
+        "pt": "app/Support: 21 arquivos",
+        "en": "app/Support: 21 files"
+      },
+      "stage": 3,
+      "row": 1,
+      "sources": [
+        {
+          "arquivo": "app/Support/ConfiguracaoDoLogin.php",
+          "trecho": "return (bool) config('kit.login.unificado', false);",
+          "label": "unificado"
+        },
+        {
+          "arquivo": "app/Support/CabecalhoDoPainel.php",
+          "trecho": "$alt               = $logoDaOrganizacao ? $organizacao->getFilamentName() : (string) config('app.name');",
+          "label": "resolverEntrada"
+        },
+        {
+          "arquivo": "app/Support/IdentidadeDoKit.php",
+          "trecho": "return view('svg.arte-do-login', ['nome' => config('app.name')])->render();",
+          "label": "artePadrao"
+        }
+      ]
+    },
+    {
+      "id": "tela",
+      "type": "frontend",
+      "label": {
+        "pt": "tela",
+        "en": "view"
+      },
+      "sublabel": {
+        "pt": "Filament: 18 arquivos",
+        "en": "Filament: 18 files"
+      },
+      "stage": 4,
+      "row": 1,
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/BoasVindas.php",
+          "trecho": "->state((string) config('app.name')),",
+          "label": "informacoesDoKit"
+        },
+        {
+          "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
+          "trecho": ".($record->tenant->nome ?? config('app.name')).' com o papel '",
+          "label": "table"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->brandName(fn (): string => config('app.name').' • Admin')",
+          "label": "panel"
+        }
+      ]
+    },
+    {
+      "id": "admin-config",
+      "type": "frontend",
+      "label": {
+        "pt": "/admin Configurações",
+        "en": "/admin Settings"
+      },
+      "sublabel": "SettingsPage",
+      "stage": 2,
+      "row": 4,
+      "width": 132,
+      "sources": [
+        {
+          "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+          "trecho": "class ConfiguracoesDoKit extends SettingsPage",
+          "label": "ConfiguracoesDoKit"
+        }
+      ]
+    },
+    {
+      "id": "audits",
+      "type": "database",
+      "label": {
+        "pt": "tabela audits",
+        "en": "audits table"
+      },
+      "sublabel": "AuditarConfiguracoes",
+      "stage": 3,
+      "row": 4,
+      "sources": [
+        {
+          "arquivo": "app/Listeners/AuditarConfiguracoesDoKit.php",
+          "trecho": "Audit::query()->create([",
+          "label": "handle"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f1",
+      "from": "env",
+      "to": "config-kit-php",
+      "label": "env()",
+      "variant": "emphasis"
+    },
+    {
+      "id": "f2",
+      "from": "config-kit-php",
+      "to": "migration-de-settings",
+      "label": {
+        "pt": "valor inicial",
+        "en": "initial value"
+      },
+      "labelDy": 25
+    },
+    {
+      "id": "f3",
+      "from": "migration-de-settings",
+      "to": "settings",
+      "label": {
+        "pt": "77 linhas",
+        "en": "77 rows"
+      }
+    },
+    {
+      "id": "f4",
+      "from": "settings",
+      "to": "aplicarnaconfig",
+      "label": {
+        "pt": "lido no boot",
+        "en": "read at boot"
+      }
+    },
+    {
+      "id": "f5",
+      "from": "aplicarnaconfig",
+      "to": "decisor",
+      "label": {
+        "pt": "config() efetivo",
+        "en": "active config()"
+      }
+    },
+    {
+      "id": "f6",
+      "from": "decisor",
+      "to": "tela",
+      "label": {
+        "pt": "decisão",
+        "en": "choice"
+      }
+    },
+    {
+      "id": "so-env",
+      "from": "config-kit-php",
+      "to": "decisor",
+      "label": {
+        "pt": "19 chaves só .env",
+        "en": "19 .env-only keys"
+      },
+      "variant": "dashed"
+    },
+    {
+      "id": "grava",
+      "from": "admin-config",
+      "to": "settings",
+      "label": {
+        "pt": "grava",
+        "en": "write"
+      }
+    },
+    {
+      "id": "audita",
+      "from": "admin-config",
+      "to": "audits",
+      "label": {
+        "pt": "o que mudou",
+        "en": "changes"
+      },
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Números (settings[] e config_somente_env[])",
+        "en": "Counts (settings[] and config_somente_env[])"
+      },
+      "items": [
+        {
+          "pt": "77 propriedades no grupo kit, 6 cifradas; nascem em 22 migrations de database/settings",
+          "en": "77 properties in group kit, 6 encrypted; created by 22 migrations in database/settings"
+        },
+        {
+          "pt": "Leitores por grupo: app/Support 53 propriedades em 21 arquivos; Filament 9 em 18; outros 11 em 16",
+          "en": "Readers by group: app/Support 53 properties in 21 files; Filament 9 in 18; others 11 in 16"
+        },
+        {
+          "pt": "19 chaves de config/kit.php ficam só no .env (lidas no boot)",
+          "en": "19 config/kit.php keys stay in .env only (read at boot)"
+        },
+        {
+          "pt": "A cadeia da §8 cita só config/kit.php, mas 19 das 77 propriedades sobrepõem outras configs: app.* (2), mail.* (8), remember-table.* (1), services.* (8)",
+          "en": "The §8 chain cites only config/kit.php, but 19 of 77 properties override other configs: app.* (2), mail.* (8), remember-table.* (1), services.* (8)"
+        },
+        {
+          "pt": "Simplificação do desenho: a seta \"19 chaves só .env\" termina nos decisores, mas só 8 dos 44 arquivos que leem essas chaves estão em app/Support (15 no Filament, 21 em outros lugares)",
+          "en": "Diagram simplification: the \"19 .env-only keys\" arrow ends at deciders, but only 8 of the 44 files reading these keys are in app/Support (15 in Filament, 21 elsewhere)"
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Origem",
+        "en": "Source"
+      },
+      "items": [
+        {
+          "pt": "Cadeia: transversal-dados.md §8 (linha dataflow); números: §3.2 settings[], §3.3 config_somente_env[], §6 listeners",
+          "en": "Chain: transversal-dados.md §8 (dataflow line); counts: §3.2 settings[], §3.3 config_somente_env[], §6 listeners"
+        }
+      ]
+    }
+  ]
+}

@@ -85,6 +85,16 @@ jobs:
           npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000
           node verifica-acessibilidade.mjs
 
+      - name: Conferir o mapa interativo (amostra de acessibilidade, nos dois temas)
+        working-directory: site
+        # O mapa (os HTML do archify em `dist/mapa/`, gerados pelo `npm run build`) tem conferidor
+        # próprio: os CT-B dele e os do conferidor de acessibilidade começam os dois em 01 (D17 da
+        # wiki `mapa-interativo-do-kit`). Usa a prévia que o passo anterior deixou de pé — o
+        # `wait-on` só confirma. ANTES do envio, como os outros conferidores.
+        run: |
+          npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000
+          node verifica-mapa.mjs
+
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site/dist

@@ -1,0 +1,379 @@
+{
+  "slug": "requisicao-autenticada",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "auth-01: Pipeline de um request autenticado num painel (regra de acesso ao painel) (parte 1 de 2)",
+    "en": "auth-01: Authenticated panel request pipeline (panel access rule) (part 1 of 2)"
+  },
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta ao navegador",
+            "en": "browser response"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "desvio (recusa, redirect, logout)",
+            "en": "branch (denial, redirect, logout)"
+          }
+        },
+        "dashed": {
+          "label": {
+            "pt": "caminho alternativo",
+            "en": "alternate path"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "passo principal",
+            "en": "main step"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      }
+    },
+    {
+      "id": "setuppanel",
+      "type": "backend",
+      "label": "SetUpPanel",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->middleware([",
+          "label": "AppPanelProvider@panel"
+        },
+        {
+          "arquivo": "routes/web.php",
+          "trecho": "->middleware('panel:app')",
+          "label": "web.php"
+        },
+        {
+          "arquivo": "app/Providers/KitServiceProvider.php",
+          "trecho": "Route::middleware(['web', 'panel:app'])->group(function (): void {",
+          "label": "KitServiceProvider@configureLoginUnificado"
+        }
+      ]
+    },
+    {
+      "id": "middleware-base-do-painel",
+      "type": "security",
+      "label": "Middleware",
+      "sublabel": {
+        "pt": "base do painel",
+        "en": "panel base"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->middleware([",
+          "label": "AppPanelProvider@panel"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->middleware([",
+          "label": "AdminPanelProvider@panel"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "->middleware([",
+          "label": "InfraPanelProvider@panel"
+        }
+      ]
+    },
+    {
+      "id": "authenticate-filament",
+      "type": "security",
+      "label": "Authenticate",
+      "sublabel": "Filament",
+      "sources": [
+        {
+          "arquivo": "resources/views/errors/403.blade.php",
+          "trecho": "$mostrarDiagnostico = app()->environment('local', 'testing');",
+          "label": "403.blade.php"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "Authenticate::class,",
+          "label": "AppPanelProvider@panel"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "Authenticate::class,",
+          "label": "AdminPanelProvider@panel"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "backend",
+      "label": "User",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "if (($motivo = $this->motivoDeIndisponibilidade()) !== null) {",
+          "label": "User@motivoDaNegativaDoPainel"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "$contexto = $panel->hasTenancy() ? null : $this->contextoGlobal();",
+          "label": "User@motivoDaNegativaDoPainel"
+        }
+      ]
+    },
+    {
+      "id": "musttwofactor",
+      "type": "security",
+      "label": "MustTwoFactor"
+    },
+    {
+      "id": "bloquearsessaocomretorno",
+      "type": "security",
+      "label": "BloquearSessao",
+      "sublabel": "ComRetorno",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/BloquearSessaoComRetorno.php",
+          "trecho": "$resposta = parent::handle($request, function (Request $request) use ($next, &$seguiu): mixed {",
+          "label": "BloquearSessaoComRetorno@handle"
+        },
+        {
+          "arquivo": "app/Providers/AppServiceProvider.php",
+          "trecho": "$this->app->bind(Locker::class, BloquearSessaoComRetorno::class);",
+          "label": "AppServiceProvider@register"
+        }
+      ]
+    },
+    {
+      "id": "exigetutorialguiadoligado",
+      "type": "security",
+      "label": "ExigeTutorial",
+      "sublabel": "GuiadoLigado",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
+          "trecho": "abort(404);\n    }",
+          "label": "ExigeTutorialGuiadoLigado@handle"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "], isPersistent: true);",
+          "label": "AppPanelProvider@panel"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "], isPersistent: true);",
+          "label": "AdminPanelProvider@panel"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 656,
+      "to": 755,
+      "label": {
+        "pt": "Desvio",
+        "en": "Branch"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "p0",
+      "from": "navegador",
+      "to": "setuppanel",
+      "y": 172,
+      "label": "GET /{painel}/...",
+      "note": {
+        "pt": "o alias panel:{id} é o 1º middleware do painel: fixa e boota o painel corrente",
+        "en": "panel:{id}, the 1st panel middleware, boots the current panel"
+      },
+      "variant": "emphasis"
+    },
+    {
+      "id": "p1",
+      "from": "setuppanel",
+      "to": "middleware-base-do-painel",
+      "y": 255,
+      "label": {
+        "pt": "cookies, sessão, AuthenticateSess…",
+        "en": "cookies, session, AuthenticateSess…"
+      },
+      "note": {
+        "pt": "cookies, sessão, AuthenticateSession, CSRF, bindings e DispatchServingFilamentEvent declarados no provider de cada painel",
+        "en": "cookies, session, AuthenticateSession, CSRF, bindings and DispatchServingFilamentEvent set in each panel's provider"
+      },
+      "variant": "default"
+    },
+    {
+      "id": "p2",
+      "from": "middleware-base-do-painel",
+      "to": "authenticate-filament",
+      "y": 365,
+      "label": {
+        "pt": "authMiddleware do painel",
+        "en": "panel authMiddleware"
+      },
+      "note": {
+        "pt": "sem sessão → AuthenticationException com redirect para o login DO PAINEL",
+        "en": "no session → AuthenticationException with redirect to the PANEL login"
+      },
+      "variant": "default"
+    },
+    {
+      "id": "p3",
+      "from": "authenticate-filament",
+      "to": "user",
+      "y": 448,
+      "label": {
+        "pt": "canAccessPanel(painel corrente)",
+        "en": "canAccessPanel(current panel)"
+      },
+      "note": {
+        "pt": "false → 403 · [User] motivoDaNegativaDoPainel: conta excluída/inativa → pendente de aprovação → master_global abre tudo → papel do painel (roles.painel) · [User] painel sem tenancy (/admin, /infra) exige o papel no contexto global; painel com tenancy (/app) aceita papel em qualquer organização",
+        "en": "false → 403 · [User] motivoDaNegativaDoPainel: deleted/inactive account → pending approval → master_global allows all → panel role (roles.painel) · [User] panel without tenancy (/admin, /infra) needs a role in the global context; panel with tenancy (/app) accepts a role in any organization"
+      },
+      "variant": "default"
+    },
+    {
+      "id": "p4",
+      "from": "authenticate-filament",
+      "to": "navegador",
+      "y": 670,
+      "label": "403",
+      "note": {
+        "pt": "a view de erro do kit mostra a negativa; o diagnóstico (conta, permissão ou papel ausente) só aparece em local/testing",
+        "en": "the kit error view shows the denial; diagnostics (account, missing permission or role) appear only in local/testing"
+      },
+      "variant": "security"
+    },
+    {
+      "id": "p7",
+      "from": "authenticate-filament",
+      "to": "musttwofactor",
+      "y": 775,
+      "label": "Breezy",
+      "note": {
+        "pt": "2FA confirmado e sessão 2FA inválida → redirect /{painel}/two-factor-authentication?next=",
+        "en": "2FA confirmed and invalid 2FA session → redirect /{painel}/two-factor-authentication?next="
+      },
+      "variant": "default"
+    },
+    {
+      "id": "p8",
+      "from": "musttwofactor",
+      "to": "bloquearsessaocomretorno",
+      "y": 858,
+      "label": {
+        "pt": "Locker do lockscreen",
+        "en": "lockscreen Locker"
+      },
+      "note": {
+        "pt": "(bind para a subclasse do kit): sessão travada ou ociosa → tela de bloqueio, guardando a página interceptada",
+        "en": "(bound to kit subclass): locked or idle session → lock screen, saving the intercepted page"
+      },
+      "variant": "default"
+    },
+    {
+      "id": "p9",
+      "from": "bloquearsessaocomretorno",
+      "to": "exigetutorialguiadoligado",
+      "y": 957,
+      "label": {
+        "pt": "com o tutorial desligado, rotas…",
+        "en": "with tutorial off, routes…"
+      },
+      "note": {
+        "pt": "com o tutorial desligado, rotas de onboarding respondem 404",
+        "en": "with tutorial off, onboarding routes return 404"
+      },
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "kit.tenancy.enabled (KIT_TENANCY, padrão false): lido no boot do AppPanelProvider: /app ganha {tenant:slug}, IdentifyTenant e DefinirTenantDePermissoes; ligado por php artisan kit:tenancy",
+          "en": "kit.tenancy.enabled (KIT_TENANCY, default false): read at AppPanelProvider boot: /app gets {tenant:slug}, IdentifyTenant and DefinirTenantDePermissoes; enabled by php artisan kit:tenancy"
+        },
+        {
+          "pt": "lockscreen.enabled (LOCKSCREEN_ENABLED, padrão true): liga o plugin de bloqueio (rotas, item de menu e o middleware Locker) nos três painéis",
+          "en": "lockscreen.enabled (LOCKSCREEN_ENABLED, default true): enables the lock plugin (routes, menu item and Locker middleware) in all three panels"
+        },
+        {
+          "pt": "lockscreen.idle_timeout (LOCKSCREEN_IDLE_TIMEOUT, padrão 1800): segundos sem navegação (GET) até travar a sessão",
+          "en": "lockscreen.idle_timeout (LOCKSCREEN_IDLE_TIMEOUT, default 1800): seconds with no navigation (GET) before session lock"
+        },
+        {
+          "pt": "kit.onboarding.habilitado (KIT_ONBOARDING, padrão false): desligado, ExigeTutorialGuiadoLigado devolve 404 nas telas de onboarding",
+          "en": "kit.onboarding.habilitado (KIT_ONBOARDING, default false): when off, ExigeTutorialGuiadoLigado returns 404 on onboarding screens"
+        },
+        {
+          "pt": "kit.registro.verificar_email (KIT_REGISTRO_VERIFICAR_EMAIL, padrão false): ExigirEmailVerificado barra no /app quem não tem email_verified_at (decidido por request)",
+          "en": "kit.registro.verificar_email (KIT_REGISTRO_VERIFICAR_EMAIL, default false): ExigirEmailVerificado blocks /app users with no email_verified_at (per request)"
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Tenancy: muda com tenant ligado",
+        "en": "Tenancy: changes with tenant on"
+      },
+      "items": [
+        {
+          "pt": "no /app as rotas de Page/Resource passam a /app/{tenant:slug} e ganham IdentifyTenant + DefinirTenantDePermissoes (persistentes); surge GET /app → RedirectToTenantController; papéis passam a ser por team_id (permission.teams=true, gravado por kit:tenancy). /admin e /infra não mudam de rota, mas exigem papel no contexto global.",
+          "en": "In /app, Page/Resource routes become /app/{tenant:slug} and get IdentifyTenant + DefinirTenantDePermissoes (persistent); adds GET /app → RedirectToTenantController; roles use team_id (permission.teams=true, set by kit:tenancy). /admin and /infra keep their routes, but need a role in the global context."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Origem",
+        "en": "Source"
+      },
+      "items": [
+        {
+          "pt": "Fluxo auth-01 de transversal-auth.md (bloco JSON das linhas 664-3209), passos 0-9 de 16",
+          "en": "auth-01 flow from transversal-auth.md (JSON block at lines 664-3209), steps 0-9 of 16"
+        },
+        {
+          "pt": "Painéis: admin, app, infra; features: F-09, F-10, F-11, F-14, F-22",
+          "en": "Panels: admin, app, infra; features: F-09, F-10, F-11, F-14, F-22"
+        }
+      ]
+    }
+  ]
+}

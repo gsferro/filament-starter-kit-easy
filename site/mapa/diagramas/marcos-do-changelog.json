@@ -1,0 +1,628 @@
+{
+  "slug": "marcos-do-changelog",
+  "tipo": "timeline",
+  "titulo": {
+    "pt": "Marcos do starter kit: 26 versões que mudaram o kit",
+    "en": "Starter kit milestones: 26 releases that changed the kit"
+  },
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "timeline",
+  "meta": {
+    "quality_profile": "showcase",
+    "evidence": "observed",
+    "timezone": "America/Sao_Paulo"
+  },
+  "layout": {
+    "breaks": "auto"
+  },
+  "lanes": [
+    {
+      "id": "auth",
+      "label": {
+        "pt": "Autenticação",
+        "en": "Auth"
+      }
+    },
+    {
+      "id": "admin",
+      "label": "/admin"
+    },
+    {
+      "id": "tenant",
+      "label": "Multi-tenancy"
+    },
+    {
+      "id": "docs",
+      "label": {
+        "pt": "Site e docs",
+        "en": "Site & docs"
+      }
+    },
+    {
+      "id": "qa",
+      "label": {
+        "pt": "Qualidade e CI",
+        "en": "Quality and CI"
+      }
+    },
+    {
+      "id": "inst",
+      "label": {
+        "pt": "Instalação e atualização",
+        "en": "Install and update"
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "v0_1_0",
+      "at": "2026-08-12T14:25:28-03:00",
+      "title": {
+        "pt": "v0.1.0 · Nasce o kit: Laravel 13 + Filament 5, três painéis (/app, /admin, /infra) e kit:install",
+        "en": "v0.1.0 · Kit begins: Laravel 13 + Filament 5, three panels (/app, /admin, /infra) and kit:install"
+      },
+      "detail": {
+        "pt": "Nasce o kit: Laravel 13 + Filament 5, três painéis (/app, /admin, /infra) e kit:install (instalação/atualização; CHANGELOG 2026-08-12; hora: sem tag: commit 1e20f344 que escreveu o título no CHANGELOG)",
+        "en": "Kit begins: Laravel 13 + Filament 5, three panels (/app, /admin, /infra) and kit:install (install/update; CHANGELOG 2026-08-12; time: no tag: commit 1e20f344 that wrote the title in CHANGELOG)"
+      },
+      "lane": "inst",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- Skeleton Laravel 13 + Filament 5 instalável via `composer create-project gsferro/starter-kit-easy`.",
+          "label": "CHANGELOG v0.1.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_3_0",
+      "at": "2026-08-12T15:56:04-03:00",
+      "title": {
+        "pt": "v0.3.0 · Comando kit:update",
+        "en": "v0.3.0 · kit:update command"
+      },
+      "detail": {
+        "pt": "Comando kit:update (instalação/atualização; CHANGELOG 2026-08-12; hora: sem tag: commit f8ceb996 que escreveu o título no CHANGELOG)",
+        "en": "kit:update command (install/update; CHANGELOG 2026-08-12; time: no tag: commit f8ceb996 that wrote the title in CHANGELOG)"
+      },
+      "lane": "inst",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- Comando `php artisan kit:update`: compara o projeto com uma versão nova do kit,",
+          "label": "CHANGELOG v0.3.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_8_0",
+      "at": "2026-08-13T09:16:10-03:00",
+      "title": {
+        "pt": "v0.8.0 · wikis/ para agentes de IA",
+        "en": "v0.8.0 · wikis/ for AI agents"
+      },
+      "detail": {
+        "pt": "wikis/ para agentes de IA (site/docs; CHANGELOG 2026-08-13; hora: sem tag: commit a6db71a0 que escreveu o título no CHANGELOG)",
+        "en": "wikis/ for AI agents (site/docs; CHANGELOG 2026-08-13; time: no tag: commit a6db71a0 that wrote the title in CHANGELOG)"
+      },
+      "lane": "docs",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **`wikis/` — a documentação que o agente de IA lê antes de codar.** Sete",
+          "label": "CHANGELOG v0.8.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_8_0_2",
+      "at": "2026-08-13T09:16:10-03:00",
+      "title": {
+        "pt": "v0.8.0 · Skills e plugins de IA no kit (feature-wiki via Boost, Ponytail e Caveman)",
+        "en": "v0.8.0 · AI skills and plugins in the kit (feature-wiki via Boost, Ponytail and Caveman)"
+      },
+      "detail": {
+        "pt": "Skills e plugins de IA no kit (feature-wiki via Boost, Ponytail e Caveman) (qualidade/CI; CHANGELOG 2026-08-13; hora: sem tag: commit a6db71a0 que escreveu o título no CHANGELOG)",
+        "en": "AI skills and plugins in the kit (feature-wiki via Boost, Ponytail and Caveman) (quality/CI; CHANGELOG 2026-08-13; time: no tag: commit a6db71a0 that wrote the title in CHANGELOG)"
+      },
+      "lane": "qa",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Skills e plugins de IA no kit.** `feature-wiki` (de",
+          "label": "CHANGELOG v0.8.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_9_1",
+      "at": "2026-08-13T11:57:51-03:00",
+      "title": "v0.9.1 · Multi-tenancy opt-in (kit:tenancy)",
+      "detail": {
+        "pt": "Multi-tenancy opt-in (kit:tenancy) (multi-tenancy; CHANGELOG 2026-08-13; hora: sem tag: commit 681be6d5 que escreveu o título no CHANGELOG)",
+        "en": "Multi-tenancy opt-in (kit:tenancy) (multi-tenancy; CHANGELOG 2026-08-13; time: no tag: commit 681be6d5 that wrote the title in CHANGELOG)"
+      },
+      "lane": "tenant",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Multi-tenancy opt-in.** `php artisan kit:tenancy` liga o modo multi-tenant;",
+          "label": "CHANGELOG v0.9.1"
+        }
+      ]
+    },
+    {
+      "id": "v0_10_0",
+      "at": "2026-08-13T17:00:23-03:00",
+      "title": {
+        "pt": "v0.10.0 · Tela de bloqueio de sessão ganha o layout do login",
+        "en": "v0.10.0 · Session lock screen gets the login layout"
+      },
+      "detail": {
+        "pt": "Tela de bloqueio de sessão ganha o layout do login (autenticação; CHANGELOG 2026-08-13; hora: sem tag: commit 1562202e que escreveu o título no CHANGELOG)",
+        "en": "Session lock screen gets the login layout (auth; CHANGELOG 2026-08-13; time: no tag: commit 1562202e that wrote the title in CHANGELOG)"
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **A tela de bloqueio de sessão agora usa o layout do login.** O",
+          "label": "CHANGELOG v0.10.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_11_0",
+      "at": "2026-08-13T20:58:16-03:00",
+      "title": {
+        "pt": "v0.11.0 · Convite por e-mail",
+        "en": "v0.11.0 · Email invitation"
+      },
+      "detail": {
+        "pt": "Convite por e-mail (autenticação; CHANGELOG 2026-08-13; hora: sem tag: commit f1ccd39f que escreveu o título no CHANGELOG)",
+        "en": "Email invitation (auth; CHANGELOG 2026-08-13; time: no tag: commit f1ccd39f that wrote the title in CHANGELOG)"
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Convite por e-mail.** `/admin` → **Convites**: e-mail, papel e (com tenancy) a",
+          "label": "CHANGELOG v0.11.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_13_0",
+      "at": "2026-08-14T18:25:46-03:00",
+      "title": {
+        "pt": "v0.13.0 · Testes em navegador real sobre as 52 telas",
+        "en": "v0.13.0 · Real-browser tests of all 52 screens"
+      },
+      "detail": {
+        "pt": "Testes em navegador real sobre as 52 telas (qualidade/CI; CHANGELOG 2026-08-14; hora: sem tag: commit 90fde7dd que escreveu o título no CHANGELOG)",
+        "en": "Real-browser tests of all 52 screens (quality/CI; CHANGELOG 2026-08-14; time: no tag: commit 90fde7dd that wrote the title in CHANGELOG)"
+      },
+      "lane": "qa",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Suíte de testes de browser** (`tests/Browser`, grupo `browser`), com 11",
+          "label": "CHANGELOG v0.13.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_16_0",
+      "at": "2026-08-16T15:09:28-03:00",
+      "title": {
+        "pt": "v0.16.0 · create-project passa a perguntar",
+        "en": "v0.16.0 · create-project now prompts"
+      },
+      "detail": {
+        "pt": "create-project passa a perguntar (instalação/atualização; CHANGELOG 2026-08-16; hora: tag v0.16.0)",
+        "en": "create-project now prompts (install/update; CHANGELOG 2026-08-16; time: tag v0.16.0)"
+      },
+      "lane": "inst",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **O `create-project` agora pergunta.** Cinco perguntas antes de tocar no banco,",
+          "label": "CHANGELOG v0.16.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_17_0",
+      "at": "2026-08-18T15:04:46-03:00",
+      "title": {
+        "pt": "v0.17.0 · Camada de mídia (spatie media library)",
+        "en": "v0.17.0 · Media layer (spatie media library)"
+      },
+      "detail": {
+        "pt": "Camada de mídia (spatie media library) (/admin; CHANGELOG 2026-08-18; hora: sem tag: commit 7a494bd1 que escreveu o título no CHANGELOG)",
+        "en": "Media layer (spatie media library) (/admin; CHANGELOG 2026-08-18; time: no tag: commit 7a494bd1 that wrote the title in CHANGELOG)"
+      },
+      "lane": "admin",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Camada de mídia** — `filament/spatie-laravel-media-library-plugin`. Até aqui upload era",
+          "label": "CHANGELOG v0.17.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_19_0",
+      "at": "2026-08-24T11:45:24-03:00",
+      "title": {
+        "pt": "v0.19.0 · Configurações do kit editáveis em /admin",
+        "en": "v0.19.0 · Kit settings editable in /admin"
+      },
+      "detail": {
+        "pt": "Configurações do kit editáveis em /admin (/admin; CHANGELOG 2026-08-24; hora: tag v0.19.0)",
+        "en": "Kit settings editable in /admin (/admin; CHANGELOG 2026-08-24; time: tag v0.19.0)"
+      },
+      "lane": "admin",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Pagina de configuracoes do kit em `/admin`**, com 19 propriedades em quatro abas: identidade",
+          "label": "CHANGELOG v0.19.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_19_1",
+      "at": "2026-08-24T14:13:47-03:00",
+      "title": {
+        "pt": "v0.19.1 · Registro aberto no /app",
+        "en": "v0.19.1 · Open sign-up in /app"
+      },
+      "detail": {
+        "pt": "Registro aberto no /app (autenticação; CHANGELOG 2026-08-24; hora: tag v0.19.1)",
+        "en": "Open sign-up in /app (auth; CHANGELOG 2026-08-24; time: tag v0.19.1)"
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Registro aberto no painel `/app`, desligado por default** (`KIT_REGISTRO=false`). Ate aqui o",
+          "label": "CHANGELOG v0.19.1"
+        }
+      ]
+    },
+    {
+      "id": "v0_19_2",
+      "at": "2026-08-24T15:18:20-03:00",
+      "title": {
+        "pt": "v0.19.2 · Login com Google (socialite)",
+        "en": "v0.19.2 · Google login (socialite)"
+      },
+      "detail": {
+        "pt": "Login com Google (socialite) (autenticação; CHANGELOG 2026-08-24; hora: tag v0.19.2)",
+        "en": "Google login (socialite) (auth; CHANGELOG 2026-08-24; time: tag v0.19.2)"
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Login com Google via `laravel/socialite`** (a unica dependencia nova da rodada). O botao",
+          "label": "CHANGELOG v0.19.2"
+        }
+      ]
+    },
+    {
+      "id": "v0_22_0",
+      "at": "2026-08-31T18:23:57-03:00",
+      "title": {
+        "pt": "v0.22.0 · Anti-robô passa a usar ddr/filament-captcha, com reCAPTCHA v3",
+        "en": "v0.22.0 · Anti-bot uses ddr/filament-captcha, with reCAPTCHA v3"
+      },
+      "detail": {
+        "pt": "Anti-robô passa a usar ddr/filament-captcha, com reCAPTCHA v3 (autenticação; CHANGELOG 2026-08-31; hora: tag v0.22.0)",
+        "en": "Anti-bot uses ddr/filament-captcha, with reCAPTCHA v3 (auth; CHANGELOG 2026-08-31; time: tag v0.22.0)"
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Proteção anti-robô sobre o pacote `ddr/filament-captcha`**, com **reCAPTCHA v3** como quarto",
+          "label": "CHANGELOG v0.22.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_24_0",
+      "at": "2026-09-02T01:55:23-03:00",
+      "title": {
+        "pt": "v0.24.0 · Site de documentação no GitHub Pages",
+        "en": "v0.24.0 · Docs site on GitHub Pages"
+      },
+      "detail": {
+        "pt": "Site de documentação no GitHub Pages (site/docs; CHANGELOG 2026-09-02; hora: tag v0.24.0)",
+        "en": "Docs site on GitHub Pages (site/docs; CHANGELOG 2026-09-02; time: tag v0.24.0)"
+      },
+      "lane": "docs",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Site de documentação em GitHub Pages**: <https://gsferro.github.io/filament-starter-kit-easy/>.",
+          "label": "CHANGELOG v0.24.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_31_0",
+      "at": "2026-09-05T23:10:37-03:00",
+      "title": {
+        "pt": "v0.31.0 · Página única de login (/login)",
+        "en": "v0.31.0 · Single login page (/login)"
+      },
+      "detail": {
+        "pt": "Página única de login (/login) (autenticação; CHANGELOG 2026-09-05; hora: tag v0.31.0)",
+        "en": "Single login page (/login) (auth; CHANGELOG 2026-09-05; time: tag v0.31.0)"
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Página única de login (`/login`) para os três painéis, opcional e desligada por default.**",
+          "label": "CHANGELOG v0.31.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_33_0",
+      "at": "2026-09-15T14:48:42-03:00",
+      "title": {
+        "pt": "v0.33.0 · Dashboard dinâmico nos três painéis",
+        "en": "v0.33.0 · Dynamic dashboard in all three panels"
+      },
+      "detail": {
+        "pt": "Dashboard dinâmico nos três painéis (/admin; CHANGELOG 2026-09-15; hora: tag v0.33.0)",
+        "en": "Dynamic dashboard in all three panels (/admin; CHANGELOG 2026-09-15; time: tag v0.33.0)"
+      },
+      "lane": "admin",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Dashboard dinâmico nos três painéis** (`mddev31/filament-dynamic-dashboard`).",
+          "label": "CHANGELOG v0.33.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_37_0",
+      "at": "2026-09-20T03:21:50-03:00",
+      "title": {
+        "pt": "v0.37.0 · Site migra para Astro Starlight",
+        "en": "v0.37.0 · Site moves to Astro Starlight"
+      },
+      "detail": {
+        "pt": "Site migra para Astro Starlight (site/docs; CHANGELOG 2026-09-20; hora: tag v0.37.0)",
+        "en": "Site moves to Astro Starlight (site/docs; CHANGELOG 2026-09-20; time: tag v0.37.0)"
+      },
+      "lane": "docs",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **O site de documentação passou a ser gerado pelo Astro Starlight e publicado por GitHub",
+          "label": "CHANGELOG v0.37.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_40_0",
+      "at": "2026-09-25T17:00:24-03:00",
+      "title": {
+        "pt": "v0.40.0 · Cobertura de testes medida, com meta e badge",
+        "en": "v0.40.0 · Test coverage measured, with target and badge"
+      },
+      "detail": {
+        "pt": "Cobertura de testes medida, com meta e badge (qualidade/CI; CHANGELOG 2026-09-25; hora: tag v0.40.0)",
+        "en": "Test coverage measured, with target and badge (quality/CI; CHANGELOG 2026-09-25; time: tag v0.40.0)"
+      },
+      "lane": "qa",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Cobertura de testes medida, com meta, badge e guarda** (`composer test:coverage`, job",
+          "label": "CHANGELOG v0.40.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_42_0",
+      "at": "2026-09-30T21:02:05-03:00",
+      "title": {
+        "pt": "v0.42.0 · Vinte diagramas Mermaid da arquitetura",
+        "en": "v0.42.0 · Twenty Mermaid architecture diagrams"
+      },
+      "detail": {
+        "pt": "Vinte diagramas Mermaid da arquitetura (site/docs; CHANGELOG 2026-09-30; hora: tag v0.42.0)",
+        "en": "Twenty Mermaid architecture diagrams (site/docs; CHANGELOG 2026-09-30; time: tag v0.42.0)"
+      },
+      "lane": "docs",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- **Vinte diagramas da arquitetura, em Mermaid, no README e no site** (wiki",
+          "label": "CHANGELOG v0.42.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_48_0",
+      "at": "2026-10-14T13:03:38-03:00",
+      "title": {
+        "pt": "v0.48.0 · Dock de atalhos por usuário",
+        "en": "v0.48.0 · Shortcut dock per user"
+      },
+      "detail": {
+        "pt": "Dock de atalhos por usuário (/admin; CHANGELOG 2026-10-14; hora: tag v0.48.0)",
+        "en": "Shortcut dock per user (/admin; CHANGELOG 2026-10-14; time: tag v0.48.0)"
+      },
+      "lane": "admin",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- Dock de atalhos por usuário (`hoceineel/filament-quick-action-dock`): botão flutuante com até 10",
+          "label": "CHANGELOG v0.48.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_51_0",
+      "at": "2026-10-19T20:26:15-03:00",
+      "title": {
+        "pt": "v0.51.0 · Agentes de IA ligados pelo settings, por painel",
+        "en": "v0.51.0 · AI agents enabled via settings, per panel"
+      },
+      "detail": {
+        "pt": "Agentes de IA ligados pelo settings, por painel (/admin; CHANGELOG 2026-10-19; hora: tag v0.51.0)",
+        "en": "AI agents enabled via settings, per panel (/admin; CHANGELOG 2026-10-19; time: tag v0.51.0)"
+      },
+      "lane": "admin",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- Agentes de IA ligados pelo settings, por painel (`wikis/specs/feat/agentes-ia-no-settings/`): a aba",
+          "label": "CHANGELOG v0.51.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_52_0",
+      "at": "2026-10-23T11:49:39-03:00",
+      "title": {
+        "pt": "v0.52.0 · Tutorial guiado nos três painéis (jornadas, tours, Primeiros passos)",
+        "en": "v0.52.0 · Guided tutorial in all three panels (journeys, tours, First steps)"
+      },
+      "detail": {
+        "pt": "Tutorial guiado nos três painéis (jornadas, tours, Primeiros passos) (/admin; CHANGELOG 2026-10-23; hora: tag v0.52.0)",
+        "en": "Guided tutorial in all three panels (journeys, tours, First steps) (/admin; CHANGELOG 2026-10-23; time: tag v0.52.0)"
+      },
+      "lane": "admin",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- Tutorial guiado nos três painéis (`wikis/specs/feat/onboarding-guiado/`), sobre o",
+          "label": "CHANGELOG v0.52.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_54_0",
+      "at": "2026-11-18T16:06:57-03:00",
+      "title": {
+        "pt": "v0.54.0 · Aparência por usuário no Meu perfil",
+        "en": "v0.54.0 · User appearance in My profile"
+      },
+      "detail": {
+        "pt": "Aparência por usuário no Meu perfil (/admin; CHANGELOG 2026-11-18; hora: tag v0.54.0)",
+        "en": "User appearance in My profile (/admin; CHANGELOG 2026-11-18; time: tag v0.54.0)"
+      },
+      "lane": "admin",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- Seção **Aparência** no Meu perfil dos três painéis: cada pessoa escolhe densidade do layout, tamanho da",
+          "label": "CHANGELOG v0.54.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_55_0",
+      "at": "2026-11-18T20:36:09-03:00",
+      "title": {
+        "pt": "v0.55.0 · Relatório de dependências declaradas × usadas",
+        "en": "v0.55.0 · Declared × used dependency report"
+      },
+      "detail": {
+        "pt": "Relatório de dependências declaradas × usadas (qualidade/CI; CHANGELOG 2026-11-18; hora: tag v0.55.0)",
+        "en": "Declared × used dependency report (quality/CI; CHANGELOG 2026-11-18; time: tag v0.55.0)"
+      },
+      "lane": "qa",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- `maglnet/composer-require-checker` e `icanhazstring/composer-unused` no `require-dev`, e os scripts",
+          "label": "CHANGELOG v0.55.0"
+        }
+      ]
+    },
+    {
+      "id": "v0_56_0",
+      "at": "2026-11-20T06:24:53-03:00",
+      "title": {
+        "pt": "v0.56.0 · Opção do \"+\" no e-mail do cadastro",
+        "en": "v0.56.0 · \"+\" option in sign-up email"
+      },
+      "detail": {
+        "pt": "Opção do \"+\" no e-mail do cadastro (autenticação; CHANGELOG 2026-11-19; hora: tag v0.56.0)",
+        "en": "\"+\" option in sign-up email (auth; CHANGELOG 2026-11-19; time: tag v0.56.0)"
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "- Opção **Permitir \"+\" no e-mail ao cadastrar**, na aba Registro de `/admin/configuracoes-da-aplicacao`",
+          "label": "CHANGELOG v0.56.0"
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "De onde vem a hora",
+        "en": "Time source"
+      },
+      "items": [
+        {
+          "pt": "17 eventos usam a data da tag (git for-each-ref, fuso −03:00).",
+          "en": "17 events use the tag date (git for-each-ref, timezone −03:00)."
+        },
+        {
+          "pt": "9 eventos não têm tag: usam a hora do commit que escreveu o título da versão no CHANGELOG (git log -S), que não é a hora da publicação.",
+          "en": "9 events have no tag: they use the time of the commit that wrote the release title in CHANGELOG (git log -S), not the release time."
+        },
+        {
+          "pt": "A área é a da primeira entrada principal da versão (curadoria em mapa-pesquisa/dados-reais.md §1.1).",
+          "en": "The area is from the release's first main entry (curated in mapa-pesquisa/dados-reais.md §1.1)."
+        }
+      ]
+    }
+  ]
+}
