@@ -1,0 +1,15 @@
+{
+  "slug": "app-registro-sem",
+  "tipo": "tree",
+  "construtor": "registro",
+  "titulo": {
+    "pt": "/app — o que o painel registra, sem tenant",
+    "en": "/app — what the panel registers, tenancy off"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem"
+  ]
+}

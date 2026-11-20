@@ -1,9 +1,10 @@
 {
   "slug": "app-resumo-sem",
   "tipo": "architecture",
+  "construtor": "mapa",
   "titulo": {
-    "pt": "Painel /app — sem tenant (recorte agregado)",
-    "en": "Panel /app — no tenant (combined view)"
+    "pt": "/app — resumo por domínio, sem tenant",
+    "en": "/app — summary by domain, tenancy off"
   },
   "paineis": [
     "app"
@@ -11,507 +12,181 @@
   "modos": [
     "sem"
   ],
-  "schema_version": 1,
-  "diagram_type": "architecture",
-  "meta": {
-    "quality_profile": "showcase",
-    "legend": {
-      "entries": {
-        "frontend": {
-          "label": {
-            "pt": "Telas e recursos do /app",
-            "en": "/app screens/resources"
-          }
-        },
-        "backend": {
-          "label": {
-            "pt": "Serviços, providers e config do kit",
-            "en": "Kit services, providers and config"
-          }
-        },
-        "database": {
-          "label": {
-            "pt": "Models Eloquent",
-            "en": "Eloquent models"
-          }
-        },
-        "security": {
-          "label": "Middleware"
-        },
-        "external": {
-          "label": {
-            "pt": "Plugins de pacote",
-            "en": "Package plugins"
-          }
-        }
-      }
-    }
-  },
-  "components": [
+  "pecas": [
     {
-      "id": "App-Models-Convite",
-      "type": "database",
-      "label": "Convite",
-      "sublabel": {
-        "pt": "aceite cria a conta",
-        "en": "accept: new account"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Models/Convite.php",
-          "trecho": "class Convite extends Model implements Auditable",
-          "label": "Convite"
-        },
-        {
-          "arquivo": "app/Models/Convite.php",
-          "trecho": "->withoutGlobalScope(Filament::getPanel('app')->getTenancyScopeName())",
-          "label": "pendentesPara"
-        },
-        {
-          "arquivo": "app/Models/Convite.php",
-          "trecho": "return $this->painelDoPapel() === 'app'",
-          "label": "contextoDoPapel"
-        }
-      ],
-      "pos": [
-        780,
-        490
-      ],
-      "size": [
-        160,
-        56
-      ]
-    },
-    {
-      "id": "App-Models-User",
-      "type": "database",
-      "label": "User",
-      "sublabel": "canAccessPanel(app)",
-      "sources": [
-        {
-          "arquivo": "app/Models/User.php",
-          "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail",
-          "label": "User"
-        },
-        {
-          "arquivo": "app/Models/User.php",
-          "trecho": "public function canAccessPanel(Panel $panel): bool",
-          "label": "canAccessPanel"
-        },
-        {
-          "arquivo": "app/Models/User.php",
-          "trecho": "$contexto = $panel->hasTenancy() ? null : $this->contextoGlobal();",
-          "label": "motivoDaNegativaDoPainel"
-        }
-      ],
-      "pos": [
-        780,
-        90
-      ],
-      "size": [
-        170,
-        110
-      ]
-    },
-    {
-      "id": "App-Providers-KitServiceProvider",
-      "type": "backend",
-      "label": "KitServiceProvider",
-      "sublabel": {
-        "pt": "gates e densidade",
-        "en": "gates and density"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Providers/KitServiceProvider.php",
-          "trecho": "public function boot(): void",
-          "label": "boot"
-        },
-        {
-          "arquivo": "app/Providers/KitServiceProvider.php",
-          "trecho": "protected function configureTenancy(): void",
-          "label": "configureTenancy"
-        },
-        {
-          "arquivo": "app/Providers/KitServiceProvider.php",
-          "trecho": "protected function escoparDashboardsPorTenant(): void",
-          "label": "escoparDashboardsPorTenant"
-        }
-      ],
-      "pos": [
-        40,
-        890
-      ],
-      "size": [
-        150,
-        56
-      ]
-    },
-    {
-      "id": "agg-aparencia",
-      "type": "backend",
-      "label": {
-        "pt": "Marca, cor e aparência",
-        "en": "Brand, color and look"
-      },
-      "sublabel": {
-        "pt": "da instalação e da pessoa",
-        "en": "of the install and user"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Support/CorPrimaria.php",
-          "trecho": "return self::resolver(config('kit.cor_primaria_hex'), config('kit.cor_primaria'));",
-          "label": "paleta"
-        },
-        {
-          "arquivo": "app/Support/CorPrimaria.php",
-          "trecho": "public static function resolver(mixed $hex, mixed $nome): array",
-          "label": "resolver"
-        },
-        {
-          "arquivo": "app/Support/CabecalhoDoPainel.php",
-          "trecho": "public static function marca(): string|Htmlable|null",
-          "label": "marca"
-        }
-      ],
-      "pos": [
-        290,
-        590
-      ],
-      "size": [
-        150,
-        56
-      ]
-    },
-    {
-      "id": "agg-escopo",
-      "type": "backend",
-      "label": {
-        "pt": "Dock, Criar X, importação",
-        "en": "Dock, Create X, import"
-      },
-      "sublabel": {
-        "pt": "por painel",
-        "en": "per panel"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Support/DockDeAtalhos.php",
-          "trecho": "public static function habilitadoNoPainel(?Panel $painel): bool",
-          "label": "habilitadoNoPainel"
-        },
-        {
-          "arquivo": "app/Support/DockDeAtalhos.php",
-          "trecho": "public const PERMISSAO = 'Usar:Dock';",
-          "label": "PERMISSAO"
-        },
-        {
-          "arquivo": "app/Support/DockDeAtalhos.php",
-          "trecho": "public static function noContexto(Panel $painel, ?Tenant $organizacao, User $usuario, Closure $callback): mixed",
-          "label": "noContexto"
-        }
-      ],
-      "pos": [
-        290,
-        790
-      ],
-      "size": [
-        170,
-        56
-      ]
-    },
-    {
-      "id": "agg-middleware",
-      "type": "security",
-      "label": {
-        "pt": "Pilha de middleware",
-        "en": "Middleware stack"
-      },
-      "sublabel": {
-        "pt": "17 classes iguais nos 2 modos",
-        "en": "17 same classes in both modes"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-          "trecho": "->middleware([\n                EncryptCookies::class,\n                AddQueuedCookiesToResponse::class,\n                StartSession::class,\n                AuthenticateSession::class,\n                ShareErrorsFromSession::class,\n                PreventRequestForgery::class,\n                SubstituteBindings::class,\n                DisableBladeIconComponents::class,\n                DispatchServingFilamentEvent::class,\n            ])\n            ->authMiddleware([\n                Authenticate::class,\n            ])\n            // Persistente: reaplicado nos updates Livewire — a tela do onboarding já aberta\n            // recusa a próxima ação quando o tutorial é desligado (wiki `onboarding-guiado`).\n            ->authMiddleware([\n                ExigeTutorialGuiadoLigado::class,\n            ], isPersistent: true);",
-          "label": {
-            "pt": "->middleware() e ->authMiddleware()",
-            "en": "->middleware() and ->authMiddleware()"
-          }
-        }
-      ],
-      "pos": [
-        290,
-        90
-      ],
-      "size": [
-        170,
-        56
-      ]
-    },
-    {
-      "id": "agg-paginas",
-      "type": "frontend",
-      "label": {
-        "pt": "Páginas do painel",
-        "en": "Panel pages"
-      },
-      "sublabel": {
-        "pt": "Dashboard, Hub, Perfil…",
-        "en": "Dashboard,Hub,Profile…"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-          "trecho": "->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')\n            ->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')\n            ->discoverWidgets(in: app_path('Filament/App/Widgets'), for: 'App\\Filament\\App\\Widgets')\n            ->pages([\n                // O par é sempre registrado: quem decide qual responde é o\n                // App\\Support\\DashboardDinamico, por request — nunca um\n                // ->pages() condicional (o banco só é lido no boot).\n                Dashboard::class,\n                DashboardClassico::class,\n                // \"Primeiros passos\" do tutorial guiado — decisor por request (`TutorialGuiado`).\n                PrimeirosPassos::class,\n                ConvitesRecebidos::class,\n            ])\n            ->widgets([\n                AccountWidget::class,\n            ])",
-          "label": "discover*() + ->pages() + ->widgets()"
-        }
-      ],
-      "pos": [
-        540,
-        740
-      ],
-      "size": [
-        150,
-        56
-      ]
-    },
-    {
-      "id": "agg-plugins",
-      "type": "external",
-      "label": {
-        "pt": "Plugins do painel",
-        "en": "Panel plugins"
-      },
-      "sublabel": {
-        "pt": "15 registros em ->plugins()",
-        "en": "15 entries in ->plugins()"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-          "trecho": "->plugins([\n                FilamentSearchSpotlightPlugin::make()\n                    ->keyBinding(['mod+k'])\n                    ->disableDefaultGlobalSearch()\n                    ->resultLimitPerCategory(5)\n                    ->actionsEnabled()\n                    ->disableCreateActions()\n                    ->placeholder('Buscar registros e telas...')\n                    // As categorias do vendor NÃO checam canAccess(); as nossas checam.\n                    ->categories([\n                        RecordsCategory::class,\n                        ResourcesAutorizadasCategory::class,\n                        PagesAutorizadasCategory::class,\n                        // Lê o registry alimentado por AcoesDeCriacao (as sugestões \"Criar X\").\n                        ActionsCategory::class,\n                    ]),\n\n                AuthDesignerPlugin::make()\n                    ->login(fn (AuthPageConfig $config): AuthPageConfig => $config\n                        // A nossa tela de login: a única diferença é não oferecer\n                        // \"Cadastre-se\", que o Filament acrescenta sozinho assim que o\n                        // painel ganha registro.\n                        ->usingPage(TelaLogin::class)\n                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))\n                        ->mediaPosition(MediaPosition::Left)\n                        ->mediaSize('70%')\n                        ->themeToggle()\n                    )\n                    /*\n                     * A tela de aceite do convite — a ÚNICA rota pública deste painel\n                     * além do login. Sem token válido na query string ela recusa e\n                     * manda para o login (App\\Filament\\Pages\\Auth\\RegistroPorConvite).\n                     *\n                     * Passa pelo PLUGIN, e não por `$panel->registration(...)` direto:\n                     * é o plugin que grava a chave 'registration' no\n                     * AuthDesignerConfigRepository (AuthDesignerPlugin.php:92-94). Sem\n                     * ela o repositório cai em `new AuthPageConfig`\n                     * (AuthDesignerConfigRepository.php:80) e a tela nasce sem mídia e\n                     * sem alternador de tema — diferente do login ao lado, sem erro\n                     * nenhum. Ver ADR-06.\n                     *\n                     * Para fechar o cadastro por completo, remova este bloco: a rota\n                     * deixa de existir e a superfície pública desaparece.\n                     *\n                     * `MediaPosition::Right` — ESPELHADO em relação ao login, igual à\n                     * recuperação de senha logo abaixo e pela mesma razão: o eixo\n                     * invertido é o sinal imediato de que se saiu do login, sem trocar\n                     * cor, texto ou marca.\n                     */\n                    ->registration(fn (AuthPageConfig $config): AuthPageConfig => $config\n                        ->usingPage(RegistroPorConvite::class)\n                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))\n                        ->mediaPosition(MediaPosition::Right)\n                        ->mediaSize('70%')\n                        ->themeToggle()\n                    )\n                    /*\n                     * Recuperação de senha: o MESMO layout do login, ESPELHADO.\n                     *\n                     * `MediaPosition::Right` inverte o eixo (a CSS do pacote troca\n                     * `row` por `row-reverse`), então a arte vai para a direita e o\n                     * formulário para a esquerda. É a diferença que dá ao usuário um\n                     * sinal imediato de que ele saiu do login — sem trocar cor, texto\n                     * ou marca.\n                     *\n                     * Precisa passar pelo PLUGIN, e não por `$panel->passwordReset()`\n                     * direto, pela mesma razão do registro logo acima: é o plugin que\n                     * grava a chave 'password-reset' no AuthDesignerConfigRepository.\n                     * Sem ela a tela nasce sem mídia e sem alternador de tema — sem\n                     * erro nenhum. Ver ADR-06.\n                     */\n                    ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config\n                        // A página do PEDIDO é a do kit, por causa do desafio anti-robô\n                        // (ver TelaRecuperarSenha); a de redefinição (com token do e-mail) também,\n                        // só para receber a aparência das telas de acesso (ver TelaRedefinirSenha).\n                        ->usingPage(TelaRecuperarSenha::class)\n                        ->usingResetPage(TelaRedefinirSenha::class)\n                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))\n                        ->mediaPosition(MediaPosition::Right)\n                        ->mediaSize('70%')\n                        ->themeToggle()\n                    )\n                    /*\n                     * Confirmação de e-mail: este bloco VESTE a tela, e só isso.\n                     *\n                     * A tela existe SEMPRE (ver a nota longa do `->emailVerification()` abaixo);\n                     * quem decide se alguém é levado até ela é o middleware do kit, por request.\n                     * Este bloco só a VESTE, para que ela saia com a mesma arte das outras em vez\n                     * de crua: quem grava a chave 'email-verification' no\n                     * AuthDesignerConfigRepository é o `boot()` do plugin\n                     * (AuthDesignerPlugin.php:99-101), e a gravação não depende da rota existir.\n                     *\n                     * Ele também faz o plugin chamar `$panel->emailVerification($classe)`\n                     * (AuthDesignerPlugin.php:45-47) — com UM argumento, então o\n                     * `bool $isRequired = true` do Filament (HasAuth.php:110) entra de\n                     * tabela. O `->emailVerification(...)` logo depois do `->plugins([...])`\n                     * reafirma a mesma coisa e é quem fala por último. Ver ADR-03 da wiki\n                     * `auth-designer-telas`, ADR-05 da wiki `registro-e-aprovacao` e ADR-01/ADR-03\n                     * da wiki `verificacao-de-email-editavel`.\n                     */\n                    ->emailVerification(fn (AuthPageConfig $config): AuthPageConfig => $config\n                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))\n                        ->mediaPosition(MediaPosition::Right)\n                        ->mediaSize('70%')\n                        ->themeToggle()\n                    ),\n\n                BreezyCore::make()\n                    ->myProfile(shouldRegisterUserMenu: true, hasAvatars: true, slug: 'meu-perfil', userMenuLabel: 'Meu perfil')\n                    // Quem entrou por login social não tem senha atual — e a troca de senha, o 2FA e o\n                    // desbloqueio da sessão pedem uma. O bloco manda o link de definição por e-mail.\n                    ->myProfileComponents([\n                        // O e-mail do perfil com a regra do \"+\" (wiki email-com-mais).\n                        'personal_info'             => InformacoesPessoais::class,\n                        'definir_senha_por_email'   => DefinirSenhaPorEmail::class,\n                        // A seção \"Aparência\" — some sozinha com a chave da instalação desligada.\n                        'preferencias_de_aparencia' => PreferenciasDeAparencia::class,\n                    ])\n                    /*\n                     * A tela de perfil do KIT no lugar da do pacote, e o motivo e' so' um: a do\n                     * pacote nao declara `canAccess()`, entao `View:MyProfilePage` existia no banco\n                     * e no checkbox de `/admin/shield/roles` sem decidir nada.\n                     *\n                     * `customMyProfilePage()` e' o ponto de extensao publicado\n                     * (`src/Concerns/Plugin/HasMyProfile.php:30-38`), lido por\n                     * `getMyProfilePageClass()` (`:151-154`) tanto no registro da Page\n                     * (`BreezyCore.php:70`) quanto na URL do item do menu do usuario (`:115,120`)\n                     * — os dois passam a apontar para a mesma classe.\n                     *\n                     * Nos TRES paineis, porque a tela existe nos tres com UMA permissao so'. Ver\n                     * ADR-04 de\n                     * `wikis/specs/feat/permissoes-de-telas-de-pacote/permissoes-de-telas-de-pacote/`.\n                     */\n                    ->customMyProfilePage(MyProfilePage::class)\n                    // `action:` é o ponto de extensão do Breezy para a tela do desafio de\n                    // 2FA — a rota do pacote pergunta ao plugin qual classe usar. A nossa\n                    // troca o layout simples pelo do login. NOMEADO de propósito: `action`\n                    // é o 3º parâmetro, e posicional cairia em `$condition`.\n                    ->enableTwoFactorAuthentication(action: TelaDoisFatores::class),\n\n                // Obrigatório em todos os painéis — ver nota no AdminPanelProvider.\n                Lockscreen::make()\n                    ->enablePlugin((bool) config('lockscreen.enabled'))\n                    ->enableIdleTimeout((int) config('lockscreen.idle_timeout'))\n                    ->enableRateLimit(limit: 5, decayMinutes: 5, forceLogout: true),\n\n                // Bases prontas de widgets de dashboard (funil, timeline, metas,\n                // segment bar...) para os indicadores do seu negócio.\n                FilamentDashboardWidgetsPlugin::make(),\n\n                EnvironmentIndicatorPlugin::make()\n                    ->visible(fn (): bool => ! app()->isProduction()),\n\n                /*\n                 * Tutorial guiado (wiki `onboarding-guiado`) — registrado nos TRÊS painéis, sempre\n                 * (`.ai/rules/providers-filament.md`: a página \"Primeiros passos\" resolve o plugin\n                 * pelo painel corrente). Quem decide se aparece é `App\\Support\\TutorialGuiado`,\n                 * por request: interruptor do settings + permissão da página.\n                 */\n                TutorialGuiado::plugin(),\n\n                /*\n                 * Dock de atalhos — registrado nos TRÊS painéis, sempre (`.ai/rules/providers-filament.md`):\n                 * o componente resolve o plugin pelo painel corrente (`QuickActionDockPlugin::get()`), e\n                 * painel sem ele estoura no update Livewire. Quem decide se o dock aparece é o próprio\n                 * plugin, por request (settings + `Usar:Dock`). Wiki `dock-de-acoes-rapidas`, D3.\n                 */\n                PluginDoDock::make(),\n\n                FilamentOdometerEasyPlugin::make()\n                    ->delay(1000)\n                    ->duration(1500)\n                    ->badgeOnCollapsedSidebar(),\n\n                // Colunas redimensionáveis/fixáveis. Os defaults de tabela ficam em\n                // App\\Providers\\Concerns\\ConfiguraFilamentGlobal; aqui só a persistência.\n                ResizedColumnPlugin::make()\n                    ->preserveOnSession(),\n\n                FilamentNotificationCenterPlugin::make(),\n\n                /*\n                 * Lightbox em imagem e documento de tabela. O plugin registra MACROS\n                 * (`ImageColumn::macro('simpleLightbox', …)`) no `boot()` dele, por painel:\n                 * coluna chamando `->simpleLightbox()` num painel sem o plugin derruba a tela\n                 * com `BadMethodCallException` na renderização. Ver o comentário longo no\n                 * AdminPanelProvider e o ADR-02 da wiki lightbox-em-imagens-e-documentos.\n                 */\n                SimpleLightBoxPlugin::make(),\n\n                // Páginas hub em grade de cartões (App\\Filament\\App\\Pages\\HubDoNegocio),\n                // ligadas por config('kit.hub') — desligado no default do kit.\n                FilamentCardsPlugin::make(),\n\n                /*\n                 * Registrado aqui SEM navegação, e isso não é opcional.\n                 *\n                 * A tela de exceções pertence ao /infra, e só lá ela aparece. Mas o\n                 * `ExceptionResource` do pacote resolve o plugin pelo painel CORRENTE — os\n                 * métodos estáticos de navegação dele chamam `FilamentExceptionsPlugin::get()`,\n                 * que é o helper `filament()`. E o filament-shield percorre\n                 * `Filament::getPanels()` no boot para montar a matriz de permissões, sem\n                 * fixar o painel corrente: a resolução cai no painel DEFAULT, que é este.\n                 *\n                 * Sem esta linha, `LogicException: Plugin [filament-exceptions] is not\n                 * registered for panel [app]` derruba TODO request e TODO comando artisan —\n                 * `migrate` e `inspire` inclusive. Medido, não suposto.\n                 *\n                 * Mesma armadilha do `Lockscreen` logo acima, mesma saída: registrar nos\n                 * três. A diferença é o `registerNavigation(false)`, porque aqui a tela não\n                 * deve aparecer.\n                 *\n                 * Consequência que NÃO pode ser esquecida: o resource passa a existir na\n                 * matriz deste painel, então `Exception` entra na lista de subtração do\n                 * `panel_user` no `PapeisSeeder`. Ver .ai/rules/filament.md §4.\n                 */\n                FilamentExceptionsPlugin::make()\n                    ->registerNavigation(false),\n\n                /*\n                 * Cabecalho rico nas telas de registro (View/Edit de User e Tenant).\n                 *\n                 * Registrado so aqui e no /app: o `register()` do plugin acrescenta um render\n                 * hook STYLES_AFTER que emite o <link> da CSS do pacote em TODA pagina do\n                 * painel (`PageHeaderPlugin::register():60-68`), tenha ela cabecalho ou nao.\n                 * O /infra nao tem tela alvo, e pagaria a folha de estilo por pagina sem um\n                 * unico consumidor. Ligar la e uma linha — ver a receita em wikis/receitas.md.\n                 *\n                 * Instancia NOVA a cada painel, nunca uma variavel reusada: `make()` e\n                 * `app(self::class)` e o provider do pacote nao registra singleton\n                 * (`PageHeaderServiceProvider::boot():14-23`), entao o estado (`$options`,\n                 * `$resourceSchemas`) e por instancia. Compartilhar faria a configuracao de um\n                 * painel vazar para o outro, em silencio.\n                 *\n                 * O plugin sozinho nao muda tela nenhuma: quem opta e a Page, com\n                 * `use HasPageHeader`. E o trait sobrescreve `getHeader()` — Page que ja\n                 * sobrescreva esse metodo torna o pacote INERTE, sem erro nenhum.\n                 *\n                 * Depois de instalar/atualizar: `php artisan filament:assets`.\n                 */\n                PageHeaderPlugin::make(),\n            ])",
-          "label": "->plugins([...])"
-        }
-      ],
-      "pos": [
-        540,
-        140
-      ],
-      "size": [
-        160,
-        56
-      ]
-    },
-    {
-      "id": "agg-telas-acesso",
-      "type": "frontend",
-      "label": {
-        "pt": "Telas de acesso",
-        "en": "Access screens"
-      },
-      "sublabel": {
-        "pt": "login, cadastro, 2FA, bloqueio",
-        "en": "login, sign-up, 2FA, lock"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-          "trecho": "AuthDesignerPlugin::make()\n                    ->login(fn (AuthPageConfig $config): AuthPageConfig => $config\n                        // A nossa tela de login: a única diferença é não oferecer\n                        // \"Cadastre-se\", que o Filament acrescenta sozinho assim que o\n                        // painel ganha registro.\n                        ->usingPage(TelaLogin::class)\n                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))\n                        ->mediaPosition(MediaPosition::Left)\n                        ->mediaSize('70%')\n                        ->themeToggle()\n                    )\n                    /*\n                     * A tela de aceite do convite — a ÚNICA rota pública deste painel\n                     * além do login. Sem token válido na query string ela recusa e\n                     * manda para o login (App\\Filament\\Pages\\Auth\\RegistroPorConvite).\n                     *\n                     * Passa pelo PLUGIN, e não por `$panel->registration(...)` direto:\n                     * é o plugin que grava a chave 'registration' no\n                     * AuthDesignerConfigRepository (AuthDesignerPlugin.php:92-94). Sem\n                     * ela o repositório cai em `new AuthPageConfig`\n                     * (AuthDesignerConfigRepository.php:80) e a tela nasce sem mídia e\n                     * sem alternador de tema — diferente do login ao lado, sem erro\n                     * nenhum. Ver ADR-06.\n                     *\n                     * Para fechar o cadastro por completo, remova este bloco: a rota\n                     * deixa de existir e a superfície pública desaparece.\n                     *\n                     * `MediaPosition::Right` — ESPELHADO em relação ao login, igual à\n                     * recuperação de senha logo abaixo e pela mesma razão: o eixo\n                     * invertido é o sinal imediato de que se saiu do login, sem trocar\n                     * cor, texto ou marca.\n                     */\n                    ->registration(fn (AuthPageConfig $config): AuthPageConfig => $config\n                        ->usingPage(RegistroPorConvite::class)\n                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))\n                        ->mediaPosition(MediaPosition::Right)\n                        ->mediaSize('70%')\n                        ->themeToggle()\n                    )\n                    /*\n                     * Recuperação de senha: o MESMO layout do login, ESPELHADO.\n                     *\n                     * `MediaPosition::Right` inverte o eixo (a CSS do pacote troca\n                     * `row` por `row-reverse`), então a arte vai para a direita e o\n                     * formulário para a esquerda. É a diferença que dá ao usuário um\n                     * sinal imediato de que ele saiu do login — sem trocar cor, texto\n                     * ou marca.\n                     *\n                     * Precisa passar pelo PLUGIN, e não por `$panel->passwordReset()`\n                     * direto, pela mesma razão do registro logo acima: é o plugin que\n                     * grava a chave 'password-reset' no AuthDesignerConfigRepository.\n                     * Sem ela a tela nasce sem mídia e sem alternador de tema — sem\n                     * erro nenhum. Ver ADR-06.\n                     */\n                    ->passwordReset(fn (AuthPageConfig $config): AuthPageConfig => $config\n                        // A página do PEDIDO é a do kit, por causa do desafio anti-robô\n                        // (ver TelaRecuperarSenha); a de redefinição (com token do e-mail) também,\n                        // só para receber a aparência das telas de acesso (ver TelaRedefinirSenha).\n                        ->usingPage(TelaRecuperarSenha::class)\n                        ->usingResetPage(TelaRedefinirSenha::class)\n                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))\n                        ->mediaPosition(MediaPosition::Right)\n                        ->mediaSize('70%')\n                        ->themeToggle()\n                    )\n                    /*\n                     * Confirmação de e-mail: este bloco VESTE a tela, e só isso.\n                     *\n                     * A tela existe SEMPRE (ver a nota longa do `->emailVerification()` abaixo);\n                     * quem decide se alguém é levado até ela é o middleware do kit, por request.\n                     * Este bloco só a VESTE, para que ela saia com a mesma arte das outras em vez\n                     * de crua: quem grava a chave 'email-verification' no\n                     * AuthDesignerConfigRepository é o `boot()` do plugin\n                     * (AuthDesignerPlugin.php:99-101), e a gravação não depende da rota existir.\n                     *\n                     * Ele também faz o plugin chamar `$panel->emailVerification($classe)`\n                     * (AuthDesignerPlugin.php:45-47) — com UM argumento, então o\n                     * `bool $isRequired = true` do Filament (HasAuth.php:110) entra de\n                     * tabela. O `->emailVerification(...)` logo depois do `->plugins([...])`\n                     * reafirma a mesma coisa e é quem fala por último. Ver ADR-03 da wiki\n                     * `auth-designer-telas`, ADR-05 da wiki `registro-e-aprovacao` e ADR-01/ADR-03\n                     * da wiki `verificacao-de-email-editavel`.\n                     */\n                    ->emailVerification(fn (AuthPageConfig $config): AuthPageConfig => $config\n                        ->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))\n                        ->mediaPosition(MediaPosition::Right)\n                        ->mediaSize('70%')\n                        ->themeToggle()\n                    ),",
-          "label": {
-            "pt": "AuthDesignerPlugin: telas do kit",
-            "en": "AuthDesignerPlugin: kit screens"
-          }
-        },
-        {
-          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-          "trecho": "->emailVerification(TelaVerificacaoDeEmail::class)",
-          "label": "->emailVerification()"
-        }
-      ],
-      "pos": [
-        290,
-        490
-      ],
-      "size": [
-        170,
-        64
-      ]
-    },
-    {
-      "id": "config-kit-tenancy-enabled",
-      "type": "backend",
-      "label": "kit.tenancy.enabled",
-      "sublabel": "KIT_TENANCY=false",
-      "icon": "flag",
-      "sources": [
-        {
-          "arquivo": "config/kit.php",
-          "trecho": "'enabled' => (bool) env('KIT_TENANCY', false),",
-          "label": "kit.php"
-        },
-        {
-          "arquivo": "app/Console/Commands/KitTenancy.php",
-          "trecho": "class KitTenancy extends Command",
-          "label": "KitTenancy"
-        }
-      ],
-      "pos": [
-        540,
-        40
-      ],
-      "size": [
-        150,
-        56
-      ]
-    },
-    {
-      "id": "painel-app",
-      "type": "frontend",
-      "label": {
-        "pt": "Painel /app",
-        "en": "Panel /app"
-      },
-      "sublabel": {
-        "pt": "rotas /app/…",
-        "en": "/app/… route"
-      },
-      "sources": [
-        {
-          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-          "trecho": "->id('app')\n            ->path('app')",
-          "label": "panel"
-        },
-        {
-          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-          "trecho": "->path('app')",
-          "label": "panel"
-        },
-        {
-          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-          "trecho": "->default()\n            ->id('app')",
-          "label": "panel"
-        }
-      ],
-      "pos": [
-        40,
-        40
-      ],
-      "size": [
-        170,
-        806
-      ]
+      "id": "painel:app",
+      "row": 0,
+      "col": 1
     }
   ],
-  "boundaries": [],
-  "connections": [
+  "agrupamentos": [
     {
-      "id": "App-Models-Convite--App-Models-User",
-      "from": "App-Models-Convite",
-      "to": "App-Models-User",
-      "label": {
-        "pt": "grava",
-        "en": "write"
-      }
+      "id": "grupo-organizacoes",
+      "rotulo": {
+        "pt": "Organizações e convites",
+        "en": "Organizations and invitations"
+      },
+      "membros": [
+        "App\\Filament\\App\\Pages\\ConvitesRecebidos",
+        "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+        "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+        "App\\Support\\SeletorDeOrganizacao",
+        "App\\Models\\Convite",
+        "App\\Models\\Tenant",
+        "App\\Http\\Middleware\\DefinirTenantDePermissoes",
+        "Filament\\Http\\Middleware\\IdentifyTenant"
+      ],
+      "row": 1,
+      "col": 0
     },
     {
-      "id": "App-Providers-KitServiceProvider--agg-aparencia",
-      "from": "App-Providers-KitServiceProvider",
-      "to": "agg-aparencia",
-      "label": {
-        "pt": "usa",
-        "en": "use"
-      }
+      "id": "grupo-acesso",
+      "rotulo": {
+        "pt": "Acesso e login",
+        "en": "Access and login"
+      },
+      "membros": [
+        "App\\Filament\\Pages\\Auth\\TelaLogin",
+        "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+        "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+        "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
+        "App\\Filament\\Pages\\MyProfilePage",
+        "App\\Support\\ConfiguracaoDoLogin",
+        "App\\Support\\DestinoAposLogin",
+        "App\\Support\\RegistroAberto",
+        "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
+        "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+        "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+        "lockscreen\\FilamentLockscreen\\Lockscreen",
+        "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+        "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+        "App\\Livewire\\DefinirSenhaPorEmail",
+        "App\\Livewire\\InformacoesPessoais",
+        "App\\Livewire\\PreferenciasDeAparencia",
+        "App\\Support\\Paineis"
+      ],
+      "row": 1,
+      "col": 2
     },
     {
-      "id": "App-Providers-KitServiceProvider--agg-telas-acesso",
-      "from": "App-Providers-KitServiceProvider",
-      "to": "agg-telas-acesso"
+      "id": "grupo-dashboard",
+      "rotulo": {
+        "pt": "Dashboard e tutorial",
+        "en": "Dashboard and tutorial"
+      },
+      "membros": [
+        "App\\Filament\\App\\Pages\\Dashboard",
+        "App\\Filament\\Pages\\DashboardClassico",
+        "App\\Filament\\App\\Pages\\HubDoNegocio",
+        "App\\Filament\\Pages\\PrimeirosPassos",
+        "Filament\\Widgets\\AccountWidget",
+        "App\\Support\\DashboardDinamico",
+        "App\\Support\\TutorialGuiado",
+        "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+        "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+        "LaBoiteACode\\FilamentDashboardWidgets\\FilamentDashboardWidgetsPlugin",
+        "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+        "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin"
+      ],
+      "row": 3,
+      "col": 0
     },
     {
-      "id": "agg-aparencia--App-Models-User",
-      "from": "agg-aparencia",
-      "to": "App-Models-User",
-      "label": {
-        "pt": "lê",
-        "en": "R"
-      }
+      "id": "grupo-dados",
+      "rotulo": {
+        "pt": "Dados do negócio",
+        "en": "Business data"
+      },
+      "membros": [
+        "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
+        "App\\Models\\Projeto",
+        "App\\Filament\\App\\Resources\\Users\\UserResource",
+        "App\\Models\\User",
+        "App\\Support\\TetoDeUpload",
+        "App\\Support\\EmailComMais",
+        "App\\Support\\Papeis"
+      ],
+      "row": 3,
+      "col": 2
     },
     {
-      "id": "agg-middleware--App-Models-User",
-      "from": "agg-middleware",
-      "to": "App-Models-User",
-      "label": {
-        "pt": "usa",
-        "en": "use"
-      }
+      "id": "grupo-aparencia",
+      "rotulo": {
+        "pt": "Aparência e navegação",
+        "en": "Look and navigation"
+      },
+      "membros": [
+        "App\\Support\\AparenciaDoUsuario",
+        "App\\Support\\AvatarDeIniciais",
+        "App\\Support\\CabecalhoDoPainel",
+        "App\\Support\\CorPrimaria",
+        "App\\Support\\IdentidadeDoKit",
+        "App\\Support\\ModoDoMenu",
+        "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+        "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
+        "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
+        "pxlrbt\\FilamentEnvironmentIndicator\\EnvironmentIndicatorPlugin",
+        "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+        "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+        "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
+        "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale"
+      ],
+      "row": 5,
+      "col": 0
     },
     {
-      "id": "agg-telas-acesso--App-Models-Convite",
-      "from": "agg-telas-acesso",
-      "to": "App-Models-Convite",
-      "label": {
-        "pt": "lê e grava",
-        "en": "read/write"
-      }
+      "id": "grupo-excecoes",
+      "rotulo": {
+        "pt": "Exceções",
+        "en": "Exceptions"
+      },
+      "membros": [
+        "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+        "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+        "App\\Support\\RetencaoDeExcecoes"
+      ],
+      "row": 5,
+      "col": 2
     },
     {
-      "id": "agg-telas-acesso--App-Models-User",
-      "from": "agg-telas-acesso",
-      "to": "App-Models-User",
-      "label": {
-        "pt": "lê e grava",
-        "en": "read/write"
-      }
-    },
-    {
-      "id": "painel-app--agg-aparencia",
-      "from": "painel-app",
-      "to": "agg-aparencia",
-      "label": {
-        "pt": "usa",
-        "en": "use"
-      }
-    },
-    {
-      "id": "painel-app--agg-escopo",
-      "from": "painel-app",
-      "to": "agg-escopo",
-      "label": {
-        "pt": "usa",
-        "en": "use"
-      }
-    },
-    {
-      "id": "painel-app--agg-middleware",
-      "from": "painel-app",
-      "to": "agg-middleware"
-    },
-    {
-      "id": "painel-app--agg-paginas",
-      "from": "painel-app",
-      "to": "agg-paginas"
-    },
-    {
-      "id": "painel-app--agg-plugins",
-      "from": "painel-app",
-      "to": "agg-plugins"
-    },
-    {
-      "id": "painel-app--agg-telas-acesso",
-      "from": "painel-app",
-      "to": "agg-telas-acesso"
-    },
-    {
-      "id": "painel-app--config-kit-tenancy-enabled",
-      "from": "painel-app",
-      "to": "config-kit-tenancy-enabled",
-      "label": {
-        "pt": "lê",
-        "en": "R"
-      }
+      "id": "grupo-pilha",
+      "rotulo": {
+        "pt": "Pilha da requisição",
+        "en": "Request stack"
+      },
+      "membros": [
+        "panel:app",
+        "Filament\\Http\\Middleware\\Authenticate",
+        "Filament\\Http\\Middleware\\AuthenticateSession",
+        "Filament\\Http\\Middleware\\DisableBladeIconComponents",
+        "Filament\\Http\\Middleware\\DispatchServingFilamentEvent",
+        "Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse",
+        "Illuminate\\Cookie\\Middleware\\EncryptCookies",
+        "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestForgery",
+        "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+        "Illuminate\\Session\\Middleware\\StartSession",
+        "Illuminate\\View\\Middleware\\ShareErrorsFromSession"
+      ],
+      "row": 7,
+      "col": 1
     }
-  ]
+  ],
+  "portas": [
+    {
+      "para": "app-organizacoes",
+      "rotulo": {
+        "pt": "→ Organizações e convites",
+        "en": "→ Organizations and invitations"
+      },
+      "row": 7,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 240,
+    "cellH": 64,
+    "gapX": 90,
+    "gapY": 48
+  }
 }

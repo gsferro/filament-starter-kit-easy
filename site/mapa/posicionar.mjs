@@ -1,0 +1,141 @@
+/**
+ * Busca uma grade que o archify aceite para um mapa de arquitetura e grava as posições no arquivo do
+ * diagrama — ADR-07 da wiki `mapa-interativo-do-kit`. Ferramenta de quem escreve diagramas: NUNCA roda
+ * no build (o layout fica versionado no arquivo, e buscar layout no build tornaria o build lento e
+ * instável a cada mudança do kit).
+ *
+ *   node mapa/posicionar.mjs <slug> [--tentativas 200]
+ *
+ * Começa por camadas no sentido das setas (quem registra e usa à esquerda, quem é usado à direita),
+ * ordena cada coluna pela média das vizinhas e então troca e move caixas ao acaso, guardando a grade
+ * com menos diagnósticos do `archify validate`, até não sobrar nenhum.
+ */
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { obterArchify } from './archify.mjs';
+import { entradaDoArchify, idArchify } from './gerar.mjs';
+
+const [slug, ...opcoes] = process.argv.slice(2);
+if (!slug) {
+  console.error('uso: node mapa/posicionar.mjs <slug> [--tentativas 200]');
+  process.exit(2);
+}
+const posicao = opcoes.indexOf('--tentativas');
+const TENTATIVAS = posicao >= 0 ? Number(opcoes[posicao + 1]) : 200;
+
+const RAIZ = fileURLToPath(new URL('../../', import.meta.url));
+const arquivo = fileURLToPath(new URL(`./diagramas/${slug}.json`, import.meta.url));
+const diagrama = JSON.parse(readFileSync(arquivo, 'utf8'));
+if (diagrama.construtor !== 'mapa') {
+  console.error(`[mapa] ${slug} não é um mapa de arquitetura construído do modelo`);
+  process.exit(2);
+}
+const cli = obterArchify();
+const catalogoPt = JSON.parse(readFileSync(fileURLToPath(new URL('../.archify/archify/examples/locales/pt.json', import.meta.url)), 'utf8'));
+const temporaria = mkdtempSync(join(tmpdir(), 'posicionar-'));
+
+/** As caixas do mapa: peças, agrupamentos e portas, cada uma com a chave do archify. */
+const caixas = [
+  ...diagrama.pecas.map((c) => ({ origem: c, chave: idArchify(c.id) })),
+  ...(diagrama.agrupamentos ?? []).map((c) => ({ origem: c, chave: c.id })),
+  ...(diagrama.portas ?? []).map((c) => ({ origem: c, chave: `porta-${c.para}` })),
+];
+
+/** Quantos diagnósticos o archify dá para a grade; zero é aceita. */
+function avaliar(grade) {
+  for (const caixa of caixas) Object.assign(caixa.origem, grade.get(caixa.chave));
+  const entrada = join(temporaria, 'mapa.json');
+  writeFileSync(entrada, JSON.stringify(entradaDoArchify(diagrama, 'pt', catalogoPt)));
+  try {
+    execFileSync(process.execPath, [cli, 'validate', 'architecture', entrada, '--json', '--repo-root', RAIZ], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, ARCHIFY_UPDATE_CHECK_DISABLED: '1' },
+    });
+    return { nota: 0, erro: '' };
+  } catch (falha) {
+    let erro = String(falha.stderr || falha.message);
+    try {
+      erro = JSON.parse(falha.stdout).error ?? erro;
+    } catch {
+      // saída sem JSON: fica o stderr
+    }
+    return { nota: (erro.match(/\n- /g) ?? []).length || 1, erro };
+  }
+}
+
+// As ligações desenhadas, para as camadas: as do próprio construtor, sem posição nenhuma.
+const ir = entradaDoArchify({ ...diagrama, pecas: diagrama.pecas.map((c) => ({ ...c, row: 0, col: 0 })) }, 'pt', catalogoPt);
+const setas = ir.connections.map((c) => [c.from, c.to]);
+
+/** Camadas pelo maior caminho a partir das fontes (ciclos quebrados na ordem da busca). */
+function camadas() {
+  const saidas = new Map(caixas.map((c) => [c.chave, []]));
+  for (const [de, para] of setas) saidas.get(de)?.push(para);
+  const camada = new Map();
+  const visitando = new Set();
+  const visitar = (no) => {
+    if (camada.has(no)) return camada.get(no);
+    if (visitando.has(no)) return 0;
+    visitando.add(no);
+    const entradas = setas.filter(([, para]) => para === no).map(([de]) => de);
+    const valor = entradas.length ? Math.max(...entradas.map((de) => visitar(de) + 1)) : 0;
+    visitando.delete(no);
+    camada.set(no, valor);
+    return valor;
+  };
+  for (const caixa of caixas) visitar(caixa.chave);
+  return camada;
+}
+
+const camada = camadas();
+const colunas = Math.max(2, Math.min(diagrama.layout?.cols ?? 6, Math.max(...camada.values()) + 1));
+const porColuna = new Map();
+for (const caixa of caixas) {
+  const col = Math.min(camada.get(caixa.chave), colunas - 1);
+  porColuna.set(col, [...(porColuna.get(col) ?? []), caixa.chave]);
+}
+const linhas = Math.max(...[...porColuna.values()].map((v) => v.length)) + 1;
+
+/** A grade inicial: coluna pela camada, linha pela ordem na coluna. */
+let melhor = new Map();
+for (const [col, chaves] of porColuna) chaves.forEach((chave, row) => melhor.set(chave, { row, col }));
+let { nota: melhorNota, erro: ultimoErro } = avaliar(melhor);
+console.log(`[mapa] layout ${slug} — tentativa 0: ${melhorNota} diagnósticos`);
+
+let atual = new Map(melhor);
+let notaAtual = melhorNota;
+for (let tentativa = 1; tentativa <= TENTATIVAS && melhorNota > 0; tentativa++) {
+  const candidata = new Map(atual);
+  const chaves = [...candidata.keys()];
+  const escolhida = chaves[Math.floor(Math.random() * chaves.length)];
+  const destino = { row: Math.floor(Math.random() * linhas), col: Math.floor(Math.random() * colunas) };
+  const ocupante = chaves.find((c) => candidata.get(c).row === destino.row && candidata.get(c).col === destino.col);
+  if (ocupante) candidata.set(ocupante, candidata.get(escolhida));
+  candidata.set(escolhida, destino);
+  const { nota, erro } = avaliar(candidata);
+  if (nota <= notaAtual) {
+    atual = candidata;
+    notaAtual = nota;
+  }
+  if (nota < melhorNota) {
+    melhor = candidata;
+    melhorNota = nota;
+    ultimoErro = erro;
+    console.log(`[mapa] layout ${slug} — tentativa ${tentativa}: ${nota} diagnósticos`);
+  }
+}
+
+rmSync(temporaria, { recursive: true, force: true });
+if (melhorNota > 0) {
+  console.error(`[mapa] ERRO ${slug} — nenhuma grade aceita em ${TENTATIVAS} tentativas; a melhor tem ${melhorNota}:`);
+  console.error(ultimoErro.split('\n').slice(0, 8).join('\n'));
+  process.exit(1);
+}
+for (const caixa of caixas) Object.assign(caixa.origem, melhor.get(caixa.chave));
+diagrama.layout = { ...diagrama.layout, cols: colunas };
+writeFileSync(arquivo, JSON.stringify(diagrama, null, 2) + '\n');
+console.log(`[mapa] layout ${slug} gravado: ${colunas} colunas, ${caixas.length} caixas, ${setas.length} setas`);

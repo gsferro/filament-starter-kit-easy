@@ -1,0 +1,130 @@
+{
+  "slug": "app-acesso",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — acesso e login",
+    "en": "/app — access and login"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaLogin",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Pages\\MyProfilePage",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\ConfiguracaoDoLogin",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DestinoAposLogin",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\RegistroAberto",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Lockscreen",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Livewire\\DefinirSenhaPorEmail",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Livewire\\InformacoesPessoais",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "App\\Livewire\\PreferenciasDeAparencia",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\Paineis",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "App\\Models\\User",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "App\\Models\\Tenant",
+      "row": 6,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\IdentidadeDoKit",
+      "row": 7,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 240,
+    "cellH": 64,
+    "gapX": 90,
+    "gapY": 48
+  }
+}

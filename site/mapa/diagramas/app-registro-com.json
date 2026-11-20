@@ -1,0 +1,15 @@
+{
+  "slug": "app-registro-com",
+  "tipo": "tree",
+  "construtor": "registro",
+  "titulo": {
+    "pt": "/app — o que o painel registra, com tenant ativo",
+    "en": "/app — what the panel registers, tenancy on"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "com"
+  ]
+}

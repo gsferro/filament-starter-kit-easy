@@ -1,0 +1,6221 @@
+[
+  {
+    "de": "App\\Ai\\Agents\\AgenteBase",
+    "para": "App\\Ai\\Exceptions\\AgenteSemGuardrailsException",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Agents/AgenteBase.php",
+      "trecho": "throw new AgenteSemGuardrailsException("
+    }
+  },
+  {
+    "de": "App\\Ai\\Agents\\AgenteBase",
+    "para": "App\\Ai\\Guardrails\\GuardrailRegistry",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Agents/AgenteBase.php",
+      "trecho": "return [new BudgetGuardMiddleware, ...GuardrailRegistry::resolver($guardrails)];"
+    }
+  },
+  {
+    "de": "App\\Ai\\Agents\\AgenteBase",
+    "para": "App\\Ai\\Middleware\\BudgetGuardMiddleware",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Agents/AgenteBase.php",
+      "trecho": "return [new BudgetGuardMiddleware, ...GuardrailRegistry::resolver($guardrails)];"
+    }
+  },
+  {
+    "de": "App\\Ai\\Agents\\AgenteBase",
+    "para": "App\\Models\\AgenteIa",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Agents/AgenteBase.php",
+      "trecho": "return $this->registro ??= AgenteIa::doSlug($this->slug())"
+    }
+  },
+  {
+    "de": "App\\Ai\\Agents\\Assistente",
+    "para": "App\\Ai\\Agents\\AgenteBase",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Agents/Assistente.php",
+      "trecho": "final class Assistente extends AgenteBase implements Conversational, HasTools"
+    }
+  },
+  {
+    "de": "App\\Ai\\Agents\\Assistente",
+    "para": "App\\Ai\\Exceptions\\AgenteInativoException",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Agents/Assistente.php",
+      "trecho": "throw new AgenteInativoException(\"Agente [{$this->slug()}] está indisponível no momento.\");"
+    }
+  },
+  {
+    "de": "App\\Ai\\Agents\\Assistente",
+    "para": "App\\Ai\\Middleware\\AiAuditMiddleware",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Agents/Assistente.php",
+      "trecho": "return [...parent::middleware(), new AiAuditMiddleware];"
+    }
+  },
+  {
+    "de": "App\\Ai\\Agents\\GuardaPrompt",
+    "para": "App\\Ai\\Agents\\AgenteBase",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Agents/GuardaPrompt.php",
+      "trecho": "final class GuardaPrompt extends AgenteBase implements HasStructuredOutput"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\FiltroSaidaSensivelMiddleware",
+    "para": "App\\Ai\\Agents\\AgenteBase",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/FiltroSaidaSensivelMiddleware.php",
+      "trecho": "'slug'   => $agente instanceof AgenteBase ? $agente->slug() : null,"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\GarantirPromptSeguroMiddleware",
+    "para": "App\\Ai\\Agents\\GuardaPrompt",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
+      "trecho": "$resposta = (new GuardaPrompt)->prompt($prompt->prompt);"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\GarantirPromptSeguroMiddleware",
+    "para": "App\\Ai\\Exceptions\\PromptInjecaoBloqueadaException",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
+      "trecho": "throw new PromptInjecaoBloqueadaException(PromptInjecaoBloqueadaException::MENSAGEM);"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\GarantirPromptSeguroMiddleware",
+    "para": "App\\Data\\Ia\\VeredictoDoGuardrailData",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
+      "trecho": "return VeredictoDoGuardrailData::de($resposta);"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\GuardrailRegistry",
+    "para": "App\\Ai\\Guardrails\\FiltroSaidaSensivelMiddleware",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/GuardrailRegistry.php",
+      "trecho": "'filtro_saida_sensivel' => FiltroSaidaSensivelMiddleware::class,"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\GuardrailRegistry",
+    "para": "App\\Ai\\Guardrails\\GarantirPromptSeguroMiddleware",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/GuardrailRegistry.php",
+      "trecho": "'prompt_guard_local'    => GarantirPromptSeguroMiddleware::class,"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\GuardrailRegistry",
+    "para": "App\\Ai\\Guardrails\\PiiRedactorMiddleware",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/GuardrailRegistry.php",
+      "trecho": "'pii_redactor'          => PiiRedactorMiddleware::class,"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\GuardrailRegistry",
+    "para": "App\\Ai\\Guardrails\\PromptInjectionGuardMiddleware",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/GuardrailRegistry.php",
+      "trecho": "'prompt_injection'      => PromptInjectionGuardMiddleware::class,"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\PiiRedactorMiddleware",
+    "para": "App\\Ai\\Guardrails\\PiiRedactor",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/PiiRedactorMiddleware.php",
+      "trecho": "public function __construct(private PiiRedactor $redactor) {}"
+    }
+  },
+  {
+    "de": "App\\Ai\\Guardrails\\PromptInjectionGuardMiddleware",
+    "para": "App\\Ai\\Exceptions\\PromptInjecaoBloqueadaException",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Guardrails/PromptInjectionGuardMiddleware.php",
+      "trecho": "throw new PromptInjecaoBloqueadaException(PromptInjecaoBloqueadaException::MENSAGEM);"
+    }
+  },
+  {
+    "de": "App\\Ai\\Listeners\\RegistrarAiRun",
+    "para": "App\\Ai\\Agents\\AgenteBase",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+      "trecho": "'task'         => $agente instanceof AgenteBase ? $agente->slug() : Str::snake(class_basename($agente)),"
+    }
+  },
+  {
+    "de": "App\\Ai\\Listeners\\RegistrarAiRun",
+    "para": "App\\Ai\\Support\\ResolvedorDeTenant",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+      "trecho": "'tenant_id'    => app(ResolvedorDeTenant::class)->id(),"
+    }
+  },
+  {
+    "de": "App\\Ai\\Middleware\\AiAuditMiddleware",
+    "para": "App\\Ai\\Agents\\AgenteBase",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Middleware/AiAuditMiddleware.php",
+      "trecho": "'versao_paper' => $agente instanceof AgenteBase ? $agente->agente()->versao : null,"
+    }
+  },
+  {
+    "de": "App\\Ai\\Middleware\\BudgetGuardMiddleware",
+    "para": "App\\Ai\\Support\\ResolvedorDeTenant",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Ai/Middleware/BudgetGuardMiddleware.php",
+      "trecho": "$tenant = app(ResolvedorDeTenant::class)->id();"
+    }
+  },
+  {
+    "de": "App\\Console\\Commands\\KitTenancy",
+    "para": "App\\Support\\AtivadorDeTenancy",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Console/Commands/KitTenancy.php",
+      "trecho": "AtivadorDeTenancy::escreverEnv(base_path('.env'));"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\CarregamentoDaTabela",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "$data['tabela_carregamento']             = CarregamentoDaTabela::coagir($data['tabela_carregamento'] ?? null)->value;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\CustomizadorDaInstalacao",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "array_combine(CustomizadorDaInstalacao::CORES, CustomizadorDaInstalacao::CORES),"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\DensidadeDoLayout",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "$data['densidade_do_layout']             = DensidadeDoLayout::coagir($data['densidade_do_layout'] ?? null)->value;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\DetalheDoUsuario",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "$data['cabecalho_detalhe_do_usuario'] = DetalheDoUsuario::coagir($data['cabecalho_detalhe_do_usuario'] ?? null)->value;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\DockDeAtalhos",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "->visible(! DockDeAtalhos::pacoteInstalado()),"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\ModoDoMenu",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "$data['modo_do_menu']                    = ModoDoMenu::coagir($data['modo_do_menu'] ?? null)->value;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\Paineis",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "->options(Paineis::opcoes())\n                        ->visible(fn (Get $get): bool => (bool) $get('dashboard_dinamico_habilitado')),"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\ProvedorAntiRobo",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "->options(array_reduce(ProvedorAntiRobo::cases(), function (array $carry, ProvedorAntiRobo $provedor): array {"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\ProvedorSocial",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "ProvedorSocial::cases(),"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\TamanhoDaFonte",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "$data['tamanho_da_fonte']                = TamanhoDaFonte::coagir($data['tamanho_da_fonte'] ?? null)->value;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "App\\Support\\TetoDeUpload",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "$maximoEmMb = TetoDeUpload::emMb();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\Dashboard",
+    "para": "App\\Filament\\Pages\\DashboardClassico",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+      "trecho": "$this->redirect(DashboardClassico::getUrl(), navigate: true);"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Pages\\Dashboard",
+    "para": "App\\Support\\DashboardDinamico",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+      "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource",
+    "para": "App\\Models\\AgenteIa",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php",
+      "trecho": "protected static ?string $model = AgenteIa::class;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource",
+    "para": "App\\Support\\AgentesDeIa",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php",
+      "trecho": "return AgentesDeIa::habilitado() && parent::shouldRegisterNavigation();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Convites\\ConviteResource",
+    "para": "App\\Models\\Convite",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Convites/ConviteResource.php",
+      "trecho": "protected static ?string $model = Convite::class;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
+    "para": "App\\Support\\TutorialGuiado",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Onboarding/CondicaoResource.php",
+      "trecho": "return TutorialGuiado::habilitado() && parent::canAccess();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource",
+    "para": "App\\Support\\TutorialGuiado",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Onboarding/JornadaResource.php",
+      "trecho": "return TutorialGuiado::habilitado() && parent::canAccess();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Roles\\RoleResource",
+    "para": "App\\Support\\AdministradorDaInstalacao",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Roles/RoleResource.php",
+      "trecho": "->rule(fn (): Closure => AdministradorDaInstalacao::regraDeNomeDePapel()),"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Roles\\RoleResource",
+    "para": "App\\Support\\Paineis",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Roles/RoleResource.php",
+      "trecho": "$opcoes = Paineis::opcoes();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Roles\\RoleResource",
+    "para": "App\\Support\\Papeis",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Roles/RoleResource.php",
+      "trecho": ": Papeis::rotulo((string) $record->getAttribute('name'));"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Tenants\\TenantResource",
+    "para": "App\\Models\\Tenant",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Tenants/TenantResource.php",
+      "trecho": "protected static ?string $model = Tenant::class;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+    "para": "App\\Models\\User",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+      "trecho": "protected static ?string $model = User::class;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+    "para": "App\\Support\\AdministradorDaInstalacao",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+      "trecho": "->relationship('roles', 'name', fn (Builder $query, ?User $record): Builder => AdministradorDaInstalacao::recortarConcessao($query, $record))"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+    "para": "App\\Support\\ContextoDePapeis",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+      "trecho": "ContextoDePapeis::em(Tenant::CONTEXTO_GLOBAL, $record, fn () => $record->syncRoles($globais));"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+    "para": "App\\Support\\EmailComMais",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+      "trecho": "->rule(fn (?Model $record): Closure => EmailComMais::regra($record?->getAttribute('email'))),"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+    "para": "App\\Support\\Papeis",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+      "trecho": "return Papeis::rotulo($record->name).' — '.($painel === null ? 'sem painel' : \"/{$painel}\");"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\AgentesIaPorProvider",
+    "para": "App\\Models\\AgenteIa",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/AgentesIaPorProvider.php",
+      "trecho": "$porProvider = AgenteIa::query()"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\AgentesIaPorProvider",
+    "para": "App\\Support\\AgentesDeIa",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/AgentesIaPorProvider.php",
+      "trecho": "return AgentesDeIa::habilitado();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\AgentesIaStats",
+    "para": "App\\Models\\AgenteIa",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/AgentesIaStats.php",
+      "trecho": "$total  = AgenteIa::query()->count();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\AgentesIaStats",
+    "para": "App\\Support\\AgentesDeIa",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/AgentesIaStats.php",
+      "trecho": "return AgentesDeIa::habilitado();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\ConvitesPorSituacao",
+    "para": "App\\Models\\Convite",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/ConvitesPorSituacao.php",
+      "trecho": "$porSituacao = Convite::query()"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\ProgressoOnboarding",
+    "para": "App\\Support\\TutorialGuiado",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/ProgressoOnboarding.php",
+      "trecho": "return TutorialGuiado::habilitado() && (bool) rescue("
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\UltimosUsuariosCadastrados",
+    "para": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/UltimosUsuariosCadastrados.php",
+      "trecho": "return UserResource::canViewAny() ? UserResource::getUrl() : null;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\UltimosUsuariosCadastrados",
+    "para": "App\\Models\\User",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/UltimosUsuariosCadastrados.php",
+      "trecho": "return User::query()"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\UsuariosPorPapel",
+    "para": "App\\Models\\Role",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/UsuariosPorPapel.php",
+      "trecho": "$itens = Role::query()"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\UsuariosPorPapel",
+    "para": "App\\Models\\User",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/UsuariosPorPapel.php",
+      "trecho": "$semPapel = User::query()->doesntHave('roles')->count();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\UsuariosVisaoGeralStats",
+    "para": "App\\Models\\Role",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/UsuariosVisaoGeralStats.php",
+      "trecho": "StatPlus::make('Papéis', Role::query()->count())"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Widgets\\UsuariosVisaoGeralStats",
+    "para": "App\\Models\\User",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Widgets/UsuariosVisaoGeralStats.php",
+      "trecho": "$total          = User::query()->count();"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Pages\\ConvitesRecebidos",
+    "para": "App\\Models\\Convite",
+    "verbo": "lê",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
+      "trecho": "->query(fn (): Builder => Convite::pendentesPara($this->usuario()))"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Pages\\ConvitesRecebidos",
+    "para": "App\\Support\\Papeis",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
+      "trecho": "->formatStateUsing(fn (?string $state): string => Papeis::rotulo($state)),"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Pages\\Dashboard",
+    "para": "App\\Filament\\Pages\\DashboardClassico",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Pages/Dashboard.php",
+      "trecho": "$this->redirect(DashboardClassico::getUrl(), navigate: true);"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Pages\\Dashboard",
+    "para": "App\\Support\\DashboardDinamico",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Pages/Dashboard.php",
+      "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+    "para": "App\\Models\\Convite",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Convites/ConviteResource.php",
+      "trecho": "protected static ?string $model = Convite::class;"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+    "para": "App\\Support\\EmailComMais",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Convites/ConviteResource.php",
+      "trecho": "->rule(fn (): Closure => EmailComMais::regraDeConvite())"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+    "para": "App\\Support\\Papeis",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Convites/ConviteResource.php",
+      "trecho": "->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
+    "para": "App\\Models\\Projeto",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Projetos/ProjetoResource.php",
+      "trecho": "protected static ?string $model = Projeto::class;"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
+    "para": "App\\Models\\Tenant",
+    "verbo": "lê",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Projetos/ProjetoResource.php",
+      "trecho": "if (! Filament::getTenant() instanceof Tenant) {"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
+    "para": "App\\Support\\TetoDeUpload",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Projetos/ProjetoResource.php",
+      "trecho": "->maxSize(TetoDeUpload::emKb())"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Users\\UserResource",
+    "para": "App\\Models\\User",
+    "verbo": "lê",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Users/UserResource.php",
+      "trecho": "->whereIn((new User)->getQualifiedKeyName(), User::queNaoGovernamAInstalacao()->select('id'));"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Users\\UserResource",
+    "para": "App\\Models\\User",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Users/UserResource.php",
+      "trecho": "protected static ?string $model = User::class;"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Users\\UserResource",
+    "para": "App\\Support\\EmailComMais",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Users/UserResource.php",
+      "trecho": "->rule(fn (?Model $record): Closure => EmailComMais::regra($record?->getAttribute('email'))),"
+    }
+  },
+  {
+    "de": "App\\Filament\\App\\Resources\\Users\\UserResource",
+    "para": "App\\Support\\Papeis",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/App/Resources/Users/UserResource.php",
+      "trecho": "->getOptionLabelFromRecordUsing(fn (Role $record): string => Papeis::rotulo($record->name))"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\Dashboard",
+    "para": "App\\Support\\DashboardDinamico",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/Dashboard.php",
+      "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "App\\Filament\\Infra\\Pages\\BackupRunsPage",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "BackupRunsPage::class => 'Últimos backups: quando rodaram, o tamanho e se o destino respondeu.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "App\\Filament\\Infra\\Pages\\Pulse",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "Pulse::class                => 'Requisições e queries lentas, uso de servidor e vazão das filas.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "AiRunResource::class => 'Ledger das execuções de IA: prompt, resposta, tokens, custo em USD e duração.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "App\\Filament\\Infra\\Resources\\ComposerReleasePackages\\ComposerReleasePackageResource",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "ComposerReleasePackageResource::class => 'Versões novas dos pacotes instalados, comparadas com o composer.lock.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "ExceptionResource::class    => 'Exceções agrupadas por tipo e frequência, com stack trace e dados da requisição.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "Bityukov\\CommandCenter\\Filament\\Pages\\Commands",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "Commands::class                       => 'Roda um comando Artisan pela interface, dentro da lista autorizada.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "Bityukov\\CommandCenter\\Filament\\Pages\\History",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "History::class                        => 'Histórico de execução dos comandos: quem rodou, com quais argumentos e a saída.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "CommandRecordResource::class          => 'Cadastro dos comandos liberados para a central de comandos.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "Croustibat\\FilamentJobsMonitor\\Resources\\QueueMonitorResource",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "QueueMonitorResource::class => 'Histórico dos jobs da fila: o que rodou, o que falhou e quanto tempo levou.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "LaBoiteACode\\DependencyGraph\\Filament\\Pages\\DependencyGraphPage",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "DependencyGraphPage::class            => 'Mapa dos models, relações, resources e painéis da aplicação.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "LaBoiteACode\\FilamentLogsExplorer\\Pages\\LogsExplorer",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "LogsExplorer::class              => 'Os arquivos de log da aplicação, lidos pela interface, sem acesso ao servidor.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "Promethys\\Revive\\Pages\\RecycleBin",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "RecycleBin::class                     => 'Registros apagados com soft delete, com restauração registro por registro.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "ShuvroRoy\\FilamentSpatieLaravelHealth\\Pages\\HealthCheckResults",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "HealthCheckResults::class   => 'Estado atual dos checks de banco, cache, fila, agendador, disco e ambiente.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "Tapp\\FilamentAuditing\\Filament\\Resources\\Audits\\AuditResource",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "AuditResource::class             => 'Trilha de alterações dos registros: quem mudou o quê, com o valor antes e depois.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "Tapp\\FilamentAuthenticationLog\\Resources\\AuthenticationLogResource",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "AuthenticationLogResource::class => 'Quem entrou, de qual IP e em qual dispositivo — e as tentativas que falharam.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "para": "Tapp\\FilamentMailLog\\Resources\\MailLogResource",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+      "trecho": "MailLogResource::class           => 'Todo e-mail que a aplicação enviou, com destinatário, assunto e corpo.',"
+    }
+  },
+  {
+    "de": "App\\Filament\\Infra\\Widgets\\AuditoriaRecente",
+    "para": "App\\Models\\User",
+    "verbo": "lê",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Widgets/AuditoriaRecente.php",
+      "trecho": "$nomes = User::query()"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+    "para": "App\\Models\\Convite",
+    "verbo": "lê",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/RegistroPorConvite.php",
+      "trecho": "$this->convite = Convite::valido($token);"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+    "para": "App\\Support\\EmailComMais",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/RegistroPorConvite.php",
+      "trecho": "if (! EmailComMais::aceita($this->convite->email)) {"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+    "para": "App\\Support\\RegistroAberto",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/RegistroPorConvite.php",
+      "trecho": "if (! RegistroAberto::habilitado()) {"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "para": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+      "trecho": "$this->redirect(ContaIndisponivelController::redirecionar($conta, Filament::getLoginUrl() ?? url('/')));"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "para": "App\\Models\\Tenant",
+    "verbo": "lê",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+      "trecho": "return $this->organizacaoParaAparencia(Tenant::query()->where('slug', $this->orgDaAparencia)->first());"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "para": "App\\Models\\User",
+    "verbo": "lê",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+      "trecho": "$conta = User::withTrashed()->comEmail($email)->first();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "para": "App\\Support\\ConfiguracaoDoLogin",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+      "trecho": "if (ConfiguracaoDoLogin::unificado() && ! $this->ehAPaginaUnica()) {"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "para": "App\\Support\\DestinoAposLogin",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+      "trecho": "session()->forget(DestinoAposLogin::SESSAO_EM_CURSO);"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "para": "App\\Support\\Paineis",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+      "trecho": "$painel = Paineis::correnteOuPadrao()->getId();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "para": "App\\Support\\RegistroAberto",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+      "trecho": "if (! RegistroAberto::habilitado() || ! $this->cadastroTemDestino()) {"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\DashboardClassico",
+    "para": "App\\Support\\DashboardDinamico",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/DashboardClassico.php",
+      "trecho": "$dinamica = DashboardDinamico::paginaDinamicaDo();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\PrimeirosPassos",
+    "para": "App\\Support\\TutorialGuiado",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/PrimeirosPassos.php",
+      "trecho": "return TutorialGuiado::habilitado();"
+    }
+  },
+  {
+    "de": "App\\Http\\Controllers\\Auth\\LoginSocialController",
+    "para": "App\\Support\\ConfiguracaoDoLogin",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+      "trecho": "if ($painel !== null && ! ConfiguracaoDoLogin::painelAutorizado($provedor, $painel)) {"
+    }
+  },
+  {
+    "de": "App\\Http\\Controllers\\Auth\\LoginSocialController",
+    "para": "App\\Support\\DestinoAposLogin",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+      "trecho": "return DestinoAposLogin::urlPara($user);"
+    }
+  },
+  {
+    "de": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
+    "para": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Middleware/BloquearSessaoComRetorno.php",
+      "trecho": "class BloquearSessaoComRetorno extends Locker"
+    }
+  },
+  {
+    "de": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "para": "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
+      "trecho": "foreach ([JornadaResource::class, CondicaoResource::class] as $resource) {"
+    }
+  },
+  {
+    "de": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "para": "App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource",
+    "verbo": "lê",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
+      "trecho": "foreach ([JornadaResource::class, CondicaoResource::class] as $resource) {"
+    }
+  },
+  {
+    "de": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "para": "App\\Filament\\Pages\\PrimeirosPassos",
+    "verbo": "lê",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
+      "trecho": "$paginaDeProgresso = $rota === PrimeirosPassos::getRouteName($painel);"
+    }
+  },
+  {
+    "de": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "para": "App\\Filament\\Pages\\PrimeirosPassos",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
+      "trecho": "$paginaDeProgresso = $rota === PrimeirosPassos::getRouteName($painel);"
+    }
+  },
+  {
+    "de": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "para": "App\\Support\\TutorialGuiado",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
+      "trecho": "if (TutorialGuiado::habilitado()) {"
+    }
+  },
+  {
+    "de": "App\\Http\\Middleware\\ExigirEmailVerificado",
+    "para": "App\\Support\\RegistroAberto",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+      "trecho": "if (! RegistroAberto::exigirVerificacaoDeEmail()) {"
+    }
+  },
+  {
+    "de": "App\\Http\\Responses\\RespostaDeLogin",
+    "para": "App\\Support\\DestinoAposLogin",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Http/Responses/RespostaDeLogin.php",
+      "trecho": "return redirect()->to(DestinoAposLogin::urlPara($user));"
+    }
+  },
+  {
+    "de": "App\\Listeners\\AuditarConfiguracoesDoKit",
+    "para": "App\\Settings\\ConfiguracoesDoKit",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Listeners/AuditarConfiguracoesDoKit.php",
+      "trecho": "if (! $evento->settings instanceof ConfiguracoesDoKit) {"
+    }
+  },
+  {
+    "de": "App\\Livewire\\AssistenteChatWidget",
+    "para": "App\\Ai\\Agents\\Assistente",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Livewire/AssistenteChatWidget.php",
+      "trecho": "$agente = new Assistente($user);"
+    }
+  },
+  {
+    "de": "App\\Livewire\\AssistenteChatWidget",
+    "para": "App\\Ai\\Exceptions\\PromptInjecaoBloqueadaException",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Livewire/AssistenteChatWidget.php",
+      "trecho": "} catch (PromptInjecaoBloqueadaException $e) {"
+    }
+  },
+  {
+    "de": "App\\Livewire\\AssistenteChatWidget",
+    "para": "App\\Support\\AgentesDeIa",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Livewire/AssistenteChatWidget.php",
+      "trecho": "if (AgentesDeIa::assistenteNoPainel($painel)) {"
+    }
+  },
+  {
+    "de": "App\\Livewire\\InformacoesPessoais",
+    "para": "App\\Support\\EmailComMais",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Livewire/InformacoesPessoais.php",
+      "trecho": "->rule(fn (): Closure => EmailComMais::regra($this->user?->getAttribute('email')));"
+    }
+  },
+  {
+    "de": "App\\Livewire\\PreferenciasDeAparencia",
+    "para": "App\\Support\\AparenciaDoUsuario",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Livewire/PreferenciasDeAparencia.php",
+      "trecho": "$this->form->fill($pessoa instanceof User ? AparenciaDoUsuario::escolhas($pessoa->aparencia) : []);"
+    }
+  },
+  {
+    "de": "App\\Models\\Convite",
+    "para": "App\\Models\\Tenant",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/Convite.php",
+      "trecho": "return $this->belongsTo(Tenant::class);"
+    }
+  },
+  {
+    "de": "App\\Models\\Convite",
+    "para": "App\\Models\\User",
+    "verbo": "grava",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/Convite.php",
+      "trecho": "$user = User::create([...$dados, 'email' => $this->email]);"
+    }
+  },
+  {
+    "de": "App\\Models\\Convite",
+    "para": "App\\Notifications\\ConviteDeAcesso",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/Convite.php",
+      "trecho": "Notification::route('mail', $this->email)->notify(new ConviteDeAcesso($this, $token));"
+    }
+  },
+  {
+    "de": "App\\Models\\Convite",
+    "para": "App\\Support\\ContextoDePapeis",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/Convite.php",
+      "trecho": "ContextoDePapeis::em($this->contextoDoPapel(), $user, function () use ($user, $papel): void {"
+    }
+  },
+  {
+    "de": "App\\Models\\Convite",
+    "para": "App\\Support\\EmailComMais",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/Convite.php",
+      "trecho": "if (! EmailComMais::aceita($this->email)) {"
+    }
+  },
+  {
+    "de": "App\\Models\\Projeto",
+    "para": "App\\Traits\\BelongsToTenant",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/Projeto.php",
+      "trecho": "use BelongsToTenant;"
+    }
+  },
+  {
+    "de": "App\\Models\\User",
+    "para": "App\\Models\\Tenant",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/User.php",
+      "trecho": "return $this->belongsToMany(Tenant::class);"
+    }
+  },
+  {
+    "de": "App\\Models\\User",
+    "para": "App\\Support\\ContextoDePapeis",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/User.php",
+      "trecho": "ContextoDePapeis::em($contexto, $this, function () use ($papel): void {"
+    }
+  },
+  {
+    "de": "App\\Observers\\TenantObserver",
+    "para": "App\\Models\\Tenant",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Observers/TenantObserver.php",
+      "trecho": "public function created(Tenant $tenant): void"
+    }
+  },
+  {
+    "de": "App\\Observers\\TenantObserver",
+    "para": "App\\Services\\Dashboard\\CriadorDeDashboardPadrao",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Observers/TenantObserver.php",
+      "trecho": "CriadorDeDashboardPadrao::para($tenant);"
+    }
+  },
+  {
+    "de": "App\\Observers\\TenantObserver",
+    "para": "App\\Support\\DashboardDinamico",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Observers/TenantObserver.php",
+      "trecho": "if (! DashboardDinamico::habilitadoPara('app')) {"
+    }
+  },
+  {
+    "de": "App\\Policies\\RolePolicy",
+    "para": "App\\Support\\AdministradorDaInstalacao",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Policies/RolePolicy.php",
+      "trecho": "return $authUser->can('Update:Role') && AdministradorDaInstalacao::papelEditavelPor($role, $authUser);"
+    }
+  },
+  {
+    "de": "App\\Providers\\AppServiceProvider",
+    "para": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/AppServiceProvider.php",
+      "trecho": "$this->app->bind(Locker::class, BloquearSessaoComRetorno::class);"
+    }
+  },
+  {
+    "de": "App\\Providers\\AppServiceProvider",
+    "para": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/AppServiceProvider.php",
+      "trecho": "$this->app->bind(Locker::class, BloquearSessaoComRetorno::class);"
+    }
+  },
+  {
+    "de": "App\\Providers\\AppServiceProvider",
+    "para": "App\\Support\\GerenciadorAntiRobo",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/AppServiceProvider.php",
+      "trecho": "$this->app->singleton(CaptchaManager::class, fn (): CaptchaManager => new GerenciadorAntiRobo);"
+    }
+  },
+  {
+    "de": "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
+    "para": "App\\Support\\AgentesDeIa",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+      "trecho": "fn (): string => AgentesDeIa::chatNaTela() ? Blade::render('@livewire(\\'assistente-chat-widget\\')') : '',"
+    }
+  },
+  {
+    "de": "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
+    "para": "App\\Support\\CarregamentoDaTabela",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+      "trecho": "$modo = CarregamentoDaTabela::deConfig()->modoDoPacote();"
+    }
+  },
+  {
+    "de": "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
+    "para": "App\\Support\\Paineis",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+      "trecho": "->labels(Paineis::rotulos())"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Ai\\Health\\LocalAiCheck",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "...LocalAiCheck::checksFor(config('ai.default')),"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Http\\Responses\\RespostaDeCadastro",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "$this->app->bind(RegistrationResponse::class, RespostaDeCadastro::class);"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Http\\Responses\\RespostaDeLogin",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "$this->app->bind(LoginResponse::class, RespostaDeLogin::class);"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Livewire\\ChecklistDoOnboarding",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "Livewire::component('filament-onboarding-launcher', ChecklistDoOnboarding::class);"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Models\\User",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "Gate::before(fn (User $user) => $user->isMasterGlobal() ? true : null);"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Observers\\TenantObserver",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "Tenant::observe(TenantObserver::class);"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "use ConfiguraFilamentGlobal;"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Settings\\ConfiguracoesDoKit",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "app(ConfiguracoesDoKit::class)->aplicarNaConfig();"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Settings\\ConfiguracoesDoKit",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "app(ConfiguracoesDoKit::class)->aplicarNaConfig();"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Support\\AparenciaDoUsuario",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "$espacamento = AparenciaDoUsuario::densidade()->espacamento();"
+    }
+  },
+  {
+    "de": "App\\Providers\\KitServiceProvider",
+    "para": "App\\Support\\PoliciesDeVendor",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/KitServiceProvider.php",
+      "trecho": "PoliciesDeVendor::registrar();"
+    }
+  },
+  {
+    "de": "App\\Support\\AgentesDeIa",
+    "para": "App\\Support\\TelaDeAutenticacao",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/AgentesDeIa.php",
+      "trecho": "return self::assistenteNoPainel(Filament::getCurrentPanel()) && ! TelaDeAutenticacao::corrente();"
+    }
+  },
+  {
+    "de": "App\\Support\\AparenciaDoUsuario",
+    "para": "App\\Models\\Tenant",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/AparenciaDoUsuario.php",
+      "trecho": "return $organizacao instanceof Tenant && $organizacao->aparencia_por_usuario ? $pessoa : null;"
+    }
+  },
+  {
+    "de": "App\\Support\\AparenciaDoUsuario",
+    "para": "App\\Models\\User",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/AparenciaDoUsuario.php",
+      "trecho": "return $pessoa instanceof User ? (self::escolhas($pessoa->aparencia)[$chave] ?? '') : '';"
+    }
+  },
+  {
+    "de": "App\\Support\\AparenciaDoUsuario",
+    "para": "App\\Support\\CorPrimaria",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/AparenciaDoUsuario.php",
+      "trecho": "return $cor === '' ? [] : CorPrimaria::resolver(null, $cor);"
+    }
+  },
+  {
+    "de": "App\\Support\\AparenciaDoUsuario",
+    "para": "App\\Support\\DensidadeDoLayout",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/AparenciaDoUsuario.php",
+      "trecho": "return DensidadeDoLayout::tryFrom(self::escolha('densidade')) ?? DensidadeDoLayout::deConfig();"
+    }
+  },
+  {
+    "de": "App\\Support\\AparenciaDoUsuario",
+    "para": "App\\Support\\ModoDoMenu",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/AparenciaDoUsuario.php",
+      "trecho": "public static function modoDoMenu(): ModoDoMenu"
+    }
+  },
+  {
+    "de": "App\\Support\\CabecalhoDoPainel",
+    "para": "App\\Support\\DetalheDoUsuario",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/CabecalhoDoPainel.php",
+      "trecho": "$detalhe = match (DetalheDoUsuario::coagir(config('kit.cabecalho.detalhe_do_usuario'))) {"
+    }
+  },
+  {
+    "de": "App\\Support\\CabecalhoDoPainel",
+    "para": "App\\Support\\IdentidadeDoKit",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/CabecalhoDoPainel.php",
+      "trecho": "$logos       = IdentidadeDoKit::logosPara($organizacao);"
+    }
+  },
+  {
+    "de": "App\\Support\\CabecalhoDoPainel",
+    "para": "App\\Support\\Paineis",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/CabecalhoDoPainel.php",
+      "trecho": "$nomeDoPainel = $tenant instanceof HasName ? $tenant->getFilamentName() : Paineis::rotulo($painel);"
+    }
+  },
+  {
+    "de": "App\\Support\\DockDeAtalhos",
+    "para": "App\\Models\\Tenant",
+    "verbo": "lê",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/DockDeAtalhos.php",
+      "trecho": "public static function noContexto(Panel $painel, ?Tenant $organizacao, User $usuario, Closure $callback): mixed"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\AiRunPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "AiRun::class                          => AiRunPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\AuditPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "Audit::class                          => AuditPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\AuthenticationLogPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "AuthenticationLog::class              => AuthenticationLogPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\CommandRecordPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "CommandRecord::class                  => CommandRecordPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\ComposerReleasePackageSnapshotPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "ComposerReleasePackageSnapshot::class => ComposerReleasePackageSnapshotPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\ExceptionPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "Exception::class                      => ExceptionPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\MailLogPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "MailLog::class                        => MailLogPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\OnboardingConditionPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "OnboardingCondition::class            => OnboardingConditionPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\OnboardingFlowPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "OnboardingFlow::class                 => OnboardingFlowPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\PoliciesDeVendor",
+    "para": "App\\Policies\\QueueMonitorPolicy",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "QueueMonitor::class                   => QueueMonitorPolicy::class,"
+    }
+  },
+  {
+    "de": "App\\Support\\RegistroAberto",
+    "para": "App\\Models\\User",
+    "verbo": "grava",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/RegistroAberto.php",
+      "trecho": "$user = User::create($dados);"
+    }
+  },
+  {
+    "de": "App\\Support\\TutorialGuiado",
+    "para": "App\\Filament\\Pages\\PrimeirosPassos",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/TutorialGuiado.php",
+      "trecho": "return PrimeirosPassos::canAccess();"
+    }
+  },
+  {
+    "de": "App\\Support\\TutorialGuiado",
+    "para": "App\\Support\\DashboardDinamico",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/TutorialGuiado.php",
+      "trecho": "'dashboard_dinamico_no_painel' => fn (): bool => DashboardDinamico::habilitado(Filament::getCurrentPanel())"
+    }
+  },
+  {
+    "de": "App\\Support\\TutorialGuiado",
+    "para": "App\\Support\\DockDeAtalhos",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/TutorialGuiado.php",
+      "trecho": "'dock_no_painel'               => fn (): bool => DockDeAtalhos::pacoteInstalado() && DockDeAtalhos::habilitadoNoPainel(Filament::getCurrentPanel()),"
+    }
+  },
+  {
+    "de": "App\\Support\\TutorialGuiado",
+    "para": "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+    "verbo": "registra",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/TutorialGuiado.php",
+      "trecho": "public static function plugin(): FilamentOnboardingPlugin"
+    }
+  },
+  {
+    "de": "App\\Support\\TutorialGuiado",
+    "para": "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/TutorialGuiado.php",
+      "trecho": "return FilamentOnboardingPlugin::make()"
+    }
+  },
+  {
+    "de": "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+    "para": "App\\Support\\RetencaoDeExcecoes",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->modelPruneInterval(RetencaoDeExcecoes::corte()),"
+    }
+  },
+  {
+    "de": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "para": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->usingPage(RegistroPorConvite::class)"
+    }
+  },
+  {
+    "de": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "para": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "verbo": "registra",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->usingPage(TelaLogin::class)"
+    }
+  },
+  {
+    "de": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "para": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+    "verbo": "registra",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->usingPage(TelaRecuperarSenha::class)"
+    }
+  },
+  {
+    "de": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "para": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+    "verbo": "registra",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->usingResetPage(TelaRedefinirSenha::class)"
+    }
+  },
+  {
+    "de": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "para": "App\\Support\\IdentidadeDoKit",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))"
+    }
+  },
+  {
+    "de": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "para": "App\\Filament\\Pages\\MyProfilePage",
+    "verbo": "registra",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->customMyProfilePage(MyProfilePage::class)"
+    }
+  },
+  {
+    "de": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "para": "App\\Livewire\\DefinirSenhaPorEmail",
+    "verbo": "registra",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "'definir_senha_por_email'   => DefinirSenhaPorEmail::class,"
+    }
+  },
+  {
+    "de": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "para": "App\\Livewire\\DefinirSenhaPorEmail",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "'definir_senha_por_email'   => DefinirSenhaPorEmail::class,"
+    }
+  },
+  {
+    "de": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "para": "App\\Livewire\\InformacoesPessoais",
+    "verbo": "registra",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "'personal_info'             => InformacoesPessoais::class,"
+    }
+  },
+  {
+    "de": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "para": "App\\Livewire\\InformacoesPessoais",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "'personal_info'             => InformacoesPessoais::class,"
+    }
+  },
+  {
+    "de": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "para": "App\\Livewire\\PreferenciasDeAparencia",
+    "verbo": "registra",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "'preferencias_de_aparencia' => PreferenciasDeAparencia::class,"
+    }
+  },
+  {
+    "de": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "para": "App\\Livewire\\PreferenciasDeAparencia",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "'preferencias_de_aparencia' => PreferenciasDeAparencia::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Pages\\Dashboard",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "Dashboard::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Pages\\HubDeAdministracao",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Resources\\Convites\\ConviteResource",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Resources\\Roles\\RoleResource",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Resources\\Tenants\\TenantResource",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Widgets\\AgentesIaPorProvider",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Widgets\\AgentesIaStats",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Widgets\\ConvitesPorSituacao",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Widgets\\ProgressoOnboarding",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Widgets\\UltimosUsuariosCadastrados",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Widgets\\UsuariosPorPapel",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Admin\\Widgets\\UsuariosVisaoGeralStats",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->usingPage(TelaLogin::class)"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->usingPage(TelaRecuperarSenha::class)"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->usingResetPage(TelaRedefinirSenha::class)"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Pages\\DashboardClassico",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "DashboardClassico::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Pages\\MyProfilePage",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->customMyProfilePage(MyProfilePage::class)"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Filament\\Pages\\PrimeirosPassos",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "PrimeirosPassos::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "ExigeTutorialGuiadoLigado::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Models\\User",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Models/User.php",
+      "trecho": "public function canAccessPanel(Panel $panel): bool"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Support\\AparenciaDoUsuario",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->sidebarCollapsibleOnDesktop(fn (): bool => AparenciaDoUsuario::modoDoMenu() === ModoDoMenu::Icones)"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Support\\AvatarDeIniciais",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->defaultAvatarProvider(AvatarDeIniciais::class)"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Support\\CabecalhoDoPainel",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->brandLogo(fn (): string|Htmlable|null => CabecalhoDoPainel::marca())"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Support\\CorPrimaria",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->colors(fn (): array => CorPrimaria::paleta())"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Support\\IdentidadeDoKit",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->favicon(fn (): ?string => IdentidadeDoKit::favicon())"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "App\\Support\\ModoDoMenu",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->sidebarFullyCollapsibleOnDesktop(fn (): bool => AparenciaDoUsuario::modoDoMenu() === ModoDoMenu::Oculto)"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "ResizedColumnPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentExceptionsPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentExceptionsPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "BezhanSalleh\\FilamentShield\\FilamentShieldPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentShieldPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+      "trecho": "Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "AuthDesignerPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Filament\\Http\\Middleware\\Authenticate",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "Authenticate::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Filament\\Http\\Middleware\\AuthenticateSession",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "AuthenticateSession::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Filament\\Http\\Middleware\\DisableBladeIconComponents",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "DisableBladeIconComponents::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Filament\\Http\\Middleware\\DispatchServingFilamentEvent",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "DispatchServingFilamentEvent::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Filament\\Widgets\\AccountWidget",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "AccountWidget::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Filament\\Widgets\\FilamentInfoWidget",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentInfoWidget::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentOdometerEasyPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentCardsPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "PluginDoDock::make(),"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "AddQueuedCookiesToResponse::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Illuminate\\Cookie\\Middleware\\EncryptCookies",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "EncryptCookies::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestForgery",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "PreventRequestForgery::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "SubstituteBindings::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Illuminate\\Session\\Middleware\\StartSession",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "StartSession::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Illuminate\\View\\Middleware\\ShareErrorsFromSession",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "ShareErrorsFromSession::class,"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "BreezyCore::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "BreezyCore::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Leandrocfe\\FilamentApexCharts\\FilamentApexChartsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentApexChartsPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "Lockscreen::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "lockscreen\\FilamentLockscreen\\Lockscreen",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "Lockscreen::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "PageHeaderPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "panel:admin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "->id('admin')"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentNotificationCenterPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "pxlrbt\\FilamentEnvironmentIndicator\\EnvironmentIndicatorPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "EnvironmentIndicatorPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "SimpleLightBoxPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "TutorialGuiado::plugin(),"
+    }
+  },
+  {
+    "de": "painel:admin",
+    "para": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "FilamentSearchSpotlightPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\App\\Pages\\ConvitesRecebidos",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "ConvitesRecebidos::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\App\\Pages\\ConvitesRecebidos",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "$panel->userMenuItems([ConvitesRecebidos::itemDeMenu()]);"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\App\\Pages\\Dashboard",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "Dashboard::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\App\\Pages\\HubDoNegocio",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->discoverPages(in: app_path('Filament/App/Pages'), for: 'App\\Filament\\App\\Pages')"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\App\\Resources\\Users\\UserResource",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/App/Resources'), for: 'App\\Filament\\App\\Resources')"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->usingPage(RegistroPorConvite::class)"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->usingPage(TelaLogin::class)"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->usingPage(TelaRecuperarSenha::class)"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->usingResetPage(TelaRedefinirSenha::class)"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->emailVerification(TelaVerificacaoDeEmail::class)"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\Pages\\DashboardClassico",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "DashboardClassico::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\Pages\\MyProfilePage",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->customMyProfilePage(MyProfilePage::class)"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Filament\\Pages\\PrimeirosPassos",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "PrimeirosPassos::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Http\\Middleware\\DefinirTenantDePermissoes",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->tenantMiddleware([DefinirTenantDePermissoes::class], isPersistent: true);"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "ExigeTutorialGuiadoLigado::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Models\\Tenant",
+    "verbo": "lê",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "$tenant = Filament::getTenant();"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Models\\Tenant",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->tenant(Tenant::class, slugAttribute: 'slug')"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Support\\AparenciaDoUsuario",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->sidebarWidth(fn (): string => AparenciaDoUsuario::densidade()->larguraDaSidebar())"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Support\\AvatarDeIniciais",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->defaultAvatarProvider(AvatarDeIniciais::class)"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Support\\CabecalhoDoPainel",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "fn (): Htmlable => CabecalhoDoPainel::usuario(),"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Support\\CorPrimaria",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->colors(fn (): array => CorPrimaria::paleta())"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Support\\IdentidadeDoKit",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->favicon(fn (): ?string => IdentidadeDoKit::favicon())"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Support\\ModoDoMenu",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->sidebarFullyCollapsibleOnDesktop(fn (): bool => AparenciaDoUsuario::modoDoMenu() === ModoDoMenu::Oculto)"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "App\\Support\\SeletorDeOrganizacao",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->tenantMenu(fn (): bool => SeletorDeOrganizacao::visivel())"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "ResizedColumnPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "FilamentExceptionsPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "FilamentExceptionsPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+      "trecho": "Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "AuthDesignerPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Filament\\Http\\Middleware\\Authenticate",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "Authenticate::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Filament\\Http\\Middleware\\AuthenticateSession",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "AuthenticateSession::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Filament\\Http\\Middleware\\DisableBladeIconComponents",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "DisableBladeIconComponents::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Filament\\Http\\Middleware\\DispatchServingFilamentEvent",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "DispatchServingFilamentEvent::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Filament\\Http\\Middleware\\IdentifyTenant",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->tenant(Tenant::class, slugAttribute: 'slug')"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Filament\\Widgets\\AccountWidget",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "AccountWidget::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "FilamentOdometerEasyPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "FilamentCardsPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "PluginDoDock::make(),"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "AddQueuedCookiesToResponse::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Illuminate\\Cookie\\Middleware\\EncryptCookies",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "EncryptCookies::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestForgery",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "PreventRequestForgery::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "SubstituteBindings::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Illuminate\\Session\\Middleware\\StartSession",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "StartSession::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Illuminate\\View\\Middleware\\ShareErrorsFromSession",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "ShareErrorsFromSession::class,"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "BreezyCore::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "BreezyCore::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "LaBoiteACode\\FilamentDashboardWidgets\\FilamentDashboardWidgetsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "FilamentDashboardWidgetsPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "Lockscreen::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "lockscreen\\FilamentLockscreen\\Lockscreen",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "Lockscreen::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "PageHeaderPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "panel:app",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->id('app')\n            ->path('app')"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "FilamentNotificationCenterPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "pxlrbt\\FilamentEnvironmentIndicator\\EnvironmentIndicatorPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "EnvironmentIndicatorPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "SimpleLightBoxPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "TutorialGuiado::plugin(),"
+    }
+  },
+  {
+    "de": "painel:app",
+    "para": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "FilamentSearchSpotlightPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Pages\\BackupRunsPage",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverPages(in: app_path('Filament/Infra/Pages'), for: 'App\\Filament\\Infra\\Pages')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Pages\\Dashboard",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "Dashboard::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverPages(in: app_path('Filament/Infra/Pages'), for: 'App\\Filament\\Infra\\Pages')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Pages\\Pulse",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverPages(in: app_path('Filament/Infra/Pages'), for: 'App\\Filament\\Infra\\Pages')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Infra/Resources'), for: 'App\\Filament\\Infra\\Resources')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Resources\\ComposerReleasePackages\\ComposerReleasePackageResource",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverResources(in: app_path('Filament/Infra/Resources'), for: 'App\\Filament\\Infra\\Resources')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\AuditoriaPorEvento",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\AuditoriaRecente",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\AutenticacaoStats",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\ComposerReleaseOverviewWidget",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\FilasPorFila",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\FilasStats",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\FilasTaxaDeSucesso",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\IaCustoPorTask",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\IaExecucoesPorDia",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\IaExecucoesPorStatus",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\IaStats",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\IaTokensPorDriver",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\PacotesComposer",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoPorStatus",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoStats",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\UltimoBackup",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Infra\\Widgets\\UltimosAcessos",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets'), for: 'App\\Filament\\Infra\\Widgets')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->usingPage(TelaLogin::class)"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->usingPage(TelaRecuperarSenha::class)"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->usingResetPage(TelaRedefinirSenha::class)"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Pages\\DashboardClassico",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "DashboardClassico::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Pages\\MyProfilePage",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->customMyProfilePage(MyProfilePage::class)"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Filament\\Pages\\PrimeirosPassos",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "PrimeirosPassos::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "ExigeTutorialGuiadoLigado::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "ResizedColumnPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentExceptionsPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentExceptionsPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+      "trecho": "Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Bityukov\\CommandCenter\\Filament\\CommandCenterPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "CommandCenterPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Bityukov\\CommandCenter\\Filament\\Pages\\Commands",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "CommandCenterPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Bityukov\\CommandCenter\\Filament\\Pages\\History",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "CommandCenterPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Bityukov\\CommandCenter\\Filament\\Pages\\RunView",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "CommandCenterPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "CommandCenterPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "AuthDesignerPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "CmsMulti\\FilamentClearCache\\FilamentClearCachePlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentClearCachePlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Croustibat\\FilamentJobsMonitor\\FilamentJobsMonitorPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentJobsMonitorPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Croustibat\\FilamentJobsMonitor\\Resources\\QueueMonitorResource",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentJobsMonitorPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Filament\\Http\\Middleware\\Authenticate",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "Authenticate::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Filament\\Http\\Middleware\\AuthenticateSession",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "AuthenticateSession::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Filament\\Http\\Middleware\\DisableBladeIconComponents",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "DisableBladeIconComponents::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Filament\\Http\\Middleware\\DispatchServingFilamentEvent",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "DispatchServingFilamentEvent::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Filament\\Widgets\\AccountWidget",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "AccountWidget::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Filament\\Widgets\\FilamentInfoWidget",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentInfoWidget::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentOdometerEasyPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentCardsPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "PluginDoDock::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "AddQueuedCookiesToResponse::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Illuminate\\Cookie\\Middleware\\EncryptCookies",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "EncryptCookies::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestForgery",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "PreventRequestForgery::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "SubstituteBindings::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Illuminate\\Session\\Middleware\\StartSession",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "StartSession::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Illuminate\\View\\Middleware\\ShareErrorsFromSession",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "ShareErrorsFromSession::class,"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "BreezyCore::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "BreezyCore::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "LaBoiteACode\\DependencyGraph\\DependencyGraphPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "DependencyGraphPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "LaBoiteACode\\DependencyGraph\\Filament\\Pages\\DependencyGraphPage",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "&& PermissaoDaTela::permite(DependencyGraphPage::class)),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "LaBoiteACode\\FilamentLogsExplorer\\FilamentLogsExplorerPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentLogsExplorerPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "LaBoiteACode\\FilamentLogsExplorer\\Pages\\LogsExplorer",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "&& PermissaoDaTela::permite(LogsExplorer::class))"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Leandrocfe\\FilamentApexCharts\\FilamentApexChartsPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentApexChartsPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "Lockscreen::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "lockscreen\\FilamentLockscreen\\Lockscreen",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "Lockscreen::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "MominAlZaraa\\FilamentComposerReleaseNotifier\\FilamentComposerReleaseNotifierPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentComposerReleaseNotifierPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "panel:infra",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->id('infra')"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentNotificationCenterPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Promethys\\Revive\\Pages\\RecycleBin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "&& PermissaoDaTela::permite(RecycleBin::class))"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Promethys\\Revive\\RevivePlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "RevivePlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "pxlrbt\\FilamentEnvironmentIndicator\\EnvironmentIndicatorPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "EnvironmentIndicatorPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "ShuvroRoy\\FilamentSpatieLaravelHealth\\FilamentSpatieLaravelHealthPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentSpatieLaravelHealthPlugin::make()"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "ShuvroRoy\\FilamentSpatieLaravelHealth\\Pages\\HealthCheckResults",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "&& PermissaoDaTela::permite(HealthCheckResults::class)),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "SimpleLightBoxPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Tapp\\FilamentAuditing\\Filament\\Resources\\Audits\\AuditResource",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentAuditingPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Tapp\\FilamentAuditing\\FilamentAuditingPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentAuditingPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Tapp\\FilamentAuthenticationLog\\FilamentAuthenticationLogPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentAuthenticationLogPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Tapp\\FilamentAuthenticationLog\\Resources\\AuthenticationLogResource",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentAuthenticationLogPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Tapp\\FilamentMailLog\\FilamentMailLogPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentMailLogPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Tapp\\FilamentMailLog\\Resources\\MailLogResource",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentMailLogPlugin::make(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "TutorialGuiado::plugin(),"
+    }
+  },
+  {
+    "de": "painel:infra",
+    "para": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
+    "verbo": "registra",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "FilamentSearchSpotlightPlugin::make()"
+    }
+  },
+  {
+    "de": "Promethys\\Revive\\RevivePlugin",
+    "para": "App\\Models\\Projeto",
+    "verbo": "lê",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+      "trecho": "->models([\n                        Projeto::class,"
+    }
+  }
+]
