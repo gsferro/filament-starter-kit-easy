@@ -5,6 +5,11 @@
     "pt": "auth-01: Pipeline de um request autenticado num painel (regra de acesso ao painel) (parte 1 de 2)",
     "en": "auth-01: Authenticated panel request pipeline (panel access rule) (part 1 of 2)"
   },
+  "paineis": [
+    "admin",
+    "app",
+    "infra"
+  ],
   "modos": [
     "sem",
     "com"

@@ -5,7 +5,9 @@
     "pt": "Navegação do painel /infra",
     "en": "/infra panel navigation"
   },
-  "painel": "infra",
+  "paineis": [
+    "infra"
+  ],
   "modos": [
     "sem",
     "com"

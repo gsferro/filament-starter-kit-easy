@@ -5,6 +5,7 @@
     "pt": "Onde foi o tempo do kit:install no CI (run 44536758392)",
     "en": "Where kit:install spent time in CI (run 44536758392)"
   },
+  "paineis": [],
   "modos": [
     "sem",
     "com"

@@ -11,7 +11,7 @@
  *  - toda prova é âncora `{arquivo, trecho}` (ADR-03). A linha sai do arquivo NA REVISÃO publicada,
  *    e não da árvore de trabalho, para o link "origem verificada" do archify apontar a linha certa
  *    daquele commit (D22);
- *  - os campos do kit — `slug`, `tipo`, `titulo`, `painel`, `modos` e, no comparativo, `base` e
+ *  - os campos do kit — `slug`, `tipo`, `titulo`, `paineis`, `modos` e, no comparativo, `base` e
  *    `cabeca` — saem antes de o arquivo chegar ao archify.
  *
  * Para no primeiro diagrama que o archify recusar, com o diagnóstico dele, e sai com código 1.
@@ -91,7 +91,7 @@ function projetar(valor, idioma) {
 
 /** A entrada do archify de um diagrama, num idioma. */
 function entradaDoArchify(diagrama, idioma, catalogoPt) {
-  const { slug, tipo, titulo, painel, modos, ...entrada } = diagrama;
+  const { slug, tipo, titulo, paineis, modos, ...entrada } = diagrama;
   const ir = projetar(entrada, idioma);
   const traducoes = {
     ...(idioma === 'pt' ? { ...catalogoPt, ...interfaceDoKit.pt } : {}),

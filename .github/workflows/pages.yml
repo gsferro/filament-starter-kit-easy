@@ -32,6 +32,10 @@ concurrency:
 
 jobs:
   build:
+    # Só a `main` publica (D31 da wiki `mapa-interativo-do-kit`): o mapa interativo liga cada prova ao
+    # commit do build (`/blob/{commit}/…`), e um `workflow_dispatch` de outro ramo publicaria links
+    # para um commit que some quando o ramo some. O dispatch a partir da `main` continua valendo.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     # No NÍVEL DO JOB, e não no passo do build: o conferidor de links precisa descontar o mesmo

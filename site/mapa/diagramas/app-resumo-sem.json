@@ -5,7 +5,9 @@
     "pt": "Painel /app — sem tenant (recorte agregado)",
     "en": "Panel /app — no tenant (combined view)"
   },
-  "painel": "app",
+  "paineis": [
+    "app"
+  ],
   "modos": [
     "sem"
   ],

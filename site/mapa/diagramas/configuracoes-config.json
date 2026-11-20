@@ -5,7 +5,9 @@
     "pt": "Configuração: .env, settings e config() no boot",
     "en": "Settings: .env, settings and config() at boot"
   },
-  "painel": "admin",
+  "paineis": [
+    "admin"
+  ],
   "modos": [
     "sem",
     "com"

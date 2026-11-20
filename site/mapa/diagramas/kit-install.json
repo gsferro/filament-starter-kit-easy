@@ -5,6 +5,7 @@
     "pt": "kit:install: passos de KitInstall::handle()",
     "en": "kit:install: steps in KitInstall::handle()"
   },
+  "paineis": [],
   "modos": [
     "sem",
     "com"

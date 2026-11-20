@@ -5,7 +5,9 @@
     "pt": "/admin — Acesso: login, 2FA, perfil e bloqueio de sessão",
     "en": "/admin — Access: login, 2FA, profile and session lock"
   },
-  "painel": "admin",
+  "paineis": [
+    "admin"
+  ],
   "modos": [
     "sem",
     "com"
