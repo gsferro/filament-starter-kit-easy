@@ -1,0 +1,456 @@
+{
+  "slug": "tempos-kit-install",
+  "tipo": "waterfall",
+  "titulo": {
+    "pt": "Onde foi o tempo do kit:install, medido no CI",
+    "en": "Where kit:install time went, measured in CI"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "waterfall",
+  "meta": {
+    "quality_profile": "showcase",
+    "evidence": "measured",
+    "unit": "s"
+  },
+  "spans": [
+    {
+      "id": "passo",
+      "name": {
+        "pt": "Rodar o instalador do kit",
+        "en": "Run kit installer"
+      },
+      "service": "artisan",
+      "start": 0,
+      "end": 9,
+      "detail": {
+        "pt": "cp .env.example .env e php artisan kit:install --ansi, no job instalacao do run 44536758392 do CI (push na main, commit d9608c5a), sem terminal e sem --create-project. Janela medida: 9.025,5 ms, da abertura do passo até a abertura do passo seguinte, pelo carimbo do runner em cada linha do log, em 19/11/2026.",
+        "en": "cp .env.example .env and php artisan kit:install --ansi, in instalacao job of CI run 44536758392 (push to main, commit d9608c5a), no terminal or --create-project. Measured window: 9,025.5 ms, from step start to next step start, via runner timestamp on each log line, on 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": ".github/workflows/ci.yml",
+          "trecho": "cp .env.example .env\n          php artisan kit:install --ansi",
+          "label": {
+            "pt": "passo Rodar o instalador do kit",
+            "en": "Run the kit installer step"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "public function handle(): int",
+          "label": "KitInstall::handle"
+        }
+      ]
+    },
+    {
+      "id": "boot",
+      "name": {
+        "pt": "cp .env e boot do artisan",
+        "en": "cp .env and artisan boot"
+      },
+      "parent": "passo",
+      "start": 0,
+      "end": 1,
+      "detail": {
+        "pt": "Da abertura do passo até a linha Instalando o starter-kit-easy...: 591,9 ms. Não tem cronômetro próprio. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "From step start to Installing starter-kit-easy... line: 591.9 ms. No own timer. instalacao job log in CI run 44536758392, with runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->info('Instalando o starter-kit-easy...');",
+          "label": {
+            "pt": "primeira linha do comando",
+            "en": "first command line"
+          }
+        }
+      ]
+    },
+    {
+      "id": "app_key",
+      "name": {
+        "pt": "Gerando APP_KEY",
+        "en": "Create APP_KEY"
+      },
+      "parent": "passo",
+      "start": 1,
+      "end": 1,
+      "detail": {
+        "pt": "Janela medida: 53,3 ms, que inclui customizar() e o key:generate. A tarefa cronometra uma closure vazia, e a duração que ela imprime não mede o trabalho. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 53.3 ms, including customizar() and key:generate. Task times an empty closure; printed duration does not measure work. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task('Gerando APP_KEY', fn (): bool => true);",
+          "label": {
+            "pt": "tarefa Gerando APP_KEY",
+            "en": "Generate APP_KEY task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->gerarAppKey();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "banco_sqlite",
+      "name": {
+        "pt": "Criando banco SQLite",
+        "en": "Create SQLite DB"
+      },
+      "parent": "passo",
+      "start": 1,
+      "end": 1,
+      "detail": {
+        "pt": "Janela medida: 0,6 ms. A tarefa cronometra uma closure vazia, depois de criar o arquivo do banco. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 0.6 ms. Task times an empty closure after database file creation. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task('Criando banco SQLite', fn (): bool => true);",
+          "label": {
+            "pt": "tarefa Criando banco SQLite",
+            "en": "Create SQLite database task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->prepararBancoSqlite();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "migrations",
+      "name": {
+        "pt": "Rodando migrations",
+        "en": "Run migrations"
+      },
+      "parent": "passo",
+      "start": 1,
+      "end": 2,
+      "detail": {
+        "pt": "Janela medida: 1.491,8 ms, que inclui conferirConexao(). A tarefa cronometra o migrate. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 1,491.8 ms, including conferirConexao(). Task times migrate. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task('Rodando migrations', function (): bool {",
+          "label": {
+            "pt": "tarefa Rodando migrations",
+            "en": "Running migrations task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->migrar();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "senha_admin",
+      "name": {
+        "pt": "Gerando senha do administrador",
+        "en": "Generating admin password"
+      },
+      "parent": "passo",
+      "start": 2,
+      "end": 2,
+      "detail": {
+        "pt": "Janela medida: 6,2 ms. A tarefa cronometra uma closure vazia, depois de gravar a senha no .env. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 6.2 ms. Task times an empty closure after saving password in .env. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task('Gerando senha do administrador', fn (): bool => true);",
+          "label": {
+            "pt": "tarefa Gerando senha do administrador",
+            "en": "Generating admin password task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->garantirSenhaDoAdministrador();",
+          "label": {
+            "pt": "chamada em semear()",
+            "en": "call in semear()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "seed",
+      "name": {
+        "pt": "Populando papéis, permissões e usuário inicial",
+        "en": "Seeding roles, permissions and initial user"
+      },
+      "parent": "passo",
+      "start": 2,
+      "end": 3,
+      "detail": {
+        "pt": "Janela medida: 1.071,8 ms. A tarefa cronometra o db:seed. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 1,071.8 ms. Task times db:seed. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task('Populando papéis, permissões e usuário inicial', function (): bool {",
+          "label": {
+            "pt": "tarefa Populando papéis",
+            "en": "Seeding roles task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->semear();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pint",
+      "name": {
+        "pt": "Formatando o código gerado",
+        "en": "Format generated code"
+      },
+      "parent": "passo",
+      "service": "Pint",
+      "start": 3,
+      "end": 4,
+      "detail": {
+        "pt": "Janela medida: 571,5 ms. A tarefa roda o Pint sobre app/Policies. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 571.5 ms. Task runs Pint on app/Policies. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task('Formatando o código gerado', function () use ($pint): bool {",
+          "label": {
+            "pt": "tarefa Formatando o código gerado",
+            "en": "Formatting generated code task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->formatarCodigoGerado();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "assets",
+      "name": {
+        "pt": "Publicando assets do Filament",
+        "en": "Publishing Filament assets"
+      },
+      "parent": "passo",
+      "start": 4,
+      "end": 4,
+      "detail": {
+        "pt": "Janela medida: 36,4 ms. A tarefa roda o filament:assets e o storage:link. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 36.4 ms. Task runs filament:assets and storage:link. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task('Publicando assets do Filament', function (): bool {",
+          "label": {
+            "pt": "tarefa Publicando assets do Filament",
+            "en": "Publishing Filament assets task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->publicarAssets();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "npm_install",
+      "name": "npm install",
+      "parent": "passo",
+      "service": "npm",
+      "start": 4,
+      "end": 8,
+      "detail": {
+        "pt": "Janela medida: 3.753,1 ms. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 3,753.1 ms. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "foreach ([['install'], ['run', 'build']] as $argumentos) {",
+          "label": {
+            "pt": "os dois comandos do npm",
+            "en": "both npm commands"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task($rotulo, function () use ($npm, $argumentos, $rotulo): bool {",
+          "label": {
+            "pt": "tarefa do npm",
+            "en": "npm task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->construirFrontend();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "npm_build",
+      "name": "npm run build",
+      "parent": "passo",
+      "service": "npm",
+      "start": 8,
+      "end": 9,
+      "detail": {
+        "pt": "Janela medida: 1.390,5 ms. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "Measured window: 1,390.5 ms. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "foreach ([['install'], ['run', 'build']] as $argumentos) {",
+          "label": {
+            "pt": "os dois comandos do npm",
+            "en": "both npm commands"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->task($rotulo, function () use ($npm, $argumentos, $rotulo): bool {",
+          "label": {
+            "pt": "tarefa do npm",
+            "en": "npm task"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->construirFrontend();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    },
+    {
+      "id": "banner",
+      "name": {
+        "pt": "Banner, avisos e convite",
+        "en": "Banner, alerts, invite"
+      },
+      "parent": "passo",
+      "start": 9,
+      "end": 9,
+      "detail": {
+        "pt": "Da linha do npm run build até a última linha do banner: 2,5 ms. Log do job instalacao no run 44536758392 do CI, com o carimbo do runner em cada linha, 19/11/2026.",
+        "en": "From npm run build line to last banner line: 2.5 ms. instalacao job log in CI run 44536758392, runner timestamps per line, 19/11/2026."
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->info('Pronto! O projeto está instalado.');",
+          "label": {
+            "pt": "primeira linha do banner",
+            "en": "first banner line"
+          }
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->banner();",
+          "label": {
+            "pt": "chamada em handle()",
+            "en": "call in handle()"
+          }
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como foi medido",
+        "en": "Measurement"
+      },
+      "items": [
+        {
+          "pt": "Fonte: o log do job instalacao do run 44536758392 do CI (push na main, commit d9608c5a), de 19/11/2026. O runner carimba cada linha do log, com resolução de 100 ns.",
+          "en": "Source: instalacao job log from CI run 44536758392 (push to main, commit d9608c5a), 19/11/2026. Runner stamps each log line with 100 ns resolution."
+        },
+        {
+          "pt": "A linha de uma tarefa só sai quando ela termina: o fim do passo é o carimbo da linha dele, e o início é o carimbo da linha anterior. A janela inclui o código que roda antes da tarefa.",
+          "en": "Task line appears only when it ends: step end is its line timestamp, start is prior line timestamp. Window includes code running before task."
+        },
+        {
+          "pt": "Os tempos estão em segundos inteiros: cada fronteira foi arredondada ao segundo mais próximo, para as barras somarem os 9 s do passo. Passo de menos de meio segundo aparece com 0 s, e a janela exata, em ms, está no detalhe dele.",
+          "en": "Times are whole seconds: each boundary rounded to nearest second so bars sum to step's 9 s. Steps below half a second show 0 s; exact window in ms is in details."
+        },
+        {
+          "pt": "Gerando APP_KEY, Criando banco SQLite e Gerando senha do administrador cronometram uma closure vazia: a duração que o comando imprime não mede o trabalho, e só o carimbo do runner mede.",
+          "en": "Generating APP_KEY, Creating SQLite database and Generating admin password time empty closures: printed duration does not measure work; only runner timestamps measure it."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Fora do desenho",
+        "en": "Outside diagram"
+      },
+      "items": [
+        {
+          "pt": "O tutorial guiado não foi semeado: sem --onboarding e sem terminal, o kit:install não pergunta.",
+          "en": "Guided tutorial was not seeded: without --onboarding or terminal, kit:install never prompts."
+        },
+        {
+          "pt": "O vínculo com o Snyk só é desfeito com --create-project, que o CI não usa.",
+          "en": "Snyk link removed only with --create-project, which CI does not use."
+        },
+        {
+          "pt": "O kit:install roda igual nos dois modos: a instalação nasce sem tenant (o .env.example traz KIT_TENANCY=false), e o modo com tenant é ligado depois, pelo php artisan kit:tenancy.",
+          "en": "kit:install runs the same in both modes: install starts without tenant (.env.example has KIT_TENANCY=false); tenant mode is enabled later via php artisan kit:tenancy."
+        }
+      ]
+    }
+  ]
+}

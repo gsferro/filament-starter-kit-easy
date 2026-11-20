@@ -1,0 +1,398 @@
+{
+  "slug": "dois-fatores",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "2FA: ativar no Meu perfil e o desafio depois do login",
+    "en": "2FA: enable in My profile and challenge after login"
+  },
+  "paineis": [
+    "admin",
+    "app",
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "passo seguinte",
+            "en": "next step"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "desvio: redirect para o desafio",
+            "en": "branch: redirect to challenge"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta",
+            "en": "reply"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      }
+    },
+    {
+      "id": "meuperfil",
+      "type": "frontend",
+      "label": "MyProfilePage",
+      "sublabel": {
+        "pt": "Meu perfil",
+        "en": "My profile"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/MyProfilePage.php",
+          "trecho": "class MyProfilePage extends MeuPerfilDoPacote"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->customMyProfilePage(MyProfilePage::class)"
+        }
+      ]
+    },
+    {
+      "id": "musttwofactor",
+      "type": "security",
+      "label": "MustTwoFactor",
+      "sublabel": "Breezy",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+        }
+      ]
+    },
+    {
+      "id": "teladoisfatores",
+      "type": "frontend",
+      "label": "TelaDoisFatores",
+      "sublabel": {
+        "pt": "desafio",
+        "en": "prompt"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaDoisFatores.php",
+          "trecho": "class TelaDoisFatores extends TwoFactorPage"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "database",
+      "label": "User",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "use TwoFactorAuthenticatable;"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 450,
+      "label": {
+        "pt": "Ativar no Meu perfil",
+        "en": "Enable in My profile"
+      }
+    },
+    {
+      "from": 460,
+      "to": 935,
+      "label": {
+        "pt": "Desafio depois do login",
+        "en": "Challenge after login"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "ativar",
+      "from": "navegador",
+      "to": "meuperfil",
+      "y": 180,
+      "label": {
+        "pt": "ativa o 2FA (pede a senha)",
+        "en": "enable 2FA (asks password)"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "o bloco de 2FA do Breezy no Meu perfil; quem não tem senha local define uma antes, pelo link por e-mail",
+        "en": "Breezy 2FA block in My profile; users without local password set one first via email link"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->customMyProfilePage(MyProfilePage::class)"
+      }
+    },
+    {
+      "id": "segredo",
+      "from": "meuperfil",
+      "to": "user",
+      "y": 255,
+      "label": {
+        "pt": "gera segredo e códigos",
+        "en": "new secret and codes"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "segredo TOTP e 8 códigos de recuperação, gravados para o painel corrente: o 2FA é cadastrado por painel",
+        "en": "TOTP secret and 8 recovery codes, saved for current panel: 2FA is set up per panel"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "use TwoFactorAuthenticatable;"
+      }
+    },
+    {
+      "id": "confirmar",
+      "from": "navegador",
+      "to": "meuperfil",
+      "y": 330,
+      "label": {
+        "pt": "confirma com o código",
+        "en": "confirms with code"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "o código do app autenticador, lido do QR code",
+        "en": "authenticator app code, read from QR code"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+      }
+    },
+    {
+      "id": "confirmado",
+      "from": "meuperfil",
+      "to": "user",
+      "y": 395,
+      "label": "two_factor_confirmed_at",
+      "variant": "default",
+      "note": {
+        "pt": "código válido: confirma o 2FA e já marca esta sessão como desafiada",
+        "en": "valid code: confirms 2FA and marks this session as challenged"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "use TwoFactorAuthenticatable;"
+      }
+    },
+    {
+      "id": "pedido",
+      "from": "navegador",
+      "to": "musttwofactor",
+      "y": 480,
+      "label": {
+        "pt": "GET do painel",
+        "en": "panel GET"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "num login novo (diagrama login); o MustTwoFactor roda no authMiddleware, depois do Authenticate",
+        "en": "on new login (login diagram); MustTwoFactor runs in authMiddleware, after Authenticate"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+      }
+    },
+    {
+      "id": "conferir",
+      "from": "musttwofactor",
+      "to": "user",
+      "y": 550,
+      "label": {
+        "pt": "2FA confirmado? desafiado?",
+        "en": "2FA set? challenged?"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "hasConfirmedTwoFactor() e hasValidTwoFactorSession(): a sessão vale se breezy_session_id bate com o 2FA da conta",
+        "en": "hasConfirmedTwoFactor() and hasValidTwoFactorSession(): session valid if breezy_session_id matches account 2FA"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "use TwoFactorAuthenticatable;"
+      }
+    },
+    {
+      "id": "para-o-desafio",
+      "from": "musttwofactor",
+      "to": "navegador",
+      "y": 635,
+      "label": {
+        "pt": "302 desafio ?next=",
+        "en": "302 prompt ?next="
+      },
+      "variant": "security",
+      "note": {
+        "pt": "confirmado e ainda não desafiado: guarda a URL pedida em ?next=; o logout passa direto",
+        "en": "confirmed but unchallenged: saves requested URL in ?next=; logout passes through"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+      }
+    },
+    {
+      "id": "abrir-desafio",
+      "from": "navegador",
+      "to": "teladoisfatores",
+      "y": 710,
+      "label": "GET two-factor-authentication",
+      "variant": "emphasis",
+      "note": {
+        "pt": "rota do Breezy sem o Authenticate, que abre a TelaDoisFatores pelo action:; sem login vai ao login, já desafiado vai à home",
+        "en": "Breezy route without Authenticate, opens TelaDoisFatores via action:; logged out goes to login, challenged goes home"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+      }
+    },
+    {
+      "id": "codigo",
+      "from": "navegador",
+      "to": "teladoisfatores",
+      "y": 790,
+      "label": {
+        "pt": "envia o código",
+        "en": "sends code"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "authenticate() do Breezy: 5 tentativas; código TOTP ou de recuperação",
+        "en": "Breezy authenticate(): 5 attempts; TOTP or recovery code"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaDoisFatores.php",
+        "trecho": "class TelaDoisFatores extends TwoFactorPage"
+      }
+    },
+    {
+      "id": "marcar",
+      "from": "teladoisfatores",
+      "to": "user",
+      "y": 840,
+      "label": {
+        "pt": "marca a sessão desafiada",
+        "en": "marks session challenged"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "grava breezy_session_id; o código de recuperação usado é descartado",
+        "en": "saves breezy_session_id; used recovery code is discarded"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "use TwoFactorAuthenticatable;"
+      }
+    },
+    {
+      "id": "volta",
+      "from": "teladoisfatores",
+      "to": "navegador",
+      "y": 900,
+      "label": {
+        "pt": "302 ?next= ou home",
+        "en": "302 ?next= or home"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "volta à página que o MustTwoFactor interceptou",
+        "en": "returns to page intercepted by MustTwoFactor"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaDoisFatores.php",
+        "trecho": "class TelaDoisFatores extends TwoFactorPage"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Nos três painéis",
+        "en": "All three panels"
+      },
+      "items": [
+        {
+          "pt": "Os três providers ligam o 2FA do Breezy com a mesma linha, enableTwoFactorAuthentication(action: TelaDoisFatores::class), sem forçar o 2FA: quem não ativou entra sem desafio.",
+          "en": "All three providers enable Breezy 2FA with the same line, enableTwoFactorAuthentication(action: TelaDoisFatores::class), without forcing 2FA: users who never enabled it enter unchallenged."
+        },
+        {
+          "pt": "A TelaDoisFatores só troca o layout pelo das telas de acesso; o authenticate(), o limite de tentativas e o código de recuperação são os do Breezy.",
+          "en": "TelaDoisFatores only changes layout to match access screens; authenticate(), attempt limit and recovery code come from Breezy."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "O que não passa pelo desafio",
+        "en": "What skips the challenge"
+      },
+      "items": [
+        {
+          "pt": "O MustTwoFactor não é reaplicado nos updates Livewire: o desafio é cobrado no GET da página.",
+          "en": "MustTwoFactor is not reapplied to Livewire updates: challenge is required on page GET."
+        },
+        {
+          "pt": "O 2FA é cadastrado por painel: o registro do Breezy nasce com o painel corrente e é filtrado por painel.",
+          "en": "2FA is set up per panel: Breezy record starts with current panel and is filtered by panel."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Com tenant",
+        "en": "Tenant on"
+      },
+      "items": [
+        {
+          "pt": "No /app, a rota do desafio ganha o prefixo /app/{tenant}, e o MustTwoFactor deixa passar as rotas do /app sem {tenant}, como o logout e a verificação de e-mail.",
+          "en": "In /app, challenge route gets /app/{tenant} prefix, and MustTwoFactor allows /app routes without {tenant}, such as logout and email verification."
+        }
+      ]
+    }
+  ]
+}

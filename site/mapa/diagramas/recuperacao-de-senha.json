@@ -1,0 +1,347 @@
+{
+  "slug": "recuperacao-de-senha",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Recuperação de senha: o pedido do link e a nova senha",
+    "en": "Password reset: link request and new password"
+  },
+  "paineis": [
+    "admin",
+    "app",
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "passo seguinte",
+            "en": "next step"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "desvio: redirect",
+            "en": "branch: redirect"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta",
+            "en": "reply"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      }
+    },
+    {
+      "id": "telarecuperar",
+      "type": "frontend",
+      "label": "TelaRecuperar",
+      "sublabel": "Senha",
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaRecuperarSenha.php",
+          "trecho": "class TelaRecuperarSenha extends RequestPasswordReset"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->usingPage(TelaRecuperarSenha::class)"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "->usingPage(TelaRecuperarSenha::class)"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "database",
+      "label": "User",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function canAccessPanel(Panel $panel): bool"
+        }
+      ]
+    },
+    {
+      "id": "email",
+      "type": "external",
+      "label": {
+        "pt": "Caixa de e-mail",
+        "en": "Email inbox"
+      }
+    },
+    {
+      "id": "telaredefinir",
+      "type": "frontend",
+      "label": "TelaRedefinir",
+      "sublabel": "Senha",
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaRedefinirSenha.php",
+          "trecho": "class TelaRedefinirSenha extends ResetPassword"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->usingResetPage(TelaRedefinirSenha::class)"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "->usingResetPage(TelaRedefinirSenha::class)"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 530,
+      "label": {
+        "pt": "Pedir o link",
+        "en": "Request link"
+      }
+    },
+    {
+      "from": 537,
+      "to": 860,
+      "label": {
+        "pt": "Definir a nova senha",
+        "en": "Set new password"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "abrir",
+      "from": "navegador",
+      "to": "telarecuperar",
+      "y": 180,
+      "label": "GET password-reset/request",
+      "variant": "emphasis",
+      "note": {
+        "pt": "o Auth Designer registra a TelaRecuperarSenha no bloco passwordReset dos três painéis",
+        "en": "Auth Designer registers TelaRecuperarSenha in all three panels' passwordReset block"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->usingPage(TelaRecuperarSenha::class)"
+      }
+    },
+    {
+      "id": "pagina-unica",
+      "from": "telarecuperar",
+      "to": "navegador",
+      "y": 255,
+      "label": "302 /esqueci-minha-senha",
+      "variant": "security",
+      "note": {
+        "pt": "com kit.login.unificado ligado, a rota do painel leva à página única",
+        "en": "with kit.login.unificado on, panel route goes to unified page"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaRecuperarSenha.php",
+        "trecho": "throw new HttpResponseException(new RedirectResponse(route('esqueci-minha-senha')));"
+      }
+    },
+    {
+      "id": "pedir",
+      "from": "navegador",
+      "to": "telarecuperar",
+      "y": 325,
+      "label": {
+        "pt": "envia o e-mail",
+        "en": "sends email"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "request() do Filament: limite de 2 pedidos; o desafio anti-robô, quando ligado, é validado antes de qualquer e-mail sair",
+        "en": "Filament request(): limit 2 requests; bot check, when on, is validated before any email is sent"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaRecuperarSenha.php",
+        "trecho": "return CampoAntiRobo::acrescentarA(parent::form($schema));"
+      }
+    },
+    {
+      "id": "acessa",
+      "from": "telarecuperar",
+      "to": "user",
+      "y": 400,
+      "label": {
+        "pt": "canAccessPanel(painel)",
+        "en": "canAccessPanel(panel)"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "o link só sai para a conta que acessa o painel corrente; sem acesso, nenhum e-mail sai, e a tela diz que enviou",
+        "en": "link sent only to accounts accessing current panel; without access, no email sent, but screen reports sent"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "public function canAccessPanel(Panel $panel): bool"
+      }
+    },
+    {
+      "id": "link",
+      "from": "telarecuperar",
+      "to": "email",
+      "y": 480,
+      "label": {
+        "pt": "link assinado",
+        "en": "signed link"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "a notificação do Filament, com a URL de redefinição do painel corrente",
+        "en": "Filament notification with current panel reset URL"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->passwordReset()"
+      }
+    },
+    {
+      "id": "abrir-link",
+      "from": "email",
+      "to": "telaredefinir",
+      "y": 550,
+      "label": "GET password-reset/reset",
+      "variant": "emphasis",
+      "note": {
+        "pt": "middleware signed: link adulterado ou vencido responde 403",
+        "en": "signed middleware: tampered or expired link returns 403"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->usingResetPage(TelaRedefinirSenha::class)"
+      }
+    },
+    {
+      "id": "nova-senha",
+      "from": "navegador",
+      "to": "telaredefinir",
+      "y": 625,
+      "label": {
+        "pt": "envia a nova senha",
+        "en": "sends new password"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "resetPassword() do Filament: limite de 2 envios; a TelaRedefinirSenha só veste a aparência das telas de acesso",
+        "en": "Filament resetPassword(): limit 2 submits; TelaRedefinirSenha only adopts access screen look"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaRedefinirSenha.php",
+        "trecho": "class TelaRedefinirSenha extends ResetPassword"
+      }
+    },
+    {
+      "id": "gravar",
+      "from": "telaredefinir",
+      "to": "user",
+      "y": 705,
+      "label": {
+        "pt": "canAccessPanel e grava",
+        "en": "canAccessPanel + save"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "o broker confere o token; sem acesso ao painel, recusa; senão grava a senha com hash, troca o remember_token e dispara PasswordReset",
+        "en": "broker checks token; no panel access, denies; else saves hashed password, rotates remember_token and fires PasswordReset"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "public function canAccessPanel(Panel $panel): bool"
+      }
+    },
+    {
+      "id": "login",
+      "from": "telaredefinir",
+      "to": "navegador",
+      "y": 800,
+      "label": {
+        "pt": "302 login do painel",
+        "en": "302 panel login"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "senha trocada: de volta ao login do mesmo painel",
+        "en": "password changed: back to same panel login"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->usingPage(TelaLogin::class)"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Página única",
+        "en": "Unified page"
+      },
+      "items": [
+        {
+          "pt": "Com kit.login.unificado (KIT_LOGIN_UNIFICADO, padrão desligado), o pedido sai de /esqueci-minha-senha, na TelaRecuperarSenhaUnificada, com o mesmo formulário.",
+          "en": "With kit.login.unificado (KIT_LOGIN_UNIFICADO, default off), request starts at /esqueci-minha-senha in TelaRecuperarSenhaUnificada with same form."
+        },
+        {
+          "pt": "Antes de pedir o link, ela troca o painel corrente pelo primeiro painel que a conta acessa (DestinoAposLogin::paineisDe): fora dos painéis o corrente seria o /app, e quem só acessa o /admin ficaria sem e-mail. O link abre no painel da pessoa.",
+          "en": "Before requesting link, it switches current panel to first panel account can access (DestinoAposLogin::paineisDe): outside panels, current would be /app, leaving /admin-only users without email. Link opens in user's panel."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "kit.login.anti_robo.habilitado (KIT_ANTI_ROBO, padrão desligado): o desafio anti-robô no pedido do link; em APP_ENV=local fica desligado, salvo KIT_ANTI_ROBO_LOCAL.",
+          "en": "kit.login.anti_robo.habilitado (KIT_ANTI_ROBO, default off): bot check on link request; off in APP_ENV=local unless KIT_ANTI_ROBO_LOCAL."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Com tenant",
+        "en": "Tenant on"
+      },
+      "items": [
+        {
+          "pt": "Igual nos dois modos: as rotas de pedido e de redefinição ficam no grupo de autenticação do painel, fora do prefixo {tenant}.",
+          "en": "Same in both modes: request and reset routes stay in panel auth group, outside {tenant} prefix."
+        }
+      ]
+    }
+  ]
+}

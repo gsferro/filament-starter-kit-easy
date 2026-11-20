@@ -1,0 +1,728 @@
+{
+  "slug": "erd-onboarding",
+  "tipo": "erd",
+  "titulo": "Onboarding",
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "entities": [
+    {
+      "id": "onboarding_flow_progress",
+      "label": "onboarding_flow_progress",
+      "sublabel": {
+        "pt": "dono: wallacemartinss/filament-onboarding",
+        "en": "by: wallacemartinss/filament-onboarding"
+      },
+      "tag": "onboarding",
+      "row": 0,
+      "col": 0,
+      "width": 232,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "flow_id",
+          "type": "varchar NN",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "onboarding_flows.id"
+        },
+        {
+          "name": "subject_type",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "subject_id",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "scope_type",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "scope_id",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "started_at",
+          "type": "datetime"
+        },
+        {
+          "name": "completed_at",
+          "type": "datetime"
+        },
+        {
+          "name": "dismissed_at",
+          "type": "datetime"
+        },
+        {
+          "name": "meta",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164950_create_onboarding_tables.php",
+          "trecho": "Schema::create($this->table('flow_progress'), function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria onboarding_flow_progress",
+            "en": "add onboarding_flow_progress"
+          }
+        }
+      ]
+    },
+    {
+      "id": "onboarding_flows",
+      "label": "onboarding_flows",
+      "sublabel": {
+        "pt": "dono: wallacemartinss/filament-onboarding",
+        "en": "by: wallacemartinss/filament-onboarding"
+      },
+      "tag": "onboarding",
+      "row": 0,
+      "col": 1,
+      "width": 244,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "key",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "panel_id",
+          "type": "varchar"
+        },
+        {
+          "name": "title",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "description",
+          "type": "TEXT"
+        },
+        {
+          "name": "icon",
+          "type": "varchar"
+        },
+        {
+          "name": "color",
+          "type": "varchar"
+        },
+        {
+          "name": "is_active",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "is_dismissible",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "visibility_condition",
+          "type": "varchar"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164950_create_onboarding_tables.php",
+          "trecho": "Schema::create($this->table('flows'), function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria onboarding_flows",
+            "en": "add onboarding_flows"
+          }
+        }
+      ]
+    },
+    {
+      "id": "onboarding_steps",
+      "label": "onboarding_steps",
+      "sublabel": {
+        "pt": "dono: wallacemartinss/filament-onboarding",
+        "en": "by: wallacemartinss/filament-onboarding"
+      },
+      "tag": "onboarding",
+      "row": 0,
+      "col": 2,
+      "width": 320,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "flow_id",
+          "type": "varchar NN",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "onboarding_flows.id"
+        },
+        {
+          "name": "key",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "title",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "description",
+          "type": "TEXT"
+        },
+        {
+          "name": "icon",
+          "type": "varchar"
+        },
+        {
+          "name": "cta_label",
+          "type": "TEXT"
+        },
+        {
+          "name": "cta_url",
+          "type": "varchar"
+        },
+        {
+          "name": "cta_route",
+          "type": "varchar"
+        },
+        {
+          "name": "completion_mode",
+          "type": "varchar NN"
+        },
+        {
+          "name": "condition_key",
+          "type": "varchar"
+        },
+        {
+          "name": "visit_url",
+          "type": "varchar"
+        },
+        {
+          "name": "tour_steps",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_required",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "is_active",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "media_type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "media_source",
+          "type": "varchar"
+        },
+        {
+          "name": "media_disk",
+          "type": "varchar"
+        },
+        {
+          "name": "media_path",
+          "type": "varchar"
+        },
+        {
+          "name": "media_url",
+          "type": "varchar"
+        },
+        {
+          "name": "media_caption",
+          "type": "TEXT"
+        },
+        {
+          "name": "modal_position",
+          "type": "varchar"
+        },
+        {
+          "name": "video_completion_threshold",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "visibility_condition",
+          "type": "varchar"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164950_create_onboarding_tables.php",
+          "trecho": "Schema::create($this->table('steps'), function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria onboarding_steps",
+            "en": "add onboarding_steps"
+          }
+        }
+      ]
+    },
+    {
+      "id": "onboarding_preferences",
+      "label": "onboarding_preferences",
+      "sublabel": {
+        "pt": "dono: wallacemartinss/filament-onboarding",
+        "en": "by: wallacemartinss/filament-onboarding"
+      },
+      "tag": "onboarding",
+      "row": 1,
+      "col": 0,
+      "width": 216,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "subject_type",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "subject_id",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "scope_type",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "scope_id",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "hidden_at",
+          "type": "datetime"
+        },
+        {
+          "name": "welcomed_at",
+          "type": "datetime"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164954_create_onboarding_preferences.php",
+          "trecho": "Schema::create($this->table('preferences'), function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria onboarding_preferences",
+            "en": "add onboarding_preferences"
+          }
+        }
+      ]
+    },
+    {
+      "id": "onboarding_step_progress",
+      "label": "onboarding_step_progress",
+      "sublabel": {
+        "pt": "dono: wallacemartinss/filament-onboarding",
+        "en": "by: wallacemartinss/filament-onboarding"
+      },
+      "tag": "onboarding",
+      "row": 1,
+      "col": 1,
+      "width": 232,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "flow_id",
+          "type": "varchar NN",
+          "key": "fk",
+          "references": "onboarding_flows.id"
+        },
+        {
+          "name": "step_id",
+          "type": "varchar NN",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "onboarding_steps.id"
+        },
+        {
+          "name": "subject_type",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "subject_id",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "scope_type",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "scope_id",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "completed_at",
+          "type": "datetime"
+        },
+        {
+          "name": "skipped_at",
+          "type": "datetime"
+        },
+        {
+          "name": "seen_at",
+          "type": "datetime"
+        },
+        {
+          "name": "meta",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164950_create_onboarding_tables.php",
+          "trecho": "Schema::create($this->table('step_progress'), function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria onboarding_step_progress",
+            "en": "add onboarding_step_progress"
+          }
+        }
+      ]
+    },
+    {
+      "id": "onboarding_conditions",
+      "label": "onboarding_conditions",
+      "sublabel": {
+        "pt": "dono: wallacemartinss/filament-onboarding",
+        "en": "by: wallacemartinss/filament-onboarding"
+      },
+      "tag": "onboarding",
+      "row": 1,
+      "col": 2,
+      "width": 208,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "key",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "label",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "description",
+          "type": "TEXT"
+        },
+        {
+          "name": "type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "model",
+          "type": "varchar"
+        },
+        {
+          "name": "subject_column",
+          "type": "varchar"
+        },
+        {
+          "name": "scope_column",
+          "type": "varchar"
+        },
+        {
+          "name": "filters",
+          "type": "TEXT"
+        },
+        {
+          "name": "minimum",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "is_active",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164955_create_onboarding_conditions.php",
+          "trecho": "Schema::create($this->table('conditions'), function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria onboarding_conditions",
+            "en": "add onboarding_conditions"
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "fk_onboarding_flow_progress_flow_id",
+      "from": "onboarding_flow_progress",
+      "to": "onboarding_flows",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_12_164950_create_onboarding_tables.php",
+        "trecho": "$table->foreignUuid('flow_id')->constrained($this->table('flows'))->cascadeOnDelete();\n            $table->string('subject_type', 191);"
+      }
+    },
+    {
+      "id": "fk_onboarding_steps_flow_id",
+      "from": "onboarding_steps",
+      "to": "onboarding_flows",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_12_164950_create_onboarding_tables.php",
+        "trecho": "$table->foreignUuid('flow_id')->constrained($this->table('flows'))->cascadeOnDelete();"
+      }
+    },
+    {
+      "id": "fk_onboarding_step_progress_flow_id",
+      "from": "onboarding_step_progress",
+      "to": "onboarding_flows",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_12_164950_create_onboarding_tables.php",
+        "trecho": "$table->foreignUuid('flow_id')->constrained($this->table('flows'))->cascadeOnDelete();\n            $table->foreignUuid('step_id')"
+      }
+    },
+    {
+      "id": "fk_onboarding_step_progress_step_id",
+      "from": "onboarding_step_progress",
+      "to": "onboarding_steps",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_12_164950_create_onboarding_tables.php",
+        "trecho": "$table->foreignUuid('step_id')->constrained($this->table('steps'))->cascadeOnDelete();"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Colunas e tipos como o SQLite os registra depois de rodar as migrations (PRAGMA table_info). Em MySQL ou PostgreSQL, a mesma migration gera os tipos nativos.",
+          "en": "Columns and types as SQLite records them after migrations (PRAGMA table_info). In MySQL or PostgreSQL, the same migration creates native types."
+        },
+        {
+          "pt": "NN = NOT NULL. Sem NN, a coluna aceita nulo.",
+          "en": "NN = NOT NULL. Without NN, null is allowed."
+        },
+        {
+          "pt": "PK, FK e UK marcam cada coluna. PK ou UK em mais de uma coluna da mesma tabela pode ser uma chave composta: veja o card \"Chaves compostas\".",
+          "en": "PK, FK and UK mark each column. PK or UK on several columns in one table may be a composite key: see the \"Composite keys\" card."
+        },
+        {
+          "pt": "O rótulo de cada ligação é a regra ON DELETE da chave estrangeira. Linha tracejada: a FK não faz parte da PK da tabela filha.",
+          "en": "Each link label is the foreign key's ON DELETE rule. Dashed line: the FK is not part of the child table's PK."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Chaves compostas",
+        "en": "Composite keys"
+      },
+      "items": [
+        {
+          "pt": "onboarding_flow_progress: único (flow_id, subject_type, subject_id, scope_type, scope_id)",
+          "en": "onboarding_flow_progress: unique (flow_id, subject_type, subject_id, scope_type, scope_id)"
+        },
+        {
+          "pt": "onboarding_steps: único (flow_id, key)",
+          "en": "onboarding_steps: unique (flow_id, key)"
+        },
+        {
+          "pt": "onboarding_preferences: único (subject_type, subject_id, scope_type, scope_id)",
+          "en": "onboarding_preferences: unique (subject_type, subject_id, scope_type, scope_id)"
+        },
+        {
+          "pt": "onboarding_step_progress: único (step_id, subject_type, subject_id, scope_type, scope_id)",
+          "en": "onboarding_step_progress: unique (step_id, subject_type, subject_id, scope_type, scope_id)"
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Referências sem chave estrangeira",
+        "en": "References without foreign keys"
+      },
+      "items": [
+        {
+          "pt": "O banco não tem chave estrangeira para estas colunas, por isso elas não ganham linha. Os pares *_type/*_id são relações polimórficas.",
+          "en": "Database has no foreign keys for these columns, so they have no lines. *_type/*_id pairs are polymorphic relations."
+        },
+        {
+          "pt": "onboarding_flow_progress: subject_type/subject_id e scope_type/scope_id",
+          "en": "onboarding_flow_progress: subject_type/subject_id and scope_type/scope_id"
+        },
+        {
+          "pt": "onboarding_preferences: subject_type/subject_id e scope_type/scope_id",
+          "en": "onboarding_preferences: subject_type/subject_id and scope_type/scope_id"
+        },
+        {
+          "pt": "onboarding_step_progress: subject_type/subject_id e scope_type/scope_id",
+          "en": "onboarding_step_progress: subject_type/subject_id and scope_type/scope_id"
+        }
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": {
+        "pt": "Outras migrations",
+        "en": "Other migrations"
+      },
+      "items": [
+        {
+          "pt": "onboarding_flow_progress e onboarding_step_progress: scope_type e scope_id passam a NOT NULL (harden_onboarding_progress_scope).",
+          "en": "onboarding_flow_progress and onboarding_step_progress: scope_type and scope_id become NOT NULL (harden_onboarding_progress_scope)."
+        },
+        "onboarding_flows: visibility_condition (add_visibility_to_onboarding).",
+        {
+          "pt": "onboarding_steps: media_type, media_source, media_disk, media_path, media_url, media_caption, modal_position e video_completion_threshold (add_media_to_onboarding_steps) e visibility_condition (add_visibility_to_onboarding).",
+          "en": "onboarding_steps: media_type, media_source, media_disk, media_path, media_url, media_caption, modal_position and video_completion_threshold (add_media_to_onboarding_steps) and visibility_condition (add_visibility_to_onboarding)."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Evidência",
+        "en": "Evidence"
+      },
+      "items": [
+        {
+          "pt": "Cada tabela leva à linha da migration que a cria.",
+          "en": "Each table links to its creation migration line."
+        },
+        {
+          "pt": "As colunas que outras migrations acrescentam ou tiram estão no card \"Outras migrations\".",
+          "en": "Columns added or removed by other migrations are in the \"Other migrations\" card."
+        },
+        {
+          "pt": "Cada ligação leva à linha da chave estrangeira, nos cards \"Prova das ligações\".",
+          "en": "Each link leads to the foreign key line in the \"Link evidence\" cards."
+        }
+      ]
+    }
+  ]
+}

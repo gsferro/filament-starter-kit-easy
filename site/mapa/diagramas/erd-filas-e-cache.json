@@ -1,0 +1,529 @@
+{
+  "slug": "erd-filas-e-cache",
+  "tipo": "erd",
+  "titulo": {
+    "pt": "Filas, jobs e cache",
+    "en": "Queues, jobs, cache"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "entities": [
+    {
+      "id": "jobs",
+      "label": "jobs",
+      "sublabel": {
+        "pt": "dono: Laravel (QUEUE_CONNECTION=database)",
+        "en": "by: Laravel (QUEUE_CONNECTION=database)"
+      },
+      "tag": {
+        "pt": "fila do Laravel",
+        "en": "Laravel queue"
+      },
+      "row": 0,
+      "col": 0,
+      "width": 208,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "queue",
+          "type": "varchar NN"
+        },
+        {
+          "name": "payload",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "attempts",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "reserved_at",
+          "type": "INTEGER"
+        },
+        {
+          "name": "available_at",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+          "trecho": "Schema::create('jobs', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria jobs",
+            "en": "add jobs"
+          }
+        }
+      ]
+    },
+    {
+      "id": "job_batches",
+      "label": "job_batches",
+      "sublabel": {
+        "pt": "dono: Laravel",
+        "en": "by: Laravel"
+      },
+      "tag": {
+        "pt": "fila do Laravel",
+        "en": "Laravel queue"
+      },
+      "row": 1,
+      "col": 0,
+      "width": 208,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "total_jobs",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "pending_jobs",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "failed_jobs",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "failed_job_ids",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "options",
+          "type": "TEXT"
+        },
+        {
+          "name": "cancelled_at",
+          "type": "INTEGER"
+        },
+        {
+          "name": "created_at",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "finished_at",
+          "type": "INTEGER"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+          "trecho": "Schema::create('job_batches', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria job_batches",
+            "en": "add job_batches"
+          }
+        }
+      ]
+    },
+    {
+      "id": "failed_jobs",
+      "label": "failed_jobs",
+      "sublabel": {
+        "pt": "dono: Laravel",
+        "en": "by: Laravel"
+      },
+      "tag": {
+        "pt": "fila do Laravel",
+        "en": "Laravel queue"
+      },
+      "row": 2,
+      "col": 0,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "connection",
+          "type": "varchar NN"
+        },
+        {
+          "name": "queue",
+          "type": "varchar NN"
+        },
+        {
+          "name": "payload",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "exception",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "failed_at",
+          "type": "datetime NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+          "trecho": "Schema::create('failed_jobs', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria failed_jobs",
+            "en": "add failed_jobs"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cache",
+      "label": "cache",
+      "sublabel": {
+        "pt": "dono: Laravel (CACHE_STORE=database)",
+        "en": "by: Laravel (CACHE_STORE=database)"
+      },
+      "tag": {
+        "pt": "cache do Laravel",
+        "en": "Laravel cache"
+      },
+      "row": 0,
+      "col": 1,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "key",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "value",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "expiration",
+          "type": "INTEGER NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000001_create_cache_table.php",
+          "trecho": "Schema::create('cache', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria cache",
+            "en": "add cache"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cache_locks",
+      "label": "cache_locks",
+      "sublabel": {
+        "pt": "dono: Laravel",
+        "en": "by: Laravel"
+      },
+      "tag": {
+        "pt": "cache do Laravel",
+        "en": "Laravel cache"
+      },
+      "row": 1,
+      "col": 1,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "key",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "owner",
+          "type": "varchar NN"
+        },
+        {
+          "name": "expiration",
+          "type": "INTEGER NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000001_create_cache_table.php",
+          "trecho": "Schema::create('cache_locks', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria cache_locks",
+            "en": "add cache_locks"
+          }
+        }
+      ]
+    },
+    {
+      "id": "queue_monitors",
+      "label": "queue_monitors",
+      "sublabel": {
+        "pt": "dono: croustibat/filament-jobs-monitor",
+        "en": "by: croustibat/filament-jobs-monitor"
+      },
+      "tag": {
+        "pt": "monitor de filas",
+        "en": "queue monitor"
+      },
+      "row": 0,
+      "col": 2,
+      "width": 224,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "job_id",
+          "type": "varchar NN"
+        },
+        {
+          "name": "name",
+          "type": "varchar"
+        },
+        {
+          "name": "queue",
+          "type": "varchar"
+        },
+        {
+          "name": "started_at",
+          "type": "datetime"
+        },
+        {
+          "name": "finished_at",
+          "type": "datetime"
+        },
+        {
+          "name": "failed",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "attempt",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "progress",
+          "type": "INTEGER"
+        },
+        {
+          "name": "exception_message",
+          "type": "TEXT"
+        },
+        {
+          "name": "tenant_id",
+          "type": "varchar"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "exception_class",
+          "type": "varchar"
+        },
+        {
+          "name": "exception",
+          "type": "TEXT"
+        },
+        {
+          "name": "failure_signature",
+          "type": "varchar"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164919_create_filament-jobs-monitor_table.php",
+          "trecho": "Schema::create('queue_monitors', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria queue_monitors",
+            "en": "add queue_monitors"
+          }
+        }
+      ]
+    },
+    {
+      "id": "queue_monitor_failure_groups",
+      "label": "queue_monitor_failure_groups",
+      "sublabel": {
+        "pt": "dono: croustibat/filament-jobs-monitor",
+        "en": "by: croustibat/filament-jobs-monitor"
+      },
+      "tag": {
+        "pt": "monitor de filas",
+        "en": "queue monitor"
+      },
+      "row": 1,
+      "col": 2,
+      "width": 264,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "signature",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "exception_class",
+          "type": "varchar NN"
+        },
+        {
+          "name": "job_class",
+          "type": "varchar"
+        },
+        {
+          "name": "queue",
+          "type": "varchar"
+        },
+        {
+          "name": "message",
+          "type": "TEXT"
+        },
+        {
+          "name": "occurrences_count",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "first_occurred_at",
+          "type": "datetime"
+        },
+        {
+          "name": "last_occurred_at",
+          "type": "datetime"
+        },
+        {
+          "name": "resolved_at",
+          "type": "datetime"
+        },
+        {
+          "name": "tenant_id",
+          "type": "varchar"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164920_add_failures_to_filament-jobs-monitor_table.php",
+          "trecho": "Schema::create('queue_monitor_failure_groups', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria queue_monitor_failure_groups",
+            "en": "add queue_monitor_failure_groups"
+          }
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Colunas e tipos como o SQLite os registra depois de rodar as migrations (PRAGMA table_info). Em MySQL ou PostgreSQL, a mesma migration gera os tipos nativos.",
+          "en": "Columns and types as SQLite records them after migrations (PRAGMA table_info). In MySQL or PostgreSQL, the same migration creates native types."
+        },
+        {
+          "pt": "NN = NOT NULL. Sem NN, a coluna aceita nulo.",
+          "en": "NN = NOT NULL. Without NN, null is allowed."
+        },
+        {
+          "pt": "PK, FK e UK marcam cada coluna.",
+          "en": "PK, FK and UK mark each column."
+        },
+        {
+          "pt": "Nenhuma tabela deste domínio tem chave estrangeira, por isso o desenho não tem linhas.",
+          "en": "No table in this domain has foreign keys, so diagram has no lines."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Referências sem chave estrangeira",
+        "en": "References without foreign keys"
+      },
+      "items": [
+        {
+          "pt": "O banco não tem chave estrangeira para estas colunas, por isso elas não ganham linha.",
+          "en": "Database has no foreign keys for these columns, so they have no lines."
+        },
+        "queue_monitors: tenant_id",
+        "queue_monitor_failure_groups: tenant_id"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": {
+        "pt": "Outras migrations",
+        "en": "Other migrations"
+      },
+      "items": [
+        {
+          "pt": "queue_monitors: exception_class, exception e failure_signature (add_failures_to_filament-jobs-monitor_table, a mesma migration que cria queue_monitor_failure_groups).",
+          "en": "queue_monitors: exception_class, exception and failure_signature (add_failures_to_filament-jobs-monitor_table, the migration that also creates queue_monitor_failure_groups)."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Evidência",
+        "en": "Evidence"
+      },
+      "items": [
+        {
+          "pt": "Cada tabela leva à linha da migration que a cria.",
+          "en": "Each table links to its creation migration line."
+        },
+        {
+          "pt": "As colunas que outras migrations acrescentam ou tiram estão no card \"Outras migrations\".",
+          "en": "Columns added or removed by other migrations are in the \"Other migrations\" card."
+        }
+      ]
+    }
+  ]
+}

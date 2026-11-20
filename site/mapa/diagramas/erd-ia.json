@@ -1,0 +1,449 @@
+{
+  "slug": "erd-ia",
+  "tipo": "erd",
+  "titulo": {
+    "pt": "Tabelas de IA",
+    "en": "AI tables"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "entities": [
+    {
+      "id": "agentes_ia",
+      "label": "agentes_ia",
+      "sublabel": {
+        "pt": "dono: kit",
+        "en": "kit owner"
+      },
+      "tag": {
+        "pt": "agentes do kit",
+        "en": "kit agents"
+      },
+      "row": 0,
+      "col": 0,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "slug",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "nome",
+          "type": "varchar NN"
+        },
+        {
+          "name": "descricao",
+          "type": "TEXT"
+        },
+        {
+          "name": "ativo",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "provider",
+          "type": "varchar"
+        },
+        {
+          "name": "modelo",
+          "type": "varchar"
+        },
+        {
+          "name": "temperatura",
+          "type": "numeric"
+        },
+        {
+          "name": "max_tokens",
+          "type": "INTEGER"
+        },
+        {
+          "name": "tools",
+          "type": "TEXT"
+        },
+        {
+          "name": "guardrails",
+          "type": "TEXT"
+        },
+        {
+          "name": "instrucoes",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "versao",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000010_create_agentes_ia_table.php",
+          "trecho": "Schema::create('agentes_ia', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria agentes_ia",
+            "en": "add agentes_ia"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ai_runs",
+      "label": "ai_runs",
+      "sublabel": {
+        "pt": "dono: fomvasss/laravel-ai-tasks",
+        "en": "by: fomvasss/laravel-ai-tasks"
+      },
+      "tag": "laravel-ai-tasks",
+      "row": 0,
+      "col": 1,
+      "width": 228,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "tenant_id",
+          "type": "varchar NN"
+        },
+        {
+          "name": "task",
+          "type": "varchar NN"
+        },
+        {
+          "name": "driver",
+          "type": "varchar NN"
+        },
+        {
+          "name": "modality",
+          "type": "varchar NN"
+        },
+        {
+          "name": "subject_type",
+          "type": "varchar"
+        },
+        {
+          "name": "subject_id",
+          "type": "varchar"
+        },
+        {
+          "name": "dispatch",
+          "type": "varchar NN"
+        },
+        {
+          "name": "status",
+          "type": "varchar NN"
+        },
+        {
+          "name": "error",
+          "type": "TEXT"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "varchar",
+          "key": "uk"
+        },
+        {
+          "name": "request",
+          "type": "TEXT"
+        },
+        {
+          "name": "response",
+          "type": "TEXT"
+        },
+        {
+          "name": "tokens_in",
+          "type": "INTEGER"
+        },
+        {
+          "name": "tokens_out",
+          "type": "INTEGER"
+        },
+        {
+          "name": "cache_read_tokens",
+          "type": "INTEGER"
+        },
+        {
+          "name": "cache_write_tokens",
+          "type": "INTEGER"
+        },
+        {
+          "name": "cost",
+          "type": "numeric"
+        },
+        {
+          "name": "started_at",
+          "type": "datetime"
+        },
+        {
+          "name": "finished_at",
+          "type": "datetime"
+        },
+        {
+          "name": "duration_ms",
+          "type": "INTEGER"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "model",
+          "type": "varchar"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164948_create_ai_runs_table.php",
+          "trecho": "Schema::create(config('ai-tasks.table', 'ai_runs'), function (Blueprint $t) {",
+          "label": {
+            "pt": "cria ai_runs",
+            "en": "add ai_runs"
+          }
+        }
+      ]
+    },
+    {
+      "id": "agent_conversations",
+      "label": "agent_conversations",
+      "sublabel": {
+        "pt": "dono: laravel/ai",
+        "en": "by: laravel/ai"
+      },
+      "tag": "laravel/ai",
+      "row": 0,
+      "col": 2,
+      "width": 216,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "participant_type",
+          "type": "varchar"
+        },
+        {
+          "name": "participant_id",
+          "type": "INTEGER"
+        },
+        {
+          "name": "title",
+          "type": "varchar NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_165028_create_agent_conversations_table.php",
+          "trecho": "Schema::create($conversationsTable, function (Blueprint $table) {",
+          "label": {
+            "pt": "cria agent_conversations",
+            "en": "add agent_conversations"
+          }
+        }
+      ]
+    },
+    {
+      "id": "agent_conversation_messages",
+      "label": "agent_conversation_messages",
+      "sublabel": {
+        "pt": "dono: laravel/ai",
+        "en": "by: laravel/ai"
+      },
+      "tag": "laravel/ai",
+      "row": 0,
+      "col": 3,
+      "width": 256,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "conversation_id",
+          "type": "varchar NN"
+        },
+        {
+          "name": "participant_type",
+          "type": "varchar"
+        },
+        {
+          "name": "participant_id",
+          "type": "INTEGER"
+        },
+        {
+          "name": "agent",
+          "type": "varchar NN"
+        },
+        {
+          "name": "role",
+          "type": "varchar NN"
+        },
+        {
+          "name": "content",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "attachments",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "tool_calls",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "tool_results",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "usage",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "meta",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "approval_state",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_165028_create_agent_conversations_table.php",
+          "trecho": "Schema::create($messagesTable, function (Blueprint $table) {",
+          "label": {
+            "pt": "cria agent_conversation_messages",
+            "en": "add agent_conversation_messages"
+          }
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Colunas e tipos como o SQLite os registra depois de rodar as migrations (PRAGMA table_info). Em MySQL ou PostgreSQL, a mesma migration gera os tipos nativos.",
+          "en": "Columns and types as SQLite records them after migrations (PRAGMA table_info). In MySQL or PostgreSQL, the same migration creates native types."
+        },
+        {
+          "pt": "NN = NOT NULL. Sem NN, a coluna aceita nulo.",
+          "en": "NN = NOT NULL. Without NN, null is allowed."
+        },
+        {
+          "pt": "PK, FK e UK marcam cada coluna.",
+          "en": "PK, FK and UK mark each column."
+        },
+        {
+          "pt": "Nenhuma tabela deste domínio tem chave estrangeira, por isso o desenho não tem linhas.",
+          "en": "No table in this domain has foreign keys, so diagram has no lines."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Referências sem chave estrangeira",
+        "en": "References without foreign keys"
+      },
+      "items": [
+        {
+          "pt": "O banco não tem chave estrangeira para estas colunas, por isso elas não ganham linha. Os pares *_type/*_id são relações polimórficas.",
+          "en": "Database has no foreign keys for these columns, so they have no lines. *_type/*_id pairs are polymorphic relations."
+        },
+        {
+          "pt": "ai_runs: subject_type/subject_id e tenant_id",
+          "en": "ai_runs: subject_type/subject_id and tenant_id"
+        },
+        "agent_conversations: participant_type/participant_id",
+        {
+          "pt": "agent_conversation_messages: participant_type/participant_id e conversation_id",
+          "en": "agent_conversation_messages: participant_type/participant_id and conversation_id"
+        }
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": {
+        "pt": "Outras migrations",
+        "en": "Other migrations"
+      },
+      "items": [
+        "ai_runs: model (add_model_to_ai_runs_table)."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Evidência",
+        "en": "Evidence"
+      },
+      "items": [
+        {
+          "pt": "Cada tabela leva à linha da migration que a cria.",
+          "en": "Each table links to its creation migration line."
+        },
+        {
+          "pt": "As colunas que outras migrations acrescentam ou tiram estão no card \"Outras migrations\".",
+          "en": "Columns added or removed by other migrations are in the \"Other migrations\" card."
+        }
+      ]
+    }
+  ]
+}

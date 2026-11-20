@@ -2,8 +2,8 @@
   "slug": "models-relacoes",
   "tipo": "class",
   "titulo": {
-    "pt": "Models do kit e suas relações próprias",
-    "en": "Kit models and their own relations"
+    "pt": "Models do kit e as relações que eles declaram",
+    "en": "Kit models and relations they declare"
   },
   "paineis": [],
   "modos": [
@@ -13,82 +13,127 @@
   "schema_version": 1,
   "diagram_type": "class",
   "meta": {
-    "quality_profile": "showcase",
-    "legend": {
-      "entries": {
-        "dependency": {
-          "label": {
-            "pt": "usa a trait (use)",
-            "en": "uses trait (use)"
-          }
-        }
-      }
-    }
+    "quality_profile": "showcase"
   },
   "layout": {
-    "mode": "grid",
-    "gapX": 170
+    "mode": "grid"
   },
   "types": [
     {
-      "id": "User",
-      "label": "User",
+      "id": "Role",
+      "label": "Role",
       "kind": "class",
       "sublabel": {
-        "pt": "tabela users",
-        "en": "users table"
+        "pt": "tabela roles",
+        "en": "roles table"
       },
-      "row": 1,
-      "col": 1,
-      "attributes": [
-        {
-          "name": "name"
-        },
-        {
-          "name": "email"
-        },
-        {
-          "name": "password",
-          "type": "hashed"
-        },
-        {
-          "name": "avatar_url"
-        }
-      ],
+      "row": 0,
+      "col": 0,
       "methods": [
         {
-          "name": "papeisEmQualquerContexto",
-          "returns": "MorphToMany"
-        },
-        {
-          "name": "tenants",
-          "returns": "BelongsToMany"
-        },
-        {
-          "name": "vinculosSociais",
-          "returns": "HasMany"
+          "name": "convites",
+          "returns": "HasMany",
+          "visibility": "public"
         }
       ],
       "sources": [
         {
-          "arquivo": "app/Models/User.php",
-          "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail",
+          "arquivo": "app/Models/Role.php",
+          "trecho": "class Role extends SpatieRole",
           "label": {
-            "pt": "class User (declaração)",
-            "en": "class User (declared)"
+            "pt": "declaração da classe",
+            "en": "class declaration"
           }
         },
         {
-          "arquivo": "app/Models/User.php",
-          "trecho": "use AuditsFillables;\n    use AuthenticationLoggable;\n\n    /** @use HasFactory<UserFactory> */\n    use HasFactory;\n\n    use HasRoles;\n    use ModeloCacheavel;\n    use Notifiable;\n\n    /**\n     * Excluir é LÓGICO: `delete()` grava `deleted_at`, a linha fica, e as pivots (`tenant_user`,\n     * `model_has_roles`) e `vinculos_sociais` ficam com ela — restaurar devolve o que havia.\n     *\n     * `Recyclable` é o que faz a Lixeira do /infra (`promethys/revive`) enxergar a exclusão: a\n     * tela lista `recycle_bin_items`, e quem grava a linha ali é o evento `deleted` desta trait\n     * (`vendor/promethys/revive/src/Concerns/Recyclable.php:29-45`). `SoftDeletes` sozinho é\n     * exclusão sem tela para desfazer. Guarda: `tests/Kit/LixeiraTest.php`.\n     *\n     * Ela sobrescreve `booted()` — uma `booted()` futura nesta classe precisa chamar a da trait.\n     * Wiki `status-e-exclusao-logica-de-usuario`, ADR-06.\n     */\n    use Recyclable;\n\n    use SoftDeletes;\n    use TemUuid;\n    use TwoFactorAuthenticatable;",
-          "label": "use (traits)"
+          "arquivo": "config/permission.php",
+          "trecho": "'role' => Role::class,",
+          "label": {
+            "pt": "permission.models.role aponta Role",
+            "en": "permission.models.role points to Role"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Convite",
+      "label": "Convite",
+      "kind": "class",
+      "sublabel": {
+        "pt": "tabela convites",
+        "en": "convites table"
+      },
+      "row": 0,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "email"
         },
         {
-          "arquivo": "app/Models/User.php",
-          "trecho": "public function papeisEmQualquerContexto(): MorphToMany",
+          "name": "role_id"
+        },
+        {
+          "name": "tenant_id"
+        },
+        {
+          "name": "convidado_por_id"
+        },
+        {
+          "name": "expira_em",
+          "type": "datetime"
+        },
+        {
+          "name": "aceito_em",
+          "type": "datetime"
+        },
+        {
+          "name": "recusado_em",
+          "type": "datetime"
+        }
+      ],
+      "methods": [
+        {
+          "name": {
+            "pt": "papel",
+            "en": "role"
+          },
+          "returns": "BelongsTo",
+          "visibility": "public"
+        },
+        {
+          "name": "tenant",
+          "returns": "BelongsTo",
+          "visibility": "public"
+        },
+        {
+          "name": "convidadoPor",
+          "returns": "BelongsTo",
+          "visibility": "public"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "class Convite extends Model implements Auditable",
           "label": {
-            "pt": "relação papeisEmQualquerContexto",
-            "en": "papeisEmQualquerContexto relation"
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        },
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "protected $fillable = [",
+          "label": {
+            "pt": "$fillable: os atributos desenhados",
+            "en": "$fillable: shown attributes"
+          }
+        },
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "protected function casts(): array",
+          "label": {
+            "pt": "casts(): o tipo dos atributos",
+            "en": "casts(): attribute types"
           }
         }
       ]
@@ -146,7 +191,8 @@
       "methods": [
         {
           "name": "users",
-          "returns": "BelongsToMany"
+          "returns": "BelongsToMany",
+          "visibility": "public"
         }
       ],
       "sources": [
@@ -154,95 +200,156 @@
           "arquivo": "app/Models/Tenant.php",
           "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName",
           "label": {
-            "pt": "class Tenant (declaração)",
-            "en": "class Tenant (declared)"
+            "pt": "declaração da classe",
+            "en": "class declaration"
           }
         },
         {
           "arquivo": "app/Models/Tenant.php",
-          "trecho": "use AuditsFillables;\n\n    /** @use HasFactory<TenantFactory> */\n    use HasFactory;\n\n    use TemUuid;",
-          "label": "use (traits)"
+          "trecho": "protected $fillable = [",
+          "label": {
+            "pt": "$fillable: os atributos desenhados",
+            "en": "$fillable: shown attributes"
+          }
         },
         {
           "arquivo": "app/Models/Tenant.php",
-          "trecho": "public function users(): BelongsToMany",
+          "trecho": "protected function casts(): array",
           "label": {
-            "pt": "relação users",
-            "en": "users link"
+            "pt": "casts(): o tipo dos atributos",
+            "en": "casts(): attribute types"
           }
         }
       ]
     },
     {
-      "id": "Convite",
-      "label": "Convite",
+      "id": "VinculoSocial",
+      "label": "VinculoSocial",
       "kind": "class",
       "sublabel": {
-        "pt": "tabela convites",
-        "en": "convites table"
+        "pt": "tabela vinculos_sociais",
+        "en": "vinculos_sociais table"
       },
-      "row": 0,
-      "col": 1,
+      "row": 1,
+      "col": 0,
       "attributes": [
         {
-          "name": "email"
+          "name": "user_id"
         },
         {
-          "name": "role_id"
+          "name": "provedor"
         },
         {
-          "name": "tenant_id"
+          "name": "sub"
         },
         {
-          "name": "convidado_por_id"
-        },
-        {
-          "name": "expira_em",
+          "name": "confirmado_em",
           "type": "datetime"
         },
         {
-          "name": "aceito_em",
-          "type": "datetime"
-        },
-        {
-          "name": "recusado_em",
+          "name": "ultimo_acesso_em",
           "type": "datetime"
         }
       ],
       "methods": [
         {
-          "name": "papel",
-          "returns": "BelongsTo"
-        },
-        {
-          "name": "tenant",
-          "returns": "BelongsTo"
-        },
-        {
-          "name": "convidadoPor",
-          "returns": "BelongsTo"
+          "name": "user",
+          "returns": "BelongsTo",
+          "visibility": "public"
         }
       ],
       "sources": [
         {
-          "arquivo": "app/Models/Convite.php",
-          "trecho": "class Convite extends Model implements Auditable",
+          "arquivo": "app/Models/VinculoSocial.php",
+          "trecho": "class VinculoSocial extends Model",
           "label": {
-            "pt": "class Convite (declaração)",
-            "en": "class Convite (declared)"
+            "pt": "declaração da classe",
+            "en": "class declaration"
           }
         },
         {
-          "arquivo": "app/Models/Convite.php",
-          "trecho": "use AuditsFillables;\n\n    /** @use HasFactory<ConviteFactory> */\n    use HasFactory;\n\n    use ModeloCacheavel;\n    use TemUuid;",
-          "label": "use (traits)"
+          "arquivo": "app/Models/VinculoSocial.php",
+          "trecho": "protected $fillable = [",
+          "label": {
+            "pt": "$fillable: os atributos desenhados",
+            "en": "$fillable: shown attributes"
+          }
         },
         {
-          "arquivo": "app/Models/Convite.php",
-          "trecho": "public function papel(): BelongsTo",
+          "arquivo": "app/Models/VinculoSocial.php",
+          "trecho": "protected function casts(): array",
           "label": {
-            "pt": "relação papel",
-            "en": "papel link"
+            "pt": "casts(): o tipo dos atributos",
+            "en": "casts(): attribute types"
+          }
+        }
+      ]
+    },
+    {
+      "id": "User",
+      "label": "User",
+      "kind": "class",
+      "sublabel": {
+        "pt": "tabela users",
+        "en": "users table"
+      },
+      "row": 1,
+      "col": 1,
+      "attributes": [
+        {
+          "name": "name"
+        },
+        {
+          "name": "email"
+        },
+        {
+          "name": "password",
+          "type": "hashed"
+        },
+        {
+          "name": "avatar_url"
+        }
+      ],
+      "methods": [
+        {
+          "name": "papeisEmQualquerContexto",
+          "returns": "MorphToMany",
+          "visibility": "public"
+        },
+        {
+          "name": "tenants",
+          "returns": "BelongsToMany",
+          "visibility": "public"
+        },
+        {
+          "name": "vinculosSociais",
+          "returns": "HasMany",
+          "visibility": "public"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "protected $fillable = [",
+          "label": {
+            "pt": "$fillable: os atributos desenhados",
+            "en": "$fillable: shown attributes"
+          }
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "protected function casts(): array",
+          "label": {
+            "pt": "casts(): o tipo dos atributos",
+            "en": "casts(): attribute types"
           }
         }
       ]
@@ -252,8 +359,8 @@
       "label": "Projeto",
       "kind": "class",
       "sublabel": {
-        "pt": "tabela projetos",
-        "en": "projetos table"
+        "pt": "tabela projetos · tenant() vem da trait BelongsToTenant",
+        "en": "projetos table · tenant() from BelongsToTenant trait"
       },
       "row": 1,
       "col": 2,
@@ -265,7 +372,8 @@
       "methods": [
         {
           "name": "tenant",
-          "returns": "BelongsTo"
+          "returns": "BelongsTo",
+          "visibility": "public"
         }
       ],
       "sources": [
@@ -273,62 +381,22 @@
           "arquivo": "app/Models/Projeto.php",
           "trecho": "class Projeto extends Model implements Auditable, HasMedia",
           "label": {
-            "pt": "class Projeto (declaração)",
-            "en": "class Projeto (declared)"
+            "pt": "declaração da classe",
+            "en": "class declaration"
           }
         },
         {
           "arquivo": "app/Models/Projeto.php",
-          "trecho": "use AuditsFillables;\n    use BelongsToTenant;\n    use InteractsWithMedia;\n    use ModeloCacheavel;\n\n    /**\n     * Sem esta trait a Lixeira lista VAZIO: a tela lê `recycle_bin_items`, e quem grava a linha\n     * ali é o evento `deleted` dela (`vendor/promethys/revive/src/Concerns/Recyclable.php:29-45`).\n     * Este model ficou só com `SoftDeletes` da 0.17.0 até a feature de status do usuário, e a\n     * Lixeira nunca mostrou um projeto. Guarda: `tests/Kit/LixeiraTest.php`.\n     */\n    use Recyclable;\n\n    /**\n     * Apagar aqui é reversível — e é o que dá conteúdo à Lixeira do /infra\n     * (`promethys/revive`, registrado no InfraPanelProvider).\n     *\n     * Duas consequências que valem para QUALQUER model que ganhe a trait:\n     *\n     * 1. `delete()` passa a gravar `deleted_at` em vez de remover a linha. Índice\n     *    único continua ocupado pelo registro apagado — se `projetos` tivesse um\n     *    unique em `nome`, não daria para recriar com o mesmo nome.\n     * 2. O registro some das queries por causa do escopo global do `SoftDeletes`,\n     *    que roda ANTES do escopo de tenant do `BelongsToTenant`. Os dois convivem;\n     *    a ordem não importa porque ambos são `where`.\n     *\n     * Model nova com esta trait precisa entrar na lista `models()` do `RevivePlugin` E usar\n     * `Recyclable` (abaixo), senão fica apagada sem tela para restaurar.\n     */\n    use SoftDeletes;\n\n    use TemUuid;",
-          "label": "use (traits)"
-        },
-        {
-          "arquivo": "app/Traits/BelongsToTenant.php",
-          "trecho": "public function tenant(): BelongsTo",
+          "trecho": "protected $fillable = [",
           "label": {
-            "pt": "relação tenant",
-            "en": "tenant link"
-          }
-        }
-      ]
-    },
-    {
-      "id": "Role",
-      "label": "Role",
-      "kind": "class",
-      "sublabel": {
-        "pt": "tabela roles",
-        "en": "roles table"
-      },
-      "row": 0,
-      "col": 0,
-      "methods": [
-        {
-          "name": "convites",
-          "returns": "HasMany"
-        }
-      ],
-      "sources": [
-        {
-          "arquivo": "app/Models/Role.php",
-          "trecho": "class Role extends SpatieRole",
-          "label": {
-            "pt": "class Role (declaração)",
-            "en": "class Role (declared)"
+            "pt": "$fillable: os atributos desenhados",
+            "en": "$fillable: shown attributes"
           }
         },
         {
-          "arquivo": "app/Models/Role.php",
-          "trecho": "use TemUuid;",
-          "label": "use (traits)"
-        },
-        {
-          "arquivo": "app/Models/Role.php",
-          "trecho": "public function convites(): HasMany",
-          "label": {
-            "pt": "relação convites",
-            "en": "convites link"
-          }
+          "arquivo": "app/Models/Projeto.php",
+          "trecho": "use BelongsToTenant;",
+          "label": "use BelongsToTenant"
         }
       ]
     },
@@ -337,8 +405,8 @@
       "label": "AgenteIa",
       "kind": "class",
       "sublabel": {
-        "pt": "tabela agentes_ia",
-        "en": "agentes_ia table"
+        "pt": "tabela agentes_ia · sem relação própria",
+        "en": "agentes_ia table · no own relations"
       },
       "row": 2,
       "col": 1,
@@ -391,72 +459,24 @@
           "arquivo": "app/Models/AgenteIa.php",
           "trecho": "class AgenteIa extends Model implements Auditable",
           "label": {
-            "pt": "class AgenteIa (declaração)",
-            "en": "class AgenteIa (declared)"
+            "pt": "declaração da classe",
+            "en": "class declaration"
           }
         },
         {
           "arquivo": "app/Models/AgenteIa.php",
-          "trecho": "use AuditsFillables;\n    use TemUuid;",
-          "label": "use (traits)"
-        }
-      ]
-    },
-    {
-      "id": "VinculoSocial",
-      "label": "VinculoSocial",
-      "kind": "class",
-      "sublabel": {
-        "pt": "tabela vinculos_sociais",
-        "en": "vinculos_sociais table"
-      },
-      "row": 1,
-      "col": 0,
-      "attributes": [
-        {
-          "name": "user_id"
-        },
-        {
-          "name": "provedor"
-        },
-        {
-          "name": "sub"
-        },
-        {
-          "name": "confirmado_em",
-          "type": "datetime"
-        },
-        {
-          "name": "ultimo_acesso_em",
-          "type": "datetime"
-        }
-      ],
-      "methods": [
-        {
-          "name": "user",
-          "returns": "BelongsTo"
-        }
-      ],
-      "sources": [
-        {
-          "arquivo": "app/Models/VinculoSocial.php",
-          "trecho": "class VinculoSocial extends Model",
+          "trecho": "protected $fillable = [",
           "label": {
-            "pt": "class VinculoSocial (declaração)",
-            "en": "class VinculoSocial (declared)"
+            "pt": "$fillable: os atributos desenhados",
+            "en": "$fillable: shown attributes"
           }
         },
         {
-          "arquivo": "database/migrations/2026_08_26_172455_create_vinculos_sociais_table.php",
-          "trecho": "$table->foreignId('user_id')->constrained()->cascadeOnDelete();",
-          "label": "FK user_id cascadeOnDelete"
-        },
-        {
-          "arquivo": "app/Models/VinculoSocial.php",
-          "trecho": "public function user(): BelongsTo",
+          "arquivo": "app/Models/AgenteIa.php",
+          "trecho": "protected function casts(): array",
           "label": {
-            "pt": "relação user",
-            "en": "user link"
+            "pt": "casts(): o tipo dos atributos",
+            "en": "casts(): attribute types"
           }
         }
       ]
@@ -464,53 +484,117 @@
   ],
   "relationships": [
     {
-      "id": "r1",
+      "id": "user-papeis",
       "from": "User",
       "to": "Role",
       "kind": "association",
-      "label": "papeisEmQualquerContexto"
+      "label": "papeisEmQualquerContexto",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "public function papeisEmQualquerContexto(): MorphToMany"
+      }
     },
     {
-      "id": "r2",
+      "id": "user-tenants",
       "from": "User",
       "to": "Tenant",
       "kind": "association",
-      "label": "tenants / users"
+      "label": "tenants",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "public function tenants(): BelongsToMany"
+      }
     },
     {
-      "id": "r3",
+      "id": "user-vinculos",
       "from": "User",
       "to": "VinculoSocial",
-      "kind": "composition",
-      "label": "vinculosSociais / user"
+      "kind": "association",
+      "label": "vinculosSociais",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "public function vinculosSociais(): HasMany"
+      }
     },
     {
-      "id": "r4",
+      "id": "tenant-users",
+      "from": "Tenant",
+      "to": "User",
+      "kind": "association",
+      "label": "users",
+      "prova": {
+        "arquivo": "app/Models/Tenant.php",
+        "trecho": "public function users(): BelongsToMany"
+      }
+    },
+    {
+      "id": "convite-papel",
       "from": "Convite",
       "to": "Role",
       "kind": "association",
-      "label": "papel / convites"
+      "label": {
+        "pt": "papel",
+        "en": "role"
+      },
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "public function papel(): BelongsTo"
+      }
     },
     {
-      "id": "r5",
+      "id": "convite-tenant",
       "from": "Convite",
       "to": "Tenant",
       "kind": "association",
-      "label": "tenant"
+      "label": "tenant",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "public function tenant(): BelongsTo"
+      }
     },
     {
-      "id": "r6",
+      "id": "convite-convidador",
       "from": "Convite",
       "to": "User",
       "kind": "association",
-      "label": "convidadoPor"
+      "label": "convidadoPor",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "public function convidadoPor(): BelongsTo"
+      }
     },
     {
-      "id": "r7",
+      "id": "role-convites",
+      "from": "Role",
+      "to": "Convite",
+      "kind": "association",
+      "label": "convites",
+      "prova": {
+        "arquivo": "app/Models/Role.php",
+        "trecho": "public function convites(): HasMany"
+      }
+    },
+    {
+      "id": "vinculo-user",
+      "from": "VinculoSocial",
+      "to": "User",
+      "kind": "association",
+      "label": "user",
+      "prova": {
+        "arquivo": "app/Models/VinculoSocial.php",
+        "trecho": "public function user(): BelongsTo"
+      }
+    },
+    {
+      "id": "projeto-tenant",
       "from": "Projeto",
       "to": "Tenant",
       "kind": "association",
-      "label": "tenant"
+      "label": "tenant",
+      "prova": {
+        "arquivo": "app/Traits/BelongsToTenant.php",
+        "trecho": "public function tenant(): BelongsTo"
+      }
     }
   ],
   "cards": [
@@ -522,16 +606,54 @@
       },
       "items": [
         {
-          "pt": "O archify não tem kind \"trait\": as 4 traits do kit aparecem como class com o sublabel \"trait PHP (use)\", e o uso é a seta tracejada de dependência.",
-          "en": "archify has no \"trait\" kind: the kit's 4 traits appear as class with the sublabel \"PHP trait (use)\", and usage is the dashed dependency arrow."
+          "pt": "Cada seta é um método de relação que o código do kit declara: sai do model que declara o método e aponta o model que ele devolve; o rótulo é o nome do método.",
+          "en": "Each arrow is a relation method declared by kit code: starts at model declaring method, points to model it returns; label is method name."
         },
         {
-          "pt": "Relações Eloquent de ida e volta viram uma linha só, com os dois nomes no rótulo (ex.: tenants / users).",
-          "en": "Two-way Eloquent relations become one line, with both names in the label (e.g.: tenants / users)."
+          "pt": "Relação de ida e volta aparece como duas setas, uma por método: tenants em User e users em Tenant; convites em Role e papel em Convite; vinculosSociais em User e user em VinculoSocial.",
+          "en": "Two-way relations appear as two arrows, one per method: tenants in User and users in Tenant; convites in Role and papel in Convite; vinculosSociais in User and user in VinculoSocial."
         },
         {
-          "pt": "Composição = FK com cascadeOnDelete (vinculos_sociais.user_id).",
-          "en": "Composition = FK with cascadeOnDelete (vinculos_sociais.user_id)."
+          "pt": "Os atributos são o $fillable de cada model, com o tipo do cast quando o model declara um.",
+          "en": "Attributes are each model's $fillable, with cast type when declared by model."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "De onde vem o alvo",
+        "en": "Target source"
+      },
+      "items": [
+        {
+          "pt": "papel() e papeisEmQualquerContexto() devolvem a classe da chave permission.models.role, e o config/permission.php do kit aponta essa chave para App\\Models\\Role.",
+          "en": "papel() and papeisEmQualquerContexto() return class from permission.models.role key; kit config/permission.php points it to App\\Models\\Role."
+        },
+        {
+          "pt": "tenant() de Projeto vem da trait BelongsToTenant, de app/Traits, que o model usa.",
+          "en": "Projeto tenant() comes from BelongsToTenant trait in app/Traits, used by model."
+        },
+        {
+          "pt": "Projeto é a demonstração que o kit:tenancy --demo usa para provar o isolamento entre organizações.",
+          "en": "Projeto is demo used by kit:tenancy --demo to prove organization isolation."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Fora do desenho",
+        "en": "Outside diagram"
+      },
+      "items": [
+        {
+          "pt": "Relações que vêm de trait de pacote: roles() e permissions() do HasRoles, media() do InteractsWithMedia, audits() do Auditable do owen-it, authentications() do AuthenticationLoggable e notifications() do Notifiable. O método mora em vendor/, fora do commit publicado.",
+          "en": "Relations from package traits: roles() and permissions() from HasRoles, media() from InteractsWithMedia, audits() from owen-it Auditable, authentications() from AuthenticationLoggable and notifications() from Notifiable. Methods live in vendor/, outside published commit."
+        },
+        {
+          "pt": "Herança, contratos e traits têm diagramas próprios.",
+          "en": "Inheritance, contracts and traits have own diagrams."
         }
       ]
     }

@@ -1,0 +1,660 @@
+{
+  "slug": "classes-heranca-e-contratos",
+  "tipo": "class",
+  "titulo": {
+    "pt": "Models do kit: superclasses e contratos",
+    "en": "Kit models: base classes and contracts"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "class",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 90
+  },
+  "types": [
+    {
+      "id": "FilamentUser",
+      "label": "FilamentUser",
+      "kind": "interface",
+      "sublabel": "Filament\\Models\\Contracts",
+      "row": 0,
+      "col": 0,
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "use Filament\\Models\\Contracts\\FilamentUser;",
+          "label": {
+            "pt": "import em User",
+            "en": "import in User"
+          }
+        }
+      ]
+    },
+    {
+      "id": "HasAvatar",
+      "label": "HasAvatar",
+      "kind": "interface",
+      "sublabel": "Filament\\Models\\Contracts",
+      "row": 0,
+      "col": 1,
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "use Filament\\Models\\Contracts\\HasAvatar;",
+          "label": {
+            "pt": "import em User",
+            "en": "import in User"
+          }
+        }
+      ]
+    },
+    {
+      "id": "HasTenants",
+      "label": "HasTenants",
+      "kind": "interface",
+      "sublabel": "Filament\\Models\\Contracts",
+      "row": 0,
+      "col": 2,
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "use Filament\\Models\\Contracts\\HasTenants;",
+          "label": {
+            "pt": "import em User",
+            "en": "import in User"
+          }
+        }
+      ]
+    },
+    {
+      "id": "MustVerifyEmail",
+      "label": "MustVerifyEmail",
+      "kind": "interface",
+      "sublabel": "Illuminate\\Contracts\\Auth",
+      "row": 0,
+      "col": 3,
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "use Illuminate\\Contracts\\Auth\\MustVerifyEmail;",
+          "label": {
+            "pt": "import em User",
+            "en": "import in User"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Authenticatable",
+      "label": "Authenticatable",
+      "kind": "class",
+      "sublabel": {
+        "pt": "alias de Illuminate\\Foundation\\Auth\\User",
+        "en": "alias for Illuminate\\Foundation\\Auth\\User"
+      },
+      "row": 1,
+      "col": 0,
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "use Illuminate\\Foundation\\Auth\\User as Authenticatable;",
+          "label": {
+            "pt": "import em User",
+            "en": "import in User"
+          }
+        }
+      ]
+    },
+    {
+      "id": "User",
+      "label": "User",
+      "kind": "class",
+      "sublabel": "app/Models",
+      "row": 1,
+      "col": 1.5,
+      "methods": [
+        {
+          "name": "canAccessPanel",
+          "returns": "bool",
+          "visibility": "public",
+          "parameters": "panel: Panel"
+        },
+        {
+          "name": "getFilamentAvatarUrl",
+          "returns": "?string",
+          "visibility": "public"
+        },
+        {
+          "name": "getTenants",
+          "returns": "Collection",
+          "visibility": "public",
+          "parameters": "panel: Panel"
+        },
+        {
+          "name": "canAccessTenant",
+          "returns": "bool",
+          "visibility": "public",
+          "parameters": "tenant: Model"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function canAccessPanel(Panel $panel): bool",
+          "label": "canAccessPanel (FilamentUser)"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function getTenants(Panel $panel): Collection",
+          "label": "getTenants (HasTenants)"
+        }
+      ]
+    },
+    {
+      "id": "Auditable",
+      "label": "Auditable",
+      "kind": "interface",
+      "sublabel": "OwenIt\\Auditing\\Contracts",
+      "row": 2,
+      "col": 3,
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "use OwenIt\\Auditing\\Contracts\\Auditable;",
+          "label": {
+            "pt": "import em User",
+            "en": "import in User"
+          }
+        }
+      ]
+    },
+    {
+      "id": "HasCurrentTenantLabel",
+      "label": "HasCurrentTenantLabel",
+      "kind": "interface",
+      "sublabel": "Filament\\Models\\Contracts",
+      "row": 2,
+      "col": 0,
+      "sources": [
+        {
+          "arquivo": "app/Models/Tenant.php",
+          "trecho": "use Filament\\Models\\Contracts\\HasCurrentTenantLabel;",
+          "label": {
+            "pt": "import em Tenant",
+            "en": "import in Tenant"
+          }
+        }
+      ]
+    },
+    {
+      "id": "HasName",
+      "label": "HasName",
+      "kind": "interface",
+      "sublabel": "Filament\\Models\\Contracts",
+      "row": 2,
+      "col": 1,
+      "sources": [
+        {
+          "arquivo": "app/Models/Tenant.php",
+          "trecho": "use Filament\\Models\\Contracts\\HasName;",
+          "label": {
+            "pt": "import em Tenant",
+            "en": "import in Tenant"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Model",
+      "label": "Model",
+      "kind": "abstract",
+      "sublabel": "Illuminate\\Database\\Eloquent",
+      "row": 2,
+      "col": 2,
+      "sources": [
+        {
+          "arquivo": "app/Models/AgenteIa.php",
+          "trecho": "use Illuminate\\Database\\Eloquent\\Model;",
+          "label": {
+            "pt": "import em AgenteIa",
+            "en": "import in AgenteIa"
+          }
+        }
+      ]
+    },
+    {
+      "id": "HasMedia",
+      "label": "HasMedia",
+      "kind": "interface",
+      "sublabel": "Spatie\\MediaLibrary",
+      "row": 2,
+      "col": 4,
+      "sources": [
+        {
+          "arquivo": "app/Models/Projeto.php",
+          "trecho": "use Spatie\\MediaLibrary\\HasMedia;",
+          "label": {
+            "pt": "import em Projeto",
+            "en": "import in Projeto"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Tenant",
+      "label": "Tenant",
+      "kind": "class",
+      "sublabel": "app/Models",
+      "row": 3,
+      "col": 0,
+      "methods": [
+        {
+          "name": "getCurrentTenantLabel",
+          "returns": "string",
+          "visibility": "public"
+        },
+        {
+          "name": "getFilamentName",
+          "returns": "string",
+          "visibility": "public"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "app/Models/Tenant.php",
+          "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        },
+        {
+          "arquivo": "app/Models/Tenant.php",
+          "trecho": "public function getCurrentTenantLabel(): string",
+          "label": "getCurrentTenantLabel"
+        },
+        {
+          "arquivo": "app/Models/Tenant.php",
+          "trecho": "public function getFilamentName(): string",
+          "label": "getFilamentName (HasName)"
+        }
+      ]
+    },
+    {
+      "id": "Convite",
+      "label": "Convite",
+      "kind": "class",
+      "sublabel": "app/Models",
+      "row": 3,
+      "col": 2,
+      "sources": [
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "class Convite extends Model implements Auditable",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Projeto",
+      "label": "Projeto",
+      "kind": "class",
+      "sublabel": "app/Models",
+      "row": 3,
+      "col": 4,
+      "sources": [
+        {
+          "arquivo": "app/Models/Projeto.php",
+          "trecho": "class Projeto extends Model implements Auditable, HasMedia",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "AgenteIa",
+      "label": "AgenteIa",
+      "kind": "class",
+      "sublabel": "app/Models",
+      "row": 3,
+      "col": 3,
+      "sources": [
+        {
+          "arquivo": "app/Models/AgenteIa.php",
+          "trecho": "class AgenteIa extends Model implements Auditable",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "VinculoSocial",
+      "label": "VinculoSocial",
+      "kind": "class",
+      "sublabel": "app/Models",
+      "row": 3,
+      "col": 1,
+      "sources": [
+        {
+          "arquivo": "app/Models/VinculoSocial.php",
+          "trecho": "class VinculoSocial extends Model",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "SpatieRole",
+      "label": "SpatieRole",
+      "kind": "class",
+      "sublabel": {
+        "pt": "alias de Spatie\\Permission\\Models\\Role",
+        "en": "alias for Spatie\\Permission\\Models\\Role"
+      },
+      "row": 0,
+      "col": 4,
+      "sources": [
+        {
+          "arquivo": "app/Models/Role.php",
+          "trecho": "use Spatie\\Permission\\Models\\Role as SpatieRole;",
+          "label": {
+            "pt": "import em Role",
+            "en": "import in Role"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Role",
+      "label": "Role",
+      "kind": "class",
+      "sublabel": "app/Models",
+      "row": 1,
+      "col": 4,
+      "sources": [
+        {
+          "arquivo": "app/Models/Role.php",
+          "trecho": "class Role extends SpatieRole",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "user-FilamentUser",
+      "from": "User",
+      "to": "FilamentUser",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail"
+      }
+    },
+    {
+      "id": "user-HasAvatar",
+      "from": "User",
+      "to": "HasAvatar",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail"
+      }
+    },
+    {
+      "id": "user-HasTenants",
+      "from": "User",
+      "to": "HasTenants",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail"
+      }
+    },
+    {
+      "id": "user-MustVerifyEmail",
+      "from": "User",
+      "to": "MustVerifyEmail",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail"
+      }
+    },
+    {
+      "id": "user-Auditable",
+      "from": "User",
+      "to": "Auditable",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail"
+      }
+    },
+    {
+      "id": "user-Authenticatable",
+      "from": "User",
+      "to": "Authenticatable",
+      "kind": "inheritance",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail"
+      }
+    },
+    {
+      "id": "Tenant-Model",
+      "from": "Tenant",
+      "to": "Model",
+      "kind": "inheritance",
+      "prova": {
+        "arquivo": "app/Models/Tenant.php",
+        "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName"
+      }
+    },
+    {
+      "id": "Convite-Model",
+      "from": "Convite",
+      "to": "Model",
+      "kind": "inheritance",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "class Convite extends Model implements Auditable"
+      }
+    },
+    {
+      "id": "Projeto-Model",
+      "from": "Projeto",
+      "to": "Model",
+      "kind": "inheritance",
+      "prova": {
+        "arquivo": "app/Models/Projeto.php",
+        "trecho": "class Projeto extends Model implements Auditable, HasMedia"
+      }
+    },
+    {
+      "id": "AgenteIa-Model",
+      "from": "AgenteIa",
+      "to": "Model",
+      "kind": "inheritance",
+      "prova": {
+        "arquivo": "app/Models/AgenteIa.php",
+        "trecho": "class AgenteIa extends Model implements Auditable"
+      }
+    },
+    {
+      "id": "VinculoSocial-Model",
+      "from": "VinculoSocial",
+      "to": "Model",
+      "kind": "inheritance",
+      "prova": {
+        "arquivo": "app/Models/VinculoSocial.php",
+        "trecho": "class VinculoSocial extends Model"
+      }
+    },
+    {
+      "id": "Tenant-Auditable",
+      "from": "Tenant",
+      "to": "Auditable",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/Tenant.php",
+        "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName"
+      }
+    },
+    {
+      "id": "Convite-Auditable",
+      "from": "Convite",
+      "to": "Auditable",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "class Convite extends Model implements Auditable"
+      }
+    },
+    {
+      "id": "Projeto-Auditable",
+      "from": "Projeto",
+      "to": "Auditable",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/Projeto.php",
+        "trecho": "class Projeto extends Model implements Auditable, HasMedia"
+      }
+    },
+    {
+      "id": "AgenteIa-Auditable",
+      "from": "AgenteIa",
+      "to": "Auditable",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/AgenteIa.php",
+        "trecho": "class AgenteIa extends Model implements Auditable"
+      }
+    },
+    {
+      "id": "Tenant-HasCurrentTenantLabel",
+      "from": "Tenant",
+      "to": "HasCurrentTenantLabel",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/Tenant.php",
+        "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName"
+      }
+    },
+    {
+      "id": "Tenant-HasName",
+      "from": "Tenant",
+      "to": "HasName",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/Tenant.php",
+        "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName"
+      }
+    },
+    {
+      "id": "Projeto-HasMedia",
+      "from": "Projeto",
+      "to": "HasMedia",
+      "kind": "realization",
+      "prova": {
+        "arquivo": "app/Models/Projeto.php",
+        "trecho": "class Projeto extends Model implements Auditable, HasMedia"
+      }
+    },
+    {
+      "id": "Role-SpatieRole",
+      "from": "Role",
+      "to": "SpatieRole",
+      "kind": "inheritance",
+      "prova": {
+        "arquivo": "app/Models/Role.php",
+        "trecho": "class Role extends SpatieRole"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Cada seta sai da declaração da classe do model (extends e implements). A de linha contínua aponta a superclasse, e a de linha tracejada, o contrato que o model cumpre; as duas terminam num triângulo vazado.",
+          "en": "Each arrow starts at the model class declaration (extends and implements). Solid lines point to the base class; dashed lines to the contract the model fulfills. Both end in a hollow triangle."
+        },
+        {
+          "pt": "Superclasses e contratos são de pacote; a fonte de cada um é o import no model, que dá o nome completo.",
+          "en": "Base classes and contracts come from packages; each source is the model import, which gives its full name."
+        },
+        {
+          "pt": "Nos models, os métodos desenhados são os que o próprio model escreve para cumprir um contrato: os de FilamentUser, HasAvatar e HasTenants em User, e os de HasCurrentTenantLabel e HasName em Tenant.",
+          "en": "Shown model methods are those the model defines to fulfill a contract: FilamentUser, HasAvatar and HasTenants in User; HasCurrentTenantLabel and HasName in Tenant."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Quem cumpre o resto dos contratos",
+        "en": "Who fulfills other contracts"
+      },
+      "items": [
+        {
+          "pt": "Auditable: a trait AuditsFillables, de app/Traits, que os cinco models usam.",
+          "en": "Auditable: AuditsFillables trait in app/Traits, used by all five models."
+        },
+        {
+          "pt": "HasMedia: a trait InteractsWithMedia, do spatie/laravel-medialibrary, que Projeto usa.",
+          "en": "HasMedia: InteractsWithMedia trait from spatie/laravel-medialibrary, used by Projeto."
+        },
+        {
+          "pt": "MustVerifyEmail: o que User herda de Authenticatable, que usa a trait MustVerifyEmail do Laravel (lido em vendor/).",
+          "en": "MustVerifyEmail: inherited by User from Authenticatable, which uses Laravel's MustVerifyEmail trait (read in vendor/)."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Fora do desenho",
+        "en": "Outside diagram"
+      },
+      "items": [
+        {
+          "pt": "Authenticatable e SpatieRole estendem Model, e Model é abstract: fatos lidos em vendor/, sem âncora no commit publicado. Por isso não há seta entre as superclasses.",
+          "en": "Authenticatable and SpatieRole extend Model, and Model is abstract: facts read in vendor/, with no anchor in the published commit. Thus no arrow joins base classes."
+        }
+      ]
+    }
+  ]
+}

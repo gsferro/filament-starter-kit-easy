@@ -1,0 +1,697 @@
+{
+  "slug": "ia-do-prompt-ao-ledger",
+  "tipo": "dataflow",
+  "titulo": {
+    "pt": "IA: do prompt ao ledger, com os caminhos sem redação de PII",
+    "en": "AI: prompt to ledger, with paths without PII redaction"
+  },
+  "paineis": [
+    "app",
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "caminho do prompt até a redação de PII e o provedor",
+            "en": "prompt path to PII redaction and provider"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "texto sem redação de PII que chega ao provedor",
+            "en": "text reaching provider without PII redaction"
+          }
+        },
+        "dashed": {
+          "label": {
+            "pt": "evento do SDK que o ledger ouve",
+            "en": "SDK event heard by ledger"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "dado entre peças",
+            "en": "data among parts"
+          }
+        },
+        "database": {
+          "label": {
+            "pt": "tabela do banco",
+            "en": "database table"
+          }
+        }
+      }
+    }
+  },
+  "stages": [
+    {
+      "label": {
+        "pt": "Tela",
+        "en": "View"
+      }
+    },
+    {
+      "label": {
+        "pt": "Agente",
+        "en": "Agent"
+      }
+    },
+    {
+      "label": "Guardrails"
+    },
+    {
+      "label": {
+        "pt": "Inferência",
+        "en": "Inference"
+      }
+    },
+    {
+      "label": {
+        "pt": "Registro",
+        "en": "Record"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      },
+      "sublabel": {
+        "pt": "quem usa o chat",
+        "en": "chat user"
+      },
+      "stage": 0,
+      "row": 1
+    },
+    {
+      "id": "widget",
+      "type": "frontend",
+      "label": "AssistenteChatWidget",
+      "sublabel": {
+        "pt": "Livewire: pergunta e deltas",
+        "en": "Livewire: query and deltas"
+      },
+      "stage": 0,
+      "row": 2,
+      "sources": [
+        {
+          "arquivo": "app/Livewire/AssistenteChatWidget.php",
+          "trecho": "class AssistenteChatWidget extends Component",
+          "label": "AssistenteChatWidget"
+        },
+        {
+          "arquivo": "app/Livewire/AssistenteChatWidget.php",
+          "trecho": "if (AgentesDeIa::assistenteNoPainel($painel)) {",
+          "label": "exigirUsoNoPainel"
+        },
+        {
+          "arquivo": "app/Livewire/AssistenteChatWidget.php",
+          "trecho": "#[Validate('required|string|max:2000', message: [",
+          "label": {
+            "pt": "mensagem",
+            "en": "message"
+          }
+        }
+      ]
+    },
+    {
+      "id": "assistente",
+      "type": "backend",
+      "label": "Assistente",
+      "sublabel": {
+        "pt": "agente do chat",
+        "en": "chat agent"
+      },
+      "stage": 1,
+      "row": 1,
+      "sources": [
+        {
+          "arquivo": "app/Ai/Agents/Assistente.php",
+          "trecho": "final class Assistente extends AgenteBase implements Conversational, HasTools",
+          "label": "Assistente"
+        },
+        {
+          "arquivo": "app/Ai/Agents/Assistente.php",
+          "trecho": "return [...parent::middleware(), new AiAuditMiddleware];",
+          "label": "middleware"
+        },
+        {
+          "arquivo": "database/seeders/AssistenteSeeder.php",
+          "trecho": "'guardrails' => ['prompt_injection', 'prompt_guard_local', 'pii_redactor', 'filtro_saida_sensivel'],",
+          "label": {
+            "pt": "ordem dos guardrails",
+            "en": "guardrail order"
+          }
+        }
+      ]
+    },
+    {
+      "id": "lembrar",
+      "type": "backend",
+      "label": "RememberConversation",
+      "sublabel": "trait RemembersConversations",
+      "stage": 1,
+      "row": 3,
+      "sources": [
+        {
+          "arquivo": "app/Ai/Agents/Assistente.php",
+          "trecho": "use RemembersConversations;",
+          "label": "Assistente"
+        },
+        {
+          "arquivo": "app/Livewire/AssistenteChatWidget.php",
+          "trecho": "$this->conversaId       = $resposta->conversationId;",
+          "label": {
+            "pt": "responder",
+            "en": "reply"
+          }
+        }
+      ]
+    },
+    {
+      "id": "classificador",
+      "type": "security",
+      "label": "GarantirPromptSeguro",
+      "sublabel": "Middleware · prompt_guard_local",
+      "stage": 2,
+      "row": 0,
+      "sources": [
+        {
+          "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
+          "trecho": "final class GarantirPromptSeguroMiddleware",
+          "label": "GarantirPromptSeguroMiddleware"
+        },
+        {
+          "arquivo": "app/Ai/Guardrails/GuardrailRegistry.php",
+          "trecho": "'prompt_guard_local'    => GarantirPromptSeguroMiddleware::class,",
+          "label": "GuardrailRegistry"
+        },
+        {
+          "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
+          "trecho": "throw new PromptInjecaoBloqueadaException(PromptInjecaoBloqueadaException::MENSAGEM);",
+          "label": {
+            "pt": "bloqueio",
+            "en": "block"
+          }
+        }
+      ]
+    },
+    {
+      "id": "guarda",
+      "type": "backend",
+      "label": "GuardaPrompt",
+      "sublabel": {
+        "pt": "classificador",
+        "en": "classifier"
+      },
+      "stage": 3,
+      "row": 0,
+      "sources": [
+        {
+          "arquivo": "app/Ai/Agents/GuardaPrompt.php",
+          "trecho": "final class GuardaPrompt extends AgenteBase implements HasStructuredOutput",
+          "label": "GuardaPrompt"
+        },
+        {
+          "arquivo": "app/Ai/Agents/GuardaPrompt.php",
+          "trecho": "return 'guarda-prompt';",
+          "label": "slug"
+        },
+        {
+          "arquivo": "database/seeders/GuardaPromptSeeder.php",
+          "trecho": "'provider'  => null,",
+          "label": {
+            "pt": "provider do catálogo",
+            "en": "catalog provider"
+          }
+        }
+      ]
+    },
+    {
+      "id": "redator",
+      "type": "security",
+      "label": "PiiRedactorMiddleware",
+      "sublabel": {
+        "pt": "pii_redactor: redige o prompt",
+        "en": "pii_redactor: redacts prompt"
+      },
+      "stage": 2,
+      "row": 1,
+      "sources": [
+        {
+          "arquivo": "app/Ai/Guardrails/PiiRedactorMiddleware.php",
+          "trecho": "final class PiiRedactorMiddleware",
+          "label": "PiiRedactorMiddleware"
+        },
+        {
+          "arquivo": "app/Ai/Guardrails/PiiRedactorMiddleware.php",
+          "trecho": "$redigido = $this->redactor->redigir($original);",
+          "label": "handle"
+        },
+        {
+          "arquivo": "app/Ai/Guardrails/PiiRedactor.php",
+          "trecho": "public function redigir(string $texto): string",
+          "label": "PiiRedactor"
+        }
+      ]
+    },
+    {
+      "id": "provedor",
+      "type": "external",
+      "label": {
+        "pt": "Provedor de IA",
+        "en": "AI provider"
+      },
+      "sublabel": {
+        "pt": "AI_PROVIDER ou o do catálogo",
+        "en": "AI_PROVIDER or catalog value"
+      },
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "mensagens",
+      "type": "database",
+      "label": "ConversationMessage",
+      "sublabel": "agent_conversation_messages",
+      "stage": 4,
+      "row": 3,
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_165028_create_agent_conversations_table.php",
+          "trecho": "Schema::create($messagesTable, function (Blueprint $table) {",
+          "label": "create_agent_conversations_table"
+        },
+        {
+          "arquivo": "database/migrations/2026_08_12_165028_create_agent_conversations_table.php",
+          "trecho": "$table->text('content');",
+          "label": "content"
+        },
+        {
+          "arquivo": "app/Livewire/AssistenteChatWidget.php",
+          "trecho": "return ConversationMessage::query()",
+          "label": {
+            "pt": "mensagens",
+            "en": "messages"
+          }
+        }
+      ]
+    },
+    {
+      "id": "registrar",
+      "type": "backend",
+      "label": "RegistrarAiRun",
+      "sublabel": {
+        "pt": "listener do ledger",
+        "en": "ledger listener"
+      },
+      "stage": 4,
+      "row": 0,
+      "sources": [
+        {
+          "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+          "trecho": "final class RegistrarAiRun",
+          "label": "RegistrarAiRun"
+        },
+        {
+          "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+          "trecho": "'tenant_id'    => app(ResolvedorDeTenant::class)->id(),",
+          "label": "tenant_id"
+        },
+        {
+          "arquivo": "app/Ai/Support/ResolvedorDeTenant.php",
+          "trecho": "return (string) ($organizacao?->getKey() ?? config('ai-tasks.default_tenant', 'default'));",
+          "label": "ResolvedorDeTenant"
+        }
+      ]
+    },
+    {
+      "id": "ai-runs",
+      "type": "database",
+      "label": "ai_runs",
+      "sublabel": {
+        "pt": "ledger de execuções",
+        "en": "run ledger"
+      },
+      "stage": 4,
+      "row": 1,
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164948_create_ai_runs_table.php",
+          "trecho": "$t->string('tenant_id')->index();",
+          "label": "tenant_id"
+        },
+        {
+          "arquivo": "database/migrations/2026_08_12_164948_create_ai_runs_table.php",
+          "trecho": "$t->decimal('cost', 12, 8)->nullable();",
+          "label": "cost"
+        }
+      ]
+    },
+    {
+      "id": "recurso",
+      "type": "frontend",
+      "label": "AiRunResource",
+      "sublabel": {
+        "pt": "/infra, Execuções de IA",
+        "en": "/infra, AI runs"
+      },
+      "stage": 4,
+      "row": 2,
+      "sources": [
+        {
+          "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+          "trecho": "class AiRunResource extends Resource",
+          "label": "AiRunResource"
+        },
+        {
+          "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+          "trecho": "return (Auth::user()?->can('ver-ai-tasks') ?? false) && parent::canAccess();",
+          "label": "canAccess"
+        }
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "pergunta",
+      "from": "navegador",
+      "to": "widget",
+      "label": {
+        "pt": "pergunta",
+        "en": "query"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "resources/views/livewire/assistente-chat-widget.blade.php",
+        "trecho": "<form wire:submit=\"enviar\""
+      }
+    },
+    {
+      "id": "stream",
+      "from": "widget",
+      "to": "assistente",
+      "label": {
+        "pt": "prompt original",
+        "en": "original prompt"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "app/Livewire/AssistenteChatWidget.php",
+        "trecho": "$resposta = $agente->stream($pendente);"
+      }
+    },
+    {
+      "id": "guardrails",
+      "from": "assistente",
+      "to": "classificador",
+      "label": {
+        "pt": "texto original",
+        "en": "original text"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "app/Ai/Agents/AgenteBase.php",
+        "trecho": "return [new BudgetGuardMiddleware, ...GuardrailRegistry::resolver($guardrails)];"
+      }
+    },
+    {
+      "id": "classificar",
+      "from": "classificador",
+      "to": "guarda",
+      "label": {
+        "pt": "texto original",
+        "en": "original text"
+      },
+      "prova": {
+        "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
+        "trecho": "$resposta = (new GuardaPrompt)->prompt($prompt->prompt);"
+      }
+    },
+    {
+      "id": "caminho-classificador",
+      "from": "guarda",
+      "to": "provedor",
+      "label": {
+        "pt": "texto original",
+        "en": "original text"
+      },
+      "variant": "security",
+      "prova": {
+        "arquivo": "app/Ai/Agents/AgenteBase.php",
+        "trecho": "return $this->agente()->provider;"
+      }
+    },
+    {
+      "id": "seguro",
+      "from": "classificador",
+      "to": "redator",
+      "label": {
+        "pt": "texto não barrado",
+        "en": "allowed text"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
+        "trecho": "if ($veredito === null || $veredito->seguro) {"
+      }
+    },
+    {
+      "id": "redigido",
+      "from": "redator",
+      "to": "provedor",
+      "label": {
+        "pt": "prompt redigido",
+        "en": "redacted prompt"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "app/Ai/Guardrails/PiiRedactorMiddleware.php",
+        "trecho": "$prompt = $prompt->revise($redigido);"
+      }
+    },
+    {
+      "id": "lembra",
+      "from": "assistente",
+      "to": "lembrar",
+      "label": {
+        "pt": "prompt original",
+        "en": "original prompt"
+      },
+      "prova": {
+        "arquivo": "app/Ai/Agents/Assistente.php",
+        "trecho": "use RemembersConversations;"
+      }
+    },
+    {
+      "id": "caminho-titulo",
+      "from": "lembrar",
+      "to": "provedor",
+      "label": {
+        "pt": "prompt p/ título",
+        "en": "title prompt"
+      },
+      "variant": "security",
+      "prova": {
+        "arquivo": "app/Livewire/AssistenteChatWidget.php",
+        "trecho": "? $agente->forUser($user)"
+      }
+    },
+    {
+      "id": "grava-conversa",
+      "from": "lembrar",
+      "to": "mensagens",
+      "label": {
+        "pt": "pergunta original",
+        "en": "original query"
+      },
+      "prova": {
+        "arquivo": "app/Livewire/AssistenteChatWidget.php",
+        "trecho": "$agente = $eraNova\n                ? $agente->forUser($user)\n                : $agente->continue($this->conversaId, as: $user);"
+      }
+    },
+    {
+      "id": "caminho-historico",
+      "from": "mensagens",
+      "to": "provedor",
+      "label": {
+        "pt": "histórico",
+        "en": "history"
+      },
+      "variant": "security",
+      "prova": {
+        "arquivo": "app/Livewire/AssistenteChatWidget.php",
+        "trecho": ": $agente->continue($this->conversaId, as: $user);"
+      }
+    },
+    {
+      "id": "deltas",
+      "from": "provedor",
+      "to": "widget",
+      "label": "deltas",
+      "prova": {
+        "arquivo": "app/Livewire/AssistenteChatWidget.php",
+        "trecho": "$this->stream(content: $evento->delta, name: 'resposta-parcial');"
+      }
+    },
+    {
+      "id": "deltas-na-tela",
+      "from": "widget",
+      "to": "navegador",
+      "label": {
+        "pt": "deltas sem filtro",
+        "en": "unfiltered deltas"
+      },
+      "prova": {
+        "arquivo": "resources/views/livewire/assistente-chat-widget.blade.php",
+        "trecho": "wire:stream=\"resposta-parcial\""
+      }
+    },
+    {
+      "id": "evento-classificador",
+      "from": "guarda",
+      "to": "registrar",
+      "label": "AgentPrompted",
+      "variant": "dashed",
+      "prova": {
+        "arquivo": "app/Providers/KitServiceProvider.php",
+        "trecho": "Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class);"
+      }
+    },
+    {
+      "id": "evento-assistente",
+      "from": "assistente",
+      "to": "registrar",
+      "label": "AgentStreamed",
+      "variant": "dashed",
+      "prova": {
+        "arquivo": "app/Providers/KitServiceProvider.php",
+        "trecho": "Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class);"
+      }
+    },
+    {
+      "id": "linha",
+      "from": "registrar",
+      "to": "ai-runs",
+      "label": {
+        "pt": "linha por evento",
+        "en": "row per event"
+      },
+      "prova": {
+        "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+        "trecho": "AiRun::create(["
+      }
+    },
+    {
+      "id": "ledger",
+      "from": "ai-runs",
+      "to": "recurso",
+      "label": {
+        "pt": "execuções",
+        "en": "runs"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+        "trecho": "protected static ?string $model = AiRun::class;"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": {
+        "pt": "Três caminhos levam texto sem redação de PII ao provedor",
+        "en": "Three paths send text to provider without PII redaction"
+      },
+      "items": [
+        {
+          "pt": "O mapa mostra o caminho que o código faz hoje: o PiiRedactorMiddleware redige só o prompt do turno corrente, e três caminhos chegam ao provedor sem essa redação",
+          "en": "Map shows current code path: PiiRedactorMiddleware redacts only current turn prompt, and three paths reach provider without this redaction"
+        },
+        {
+          "pt": "Classificador: o GarantirPromptSeguroMiddleware entrega o texto original ao GuardaPrompt antes do PiiRedactorMiddleware, na ordem de guardrails que o AssistenteSeeder semeia no catálogo. O provider é o do registro guarda-prompt; de fábrica é nulo, e aí vale o AI_PROVIDER",
+          "en": "Classifier: GarantirPromptSeguroMiddleware sends original text to GuardaPrompt before PiiRedactorMiddleware, in guardrail order seeded by AssistenteSeeder in catalog. Provider comes from guarda-prompt record; default is null, using AI_PROVIDER"
+        },
+        {
+          "pt": "Título da conversa: na conversa nova (forUser), o RememberConversation pede ao provedor um título a partir do prompt original, sem passar pelo PiiRedactorMiddleware. A inferência roda no SDK laravel/ai; a prova é a linha do kit que abre a conversa nova",
+          "en": "Conversation title: for a new conversation (forUser), RememberConversation asks provider for a title from original prompt, bypassing PiiRedactorMiddleware. Inference runs in laravel/ai SDK; evidence is kit line opening new conversation"
+        },
+        {
+          "pt": "Histórico: a pergunta fica gravada sem redação em agent_conversation_messages e volta ao provedor como histórico nos turnos seguintes da conversa (continue). O reenvio roda no SDK laravel/ai; a prova é a linha do kit que continua a conversa",
+          "en": "History: query is saved unredacted in agent_conversation_messages and returns to provider as history in later turns (continue). Resending runs in laravel/ai SDK; evidence is kit line continuing conversation"
+        }
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Do turno ao ledger",
+        "en": "Turn to ledger"
+      },
+      "items": [
+        {
+          "pt": "O GuardaPrompt roda por prompt() e o Assistente por stream(): os eventos AgentPrompted e AgentStreamed chegam ao RegistrarAiRun, que grava uma linha em ai_runs por evento",
+          "en": "GuardaPrompt runs via prompt() and Assistente via stream(): AgentPrompted and AgentStreamed reach RegistrarAiRun, which saves one ai_runs row per event"
+        },
+        {
+          "pt": "Com o classificador respondendo, um turno grava duas linhas: a do guarda-prompt e a do assistente",
+          "en": "With classifier responding, one turn saves two rows: guarda-prompt and assistente"
+        },
+        {
+          "pt": "O tenant_id vem do ResolvedorDeTenant: a organização corrente do painel ou, fora de uma organização, ai-tasks.default_tenant",
+          "en": "tenant_id comes from ResolvedorDeTenant: current panel organization or, outside an organization, ai-tasks.default_tenant"
+        },
+        {
+          "pt": "O texto da resposta só vai para ai_runs com ai-tasks.store_request ligado",
+          "en": "Reply text only goes to ai_runs with ai-tasks.store_request on"
+        },
+        {
+          "pt": "O AiRunResource do /infra lista ai_runs para quem passa no gate ver-ai-tasks e na policy do recurso",
+          "en": "/infra AiRunResource lists ai_runs for users passing ver-ai-tasks gate and resource policy"
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Antes e depois do provedor",
+        "en": "Before and after provider"
+      },
+      "items": [
+        {
+          "pt": "Antes do classificador, o BudgetGuardMiddleware e o PromptInjectionGuardMiddleware podem barrar o turno sem chamar o provedor",
+          "en": "Before classifier, BudgetGuardMiddleware and PromptInjectionGuardMiddleware can block turn without calling provider"
+        },
+        {
+          "pt": "O GarantirPromptSeguroMiddleware só barra com veredito inseguro; sem veredito (classificador fora do ar ou resposta fora do schema), o texto segue",
+          "en": "GarantirPromptSeguroMiddleware only blocks unsafe verdicts; with no verdict (classifier down or invalid schema), text passes through"
+        },
+        {
+          "pt": "O AiAuditMiddleware, último da cadeia do Assistente, registra no canal de log ai só metadados (tamanho, tokens, latência, provider e modelo), nunca o texto",
+          "en": "AiAuditMiddleware, last in Assistente chain, logs only metadata to ai (size, tokens, latency, provider and model), never text"
+        },
+        {
+          "pt": "Os deltas vão ao navegador como chegam do provedor; o FiltroSaidaSensivelMiddleware atua no texto final da resposta",
+          "en": "Deltas reach browser as they arrive from provider; FiltroSaidaSensivelMiddleware acts on final reply text"
+        },
+        {
+          "pt": "O chat só aparece nos painéis de kit.agentes_ia.paineis, com kit.agentes_ia.habilitado ligado; de fábrica, nenhum. Os dois vêm das Configurações da aplicação",
+          "en": "Chat only shows in kit.agentes_ia.paineis panels with kit.agentes_ia.habilitado on; default is none. Both come from Application settings"
+        }
+      ]
+    }
+  ]
+}

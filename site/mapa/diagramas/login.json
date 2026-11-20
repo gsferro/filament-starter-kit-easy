@@ -1,0 +1,399 @@
+{
+  "slug": "login",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Login por senha na tela do painel",
+    "en": "Password login on panel screen"
+  },
+  "paineis": [
+    "admin",
+    "app",
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "passo seguinte",
+            "en": "next step"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "desvio: recusa ou redirect",
+            "en": "branch: denial or redirect"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta",
+            "en": "reply"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      }
+    },
+    {
+      "id": "telalogin",
+      "type": "frontend",
+      "label": "TelaLogin",
+      "sublabel": "login",
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+          "trecho": "class TelaLogin extends Login"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->usingPage(TelaLogin::class)"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "->usingPage(TelaLogin::class)"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "database",
+      "label": "User",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function canAccessPanel(Panel $panel): bool"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function motivoDeIndisponibilidade(): ?string"
+        }
+      ]
+    },
+    {
+      "id": "respostadelogin",
+      "type": "backend",
+      "label": "RespostaDeLogin",
+      "sublabel": "LoginResponse",
+      "sources": [
+        {
+          "arquivo": "app/Http/Responses/RespostaDeLogin.php",
+          "trecho": "final class RespostaDeLogin extends LoginResponse"
+        },
+        {
+          "arquivo": "app/Providers/KitServiceProvider.php",
+          "trecho": "$this->app->bind(LoginResponse::class, RespostaDeLogin::class);"
+        }
+      ]
+    },
+    {
+      "id": "authenticate",
+      "type": "security",
+      "label": "Authenticate",
+      "sublabel": "Filament",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 314,
+      "label": {
+        "pt": "Abrir a tela",
+        "en": "Open screen"
+      }
+    },
+    {
+      "from": 324,
+      "to": 744,
+      "label": {
+        "pt": "Entrar",
+        "en": "Log in"
+      }
+    },
+    {
+      "from": 754,
+      "to": 999,
+      "label": {
+        "pt": "Conta indisponível",
+        "en": "Account barred"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "abrir",
+      "from": "navegador",
+      "to": "telalogin",
+      "y": 180,
+      "label": "GET /{painel}/login",
+      "variant": "emphasis",
+      "note": {
+        "pt": "o Auth Designer registra a TelaLogin como página de login dos três painéis; o formulário ganha o desafio anti-robô quando ele está ligado",
+        "en": "Auth Designer registers TelaLogin as all three panels' login page; form adds bot check when enabled"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->usingPage(TelaLogin::class)"
+      }
+    },
+    {
+      "id": "pagina-unica",
+      "from": "telalogin",
+      "to": "navegador",
+      "y": 269,
+      "label": "302 /login",
+      "variant": "security",
+      "note": {
+        "pt": "com kit.login.unificado ligado, a tela do painel leva à página única, com a mesma query",
+        "en": "with kit.login.unificado on, panel screen redirects to unified page with same query"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+        "trecho": "throw new HttpResponseException(new RedirectResponse(route('login', request()->query())));"
+      }
+    },
+    {
+      "id": "enviar",
+      "from": "navegador",
+      "to": "telalogin",
+      "y": 344,
+      "label": {
+        "pt": "envia e-mail e senha",
+        "en": "send email, password"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "authenticate() chama o do Filament num try/catch: 5 tentativas e a senha conferida num Timebox",
+        "en": "authenticate() calls Filament's in try/catch: 5 attempts, password checked in Timebox"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+        "trecho": "return parent::authenticate();"
+      }
+    },
+    {
+      "id": "pode-entrar",
+      "from": "telalogin",
+      "to": "user",
+      "y": 424,
+      "label": {
+        "pt": "canAccessPanel(painel)",
+        "en": "canAccessPanel(panel)"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "antes de abrir a sessão: nega conta excluída ou inativa e cadastro pendente; master_global entra; senão exige papel com roles.painel igual ao id do painel",
+        "en": "before session opens: denies Deleted or Inactive account and Pending sign-up; master_global enters; else requires role with roles.painel matching panel id"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "public function canAccessPanel(Panel $panel): bool"
+      }
+    },
+    {
+      "id": "resposta",
+      "from": "telalogin",
+      "to": "respostadelogin",
+      "y": 529,
+      "label": "LoginResponse",
+      "variant": "default",
+      "note": {
+        "pt": "senha certa e painel liberado: o Filament abre a sessão, dispara o evento Login, regenera a sessão e pede a LoginResponse do container",
+        "en": "correct password and panel allowed: Filament opens session, fires Login, regenerates session and requests LoginResponse from container"
+      },
+      "prova": {
+        "arquivo": "app/Providers/KitServiceProvider.php",
+        "trecho": "$this->app->bind(LoginResponse::class, RespostaDeLogin::class);"
+      }
+    },
+    {
+      "id": "destino",
+      "from": "respostadelogin",
+      "to": "navegador",
+      "y": 609,
+      "label": {
+        "pt": "302 pretendida ou painel",
+        "en": "302 intended or panel"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "página única desligada: a resposta do Filament, a URL pretendida ou a raiz do painel; ligada: DestinoAposLogin",
+        "en": "unified page off: Filament response, intended URL or panel root; on: DestinoAposLogin"
+      },
+      "prova": {
+        "arquivo": "app/Http/Responses/RespostaDeLogin.php",
+        "trecho": "return parent::toResponse($request);"
+      }
+    },
+    {
+      "id": "painel",
+      "from": "navegador",
+      "to": "authenticate",
+      "y": 679,
+      "label": {
+        "pt": "GET do painel",
+        "en": "panel GET"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "a pilha do painel (diagrama requisicao-autenticada); 2FA confirmado: desafio antes (dois-fatores)",
+        "en": "panel stack (requisicao-autenticada diagram); confirmed 2FA: challenge first (dois-fatores)"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "Authenticate::class,"
+      }
+    },
+    {
+      "id": "conta-e-senha",
+      "from": "telalogin",
+      "to": "user",
+      "y": 774,
+      "label": {
+        "pt": "conta indisponível e senha?",
+        "en": "account barred, password?"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "a falha do Filament é capturada: busca a conta pelo e-mail, inclusive excluída, e confere a senha num Timebox",
+        "en": "Filament failure is caught: finds account by email, including Deleted, and checks password in Timebox"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+        "trecho": "$conta = User::withTrashed()->comEmail($email)->first();"
+      }
+    },
+    {
+      "id": "erro-generico",
+      "from": "telalogin",
+      "to": "navegador",
+      "y": 859,
+      "label": {
+        "pt": "erro genérico de credenciais",
+        "en": "generic credentials error"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "senha errada ou conta disponível, inclusive pendente de aprovação: relança a mesma exceção",
+        "en": "wrong password or available account, including Pending approval: rethrows same exception"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+        "trecho": "throw $excecao;"
+      }
+    },
+    {
+      "id": "conta-indisponivel",
+      "from": "telalogin",
+      "to": "navegador",
+      "y": 934,
+      "label": "302 /conta-indisponivel",
+      "variant": "security",
+      "note": {
+        "pt": "inativa ou excluída com a senha certa: o aviso vai na sessão, e a página mostra o motivo com HTTP 403",
+        "en": "Inactive or Deleted with correct password: notice saved in session; page shows reason with HTTP 403"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+        "trecho": "$this->redirect(ContaIndisponivelController::redirecionar($conta, Filament::getLoginUrl() ?? url('/')));"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "O que fica com o Filament",
+        "en": "What Filament handles"
+      },
+      "items": [
+        {
+          "pt": "A TelaLogin estende o Login do Auth Designer e não reescreve a entrada: rate limit, Timebox, canAccessPanel antes da sessão, evento Login e regeneração da sessão são do authenticate() do Filament.",
+          "en": "TelaLogin extends Auth Designer Login without rewriting sign-in: rate limit, Timebox, canAccessPanel before session, Login event and session regeneration come from Filament authenticate()."
+        },
+        {
+          "pt": "O evento Login grava a linha do authentication_log, e o hook creating do KitServiceProvider carimba nela o painel corrente; na página única, o painel fica nulo até o destino ser decidido.",
+          "en": "Login event writes authentication_log row; KitServiceProvider creating hook stamps current panel on it; on unified page, panel stays null until destination is chosen."
+        },
+        {
+          "pt": "Conta excluída dispara o evento Failed à mão, porque o Filament não a acha; a inativa já gerou a linha.",
+          "en": "Deleted account fires Failed manually, since Filament cannot find it; Inactive account already generated row."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "kit.login.unificado (KIT_LOGIN_UNIFICADO, padrão desligado): as telas dos painéis levam a /login, e o destino depois do login passa a ser de DestinoAposLogin.",
+          "en": "kit.login.unificado (KIT_LOGIN_UNIFICADO, default off): panel screens redirect to /login, and DestinoAposLogin decides post-login destination."
+        },
+        {
+          "pt": "kit.login.anti_robo.habilitado (KIT_ANTI_ROBO, padrão desligado): o desafio anti-robô no formulário; em APP_ENV=local fica desligado, salvo KIT_ANTI_ROBO_LOCAL.",
+          "en": "kit.login.anti_robo.habilitado (KIT_ANTI_ROBO, default off): form bot check; off in APP_ENV=local unless KIT_ANTI_ROBO_LOCAL."
+        },
+        {
+          "pt": "kit.registro.habilitado (KIT_REGISTRO, padrão desligado): sem ele, a tela não mostra o link Cadastre-se.",
+          "en": "kit.registro.habilitado (KIT_REGISTRO, default off): without it, screen hides Sign up link."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Com tenant",
+        "en": "Tenant on"
+      },
+      "items": [
+        {
+          "pt": "/admin e /infra exigem o papel no contexto global; o /app aceita o papel em qualquer organização.",
+          "en": "/admin and /infra need role in global context; /app accepts role in any organization."
+        },
+        {
+          "pt": "No /app, o ?org= de uma organização ativa veste a tela com a aparência dela, e o link Cadastre-se só aparece com o ?org= de uma organização que aceita cadastro.",
+          "en": "In /app, ?org= for an Active organization applies its look; Sign up link only shows with ?org= for an organization accepting sign-ups."
+        }
+      ]
+    }
+  ]
+}

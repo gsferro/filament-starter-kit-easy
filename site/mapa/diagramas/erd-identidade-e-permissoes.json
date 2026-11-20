@@ -1,0 +1,849 @@
+{
+  "slug": "erd-identidade-e-permissoes",
+  "tipo": "erd",
+  "titulo": {
+    "pt": "Identidade e permissões, sem tenant",
+    "en": "Identity and permissions, no tenant"
+  },
+  "paineis": [],
+  "modos": [
+    "sem"
+  ],
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "entities": [
+    {
+      "id": "model_has_permissions",
+      "label": "model_has_permissions",
+      "sublabel": {
+        "pt": "dono: spatie/laravel-permission",
+        "en": "by: spatie/laravel-permission"
+      },
+      "tag": {
+        "pt": "permissões",
+        "en": "Permission"
+      },
+      "row": 0,
+      "col": 0,
+      "width": 236,
+      "attributes": [
+        {
+          "name": "permission_id",
+          "type": "INTEGER NN",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "permissions.id"
+        },
+        {
+          "name": "model_type",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "model_id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+          "trecho": "Schema::create($tableNames['model_has_permissions'], static function (Blueprint $table) use ($tableNames, $columnNames, $pivotPermission, $teams) {",
+          "label": {
+            "pt": "cria model_has_permissions",
+            "en": "add model_has_permissions"
+          }
+        }
+      ]
+    },
+    {
+      "id": "permissions",
+      "label": "permissions",
+      "sublabel": {
+        "pt": "dono: spatie/laravel-permission",
+        "en": "by: spatie/laravel-permission"
+      },
+      "tag": {
+        "pt": "permissões",
+        "en": "Permission"
+      },
+      "row": 0,
+      "col": 1,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "guard_name",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+          "trecho": "Schema::create($tableNames['permissions'], static function (Blueprint $table) {",
+          "label": {
+            "pt": "cria permissions",
+            "en": "add permissions"
+          }
+        }
+      ]
+    },
+    {
+      "id": "role_has_permissions",
+      "label": "role_has_permissions",
+      "sublabel": {
+        "pt": "dono: spatie/laravel-permission",
+        "en": "by: spatie/laravel-permission"
+      },
+      "tag": {
+        "pt": "permissões",
+        "en": "Permission"
+      },
+      "row": 0,
+      "col": 2,
+      "width": 236,
+      "attributes": [
+        {
+          "name": "permission_id",
+          "type": "INTEGER NN",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "permissions.id"
+        },
+        {
+          "name": "role_id",
+          "type": "INTEGER NN",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "roles.id"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+          "trecho": "Schema::create($tableNames['role_has_permissions'], static function (Blueprint $table) use ($tableNames, $pivotRole, $pivotPermission) {",
+          "label": {
+            "pt": "cria role_has_permissions",
+            "en": "add role_has_permissions"
+          }
+        }
+      ]
+    },
+    {
+      "id": "roles",
+      "label": "roles",
+      "sublabel": {
+        "pt": "dono: spatie/laravel-permission + colunas do kit (painel, uuid)",
+        "en": "owner: spatie/laravel-permission + kit columns (painel, uuid)"
+      },
+      "tag": {
+        "pt": "permissões",
+        "en": "Permission"
+      },
+      "row": 0,
+      "col": 3,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "guard_name",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "painel",
+          "type": "varchar"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar",
+          "key": "uk"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+          "trecho": "Schema::create($tableNames['roles'], static function (Blueprint $table) use ($teams, $columnNames) {",
+          "label": {
+            "pt": "cria roles",
+            "en": "new roles"
+          }
+        }
+      ]
+    },
+    {
+      "id": "model_has_roles",
+      "label": "model_has_roles",
+      "sublabel": {
+        "pt": "dono: spatie/laravel-permission",
+        "en": "by: spatie/laravel-permission"
+      },
+      "tag": {
+        "pt": "permissões",
+        "en": "Permission"
+      },
+      "row": 0,
+      "col": 4,
+      "width": 216,
+      "attributes": [
+        {
+          "name": "role_id",
+          "type": "INTEGER NN",
+          "key": [
+            "pk",
+            "fk"
+          ],
+          "references": "roles.id"
+        },
+        {
+          "name": "model_type",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "model_id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+          "trecho": "Schema::create($tableNames['model_has_roles'], static function (Blueprint $table) use ($tableNames, $columnNames, $pivotRole, $teams) {",
+          "label": {
+            "pt": "cria model_has_roles",
+            "en": "add model_has_roles"
+          }
+        }
+      ]
+    },
+    {
+      "id": "password_reset_tokens",
+      "label": "password_reset_tokens",
+      "sublabel": {
+        "pt": "dono: Laravel",
+        "en": "by: Laravel"
+      },
+      "tag": {
+        "pt": "identidade",
+        "en": "identity"
+      },
+      "row": 1,
+      "col": 0,
+      "width": 208,
+      "attributes": [
+        {
+          "name": "email",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "token",
+          "type": "varchar NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000000_create_users_table.php",
+          "trecho": "Schema::create('password_reset_tokens', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria password_reset_tokens",
+            "en": "add password_reset_tokens"
+          }
+        }
+      ]
+    },
+    {
+      "id": "users",
+      "label": "users",
+      "sublabel": {
+        "pt": "dono: Laravel (esqueleto) + colunas do kit",
+        "en": "owner: Laravel (skeleton) + kit columns"
+      },
+      "tag": {
+        "pt": "identidade",
+        "en": "identity"
+      },
+      "row": 1,
+      "col": 1,
+      "width": 268,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "email",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "email_verified_at",
+          "type": "datetime"
+        },
+        {
+          "name": "password",
+          "type": "varchar NN"
+        },
+        {
+          "name": "avatar_url",
+          "type": "varchar"
+        },
+        {
+          "name": "remember_token",
+          "type": "varchar"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "aprovacao_pendente",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "origem",
+          "type": "varchar NN"
+        },
+        {
+          "name": "ativo",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "deleted_at",
+          "type": "datetime"
+        },
+        {
+          "name": "dock_atalhos",
+          "type": "TEXT"
+        },
+        {
+          "name": "dock_layout",
+          "type": "varchar"
+        },
+        {
+          "name": "aparencia",
+          "type": "TEXT"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000000_create_users_table.php",
+          "trecho": "Schema::create('users', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria users",
+            "en": "new users"
+          }
+        }
+      ]
+    },
+    {
+      "id": "vinculos_sociais",
+      "label": "vinculos_sociais",
+      "sublabel": {
+        "pt": "dono: kit",
+        "en": "kit owner"
+      },
+      "tag": {
+        "pt": "identidade",
+        "en": "identity"
+      },
+      "row": 1,
+      "col": 2,
+      "width": 220,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER NN",
+          "key": "fk",
+          "references": "users.id"
+        },
+        {
+          "name": "provedor",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "sub",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "confirmado_em",
+          "type": "datetime NN"
+        },
+        {
+          "name": "ultimo_acesso_em",
+          "type": "datetime"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_26_172455_create_vinculos_sociais_table.php",
+          "trecho": "Schema::create('vinculos_sociais', function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria vinculos_sociais",
+            "en": "add vinculos_sociais"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sessions",
+      "label": "sessions",
+      "sublabel": {
+        "pt": "dono: Laravel (SESSION_DRIVER=database)",
+        "en": "by: Laravel (SESSION_DRIVER=database)"
+      },
+      "tag": {
+        "pt": "identidade",
+        "en": "identity"
+      },
+      "row": 2,
+      "col": 0,
+      "width": 216,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER"
+        },
+        {
+          "name": "ip_address",
+          "type": "varchar"
+        },
+        {
+          "name": "user_agent",
+          "type": "TEXT"
+        },
+        {
+          "name": "payload",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "last_activity",
+          "type": "INTEGER NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000000_create_users_table.php",
+          "trecho": "Schema::create('sessions', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria sessions",
+            "en": "add sessions"
+          }
+        }
+      ]
+    },
+    {
+      "id": "breezy_sessions",
+      "label": "breezy_sessions",
+      "sublabel": {
+        "pt": "dono: jeffgreco13/filament-breezy",
+        "en": "by: jeffgreco13/filament-breezy"
+      },
+      "tag": {
+        "pt": "identidade",
+        "en": "identity"
+      },
+      "row": 2,
+      "col": 1,
+      "width": 268,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "authenticatable_type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "authenticatable_id",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "panel_id",
+          "type": "varchar"
+        },
+        {
+          "name": "two_factor_secret",
+          "type": "TEXT"
+        },
+        {
+          "name": "two_factor_recovery_codes",
+          "type": "TEXT"
+        },
+        {
+          "name": "two_factor_confirmed_at",
+          "type": "datetime"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164918_create_breezy_sessions_table.php",
+          "trecho": "Schema::create('breezy_sessions', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria breezy_sessions",
+            "en": "add breezy_sessions"
+          }
+        }
+      ]
+    },
+    {
+      "id": "passkeys",
+      "label": "passkeys",
+      "sublabel": {
+        "pt": "dono: jeffgreco13/filament-breezy",
+        "en": "by: jeffgreco13/filament-breezy"
+      },
+      "tag": {
+        "pt": "identidade",
+        "en": "identity"
+      },
+      "row": 2,
+      "col": 2,
+      "width": 260,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "authenticatable_type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "authenticatable_id",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "panel_id",
+          "type": "varchar"
+        },
+        {
+          "name": "name",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "credential_id",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "data",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "last_used_at",
+          "type": "datetime"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164920_create_passkeys_table.php",
+          "trecho": "Schema::create('passkeys', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria passkeys",
+            "en": "add passkeys"
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "fk_model_has_permissions_permission_id",
+      "from": "model_has_permissions",
+      "to": "permissions",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+        "trecho": "$table->foreign($pivotPermission)"
+      }
+    },
+    {
+      "id": "fk_role_has_permissions_role_id",
+      "from": "role_has_permissions",
+      "to": "roles",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+        "trecho": "->cascadeOnDelete();\n\n            $table->foreign($pivotRole)"
+      }
+    },
+    {
+      "id": "fk_role_has_permissions_permission_id",
+      "from": "role_has_permissions",
+      "to": "permissions",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+        "trecho": "$table->unsignedBigInteger($pivotRole);\n\n            $table->foreign($pivotPermission)"
+      }
+    },
+    {
+      "id": "fk_model_has_roles_role_id",
+      "from": "model_has_roles",
+      "to": "roles",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+        "trecho": "$table->foreign($pivotRole)"
+      }
+    },
+    {
+      "id": "fk_vinculos_sociais_user_id",
+      "from": "vinculos_sociais",
+      "to": "users",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_26_172455_create_vinculos_sociais_table.php",
+        "trecho": "$table->foreignId('user_id')->constrained()->cascadeOnDelete();"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Colunas e tipos como o SQLite os registra depois de rodar as migrations (PRAGMA table_info). Em MySQL ou PostgreSQL, a mesma migration gera os tipos nativos.",
+          "en": "Columns and types as SQLite records them after migrations (PRAGMA table_info). In MySQL or PostgreSQL, the same migration creates native types."
+        },
+        {
+          "pt": "NN = NOT NULL. Sem NN, a coluna aceita nulo.",
+          "en": "NN = NOT NULL. Without NN, null is allowed."
+        },
+        {
+          "pt": "PK, FK e UK marcam cada coluna. PK ou UK em mais de uma coluna da mesma tabela pode ser uma chave composta: veja o card \"Chaves compostas\".",
+          "en": "PK, FK and UK mark each column. PK or UK on several columns in one table may be a composite key: see the \"Composite keys\" card."
+        },
+        {
+          "pt": "O rótulo de cada ligação é a regra ON DELETE da chave estrangeira. Linha tracejada: a FK não faz parte da PK da tabela filha.",
+          "en": "Each link label is the foreign key's ON DELETE rule. Dashed line: the FK is not part of the child table's PK."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Chaves compostas",
+        "en": "Composite keys"
+      },
+      "items": [
+        "model_has_permissions: PK (permission_id, model_id, model_type)",
+        {
+          "pt": "permissions: único (name, guard_name)",
+          "en": "permissions: unique (name, guard_name)"
+        },
+        "role_has_permissions: PK (permission_id, role_id)",
+        {
+          "pt": "roles: único (name, guard_name)",
+          "en": "roles: unique (name, guard_name)"
+        },
+        "model_has_roles: PK (role_id, model_id, model_type)",
+        {
+          "pt": "vinculos_sociais: único (provedor, sub)",
+          "en": "vinculos_sociais: unique (provedor, sub)"
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Referências sem chave estrangeira",
+        "en": "References without foreign keys"
+      },
+      "items": [
+        {
+          "pt": "O banco não tem chave estrangeira para estas colunas, por isso elas não ganham linha. Os pares *_type/*_id são relações polimórficas.",
+          "en": "Database has no foreign keys for these columns, so they have no lines. *_type/*_id pairs are polymorphic relations."
+        },
+        "model_has_permissions: model_type/model_id",
+        "model_has_roles: model_type/model_id",
+        {
+          "pt": "sessions: user_id (foreignId sem constrained())",
+          "en": "sessions: user_id (foreignId without constrained())"
+        },
+        "breezy_sessions: authenticatable_type/authenticatable_id",
+        "passkeys: authenticatable_type/authenticatable_id"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": {
+        "pt": "Outras migrations",
+        "en": "Other migrations"
+      },
+      "items": [
+        {
+          "pt": "roles: painel (add_painel_to_roles_table) e uuid, com índice único (add_uuid_to_roles_table).",
+          "en": "roles: painel (add_painel_to_roles_table) and uuid, with unique index (add_uuid_to_roles_table)."
+        },
+        {
+          "pt": "users: aprovacao_pendente (add_aprovacao_pendente_to_users_table), origem (add_origem_to_users_table), ativo e deleted_at (add_ativo_and_soft_deletes_to_users_table), dock_atalhos e dock_layout (add_dock_to_users_table) e aparencia (add_aparencia_to_users_table).",
+          "en": "users: aprovacao_pendente (add_aprovacao_pendente_to_users_table), origem (add_origem_to_users_table), ativo and deleted_at (add_ativo_and_soft_deletes_to_users_table), dock_atalhos and dock_layout (add_dock_to_users_table) and aparencia (add_aparencia_to_users_table)."
+        },
+        {
+          "pt": "breezy_sessions: alter_breezy_sessions_table tira guard, ip_address, user_agent e expires_at.",
+          "en": "breezy_sessions: alter_breezy_sessions_table removes guard, ip_address, user_agent and expires_at."
+        }
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": {
+        "pt": "Com tenant",
+        "en": "Tenant on"
+      },
+      "items": [
+        {
+          "pt": "Com tenant, roles, model_has_roles e model_has_permissions ganham team_id: o diagrama \"Identidade e permissões, com tenant\" mostra essa variante.",
+          "en": "With tenant, roles, model_has_roles and model_has_permissions gain team_id: \"Identity and permissions, with tenant\" shows this variant."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Evidência",
+        "en": "Evidence"
+      },
+      "items": [
+        {
+          "pt": "Cada tabela leva à linha da migration que a cria.",
+          "en": "Each table links to its creation migration line."
+        },
+        {
+          "pt": "As colunas que outras migrations acrescentam ou tiram estão no card \"Outras migrations\".",
+          "en": "Columns added or removed by other migrations are in the \"Other migrations\" card."
+        },
+        {
+          "pt": "Cada ligação leva à linha da chave estrangeira, nos cards \"Prova das ligações\".",
+          "en": "Each link leads to the foreign key line in the \"Link evidence\" cards."
+        }
+      ]
+    }
+  ]
+}

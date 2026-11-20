@@ -1,0 +1,558 @@
+{
+  "slug": "admin-convite",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Convite de acesso pelo /admin",
+    "en": "Access invitation via /admin"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "ação de quem convida",
+            "en": "inviter action"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "chamada no servidor",
+            "en": "server call"
+          }
+        },
+        "dashed": {
+          "label": {
+            "pt": "assíncrono (fila e e-mail)",
+            "en": "async (queue and email)"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta ao navegador",
+            "en": "browser response"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "revogação",
+            "en": "revoke"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      },
+      "sublabel": {
+        "pt": "quem convida",
+        "en": "inviter"
+      }
+    },
+    {
+      "id": "conviteform",
+      "type": "frontend",
+      "label": "ConviteForm",
+      "sublabel": {
+        "pt": "formulário",
+        "en": "form"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php",
+          "trecho": "class ConviteForm",
+          "label": "ConviteForm"
+        },
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php",
+          "trecho": "->rule(fn (): Closure => EmailComMais::regraDeConvite())",
+          "label": "ConviteForm@configure"
+        },
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php",
+          "trecho": "->required(fn (Get $get): bool => (bool) config('kit.tenancy.enabled')",
+          "label": "ConviteForm@configure"
+        }
+      ]
+    },
+    {
+      "id": "createconvite",
+      "type": "frontend",
+      "label": "CreateConvite",
+      "sublabel": {
+        "pt": "página",
+        "en": "page"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Pages/CreateConvite.php",
+          "trecho": "class CreateConvite extends CreateRecord",
+          "label": "CreateConvite"
+        },
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/ConviteResource.php",
+          "trecho": "'create' => CreateConvite::route('/create'),",
+          "label": "ConviteResource@getPages"
+        }
+      ]
+    },
+    {
+      "id": "convitestable",
+      "type": "frontend",
+      "label": "ConvitesTable",
+      "sublabel": {
+        "pt": "listagem",
+        "en": "list"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+          "trecho": "class ConvitesTable",
+          "label": "ConvitesTable"
+        },
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+          "trecho": "->recordActions([",
+          "label": "ConvitesTable@configure"
+        }
+      ]
+    },
+    {
+      "id": "convite",
+      "type": "database",
+      "label": "Convite",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "class Convite extends Model implements Auditable",
+          "label": "Convite"
+        },
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "public function enviar(): string",
+          "label": "Convite@enviar"
+        },
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "'token'     => hash('sha256', $token),",
+          "label": "Convite@enviar"
+        }
+      ]
+    },
+    {
+      "id": "convitedeacesso",
+      "type": "backend",
+      "label": "ConviteDeAcesso",
+      "sublabel": {
+        "pt": "notificação",
+        "en": "notice"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Notifications/ConviteDeAcesso.php",
+          "trecho": "class ConviteDeAcesso extends Notification implements ShouldQueue",
+          "label": "ConviteDeAcesso"
+        },
+        {
+          "arquivo": "app/Notifications/ConviteDeAcesso.php",
+          "trecho": "public function toMail(object $notifiable): MailMessage",
+          "label": "ConviteDeAcesso@toMail"
+        }
+      ]
+    },
+    {
+      "id": "fila",
+      "type": "messagebus",
+      "label": {
+        "pt": "Fila",
+        "en": "Q."
+      },
+      "sublabel": {
+        "pt": "tabela jobs",
+        "en": "jobs table"
+      },
+      "sources": [
+        {
+          "arquivo": "config/queue.php",
+          "trecho": "'default' => env('QUEUE_CONNECTION', 'database'),",
+          "label": "config/queue.php"
+        },
+        {
+          "arquivo": "database/migrations/0001_01_01_000002_create_jobs_table.php",
+          "trecho": "Schema::create('jobs', function (Blueprint $table) {",
+          "label": "create_jobs_table"
+        }
+      ]
+    },
+    {
+      "id": "convidado",
+      "type": "external",
+      "label": {
+        "pt": "Convidado",
+        "en": "Invitee"
+      },
+      "sublabel": {
+        "pt": "caixa de e-mail",
+        "en": "email inbox"
+      }
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 896,
+      "label": {
+        "pt": "Criar convite",
+        "en": "Invite"
+      }
+    },
+    {
+      "from": 906,
+      "to": 1110,
+      "label": {
+        "pt": "Worker da fila",
+        "en": "Queue worker"
+      }
+    },
+    {
+      "from": 1120,
+      "to": 1424,
+      "label": {
+        "pt": "Na listagem",
+        "en": "In the list"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "abrir-criacao",
+      "from": "navegador",
+      "to": "createconvite",
+      "y": 172,
+      "label": "GET /admin/convites/create",
+      "variant": "emphasis",
+      "note": {
+        "pt": "página create do ConviteResource; não há página de edição, porque o convite já saiu por e-mail",
+        "en": "ConviteResource create page; no edit page, since the invitation was already emailed"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/ConviteResource.php",
+        "trecho": "'create' => CreateConvite::route('/create'),"
+      }
+    },
+    {
+      "id": "montar-formulario",
+      "from": "createconvite",
+      "to": "conviteform",
+      "y": 264,
+      "label": {
+        "pt": "e-mail, papel e organização",
+        "en": "email, role, organization"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "e-mail sem unique (quem já tem conta recebe oferta de acesso), com a regra do \"+\"; papel recortado pelo teto de escalada; organização só com tenancy, obrigatória para papel do /app",
+        "en": "email without unique (existing accounts get an access offer), with the \"+\" rule; role capped by escalation limit; organization only with tenancy, required for /app roles"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/ConviteResource.php",
+        "trecho": "return ConviteForm::configure($schema);"
+      }
+    },
+    {
+      "id": "criar",
+      "from": "navegador",
+      "to": "createconvite",
+      "y": 411,
+      "label": {
+        "pt": "Criar",
+        "en": "Add"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "a página grava com os dados já validados pelo formulário",
+        "en": "the page saves data already validated by the form"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Pages/CreateConvite.php",
+        "trecho": "protected function mutateFormDataBeforeCreate(array $data): array"
+      }
+    },
+    {
+      "id": "gravar",
+      "from": "createconvite",
+      "to": "convite",
+      "y": 481,
+      "label": {
+        "pt": "create com convidado_por_id",
+        "en": "create + convidado_por_id"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "quem convida fica gravado: o usuário logado",
+        "en": "records the inviter: the logged-in user"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Pages/CreateConvite.php",
+        "trecho": "$data['convidado_por_id'] = auth()->id();"
+      }
+    },
+    {
+      "id": "enviar",
+      "from": "createconvite",
+      "to": "convite",
+      "y": 551,
+      "label": "afterCreate: enviar()",
+      "variant": "default",
+      "note": {
+        "pt": "o envio sai da página, e não de um Observer: seeder, teste e tinker não mandam e-mail",
+        "en": "the page sends it, outside an Observer: seeder, tests and tinker send no email"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Pages/CreateConvite.php",
+        "trecho": "$convite->enviar();"
+      }
+    },
+    {
+      "id": "notificar",
+      "from": "convite",
+      "to": "convitedeacesso",
+      "y": 643,
+      "label": {
+        "pt": "notify: rota mail + token",
+        "en": "notify: mail + token"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "antes, gera um token de 64 caracteres e grava só o hash sha256, com expira_em = agora + kit.convites.validade_em_dias; depois, loga no canal autenticacao com o e-mail mascarado",
+        "en": "first creates a 64-character token and stores only its sha256 hash, with expira_em = now + kit.convites.validade_em_dias; then logs to autenticacao with masked email"
+      },
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "Notification::route('mail', $this->email)->notify(new ConviteDeAcesso($this, $token));"
+      }
+    },
+    {
+      "id": "enfileirar",
+      "from": "convitedeacesso",
+      "to": "fila",
+      "y": 790,
+      "label": {
+        "pt": "ShouldQueue: vai para a fila",
+        "en": "ShouldQueue: queued"
+      },
+      "variant": "dashed",
+      "note": {
+        "pt": "QUEUE_CONNECTION=database por padrão: sem worker rodando, o e-mail espera na tabela jobs",
+        "en": "QUEUE_CONNECTION=database by default: without a worker, email waits in the jobs table"
+      },
+      "prova": {
+        "arquivo": "app/Notifications/ConviteDeAcesso.php",
+        "trecho": "class ConviteDeAcesso extends Notification implements ShouldQueue"
+      }
+    },
+    {
+      "id": "voltar-a-lista",
+      "from": "createconvite",
+      "to": "navegador",
+      "y": 882,
+      "label": {
+        "pt": "redirect para a lista",
+        "en": "redirect to list"
+      },
+      "variant": "return",
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Pages/CreateConvite.php",
+        "trecho": "return $this->getResource()::getUrl('index');"
+      }
+    },
+    {
+      "id": "montar-email",
+      "from": "fila",
+      "to": "convitedeacesso",
+      "y": 922,
+      "label": "worker: toMail()",
+      "variant": "dashed",
+      "note": {
+        "pt": "o texto muda para quem já tem conta (Entrar e aceitar) e cita a organização quando o convite tem uma",
+        "en": "text changes for existing accounts (Sign in and accept) and names the organization if the invitation has one"
+      },
+      "prova": {
+        "arquivo": "app/Notifications/ConviteDeAcesso.php",
+        "trecho": "public function toMail(object $notifiable): MailMessage"
+      }
+    },
+    {
+      "id": "entregar",
+      "from": "convitedeacesso",
+      "to": "convidado",
+      "y": 1025,
+      "label": {
+        "pt": "e-mail com link de aceite",
+        "en": "email with accept link"
+      },
+      "variant": "dashed",
+      "note": {
+        "pt": "link do registro do /app, fora do grupo {tenant}: a organização vem do token, e o aceite acontece lá",
+        "en": "/app sign-up link, outside {tenant}: organization comes from token; acceptance takes place there"
+      },
+      "prova": {
+        "arquivo": "app/Notifications/ConviteDeAcesso.php",
+        "trecho": "return Filament::getPanel('app')->route('auth.register', ['token' => $this->token]);"
+      }
+    },
+    {
+      "id": "reenviar",
+      "from": "navegador",
+      "to": "convitestable",
+      "y": 1136,
+      "label": {
+        "pt": "Reenviar",
+        "en": "Resend"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "só para convite pendente ou expirado, com e-mail aceito pela regra do \"+\"; pede confirmação",
+        "en": "only for Pending or Expired invitations with email allowed by the \"+\" rule; asks for confirmation"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "->authorize('Reenviar:Convite')"
+      }
+    },
+    {
+      "id": "reenviar-enviar",
+      "from": "convitestable",
+      "to": "convite",
+      "y": 1228,
+      "label": {
+        "pt": "enviar() de novo",
+        "en": "enviar() again"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "token novo e prazo renovado: o link anterior e o do último lembrete deixam de valer",
+        "en": "new token and renewed expiry: prior link and last reminder link become invalid"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "->action(fn (Convite $record) => $record->enviar())"
+      }
+    },
+    {
+      "id": "revogar",
+      "from": "navegador",
+      "to": "convitestable",
+      "y": 1320,
+      "label": {
+        "pt": "Revogar",
+        "en": "Revoke"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "->label('Revogar')"
+      }
+    },
+    {
+      "id": "revogar-excluir",
+      "from": "convitestable",
+      "to": "convite",
+      "y": 1350,
+      "label": {
+        "pt": "exclui a linha e loga",
+        "en": "deletes row and logs"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "o link para de valer na hora; a auditoria registra a exclusão sem o hash do token",
+        "en": "link expires at once; audit records deletion without token hash"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "\"[ConvitesTable@revogar] Convite revogado | convite: {$record->id}\","
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "kit.convites.validade_em_dias (KIT_CONVITE_VALIDADE_DIAS, padrão 7): prazo do link, regravado em expira_em a cada envio",
+          "en": "kit.convites.validade_em_dias (KIT_CONVITE_VALIDADE_DIAS, default 7): link lifetime, saved in expira_em on each send"
+        },
+        {
+          "pt": "kit.tenancy.enabled (KIT_TENANCY): mostra o campo Organização no formulário",
+          "en": "kit.tenancy.enabled (KIT_TENANCY): shows the Organization field in the form"
+        },
+        {
+          "pt": "kit.email.permitir_mais (KIT_EMAIL_PERMITIR_MAIS, padrão ligado): desligado, o convite recusa e-mail com \"+\" que criaria conta nova, e Reenviar some para ele",
+          "en": "kit.email.permitir_mais (KIT_EMAIL_PERMITIR_MAIS, default on): when off, rejects \"+\" email for new accounts and hides Resend for them"
+        },
+        {
+          "pt": "QUEUE_CONNECTION (padrão database): sem worker rodando, o e-mail não sai",
+          "en": "QUEUE_CONNECTION (default database): without a worker, email stays queued"
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Sem e com tenant",
+        "en": "Tenant on/off"
+      },
+      "items": [
+        {
+          "pt": "Sem tenant: o formulário não mostra Organização e o convite nasce sem tenant_id",
+          "en": "Without tenant: form hides Organization and creates invitation without tenant_id"
+        },
+        {
+          "pt": "Com tenant: Organização aparece e é obrigatória para papel do /app; o e-mail cita a organização, e o aceite grava o papel dentro dela",
+          "en": "With tenant: Organization is shown and required for /app roles; email names it, and acceptance saves the role within it"
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Fora deste diagrama",
+        "en": "Beyond diagram"
+      },
+      "items": [
+        {
+          "pt": "O aceite acontece no /app, pelo link do e-mail (RegistroPorConvite)",
+          "en": "Acceptance takes place in /app via the email link (RegistroPorConvite)"
+        },
+        {
+          "pt": "Convidar em massa (ListConvites): o mesmo papel e a mesma organização para até kit.convites.limite_do_lote endereços (100 por padrão)",
+          "en": "Bulk invite (ListConvites): same role and organization for up to kit.convites.limite_do_lote addresses (default 100)"
+        },
+        {
+          "pt": "Lembretes: kit:convites-lembrar roda todo dia às 08:00 e manda um segundo link, sem matar o primeiro",
+          "en": "Reminders: kit:convites-lembrar runs daily at 08:00 and sends a second link, keeping the first valid"
+        }
+      ]
+    }
+  ]
+}

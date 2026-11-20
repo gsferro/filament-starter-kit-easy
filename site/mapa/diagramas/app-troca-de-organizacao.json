@@ -1,0 +1,413 @@
+{
+  "slug": "app-troca-de-organizacao",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Troca de organização no /app (com tenant)",
+    "en": "Switch organization in /app (with tenant)"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "chamada no servidor",
+            "en": "server call"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "acesso: checagem e contexto de papéis",
+            "en": "access: check and role context"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta ao navegador",
+            "en": "browser response"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      },
+      "sublabel": {
+        "pt": "quem troca",
+        "en": "switcher"
+      }
+    },
+    {
+      "id": "apppanelprovider",
+      "type": "backend",
+      "label": "AppPanel",
+      "sublabel": "Provider",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "class AppPanelProvider extends PanelProvider",
+          "label": "AppPanelProvider"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "if (config('kit.tenancy.enabled')) {",
+          "label": "AppPanelProvider@panel"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "FilamentColor::register(function (): array {",
+          "label": "AppPanelProvider@panel"
+        }
+      ]
+    },
+    {
+      "id": "tenant",
+      "type": "database",
+      "label": "Tenant",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/Tenant.php",
+          "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName",
+          "label": "Tenant"
+        }
+      ]
+    },
+    {
+      "id": "seletor",
+      "type": "backend",
+      "label": "SeletorDe",
+      "sublabel": "Organizacao",
+      "sources": [
+        {
+          "arquivo": "app/Support/SeletorDeOrganizacao.php",
+          "trecho": "final class SeletorDeOrganizacao",
+          "label": "SeletorDeOrganizacao"
+        },
+        {
+          "arquivo": "app/Support/SeletorDeOrganizacao.php",
+          "trecho": "public static function visivel(): bool",
+          "label": "SeletorDeOrganizacao@visivel"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "database",
+      "label": "User",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function getTenants(Panel $panel): Collection",
+          "label": "User@getTenants"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function canAccessTenant(Model $tenant): bool",
+          "label": "User@canAccessTenant"
+        }
+      ]
+    },
+    {
+      "id": "identifytenant",
+      "type": "security",
+      "label": "IdentifyTenant",
+      "sublabel": "Filament",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->tenant(Tenant::class, slugAttribute: 'slug')",
+          "label": "AppPanelProvider@panel"
+        }
+      ]
+    },
+    {
+      "id": "definir",
+      "type": "security",
+      "label": "DefinirTenant",
+      "sublabel": "DePermissoes",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/DefinirTenantDePermissoes.php",
+          "trecho": "class DefinirTenantDePermissoes",
+          "label": "DefinirTenantDePermissoes"
+        },
+        {
+          "arquivo": "app/Http/Middleware/DefinirTenantDePermissoes.php",
+          "trecho": "public function handle(Request $request, Closure $next): Response",
+          "label": "DefinirTenantDePermissoes@handle"
+        }
+      ]
+    },
+    {
+      "id": "permissionregistrar",
+      "type": "cloud",
+      "label": "Permission",
+      "sublabel": "Registrar · spatie"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 485,
+      "label": {
+        "pt": "Render da página da org. A",
+        "en": "Render org. A page"
+      }
+    },
+    {
+      "from": 495,
+      "to": 1236,
+      "label": {
+        "pt": "Troca para a org. B",
+        "en": "Switch to org. B"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "menu-visivel",
+      "from": "apppanelprovider",
+      "to": "seletor",
+      "y": 172,
+      "label": "tenantMenu: visivel()",
+      "variant": "default",
+      "note": {
+        "pt": "avaliado no render de cada página; com kit.tenancy.ocultar_seletor_unico desligado (padrão), o seletor sempre aparece, sem consulta",
+        "en": "checked on each page render; with kit.tenancy.ocultar_seletor_unico off (default), selector always shows, with no query"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->tenantMenu(fn (): bool => SeletorDeOrganizacao::visivel())"
+      }
+    },
+    {
+      "id": "contar-organizacoes",
+      "from": "seletor",
+      "to": "user",
+      "y": 286,
+      "label": {
+        "pt": "getUserTenants: conta > 1",
+        "en": "getUserTenants: count > 1"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "só com ocultar_seletor_unico ligado: esconde o seletor de quem tem 0 ou 1 organização; esconder é só de tela, a URL continua valendo",
+        "en": "only with ocultar_seletor_unico on: hides selector for users with 0 or 1 organization; only affects display, URL stays valid"
+      },
+      "prova": {
+        "arquivo": "app/Support/SeletorDeOrganizacao.php",
+        "trecho": "$quantidade = count(Filament::getUserTenants($usuario));"
+      }
+    },
+    {
+      "id": "listar-organizacoes",
+      "from": "apppanelprovider",
+      "to": "user",
+      "y": 400,
+      "label": {
+        "pt": "getTenants(): lista",
+        "en": "getTenants(): list"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "o menu lista as organizações ativas do vínculo (tenant_user); o master_global recebe todas as ativas",
+        "en": "menu lists Active linked organizations (tenant_user); master_global gets all Active ones"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "return $this->tenants()->where('ativo', true)->get();"
+      }
+    },
+    {
+      "id": "abrir-org-b",
+      "from": "navegador",
+      "to": "identifytenant",
+      "y": 511,
+      "label": "GET /app/{org-b}/…",
+      "variant": "emphasis",
+      "note": {
+        "pt": "clique no seletor: a rota leva o slug da organização; antes passa a pilha de autenticação do painel, que é outro diagrama",
+        "en": "selector click: route carries organization slug; panel auth stack runs first, covered in another diagram"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->tenant(Tenant::class, slugAttribute: 'slug')"
+      }
+    },
+    {
+      "id": "pode-entrar",
+      "from": "identifytenant",
+      "to": "user",
+      "y": 625,
+      "label": "canAccessTenant(org. B)",
+      "variant": "security",
+      "note": {
+        "pt": "organização inativa nega a todos, até o master_global (log organizacao_inativa); o master_global passa; os demais precisam do vínculo em tenant_user (senão, log sem_vinculo)",
+        "en": "Inactive organization denies all, even master_global (log organizacao_inativa); master_global passes; others need tenant_user link (else log sem_vinculo)"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "if ($this->tenants()->whereKey($tenant->getKey())->exists()) {"
+      }
+    },
+    {
+      "id": "middleware-do-tenant",
+      "from": "identifytenant",
+      "to": "definir",
+      "y": 772,
+      "label": {
+        "pt": "tenantMiddleware (persistente)",
+        "en": "tenantMiddleware (persistent)"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "isPersistent: roda também nos updates Livewire (AJAX) da página",
+        "en": "isPersistent: also runs on page Livewire (AJAX) updates"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->tenantMiddleware([DefinirTenantDePermissoes::class], isPersistent: true);"
+      }
+    },
+    {
+      "id": "fixar-team",
+      "from": "definir",
+      "to": "permissionregistrar",
+      "y": 853,
+      "label": "setPermissionsTeamId(org. B)",
+      "variant": "security",
+      "note": {
+        "pt": "papéis e permissões passam a ser lidos no team da org. B; sem organização resolvida, cai no contexto global (0)",
+        "en": "roles and permissions now read from org. B team; without a resolved organization, falls back to global context (0)"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/DefinirTenantDePermissoes.php",
+        "trecho": "app(PermissionRegistrar::class)->setPermissionsTeamId("
+      }
+    },
+    {
+      "id": "seguir",
+      "from": "definir",
+      "to": "apppanelprovider",
+      "y": 956,
+      "label": {
+        "pt": "$next: segue para a página",
+        "en": "$next: on to page"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "antes, grava tenant_corrente na sessão: a tela de bloqueio, sem {tenant} na rota, acha a logo da organização por ela",
+        "en": "first saves tenant_corrente in session: lock screen, without {tenant} in route, uses it to find organization logo"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/DefinirTenantDePermissoes.php",
+        "trecho": "return $next($request);"
+      }
+    },
+    {
+      "id": "cor",
+      "from": "apppanelprovider",
+      "to": "tenant",
+      "y": 1070,
+      "label": {
+        "pt": "cor da organização",
+        "en": "organization color"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "no render do <head>, só no painel app: hex válido vence, senão a paleta pelo nome, senão fica a cor da instalação",
+        "en": "on <head> render, app panel only: valid hex wins, else named palette, else installation color"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "$paleta = CorPrimaria::resolver($tenant->cor_primaria, $tenant->cor_primaria_nome);"
+      }
+    },
+    {
+      "id": "pagina",
+      "from": "apppanelprovider",
+      "to": "navegador",
+      "y": 1173,
+      "label": {
+        "pt": "página com a marca da org. B",
+        "en": "page with org. B branding"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "a marca do topo é a da organização aberta (CabecalhoDoPainel)",
+        "en": "header branding comes from open organization (CabecalhoDoPainel)"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->brandLogo(fn (): string|Htmlable|null => CabecalhoDoPainel::marca())"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "kit.tenancy.enabled (KIT_TENANCY): sem ele o /app não tem organização, seletor nem este fluxo",
+          "en": "kit.tenancy.enabled (KIT_TENANCY): without it, /app has no organization, selector or this flow"
+        },
+        {
+          "pt": "kit.tenancy.ocultar_seletor_unico (KIT_TENANCY_OCULTAR_SELETOR_UNICO, padrão desligado): esconde o seletor de quem tem 0 ou 1 organização acessível",
+          "en": "kit.tenancy.ocultar_seletor_unico (KIT_TENANCY_OCULTAR_SELETOR_UNICO, default off): hides selector for users with 0 or 1 accessible organization"
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Só com tenant",
+        "en": "Tenant only"
+      },
+      "items": [
+        {
+          "pt": "O AppPanelProvider só chama ->tenant(), ->tenantMenu() e ->tenantMiddleware() com kit.tenancy.enabled ligado: sem tenant, não há troca",
+          "en": "AppPanelProvider only calls ->tenant(), ->tenantMenu() and ->tenantMiddleware() with kit.tenancy.enabled on: no tenant, no switch"
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Fora deste diagrama",
+        "en": "Beyond diagram"
+      },
+      "items": [
+        {
+          "pt": "A pilha de autenticação do painel, que roda antes do IdentifyTenant (diagrama do request autenticado)",
+          "en": "Panel auth stack, which runs before IdentifyTenant (authenticated request diagram)"
+        }
+      ]
+    }
+  ]
+}
