@@ -60,8 +60,12 @@
 - [ ] CI verde
 
 ## Testes
-- [ ] `tests/Kit/MapaInterativoTest.php` (CT-01 a CT-11, CT-13 a CT-29, CT-31, CT-34 a CT-37, CT-39 a CT-43)
-- [ ] `tests/Tenancy/MapaInterativoTenancyTest.php` (CT-12, CT-30, CT-38)
+*(alterado em 2026-11-20: o lote G1 e o G2 do `04` foram divididos em três arquivos, para executores paralelos com
+dono único por arquivo; os CT seguem os mesmos)*
+- [ ] `tests/Kit/MapaInterativoCatalogoTest.php` — G1: R1 a R5, R7, R21 (CT-23), R23, R25, R26, R27, R33
+- [ ] `tests/Kit/MapaInterativoTest.php` — G2, modelo: R8, R9, R10, R11 (CT-11, CT-13), R28 (CT-29, CT-41), R35, R36, R37
+- [ ] `tests/Kit/MapaInterativoDiagramasTest.php` — G2, diagramas e página: R6, R12, R15 a R20, R22, R29, R34 (CT-37)
+- [ ] `tests/Tenancy/MapaInterativoTenancyTest.php` (CT-12, CT-30, CT-38, CT-44)
 - [ ] `site/verifica-mapa.mjs` (CT-B01 a CT-B07) — conferidor Node + Playwright do site construído (D17); o
   `ids-ct.sh` só lê `it()`/`test()` do Pest e acusa estes sete como sem teste, por desenho; a conferência deles é o
   próprio conferidor no `pages.yml` e no job `site` do `ci.yml`
@@ -168,7 +172,8 @@ Roteiro manual: não — 2026-11-20 — sem resposta a Q5 — a entrega é um si
 | 11 | 1 | Codex CLI 0.163.0 (`codex exec --yolo`, pasta de trabalho no scratchpad) — tradução en dos 792 textos únicos dos diagramas do esqueleto (RQ-12) | gpt-6.1-sol (o log do Codex) | a conversa, o repositório | `traducoes-esqueleto.json`: 792 chaves | 39.089 tokens (o log do Codex) | D24: `HEAD`, tags e branch iguais antes e depois; `git status` só com as edições da própria sessão feitas durante o despacho. Conferido por script: 792 chaves, nenhuma faltando ou sobrando, 366 iguais ao pt (código), nenhum texto de até 30 caracteres cresceu; uma nota de sequência encurtada à mão depois do `render` en (`sequence/note-overlap`) |
 | 12 | 1 | Codex CLI 0.163.0 — tradução en dos 35 textos do par r1 do comparativo do `/app` | gpt-6.1-sol | idem #11 | 35 chaves | 7.221 tokens | D24 idem; `git status` idêntico antes e depois; 35 chaves, nenhuma faltando, nenhuma curta que cresceu |
 | 13 | 5 | `general-purpose` — catálogo único: dono exclusivo das F-72 em diante, coluna Origem, as defasagens (F-07 en), os 4 pacotes da referência e o mapa de ids provisórios → F-nn em `catalogo-mapa.json` | opus | a conversa | 124 F-nn por idioma (74 da base + F-72 a F-121, uma por id provisório da pesquisa, P-01 a P-50, nenhum descartado); coluna Origem nas 10 tabelas (67 pacote com customização, 53 código próprio, 4 pacote; as seções "Instalação e operação" e "Desenvolvimento" entraram no fim); os seis itens do README casam por palavra inteira (F-93, F-94, F-95, F-73, F-74, F-76); todo caminho do "Onde" resolve (os `/app/{org}…` só com tenant); 16 defasagens corrigidas sem trocar número (F-06, F-07 en, F-17, F-26, F-30, F-31, F-32, F-33, F-41, F-44, F-45, F-50, F-53, F-54, F-61, F-68); a referência lista os 91 pacotes dos manifestos; `catalogo-mapa.json` com o mapa de ids provisórios, a tabela README → F-nn e as listas sugeridas para a guarda | 715.214 tokens · 55 min | contagens refeitas por `grep -c` (124/50 nos dois idiomas); 4 linhas amostradas (F-73, F-76, F-93, F-102 em pt; F-76, F-93 em en) com o termo, a Origem e o link da página; `git status` só com os quatro arquivos do pedido e os diagramas dos autores do #14; testes do pedido 613/616 — a falha pré-existente do contador e os dois `[CT-22]` do link da sessão para a página do mapa, que ainda não existia. Pendências que o agente apontou fora dos seus arquivos foram devolvidas a ele na tarefa seguinte (#15) |
-| 15 | 2 | o agente do #13 (`SendMessage`) — associação peça → F-nn pela R6, lista das sem feature própria pela R28 e F-nn sem peça, com a peça proposta; e as três pendências de documentação que ele achou | opus | idem #13 | em curso | — | — |
+| 15 | 2 | o agente do #13 (`SendMessage`) — associação peça → F-nn pela R6, lista das sem feature própria pela R28 e F-nn sem peça, com a peça proposta; e as três pendências de documentação que ele achou | opus | idem #13 | 238 peças com F-nn, 3 na lista das sem feature própria (o `Controller` base, o `BooleanoDoEnv` e o `NumeroDoEnv`), 27 F-nn sem peça (21 com peça proposta e prova; 6 impossíveis, das quais F-100 e F-113 só na parte do pacote); origens e "onde fica" do catálogo ajustados à peça real nos dois idiomas; as três pendências de documentação corrigidas; um defeito novo do kit (com `BROADCAST_CONNECTION=reverb` o polling do sininho desliga e o Echo não está configurado: o sininho nunca atualiza) | 961.766 tokens · 21 min, depois de interrompido e retomado | o modelo regenerado com os arquivos dele: 267 peças, 253 com F-nn, nenhuma proposta recusada pela âncora; o piso da P-12 fechado (235 peças, nenhuma sem F-nn fora da lista); só 4 F-nn do catálogo sem peça (as da D33); testes do site 88/88, com o `[CT-22]` verde |
+| 16 | 8 | Workflow `wf_52cdca17-14b` — 5 executores em paralelo, um arquivo cada: `fw-executor-ct` nos lotes G1 (catálogo), G2a (modelo), G2b (diagramas e página) e G3 (tenancy), e `fw-executor-ctb` no G4 (CT-B no `site/verifica-mapa.mjs`); contrato em `brief-executores.md` | herdado dos agentes | o `01`, o `02` e a conversa | em curso | — | — |
 | 14 | 3 | Workflow `wf_23c4acca-a3e` — 7 autores de diagramas curados em paralelo, arquivos disjuntos (contrato em `brief-autores.md` no scratchpad): sequências transversais, sequências por painel, workflows `kit:*`, ciclos de vida, fluxos de dados, ERD e classes, linha do tempo e tempos | herdado da sessão | a conversa | 7/7 autores, 0 erro; 36 arquivos de diagrama curado (7 sequências transversais, com a pilha da requisição dividida na comum e na do `/app` com tenant; 5 sequências por painel; 3 workflows `kit:*`; 3 ciclos de vida; 2 fluxos de dados; 10 ERD; 3 de classes, a linha do tempo e 2 cascatas de tempos; o `kit-install-ci` do esqueleto apagado), todos com prova em toda ligação, textos em pt e as linhas `[mapa]` pt e en sem ERRO; o que ficou de fora por falta de prova no kit (passo feito só em `vendor/`) está listado por autor no journal do workflow. Um autor mediu um **defeito do kit**: a poda agendada da trilha de exceções não roda (`TypeError` de `getModelPruneInterval()` com `CarbonImmutable` no console, onde o painel padrão `/app` registra o plugin sem `modelPruneInterval`) — relatado ao mantenedor, não corrigido (RQ-15) | 3.131.596 tokens · 44 min | os 36 renderizados pela sessão com `gerar.mjs --saida` (todos sem ERRO); cada autor conferiu as âncoras com script próprio (primeira ocorrência na linha, fora de comentário, 12+ caracteres, fora de `vendor/`) e os limites da D5, D10 e D21; amostra da sessão: o defeito relatado conferido nos fatos citados (o `->registerNavigation(false)` do `/app` e o `->modelPruneInterval(…)` só no `/infra`) |
 
 ## Blockers
@@ -195,6 +200,29 @@ Do passo 1 (esqueleto andante), 2026-11-20:
 - O arquivo de diagrama troca `painel?` por `paineis[]` (D28).
 - O navegador do Playwright 1.63 do site não estava instalado nesta máquina (`npx playwright install chromium`
   resolveu); o CI já o instala.
+
+Dos passos 2 a 6, 2026-11-20:
+- O modelo sai do registro vivo dos painéis (despejo nos dois modos, `getPages()` mais os getters de autenticação da
+  D30) e das classes classificadas por reflexão, e não da cópia dos grafos da pesquisa: os grafos tinham três
+  esquemas de ligação e rótulos de modo em texto livre. As ligações da pesquisa entram só quando a prova passa nas
+  formas da D20, D26 e D27 (206 descartadas, com o motivo, no relatório do script).
+- O modo de cada ligação sai da prova: trecho dentro do bloco `if (config('kit.tenancy.enabled'))` do provider vale
+  só com tenant (o modelo dava "o `/app` usa `Tenant`" nos dois modos).
+- Os mapas de domínio são as seções do catálogo dentro de cada painel (e do kit inteiro), divididas no teto da
+  ADR-07; a ligação entre domínios fica desenhada no resumo, pelo agrupamento, ou acrescentando a ponta que falta ao
+  mapa de uma das pontas. O resumo não leva uma porta por mapa de domínio: cada agrupamento tem o nome do domínio, e
+  a página do site linka os dois.
+- A peça que só existe num modo fica fora dos agrupamentos do resumo, desenhada sozinha: sem isso, o comparativo do
+  `/app` mostrava 0 acrescentadas.
+- O `tag` de F-nn mostra até três e "+N" (uma peça entrega 13 F-nn e o archify recusava o tag largo); o card "F-nn
+  de cada peça" lista todas, à vista sem zoom (D29 emendada). A caixa cresce com o rótulo, e o agrupamento leva a
+  procedência dos três primeiros membros (o resumo do kit, só de agrupamentos, era recusado por não ter fonte).
+- Os mapas do kit inteiro não desenhavam ligação nenhuma (o filtro de painel do construtor recusava as ligações sem
+  painel): corrigido antes do commit.
+- A D33 registra as quatro F-nn sem peça possível; a página do mapa as declara sem número nem nome (R2).
+- A conversão do site rederivava a descrição de oito páginas alheias; só o que é da página nova ficou no commit.
+- Os mapas somam 174 HTML e 147 MB no `dist/` (a estimativa do passo 1 era 130 MB), e o gerador leva cerca de 60 s
+  no build.
 
 ## Notas de Implementação
 
