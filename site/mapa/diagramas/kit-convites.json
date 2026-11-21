@@ -24,17 +24,22 @@
     },
     {
       "id": "App\\Data\\Convite\\ResultadoDoConviteEmMassaData",
-      "row": 2,
-      "col": 0
+      "row": 0,
+      "col": 1
     },
     {
       "id": "App\\Support\\ValidadeDoConvite",
-      "row": 3,
-      "col": 0
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "Spatie\\LaravelData\\Data",
+      "row": 0,
+      "col": 2
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,

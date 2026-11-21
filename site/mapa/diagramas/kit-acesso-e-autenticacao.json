@@ -14,7 +14,7 @@
   "pecas": [
     {
       "id": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
-      "row": 2,
+      "row": 1,
       "col": 2
     },
     {
@@ -59,77 +59,92 @@
     },
     {
       "id": "Laravel\\Socialite\\SocialiteServiceProvider",
-      "row": 0,
-      "col": 1
+      "row": 8,
+      "col": 0
     },
     {
       "id": "App\\Support\\AparenciaDasTelasDeAcesso",
-      "row": 1,
+      "row": 0,
       "col": 1
     },
     {
       "id": "App\\Notifications\\ConfirmarVinculoSocial",
-      "row": 2,
+      "row": 1,
       "col": 1
     },
     {
       "id": "App\\Http\\Controllers\\Auth\\EntrarNoPainelController",
-      "row": 3,
+      "row": 2,
       "col": 1
     },
     {
       "id": "App\\Support\\GerenciadorAntiRobo",
-      "row": 3,
+      "row": 2,
       "col": 2
     },
     {
       "id": "App\\Http\\Controllers\\Auth\\LoginSocialController",
-      "row": 4,
+      "row": 3,
       "col": 1
     },
     {
       "id": "App\\Data\\Social\\PerfilSocialData",
-      "row": 5,
+      "row": 4,
       "col": 1
     },
     {
       "id": "App\\Notifications\\PrimeiroAcessoSocial",
-      "row": 6,
+      "row": 5,
       "col": 1
     },
     {
       "id": "App\\Http\\Responses\\RespostaDeCadastro",
-      "row": 7,
+      "row": 6,
       "col": 1
     },
     {
       "id": "App\\Http\\Responses\\RespostaDeLogin",
-      "row": 0,
-      "col": 2
+      "row": 7,
+      "col": 1
     },
     {
       "id": "App\\Support\\VerificacaoAntiRobo",
-      "row": 1,
-      "col": 2
+      "row": 8,
+      "col": 1
     },
     {
       "id": "App\\Support\\ConfiguracaoDoLogin",
-      "row": 4,
+      "row": 3,
       "col": 2
     },
     {
       "id": "App\\Support\\DestinoAposLogin",
-      "row": 5,
-      "col": 2
-    },
-    {
-      "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
-      "row": 7,
+      "row": 4,
       "col": 2
     },
     {
       "id": "App\\Support\\RegistroAberto",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "Ddr\\FilamentCaptcha\\CaptchaManager",
+      "row": 8,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaBloqueio",
       "row": 6,
+      "col": 2
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Http\\Livewire\\LockerScreen",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "Filament\\Panel",
+      "row": 7,
       "col": 2
     }
   ],

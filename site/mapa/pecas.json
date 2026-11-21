@@ -773,6 +773,51 @@
     ]
   },
   {
+    "id": "App\\Filament\\Admin\\Resources\\Convites\\Pages\\CreateConvite",
+    "nome": "CreateConvite",
+    "tipo": "pagina",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-15"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Pages/CreateConvite.php",
+        "trecho": "class CreateConvite extends CreateRecord"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Convites\\Tables\\ConvitesTable",
+    "nome": "ConvitesTable",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-20"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "class ConvitesTable"
+      }
+    ]
+  },
+  {
     "id": "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
     "nome": "CondicaoResource",
     "tipo": "recurso",
@@ -894,7 +939,7 @@
       "sem",
       "com"
     ],
-    "origem": "pacote",
+    "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
     "features": [
       "F-90"
@@ -1811,6 +1856,56 @@
     ]
   },
   {
+    "id": "App\\Filament\\Pages\\Auth\\TelaBloqueio",
+    "nome": "TelaBloqueio",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "marjose123/filament-lockscreen",
+    "features": [
+      "F-06"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "class TelaBloqueio extends LockerScreen"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\TelaDoisFatores",
+    "nome": "TelaDoisFatores",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "jeffgreco13/filament-breezy",
+    "features": [
+      "F-04"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaDoisFatores.php",
+        "trecho": "class TelaDoisFatores extends TwoFactorPage"
+      }
+    ]
+  },
+  {
     "id": "App\\Filament\\Pages\\Auth\\TelaLogin",
     "nome": "TelaLogin",
     "tipo": "pagina",
@@ -1847,7 +1942,7 @@
       "sem",
       "com"
     ],
-    "origem": "pacote",
+    "origem": "pacote+proprio",
     "pacote": "caresome/filament-auth-designer",
     "features": [
       "F-73"
@@ -1942,7 +2037,7 @@
       "sem",
       "com"
     ],
-    "origem": "pacote",
+    "origem": "pacote+proprio",
     "pacote": "harvirsidhu/filament-cards",
     "features": [
       "F-65",
@@ -4494,6 +4589,27 @@
     ]
   },
   {
+    "id": "BezhanSalleh\\FilamentExceptions\\Models\\Exception",
+    "nome": "Exception",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "bezhansalleh/filament-exceptions",
+    "features": [
+      "F-57"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/PoliciesDeVendor.php",
+        "trecho": "use BezhanSalleh\\FilamentExceptions\\Models\\Exception;"
+      }
+    ]
+  },
+  {
     "id": "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
     "nome": "ExceptionResource",
     "tipo": "recurso",
@@ -4710,6 +4826,29 @@
     ]
   },
   {
+    "id": "Brimham\\FilamentBackupMonitor\\Pages\\BackupRunsPage",
+    "nome": "BackupRunsPage",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "brimham/filament-backup-monitor",
+    "features": [
+      "F-34"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Pages/BackupRunsPage.php",
+        "trecho": "use Brimham\\FilamentBackupMonitor\\Pages\\BackupRunsPage as BackupRunsDoPacote;"
+      }
+    ]
+  },
+  {
     "id": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
     "nome": "AuthDesignerPlugin",
     "tipo": "plugin",
@@ -4734,6 +4873,54 @@
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
         "trecho": "AuthDesignerPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\EmailVerification",
+    "nome": "EmailVerification",
+    "tipo": "pagina",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-03c"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php",
+        "trecho": "use Caresome\\FilamentAuthDesigner\\Pages\\Auth\\EmailVerification;"
+      }
+    ]
+  },
+  {
+    "id": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\RequestPasswordReset",
+    "nome": "RequestPasswordReset",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-02"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaRecuperarSenha.php",
+        "trecho": "use Caresome\\FilamentAuthDesigner\\Pages\\Auth\\RequestPasswordReset;"
       }
     ]
   },
@@ -4807,6 +4994,27 @@
     ]
   },
   {
+    "id": "Ddr\\FilamentCaptcha\\CaptchaManager",
+    "nome": "CaptchaManager",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "ddr/filament-captcha",
+    "features": [
+      "F-74"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/GerenciadorAntiRobo.php",
+        "trecho": "use Ddr\\FilamentCaptcha\\CaptchaManager;"
+      }
+    ]
+  },
+  {
     "id": "Dotswan\\FilamentLaravelPulse\\Widgets\\PulseServers",
     "nome": "PulseServers",
     "tipo": "widget",
@@ -4824,6 +5032,27 @@
       {
         "arquivo": "app/Filament/Infra/Pages/Pulse.php",
         "trecho": "PulseServers::class,"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Actions\\Exports\\Exporter",
+    "nome": "Exporter",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/actions",
+    "features": [
+      "F-97"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ImportExport/ExportadorDoKit.php",
+        "trecho": "use Filament\\Actions\\Exports\\Exporter;"
       }
     ]
   },
@@ -4940,6 +5169,50 @@
       {
         "arquivo": "app/Providers/Filament/AppPanelProvider.php",
         "trecho": "->tenant(Tenant::class, slugAttribute: 'slug')"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Pages\\SettingsPage",
+    "nome": "SettingsPage",
+    "tipo": "pagina",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/spatie-laravel-settings-plugin",
+    "features": [
+      "F-79"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+        "trecho": "use Filament\\Pages\\SettingsPage;"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Panel",
+    "nome": "Panel",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [
+      "F-82"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "use Filament\\Panel;"
       }
     ]
   },
@@ -5398,6 +5671,27 @@
     ]
   },
   {
+    "id": "LaBoiteACode\\FilamentDashboardWidgets\\Widgets\\BreakdownWidget",
+    "nome": "BreakdownWidget",
+    "tipo": "widget",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-90"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/Widgets/AcessosPorPainel.php",
+        "trecho": "use LaBoiteACode\\FilamentDashboardWidgets\\Widgets\\BreakdownWidget;"
+      }
+    ]
+  },
+  {
     "id": "LaBoiteACode\\FilamentLogsExplorer\\FilamentLogsExplorerPlugin",
     "nome": "FilamentLogsExplorerPlugin",
     "tipo": "plugin",
@@ -5535,6 +5829,31 @@
     ]
   },
   {
+    "id": "lockscreen\\FilamentLockscreen\\Http\\Livewire\\LockerScreen",
+    "nome": "LockerScreen",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "marjose123/filament-lockscreen",
+    "features": [
+      "F-06"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/AppServiceProvider.php",
+        "trecho": "$this->app->bind(LockerScreen::class, TelaBloqueio::class);"
+      }
+    ]
+  },
+  {
     "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
     "nome": "Locker",
     "tipo": "middleware",
@@ -5581,6 +5900,31 @@
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
         "trecho": "Lockscreen::make()"
+      }
+    ]
+  },
+  {
+    "id": "MDDev\\DynamicDashboard\\Pages\\DynamicDashboard",
+    "nome": "DynamicDashboard",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "mddev31/filament-dynamic-dashboard",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+        "trecho": "use MDDev\\DynamicDashboard\\Pages\\DynamicDashboard;"
       }
     ]
   },
@@ -5985,6 +6329,27 @@
     ]
   },
   {
+    "id": "Spatie\\LaravelData\\Data",
+    "nome": "Data",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "spatie/laravel-data",
+    "features": [
+      "F-111"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Data/Convite/FalhaDoConviteData.php",
+        "trecho": "use Spatie\\LaravelData\\Data;"
+      }
+    ]
+  },
+  {
     "id": "STS\\FilamentImpersonate\\FilamentImpersonateServiceProvider",
     "nome": "FilamentImpersonateServiceProvider",
     "tipo": "provider",
@@ -6117,6 +6482,27 @@
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
         "trecho": "FilamentMailLogPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Tapp\\FilamentMailLog\\Models\\MailLog",
+    "nome": "MailLog",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "tapp/filament-maillog",
+    "features": [
+      "F-58"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/PoliciesDeVendor.php",
+        "trecho": "use Tapp\\FilamentMailLog\\Models\\MailLog;"
       }
     ]
   },

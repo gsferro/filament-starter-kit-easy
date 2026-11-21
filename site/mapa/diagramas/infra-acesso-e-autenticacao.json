@@ -41,13 +41,13 @@
     },
     {
       "id": "App\\Models\\User",
-      "row": 4,
+      "row": 5,
       "col": 2
     },
     {
       "id": "App\\Filament\\Pages\\MyProfilePage",
       "row": 2,
-      "col": 1
+      "col": 2
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
@@ -86,28 +86,33 @@
     },
     {
       "id": "App\\Support\\ConfiguracaoDoLogin",
-      "row": 6,
-      "col": 1
-    },
-    {
-      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
       "row": 0,
       "col": 2
     },
     {
-      "id": "App\\Support\\DestinoAposLogin",
+      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
       "row": 1,
       "col": 2
     },
     {
-      "id": "App\\Support\\EmailComMais",
+      "id": "App\\Support\\DestinoAposLogin",
       "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\EmailComMais",
+      "row": 3,
       "col": 2
     },
     {
       "id": "App\\Support\\RegistroAberto",
-      "row": 3,
+      "row": 4,
       "col": 2
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaDoisFatores",
+      "row": 6,
+      "col": 1
     }
   ],
   "layout": {

@@ -322,6 +322,20 @@
     }
   },
   {
+    "de": "App\\Data\\Convite\\FalhaDoConviteData",
+    "para": "Spatie\\LaravelData\\Data",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Data/Convite/FalhaDoConviteData.php",
+      "trecho": "final class FalhaDoConviteData extends Data"
+    }
+  },
+  {
     "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
     "para": "App\\Support\\CarregamentoDaTabela",
     "verbo": "usa",
@@ -498,6 +512,22 @@
     }
   },
   {
+    "de": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "para": "Filament\\Pages\\SettingsPage",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+      "trecho": "class ConfiguracoesDoKit extends SettingsPage"
+    }
+  },
+  {
     "de": "App\\Filament\\Admin\\Pages\\Dashboard",
     "para": "App\\Filament\\Pages\\DashboardClassico",
     "verbo": "usa",
@@ -530,6 +560,22 @@
     }
   },
   {
+    "de": "App\\Filament\\Admin\\Pages\\Dashboard",
+    "para": "MDDev\\DynamicDashboard\\Pages\\DynamicDashboard",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+      "trecho": "final class Dashboard extends DynamicDashboard"
+    }
+  },
+  {
     "de": "App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource",
     "para": "App\\Models\\AgenteIa",
     "verbo": "usa",
@@ -559,6 +605,38 @@
     "evidencia": {
       "arquivo": "app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php",
       "trecho": "return AgentesDeIa::habilitado() && parent::shouldRegisterNavigation();"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Convites\\ConviteResource",
+    "para": "App\\Filament\\Admin\\Resources\\Convites\\Pages\\CreateConvite",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Convites/ConviteResource.php",
+      "trecho": "'create' => CreateConvite::route('/create'),"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Convites\\ConviteResource",
+    "para": "App\\Filament\\Admin\\Resources\\Convites\\Tables\\ConvitesTable",
+    "verbo": "usa",
+    "paineis": [
+      "admin"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Convites/ConviteResource.php",
+      "trecho": "return ConvitesTable::configure($table);"
     }
   },
   {
@@ -675,6 +753,20 @@
     "evidencia": {
       "arquivo": "app/Filament/Admin/Resources/Tenants/TenantResource.php",
       "trecho": "protected static ?string $model = Tenant::class;"
+    }
+  },
+  {
+    "de": "App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel",
+    "para": "LaBoiteACode\\FilamentDashboardWidgets\\Widgets\\BreakdownWidget",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Admin/Resources/Tenants/Widgets/AcessosPorPainel.php",
+      "trecho": "class AcessosPorPainel extends BreakdownWidget"
     }
   },
   {
@@ -1174,6 +1266,22 @@
     }
   },
   {
+    "de": "App\\Filament\\Infra\\Pages\\BackupRunsPage",
+    "para": "Brimham\\FilamentBackupMonitor\\Pages\\BackupRunsPage",
+    "verbo": "usa",
+    "paineis": [
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Infra/Pages/BackupRunsPage.php",
+      "trecho": "class BackupRunsPage extends BackupRunsDoPacote"
+    }
+  },
+  {
     "de": "App\\Filament\\Infra\\Pages\\Dashboard",
     "para": "App\\Support\\DashboardDinamico",
     "verbo": "usa",
@@ -1642,6 +1750,40 @@
     }
   },
   {
+    "de": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+    "para": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\RequestPasswordReset",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaRecuperarSenha.php",
+      "trecho": "class TelaRecuperarSenha extends RequestPasswordReset"
+    }
+  },
+  {
+    "de": "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
+    "para": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\EmailVerification",
+    "verbo": "usa",
+    "paineis": [
+      "app"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php",
+      "trecho": "class TelaVerificacaoDeEmail extends EmailVerification"
+    }
+  },
+  {
     "de": "App\\Filament\\Pages\\DashboardClassico",
     "para": "App\\Support\\DashboardDinamico",
     "verbo": "usa",
@@ -1709,7 +1851,11 @@
     "de": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
     "para": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
     "verbo": "usa",
-    "paineis": [],
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
     "modos": [
       "sem",
       "com"
@@ -2212,6 +2358,20 @@
     }
   },
   {
+    "de": "App\\Providers\\Filament\\AdminPanelProvider",
+    "para": "Filament\\Panel",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+      "trecho": "public function panel(Panel $panel): Panel"
+    }
+  },
+  {
     "de": "App\\Providers\\KitServiceProvider",
     "para": "App\\Ai\\Health\\LocalAiCheck",
     "verbo": "registra",
@@ -2540,6 +2700,34 @@
     }
   },
   {
+    "de": "App\\Support\\GerenciadorAntiRobo",
+    "para": "Ddr\\FilamentCaptcha\\CaptchaManager",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/GerenciadorAntiRobo.php",
+      "trecho": "final class GerenciadorAntiRobo extends CaptchaManager"
+    }
+  },
+  {
+    "de": "App\\Support\\ImportExport\\ExportadorDoKit",
+    "para": "Filament\\Actions\\Exports\\Exporter",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/ImportExport/ExportadorDoKit.php",
+      "trecho": "abstract class ExportadorDoKit extends Exporter"
+    }
+  },
+  {
     "de": "App\\Support\\PoliciesDeVendor",
     "para": "App\\Policies\\AiRunPolicy",
     "verbo": "registra",
@@ -2806,6 +2994,20 @@
     }
   },
   {
+    "de": "BezhanSalleh\\FilamentExceptions\\Models\\Exception",
+    "para": "App\\Policies\\ExceptionPolicy",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "Exception::class                      => ExceptionPolicy::class,"
+    }
+  },
+  {
     "de": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
     "para": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
     "verbo": "registra",
@@ -2891,6 +3093,24 @@
     "evidencia": {
       "arquivo": "app/Providers/Filament/AppPanelProvider.php",
       "trecho": "->media(IdentidadeDoKit::arteDoLogin(), alt: config('app.name'))"
+    }
+  },
+  {
+    "de": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "para": "App\\Filament\\Pages\\Auth\\TelaDoisFatores",
+    "verbo": "usa",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+      "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
     }
   },
   {
@@ -3017,6 +3237,20 @@
     "evidencia": {
       "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
       "trecho": "'preferencias_de_aparencia' => PreferenciasDeAparencia::class,"
+    }
+  },
+  {
+    "de": "lockscreen\\FilamentLockscreen\\Http\\Livewire\\LockerScreen",
+    "para": "App\\Filament\\Pages\\Auth\\TelaBloqueio",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Providers/AppServiceProvider.php",
+      "trecho": "$this->app->bind(LockerScreen::class, TelaBloqueio::class);"
     }
   },
   {
@@ -6325,6 +6559,20 @@
     "evidencia": {
       "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
       "trecho": "->models([\n                        Projeto::class,"
+    }
+  },
+  {
+    "de": "Tapp\\FilamentMailLog\\Models\\MailLog",
+    "para": "App\\Policies\\MailLogPolicy",
+    "verbo": "usa",
+    "paineis": [],
+    "modos": [
+      "sem",
+      "com"
+    ],
+    "evidencia": {
+      "arquivo": "app/Support/PoliciesDeVendor.php",
+      "trecho": "MailLog::class                        => MailLogPolicy::class,"
     }
   }
 ]

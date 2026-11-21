@@ -16,12 +16,12 @@
   "pecas": [
     {
       "id": "App\\Livewire\\DefinirSenhaPorEmail",
-      "row": 1,
+      "row": 0,
       "col": 1
     },
     {
       "id": "App\\Livewire\\InformacoesPessoais",
-      "row": 2,
+      "row": 1,
       "col": 1
     },
     {
@@ -31,13 +31,13 @@
     },
     {
       "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
-      "row": 1,
-      "col": 0
+      "row": 2,
+      "col": 1
     },
     {
       "id": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
-      "row": 2,
-      "col": 0
+      "row": 1,
+      "col": 2
     },
     {
       "id": "App\\Models\\User",
@@ -46,17 +46,17 @@
     },
     {
       "id": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
-      "row": 3,
-      "col": 0
-    },
-    {
-      "id": "App\\Filament\\Pages\\MyProfilePage",
-      "row": 7,
+      "row": 0,
       "col": 2
     },
     {
+      "id": "App\\Filament\\Pages\\MyProfilePage",
+      "row": 3,
+      "col": 1
+    },
+    {
       "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
-      "row": 4,
+      "row": 3,
       "col": 0
     },
     {
@@ -66,8 +66,8 @@
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
-      "row": 5,
-      "col": 1
+      "row": 1,
+      "col": 0
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
@@ -76,28 +76,28 @@
     },
     {
       "id": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
-      "row": 5,
+      "row": 4,
       "col": 0
     },
     {
       "id": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
-      "row": 6,
+      "row": 5,
       "col": 0
     },
     {
       "id": "lockscreen\\FilamentLockscreen\\Lockscreen",
-      "row": 7,
+      "row": 6,
       "col": 0
     },
     {
       "id": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
-      "row": 0,
-      "col": 1
+      "row": 7,
+      "col": 0
     },
     {
       "id": "App\\Support\\ConfiguracaoDoLogin",
-      "row": 1,
-      "col": 2
+      "row": 5,
+      "col": 1
     },
     {
       "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
@@ -121,13 +121,23 @@
     },
     {
       "id": "App\\Support\\ProvedorSocial",
-      "row": 0,
-      "col": 2
+      "row": 8,
+      "col": 1
     },
     {
       "id": "App\\Support\\RegistroAberto",
       "row": 5,
       "col": 2
+    },
+    {
+      "id": "Filament\\Pages\\SettingsPage",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
+      "row": 8,
+      "col": 0
     }
   ],
   "layout": {

@@ -95,6 +95,11 @@
       "id": "App\\Support\\Paineis",
       "row": 4,
       "col": 2
+    },
+    {
+      "id": "Filament\\Actions\\Exports\\Exporter",
+      "row": 5,
+      "col": 2
     }
   ],
   "layout": {

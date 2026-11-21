@@ -51,72 +51,77 @@
     },
     {
       "id": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
-      "row": 0,
-      "col": 1
+      "row": 7,
+      "col": 0
     },
     {
       "id": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
-      "row": 1,
+      "row": 0,
       "col": 1
     },
     {
       "id": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
-      "row": 2,
+      "row": 1,
       "col": 1
     },
     {
       "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
-      "row": 3,
+      "row": 2,
       "col": 1
     },
     {
       "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
-      "row": 4,
+      "row": 3,
       "col": 1
     },
     {
       "id": "App\\Support\\AparenciaDoUsuario",
-      "row": 3,
-      "col": 2
-    },
-    {
-      "id": "App\\Support\\AvatarDeIniciais",
-      "row": 5,
-      "col": 1
-    },
-    {
-      "id": "App\\Support\\CarregamentoDaTabela",
-      "row": 6,
-      "col": 1
-    },
-    {
-      "id": "App\\Support\\DashboardDinamico",
-      "row": 4,
-      "col": 2
-    },
-    {
-      "id": "App\\Support\\DensidadeDoLayout",
-      "row": 5,
-      "col": 2
-    },
-    {
-      "id": "App\\Support\\DockDeAtalhos",
-      "row": 0,
-      "col": 2
-    },
-    {
-      "id": "App\\Support\\ModoDoMenu",
-      "row": 6,
-      "col": 2
-    },
-    {
-      "id": "App\\Support\\TamanhoDaFonte",
       "row": 1,
       "col": 2
     },
     {
-      "id": "App\\Support\\TetoDeUpload",
+      "id": "App\\Support\\AvatarDeIniciais",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\CarregamentoDaTabela",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\DashboardDinamico",
       "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DensidadeDoLayout",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DockDeAtalhos",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\ModoDoMenu",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\TamanhoDaFonte",
+      "row": 7,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\TetoDeUpload",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "MDDev\\DynamicDashboard\\Pages\\DynamicDashboard",
+      "row": 3,
       "col": 2
     }
   ],

@@ -16,12 +16,12 @@
   "pecas": [
     {
       "id": "App\\Livewire\\DefinirSenhaPorEmail",
-      "row": 1,
+      "row": 0,
       "col": 1
     },
     {
       "id": "App\\Livewire\\InformacoesPessoais",
-      "row": 2,
+      "row": 1,
       "col": 1
     },
     {
@@ -46,28 +46,28 @@
     },
     {
       "id": "App\\Filament\\Pages\\MyProfilePage",
-      "row": 3,
+      "row": 2,
       "col": 1
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
-      "row": 4,
+      "row": 3,
       "col": 1
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\TelaLogin",
-      "row": 5,
+      "row": 4,
       "col": 1
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
-      "row": 6,
+      "row": 5,
       "col": 1
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
-      "row": 0,
-      "col": 2
+      "row": 6,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
@@ -91,33 +91,43 @@
     },
     {
       "id": "App\\Filament\\App\\Resources\\Users\\UserResource",
-      "row": 0,
-      "col": 1
+      "row": 7,
+      "col": 0
     },
     {
       "id": "App\\Support\\ConfiguracaoDoLogin",
-      "row": 1,
+      "row": 0,
       "col": 2
     },
     {
       "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
-      "row": 2,
+      "row": 1,
       "col": 2
     },
     {
       "id": "App\\Support\\DestinoAposLogin",
-      "row": 3,
+      "row": 2,
       "col": 2
     },
     {
       "id": "App\\Support\\EmailComMais",
-      "row": 4,
+      "row": 3,
       "col": 2
     },
     {
       "id": "App\\Support\\RegistroAberto",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\RequestPasswordReset",
       "row": 5,
       "col": 2
+    },
+    {
+      "id": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\EmailVerification",
+      "row": 7,
+      "col": 1
     }
   ],
   "layout": {
