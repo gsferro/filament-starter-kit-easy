@@ -112,7 +112,8 @@ model, the classes, the releases and the timings.
 - **Theme**: the site theme switch does not reach the viewer, which follows the system theme; the comparison
   always opens in dark.
 - **Numbers and dates**: archify writes the axis numbers in English format; the timings cascade uses whole
-  seconds, and the timeline carries the dd/mm/yyyy date in the text of each milestone.
+  seconds, and the timeline carries the dd/mm/yyyy date in the text of each milestone. The timeline, being wide,
+  opens with smaller text than the other diagrams: use the viewer zoom.
 - **Completeness**: the map guarantees a floor — every piece a panel registers and every class of `app/` outside
   `app/Filament` delivers a catalog feature or sits in a list with the reason —, and does not guarantee that every
   link in the code is drawn.

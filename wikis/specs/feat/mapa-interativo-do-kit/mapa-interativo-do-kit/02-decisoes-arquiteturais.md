@@ -367,6 +367,12 @@ Para cada painel e cada modo de tenancy em que a estrutura muda (P-09):
 O piso de leitura do projeto é 6,5 px projetados, acima dos 6 px do archify: o spike mediu de 6,00 a
 6,15 px no Chromium do Windows, e as fontes do Linux do CI podem virar o resultado.
 
+*(alterado em 2026-11-20 — medido no Chromium do Linux, no enquadramento inicial de 1.440 × 900, contando só o texto
+visível no carregamento)* Com a grade equilibrada do posicionador (o desenho alto era encolhido até caber), 86 dos 87
+diagramas de cada idioma ficam no piso ou acima. A exceção é a linha do tempo, larga (26 marcos lado a lado), que
+abre a 6,31 px e se lê pelo zoom do visualizador; a página do mapa declara isso. O `tag` de F-nn, que o archify
+esconde até o nível de detalhe completo, fica fora da conta.
+
 ### Alternativas Consideradas
 
 1. **O painel inteiro num diagrama** — reprovado pelo spike (acima).
