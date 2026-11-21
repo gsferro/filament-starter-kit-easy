@@ -105,19 +105,28 @@ build from a versioned model — the decisions are in the ADRs of the `mapa-inte
   `{pt, en}` and the proof of each link in the `prova` field.
 - **The generator** — `site/mapa/gerar.mjs` runs at the end of `npm run build`. It downloads archify at the commit
   pinned in `site/mapa/archify.mjs` (the build needs `git` and access to github.com), projects each language and
-  writes `dist/mapa/{pt,en}/{slug}.html`. A link without proof, a snippet that is not in the file and a layout
-  that archify rejects stop the build, with the diagnostic.
+  writes `dist/mapa/{pt,en}/{slug}.html`. A link without proof, a snippet that is not in the file (or only appears
+  in a comment), a diagram piece that is not in the model, broken JSON and a layout that archify rejects stop the
+  build, with a `[mapa]` message naming the culprit — all but the layout before archify is fetched and the output
+  is deleted. Each pair of pieces gets one arrow per verb (registers, uses,
+  reads, writes), each with its own stroke.
 - **The placer** — `node mapa/posicionar.mjs <slug>` (in `site/`) searches for a grid archify accepts for an
   architecture map and writes it into the file. Run it after changing the pieces of a map; it never runs in the
   build.
-- **The checker** — `site/verifica-mapa.mjs` runs in CI after the accessibility one: a sample of one HTML per
-  type, language and theme, WCAG 2.1 AA through axe, with two defects of archify itself tolerated by rule and
-  element, and no console error.
+- **The checker** — `site/verifica-mapa.mjs` runs in CI after the accessibility one: it opens the diagrams in
+  both languages and checks, against the source, the pieces and labels, the proof of each link, the search and the
+  passport, and the interface in the page language; it audits a sample of one HTML per type, language and theme
+  (WCAG 2.1 AA through axe, with two defects of archify itself tolerated by rule and element); and it fails the job
+  on any console error.
 
 To check one diagram without rebuilding the whole site: `cd site && node mapa/gerar.mjs --saida /tmp/mapa <slug>`.
+Without a slug, the generator rebuilds the whole `--saida` folder, so it refuses a folder that holds anything but
+what it writes in `pt/` and `en/` (the map HTML and the comparison receipt): it never deletes what it did not
+generate.
 
 A new kit piece enters the model with the F-nn it delivers — the rule `.ai/rules/catalogo-de-features.md` and the
-guards `tests/Kit/MapaInterativoTest.php` and `tests/Tenancy/MapaInterativoTenancyTest.php` enforce it.
+guards `tests/Kit/MapaInterativo*Test.php` (catalog, publication, model and diagrams) and
+`tests/Tenancy/MapaInterativoTenancyTest.php` enforce it, and resolve every map anchor on every PR.
 
 ## What runs in the background
 

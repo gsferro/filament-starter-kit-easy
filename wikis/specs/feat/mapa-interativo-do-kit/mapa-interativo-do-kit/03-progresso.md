@@ -68,8 +68,13 @@ dono único por arquivo; os CT seguem os mesmos. O G1 virou dois no redespacho #
 - [x] `tests/Kit/MapaInterativoDiagramasTest.php` — G2, diagramas e página: R6, R12, R15 a R20, R22, R29, R34 (CT-37) — 90 casos, verdes
 - [x] `tests/Tenancy/MapaInterativoTenancyTest.php` (CT-12, CT-30, CT-38, CT-44) — 13 casos, verdes
 - [x] `site/verifica-mapa.mjs` (CT-B01 a CT-B07) — 87 diagramas × 2 idiomas, 0 reprovação (CT-B01 2.070 conferências, CT-B02 2.898) — conferidor Node + Playwright do site construído (D17); o
-  `ids-ct.sh` só lê `it()`/`test()` do Pest e acusa estes sete como sem teste, por desenho; a conferência deles é o
+  `ids-ct.sh` só lê `it()`/`test()` do Pest e acusa estes oito (com o CT-B08 do step 9) como sem teste, por desenho; a conferência deles é o
   próprio conferidor no `pages.yml` e no job `site` do `ci.yml`
+
+*(alterado em 2026-11-21 — steps 9 e 10)* Depois da revisão do diff, da re-revisão, da reconciliação e do ponytail,
+no commit `000359b2`, com JUnit: catálogo 64 casos, publicação 48 (CT-48 a CT-51), modelo 105 (CT-52 a CT-54),
+diagramas 97 (CT-46 e CT-47) e tenancy 18 (CT-55) — 332 casos, 0 erro, 0 falha, 0 pulado; o conferidor ganhou o
+CT-B08.
 
 Recortes bloqueados até a resposta do mantenedor (nenhuma RQ inteira): a lista fechada e a ordem dos fluxos
 (Q6) e a marca da peça condicional (Q11) — com ela ficam estacionados a R30 (CT-32 e CT-33, IDs reservados e
@@ -80,20 +85,52 @@ coberturas parciais`.
 Não fatiado — 2026-11-20: 26 RQ vigentes, 41 CT (dois deles estacionados na Q11) e 7 CT-B, compactação: sim, 2 perguntas de requisito abertas (Q6, Q11) — dois sinais do step 8 (tamanho e compactação); a sugestão de `/feature-tickets` foi feita ao mantenedor no status de 2026-11-20 e ficou sem resposta; a sessão segue sem fatiar, com a autorização "implemente ate o fim" (RQ-14, RQ-26), e paraleliza os passos do `01` por conjuntos de arquivos disjuntos
 
 ## Verificação Final
-- [ ] `/ponytail:ponytail-review` no diff (validar contra over-engineering)
-- [ ] `vendor/bin/pint --dirty`
-- [ ] `vendor/bin/pest tests/Kit/MapaInterativoTest.php tests/Tenancy/MapaInterativoTenancyTest.php --compact`
+- [x] `/ponytail:ponytail-review` no diff (validar contra over-engineering) — despacho #37, 54 achados; aplicados no `000359b2` (net -356 linhas), os outros recusados com o motivo abaixo, 2026-11-21
+- [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}` no `000359b2`, 2026-11-21
+- [x] `vendor/bin/pest tests/Kit/MapaInterativoTest.php tests/Tenancy/MapaInterativoTenancyTest.php --compact` — as cinco guardas do mapa no `000359b2`, com JUnit: 105 + 97 + 64 + 48 + 18 = 332 casos, 0 erro, 0 falha, 0 pulado, 2026-11-21
 - [ ] Suítes `Kit` e `Tenancy`: nada quebrou além da **baseline** de `main` (falhas pré-existentes por nome)
 - [ ] `npm run build`, `verifica-links` e acessibilidade do site num clone raso, no contêiner Linux do passo 1
-- [ ] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação
-- [ ] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*`
-- [ ] `rastreabilidade.sh {wiki}` silencioso
-- [ ] `checkbox-sem-evidencia.sh {wiki}` silencioso
-- [ ] `citacoes.sh {wiki}` silencioso
-- [ ] `ids-ct.sh {wiki} 'tests/**/MapaInterativo*Test.php'` silencioso
-- [ ] `conformidade-rules.sh {wiki} main` silencioso
-- [ ] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final
+- [x] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação — despachos #20 e #21 (primeira rodada) e #30 e #31 (re-revisão), todos os achados roteados na tabela do step 9, 2026-11-21
+- [x] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*` — `00` (P-14, nota do step 10), `04` (CT-50, CT-52, cabeçalho e Índice), `05` (a caixa que o modo esvazia), 2026-11-21
+- [x] `rastreabilidade.sh {wiki}` silencioso — exit 0 sem saída, 2026-11-21
+- [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — exit 0 sem saída, 2026-11-21
+- [x] `citacoes.sh {wiki}` silencioso — exit 0 sem saída depois do acerto das citações que o step 9, o step 10 e o ponytail deslocaram; as 38 citações de `tests/Pest.php` que outros wikis têm quebradas já estavam quebradas na `main`, 2026-11-21
+- [x] `ids-ct.sh {wiki} 'tests/**/MapaInterativo*Test.php'` silencioso — acusa só os CT-B01 a CT-B08, do conferidor Node, por desenho (ver `## Testes`), 2026-11-21
+- [x] `conformidade-rules.sh {wiki} main` silencioso — exit 0 sem saída, 2026-11-21
+- [x] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final — `desenvolvendo-o-kit.md` nos dois idiomas e o `[Unreleased]` do CHANGELOG com a recusa antes de qualquer efeito, o conferidor e o Node no CI; o README não muda (2.775 blocos e 231/271 arquivos de teste, iguais), 2026-11-21
 - [ ] `git commit`
+
+**O ponytail do diff (#37), achado a achado.** Aplicados no `000359b2`:
+- os 129 wrappers `if (! function_exists())`/`if (! defined())` dos cinco arquivos de guarda — nenhum arquivo de
+  `tests/` da `main` faz isso; desindentados por um script que conferiu, pelo tokenizador, que só os tokens do
+  wrapper mudaram, e nenhum nome de função se repete em `tests/`;
+- no `tests/Pest.php`, `pecasPorId()` por `collect()->unique()->keyBy()` e o parâmetro `falhaComoExpectativa`
+  fora; nas guardas, `class_basename()`, `versaoDoNode()`, `array_any()`, `composerDoKit()` e
+  `Yaml::parseFile()` no lugar das cópias, e os parâmetros que nenhum chamador usava;
+- no gerador, um `cardDeFeatures()`; no posicionador, os diagramas lidos uma vez, sem o Map morto nem a linha
+  que repetia o layout; no conferidor, `Map.groupBy`, `lerPagina()` no lugar da cópia dela, sem os valores e os
+  parâmetros mortos, e o `lang` num `if` só.
+
+Recusados, com o motivo:
+- **o piso de população do conferidor**: é a convenção dos três conferidores do site (`verifica-links` e
+  `verifica-acessibilidade` têm o mesmo);
+- **o script do filho por `--eval` e `Process::input()`**: no Windows, um argumento de várias linhas com aspas
+  passa pelo `cmd.exe`, e o arquivo temporário é o caminho robusto;
+- **tirar o `publicacaoDesligarPasta()` do CT-51**: a junção aponta para o kit, e desligá-la antes da remoção
+  recursiva é a barreira contra apagar a árvore através dela;
+- **juntar a R11, a R28 e a R34 do Kit e do Tenancy**: as semânticas diferem (a R11 do Kit compara a união, a
+  do Tenancy tipo a tipo; as duas R28 têm entradas e regras diferentes), e o #19 mediu e manteve a R11 e a R34;
+- **`mapaModeloSemComentario()` pela máscara**: apagar e mascarar não dão o mesmo `str_contains` quando o trecho
+  atravessa um comentário removido;
+- **as tabelas do oráculo com um chamador** (`mapaDiagramasTracoDoVerbo()`, `mapaDiagramasColunas()`,
+  `catalogoOrigensDoGlossario()`) e **a união de fontes de `publicacaoSlugsDoMapa()`**: nomeiam o oráculo, e a
+  união é de propósito;
+- **a união com o `require` do `composer.json`** e **a segunda varredura de `app/Providers` pelo
+  `mapaModeloClassesDeApp()`**: não foi conferido que o resultado fica igual;
+- **o resumo da mensagem de falha do traço** (as guardas de diagrama): é o que o mantenedor lê quando reprova;
+- **as trocas de laço por função da biblioteca em teste verde** (`array_fill_keys`, `array_find`/`array_any`,
+  `Str::between`, `File::allFiles`, `array_column`, os datasets combinados, a fusão de `mapaDiagramasPt`/`En`):
+  não mudam o que o teste prova; ficam para uma limpeza à parte.
 
 ## Revisão do Diff (step 9)
 
@@ -115,8 +152,22 @@ Não fatiado — 2026-11-20: 26 RQ vigentes, 41 CT (dois deles estacionados na Q
 | A14 | RD-10 (minor) | o conferidor lê do próprio HTML o rótulo da raiz da árvore de registro | R24 → CT-B01 e CT-B02 → `46cd0644`: a raiz da árvore leva o nome do modelo ("/app"; Q23) | CT-B01, CT-B02 | — |
 | A15 | RD-11 (minor) | na suíte Tenancy, a guarda do registro ignora sobra fora dos cinco tipos, e o docblock promete controles que os datasets não têm | R11 → CT-55 e linha nova do CT-38 → a guarda Tenancy reprova sobra de qualquer tipo; docblock da suíte corrigido (D38) | CT-55, CT-38 | — |
 | A16 | RD-12 (minor) | a tradução do tipo `class`/`abstract` no passaporte pt não tem guarda de regressão | R31 → CT-B04 (passo 8) — já passava; vira guarda de regressão | CT-B04 | — |
+| R2-1 | re-revisão, passe genérico (importante) | o conferidor ainda espera a caixa de agrupamento que o filtro de modo esvazia, e o posicionador ainda lhe dá uma célula da grade | P-13 → o conferidor filtra a caixa vazia, como o gerador (`563cda13`; nota no `05`, CT-B01) | P-13, CT-B01 | em parte: a célula do posicionador fica — ele valida a entrada que o gerador monta, já sem a caixa, e filtrar ali repetiria o filtro de modo do gerador (lista paralela); o efeito é uma célula vaga numa grade válida. Sem vermelho: nenhuma das 56 caixas dos 46 mapas construídos esvazia hoje, e o CT-B01 passa antes e depois |
+| R2-2 | re-revisão, passe genérico (importante) | o lexer de comentários do gerador toma código por comentário: regex de JS, heredoc e `#` entre aspas no YAML | igual ao RR-03 | CT-52 | em parte: a regex de JS e o `#` entre aspas no YAML seguem a régua da guarda, o oráculo do CT-52; o caso que diverge do arquivo real falha fechado ("só aparece em comentário") e nunca dá uma linha de comentário |
+| R2-3 | re-revisão, passe genérico (nit) | o recibo `.receipt.json` de um `compare` interrompido trava toda regeração da pasta de saída | P-14 → `563cda13`: o recibo é aceito na pasta e sai com o `pt/` e o `en/` | P-14 | em parte: o lixo do sistema operacional (`.DS_Store`) segue recusado — o gerador não apaga o que não gerou, e a mensagem nomeia o arquivo |
+| R2-4 | re-revisão, passe genérico (nit) | o posicionador lê os diagramas irmãos com `JSON.parse` cru, depois de baixar o archify | igual ao RR-02 | CT-50 | — |
+| R2-5 | re-revisão, passe genérico (nit) | o gerador e o conferidor dão prioridades opostas ao nome do tipo no passaporte (`foraDoCatalogo` × catálogo do archify) | R31 → `563cda13`: o nome do kit vence no catálogo embutido, como o conferidor espera (CT-B04) | CT-B04 | — |
+| R2-6 | re-revisão, passe genérico (nit) | `nome in IDIOMAS` aceita pasta com nome do protótipo (`constructor`) | P-14 → `563cda13`: `Object.hasOwn` | P-14 | — |
+| RR-01 | re-revisão, passe de eixos (major) | a peça e o membro de agrupamento fora do modelo só são recusados no laço de render, depois de baixar o archify e de apagar `pt/` e `en/` | P-14 → duas linhas novas do CT-50 (vermelhas no `bc27379f`) → `563cda13`: as peças de todo mapa construído são conferidas antes de qualquer efeito, e a linha `[mapa]` nomeia a peça e o diagrama | P-14, CT-50 | — |
+| RR-02 | re-revisão, passe de eixos (minor) | o do R2-4, com a pasta temporária que vaza | P-14 → linha nova do CT-50 (vermelha no `bc27379f`) → `563cda13`: os irmãos são lidos antes de baixar o archify, e o quebrado é recusado pelo nome | P-14, CT-50 | — |
+| RR-03 | re-revisão, passe de eixos (minor) | o lexer não conhece heredoc, nowdoc nem HTML solto: um apóstrofo num nowdoc engole o `//` de um comentário, e a prova aponta o comentário | R9 → linha nova do CT-52, o controle do nowdoc (vermelha no `bc27379f`: a linha 28, o comentário, e não a 31) → `563cda13`: o comentário de PHP é o do tokenizador do PHP, e os outros tipos usam as regex da guarda. Diferencial contra a máscara da guarda em 2.145 arquivos versionados: 0 divergências (o lexer anterior divergia em 22) | CT-52 | — |
+| RR-04 | re-revisão, passe de eixos (minor) | um `end_line` escrito na âncora sobrevive à linha calculada | R9 → `563cda13`: `line`, `end_line` e `path` da âncora não passam ao link | CT-09, CT-53 | sem linha nova: o CT-09 e o CT-53 já reprovam a chave em todo dado publicado, e a correção é a segunda barreira |
+| RR-05 | re-revisão, passe de eixos (minor) | o gerador trata `.cjs` como JS, e a guarda não | R9 → `563cda13`: `.cjs` sai do gerador, como na guarda | CT-52 | — |
+| S10-01 | reconciliação (step 10), a sessão | o gerador só resolve a prova de cada ligação e de cada peça no laço de render, depois de baixar o archify e, sem slug, de apagar `pt/` e `en/`; o posicionador baixa o archify antes de montar o mapa; e o comentário de `gerar()` prometia "tudo o que pode recusar vem antes de qualquer efeito" | P-14 (nota do step 10 no `00`: o layout é a exceção) → 7 linhas novas do CT-50 (vermelhas no `563cda13`, #35 e #36) → `d34bf17e`: a entrada inteira é montada antes de qualquer efeito, e a âncora que não resolve nomeia o nó que a cita | P-14, CT-50 | — |
 
 *Alvo: `main...168d1827`. Derivação dos CT pela `feature-test-design` (despacho #22), vermelhos escritos antes da correção pelos executores (#23 a #28) — o vermelho de cada um é a prova de que o CT falha sem a correção —, correções da sessão nos commits `46cd0644` e `114f519f` e no conferidor. Nenhum achado rejeitado: os dois passes repetem três (A2, A3 e o RD-04/CR-02), e a sessão conferiu cada um — o A1 e o A8 reproduzidos pelos revisores, o A9 medido pela sessão (a função do CT-10 sobre as 413 ligações, num teste temporário apagado depois).*
+
+*Re-revisão (segunda e última rodada, teto de 2), 2026-11-21, alvo: só as correções da primeira (`168d1827...HEAD`, sem a wiki). O passe genérico (#30) e o de eixos (#31) acharam 11; dois aparecem nos dois (R2-2 = RR-03, R2-4 = RR-02); nada estrutural. RR-01, RR-02 e RR-03 ganharam linha de CT (analista, #32), escrita e vista vermelha pelos executores antes da correção (#33, #34); os outros são correções pequenas sem linha nova, com o motivo na tabela. O passe de eixos recebeu, no pedido, um resumo do que as correções prometiam; o próprio revisor declarou a contaminação e apoiou cada achado numa repro e no que o diff afirma. O passe genérico rodou sem esse resumo.*
 
 ## Conformidade com Rules
 
@@ -211,11 +262,33 @@ Roteiro manual: não — 2026-11-20 — sem resposta a Q5 — a entrega é um si
 | 27 | 9 | `fw-executor-ct` — tenancy: CT-55, linha nova do CT-38, docblock | opus | idem | 18 casos; 1 vermelho b (a guarda filtrava a sobra pelos cinco tipos) | 156.554 tokens · 10 min | a sessão corrigiu a função de guarda; verde depois (18/18) |
 | 28 | 9 | `fw-executor-ctb` — conferidor: CT-B01, B02, B04, B06, B07 e CT-B08 | opus | idem | vermelhos b na raiz da árvore (16 = 8 × 2 idiomas); CT-B06, CT-B07 e CT-B08 vermelhos e verdes depois das correções do próprio conferidor | 230.919 tokens · 22 min | verde depois da correção do gerador (8 CT-B, 0 reprovação) |
 | 29 | 9 | `general-purpose` como construtor — juntar no `tests/Pest.php` os leitores da saída do gerador clonados no step 9 | opus | o `01`, o `02`, o `03` e a conversa | `entradasDoGeradorDoMapa()` no lugar dos dois leitores e `versaoDoNode()` no lugar das duas checagens do Node; a máscara de comentários e os helpers do clone descartável ficaram, porque um arquivo só os usa | 359.688 tokens · 37 min | a sessão rodou os cinco arquivos e as guardas de helper, citação e documentação com JUnit (327 + 18 casos, 0 erro, 0 falha, 0 pulado); commit `c270e120` |
+| 30 | 9 | `/code-review high 168d1827...HEAD` — re-revisão, passe genérico (segunda e última rodada) | não exposto pelo host | a conversa | 6 achados: 2 importantes (R2-1, R2-2) e 4 nits (R2-3 a R2-6) | 148.584 tokens · 4 min | conferidos pela sessão contra o código; R2-2 e R2-4 repetem achados do passe de eixos |
+| 31 | 9 | `fw-revisor-diff` — re-revisão, passe de eixos, sem a wiki | opus | o `01`, o `03` e a conversa — mas o pedido trouxe um resumo do que as correções prometiam (contaminação declarada pelo revisor) | 5 achados: 1 major (RR-01) e 4 minor (RR-02 a RR-05); o próprio diferencial do lexer contra o `token_get_all` (774 PHP, 9 divergentes, nenhuma das 1.500 âncoras PHP afetada); CT-48 a CT-51 e a suíte do mapa em paralelo, verdes | 314.683 tokens · 34 min | a sessão conferiu o RR-01 e o RR-02 pela ordem das chamadas no código, e mediu o RR-03 com o próprio diferencial de máscara |
+| 32 | 9 | analista do #22, retomado — as linhas da re-revisão no `04` e no `05` (RR-01, RR-02, RR-03 e a caixa vazia do conferidor) | opus | o `01`, o `02`, o `03` e a conversa | duas linhas do RR-01 e uma do RR-02 no CT-50 (colunas `defeito` e `culpado` novas), o controle do nowdoc no CT-52, os mutantes M7, M8 e M13, a nota da caixa vazia no `05`; cada linha com o medido no `bc27379f` | 797.238 tokens · 8 min | diff do `04` e do `05` conferido: só os pontos pedidos, com a marca da re-revisão |
+| 33 | 9 | `fw-executor-ct` do #23, retomado — o controle do nowdoc do CT-52 | opus | o `01`, o `02` e a conversa | primeiro retorno bloqueado: o texto em memória não chegava ao gerador, e o executor pediu a opção `textosNaRevisao` em `entradasDoGeradorDoMapa()`, que a sessão pôs no `tests/Pest.php`; no segundo, 105 casos e 1 vermelho b (a linha 28, o comentário, e não a 31) | 343.425 + 346.184 tokens · 4 min + 5 min | vermelho conferido no JUnit antes da correção; verde depois (105/105, commit `563cda13`) |
+| 34 | 9 | `fw-executor-ct` do #25, retomado — as três linhas novas do CT-50 | opus | idem | 41 casos; 3 vermelhos b, iguais ao medido no `04`; as quatro linhas antigas, com o "E" novo, verdes; `git status` igual antes e depois | 287.408 tokens · 6 min | verde depois do commit da correção (41/41 no `563cda13`), porque o clone é do HEAD |
+| 35 | 10 | analista do #22, retomado — a P-14 sobre a projeção, que a reconciliação achou: linhas do CT-50 | opus | o `01`, o `02`, o `03` e a conversa | 7 linhas novas no CT-50 (4 do gerador, 3 do posicionador), uma por classe e por ferramenta (EP), com o medido no `563cda13`; o título e o último passo do CT-50 ampliados; os mutantes R40-M9 a M14; três citações do RR-01 e do RR-02 em forma histórica | 844.166 tokens · 5 min | diff do `04` conferido: só o CT-50 e a tabela de mutantes dele; a sessão acertou o cabeçalho (260 mutantes) e a linha do Índice |
+| 36 | 10 | `fw-executor-ct` do #25, retomado — as sete linhas do CT-50 do step 10 | opus | o `01`, o `02` e a conversa | 48 casos; 7 vermelhos b, iguais ao medido no `04`; uma correção a, na pré-condição do próprio teste (a ligação só em comentário tem as duas pontas também no `kit-resumo-com` e no `kit-resumo-sem`, onde as duas caem no mesmo agrupamento e a seta não sai); o "E" novo nas 14 linhas | 356.481 tokens · 9 min | verde depois do commit da correção (48/48 no `d34bf17e`), porque o clone é do HEAD |
+| 37 | 10 | `general-purpose` com a skill `ponytail-review` — o diff de código `main...563cda13` (as ferramentas do mapa, o conferidor, o CI e os testes), lido do git | opus | a conversa, a wiki e o raciocínio da implementação | 54 achados, `net: -698 lines possible`; o maior bloco, os 129 wrappers `function_exists`/`defined` dos cinco arquivos de guarda | 294.279 tokens · 22 min | a sessão conferiu cada achado no código antes de decidir; aplicados no `000359b2` (net -356 linhas), recusados com o motivo na Verificação Final; as cinco guardas, a `HelpersDeTesteTest` e a publicação verdes depois |
 | 14 | 3 | Workflow `wf_23c4acca-a3e` — 7 autores de diagramas curados em paralelo, arquivos disjuntos (contrato em `brief-autores.md` no scratchpad): sequências transversais, sequências por painel, workflows `kit:*`, ciclos de vida, fluxos de dados, ERD e classes, linha do tempo e tempos | herdado da sessão | a conversa | 7/7 autores, 0 erro; 36 arquivos de diagrama curado (7 sequências transversais, com a pilha da requisição dividida na comum e na do `/app` com tenant; 5 sequências por painel; 3 workflows `kit:*`; 3 ciclos de vida; 2 fluxos de dados; 10 ERD; 3 de classes, a linha do tempo e 2 cascatas de tempos; o `kit-install-ci` do esqueleto apagado), todos com prova em toda ligação, textos em pt e as linhas `[mapa]` pt e en sem ERRO; o que ficou de fora por falta de prova no kit (passo feito só em `vendor/`) está listado por autor no journal do workflow. Um autor mediu um **defeito do kit**: a poda agendada da trilha de exceções não roda (`TypeError` de `getModelPruneInterval()` com `CarbonImmutable` no console, onde o painel padrão `/app` registra o plugin sem `modelPruneInterval`) — relatado ao mantenedor, não corrigido (RQ-15) | 3.131.596 tokens · 44 min | os 36 renderizados pela sessão com `gerar.mjs --saida` (todos sem ERRO); cada autor conferiu as âncoras com script próprio (primeira ocorrência na linha, fora de comentário, 12+ caracteres, fora de `vendor/`) e os limites da D5, D10 e D21; amostra da sessão: o defeito relatado conferido nos fatos citados (o `->registerNavigation(false)` do `/app` e o `->modelPruneInterval(…)` só no `/infra`) |
 
 ## Blockers
 
 ## Desvios do Plano
+
+Da re-revisão do step 9 e da reconciliação (step 10), 2026-11-21:
+- **O lexer de comentários do gerador é a régua da guarda da R9**, e não um lexer próprio de strings: o PHP como o
+  tokenizador do PHP o vê (heredoc, nowdoc e HTML fora de `<?php` não têm comentário), e JS, YAML, `.env`, Markdown
+  e Blade pelas mesmas regex da guarda. Medido: a máscara do gerador e a da guarda iguais em 2.145 arquivos
+  versionados (866 PHP); o lexer anterior divergia em 22, entre eles `## Papel` dentro de um heredoc de seeder,
+  tomado por comentário.
+- **A entrada inteira é montada antes de qualquer efeito** (P-14, com a nota do step 10 no `00`): o gerador confere
+  as peças de todo mapa construído e monta cada diagrama a gerar nos dois idiomas sem o archify — a prova que não
+  resolve, a ligação sem prova e o texto sem tradução param ali, com o diagrama e o nó nomeados —, e só então obtém
+  o archify e apaga `pt/` e `en/`; o posicionador monta o mapa do mesmo jeito antes do download. Só o layout fica
+  para o render, porque só o archify o confere.
+- **A célula do posicionador para a caixa que o modo esvazia fica** (R2-1, rejeitado em parte): ele valida a
+  entrada que o gerador monta, já sem a caixa, e filtrar ali repetiria o filtro de modo do gerador.
 
 Do step 9 (revisão do diff), 2026-11-21 — o que os achados pediram, além do que o `00` e o `04` já registram:
 - **Uma seta por verbo** (D36): o par de pontas com ligações de verbos diferentes ganhou uma seta por verbo; quatro

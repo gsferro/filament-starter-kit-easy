@@ -106,18 +106,25 @@ a partir de um modelo versionado — as decisões estão nas ADRs da wiki `mapa-
   com os textos em `{pt, en}` e a prova de cada ligação no campo `prova`.
 - **O gerador** — `site/mapa/gerar.mjs` roda no fim do `npm run build`. Baixa o archify pelo commit fixado em
   `site/mapa/archify.mjs` (o build precisa de `git` e de acesso a github.com), projeta cada idioma e grava
-  `dist/mapa/{pt,en}/{slug}.html`. Ligação sem prova, trecho que não está no arquivo e layout que o archify recusa
-  param o build, com o diagnóstico.
+  `dist/mapa/{pt,en}/{slug}.html`. Ligação sem prova, trecho que não está no arquivo (ou que só aparece em
+  comentário), peça de diagrama que não está no modelo, JSON quebrado e layout que o archify recusa param o build,
+  com a mensagem `[mapa]` que nomeia o culpado — tudo, menos o layout, antes de baixar o archify e de apagar a
+  saída. Cada par de peças ganha uma seta por verbo (registra, usa, lê,
+  grava), cada uma com o traço dele.
 - **O posicionador** — `node mapa/posicionar.mjs <slug>` (em `site/`) busca uma grade que o archify aceite para um
   mapa de arquitetura e a grava no arquivo. Rode depois de mudar as peças de um mapa; ele nunca roda no build.
-- **O conferidor** — `site/verifica-mapa.mjs` roda no CI depois do de acessibilidade: uma amostra de um HTML por
-  tipo, idioma e tema, WCAG 2.1 AA pelo axe, com dois defeitos do próprio archify tolerados por regra e elemento, e
-  nenhum erro de console.
+- **O conferidor** — `site/verifica-mapa.mjs` roda no CI depois do de acessibilidade: abre os diagramas nos dois
+  idiomas e confere, contra a fonte, as peças e os rótulos, a prova de cada ligação, a busca e o passaporte, e a
+  interface no idioma da página; audita uma amostra de um HTML por tipo, idioma e tema (WCAG 2.1 AA pelo axe, com
+  dois defeitos do próprio archify tolerados por regra e elemento); e reprova o job em qualquer erro de console.
 
 Para conferir um diagrama sem refazer o site inteiro: `cd site && node mapa/gerar.mjs --saida /tmp/mapa <slug>`.
+Sem slug, o gerador refaz a pasta de `--saida` inteira, e por isso recusa a pasta que tem algo além do que ele
+gera em `pt/` e `en/` (o HTML do mapa e o recibo do comparativo): ele nunca apaga o que não gerou.
 
 Peça nova do kit entra no modelo com as F-nn que entrega — a rule `.ai/rules/catalogo-de-features.md` e as guardas
-`tests/Kit/MapaInterativoTest.php` e `tests/Tenancy/MapaInterativoTenancyTest.php` cobram isso.
+`tests/Kit/MapaInterativo*Test.php` (o catálogo, a publicação, o modelo e os diagramas) e
+`tests/Tenancy/MapaInterativoTenancyTest.php` cobram isso, e resolvem toda âncora do mapa em todo PR.
 
 ## O que roda em segundo plano
 

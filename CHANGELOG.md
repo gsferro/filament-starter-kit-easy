@@ -23,12 +23,16 @@ roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
     num card, com o passaporte da peça levando à linha no GitHub, no commit publicado.
 - O modelo versionado do mapa (`site/mapa/pecas.json` e `ligacoes.json`, a prova como âncora de trecho, nunca
   número de linha), o gerador `site/mapa/gerar.mjs`, que roda no fim do `npm run build` do site, e o
-  posicionador `site/mapa/posicionar.mjs`, só de desenvolvimento.
+  posicionador `site/mapa/posicionar.mjs`, só de desenvolvimento. Os dois recusam, com a mensagem `[mapa]` que
+  nomeia o culpado, o que não podem usar — JSON quebrado, peça fora do modelo, ligação sem prova, prova cujo
+  trecho não está no arquivo ou só aparece em comentário, pasta de saída com o que o gerador não gerou —, antes
+  de baixar o archify e de apagar a saída; só o layout, que o archify confere ao renderizar, fica para depois.
 - O archify entra pelo download raso de um commit fixo (`site/mapa/archify.mjs`), conferido antes de usar;
   nenhuma dependência npm nova.
-- `site/verifica-mapa.mjs`: o CI do site abre um diagrama de cada tipo, idioma e tema e reprova violação
-  `serious`/`critical` do WCAG 2.1 AA e erro de console, tolerando só dois defeitos do próprio archify,
-  reconhecidos pela regra e pelo elemento.
+- `site/verifica-mapa.mjs`: o CI do site abre os diagramas nos dois idiomas e confere, contra a fonte, as
+  peças e os rótulos, a prova de cada ligação, a busca, o passaporte e a interface no idioma da página; audita
+  um diagrama de cada tipo, idioma e tema e reprova violação `serious`/`critical` do WCAG 2.1 AA, tolerando
+  só dois defeitos do próprio archify, reconhecidos pela regra e pelo elemento; e reprova erro de console.
 - Rule `.ai/rules/catalogo-de-features.md`: feature nova entra no roteiro nos dois idiomas, o número só
   cresce, e a peça nova entra no mapa com as F-nn que entrega.
 
@@ -41,6 +45,8 @@ roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
 - A referência de pacotes passa a listar os 91 pacotes dos manifestos (faltavam quatro).
 - O `pages.yml` só publica a partir da `main`: o mapa liga cada prova ao commit do build, e um dispatch de
   outro ramo publicaria links para um commit que some com o ramo.
+- Os jobs `qualidade` e `cobertura` do CI instalam o Node 24: as guardas do mapa rodam o gerador e o
+  posicionador num clone descartável do repositório.
 
 ### Corrigido
 
