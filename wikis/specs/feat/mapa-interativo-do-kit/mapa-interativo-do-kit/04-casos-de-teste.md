@@ -3,11 +3,12 @@
 > Requisito: `00-requisito.md` (RQ-01 a RQ-26, P-01 a P-12, Adendo 1, perguntas Q6, Q7, Q9, Q11, Q12, Q13 e Q16) · Plano: `01-plano-acao.md` (só paths, rotas, stack e `## Superfície de UI`, recebidos por trecho no despacho) · `02`: só `## Superfície Livewire` ("não se aplica")
 > Derivado do **requisito**, não do plano. Nenhum cenário foi escrito olhando implementação: ela ainda não existe.
 > Base congelada: commit `d9608c5a` (2026-11-19). Todo "da base" deste arquivo foi medido nele, nesta derivação.
-> **Revisão adversarial: feita por decisão da sessão, e fechada na quarta rodada.** O perfil não a exigia: nenhuma área é `completo` e nenhuma tem Impacto 3 (o motivo está abaixo da tabela). Foram 34 achados, ADV-01 a ADV-34, e o que virou cada um está em `## Revisão adversarial`. O fechamento criou cenário novo, então cabe uma re-revisão, uma vez só.
+> **Revisão adversarial: feita por decisão da sessão, em duas rodadas, as duas fechadas.** O perfil não a exigia: nenhuma área é `completo` e nenhuma tem Impacto 3 (o motivo está abaixo da tabela). A primeira rodada deu 34 achados (ADV-01 a ADV-34), fechados na quarta rodada; a segunda deu 32 (ADV2-01 a ADV2-32), fechados na quinta. É o teto de duas rodadas da skill: não há terceira, e todo oráculo novo ou reescrito no fechamento da segunda foi conferido por comando contra dados reais (`## Revisão adversarial — segunda rodada`).
 > *(alterado em 2026-11-20: rodada de revisão do step 7 — perguntas renumeradas para Q6 a Q15 e respondidas pela sessão; regras R27 a R33, CT-28 a CT-34 e CT-B04 a CT-B06 novos; os CT-B saem do conferidor de acessibilidade para um conferidor próprio, `site/verifica-mapa.mjs`)*
 > *(alterado em 2026-11-20: terceira rodada — as duas perguntas novas da rodada anterior viraram Q16 e Q17 e foram fechadas; a R27 e o CT-28 partem dos manifestos e conferem as duas direções, com a referência de pacotes)*
 > *(alterado em 2026-11-20: quarta rodada — fechamento da revisão adversarial e P-12; regras R34 a R36, CT-35 a CT-43 e CT-B07 novos; R30, CT-32, CT-33 e R24-M5 estacionados na Q11; CT-B02 e CT-B03 reescritos pelos fatos de plataforma medidos pela sessão)*
 > *(alterado em 2026-11-20: ajuste da quarta rodada — as duas perguntas novas da rodada viraram Q18 e Q19, decididas pela sessão no `01` (D25 e D26); a R10 ganha a quinta forma; a R5 casa o termo por palavra inteira; a R6 troca a regra da rota (40 linhas nos dois idiomas); a leitura da porta fica fechada pela P-10)*
+> *(alterado em 2026-11-20: quinta rodada — fechamento da segunda revisão adversarial, a última; regra R37 e CT-44 e CT-45 novos; oráculos conferidos por comando contra o código, o catálogo, o README e o esqueleto do mapa já construído; os do site construído, conferidos de novo no commit `4adaf9a`, que a sessão publicou durante a rodada com os construtores do mapa)*
 
 ## Perfil de Derivação
 
@@ -37,7 +38,7 @@
   - Estado × operação no número do catálogo: 15 células.
   - Controle negativo em cópia adulterada em memória, no molde de `conferirDg10()` de `tests/Kit/GuardasDosDiagramasTest.php`.
   - Controle sintético no conferidor do site, decidido pela mesma função que decide o real (o molde dos controles de `site/verifica-acessibilidade.mjs`).
-- Cenários: 41 · Regras: 35 · Mutantes previstos: 181 · Sem matador: 4 (mais 7 CT-B no `05`, nas regras R13, R14, R21, R24, R31 e R32; os mutantes delas estão contados aqui)
+- Cenários: 43 · Regras: 36 · Mutantes previstos: 219 · Sem matador: 7 (mais 7 CT-B no `05`, nas regras R6, R12, R13, R14, R21, R23, R24, R31 e R32; os mutantes delas estão contados aqui)
 <!-- derivado por grep -c (template-04.md §Contagem do cabeçalho) -->
 
 **Divergências declaradas.**
@@ -51,8 +52,8 @@
 
 | Letra | O que existe nesta feature | Cenários gerados |
 |---|---|---|
-| S | <ul><li>Em `site/mapa/`: o modelo de peças, o modelo de ligações e um arquivo por diagrama; a tradução da interface do visualizador; o gerador e o download do archify.</li><li>A página "Mapa interativo" em pt e en, com navegação, redirecionamento e stub.</li><li>O catálogo (a página Roteiro de features em pt e en), a referência de pacotes instalados e o README em pt e en.</li><li>A rule do catálogo e a linha dela no índice.</li><li>`site/package.json`, o conferidor novo `site/verifica-mapa.mjs` e o conferidor de acessibilidade.</li><li>`pages.yml` e o job `site` do `ci.yml`.</li><li>Nenhum arquivo de `app/` muda (RQ-15 e a Superfície Livewire do `02`).</li></ul> | CT-01 a CT-31, CT-34 a CT-43 (CT-32 e CT-33 estacionados na Q11) |
-| F | <ul><li>Desenhar peças e ligações por painel e por modo.</li><li>Provar cada ligação com o arquivo e o trecho.</li><li>Cobrir toda feature do catálogo e toda peça registrada.</li><li>Mostrar a grade painel × modo e os tipos. A condição de disponibilidade está estacionada na Q11.</li><li>Ancorar no código cada transição de fluxo.</li><li>Unificar e numerar o catálogo.</li><li>Falhar quando o código diverge (P-03).</li><li>Publicar no build do commit.</li><li>Deixar o leitor buscar a peça e ler a prova, na língua da página.</li><li>Passar pela conferência de acessibilidade por amostra.</li></ul> | CT-03, CT-06, CT-08 a CT-14, CT-17, CT-20, CT-25, CT-29 a CT-31, CT-36 a CT-41, CT-B01 a CT-B07 |
+| S | <ul><li>Em `site/mapa/`: o modelo de peças, o modelo de ligações e um arquivo por diagrama; a tradução da interface do visualizador; o gerador e o download do archify.</li><li>A página "Mapa interativo" em pt e en, com navegação, redirecionamento e stub.</li><li>O catálogo (a página Roteiro de features em pt e en), a referência de pacotes instalados e o README em pt e en.</li><li>A rule do catálogo e a linha dela no índice.</li><li>`site/package.json`, o conferidor novo `site/verifica-mapa.mjs` e o conferidor de acessibilidade.</li><li>`pages.yml` e o job `site` do `ci.yml`.</li><li>Nenhum arquivo de `app/` muda (RQ-15 e a Superfície Livewire do `02`).</li></ul> | CT-01 a CT-31, CT-34 a CT-45 (CT-32 e CT-33 estacionados na Q11) |
+| F | <ul><li>Desenhar peças e ligações por painel e por modo.</li><li>Provar cada ligação com o arquivo e o trecho.</li><li>Cobrir toda feature do catálogo e toda peça registrada.</li><li>Mostrar a grade painel × modo e os tipos. A condição de disponibilidade está estacionada na Q11.</li><li>Ancorar no código cada transição de fluxo.</li><li>Unificar e numerar o catálogo.</li><li>Falhar quando o código diverge (P-03).</li><li>Publicar no build do commit.</li><li>Deixar o leitor buscar a peça e ler a prova, na língua da página.</li><li>Passar pela conferência de acessibilidade por amostra.</li></ul> | CT-03, CT-06, CT-08 a CT-14, CT-17, CT-20, CT-25, CT-29 a CT-31, CT-36 a CT-41, CT-44, CT-45, CT-B01 a CT-B07 |
 | D | <ul><li>Peças e ligações: 243 e 496 só no `/admin`.</li><li>Os diagramas.</li><li>Na base: 74 F-nn por idioma (F-01 a F-71, mais F-03a, F-03b e F-03c), 46 itens de feature do README por idioma, 39 páginas do site por idioma, 91 pacotes nos manifestos e 87 na referência por idioma (os quatro que faltam a entrega acrescenta, Q16), 141 versões com data no CHANGELOG, mais o `[Unreleased]`, sem data, e 135 classes de `app/` fora de `app/Filament` (P-12). Das 74 linhas do catálogo, 40 trazem no "onde fica" um caminho de rota sem "→", nos dois idiomas.</li><li>Provas: arquivo do kit versionado (válida), e as inválidas — ausente, vazia, só de espaços, só em comentário, fora do commit (`vendor/` ou fora do git).</li><li>Peças de disponibilidade condicional: pelo modo (`TenantResource`) e pela chave (`AgenteIaResource`). A marca delas está estacionada na Q11.</li><li>Os modos (sem e com tenant), os 10 tipos e o comparativo, os idiomas pt e en, os temas claro e escuro.</li><li>Cardinalidade 0/1/N: painel sem diagrama, feature sem peça, peça registrada ou classe de `app/` sem F-nn, ligação sem diagrama, transição sem âncora, célula sem diagrama nem motivo, amostra vazia.</li><li>Dado de outro tenant não se aplica: o modo é configuração, não dado.</li></ul> | CT-01, CT-05, CT-06, CT-09, CT-14, CT-17, CT-21, CT-28, CT-29, CT-31, CT-35, CT-39, CT-41, CT-B05 |
 | I | <ul><li>A página estática `/{pt,en}/referencia/mapa-interativo/` e os HTML `/mapa/{pt,en}/{slug}.html`.</li><li>O README no GitHub, o catálogo, a referência de pacotes e a rule, que os agentes leem pelo índice.</li><li>O registro vivo dos painéis: `Filament::getPanels()` e os getters de cada painel; o roteador da aplicação, para o "onde fica" do catálogo.</li><li>Os arquivos citados pelas provas e pelas âncoras de fluxo, e os links de evidência para o repositório do `support.source` do `composer.json`.</li><li>O `CHANGELOG.md`.</li><li>`npm run build` e os dois workflows.</li></ul> | CT-07, CT-11, CT-12, CT-15, CT-25, CT-26, CT-28, CT-31, CT-36, CT-39, CT-42, CT-B03 |
 | P | <ul><li>PHP 8.4, Laravel 13.42, Filament 5.10.2 (getters conferidos no vendor) e Pest 5.3.7.</li><li>Node 24, Astro 7.3.3 + Starlight 0.42.2, Playwright 1.63 e axe-core 4.13.</li><li>archify 3.2.0 no commit `4478129`, segundo o README e o `schemas/README.md` do archify nesse commit: não tem catálogo pt (tem en, zh-CN, zh-TW, es, ko e ar); o `meta.locale` escolhe a interface e o `lang`, mas não traduz o texto escrito; a prova é por nó (`sources`, de 1 a 3), sem prova por aresta; a casca do comparativo existe só em inglês (P-11); e há dois defeitos de acessibilidade tolerados (P-11).</li><li>Medido pela sessão num HTML do archify, no commit fixado, no Chromium:<ul><li>o passaporte de uma peça em foco mostra o rótulo, o tipo, "origem verificada {repositório} @ {commit}", as provas da própria peça (até três) como links para o GitHub no commit, e só as contagens das ligações;</li><li>os cards ficam no painel lateral (`.reader-rail .card`), sempre presentes;</li><li>o DOM traz `data-node-id`, `data-node-label`, `data-edge-from`, `data-edge-to` e `data-edge-id`, e o `lang` do documento segue o `meta.locale`;</li><li>nenhuma requisição externa e nenhum erro.</li></ul></li><li>O `examples/locales/pt.json` do archify (461 chaves) fica fora do manifesto dos catálogos embutidos. O kit entrega o pt pelas traduções do diagrama, e o en é o `locales/en.json` (486 chaves).</li><li>Nos mapas de arquitetura, a aresta é direta, de agrupamento ou de porta.</li><li>GitHub Pages sob a base `/filament-starter-kit-easy`.</li><li>Desenvolvimento no Windows (caminho com `\`, fim de linha CRLF) e CI no Linux.</li></ul> | CT-09, CT-14, CT-16, CT-40, CT-B01 a CT-B07 |
@@ -61,46 +62,47 @@
 
 ## Mapa de Regras
 
-*(alterado em 2026-11-20: quarta rodada — fechamento da revisão adversarial; R34 a R36 novas; R30 estacionada na Q11)*
+*(alterado em 2026-11-20: quarta rodada — fechamento da revisão adversarial; R34 a R36 novas; R30 estacionada na Q11. Quinta rodada — segunda revisão adversarial; R37 nova)*
 
 | Regra | Área (perfil herdado) | Origem (`RQ`/`P-nn`) | Técnica | Cenários |
 |---|---|---|---|---|
-| R1 — O catálogo é um só, com as mesmas F-nn em pt e em en, a mesma feature em cada número, uma linha por F-nn e uma origem do glossário em cada | A (padrão) | RQ-21, RQ-22, RQ-04, RQ-05, P-02 | EP + controles | CT-01 |
+| R1 — O catálogo é um só, com as mesmas F-nn em pt e em en, a mesma feature e o mesmo estado em cada número, uma linha por F-nn e uma origem do glossário em cada | A (padrão) | RQ-21, RQ-22, RQ-04, RQ-05, P-02 | EP + controles | CT-01 |
 | R2 — README, páginas do site e mapa só citam F-nn que o catálogo tem, e nenhum deles lista feature por fora dele | A (padrão) | RQ-22, RQ-21, P-08 | EP + controles | CT-02 |
 | R3 — Toda F-nn da base continua com a sua feature, ou fica marcada como removida com o motivo, e a removida não volta | A (padrão) | P-08, RQ-22 | estado × operação + controles | CT-03 |
 | R4 — A feature nova recebe o próximo número livre: a F-72, e as seguintes em sequência, sem buraco e sem sufixo novo | A (padrão) | P-08 | BVA 3-valores (escalada) | CT-04 |
 | R5 — Todo item de feature do README da base e toda página do site correspondem a ao menos uma F-nn — os seis itens que a base não cobre, pelo termo fixado —, ou a página está na lista das que não descrevem feature, com o motivo | A (padrão) | RQ-19, RQ-04, RQ-05, P-02 | EP por fonte + controles | CT-05, CT-35 |
-| R6 — Toda F-nn vigente é entregue por peça desenhada da origem que ela declara — do pacote que a linha nomeia, ou, no código próprio, da rota do "onde fica" —, e nenhuma peça entrega F-nn removida | A/B (padrão) | RQ-04, RQ-05, RQ-21, P-03, P-10, P-08 | EP por origem + tabela de decisão + controles | CT-06, CT-36 |
+| R6 — Toda F-nn vigente é entregue por peça desenhada da origem que ela declara — do pacote que a linha nomeia, ou, no código próprio, da rota do "onde fica" —, com a F-nn no desenho da peça; todo caminho do "onde fica" resolve; e nenhuma peça entrega F-nn removida | A/B (padrão) | RQ-04, RQ-05, RQ-21, P-03, P-10, P-08 | EP por origem + tabela de decisão + controles | CT-06, CT-36, CT-44, CT-B01 (no `05`) |
 | R7 — Manter o catálogo único é uma rule indexada, que alcança os lugares onde a feature nasce e manda o número só crescer | F (mínimo) | RQ-23, P-08 | EP | CT-07 |
 | R8 — Toda peça do modelo é peça com nome que existe, do tipo que a classe dela é, dentro do conjunto fechado, e aparece uma vez | B (padrão) | RQ-24, P-03 | EP + tabela de decisão (classe × tipo) + controles | CT-08 |
-| R9 — Toda prova resolve no commit que publica: o arquivo é versionado no kit, o trecho está nele, fora de comentário, e a prova não guarda número de linha | B (padrão) | RQ-24, P-03, P-04, P-07 | EP (uma partição inválida por linha) + controles | CT-09 |
+| R9 — Toda prova resolve no commit que publica: o arquivo é versionado no kit, o trecho está nele, fora de comentário pela sintaxe do tipo de arquivo, e a prova não guarda número de linha, nem no modelo nem nos arquivos de diagrama | B (padrão) | RQ-24, P-03, P-04, P-07 | EP (uma partição inválida por linha) + controles | CT-09 |
 | R10 — A prova é a da ligação: está no arquivo da origem, num trait ou concern que a origem usa, no provider do painel (descoberta, plugin ou configuração), no método de contrato do alvo ou, quando a origem é peça de pacote, num arquivo do kit que nomeia a origem; o trecho é o dessa ligação; e as duas pontas são peças | B (padrão) | RQ-24, P-03, P-07 | EP (forma da prova × arquivo) + controles | CT-10 |
 | R11 — Tudo que o painel registra tem ligação de registro no modelo, e o modelo não dá a um modo o que o painel não registra nele | B (padrão) | P-05, RQ-08, RQ-10, RQ-11, P-03 | tabela de decisão (3 × 2 × 5, nas duas direções) + controles | CT-11, CT-12, CT-13 |
-| R12 — Toda ligação do modelo está desenhada em diagrama publicado, direto ou por agrupamento que nomeia os membros num card do diagrama ou no rótulo dele; menção em texto não conta | B (padrão) | P-10, RQ-08 | EP (forma da aresta) + controles | CT-14 |
-| R13 — Toda ligação que o diagrama desenha — direta, ou por agrupamento ou porta que nomeia os membros — traz a prova, com o arquivo e o trecho, num card do painel lateral do próprio diagrama, à vista sem foco | B (padrão) | P-04, P-07, RQ-08 | rastreio exaustivo no site construído | CT-B02 (no `05`) |
-| R14 — O leitor acha a peça pela busca, e o passaporte dela mostra as provas da própria peça, com o link para o repositório do kit no commit do build | B (padrão) | RQ-07, P-04, P-07 | EP (idioma) | CT-B03 (no `05`) |
+| R12 — Toda ligação do modelo está desenhada em diagrama publicado, direto ou por agrupamento que nomeia os membros num card do diagrama ou no rótulo dele; menção em texto não conta | B (padrão) | P-10, RQ-08 | EP (forma da aresta) + controles | CT-14, CT-B02 (no `05`) |
+| R13 — Toda ligação que o diagrama desenha — direta, ou por agrupamento ou porta que nomeia os membros — traz a prova, com o arquivo e o trecho, num item próprio de card do painel lateral do próprio diagrama, inteiro e à vista sem foco; o comparativo fica fora | B (padrão) | P-04, P-07, RQ-08 | rastreio exaustivo no site construído | CT-B02 (no `05`) |
+| R14 — O leitor acha a peça pela busca, e o passaporte dela mostra as provas da própria peça, com o link para o repositório do kit no commit do build | B (padrão) | RQ-07, P-04, P-07 | EP (idioma) + amostra por `architecture` | CT-B03 (no `05`) |
 | R15 — A página de cada idioma leva, por `<a href>` relativo, a todo diagrama do seu idioma, e só a diagrama que existe | C (padrão) | RQ-03, P-02 | EP | CT-15 |
-| R16 — Todo diagrama tem os seus textos em pt e em en, e o texto en é traduzido; o título só fica igual quando é o nome de uma peça do modelo ou de um comando `kit:*`, marcado como nome de código | C (padrão) | P-02, RQ-03 | EP + controles | CT-16 |
-| R17 — A grade painel × modo é inteira: cada painel do registro tem diagrama próprio em cada modo, o compartilhado vem marcado, e a célula não leva a diagrama do outro modo nem de outro painel | C (padrão) | RQ-10, RQ-11, P-06, P-09 | tabela de decisão (3 × 2) + controles | CT-17, CT-18, CT-43 |
-| R18 — Só se compartilha o que é igual nos dois modos, e o que é igual não se duplica | C (padrão) | P-09, RQ-11 | tabela de decisão + controles | CT-19 |
-| R19 — Cada um dos dez tipos e o comparativo têm uso ou motivo, e cada combinação tipo × painel × modo tem diagrama ou motivo ao lado | C (padrão) | RQ-06, RQ-25, P-06, P-02 | produto cartesiano fechado (63 células por idioma) + controles | CT-20, CT-21 |
-| R20 — Todo comparativo publicado vai do modo sem tenant (antes) para o com tenant (depois) do mesmo painel | C (padrão) | RQ-25, RQ-11 | EP + controles | CT-22 |
-| R21 — Nenhuma dependência nova de visualização no site: o `site/package.json` fica com as dependências da base, e o HTML de cada diagrama não carrega recurso de fora dele | C (padrão) | RQ-25 | EP (lista fechada) + rastreio no site construído | CT-23, CT-B01 (no `05`) |
+| R16 — Todo diagrama tem os seus textos em pt e em en, e o texto en é traduzido; o título só fica igual quando é o nome de uma peça do modelo ou de um comando `kit:*`, marcado como nome de código | C (padrão) | P-02, RQ-03 | EP (tipo de texto) + controles | CT-16 |
+| R17 — A grade painel × modo é inteira: cada painel do registro tem diagrama próprio em cada modo, o compartilhado vem marcado e só ele, e a célula não leva a diagrama do outro modo nem de outro painel | C (padrão) | RQ-10, RQ-11, P-06, P-09 | tabela de decisão (3 × 2) + controles | CT-17, CT-18, CT-43 |
+| R18 — Só se compartilha o que é igual nos dois modos, o que é igual não se duplica, e toda ligação desenhada vale no modo do diagrama | C (padrão) | P-09, RQ-11 | tabela de decisão + controles | CT-19 |
+| R19 — Cada um dos dez tipos e o comparativo têm uso ou motivo, cada combinação tipo × painel × modo tem diagrama ou motivo traduzido, e só é do kit inteiro o diagrama que não desenha peça registrada por painel | C (padrão) | RQ-06, RQ-25, P-06, P-02 | produto cartesiano fechado (63 células por idioma) + controles | CT-20, CT-21 |
+| R20 — Todo comparativo publicado vai do modo sem tenant (antes) para o com tenant (depois) do mesmo painel | C (padrão) | RQ-25, RQ-11, P-04 | EP + controles | CT-22 |
+| R21 — Nenhuma dependência nova de visualização no site: o `site/package.json` fica com as dependências da base nos quatro campos, `site/mapa/` só tem os arquivos do mapa, e o HTML de cada diagrama não carrega recurso de fora dele | C (padrão) | RQ-25 | EP (lista fechada) + controles + rastreio no site construído | CT-23, CT-B01 (no `05`) |
 | R22 — Há fluxo publicado, e, nos tipos `workflow`, `sequence` e `dataflow`, todo passo percorre peça do modelo | C (padrão) | RQ-09, P-03 | EP (tipo de fluxo) + controles | CT-24 |
-| R23 — O mapa nasce no build do commit que publica, os dois fluxos de CI o conferem com o conferidor do mapa antes de enviar, e a falha do conferidor reprova o job | D (padrão) | P-07, RQ-03, RQ-17, P-11 | EP por workflow + controles | CT-25, CT-42 |
-| R24 — Todo diagrama publicado abre desenhado, com as peças do arquivo, sem erro de console nem exceção, no idioma da página | D (padrão) | RQ-07, RQ-03, P-02 | rastreio exaustivo no site construído | CT-B01 (no `05`) |
+| R23 — O mapa nasce no build do commit que publica, os dois fluxos de CI o conferem com o conferidor do mapa antes de enviar, e a falha do conferidor reprova o job | D (padrão) | P-07, RQ-03, RQ-17, P-11 | EP por workflow + controles | CT-25, CT-42, CT-B06 (no `05`) |
+| R24 — Todo diagrama publicado abre desenhado, com as peças que a fonte dá a ele e a interface do visualizador montada, sem erro de console nem exceção, no idioma da página | D (padrão) | RQ-07, RQ-03, P-02 | rastreio exaustivo no site construído | CT-B01, CT-B03, CT-B04 (no `05`) |
 | R25 — O README de cada idioma leva ao mapa do mesmo idioma | E (mínimo) | RQ-02, P-02 | EP | CT-26 |
 | R26 — Os diagramas Mermaid da base continuam onde estavam | E (mínimo) | P-01, RQ-25 | EP | CT-27 |
 | R27 — Todo pacote instalado está na referência de pacotes e numa F-nn de origem pacote, ou na lista dos sem feature própria, com o motivo; e todo pacote que a referência lista está instalado | A (padrão) | RQ-19, RQ-04, P-03 | EP por partição de pacote + controles | CT-28 |
 | R28 — Toda peça que um painel registra — recurso, página, widget e plugin —, nos dois modos, e toda classe de `app/` fora de `app/Filament` entrega ao menos uma F-nn do catálogo, ou está na lista da guarda das peças e classes sem feature própria, com o motivo | A/B (padrão) | RQ-20, RQ-04, RQ-05, P-05, P-12 | tabela de decisão (3 × 2 × 4) + EP (classe de `app/`) + controles | CT-29, CT-30, CT-41 |
-| R29 — Cada marco da linha do tempo cita uma versão do CHANGELOG com a data dela e um termo da seção dessa versão, e cada tempo medido traz a data e a fonte da medição | C (padrão) | P-03, P-06 | EP (uma partição inválida por linha) + controles | CT-31 |
+| R29 — Cada marco da linha do tempo cita uma versão do CHANGELOG com a data dela, e o título visível do marco aparece na seção dessa versão; e cada tempo medido traz a data e a fonte da medição | C (padrão) | P-03, P-06 | EP (uma partição inválida por linha) + controles | CT-31 |
 | ~~R30 — Toda peça de disponibilidade condicional guarda no modelo a condição, com a âncora do código que decide, e mostra a condição em todo diagrama que a desenha~~ | estacionada — Q11 (ADV-17, ADV-31) | RQ-04, RQ-05, RQ-11, P-03, P-09 | — | ~~CT-32, CT-33~~ |
 | R31 — A interface do visualizador está no idioma da página, e só a casca do comparativo fica em inglês; o catálogo pt que o kit entrega não copia o texto en, fora a lista fechada com o motivo | D (padrão) | P-11, P-02, RQ-03 | rastreio exaustivo no site construído + controles | CT-B04, CT-B07 (no `05`) |
 | R32 — A conferência de acessibilidade audita a amostra inteira e tolera só os dois defeitos do archify, pela regra e pelo elemento | D (padrão; técnica escalada) | P-11, RQ-03, RQ-07 | amostra estratificada + controle sintético | CT-B05, CT-B06 (no `05`) |
-| R33 — A página do mapa declara, nos dois idiomas, as duas exceções da P-11 e o limite da varredura da P-12 | D (padrão) | P-11, P-12, P-02 | EP (idioma) | CT-34 |
-| R34 — Os diagramas de arquitetura de um painel que valem num modo desenham, juntos, todo o registro do painel nesse modo, e nada que ele não registra nesse modo | C (padrão) | P-09, RQ-11, RQ-10, P-05 | tabela de decisão (3 × 2) + controles | CT-37, CT-38 |
+| R33 — A página do mapa declara, nos dois idiomas, as duas exceções da P-11, a do comparativo na P-04 e o limite da varredura da P-12 | D (padrão) | P-11, P-12, P-04, P-02 | EP (idioma) | CT-34 |
+| R34 — Os diagramas de arquitetura e a árvore de registro de um painel que valem num modo desenham, juntos, todo o registro do painel nesse modo, e nada que ele não registra nesse modo | C (padrão) | P-09, RQ-11, RQ-10, P-05 | tabela de decisão (3 × 2) + controles | CT-37, CT-38 |
 | R35 — Toda transição de fluxo publicado tem âncora que resolve; no `lifecycle`, todo estado também; e duas transições seguidas ancoradas no mesmo método estão na ordem do código | C (padrão) | P-03, RQ-09 | EP + controles | CT-39 |
-| R36 — O que um diagrama desenha está no modelo: toda aresta é ligação do modelo no mesmo sentido — direta, de agrupamento ou de porta —, e o diagrama de painel só desenha peça do painel, peça do kit inteiro ou caixa de porta | B (padrão) | P-03, RQ-24, P-10, RQ-10 | EP (forma da aresta) + controles | CT-40 |
+| R36 — O que o mapa desenha está no modelo: no mapa de arquitetura e na árvore de registro, toda aresta é ligação do modelo no mesmo sentido — direta, de agrupamento ou de porta —, e todo diagrama de painel só desenha, como peça, peça do painel ou do kit inteiro, além da caixa de porta | B (padrão) | P-03, RQ-24, P-10, RQ-10 | EP (forma da aresta) + controles | CT-40 |
+| R37 — Toda marca de disponibilidade que o mapa publica é a do código: a chave que decide o acesso da peça, com o valor de fábrica dela, ou o modo | B (padrão) | P-03, RQ-04, RQ-05, RQ-11 | EP + controles | CT-45 |
 
 ### Cláusulas sem regra
 
@@ -121,11 +123,11 @@
 A parte de cada cláusula que já está decidida tem cenário. O recorte espera a resposta. Nenhuma RQ está inteira aberta: a RQ-20 deixou de estar com a Q8 decidida, e a P-12 deu a ela o piso das classes de `app/` (R28).
 
 - RQ-09 — cobertura parcial: CT-24, CT-39; recorte {quais fluxos, e se todos} aberto (Q6); recorte {o trecho da transição do `lifecycle` faz a transição} lacuna declarada (R35-M5, D25)
-- RQ-11 — cobertura parcial: CT-11 a CT-13, CT-17 a CT-19, CT-22, CT-37, CT-38, CT-43; recorte {a marca da peça de disponibilidade condicional, e em que diagrama de modo ela entra} aberto (Q11)
+- RQ-11 — cobertura parcial: CT-11 a CT-13, CT-17 a CT-19, CT-22, CT-37, CT-38, CT-43, CT-45; recorte {a marca da peça de disponibilidade condicional, e em que diagrama de modo ela entra, inclusive no "nem mais nem menos" do CT-37 (ADV2-29)} aberto (Q11); recorte {o modo de toda ligação de uso confere com o código, e o nó de fluxo com rótulo abreviado} lacuna declarada (R18-M5 e R18-M6)
 - P-09 — cobertura parcial: CT-17 a CT-19, CT-37, CT-38, CT-43; recorte {se a disponibilidade por modo conta como diferença de estrutura para compartilhar o diagrama} aberto (Q11)
-- RQ-04 — cobertura parcial: CT-01, CT-05, CT-06, CT-28 a CT-30, CT-35, CT-36, CT-41; recorte {a marca da peça de feature opcional, e em que diagrama de modo ela entra} aberto (Q11)
-- RQ-05 — cobertura parcial: CT-01, CT-05, CT-06, CT-29, CT-30, CT-35, CT-36, CT-41; recorte {a marca da peça de feature opcional, e em que diagrama de modo ela entra} aberto (Q11)
-- P-03 — cobertura parcial: CT-06, CT-08 a CT-13, CT-24, CT-28, CT-31, CT-36, CT-39, CT-40; recorte {o que o mapa afirma sobre a peça condicional} aberto (Q11); recorte {o trecho da transição do `lifecycle` faz a transição} lacuna declarada (R35-M5, D25)
+- RQ-04 — cobertura parcial: CT-01, CT-05, CT-06, CT-28 a CT-30, CT-35, CT-36, CT-41, CT-44, CT-45, CT-B01; recorte {a marca da peça de feature opcional, e em que diagrama de modo ela entra} aberto (Q11)
+- RQ-05 — cobertura parcial: CT-01, CT-05, CT-06, CT-29, CT-30, CT-35, CT-36, CT-41, CT-44, CT-45, CT-B01; recorte {a marca da peça de feature opcional, e em que diagrama de modo ela entra} aberto (Q11)
+- P-03 — cobertura parcial: CT-06, CT-08 a CT-13, CT-24, CT-28, CT-31, CT-36, CT-39, CT-40, CT-44, CT-45, CT-B01; recorte {em que diagrama de modo entra a peça condicional, e se o mapa a marca} aberto (Q11); recorte {o trecho da transição do `lifecycle` faz a transição} lacuna declarada (R35-M5, D25)
 
 *(alterado em 2026-11-20: ADV-32)* A ordem dos passos saiu do recorte da Q6. A P-03 vale para todo fluxo publicado, qualquer que seja a lista. Por isso a âncora de cada transição e a ordem no mesmo método são da R35, e só a ordem entre arquivos ou métodos diferentes ficou como lacuna declarada (R35-M4).
 
@@ -137,6 +139,7 @@ A parte de cada cláusula que já está decidida tem cenário. O recorte espera 
   - o R24-M5.
 - **Onde não aparecem.** Nenhum Gherkin nem linha vigente do Índice os define; a linha da R30 no Mapa e as do CT-32 e do CT-33 no Índice estão riscadas.
 - **Quando voltam.** Com a resposta da Q11, junto com o ADV-17, que pede a detecção também no modo com tenant, cada chave com o valor oposto ao de fábrica e a linha da âncora que não resolve.
+- **O que a segunda rodada mexeu aqui** *(alterado em 2026-11-20: ADV2-29 e ADV2-30)*. A Q11 segura também o "nem mais nem menos" do diagrama de arquitetura sem tenant do `/admin` para a peça condicional (CT-37). E a parte que vale nas três leituras — a marca publicada é a do código — saiu do estacionamento como a R37 (CT-45), vácua enquanto o mapa não marcar nada.
 
 A RQ-19 tem cobertura completa desde a terceira rodada (CT-05, CT-28 e, na quarta, CT-35), com a Q16 fechada. A RQ-24 tem cobertura completa desde o ajuste da quarta rodada (CT-08 a CT-10, CT-40), com a Q19 decidida (D26).
 
@@ -162,9 +165,9 @@ Fechadas ou decididas nas rodadas de revisão, e com cenário:
 | Grupo | Regras | Costura | Existente ou nova | Por quê esta camada | Confirmada |
 |---|---|---|---|---|---|
 | G1 — arquivos versionados do catálogo, do README, da referência de pacotes, da rule, da página do mapa e dos workflows (Kit) | R1, R2, R3, R4, R5, R7, R21 (CT-23), R23, R25, R26, R27, R33 | Pest feature HTTP | **nova**: `tests/Kit/MapaInterativoTest.php`. Moldes: a base congelada e a leitura de `docs/` de `tests/Kit/SiteDeDocumentacaoTest.php` (`[CT-24]`, `[CT-40]`, `[CT-42]`); a rule e a linha do índice de `tests/Kit/OnboardingGuiadoInstalacaoTest.php`; o inventário Mermaid de `blocosMermaidDaArvore()` | o `Então` afirma o conteúdo de arquivos versionados — catálogo, README, páginas, referência de pacotes, `composer.json`, `package.json`, rule, índice, `site/package.json` e workflows — contra a base congelada e contra a árvore. A aplicação fica de pé pelo arnês do kit, e por isso a linha do CT-28 que lê o registro dos painéis (ADV-04) cabe aqui | sessão, 2026-11-20 — convenção do projeto: guarda de documentação em `tests/Kit`, no molde do `SiteDeDocumentacaoTest` e do `GuardasDosDiagramasTest` |
-| G2 — modelo e diagramas do mapa × aplicação de pé, sem tenant (Kit) | R6, R8, R9, R10, R11 (CT-11, CT-13), R12, R15, R16, R17, R18, R19, R20, R22, R28 (CT-29, CT-41), R29, R34 (CT-37), R35, R36 | Pest feature HTTP | **nova**: `tests/Kit/MapaInterativoTest.php`. Moldes: o `[CT-25]` de `tests/Kit/SiteDeDocumentacaoTest.php`, que confronta o README com `Filament::getPanel()`; o `conferirDg10()` de `tests/Kit/GuardasDosDiagramasTest.php`, para o controle em cópia | o `Então` afirma o modelo e os arquivos de diagrama contra o que os painéis registram, contra o roteador da aplicação, contra os arquivos de código citados e as classes de `app/`, contra o CHANGELOG e contra a página. Roda em todo PR, e o job `site` não (T) | sessão, 2026-11-20 — convenção do projeto: guarda que confronta documentação com o painel vivo em `tests/Kit` (molde do `[CT-25]` do `SiteDeDocumentacaoTest`) |
-| G3 — registro dos painéis com tenant (Tenancy) | R11 (CT-12), R28 (CT-30), R34 (CT-38) | Pest feature HTTP | **nova**: `tests/Tenancy/MapaInterativoTenancyTest.php`. Molde: `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | o modo com tenant só existe com o `Tests\TenancyTestCase`, que fixa `kit.tenancy.enabled` antes do boot | sessão, 2026-11-20 — convenção do projeto: o modo com tenant só existe na suíte `Tenancy` (molde do `DiagramasDaArquiteturaTenancyTest`) |
-| G4 — site construído (conferidor do mapa, Node + Playwright) | R13, R14, R21 (CT-B01), R24, R31, R32 | browser | **nova** *(alterado em 2026-11-20: era "existente — `site/verifica-acessibilidade.mjs`")*: `site/verifica-mapa.mjs`, sobre o `astro preview`. Os dois workflows o rodam logo depois do conferidor de acessibilidade, com a mesma prévia de pé; no `pages.yml`, antes do envio do artefato. Molde: `site/verifica-acessibilidade.mjs`, inclusive os controles sintéticos | o HTML do mapa só existe depois do build (o `site/dist` é ignorado pelo git), o visualizador desenha no navegador, e acessibilidade e idioma da interface só o navegador mede. O catálogo en do archify só existe depois do build, que baixa o archify, e por isso o CT-B07 também mora aqui. O `pest-plugin-browser` não serve site estático (`site/verifica-acessibilidade.mjs:'pest-plugin-browser':6`). O arquivo é próprio porque o conferidor de acessibilidade já tem `[CT-B01]` e `[CT-B02]` de outra wiki. O `ids-ct.sh` acusa estes CT-B como sem teste, por desenho: ele só lê `it()` e `test()` | sessão, 2026-11-20 — convenção do projeto: o site construído é conferido por Node + Playwright no CI (molde do `site/verifica-acessibilidade.mjs`); arquivo próprio pela D17 do `01` |
+| G2 — modelo e diagramas do mapa × aplicação de pé, sem tenant (Kit) | R6, R8, R9, R10, R11 (CT-11, CT-13), R12, R15, R16, R17, R18, R19, R20, R22, R28 (CT-29, CT-41), R29, R34 (CT-37), R35, R36, R37 | Pest feature HTTP | **nova**: `tests/Kit/MapaInterativoTest.php`. Moldes: o `[CT-25]` de `tests/Kit/SiteDeDocumentacaoTest.php`, que confronta o README com `Filament::getPanel()`; o `conferirDg10()` de `tests/Kit/GuardasDosDiagramasTest.php`, para o controle em cópia | o `Então` afirma o modelo e os arquivos de diagrama contra o que os painéis registram, contra o roteador da aplicação, contra os arquivos de código citados e as classes de `app/`, contra o CHANGELOG e contra a página. Roda em todo PR, e o job `site` não (T) | sessão, 2026-11-20 — convenção do projeto: guarda que confronta documentação com o painel vivo em `tests/Kit` (molde do `[CT-25]` do `SiteDeDocumentacaoTest`) |
+| G3 — registro dos painéis com tenant (Tenancy) | R6 (CT-44), R11 (CT-12), R28 (CT-30), R34 (CT-38) | Pest feature HTTP | **nova**: `tests/Tenancy/MapaInterativoTenancyTest.php`. Molde: `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | o modo com tenant só existe com o `Tests\TenancyTestCase`, que fixa `kit.tenancy.enabled` antes do boot | sessão, 2026-11-20 — convenção do projeto: o modo com tenant só existe na suíte `Tenancy` (molde do `DiagramasDaArquiteturaTenancyTest`) |
+| G4 — site construído (conferidor do mapa, Node + Playwright) | R6 (CT-B01), R12 (CT-B02), R13, R14, R21 (CT-B01), R23 (CT-B06), R24, R31, R32 | browser | **nova** *(alterado em 2026-11-20: era "existente — `site/verifica-acessibilidade.mjs`")*: `site/verifica-mapa.mjs`, sobre o `astro preview`. Os dois workflows o rodam logo depois do conferidor de acessibilidade, com a mesma prévia de pé; no `pages.yml`, antes do envio do artefato. Molde: `site/verifica-acessibilidade.mjs`, inclusive os controles sintéticos | o HTML do mapa só existe depois do build (o `site/dist` é ignorado pelo git), o visualizador desenha no navegador, e acessibilidade e idioma da interface só o navegador mede. O catálogo en do archify só existe depois do build, que baixa o archify, e por isso o CT-B07 também mora aqui. O `pest-plugin-browser` não serve site estático (`site/verifica-acessibilidade.mjs:'pest-plugin-browser':6`). O arquivo é próprio porque o conferidor de acessibilidade já tem `[CT-B01]` e `[CT-B02]` de outra wiki. O `ids-ct.sh` acusa estes CT-B como sem teste, por desenho: ele só lê `it()` e `test()` | sessão, 2026-11-20 — convenção do projeto: o site construído é conferido por Node + Playwright no CI (molde do `site/verifica-acessibilidade.mjs`); arquivo próprio pela D17 do `01` |
 
 ## Fronteira com o Plano
 
@@ -202,7 +205,7 @@ As de raia requisito estão no `00`, em `## Perguntas ao Solicitante`, com o est
 | Q8 | desenho (reclassificada) | RQ-20 | decidida pela sessão | R28 (CT-29, CT-30) |
 | Q9 | requisito | RQ-24, P-04, P-05, P-07 | fechada pelo `00` | R9 (prova fora do commit reprova) e R10 (registro pelo plugin que traz a peça) |
 | Q10 | desenho | P-03, P-06 | decidida pela sessão | R29 (CT-31) |
-| Q11 | requisito | RQ-04, RQ-05, RQ-11, P-03, P-09 | aberta | recorte bloqueado e estacionado (ADV-17, ADV-31): a R30 (CT-32, CT-33), a metade de condição do CT-B01 e o R24-M5 saíram do conjunto vigente, porque nenhuma afirmação sobre a marca vale nas três leituras |
+| Q11 | requisito | RQ-04, RQ-05, RQ-11, P-03, P-09 | aberta | recorte bloqueado e estacionado (ADV-17, ADV-31): a R30 (CT-32, CT-33), a metade de condição do CT-B01 e o R24-M5 saíram do conjunto vigente, porque nenhuma afirmação sobre a marca vale nas três leituras. Na quinta rodada, a Q11 segura também o recorte do CT-37 (ADV2-29), e a parte que vale nas três leituras virou a R37 (ADV2-30) |
 | Q12 | requisito | P-02, RQ-03, RQ-07 | fechada pela P-11 | R31, R32 e R33 |
 | Q13 | requisito | P-08, RQ-23 | fechada pelo `00` | R4 (linha F-03d) |
 | Q14 | desenho | P-08, RQ-19 | decidida (a recomendação) | R3 e R5 (`@premissa`) |
@@ -286,6 +289,47 @@ Os mutantes que vieram da revisão levam a marca `revisão adversarial` e não c
 | ADV-33 | o piso da varredura parava no registro dos painéis | aceito (virou a P-12) | R28: a lista com motivo vale também para peça registrada; CT-41, novo (classes de `app/` fora de `app/Filament`); R33: a página declara o limite (CT-34); R28-M4 a M6 e R33-M4 |
 | ADV-34 | o executor acumula o papel de aprovador (merge, tag) | rejeitado como cenário | é controle de processo da RQ-26: a sessão e o Codex nunca fazem merge, push na `main` nem tag, e a sessão confere HEAD, tags e o estado do PR antes e depois de cada despacho do Codex. Confere-se no quality gate e no PR |
 
+## Revisão adversarial — segunda rodada
+
+*(seção nova em 2026-11-20, quinta rodada)* É a segunda e última rodada: a skill tem teto de duas, e não há terceira. O revisor recebeu só o `00`, o `04`, o `05` e o glossário, e devolveu 32 achados. A sessão aceitou todos, alguns com o oráculo ajustado pelo que mediu. Esta derivação conferiu por comando cada oráculo novo ou reescrito, e cada fato de linha de controle, contra dados reais: o código, o vendor, o catálogo, o README, o CHANGELOG e o esqueleto do mapa construído (os 13 arquivos de diagrama de `site/mapa/diagramas/` e o HTML de `site/dist/mapa/`, na revisão `ae5d20f`). Durante a rodada, a sessão publicou os construtores do mapa (commit `4adaf9a`), e os oráculos do site construído foram conferidos de novo nesse commit: os 17 arquivos de diagrama dele, gerados pelo `site/mapa/gerar.mjs --saida` numa pasta de rascunho, sem tocar no `dist/`. O gerador aceita 10 dos 17; os 7 escritos à mão no esqueleto, sem prova por ligação, ele recusa, e os tipos `lifecycle`, `erd`, `class`, `sequence`, `workflow` e `dataflow` ficam sem medição nesse commit (o `erd`, o `sequence`, o `workflow` e o `dataflow` foram medidos no trabalho em andamento da sessão, fora de commit, só para os seletores do `05`). A sessão publicou também o catálogo da entrega (commit `0f38e2f`, com a F-72 a F-121 e a coluna Origem), e os oráculos do catálogo que dependem das linhas novas — a identidade por tokens (ADV2-01) e a resolução dos caminhos (ADV2-04) — foram conferidos nele. Por último, a sessão publicou a página do mapa (commit `e7d6eb5`) e os fluxos escritos a partir do código (commit `4cc9517`, que tira os diagramas de arquitetura escritos à mão do esqueleto). **A base da conferência fica congelada no `4cc9517`**: os 43 arquivos de diagrama dele, de todos os tipos e todos aceitos pelo gerador, foram gerados de novo na pasta de rascunho e conferidos no Chromium, e a página, o README e o modelo foram lidos nele; commit posterior não foi conferido. Medido no `4cc9517`: o `<h1>` e o rótulo de cada peça iguais aos da fonte nos 84 HTML fora o comparativo; a busca com um resultado por peça em 42 de 42 diagramas, e nenhum sem JavaScript; nenhum erro, nenhuma requisição para fora e nenhum `<script src>` nos 86; os pares de arestas dos 4 mapas de arquitetura iguais aos da fonte; 1.172 itens de prova, todos achados, inteiros e sem corte; 685 links de prova de peça, todos com o trecho na linha; 1.416 textos en de duas palavras ou mais sem palavra funcional do pt; nenhuma marca de disponibilidade; nenhum item que é nome de F-nn nas 13 listas e tabelas da página nem nos 328 cards; e o registro do `/admin` (57 peças) e o do `/infra` (84) iguais nos dois modos, e o do `/app` com 46 sem tenant e 48 com. Onde a conferência reprovaria dado correto, o oráculo foi ajustado, e a última coluna diz o que se mediu.
+
+Placar: 32 aceitos. Os achados estruturais — ADV2-14, ADV2-20, ADV2-29 e ADV2-30 — a sessão escalou ao mantenedor. Os mutantes que vieram desta rodada levam a marca `revisão adversarial (ADV2-nn)` e, pela regra da skill, não contam para o teto da regra.
+
+| Achado | O que o revisor achou | Decisão | Destino | Conferido contra dados reais |
+|---|---|---|---|---|
+| ADV2-01 | duas F-nn novas, sem página, pacote nem rota, trocam de feature entre pt e en | aceito, com o oráculo ajustado | R1: nas linhas novas, os tokens entre crases do pt são os do en; CT-01; R1-M6, e a troca entre linhas sem token, lacuna declarada (R1-M8) | 4 das 74 linhas da base diferem nos tokens (F-02 e F-04 por `{painel}`/`{panel}`, F-07 com o en errado, F-51 com a palavra traduzida) e 10 não têm token: a regra vale só para as linhas novas. No commit `0f38e2f`, as 50 linhas novas (F-72 a F-121) têm os mesmos tokens nos dois idiomas, e a F-118 ("Voltar ao topo", código próprio, sem página nem rota) não tem token nenhum: "e não vazios" reprovaria dado correto, e saiu |
+| ADV2-02 | F-nn removida num idioma só | aceito | R1: o estado entra na identidade; CT-01; R1-M7 | a base não tem F-nn removida |
+| ADV2-03 | o README publicado ganha item fora do catálogo | aceito | R5: o CT-05 lê também a lista publicada; CT-35; R5-M9 | 46 itens e 46 títulos diferentes por idioma: 26 em negrito, 17 pelo separador e 3 pelo item inteiro. A lista não muda no commit `4cc9517`: a seção "Mapa interativo" que o `e7d6eb5` pôs no README fica fora dela |
+| ADV2-04 | caminho velho no "onde fica" passava com "basta um caminho" | aceito | R6: todo caminho resolve; CT-06, CT-36 (F-07 en) e CT-44, novo, com tenant; R6-M9 | na base, pt: 51 caminhos, 3 só com tenant, e todos resolvem; en: só a F-07 (`/{panel}/my-profile`) não resolve. No catálogo da entrega (commit `0f38e2f`): 92 caminhos por idioma, 6 só com tenant, e todos resolvem nos dois modos; a F-07 en foi corrigida |
+| ADV2-05 | a F-nn não chega ao leitor | aceito (D29), com o oráculo ajustado | R6: o CT-B01 confere a F-nn no desenho da peça — o `tag` no nível de leitura cheio, no mapa de arquitetura, e o sublabel, na árvore de registro; R6-M10 | no commit `4adaf9a`: o `tag` das 4 peças com F-nn do `app-acesso` fica com opacidade 0 no carregamento (nível "read") e com 1 no nível "full", pelo botão "+", e com a peça em foco pela busca; o passaporte mostra o `tag`, e a busca por "F-02" acha as duas telas que a entregam. O esquema `tree` do archify não tem `tag`, e a árvore leva a F-nn no sublabel, à vista no carregamento (5 peças em cada árvore do `/app`). "À vista" no carregamento reprovaria o mapa de arquitetura, e o ponto vai ao coordenador |
+| ADV2-06 | "fora de comentário" só definido para PHP | aceito | R9: comentário por tipo de arquivo; CT-09, linha Blade; R9-M7 | a linha 1 do `convites-recebidos.blade.php` é um `{{-- --}}` com `ConvitesRecebidos::table()`, que o arquivo não traz fora dele |
+| ADV2-07 | o número de linha guardado fora do caminho | aceito | R9: o modelo não tem campo de linha, e as provas dos arquivos de diagrama são âncora; CT-09, duas linhas; R9-M8 | 405 provas nos 13 arquivos do esqueleto: 3 com `arquivo` e `trecho` e 402 também com `label`; nenhuma com linha. No commit `4adaf9a`: 977 âncoras no modelo e nos 17 arquivos de diagrama, 652 com `arquivo` e `trecho` e 325 também com `label`, nenhuma com linha |
+| ADV2-08 | trait que a origem não usa, e método qualquer do alvo | aceito | R10: o trait que a origem usa e a lista fechada de métodos de contrato; CT-10, duas linhas; R10-M10 e M11 | 6 interfaces e 7 métodos de contrato no vendor; o `Projeto` usa o `BelongsToTenant`, e o `UserResource`, não |
+| ADV2-09 | par de mapeamento com as pontas trocadas | aceito (D27) | R10: o trecho é a linha inteira do par; CT-10, linha do `MailLog`; R10-M12 | a linha 67 do `PoliciesDeVendor` tem 22 espaços de alinhamento, e a 68 mapeia o `MailLog`. No modelo do commit `4adaf9a`, as 10 ligações que saem do `PoliciesDeVendor` levam a linha inteira do par como trecho, com os espaços |
+| ADV2-10 | as páginas que o painel liga pela configuração ficam fora do registro | aceito (D30) | R11: o registro vivo lê os getters da configuração; CT-11 e CT-13; R11-M6 | `TelaLogin`, `TelaRecuperarSenha` e `TelaRedefinirSenha` (três painéis), `RegistroPorConvite` e `TelaVerificacaoDeEmail` (`/app`) fora do `getPages()`; com tenant, os getters da organização devolvem nulo. No modelo do commit `4adaf9a`, o painel app e o admin registram a `TelaLogin` nos dois modos, com o trecho `->usingPage(TelaLogin::class)` |
+| ADV2-11 | rótulo de nó que não é peça sai igual ao pt | aceito, com o oráculo ajustado | R16: termo do glossário com o en dele, frase pelo critério do ADV2-28, código isento; CT-16; R16-M6 | 373 pares iguais nas traduções do esqueleto, todos código ou texto em inglês; dos 4 rótulos que são termo do glossário, 2 não batem (Inativa → Off; Telas de acesso → Access screens) |
+| ADV2-12 | diagrama de um modo marcado como compartilhado | aceito | R17: nas duas direções; CT-17 e CT-43; R17-M7 | no esqueleto, os diagramas de um modo só têm um modo em `modos` |
+| ADV2-13 | ligação de um modo desenhada no diagrama do outro | aceito | R18: CT-19; R18-M4, e o modo da ligação de uso, lacuna declarada (R18-M5) | no esqueleto, o `app-resumo-sem` não desenha peça nem ligação do modo com tenant, e o `app-resumo-com` desenha 5. No modelo do commit `4adaf9a`, "o painel app usa o model `Tenant`" está nos dois modos, embora o trecho dela, o `->tenant()`, só rode com tenant, e o "registra `IdentifyTenant`", com o mesmo trecho, só no modo com tenant: é defeito do modelo, que a linha de controle do CT-19 acusa; nenhuma ligação do modelo vale só com tenant entre peças dos dois modos no `/app` |
+| ADV2-14 | fluxo de painel declarado do kit inteiro | aceito (D28); estrutural, escalado | R19: CT-21; R19-M7 | os 6 diagramas do kit inteiro do esqueleto não desenham peça registrada; o `conta` cita o `UserResource` só como âncora. No commit `4cc9517`: 22 diagramas do kit inteiro, nenhum nó com o nome exato de uma das 112 peças que painel registra (o marco 0.33.0 cita `Dashboard` numa frase, e conferir por palavra reprovaria dado correto); a pilha da requisição saiu em dois diagramas de painel, o comum, dos três painéis e dos dois modos, e o do `/app` com tenant |
+| ADV2-15 | biblioteca embutida, ou em `peerDependencies` | aceito (D32), com a lista ajustada | R21: o CT-23 vira Esquema, com os quatro campos e a lista fechada de `site/mapa/`; R21-M6 e M7 | sem `optionalDependencies` nem `peerDependencies`. No commit `4adaf9a`, `site/mapa/` tem `archify.mjs`, `diagramas/`, `gerar.mjs`, `interface.json`, `ligacoes.json`, `pecas.json` e `posicionar.mjs`. A lista da D32 não nomeia os dois arquivos do modelo, e com ela a linha "publicados" reprovaria dado correto; a lista fechada os inclui, e a divergência vai ao coordenador |
+| ADV2-16 | o conferidor reprova e termina com código 0 | aceito | R23: controle de processo no CT-B06; R23-M6 | o `site/verifica-mapa.mjs` do commit `4adaf9a`, rodado numa pasta de rascunho sobre uma cópia em que o HTML do `app-resumo-sem` não desenha nada, saiu com código 1 ("nenhum `<svg role="img">` em 15000 ms", nas quatro entradas da amostra); sobre a cópia com o HTML gerado, saiu com 0 |
+| ADV2-17 | o gerador perde as arestas | aceito, com o oráculo ajustado | R12: o CT-B02 confere os pares do DOM contra a fonte — o arquivo, no diagrama escrito à mão; o modelo, no construído; R12-M7 | no esqueleto, 76 e 76, 14 e 14, 43 e 43 pares nos três `architecture`. No commit `4adaf9a`, o arquivo construído não tem `connections`, e "o do arquivo" reprovaria dado correto; contra o modelo, 17 e 17 (`app-acesso`), 14 e 14 (`app-organizacoes`) e 16 e 16 (`app-resumo-sem` e `app-resumo-com`) |
+| ADV2-18 | comando `kit:*` na lista dos sem feature | aceito | R28: CT-41; R28-M7 | 9 comandos `kit:*`. No modelo do commit `4adaf9a`, nenhum dos 9 tem F-nn, e o catálogo da entrega (`0f38e2f`) dá a F-102 ao `kit:install` e a F-105 ao `kit:update`: o CT-41 e o CT-06 reprovam esse modelo até a sessão ligar as F-nn, e o oráculo fica |
+| ADV2-19 | violação com alvos mistos | aceito | R32: CT-B06; R32-M7 | o conferidor já filtra os alvos (`v.nodes.filter`) |
+| ADV2-20 | comparativo sem cards | aceito (P-04 emendada); estrutural, escalado | R20: CT-22; R13 tira o comparativo dos cards; R33: CT-34; R24: o CT-B01 abre o comparativo; R20-M3 e R33-M5 | comparativo nos dois idiomas: `lang="en"`, nenhum card, nenhuma requisição para fora; a `base` e a `cabeca` estão publicadas. No commit `4adaf9a`, o mesmo; a casca não tem `<h1>` com o título do arquivo: mostra o subtítulo "base → cabeça", com os títulos dos dois diagramas no idioma da página |
+| ADV2-21 | lista só de nomes de feature | aceito, com o oráculo ajustado | R2: limiar de 3 nomes de F-nn em item de lista, linha de tabela ou item de card; CT-02; R2-M5 | os nós do `infra-registro` trazem 3 nomes de F-nn (são peças), então nó não conta; cards do esqueleto: nenhum; a página prevista no passo 6 do `01` só tem link de diagrama e motivo. No commit `4cc9517`, com a página publicada e os cards dos 43 diagramas: nenhum item que é nome de F-nn nas 13 listas e tabelas da página nem nos 328 cards, nos dois idiomas |
+| ADV2-22 | a prova do card não amarrada à ligação | aceito, com o oráculo ajustado | R13: CT-B02; R13-M4 reescrito e R13-M7 | o gerador escreve um item por ligação, "origem → destino (verbo): arquivo:linha — trecho". No commit `4adaf9a`, o painel lateral do mapa construído tem também os cards "Como ler as setas" e "Quem está em …", e o item de prova se reconhece pela forma; nos 6 diagramas construídos, 281 itens de prova por idioma, igual às ligações desenhadas (75 no `app-resumo-sem`, sobre 16 pares de arestas), todos inteiros, e nenhum diagrama repete nome de peça |
+| ADV2-23 | amostra de uma peça só, e a linha nunca conferida | aceito, com o oráculo ajustado | R14: CT-B03; R14-M6 | no esqueleto, 226 links de prova de peça, todos com o trecho na linha. No commit `4adaf9a`, todos também: 21, 9, 49, 47, 1 e 1 nos construídos, e 73, 31 e 26 no `infra-registro`, no `kit-install-ci` e no `marcos-do-changelog`; o `app-acesso` tem 5 peças de pacote em 21, e os outros três `architecture`, nenhuma |
+| ADV2-24 | a exceção da interação não é pega | aceito | R14 e R31: CT-B03 e CT-B04; o R24-M7 passa a eles | nenhum erro no esqueleto com a busca aberta e uma peça em foco; no commit `4adaf9a`, nenhum no `app-acesso` e no `app-organizacoes`, nos dois idiomas, com a busca e o passaporte abertos |
+| ADV2-25 | o termo do marco à escolha dele | aceito | R29: o título visível; CT-31; R29-M7 | "login" está na seção da 0.56.0, e "Passkeys", não |
+| ADV2-26 | a lista de textos iguais sem teto | aceito, com o oráculo ajustado | R31: CT-B07 fechado às 14 chaves medidas e às só de marcadores; R31-M9 | 14 das 461 chaves do pt do archify iguais ao en. No commit `4adaf9a`, cada HTML embute só as 390 chaves de interface (as mesmas no pt e no en), e "o pt tem as 486" sobre o HTML reprovaria dado correto; as outras 96 o archify aplica no render. Iguais ao en: 9 a 11 por HTML entre as 390 e 14 na fonte do kit, todas entre as 14 |
+| ADV2-27 | o en do CT-B04 sem critério | aceito | R31: CT-B04; R31-M5 reescrito | no esqueleto, a legenda en do `admin-acesso` traz os nomes en dos tipos. No commit `4adaf9a`, a do `app-acesso` traz Screen (panel, page, resource, widget, Livewire), Kit code (provider, service, command), Data (model, settings), Third-party package or plugin e Access (middleware, policy); nenhum texto de interface en igual ao pt de uma chave cujo en é outro |
+| ADV2-28 | "traduzido" conferido como "diferente do pt" | aceito | R16 e R19: palavra funcional do pt; CT-16 e CT-21; R16-M7 e R19-M8 | nenhum dos 482 valores en de duas palavras ou mais traz uma; o detector acha 199 dos 827 textos pt. No commit `4adaf9a`: nenhum dos 403 textos en dos 17 arquivos de diagrama, nem dos 14 textos en do gerador, nem dos 9 das sobrescritas de tipo. "Do" também é palavra inglesa: nenhum texto en do commit `4adaf9a` a traz, e, se um vier a trazer, a lista é decisão da sessão |
+| ADV2-29 | o CT-37 afirmava o recorte da Q11 | aceito; estrutural, escalado | R34: a linha admin tira a peça condicional; a Q11 segura o recorte | — |
+| ADV2-30 | a marca publicada não era conferida | aceito; estrutural, escalado | R37, nova: CT-45; R37-M1 a M3 | o esqueleto não publica marca (a regra é vácua hoje); o `canAccess()` das duas peças condicionais lido no código. No commit `4adaf9a`, nenhum dos 17 arquivos de diagrama publica marca, e o modelo registra o `TenantResource` e o `AgenteIaResource` nos dois modos |
+| ADV2-31 | publicação a partir de outro ramo | aceito (D31) | R23: CT-25 e CT-42; R23-M7 | `if: github.ref == 'refs/heads/main'` no job `build` do `pages.yml` |
+| ADV2-32 | texto cortado à vista | aceito, com o oráculo ajustado | R13: o item de card inteiro (CT-B02); R24: o rótulo igual ao da fonte (CT-B01); R13-M8 | o item de card do archify quebra a linha (`overflow-wrap: anywhere`); um item de 160 caracteres sem espaço ficou com 346 px nas duas medidas; o esqueleto escreve "…" à mão em 33 rótulos, e por isso o rótulo é conferido por igualdade, e não por "sem reticências". No commit `4adaf9a`, nenhum dos 562 itens de prova dos construídos é cortado |
+
 ## Setup Global
 
 ### Sentinela, grupo e suíte
@@ -299,6 +343,7 @@ Os mutantes que vieram da revisão levam a marca `revisão adversarial` e não c
 ### Registro vivo: getters conferidos no vendor (Filament 5.10.2)
 - Painéis: `Filament::getPanels()` (`vendor/filament/filament/src/FilamentManager.php:getPanels:384`). É a lista da grade e do registro, nunca escrita à mão.
 - Recursos, páginas e widgets: `getResources()`, `getPages()` e `getWidgets()` (`vendor/filament/filament/src/Panel/Concerns/HasComponents.php:getResources:466`, `vendor/filament/filament/src/Panel/Concerns/HasComponents.php:getPages:442`, `vendor/filament/filament/src/Panel/Concerns/HasComponents.php:getWidgets:490`).
+- *(alterado em 2026-11-20: ADV2-10, D30)* Páginas que o painel liga pela configuração, e não pelo `->pages()`: `getLoginRouteAction()` (`vendor/filament/filament/src/Panel/Concerns/HasAuth.php:getLoginRouteAction:561`), `getRegistrationRouteAction()`, `getRequestPasswordResetRouteAction()`, `getResetPasswordRouteAction()`, `getEmailVerificationPromptRouteAction()` e `getProfilePage()`, todos em `HasAuth`; e, com tenant, `getTenantRegistrationPage()` e `getTenantProfilePage()` (`vendor/filament/filament/src/Panel/Concerns/HasTenancy.php:getTenantProfilePage:262`). Medido no kit, nos dois modos: `TelaLogin`, `TelaRecuperarSenha` e `TelaRedefinirSenha` nos três painéis, e `RegistroPorConvite` e `TelaVerificacaoDeEmail` no `/app`, fora do `getPages()`; `getProfilePage()` e os dois getters da organização devolvem nulo.
 - Plugins: `getPlugins()` (`vendor/filament/filament/src/Panel/Concerns/HasPlugins.php:getPlugins:38`).
 - Middlewares:
   - `getMiddleware()` devolve também o alias `panel:{id}` (`vendor/filament/filament/src/Panel/Concerns/HasMiddleware.php:getMiddleware:97`, `vendor/filament/filament/src/Panel/Concerns/HasMiddleware.php:getId:100`).
@@ -339,13 +384,14 @@ Os mutantes que vieram da revisão levam a marca `revisão adversarial` e não c
 - Toda guarda é uma função aplicada ao modelo publicado e a cópias adulteradas **em memória**, nunca ao arquivo real. Ela devolve "aceita" ou "reprova", com um motivo que nomeia o item. O molde é `conferirDg10()` (`tests/Kit/GuardasDosDiagramasTest.php:conferirDg10:117`).
 - A guarda do catálogo recebe a base como parâmetro. Assim o controle monta uma base em que um número já está removido, sem tocar na base congelada.
 - O piso de não vácuo vem de uma fonte que o modelo não controla: o registro do painel, a árvore de `docs/`, os manifestos de pacotes ou o catálogo da base. Assim um modelo vazio não passa em "toda peça…".
-- Trecho fora de comentário: em arquivo PHP, usar `codigoSemComentario()` (`tests/Pest.php:codigoSemComentario:2188`).
+- Trecho fora de comentário, por tipo de arquivo *(alterado em 2026-11-20: ADV2-06)*: em PHP, `codigoSemComentario()` (`tests/Pest.php:codigoSemComentario:2188`); em Blade, fora de `{{-- --}}` e de `<!-- -->`; em JS e stub, fora de `//` e de `/* */`.
 - "No commit que publica" quer dizer que o arquivo está no índice do git. Invocar o `git` exige a sentinela (`[CT-26]` de `tests/Kit/RedeDeDocumentacaoTest.php`).
 - Arquivos que existem no disco e estão fora do commit:
   - `bootstrap/cache/packages.php`, que o Composer gera e o `bootstrap/cache/.gitignore` ignora;
   - todo arquivo de `vendor/`.
 - Quarto painel: `painelRegistradoEmTeste('financeiro')` (`tests/Pest.php:painelRegistradoEmTeste:812`). O registro morre com o container do caso.
 - A guarda das classes de `app/` recebe a lista de classes como parâmetro. Assim o CT-41 acrescenta uma classe que não existe, sem tocar na árvore.
+- *(alterado em 2026-11-20: segunda revisão adversarial)* Listas fechadas e critérios que as guardas compartilham, cada um conferido na regra dele: os métodos de contrato do alvo (R10, ADV2-08); os comandos `kit:*`, que nunca entram na lista das sem feature (R28, ADV2-18); os 39 termos do glossário e as palavras funcionais do pt na tradução (R16, ADV2-11 e ADV2-28); o título do item do README (R5, ADV2-03); a normalização dos caminhos do "onde fica" (R6, ADV2-04); os arquivos de `site/mapa/` (R21, D32).
 - **Motivo de enfeite** *(alterado em 2026-11-20: ADV-22)*: o motivo vazio, só de travessão ou pontuação, ou "não se aplica" sem dizer por quê. A definição é uma só, nos CT-03, CT-21, CT-28, CT-29, CT-35 e CT-41, e no CT-B07 do `05`.
 - A detecção da peça condicional (o `master_global`, o `canAccess()` e o `canView()`) saiu com a R30, estacionada na Q11 *(alterado em 2026-11-20: ADV-31)*.
 
@@ -375,7 +421,7 @@ Os mutantes que vieram da revisão levam a marca `revisão adversarial` e não c
 
 ---
 
-## Regra R1 — O catálogo é um só, com as mesmas F-nn em pt e em en, a mesma feature em cada número, uma linha por F-nn e uma origem do glossário em cada
+## Regra R1 — O catálogo é um só, com as mesmas F-nn em pt e em en, a mesma feature e o mesmo estado em cada número, uma linha por F-nn e uma origem do glossário em cada
 
 > `RQ-21`, `RQ-22`, `RQ-04`, `RQ-05`, `P-02` · perfil **padrão** · técnica: **EP** (uma partição inválida por linha) + controles em cópia
 
@@ -399,11 +445,20 @@ Funcionalidade: Mapa interativo do kit com a skill archify
         | cópia em que a F-30 declara a origem "biblioteca"                                       | reprova, nomeando a F-30 e a origem      | origem fora do conjunto      |
         | cópia em que a F-30 não declara origem                                                  | reprova, nomeando a F-30                 | origem ausente               |
         | cópia em que a F-30 está em duas linhas do pt                                           | reprova, nomeando a F-30                 | número repetido              |
+        | cópia em que a F-118 e a F-121, novas, de código próprio e sem página nem rota, trocam de descrição entre pt e en | reprova, nomeando a F-118 e a F-121 | número novo com outra feature |
+        | cópia com a F-05 marcada como removida, com o motivo, no pt e vigente no en | reprova, nomeando a F-05 e o idioma en | estado diferente entre os idiomas |
 ```
 
 As origens válidas são as três do glossário (Catálogo de features): pacote, código próprio e pacote com customização própria. A linha "publicado" afirma que cada F-nn declara **exatamente uma** delas.
 
-*(alterado em 2026-11-20: ADV-09)* A mesma F-nn é a mesma feature nos dois idiomas quando as duas linhas declaram a mesma origem, nomeiam o mesmo pacote, levam à mesma página (a do outro idioma, no espelho de `docs/`) e dão os mesmos caminhos de rota no "onde fica". A linha da F-72 é de controle: na cópia, o link da F-72 en é trocado.
+*(alterado em 2026-11-20: ADV-09, ADV2-01 e ADV2-02)* A mesma F-nn é a mesma feature, no mesmo estado, nos dois idiomas:
+- **Nas linhas da base** (F-01 a F-71, F-03a, F-03b e F-03c): as duas linhas declaram a mesma origem, nomeiam o mesmo pacote, levam à mesma página (a do outro idioma, no espelho de `docs/`) e dão os mesmos caminhos de rota no "onde fica", com `{painel}` e `{panel}` tidos como o mesmo curinga.
+- **Nas linhas novas** (F-72 em diante), que a entrega escreve: além disso, o conjunto de tokens entre crases da linha pt é o da linha en. Assim a F-nn nova sem página, pacote ou rota, como a de um comando `kit:*`, também fica amarrada pelo que só ela tem. A linha nova sem token em nenhum dos dois idiomas não tem essa âncora, e a troca entre duas linhas assim é lacuna declarada (R1-M8). *(alterado em 2026-11-20: "e não é vazio" saiu, medido no catálogo da entrega)*
+- **O estado:** a F-nn removida está marcada como removida no pt e no en.
+
+Medido na base: das 74 linhas, 4 têm tokens diferentes entre pt e en — F-02 e F-04 (`{painel}`/`{panel}`), F-07 (`/{painel}/meu-perfil`/`/{panel}/my-profile`, e o en está errado) e F-51 (`homologação`/`staging`, palavra traduzida) — e 10 não têm token nenhum. Por isso a identidade por tokens vale só para as linhas novas; nas da base fica a identidade acima, que reprova a F-07 en até a entrega a corrigir (R6, ADV2-04).
+
+Medido no catálogo da entrega (commit `0f38e2f`, F-72 a F-121): as 50 linhas novas têm os mesmos tokens nos dois idiomas; só a F-118 ("Voltar ao topo") não tem token nenhum, e exigir token reprovaria dado correto. As linhas novas de código próprio sem página nem rota são duas, a F-118 e a F-121 ("Senha forte e comandos destrutivos bloqueados em produção", com `php artisan`, `APP_ENV=production` e `migrate:fresh`), e a linha de controle da troca usa as duas. As linhas da F-72, da F-118, da F-121 e da F-05 são de controle, em cópia: no commit, a F-72 é o login social por painel, com página, e a F-05, as passkeys, desligadas no kit.
 
 #### Mutantes previstos
 
@@ -414,6 +469,9 @@ As origens válidas são as três do glossário (Catálogo de features): pacote,
 | M3 | a coluna de origem é opcional, e a F-nn sem origem passa | CT-01 | linha "não declara origem": reprova; o mutante aceita |
 | M4 | duas linhas com o mesmo número (a feature nova copiada de uma linha antiga sem trocar o número) | CT-01 | linha "F-30 em duas linhas": reprova; o mutante aceita |
 | M5 — revisão adversarial (ADV-09) | com pt e en editados em paralelo, os números novos saem em ordem diferente: a F-72 do pt é o dock, e a do en, o tutorial | CT-01 | linha da F-72: reprova; o mutante aceita, porque confere só o conjunto de números |
+| M6 — revisão adversarial (ADV2-01) | duas F-nn novas sem página, pacote nem rota trocam de feature entre pt e en, e os atributos de identidade vazios e iguais deixam passar | CT-01 | linha da F-118 e da F-121: os tokens entre crases diferem (nenhum na F-118, três na F-121), e reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-02) | a F-nn é marcada como removida num idioma só | CT-01 | linha da F-05 removida no pt e vigente no en: reprova; o mutante aceita |
+| M8 — revisão adversarial (ADV2-01) | duas F-nn novas sem token nenhum, sem página e sem rota trocam de descrição entre pt e en | ⚠️ **sem matador**: no catálogo da entrega (commit `0f38e2f`), a F-118 é a única linha nova sem token, e exigir token reprovaria dado correto; sem token, página nem rota, não há âncora mecânica da identidade entre os idiomas. Fica para o quality gate | — (lacuna declarada) |
 
 ---
 
@@ -438,6 +496,8 @@ As origens válidas são as três do glossário (Catálogo de features): pacote,
         | cópia do `README.en.md` que cita uma F-nn que só o catálogo pt tem                          | reprova, nomeando a F-nn e o `README.en.md` |
         | cópia da página do mapa com uma tabela de três F-nn                                         | reprova, nomeando a página                  |
         | cópia de um arquivo do mapa com uma lista de features, cada uma com a F-nn e o nome          | reprova, nomeando o arquivo                 |
+        | cópia da página do mapa com uma lista só de nomes, "Passkeys", "Impersonate" e "Lixeira", sem número | reprova, nomeando a página |
+        | cópia de um arquivo do mapa com um card de três itens que são nomes de F-nn do catálogo | reprova, nomeando o arquivo |
 ```
 
 A varredura cobre o README, `docs/` e `site/mapa/`. Ficam de fora `tests/` e `app/`, onde "F-nn" também nomeia achado de revisão, como "F-01 da conformidade Blueprint" (`.ai/rules/kit.md`). Ali a regex daria falso positivo.
@@ -445,6 +505,12 @@ A varredura cobre o README, `docs/` e `site/mapa/`. Ficam de fora `tests/` e `ap
 *(alterado em 2026-11-20: ADV-20)* "Lista ou tabela de features" tem dois sinais:
 - **Nas páginas fora do catálogo:** linha de tabela ou item de lista que cita F-nn. Na base não há nenhuma, e as duas citações de `docs/`, em `autenticacao/login-social.md`, estão em prosa.
 - **Nos arquivos do mapa:** a F-nn junto do nome que o catálogo dá a ela. A peça aponta a F-nn só pelo número.
+
+*(alterado em 2026-11-20: ADV2-21)* A lista de features também pode vir só com os nomes, sem número. O terceiro sinal é este: um item de lista, uma linha de tabela ou um item de card que é o nome que o catálogo dá a uma F-nn (o texto da coluna "Feature", sem a marcação), com ou sem o número. Três ou mais itens assim na mesma lista, tabela ou card da página do mapa e dos arquivos do mapa reprovam. Ficam fora da conta:
+- o nó de diagrama, porque nomeia a peça ou o marco. Medido no esqueleto: o `infra-registro` (tree) tem 3 nós cujo rótulo é nome de F-nn — Execuções de IA, Grafo de dependências e Lixeira —, e são peças;
+- o item que é link para um diagrama do mapa, que é navegação.
+
+Medido: nos cards dos 13 arquivos do esqueleto, nenhum item é nome de F-nn. A página do mapa ainda não existe; pelo passo 6 do `01`, as tabelas e listas dela são a grade painel × modo, com `<a href>` em cada célula, os fluxos, a matriz de tipos com o motivo de cada célula vazia e os limites, e nenhuma é lista de nomes de feature.
 
 #### Mutantes previstos
 
@@ -454,6 +520,7 @@ A varredura cobre o README, `docs/` e `site/mapa/`. Ficam de fora `tests/` e `ap
 | M2 | uma página do site cita número que o catálogo não tem (inventado, ou de antes da unificação) | CT-02 | linha "F-99": reprova nomeando a página; o mutante aceita |
 | M3 | o README en cita F-nn que só o catálogo pt ganhou | CT-02 | linha `README.en.md`: reprova; o mutante aceita |
 | M4 | a peça aponta a feature pelo nome, e não pela F-nn | CT-02 | linha "peça cita a feature pelo nome": reprova nomeando a peça; o mutante aceita |
+| M5 — revisão adversarial (ADV2-21) | a lista própria de features vem só com os nomes, sem número, e não acende nenhum dos dois sinais | CT-02 | linhas da lista de três nomes na página do mapa e do card de três nomes: reprova; o mutante aceita |
 
 ---
 
@@ -576,6 +643,8 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
         | lista de features do README da base    | en     | 46                          | a tabela da base congelada na guarda                               | cada um dos seis itens que a base não cobre casa com uma F-nn cuja linha traz o termo en do item, como palavra inteira (tabela abaixo)      |
         | todas as páginas de `docs/pt/`         | pt     | as da árvore (39 na base)   | o link da linha do catálogo para a página, ou a lista da guarda    | a linha de cada F-nn casada leva por link à própria página                                                           |
         | todas as páginas de `docs/en/`         | en     | as da árvore (39 na base)   | o link da linha do catálogo para a página, ou a lista da guarda    | a linha de cada F-nn casada leva por link à própria página                                                           |
+        | lista de features do README publicado  | pt     | as da lista publicada (46 na base) | o título do item: o da base, pela tabela congelada; o novo, pela tabela da guarda, com a F-nn e o termo | todo item cujo título não é de um dos 46 da base casa com uma F-nn cuja linha traz o termo dele, como palavra inteira |
+        | lista de features do README publicado  | en     | as da lista publicada (46 na base) | o título do item: o da base, pela tabela congelada; o novo, pela tabela da guarda, com a F-nn e o termo | todo item cujo título não é de um dos 46 da base casa com uma F-nn cuja linha traz o termo dele, como palavra inteira |
 
     @premissa
     Esquema do Cenário: [CT-35] a guarda das fontes reprova o item casado com a feature errada, a página escondida na lista e o motivo de enfeite
@@ -592,6 +661,7 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
         | cópia da lista com a página `comecar/index.md`, sem o motivo                                                     | reprova, nomeando a página                | motivo ausente                    |
         | cópia da lista com a página `comecar/index.md`, com o motivo "—"                                                 | reprova, nomeando a página                | motivo de enfeite                 |
         | cópia da lista com a página `comecar/index.md`, com o motivo "não se aplica", sem porquê                         | reprova, nomeando a página                | motivo de enfeite                 |
+        | cópia do README pt com um item a mais na lista, "**Mapa interativo**: …", fora da tabela da guarda | reprova, nomeando o item | item novo sem F-nn |
 ```
 
 `@premissa` de mecanismo, decidida pela sessão (Q14b e Q14c):
@@ -610,6 +680,8 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
 | Proteção anti-robô opcional / Optional anti-robot protection | `anti-robô` | `anti-robot` |
 | "+" no e-mail do cadastro / "+" in the sign-up e-mail | `"+"` | `"+"` |
 
+*(alterado em 2026-11-20: ADV2-03)* A R5 lê também a lista publicada do README, e não só a da base. O item é reconhecido pelo título: o texto em negrito do começo; sem negrito, o texto antes do primeiro ":", "—" ou "("; e, sem nenhum dos dois, o item inteiro. Medido nos dois READMEs: 46 itens e 46 títulos diferentes por idioma, 26 em negrito, 17 pelo separador e 3 pelo item inteiro. O item cujo título não é de um dos 46 da base fica na tabela da guarda, com a F-nn e o termo, como os seis do ADV-01.
+
 *(alterado em 2026-11-20: ADV-21 e ADV-22)* O CT-35 dá a cada mutante da guarda das fontes uma cópia que o mata, sem depender de a árvore real estar errada.
 
 #### Mutantes previstos
@@ -624,10 +696,11 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
 | M6 — revisão adversarial (ADV-01) | a tabela da guarda, escrita pela mesma mão que escreve o catálogo, casa um item novo do README com a F-nn de outra feature | CT-05, CT-35 | CT-35, linha do dock casado com a F-06: reprova; e, no publicado, o CT-05 exige o termo na linha casada; o mutante aceita |
 | M7 — revisão adversarial (ADV-22) | página na lista com motivo de enfeite | CT-35 | linhas do motivo "—" e do "não se aplica" sem porquê: reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV-01; conferido pela sessão) | o termo casa como pedaço de palavra, e `dock` acha "docker" na linha da F-56 | CT-35 | linha do dock casado com a F-56: reprova; o mutante aceita |
+| M9 — revisão adversarial (ADV2-03) | a entrega acrescenta à lista do README um item sem F-nn, como o próprio mapa, e a guarda só lê o README da base | CT-05, CT-35 | CT-35, linha do item "Mapa interativo": reprova; e, no publicado, o CT-05 lê a lista publicada; o mutante aceita |
 
 ---
 
-## Regra R6 — Toda F-nn vigente é entregue por peça desenhada da origem que ela declara — do pacote que a linha nomeia, ou, no código próprio, da rota do "onde fica" —, e nenhuma peça entrega F-nn removida
+## Regra R6 — Toda F-nn vigente é entregue por peça desenhada da origem que ela declara — do pacote que a linha nomeia, ou, no código próprio, da rota do "onde fica" —, com a F-nn no desenho da peça; todo caminho do "onde fica" resolve; e nenhuma peça entrega F-nn removida
 
 > `RQ-04`, `RQ-05`, `RQ-21`, `P-03`, `P-10`, `P-08` · perfil **padrão** · técnica: **EP por origem** (as três partições do glossário) + tabela de decisão (F-nn × pacote nomeado × pacote da peça; removida × entregue) + controles em cópia
 
@@ -640,6 +713,7 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
       Quando a guarda do mapa procura as peças que entregam cada uma
       Então cada F-nn é entregue por ao menos uma peça do modelo que está desenhada em diagrama publicado
       E ao menos uma dessas peças é <peça da origem>
+      E todo caminho do "onde fica" dessas F-nn resolve no roteador, no modo sem tenant (o caminho com `{org}` fica para o CT-44)
 
       Exemplos:
         | origem                          | peça da origem                                                                                                                                                      |
@@ -661,6 +735,19 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
         | cópia em que uma F-nn de código próprio é entregue só por peça de pacote                                                      | reprova, nomeando a F-nn                   | origem errada                       |
         | cópia em que uma F-nn de pacote com customização própria é entregue por uma peça só                                           | reprova, nomeando a F-nn                   | customização com uma peça só        |
         | cópia com a F-05 marcada como removida, com o motivo, e uma peça do modelo que ainda a entrega                                | reprova, nomeando a F-05 e a peça          | removida e entregue                 |
+        | cópia em que o "onde fica" da F-07 en é `/{panel}/my-profile`, que o roteador não resolve | reprova, nomeando a F-07 e o caminho | caminho que não resolve |
+
+    Esquema do Cenário: [CT-44] com tenant, todo caminho do "onde fica" que leva a organização resolve no roteador
+      Dado o modo multi-tenant ligado, com `kit.tenancy.enabled` lido como verdadeiro
+      E o catálogo em "<idioma>"
+      Quando a guarda do mapa resolve no roteador cada caminho do "onde fica" que traz `{org}` ou `{/org}`, com uma organização no lugar do curinga
+      Então todo caminho resolve
+      E a guarda conferiu ao menos os caminhos da F-15, da F-22 e da F-25
+
+      Exemplos:
+        | idioma |
+        | pt     |
+        | en     |
 ```
 
 O piso de não vácuo é o do CT-01: cada F-nn tem exatamente uma origem, e as três linhas somadas percorrem o catálogo inteiro.
@@ -672,10 +759,16 @@ O piso de não vácuo é o do CT-01: cada F-nn tem exatamente uma origem, e as t
 - **A rota do "onde fica".**
   - O caminho de rota é o texto entre crases que começa com `/`.
   - A guarda troca `{painel}` por cada painel do registro, tira o `{org}` (a suíte do kit roda sem tenant) e a query, e resolve o caminho no roteador da aplicação.
-  - Basta um caminho resolver para uma peça que entrega a F-nn. Medido com `php artisan route:list`: `admin/users` resolve para `ListUsers`, página do `UserResource`; `app/login`, para `TelaLogin`; `infra/health-check-results`, para `HealthCheckResults`.
+  - Todo caminho da célula resolve no roteador, em toda linha, de qualquer origem *(alterado em 2026-11-20: ADV2-04; era "basta um caminho")*. `{painel}` e `{panel}` valem para cada um dos três painéis, e todos têm de resolver; `{/org}` vale sem a organização no modo sem tenant e com ela no modo com tenant; `{org}` só existe com tenant e é conferido no CT-44, na suíte Tenancy; outro parâmetro aceita qualquer valor.
+  - No código próprio, ao menos um caminho resolve para uma peça que entrega a F-nn: a página que responde nele, ou o recurso dono dela. Medido com `php artisan route:list`: `admin/users` resolve para `ListUsers`, página do `UserResource`; `app/login`, para `TelaLogin`; `infra/health-check-results`, para `HealthCheckResults`.
+  - Medido com `php artisan route:list --json` nos dois modos: no pt, 51 caminhos, 3 só do modo com tenant (F-15, F-22 e F-25, `/app/{org}…`), e todos resolvem; no en, os mesmos, menos a F-07, `/{panel}/my-profile`, que não resolve sem tenant em painel nenhum (a rota é `/meu-perfil` nos três). É defeito da base, que a entrega corrige no passo 5. No catálogo da entrega (commit `0f38e2f`, a coluna "Onde" achada pelo cabeçalho, depois da Origem): 92 caminhos por idioma, 6 só do modo com tenant, e todos resolvem nos dois modos (136 rotas sem tenant e 137 com).
 - **Até onde o oráculo vai.** A regra é a célula "onde fica" trazer um caminho entre crases que começa por `/`, em qualquer ponto, sem "→". Na base, dá 40 das 74 linhas, nos dois idiomas. Outras 4 têm caminho e "→", e 30 não têm caminho (menu, ação, "os três", "—"). *(alterado em 2026-11-20: a regra antiga, "começa por caminho", dava 37 em pt e 38 em en, porque a F-44 é "topbar do `/infra`" em pt e "`/infra` topbar" em en)*
   - Nessas 40, a rota fecha o oráculo do código próprio.
   - Nas outras, ele é só "do código do kit", e trocar uma peça do kit por outra fica como lacuna (M8).
+- **A F-nn no desenho da peça** *(alterado em 2026-11-20: ADV2-05, D29; oráculo ajustado pela medição no commit `4adaf9a`)*. Nos diagramas que os construtores geram do modelo — o mapa de arquitetura e a árvore de registro —, a F-nn de cada peça com nó próprio que entrega feature está no desenho dela, e o CT-B01 confere as duas formas. A peça que só aparece como membro de um agrupamento não tem nó próprio: o card "Quem está em …" a nomeia, e a F-nn dela fica no diagrama em que ela tem nó (medido: o `app-resumo-sem` desenha 1 peça e 7 agrupamentos).
+  - **No mapa de arquitetura, no `tag`** do componente ("F-29 · F-30"). O archify o desenha como detalhe fino (`data-detail="fine"`): o visualizador abre no nível de leitura "read", e o `tag` fica com opacidade 0; a partir de 175 % de zoom (nível "full", pelo botão "+") e com a peça em foco pela busca, opacidade 1. O CT-B01 leva o visualizador ao nível cheio e confere a opacidade. Medido: 4 peças com F-nn no `app-acesso`, em pt e em en, com 0 no carregamento e 1 no nível cheio; o passaporte mostra o `tag`, e a busca por "F-02" acha as duas telas que a entregam.
+  - **Na árvore de registro, no sublabel.** O esquema `tree` do archify não tem `tag` — só `architecture`, `workflow`, `dataflow`, `lifecycle` e `erd` o têm, e no `erd` ele é a faixa de domínio, e não um texto da entidade. A F-nn vai no sublabel, à vista no carregamento. Medido: 5 peças com F-nn em cada árvore do `/app`, com opacidade 1.
+  - **No carregamento, o `tag` não aparece.** A P-10 não conta como desenho a etiqueta que o zoom esconde, e o ADV2-05 era "a F-nn não chega ao leitor". O oráculo segue a D29 e pede o nível cheio; se a F-nn tiver de aparecer sem zoom, a D29 muda (por exemplo, a F-nn no sublabel, como na árvore), e o ponto foi ao coordenador.
 - **O CT-36 controla com cópias.** Cada mutante da guarda da origem morre sem depender de a árvore real estar errada.
 
 #### Mutantes previstos
@@ -690,6 +783,8 @@ O piso de não vácuo é o do CT-01: cada F-nn tem exatamente uma origem, e as t
 | M6 — revisão adversarial (ADV-03) | a associação peça → F-nn é livre: a F-nn do Health é entregue só por outro plugin | CT-36 | linha da F-33 entregue pelo `FilamentJobsMonitorPlugin`: reprova; o mutante aceita |
 | M7 — revisão adversarial (ADV-03) | a F-nn de código próprio é entregue por uma peça do kit que não responde na rota do "onde fica" | CT-36 | linha da F-29 entregue pelo `ConviteResource`: reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV-03) | a F-nn de código próprio cujo "onde fica" não é rota (menu, ação, painel inteiro) é entregue por outra peça do kit | ⚠️ **sem matador**: nas 34 linhas da base cujo "onde fica" não traz caminho sem "→" (4 com "→" e 30 sem caminho), não há peça que a guarda resolva sem julgamento. Fica para o quality gate | — (lacuna declarada) |
+| M9 — revisão adversarial (ADV2-04) | o "onde fica" guarda um segundo caminho velho, que não resolve mais, e "basta um caminho" aceita a célula | CT-36, CT-44 | CT-36, linha da F-07 en: reprova; com tenant, o CT-44 resolve os caminhos com `{org}`; o mutante aceita |
+| M10 — revisão adversarial (ADV2-05) | o modelo liga cada peça à F-nn dela, mas nenhum diagrama mostra a F-nn ao leitor | CT-B01 | "a F-nn de cada peça com nó próprio que entrega feature está no desenho dela: no `tag`, com opacidade 1 no nível de leitura cheio, ou no sublabel da árvore, à vista": reprova; o mutante aceita |
 
 ---
 
@@ -779,7 +874,7 @@ Os tipos válidos são os 13 do Setup Global.
 
 ---
 
-## Regra R9 — Toda prova resolve no commit que publica: o arquivo é versionado no kit, o trecho está nele, fora de comentário, e a prova não guarda número de linha
+## Regra R9 — Toda prova resolve no commit que publica: o arquivo é versionado no kit, o trecho está nele, fora de comentário pela sintaxe do tipo de arquivo, e a prova não guarda número de linha, nem no modelo nem nos arquivos de diagrama
 
 > `RQ-24`, `P-03`, `P-04`, `P-07` · perfil **padrão** · técnica: **EP** (uma partição inválida por linha, nunca duas juntas) + controles em cópia
 
@@ -806,11 +901,18 @@ A Q9 foi fechada pelo `00`. Pela P-07, o link de prova aponta para o commit que 
         | a mesma ligação, em `bootstrap/cache/packages.php`, que está no disco e fora do git, com um trecho que está nele                                          | reprova, nomeando o arquivo  | arquivo fora do git               |
         | "o painel infra registra a página `HealthCheckResults`": `vendor/shuvroroy/filament-spatie-laravel-health/src/FilamentSpatieLaravelHealthPlugin.php`, trecho `$panel->pages([$this->getPage()]);` | reprova, nomeando o arquivo  | arquivo de pacote, fora do commit |
         | a primeira ligação, com a prova `app/Providers/Filament/AdminPanelProvider.php:240`, que guarda o número da linha, e o mesmo trecho                         | reprova, nomeando a ligação  | prova com número de linha         |
+        | a mesma ligação, em `resources/views/filament/pages/convites-recebidos.blade.php`, trecho `ConvitesRecebidos::table()`, que só existe dentro do `{{-- --}}` da linha 1 | reprova, nomeando a ligação | trecho só em comentário Blade |
+        | cópia do modelo com a prova de uma ligação num campo `linha: 240`, ao lado do arquivo e do trecho | reprova, nomeando a ligação | linha num campo do modelo |
+        | cópia de um arquivo de diagrama em que a prova de uma peça, no `sources`, traz `line: 240` | reprova, nomeando o diagrama e a peça | linha nas provas do diagrama |
 ```
 
 *(alterado em 2026-11-20: ADV-19 e ADV-23)*
 - A prova é só o arquivo e o trecho. O número da linha envelhece a cada edição do arquivo (P-07), e quem o calcula é o build. A guarda reprova a prova que guarda linha, num campo próprio ou colada no caminho (`:240`, `#L240`).
 - Essa linha está aqui, na suíte do kit, porque ela roda em todo PR. O job `site` não roda no PR que só toca `app/`, e é nesse PR que a linha guardada envelhece.
+
+*(alterado em 2026-11-20: ADV2-06 e ADV2-07)*
+- **Fora de comentário, por tipo de arquivo.** PHP: `codigoSemComentario()`. Blade (`.blade.php`): fora de `{{-- --}}` e de `<!-- -->`. JS e stub: fora de `//` e de `/* */`. Medido: a linha 1 de `resources/views/filament/pages/convites-recebidos.blade.php` é um `{{-- --}}` com `ConvitesRecebidos::table()`, e o arquivo, de 4 linhas, não traz o trecho fora dele.
+- **A linha nunca é guardada.** O modelo não tem campo `linha` nem `line`, e a prova de peça nos arquivos de diagrama (`sources`) é sempre âncora `{arquivo, trecho}`, com `label` opcional. Medido nos 13 arquivos de diagrama do esqueleto: 405 provas, 3 com `arquivo` e `trecho`, 402 também com `label`, e nenhuma com linha nem com `:N` ou `#LN` no caminho. O gerador projeta a âncora e acha a linha na revisão publicada (`site/mapa/gerar.mjs`, função `linhaDaAncora`), e não aceita outra forma como prova.
 - O piso conta todas as ligações do modelo, e não só as de registro.
 
 #### Mutantes previstos
@@ -823,6 +925,8 @@ A Q9 foi fechada pelo `00`. Pela P-07, o link de prova aponta para o commit que 
 | M4 | prova em arquivo fora do git, cujo link para o commit daria 404 | CT-09 | linha `bootstrap/cache/packages.php`: reprova; o mutante aceita |
 | M5 | a prova da peça de plugin cita o `register()` do plugin em `vendor/`, que existe no disco e não está no commit | CT-09 | linha `vendor/shuvroroy/…`: reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV-23) | a guarda confere a prova só das ligações de registro, e a prova velha de uma ligação de uso (`UserResource` → `User`) passa | CT-09 | "conferiu a prova de tantas ligações quantas o modelo tem": a conta fica abaixo do total e reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-06) | a prova cita uma view Blade, um stub ou um JS, e o trecho só existe dentro de `{{-- --}}`, `<!-- -->` ou `//`, que a guarda de PHP não reconhece | CT-09 | linha do `convites-recebidos.blade.php`: reprova; o mutante aceita |
+| M8 — revisão adversarial (ADV2-07) | o número de linha fica guardado fora do caminho: num campo do modelo, ou no `sources` do arquivo de diagrama | CT-09 | linhas do campo `linha` e do `sources` com `line`: reprova; o mutante aceita |
 
 ---
 
@@ -842,7 +946,7 @@ As formas válidas de a prova ser a da ligação são estas. Qualquer outro arqu
   - *Descoberta por pasta.* É a regra nos três painéis (`app/Providers/Filament/AdminPanelProvider.php:discoverResources:147`). A prova de "o painel admin registra `UserResource`" não nomeia o recurso: é a linha de descoberta cuja pasta o contém.
   - *Registro do plugin que traz a peça* (Q9). A peça que um plugin traz só aparece no código versionado como o registro do plugin no provider. A prova de "o painel infra registra `HealthCheckResults`" é o `FilamentSpatieLaravelHealthPlugin::make()` (`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:345`), porque o `register()` desse plugin registra a página (`vendor/shuvroroy/filament-spatie-laravel-health/src/FilamentSpatieLaravelHealthPlugin.php:pages:36`).
   - *Configuração do painel* (ADV-08). O framework acrescenta peças a partir da configuração do painel: o alias `panel:{id}` sai do `->id()` (`app/Providers/Filament/AdminPanelProvider.php:id:77`), e o `IdentifyTenant` sai do `->tenant()` (`app/Providers/Filament/AppPanelProvider.php:tenant:660`). A prova é o trecho que configura, no provider desse painel.
-- **Método de contrato do alvo.** Quando o framework chama um método no alvo, o trecho é esse método, no arquivo do alvo: o `canAccessPanel()` do `User` (`app/Models/User.php:canAccessPanel:174`).
+- **Método de contrato do alvo.** Quando o framework chama um método no alvo, o trecho é esse método, no arquivo do alvo: o `canAccessPanel()` do `User` (`app/Models/User.php:canAccessPanel:174`). O método é um da lista fechada, abaixo dos Exemplos.
 - **Arquivo do kit que liga a peça de pacote** (Q19, decidida — D26). Quando a origem é peça de pacote, a prova é o trecho do kit que liga a origem ao destino, num arquivo versionado fora de `vendor/`, em qualquer pasta.
   - O trecho nomeia a peça de destino, pela classe, pelo alias ou pela chave.
   - O arquivo nomeia a peça de origem, pela classe, pelo plugin ou pela chave de config do pacote.
@@ -870,12 +974,15 @@ Sem a partição do plugin e a da configuração, toda ligação de registro que
         | o painel app registra `IdentifyTenant`                   | `app/Providers/Filament/AppPanelProvider.php`          | `->tenant(Tenant::class, slugAttribute: 'slug')`               | aceita                       | configuração do painel                  |
         | o painel admin usa o model `User`                        | `app/Models/User.php`                                  | `public function canAccessPanel(Panel $panel): bool`           | aceita                       | método de contrato do alvo              |
         | a página `LockerScreen` do pacote do lockscreen resolve para a `TelaBloqueio` | `app/Providers/AppServiceProvider.php` | `$this->app->bind(LockerScreen::class, TelaBloqueio::class);` | aceita | arquivo do kit que liga a peça de pacote |
-        | o model `Exception` do `filament-exceptions` usa a `ExceptionPolicy` | `app/Support/PoliciesDeVendor.php`      | `=> ExceptionPolicy::class,`                                   | aceita                       | arquivo do kit que liga a peça de pacote |
+        | o model `Exception` do `filament-exceptions` usa a `ExceptionPolicy` | `app/Support/PoliciesDeVendor.php` | `Exception::class                      => ExceptionPolicy::class,` | aceita | par de mapeamento: a linha inteira |
         | `UserResource` usa o model `User`                        | `app/Filament/Exports/UserExporter.php`                | `protected static ?string $model = User::class;`               | reprova, nomeando a ligação  | outro arquivo, que nomeia a peça        |
         | o painel infra registra o `UserResource` do `/admin`     | `app/Providers/Filament/InfraPanelProvider.php`        | `->discoverResources(in: app_path('Filament/Infra/Resources')` | reprova, nomeando a ligação  | descoberta que não alcança              |
         | o painel infra registra a página `HealthCheckResults`    | `app/Providers/Filament/InfraPanelProvider.php`        | `FilamentJobsMonitorPlugin::make()`                            | reprova, nomeando a ligação  | registro de plugin que não traz a peça  |
         | o painel admin registra `panel:admin`                    | `app/Providers/Filament/AppPanelProvider.php`          | `->id('app')`                                                  | reprova, nomeando a ligação  | configuração de outro painel            |
         | o painel admin registra `IdentifyTenant`                 | `app/Providers/Filament/AppPanelProvider.php`          | `->tenant(Tenant::class, slugAttribute: 'slug')`               | reprova, nomeando a ligação  | configuração de outro painel            |
+        | `UserResource` usa o model `Tenant`                      | `app/Traits/BelongsToTenant.php`                       | `return $this->belongsTo(Tenant::class);`                      | reprova, nomeando a ligação  | trait que a origem não usa              |
+        | o painel admin usa o model `Convite`                     | `app/Models/Convite.php`                               | `public function situacao(): string`                           | reprova, nomeando a ligação  | método fora da lista de contrato        |
+        | o model `MailLog` do pacote usa a `ExceptionPolicy`      | `app/Support/PoliciesDeVendor.php`                     | `Exception::class                      => ExceptionPolicy::class,` | reprova, nomeando a ligação | par que não nomeia a origem |
         | o painel admin registra o plugin do Shield               | `app/Providers/Filament/AdminPanelProvider.php`        | `AuthDesignerPlugin::make()`                                   | reprova, nomeando a ligação  | prova de outra ligação                  |
         | a página `HealthCheckResults` do pacote do Health resolve para a `TelaBloqueio` | `app/Providers/AppServiceProvider.php` | `$this->app->bind(LockerScreen::class, TelaBloqueio::class);` | reprova, nomeando a ligação | arquivo que não nomeia a origem |
         | o plugin `FilamentSpatieLaravelHealthPlugin` traz a página `HealthCheckResults` | `vendor/shuvroroy/filament-spatie-laravel-health/src/FilamentSpatieLaravelHealthPlugin.php` | `protected string $page = HealthCheckResults::class;` | reprova, nomeando o arquivo | arquivo de `vendor/` |
@@ -884,7 +991,12 @@ Sem a partição do plugin e a da configuração, toda ligação de registro que
         | `UserResource` usa `User`, numa cópia do modelo sem a peça `User` | `app/Filament/Admin/Resources/Users/UserResource.php` | `protected static ?string $model = User::class;`      | reprova, nomeando `User`     | ponta que não é peça                    |
 ```
 
-Cada linha inválida tem um único defeito. Os trechos dela estão no arquivo, e a R9 os aceitaria, fora as linhas de `vendor/` e da saída de comando, que a R9 também reprova; a quinta forma as reprova por conta própria (D26). O `UserExporter` traz o mesmo trecho do `UserResource` (`app/Filament/Exports/UserExporter.php:$model:24`), e por isso a única diferença da linha dele é o arquivo. O trecho do `PoliciesDeVendor` é só o lado direito da linha 67, porque ela alinha a seta com espaços, e o trecho tem de estar no arquivo, letra a letra (R9).
+Cada linha inválida tem um único defeito. Os trechos dela estão no arquivo, e a R9 os aceitaria, fora as linhas de `vendor/` e da saída de comando, que a R9 também reprova; a quinta forma as reprova por conta própria (D26). O `UserExporter` traz o mesmo trecho do `UserResource` (`app/Filament/Exports/UserExporter.php:$model:24`), e por isso a única diferença da linha dele é o arquivo.
+
+*(alterado em 2026-11-20: ADV2-08 e ADV2-09)*
+- **O trait vale só quando a origem o usa.** Medido: o `Projeto` usa o `BelongsToTenant`, e o `UserResource`, não.
+- **O método de contrato é um da lista fechada,** a das interfaces de `vendor/filament/filament/src/Models/Contracts` no Filament instalado: `canAccessPanel` (`FilamentUser`), `canAccessTenant` e `getTenants` (`HasTenants`), `getDefaultTenant` (`HasDefaultTenant`), `getCurrentTenantLabel` (`HasCurrentTenantLabel`), `getFilamentName` (`HasName`) e `getFilamentAvatarUrl` (`HasAvatar`). Medido: 6 interfaces e 7 métodos; o `User` implementa `FilamentUser`, `HasAvatar` e `HasTenants`. O `situacao()` do `Convite` (`app/Models/Convite.php:situacao:619`) não está na lista.
+- **Par de mapeamento** (D27). Quando o trecho é um par `X::class => Y::class`, como no `app/Support/PoliciesDeVendor.php`, ele é a linha inteira, com os espaços de alinhamento, e nomeia as duas pontas. Fora desse caso vale a D26. Conferido o literal: a linha 67, sem o recuo, é `Exception::class`, 22 espaços e `=> ExceptionPolicy::class,`, e a 68 mapeia o `MailLog`. Medido pela sessão nas 116 provas em provider de painel: a linha nomeia as duas pontas em só 3, e por isso a regra das duas pontas vale só para o par de mapeamento.
 
 #### Mutantes previstos
 
@@ -899,6 +1011,9 @@ Cada linha inválida tem um único defeito. Os trechos dela estão no arquivo, e
 | M7 — revisão adversarial (ADV-08) | a peça que o framework acrescenta pela configuração do painel fica dispensada de prova, ou aceita a configuração de outro painel | CT-10 | linhas do `->id('app')` e do `->tenant()` do `/app` como prova do `/admin`: reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV-07; D26) | na ligação cuja origem é peça de pacote, vale qualquer arquivo do kit cujo trecho nomeia o destino, mesmo sem nomear a origem | CT-10 | linha do `HealthCheckResults` com o `bind` do `AppServiceProvider`: reprova; o mutante aceita |
 | M9 — revisão adversarial (ADV-07; D26) | a prova da ligação cuja origem é peça de pacote fica no `vendor/` dela, ou na saída de `artisan route:list` | CT-10 | linhas de `vendor/` e da saída de comando: reprova; o mutante aceita |
+| M10 — revisão adversarial (ADV2-08) | a guarda aceita qualquer trait como prova, sem conferir se a origem o usa | CT-10 | linha "`UserResource` usa o model `Tenant`", com o `BelongsToTenant`: reprova; o mutante aceita |
+| M11 — revisão adversarial (ADV2-08) | a guarda aceita qualquer método no arquivo do alvo, sem conferir se é de contrato | CT-10 | linha do `situacao()` do `Convite`: reprova; o mutante aceita |
+| M12 — revisão adversarial (ADV2-09) | num arquivo de mapeamento, o trecho nomeia só o destino, e toda origem que o arquivo mapeia passa com qualquer policy dele | CT-10 | linha do `MailLog` com a linha do `Exception`: reprova; o mutante aceita |
 
 ---
 
@@ -923,7 +1038,7 @@ A completude (painel → modelo) não se amarra ao modo. A peça registrada nos 
       Exemplos:
         | painel | registrado                                                                                                  | fora                                                                    |
         | admin  | o plugin `FilamentShieldPlugin`, o middleware `panel:admin` e o recurso `TenantResource`, registrado mesmo sem tenancy | `IdentifyTenant`, que `getTenantMiddleware()` devolve mesmo sem tenancy |
-        | app    | o plugin `FilamentSearchSpotlightPlugin`                                                                    | `DefinirTenantDePermissoes` e `IdentifyTenant`                          |
+        | app    | o plugin `FilamentSearchSpotlightPlugin` e a página `TelaLogin`, que o painel liga pela configuração de login | `DefinirTenantDePermissoes` e `IdentifyTenant` |
         | infra  | o plugin `FilamentSpatieLaravelHealthPlugin` e a página `HealthCheckResults`, que ele registra               | `IdentifyTenant`                                                        |
 
     Esquema do Cenário: [CT-12] com tenant, tudo que o painel registra está no modelo, e o modelo não dá a esse modo nada além disso
@@ -953,7 +1068,10 @@ A completude (painel → modelo) não se amarra ao modo. A peça registrada nos 
         | cópia sem a ligação "o painel admin registra `FilamentShieldPlugin`"                                          | reprova, nomeando o plugin e o painel admin   | painel ⊄ modelo    |
         | cópia com a ligação "o painel admin registra `FilamentSpatieLaravelHealthPlugin`", que só o `/infra` registra  | reprova, nomeando o plugin e o painel admin   | modelo ⊄ painel    |
         | cópia que dá `DefinirTenantDePermissoes` ao painel app no modo sem tenant                                     | reprova, nomeando o middleware                | modo trocado       |
+        | cópia sem a ligação "o painel app registra `TelaLogin`"                                                     | reprova, nomeando a `TelaLogin` e o painel app | painel ⊄ modelo    |
 ```
+
+*(alterado em 2026-11-20: ADV2-10, D30)* O registro vivo inclui as páginas que o painel liga pela configuração, e não pelo `->pages()` (Setup Global). Medido com os getters do Filament, nos dois modos: `TelaLogin`, `TelaRecuperarSenha` e `TelaRedefinirSenha` nos três painéis, e `RegistroPorConvite` e `TelaVerificacaoDeEmail` no `/app`, estão fora do `getPages()`; com tenant, o kit não liga página de cadastro nem de perfil da organização (os dois getters devolvem nulo).
 
 As âncoras das colunas "registrado" e "fora" vêm do código de hoje:
 - `FilamentShieldPlugin::make()` em `app/Providers/Filament/AdminPanelProvider.php:FilamentShieldPlugin:240`;
@@ -973,6 +1091,7 @@ Elas provam que cada suíte roda no seu modo e que cada guarda leu o registro, e
 | M3 | um modo só: o modelo não tem o que só o modo com tenant registra | CT-12 | linha "app": os dois middlewares de organização estão no modelo; o mutante não os tem, e a guarda reprova |
 | M4 | o middleware de organização é contado pela chave da instalação, ou sem `hasTenancy()`, e `IdentifyTenant` entra no registro de painel sem tenancy | CT-11, CT-12 | CT-11, linhas admin, app e infra, e CT-12, linhas admin e infra: `IdentifyTenant` fora dos dois lados. O mutante o põe no modelo, e a guarda mutante o conta no painel |
 | M5 | a guarda filtra o lado do painel: deixa fora o alias `panel:{id}`, que não é classe, ou a peça que só abre com tenant (compara a disponibilidade, não o registro) | CT-11 | linha "admin": `panel:admin` e `TenantResource` nos dois lados; o modelo do mutante pode omiti-los, e a guarda mutante não reclama |
+| M6 — revisão adversarial (ADV2-10) | o registro vivo usa só o `getPages()`, e as páginas que o painel liga pela configuração (login, cadastro, recuperação de senha, verificação de e-mail) ficam fora do modelo | CT-13, CT-11 | CT-13, linha "sem a ligação do `TelaLogin`": reprova; e, no publicado, o CT-11, linha "app", exige a `TelaLogin`; o mutante aceita |
 
 ---
 
@@ -1019,10 +1138,13 @@ A P-10 conta como desenho a aresta direta e o agrupamento que nomeia os membros.
 | M4 | a ligação só aparece num diagrama que a página não publica | CT-14 | linha "diagrama órfão": reprova; o mutante aceita |
 | M5 — revisão adversarial (ADV-15) | o agrupamento nomeia os membros só no texto secundário da caixa, que o zoom esconde | CT-14 | linha "membros só no texto secundário": reprova; o mutante aceita |
 | M6 | a porta conta como desenho das ligações do outro lado sem nomear as peças de lá | CT-14 | linha "porta sem os membros": reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-17) | na conversão para o esquema do archify, o gerador perde as arestas, e o diagrama desenha só os nós | CT-B02 | "em cada `architecture`, o conjunto de pares origem → destino das arestas desenhadas é o da fonte": reprova; o mutante aceita |
+
+*(alterado em 2026-11-20: ADV2-17; oráculo ajustado pela medição no commit `4adaf9a`)* O CT-B02 confere que as arestas que o DOM desenha são as da fonte. No diagrama escrito à mão, a fonte é a lista de ligações do arquivo. No construído (o campo `construtor`), o arquivo só diz o recorte e o layout, e a fonte é o modelo: cada ligação do modelo no painel e no modo do diagrama vira o par das pontas desenhadas — a peça, ou o agrupamento que a nomeia —, e a ligação cuja ponta não está desenhada, ou cujas duas pontas caem na mesma caixa, não vira aresta. Medido no esqueleto (`ae5d20f`): `admin-acesso`, 76 pares no arquivo e 76 no DOM; `app-resumo-sem`, 14 e 14; `app-resumo-com`, 43 e 43. No commit `4adaf9a`, contra o modelo: `app-acesso`, 17 e 17; `app-organizacoes`, 14 e 14; `app-resumo-sem` e `app-resumo-com`, 16 e 16. O DOM tem mais elementos de aresta que pares (62 elementos e 43 pares no `app-resumo-com` do esqueleto), e por isso a conta é de pares únicos, lidos em `svg [data-edge-from][data-edge-to]`.
 
 ---
 
-## Regra R13 — Toda ligação que o diagrama desenha — direta, ou por agrupamento ou porta que nomeia os membros — traz a prova, com o arquivo e o trecho, num card do painel lateral do próprio diagrama, à vista sem foco
+## Regra R13 — Toda ligação que o diagrama desenha — direta, ou por agrupamento ou porta que nomeia os membros — traz a prova, com o arquivo e o trecho, num item próprio de card do painel lateral do próprio diagrama, inteiro e à vista sem foco; o comparativo fica fora
 
 > `P-04`, `P-07`, `RQ-08` · perfil **padrão** · técnica: **rastreio exaustivo** no site construído · cenário: **CT-B02, no `05`** (costura browser, G4)
 
@@ -1032,16 +1154,24 @@ O archify só tem prova por nó (`sources`, de 1 a 3) e nenhuma por aresta. Por 
 - **Onde fica a prova.** Os cards ficam no painel lateral do diagrama, sempre presentes, sem depender de foco. A prova de cada ligação fica num card do próprio diagrama, agrupado pela peça de origem; esse arranjo é decisão de desenho, e o oráculo é só "num card do painel lateral, à vista".
 - **O card não tem link.** O archify escreve o item do card como texto escapado, num `<li>` (a função `renderCards`, em `renderers/shared/utils.mjs` do archify, no commit fixado). O link de evidência que o leitor clica é o do passaporte da peça (R14). Por isso a P-07 aqui é a do M3: a prova não guarda número de linha.
 
+*(alterado em 2026-11-20: ADV2-20, ADV2-22 e ADV2-32)*
+- **O comparativo fica fora** da conferência de cards: pela P-04 emendada, a casca do archify não leva cards nem passaporte. A `base` e a `cabeca` dele são diagramas do mapa, publicados ao lado com os cards (R20). Medido no HTML do comparativo, nos dois idiomas: 43 pares de arestas (62 elementos de aresta no DOM) e nenhum card.
+- **Cada item amarrado à ligação.** O gerador escreve um item por ligação, "origem → destino (rótulo): arquivo:linha — trecho", no card da peça de origem (`site/mapa/gerar.mjs`, função `cardsDeProva`). O CT-B02 lê o item que nomeia a ligação e confere o arquivo e o trecho dela; e o total de itens de prova lidos no DOM, por diagrama, é o de ligações desenhadas, contado do lado do DOM.
+- **Como se reconhece o item de prova** *(alterado em 2026-11-20: medido no commit `4adaf9a`)*. O painel lateral tem outros cards — no mapa construído, "Como ler as setas" e "Quem está em …", com os membros de cada agrupamento —, e eles ficam fora da conta. O item de prova é o que tem a forma "origem → destino (verbo): arquivo:linha — trecho". O total é por ligação do modelo, e não por par de arestas: o agrupamento desenha várias ligações numa aresta só. Medido: nos 6 diagramas construídos, 281 itens de prova por idioma, igual às ligações desenhadas (75 no `app-resumo-sem`, sobre 16 pares; 77 no `app-resumo-com`, sobre 16), e nenhum diagrama repete nome de peça, que é o que o item nomeia.
+- **O item aparece inteiro.** Medido no Chromium: o item de card do archify quebra a linha (`overflow-wrap: anywhere`), e um item sintético de 160 caracteres sem espaço ficou com `scrollWidth` e `clientWidth` iguais, de 346 px; os 25 itens de card do esqueleto também não transbordam, nem os 562 itens de prova dos construídos no commit `4adaf9a`. O CT-B02 afirma `scrollWidth <= clientWidth + 1` e o trecho inteiro do modelo, sem reticências que o modelo não tenha.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M1 | o gerador perde a prova das ligações desenhadas por agrupamento ou por porta que nomeia os membros *(alterado em 2026-11-20: a porta entrou com os fatos de plataforma)* | CT-B02 | "uma por ligação": a ligação do membro sem prova reprova; o mutante aceita |
-| M2 | o card traz só o arquivo, sem o trecho *(reescrito em 2026-11-20: era "link de prova para `blob/main`", que passou à R14 como M5, porque o card do archify é texto, sem link)* | CT-B02 | "a prova, com o arquivo e o trecho do modelo": reprova; o mutante aceita |
+| M2 | o card traz só o arquivo, sem o trecho *(reescrito em 2026-11-20: era "link de prova para `blob/main`", que passou à R14 como M5, porque o card do archify é texto, sem link)* | CT-B02 | "um item de prova que a nomeia, … com o arquivo e o trecho do modelo": o item sem o trecho reprova; o mutante aceita |
 | M3 | número de linha guardado no modelo, que envelhece a cada edição do arquivo *(alterado em 2026-11-20: ADV-19, o matador passou do CT-B02 para a suíte do kit)* | CT-09 | linha da prova com número de linha, na suíte do kit, que roda em todo PR: reprova; o mutante aceita |
-| M4 | o card mostra a prova de outra ligação (índice trocado) | CT-B02 | "o arquivo e o trecho do modelo": reprova; o mutante aceita |
-| M5 | a prova só fica num documento à parte, nunca no diagrama | CT-B02 | "o total de provas conferidas é o de ligações desenhadas, maior que zero": dá zero e reprova; o mutante aceita |
-| M6 — revisão adversarial (ADV-25) | o card da prova fica fora do painel lateral: oculto, ou só aparece quando o leitor foca a peça | CT-B02 | "num card do painel lateral do diagrama, à vista", com o diagrama aberto sem focar peça nenhuma: reprova; o mutante aceita |
+| M4 | o card mostra a prova de outra ligação (índice trocado, ou provas trocadas entre os cards de duas origens) *(alterado em 2026-11-20: ADV2-22, a asserção antiga contava o conjunto de provas em qualquer card)* | CT-B02 | "um item de prova que a nomeia, 'origem → destino', com o arquivo e o trecho do modelo": o item que nomeia a ligação traz a prova de outra, e reprova; o mutante aceita |
+| M5 | a prova só fica num documento à parte, nunca no diagrama | CT-B02 | "o total de itens de prova lidos no DOM é o de ligações desenhadas, maior que zero em todo diagrama que desenha ligação": dá zero e reprova; o mutante aceita |
+| M6 — revisão adversarial (ADV-25) | o card da prova fica fora do painel lateral: oculto, ou só aparece quando o leitor foca a peça | CT-B02 | "num card do painel lateral, à vista", com o diagrama aberto sem focar peça nenhuma: reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-22) | o conferidor conta as provas do lado esperado, e a ligação de membro sem item próprio passa, porque outra ligação desenhada tem a mesma prova | CT-B02 | "o total de itens de prova lidos no DOM é o de ligações desenhadas": reprova; o mutante aceita |
+| M8 — revisão adversarial (ADV2-32) | o item de card corta o trecho longo, com reticências que o modelo não tem | CT-B02 | "o item mostra o trecho inteiro do modelo, e não é cortado (`scrollWidth <= clientWidth + 1`)": reprova; o mutante aceita |
 
 ---
 
@@ -1059,17 +1189,23 @@ A interação que o `00` pede (RQ-07) é provada pela busca e pelo passaporte co
 
 Ele não lista cada ligação com a prova dela: essa prova está no card (R13). Por isso o CT-B03 deixou de afirmar a prova da ligação no detalhe.
 
-O oráculo do link é o da P-07: o repositório do `support.source` do `composer.json`, o commit do build e um arquivo que existe nesse commit. A linha da prova da peça não tem trecho a conferir: o `sources` do archify guarda só o caminho e a linha.
+O oráculo do link é o da P-07: o repositório do `support.source` do `composer.json`, o commit do build e um arquivo que existe nesse commit.
+
+*(alterado em 2026-11-20: ADV2-23 e ADV2-24)*
+- **A amostra.** Em cada `architecture`, a primeira peça de pacote que o arquivo desenha, quando houver, e a primeira do kit; e, no conjunto dos `architecture`, ao menos uma de pacote. Medido no esqueleto: o `admin-acesso` tem 4 peças de pacote em 41, e o `app-resumo-sem` e o `app-resumo-com` não têm nenhuma; exigir uma de pacote em cada `architecture` reprovaria esses dois. No commit `4adaf9a`: o `app-acesso` tem 5 em 21, e o `app-organizacoes`, o `app-resumo-sem` e o `app-resumo-com`, nenhuma. A peça de pacote é a que o modelo dá como de pacote (a origem `pacote`); no desenho, é a do tipo `cloud`, "Pacote ou plugin de terceiros" na legenda.
+- **A linha.** A prova de peça é âncora `{arquivo, trecho}` (R9), e o gerador acha a linha na revisão publicada. A linha do `#L` contém, no commit do build, o trecho da âncora. Medido no HTML construído do esqueleto (revisão `ae5d20f`): 226 links de prova de peça em 4 diagramas, e a linha de todos contém o trecho. No commit `4adaf9a`, também todos: 21, 9, 49, 47, 1 e 1 nos 6 construídos, e 73, 31 e 26 no `infra-registro`, no `kit-install-ci` e no `marcos-do-changelog`.
+- **Sem erro na interação.** Com a busca aberta e o passaporte aberto, nenhuma exceção não capturada e nenhum erro de console. Medido no Chromium: nenhum erro no esqueleto com a busca aberta e uma peça em foco; no commit `4adaf9a`, nenhum no `app-acesso` (a peça de pacote `AuthDesignerPlugin`, achada pela busca, com o passaporte e um link para `AdminPanelProvider.php#L200` no commit) e no `app-organizacoes`, nos dois idiomas.
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M1 | o diagrama é exportado como imagem estática, sem busca nem passaporte | CT-B03 | "o leitor busca a peça e a foca": não há busca e reprova; o mutante aceita |
-| M2 | o nó sai sem provas, e o passaporte não mostra a origem verificada *(reescrito em 2026-11-20: era "o detalhe não traz a prova da ligação", que o passaporte do archify não mostra por desenho)* | CT-B03 | "mostra de uma a três provas da própria peça": reprova; o mutante aceita |
+| M2 | o nó sai sem provas, e o passaporte não mostra a origem verificada *(reescrito em 2026-11-20: era "o detalhe não traz a prova da ligação", que o passaporte do archify não mostra por desenho; ADV2-23 estendeu a amostra)* | CT-B03 | "cada peça da amostra mostra de uma a três provas": reprova; o mutante aceita |
 | M3 — revisão adversarial (ADV-25) | o link do passaporte leva a outro repositório, como um fork ou um nome errado, com o mesmo commit e caminho *(reescrito em 2026-11-20: era "o detalhe do agrupamento não nomeia os membros", que passou à R12 como M5)* | CT-B03 | "leva ao repositório do `support.source`": reprova; o mutante aceita |
 | M4 | a prova da peça de pacote aponta para `vendor/`, fora do commit, e o link dá 404 | CT-B03 | "a um arquivo que existe nesse commit": reprova; o mutante aceita |
 | M5 | link de evidência para `blob/main`, um ramo que anda *(veio da R13, onde era o M2)* | CT-B03 | "no commit do build": o `href` não traz o commit e reprova; o mutante aceita |
+| M6 — revisão adversarial (ADV2-23) | a linha do `#L` sai fixa em 1, ou envelhece, e o link leva a outra linha | CT-B03 | "a linha do `#L` contém o trecho da âncora, no commit do build": reprova; o mutante aceita |
 
 ---
 
@@ -1111,10 +1247,16 @@ A Q15 foi decidida antes da derivação. A página linka cada diagrama com `<a h
 
 > `P-02`, `RQ-03` · perfil **padrão** · técnica: **EP** + controles em cópia
 
-*(alterado em 2026-11-20: ADV-10)*
-- **O que tem de ser traduzido.** O título, o rótulo de ligação, a descrição e o passo en são diferentes dos pt.
-- **O rótulo de peça.** É o nome dela, igual nos dois idiomas de propósito.
+*(alterado em 2026-11-20: ADV-10, ADV2-11 e ADV2-28)* O texto en é traduzido por quatro critérios, e nunca por "diferente do pt":
+- **Termo do glossário ou nome de estado.** Quando o texto pt é um termo do glossário — os 39 pares "termo (en: …)" de `wikis/glossario.md` —, o en é o termo en do glossário, sem diferença de maiúscula. Vale para o rótulo de nó que não é peça: o estado do `lifecycle`, a caixa de agrupamento e a de porta, o marco.
+- **Frase.** O texto en de duas palavras ou mais não traz palavra funcional do pt — de, do, da, para, com, não ou uma — como palavra: não colada a letra, dígito, `_`, `.`, `/` ou `-`. Vale para título, descrição, passo, rótulo de ligação e rótulo de nó que não é peça.
+- **Nome de código e rótulo de peça.** Ficam isentos: o rótulo de peça é o nome dela, igual nos dois idiomas de propósito, e o token único (classe, método, caminho, comando, chave) é código.
 - **O título igual nos dois idiomas.** Só passa quando é exatamente o nome de uma peça do modelo ou de um comando `kit:*` (`kit:install`), e o arquivo o marca como nome de código. Antes, o exemplo dava também `2FA`, que essa restrição recusa. A marca num título que não é nome de peça nem de comando reprova.
+
+Medido nas traduções do esqueleto (827 pares pt → en):
+- 373 pares têm o en igual ao pt, 77 deles com espaço, e todos são código ou texto já em inglês (`22 migrations`, `CHANGELOG v0.56.0`, `/infra/logs · LogsExplorer`). "Diferente do pt" reprovaria todos.
+- Dos 482 valores en de duas palavras ou mais, nenhum traz palavra funcional do pt; o mesmo detector acha alguma em 199 dos 827 textos pt. No commit `4adaf9a`, também nenhum: 403 textos en de duas palavras ou mais nos 17 arquivos de diagrama, 14 no gerador e 9 nas sobrescritas de tipo. "Do" também é palavra inglesa ("do not"); nenhum texto en do commit `4adaf9a` a traz, e, se um texto en legítimo vier a trazê-la, a lista da ADV2-28 é decisão da sessão.
+- Dos 4 rótulos do esqueleto que são termo do glossário, 2 batem com o en dele (Pendente → Pending; Excluída → Deleted) e 2 não: Inativa → Off (o glossário dá Inactive) e Telas de acesso → Access screens (o glossário dá sign-in screens). São defeitos do esqueleto, que a entrega corrige.
 
 ```gherkin
   Regra: O site vale nos dois idiomas, e o que o kit escreve em cada diagrama também
@@ -1126,12 +1268,14 @@ A Q15 foi decidida antes da derivação. A página linka cada diagrama com `<a h
 
       Exemplos:
         | mundo                                                                              | resultado                                                                                                                              | # partição               |
-        | publicados                                                                         | aceita: todo título, rótulo, descrição e passo tem pt e en não vazios; o título, o rótulo de ligação, a descrição e o passo en são diferentes dos pt, salvo o título que é exatamente o nome de uma peça do modelo ou de um comando `kit:*`, marcado como nome de código | válida |
+        | publicados                                                                         | aceita: todo título, rótulo, descrição e passo tem pt e en não vazios; o termo do glossário usa o en dele; o texto en de duas palavras ou mais não traz palavra funcional do pt; e o título igual nos dois idiomas é exatamente o nome de uma peça do modelo ou de um comando `kit:*`, marcado como nome de código | válida |
         | cópia em que um rótulo não tem o texto en                                          | reprova, nomeando o diagrama e o rótulo                                                                                                | texto en ausente         |
         | cópia em que o título en é igual ao pt, sem a marca de nome de código              | reprova, nomeando o diagrama                                                                                                           | título copiado           |
         | cópia em que o título `kit:install` é igual nos dois idiomas, marcado como nome de código | aceita                                                                                                                          | nome de comando          |
         | cópia em que o título "Painel admin — sem organização" é igual nos dois idiomas, marcado como nome de código | reprova, nomeando o diagrama e o título                                                                        | marca de fachada         |
-        | cópia em que a descrição en de um passo é a frase pt                               | reprova, nomeando o diagrama e o passo                                                                                                 | descrição copiada        |
+        | cópia em que a descrição en de um passo é a frase pt "Gerando senha do admin"         | reprova, nomeando o diagrama e o passo | descrição copiada |
+        | cópia do `lifecycle` do convite em que o estado Pendente tem o rótulo en "Pendente" | reprova, nomeando o diagrama e o estado | termo do glossário sem o en dele |
+        | cópia em que o passo en é a frase pt com uma palavra trocada, "Generating senha do admin" | reprova, nomeando o diagrama e o passo | frase com palavra do pt |
         | cópia em que um diagrama de fluxo só tem os textos pt                              | reprova, nomeando o diagrama                                                                                                           | diagrama de um idioma só |
 ```
 
@@ -1143,11 +1287,13 @@ A Q15 foi decidida antes da derivação. A página linka cada diagrama com `<a h
 | M2 | título en copiado do pt | CT-16 | linha "título igual, sem a marca": reprova; o mutante aceita |
 | M3 | diagrama de fluxo escrito só em pt | CT-16 | linha "só pt": reprova; o mutante aceita |
 | M4 — revisão adversarial (ADV-10) | o título copiado do pt ganha a marca de nome de código para passar | CT-16 | linha "Painel admin — sem organização", marcado: reprova; o mutante aceita |
-| M5 — revisão adversarial (ADV-10) | a descrição ou o passo en é a frase pt copiada | CT-16 | linha "descrição en é a frase pt": reprova; o mutante aceita, porque só exige en não vazio |
+| M5 — revisão adversarial (ADV-10) | a descrição ou o passo en é a frase pt copiada | CT-16 | linha "descrição en é a frase pt": a frase traz "do", e reprova; o mutante aceita, porque só exige en não vazio |
+| M6 — revisão adversarial (ADV2-11) | o rótulo en do estado ou da caixa que não é peça sai igual ao pt ("Pendente") | CT-16 | linha do estado Pendente: o glossário dá Pending, e reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-28) | a frase en é a pt com uma palavra trocada, e passa no "diferente do pt" | CT-16 | linha "Generating senha do admin": traz "do", e reprova; o mutante aceita |
 
 ---
 
-## Regra R17 — A grade painel × modo é inteira: cada painel do registro tem diagrama próprio em cada modo, o compartilhado vem marcado, e a célula não leva a diagrama do outro modo nem de outro painel
+## Regra R17 — A grade painel × modo é inteira: cada painel do registro tem diagrama próprio em cada modo, o compartilhado vem marcado e só ele, e a célula não leva a diagrama do outro modo nem de outro painel
 
 > `RQ-10`, `RQ-11`, `P-06`, `P-09` · perfil **padrão** · técnica: **tabela de decisão** (3 painéis × 2 modos = 6 células por idioma, 12 nos dois) + controles em cópia
 
@@ -1162,6 +1308,7 @@ A Q15 foi decidida antes da derivação. A página linka cada diagrama com `<a h
       E todo diagrama da célula que vale nos dois modos está também na outra célula do painel, marcado como compartilhado
       E nenhum diagrama da célula é de outro painel
       E nenhum diagrama da célula vale só no outro modo
+      E todo diagrama marcado como compartilhado vale nos dois modos
 
       Exemplos:
         | idioma | painel | modo       |
@@ -1194,9 +1341,12 @@ A Q15 foi decidida antes da derivação. A página linka cada diagrama com `<a h
         | publicada, pt e en                                                                                             | aceita                                      | válida                        |
         | cópia em que a célula app × com tenant leva também ao diagrama de arquitetura do app que só vale sem tenant      | reprova, nomeando a célula e o diagrama     | diagrama do outro modo        |
         | cópia em que a célula infra × sem tenant leva ao diagrama de arquitetura do admin                              | reprova, nomeando a célula e o diagrama     | diagrama de outro painel      |
+        | cópia em que a célula app × com tenant marca como compartilhado o diagrama de arquitetura que só vale com tenant | reprova, nomeando a célula e o diagrama | compartilhado de um modo só |
 ```
 
 *(alterado em 2026-11-20: ADV-26)* O CT-17 pede "ao menos um" diagrama válido na célula. Sem a linha "vale só no outro modo", a célula com tenant podia levar também ao diagrama que só vale sem tenant. O CT-43 dá a cópia que mata esse defeito, e também a do diagrama de outro painel, que antes só tinha o mundo publicado.
+
+*(alterado em 2026-11-20: ADV2-12)* A marca de compartilhado vale nas duas direções: o diagrama que vale nos dois modos está marcado nas duas células, e o diagrama marcado vale nos dois. O modo de cada diagrama é o do campo `modos` do arquivo. Medido no esqueleto: os diagramas de um modo só, `app-resumo-sem` e `app-resumo-com`, têm um modo em `modos`, e os demais, os dois.
 
 #### Mutantes previstos
 
@@ -1208,14 +1358,21 @@ A Q15 foi decidida antes da derivação. A página linka cada diagrama com `<a h
 | M4 | o diagrama dos dois modos aparece numa célula só, ou sem a marca | CT-17 | "está também na outra célula, marcado como compartilhado": reprova; o mutante aceita |
 | M5 | só o modo sem tenant tem diagramas | CT-17 | linhas "com tenant": reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV-26) | a célula com tenant leva também ao diagrama que só vale sem tenant | CT-43 | linha "app × com tenant leva ao diagrama que só vale sem tenant": reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-12) | um diagrama que só vale num modo vem marcado como compartilhado na célula | CT-43, CT-17 | CT-43, linha "marca como compartilhado o diagrama que só vale com tenant": reprova; e, no publicado, o CT-17 exige que todo marcado valha nos dois modos; o mutante aceita |
 
 ---
 
-## Regra R18 — Só se compartilha o que é igual nos dois modos, e o que é igual não se duplica
+## Regra R18 — Só se compartilha o que é igual nos dois modos, o que é igual não se duplica, e toda ligação desenhada vale no modo do diagrama
 
 > `P-09`, `RQ-11` · perfil **padrão** · técnica: **tabela de decisão** (igual nos dois modos × publicado uma vez) + controles em cópia
 
 As linhas usam `DefinirTenantDePermissoes`, que o `/app` só registra com tenant. Assim o oráculo vem do registro (CT-11 e CT-12), e não da disponibilidade. Se a disponibilidade por modo conta como diferença de estrutura é recorte aberto (Q11).
+
+*(alterado em 2026-11-20: ADV2-13)* Toda ligação desenhada tem, nos modos dela, o modo do diagrama. A ligação "o painel app usa o model `Tenant`" vem do `->tenant()` dentro do bloco `kit.tenancy.enabled` (`app/Providers/Filament/AppPanelProvider.php:tenant:660`), e só vale no modo com tenant. Medido no esqueleto: o `app-resumo-sem` não desenha peça nem ligação do modo com tenant, e o `app-resumo-com` desenha 5 ligações do `IdentifyTenant` e do `DefinirTenantDePermissoes`.
+
+*(alterado em 2026-11-20: medido no modelo do commit `4adaf9a`)* O modelo dá "o painel app usa o model `Tenant`" aos dois modos, e o "o painel app registra `IdentifyTenant`", com o mesmo trecho, só ao modo com tenant. O trecho só roda com tenant, e por isso o defeito é do modelo, e não do oráculo: a linha de controle do CT-19 parte do código e reprova enquanto o modelo der a ligação ao modo sem tenant. Nenhuma ligação do modelo do commit `4adaf9a` vale só com tenant entre peças dos dois modos no `/app`. O modo das demais ligações de uso não tem guarda: o registro vivo (R11) dá o modo só das ligações de registro, e a P-05 não promete a varredura de uso inteira. É lacuna declarada (R18-M5), e o ponto foi ao coordenador.
+
+*(alterado em 2026-11-20: fato da implementação, dado pelo coordenador, e medição no commit `4cc9517`)* A pilha da requisição saiu em dois diagramas `sequence`: o `requisicao-autenticada`, comum, com os três painéis e os dois modos, e o `requisicao-autenticada-com`, só do `/app` e só com tenant, com a camada da organização. O comum não desenha o `IdentifyTenant` nem o `DefinirTenantDePermissoes`: só os cita num card que leva ao `-com`, e menção em texto não é desenho (R12). O `-com` os desenha, o segundo com o rótulo abreviado "DefinirTenant". A guarda reconhece a peça do fluxo pelo nome exato, e o rótulo abreviado de uma peça de um modo só, desenhado no fluxo comum, passaria: é lacuna declarada (R18-M6).
 
 ```gherkin
   Regra: Ganha um diagrama por modo só o que muda de estrutura
@@ -1231,6 +1388,7 @@ As linhas usam `DefinirTenantDePermissoes`, que o `/app` só registra com tenant
         | cópia em que o diagrama compartilhado do painel app desenha `DefinirTenantDePermissoes`, que só existe com tenant       | reprova, nomeando o diagrama e a peça   | compartilhado esconde a diferença  |
         | cópia com dois diagramas do painel app, do mesmo tipo, um por modo, que desenham as mesmas peças e ligações             | reprova, nomeando os dois diagramas     | igual duplicado                    |
         | cópia em que o diagrama do painel app sem tenant desenha `DefinirTenantDePermissoes`                                   | reprova, nomeando o diagrama e a peça   | peça do modo errado                |
+        | cópia em que o diagrama de arquitetura do painel app sem tenant desenha "o painel app usa o model `Tenant`", que o código só faz com tenant (o `->tenant()` no bloco `kit.tenancy.enabled`) | reprova, nomeando o diagrama e a ligação | ligação do modo errado |
 ```
 
 #### Mutantes previstos
@@ -1240,10 +1398,13 @@ As linhas usam `DefinirTenantDePermissoes`, que o `/app` só registra com tenant
 | M1 | o diagrama compartilhado esconde a diferença de modo | CT-19 | linha "compartilhado desenha `DefinirTenantDePermissoes`": reprova; o mutante aceita |
 | M2 | o que é igual é publicado duas vezes, uma por modo | CT-19 | linha "dois iguais": reprova; o mutante aceita |
 | M3 | uma peça de um modo é desenhada no diagrama do outro | CT-19 | linha "sem tenant desenha `DefinirTenantDePermissoes`": reprova; o mutante aceita |
+| M4 — revisão adversarial (ADV2-13) | o diagrama sem tenant desenha uma ligação que o modelo dá só ao modo com tenant, entre peças que existem nos dois modos | CT-19 | linha "o painel app usa o model `Tenant`" no diagrama sem tenant: reprova; o mutante aceita |
+| M5 — revisão adversarial (ADV2-13) | o modelo dá aos dois modos uma ligação de uso cujo trecho só roda com tenant | ⚠️ **sem matador**: nenhuma guarda deriva do código o modo da ligação de uso; o registro vivo (R11) dá o modo só das ligações de registro, e a P-05 não promete a varredura de uso inteira. Medido no modelo do commit `4adaf9a`: "o painel app usa o model `Tenant`", com o trecho `->tenant(Tenant::class, slugAttribute: 'slug')` no bloco `kit.tenancy.enabled`, está nos dois modos. A linha de controle do CT-19 acusa esse caso, e só ele; o resto fica para o quality gate | — (lacuna declarada) |
+| M6 — revisão adversarial (ADV2-13) | o fluxo comum aos dois modos desenha, com o rótulo abreviado, uma peça que só existe com tenant ("DefinirTenant") | ⚠️ **sem matador**: no fluxo escrito à mão, a guarda só reconhece a peça do modelo pelo nome exato, e o rótulo abreviado não é peça para ela. Medido no commit `4cc9517`: o `requisicao-autenticada-com` desenha o `DefinirTenantDePermissoes` como "DefinirTenant", e 61 dos 99 nós dos 14 fluxos de painel não têm nome de peça. Fica para o quality gate | — (lacuna declarada) |
 
 ---
 
-## Regra R19 — Cada um dos dez tipos e o comparativo têm uso ou motivo, e cada combinação tipo × painel × modo tem diagrama ou motivo ao lado
+## Regra R19 — Cada um dos dez tipos e o comparativo têm uso ou motivo, cada combinação tipo × painel × modo tem diagrama ou motivo traduzido, e só é do kit inteiro o diagrama que não desenha peça registrada por painel
 
 > `RQ-06`, `RQ-25`, `P-06`, `P-02` · perfil **padrão** · técnica: **produto cartesiano fechado**: (10 tipos × 3 painéis × 2 modos) + (comparativo × 3 painéis) = **63 células por idioma**, 126 nos dois. Cada célula é resolvida pelo CT-21. No nível do tipo, os 11 tipos são resolvidos pelo CT-20
 
@@ -1276,11 +1437,13 @@ As linhas usam `DefinirTenantDePermissoes`, que o `/app` só registra com tenant
 
       Exemplos:
         | mundo                                                                                          | resultado                                                                                                                  | # partição             |
-        | publicada, pt e en                                                                             | aceita: todo diagrama a que a célula leva é daquele tipo e daquele painel e vale naquele modo, ou a célula traz o motivo; e o motivo da página en é traduzido | válida |
+        | publicada, pt e en | aceita: todo diagrama a que a célula leva é daquele tipo e daquele painel e vale naquele modo, ou a célula traz o motivo; o motivo da página en é traduzido (critério da R16); e o diagrama do kit inteiro (`paineis` vazio) não desenha peça que painel registra | válida |
         | cópia com a célula `waterfall` × admin × com tenant sem diagrama e sem motivo                  | reprova, nomeando a célula                                                                                                 | célula vazia           |
-        | cópia com o motivo "—" na célula `tree` × infra × sem tenant                                   | reprova, nomeando a célula                                                                                                 | motivo de enfeite      |
+        | cópia com o motivo "—" na célula comparativo × infra                                           | reprova, nomeando a célula                                                                                                 | motivo de enfeite      |
         | cópia com o motivo "não se aplica", sem porquê, na célula `erd` × app × com tenant             | reprova, nomeando a célula                                                                                                 | motivo de enfeite      |
-        | cópia da página en em que o motivo da célula `tree` × infra × sem tenant é o texto da página pt | reprova, nomeando a célula                                                                                                | motivo en copiado do pt |
+        | cópia da página en em que o motivo da célula comparativo × infra é o texto pt "o resumo do painel é igual nos dois modos" | reprova, nomeando a célula | motivo en copiado do pt |
+        | cópia da página en em que o motivo de uma célula é a frase pt com uma palavra trocada, "no flow de dados in this panel" | reprova, nomeando a célula | motivo en com palavra do pt |
+        | cópia em que um `workflow` que desenha peças que o `/app` registra tem `paineis` vazio e resolve as células `workflow` × app com o motivo "do kit inteiro" | reprova, nomeando o diagrama | fluxo de painel declarado do kit inteiro |
         | cópia em que a célula `sequence` × admin × sem tenant leva a um diagrama `workflow`            | reprova, nomeando a célula e o tipo                                                                                        | link na célula errada  |
         | cópia em que a célula `sequence` × admin × sem tenant leva ao `sequence` do app                | reprova, nomeando a célula                                                                                                 | link de outro painel   |
         | cópia com o tipo "mindmap" na página                                                           | reprova, nomeando o tipo                                                                                                   | tipo fora do conjunto  |
@@ -1289,6 +1452,12 @@ As linhas usam `DefinirTenantDePermissoes`, que o `/app` só registra com tenant
 Um tipo do kit inteiro (P-06: linha do tempo das versões, tempos, modelo de dados e de classes) resolve as células de painel com o motivo "do kit inteiro" e o link para o diagrama dele.
 
 *(alterado em 2026-11-20: ADV-10 e ADV-26)* O motivo da célula na página en é diferente do da mesma célula na página pt. A linha "leva ao `sequence` do app" dá à metade "outro painel" do M4 a cópia que faltava.
+
+*(alterado em 2026-11-20: ADV2-14, D28, e ADV2-28)*
+- **Do kit inteiro.** Vale só para o diagrama que não desenha peça registrada por painel: versões, tempos, modelo de dados e de classes, e os comandos `kit:*` (P-06, D28). O fluxo transversal — login, 2FA, login social, recuperação de senha, bloqueio de sessão, pilha de middleware — desenha peça que todo painel registra e é diagrama dos painéis que ele desenha: `paineis[]` substitui `painel?`, e o diagrama aparece, compartilhado, na célula de cada um. Medido no esqueleto: os 6 diagramas com `paineis` vazio (lifecycle, erd, waterfall, workflow do `kit:install`, timeline e class) não desenham peça registrada; o `conta` cita o `UserResource` só como âncora de um estado; e o `requisicao-autenticada` (sequence) tem os três painéis em `paineis`.
+- *(alterado em 2026-11-20: medido no commit `4cc9517`)* **Desenhar a peça** é ter um nó com o id do modelo dela ou com o nome dela, exato. O marco da linha do tempo que cita a feature numa frase não desenha a peça: o título do marco 0.33.0, "Dashboard dinâmico nos três painéis", traz `Dashboard`, nome de peça registrada, e conferir por palavra reprovaria dado correto. Medido: 22 diagramas com `paineis` vazio, e nenhum nó com o nome exato de uma das 112 peças que painel registra. A pilha da requisição é de painel: o `requisicao-autenticada` tem os três painéis e os dois modos, e o `requisicao-autenticada-com`, só o `/app` e só com tenant.
+- *(alterado em 2026-11-20: medido na página do commit `e7d6eb5`)* **As células do comparativo.** A página repete o comparativo nas duas colunas de modo de cada painel (66 células por idioma, e não 63); as duas valem pela mesma combinação comparativo × painel, e a guarda as lê assim. O motivo real das células do `/admin` e do `/infra` é "o resumo do painel é igual nos dois modos" ("the panel summary is the same in both modes"), e as linhas de controle do motivo usam essas células. Na mesma página, as células da árvore de registro e da arquitetura do `/admin` e do `/infra` trazem "—", e o CT-21 as reprova até a entrega pôr a árvore compartilhada de cada um e o motivo da arquitetura.
+- **O motivo en é traduzido** pelo critério da R16: não traz palavra funcional do pt, e nunca "diferente do pt".
 
 #### Mutantes previstos
 
@@ -1299,13 +1468,15 @@ Um tipo do kit inteiro (P-06: linha do tempo das versões, tempos, modelo de dad
 | M3 | motivo de enfeite ("—", "não se aplica") | CT-21 | linhas "—" e "não se aplica": reprova; o mutante aceita |
 | M4 | link na célula de outro tipo ou de outro painel | CT-21 | linhas "`sequence` leva a `workflow`" e "`sequence` leva ao `sequence` do app": reprova; o mutante aceita |
 | M5 | a página traz um tipo que o archify não tem | CT-21 | linha "mindmap": reprova; o mutante aceita |
-| M6 — revisão adversarial (ADV-10) | o motivo da célula na página en é o texto pt copiado | CT-21 | linha "motivo en copiado do pt": reprova; o mutante aceita |
+| M6 — revisão adversarial (ADV-10) | o motivo da célula na página en é o texto pt copiado | CT-21 | linha "motivo en copiado do pt": o texto pt traz "do", e reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-14) | os fluxos do `/app` são declarados do kit inteiro, e as células de fluxo × painel se resolvem com o motivo "do kit inteiro" | CT-21 | linha do `workflow` com `paineis` vazio: reprova; o mutante aceita |
+| M8 — revisão adversarial (ADV2-28) | o motivo en é a frase pt com uma palavra trocada, e passa no "diferente do pt" | CT-21 | linha "no flow de dados in this panel": traz "de", e reprova; o mutante aceita |
 
 ---
 
 ## Regra R20 — Todo comparativo publicado vai do modo sem tenant (antes) para o com tenant (depois) do mesmo painel
 
-> `RQ-25`, `RQ-11` · perfil **padrão** · técnica: **EP** + controles em cópia
+> `RQ-25`, `RQ-11`, `P-04` · perfil **padrão** · técnica: **EP** + controles em cópia
 
 ```gherkin
   Regra: O comparativo de arquitetura compara o mesmo painel, de sem tenant para com tenant
@@ -1317,12 +1488,15 @@ Um tipo do kit inteiro (P-06: linha do tempo das versões, tempos, modelo de dad
 
       Exemplos:
         | mundo                                                                     | resultado                                                                                                             |
-        | publicados                                                                | aceita: o "antes" é o diagrama de arquitetura do painel sem tenant, e o "depois" é o do mesmo painel com tenant        |
+        | publicados | aceita: o "antes" é o diagrama de arquitetura do painel sem tenant, e o "depois" é o do mesmo painel com tenant, os dois arquivos de diagrama do mapa, publicados ao lado com a prova de cada ligação (P-04) |
         | cópia com o comparativo do painel app indo de "com tenant" para "sem"     | reprova, nomeando o comparativo                                                                                       |
         | cópia com o comparativo indo de "admin sem tenant" para "app com tenant"  | reprova, nomeando o comparativo                                                                                       |
+        | cópia com o comparativo cuja `base` não é arquivo de diagrama do mapa | reprova, nomeando o comparativo |
 ```
 
 O comparativo é opcional pela R19: ele pode ser trocado por um motivo. Esta regra vale para todo comparativo que for publicado.
+
+*(alterado em 2026-11-20: ADV2-20, P-04 emendada)* O comparativo é a exceção da P-04: a casca do archify não leva cards nem passaporte. Ele só é publicado quando a `base` e a `cabeca` são diagramas do mapa, publicados ao lado com a prova de cada ligação. Medido no esqueleto: o `app-resumo-sem-com` tem `base` `app-resumo-sem` e `cabeca` `app-resumo-com`, os dois publicados; o HTML dele, nos dois idiomas, tem `lang="en"`, nenhum card e nenhuma requisição para fora.
 
 #### Mutantes previstos
 
@@ -1330,21 +1504,30 @@ O comparativo é opcional pela R19: ele pode ser trocado por um motivo. Esta reg
 |---|---|---|---|
 | M1 | antes e depois trocados: o delta mostra a organização como removida | CT-22 | linha "de com para sem": reprova; o mutante aceita |
 | M2 | painéis misturados no par | CT-22 | linha "admin sem → app com": reprova; o mutante aceita |
+| M3 — revisão adversarial (ADV2-20) | o comparativo compara arquivos que não são diagramas do mapa publicados, e o leitor fica sem a prova das ligações dele | CT-22 | linha "a `base` não é arquivo de diagrama do mapa": reprova; o mutante aceita |
 
 ---
 
-## Regra R21 — Nenhuma dependência nova de visualização no site: o `site/package.json` fica com as dependências da base, e o HTML de cada diagrama não carrega recurso de fora dele
+## Regra R21 — Nenhuma dependência nova de visualização no site: o `site/package.json` fica com as dependências da base nos quatro campos, `site/mapa/` só tem os arquivos do mapa, e o HTML de cada diagrama não carrega recurso de fora dele
 
-> `RQ-25` · perfil **padrão** · técnica: **EP** (lista fechada, nas de execução e nas de desenvolvimento) + rastreio no site construído (CT-B01, no `05`)
+> `RQ-25` · perfil **padrão** · técnica: **EP** (lista fechada: os quatro campos de dependência e os arquivos de `site/mapa/`) + controles em cópia + rastreio no site construído (CT-B01, no `05`)
 
 ```gherkin
   Regra: Nenhuma dependência nova de visualização além do archify
 
-    Cenário: [CT-23] o site não ganha dependência de visualização além do archify
+    Esquema do Cenário: [CT-23] o site não ganha dependência de visualização além do archify, nem pelo manifesto nem por arquivo em `site/mapa/`
       Dado as dependências de `site/package.json` da base: `@astrojs/starlight`, `astro`, `astro-mermaid`, `mermaid` e `sharp` para execução; `axe-core`, `playwright` e `wait-on` para desenvolvimento
-      Quando a guarda do mapa lê `site/package.json`
-      Então as dependências de execução são exatamente as da base
-      E as dependências de desenvolvimento são exatamente as da base
+      E o `site/package.json` e a pasta `site/mapa/` "<mundo>"
+      Quando a guarda do mapa lê os quatro campos de dependência e a lista de arquivos de `site/mapa/`
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | mundo | resultado | # partição |
+        | publicados | aceita: as de execução e as de desenvolvimento são exatamente as da base; `optionalDependencies` e `peerDependencies` não existem ou estão vazias; e `site/mapa/` só tem o download do archify, o gerador, a interface, o posicionador, os dois arquivos do modelo (o de peças e o de ligações) e a pasta de diagramas | válida |
+        | cópia com `d3` nas de execução | reprova, nomeando a dependência | fora da lista fechada |
+        | cópia com `@antv/g6` nas de desenvolvimento | reprova, nomeando a dependência | fora da lista fechada |
+        | cópia com `chart.js` em `peerDependencies` | reprova, nomeando a dependência | campo que a guarda não lia |
+        | cópia de `site/mapa/` com `chart.min.js` | reprova, nomeando o arquivo | arquivo fora da lista |
 ```
 
 O `package.json` da raiz já está congelado pelo `[CT-12]` herdado de `tests/Kit/SiteDeDocumentacaoTest.php`.
@@ -1356,15 +1539,19 @@ O `package.json` da raiz já está congelado pelo `[CT-12]` herdado de `tests/Ki
   - O documento não tem `<script src>` nem `<link rel="stylesheet">`.
   - O HTML do archify no commit fixado é autocontido: o `assets/template.html` e os exemplos não trazem nenhum dos dois. A sessão mediu zero requisição externa num HTML gerado.
 
+*(alterado em 2026-11-20: ADV2-15, D32)* A biblioteca de visualização também entra copiada para `site/mapa/` e embutida no HTML como `<script>` inline, sem requisição e sem `<script src>`, ou num campo de dependência que a guarda não lia. Por isso a guarda lê os quatro campos (`dependencies`, `devDependencies`, `optionalDependencies` e `peerDependencies`) e fecha a lista de `site/mapa/`: o download (`archify.mjs`), o gerador (`gerar.mjs`), a interface (`interface.json`), o posicionador (`posicionar.mjs`), os dois arquivos do modelo (`pecas.json` e `ligacoes.json`) e a pasta `diagramas/`. Medido: o `site/package.json` não tem `optionalDependencies` nem `peerDependencies`, e as outras duas são as da base. No esqueleto, `site/mapa/` tinha `archify.mjs`, `diagramas/`, `gerar.mjs` e `interface.json`; no commit `4adaf9a`, tem também `ligacoes.json`, `pecas.json` e `posicionar.mjs`. A D32 lista o download, o gerador, a interface, o posicionador e a pasta de diagramas, e não nomeia o modelo, que o plano põe na mesma pasta; sem os dois arquivos do modelo na lista, a linha "publicados" reprovaria o commit `4adaf9a`, e a divergência foi ao coordenador. O `archify check` não serve de oráculo: medido pela sessão, ele só acusa alteração do HTML com o recibo `.delivery.json`, que o `render` não grava.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M1 | `d3` ou `cytoscape` nas dependências de execução, para desenhar o que o archify não desenha | CT-23 | "as de execução são exatamente as da base": reprova; o mutante aceita |
-| M2 | `@mermaid-js/mermaid-cli` nas de desenvolvimento, para pré-renderizar | CT-23 | "as de desenvolvimento são exatamente as da base": reprova; o mutante aceita |
+| M1 | `d3` ou `cytoscape` nas dependências de execução, para desenhar o que o archify não desenha | CT-23 | linha `d3`: reprova; o mutante aceita |
+| M2 | `@mermaid-js/mermaid-cli` nas de desenvolvimento, para pré-renderizar | CT-23 | linha "publicados": as de desenvolvimento são exatamente as da base, e o mutante não é; reprova; o mutante aceita |
 | M3 | uma biblioteca PHP de grafo entra no `composer.json` para gerar o modelo | ⚠️ **sem matador**: os pacotes PHP do kit mudam toda semana, e uma lista congelada ficaria vermelha em toda adição legítima (é o precedente do `[CT-12]` de `tests/Kit/SiteDeDocumentacaoTest.php`). O gate confere no diff | — (lacuna declarada) |
-| M4 — revisão adversarial (ADV-14) | a biblioteca nova entra nas de desenvolvimento com um nome fora da lista de recusa antiga (`@antv/g6`) | CT-23 | "as de desenvolvimento são exatamente as da base": reprova; o mutante aceita |
+| M4 — revisão adversarial (ADV-14) | a biblioteca nova entra nas de desenvolvimento com um nome fora da lista de recusa antiga (`@antv/g6`) | CT-23 | linha `@antv/g6`: reprova; o mutante aceita |
 | M5 — revisão adversarial (ADV-14) | o HTML do diagrama carrega a biblioteca por CDN, ou de um arquivo copiado para `site/public/` | CT-B01 | "nenhuma requisição sai da origem da prévia, e o documento não tem `<script src>` nem `<link rel="stylesheet">`": reprova; o mutante aceita |
+| M6 — revisão adversarial (ADV2-15) | a biblioteca entra em `optionalDependencies` ou em `peerDependencies`, que a guarda não lia | CT-23 | linha `chart.js` em `peerDependencies`: reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-15) | o gerador copia a biblioteca para `site/mapa/` e a embute no HTML como `<script>` inline | CT-23 | linha `chart.min.js` em `site/mapa/`: reprova; o mutante aceita |
 
 ---
 
@@ -1417,10 +1604,10 @@ O `package.json` da raiz já está congelado pelo `[CT-12]` herdado de `tests/Ki
 
       Exemplos:
         | workflow                                    | e antes                         |
-        | `.github/workflows/pages.yml`               | e antes do envio do artefato    |
+        | `.github/workflows/pages.yml`               | e antes do envio do artefato, e o job `build` só roda na `main` (`if: github.ref == 'refs/heads/main'`) |
         | o job `site` de `.github/workflows/ci.yml`  | (o job não envia artefato)      |
 
-    Esquema do Cenário: [CT-42] a falha do conferidor do mapa reprova o job
+    Esquema do Cenário: [CT-42] a falha do conferidor do mapa reprova o job, e o build do Pages só roda na `main`
       Dado o workflow "<workflow>" "<mundo>"
       Quando a guarda do mapa lê o passo que roda o conferidor do mapa
       Então o resultado é "<resultado>"
@@ -1431,11 +1618,14 @@ O `package.json` da raiz já está congelado pelo `[CT-12]` herdado de `tests/Ki
         | o job `site` de `.github/workflows/ci.yml`  | publicado                                                              | aceita (idem)                                                |
         | `.github/workflows/pages.yml`               | cópia em que o passo do conferidor do mapa tem `continue-on-error: true` | reprova, nomeando o passo                                  |
         | o job `site` de `.github/workflows/ci.yml`  | cópia em que o passo roda `node verifica-mapa.mjs \|\| true`             | reprova, nomeando o passo                                    |
+        | `.github/workflows/pages.yml`               | cópia em que o job `build` não tem a condição `github.ref == 'refs/heads/main'` | reprova, nomeando o job |
 ```
 
 Molde: `[CT-40]` e `[CT-42]` de `tests/Kit/SiteDeDocumentacaoTest.php` (passos do workflow por posição).
 
 *(alterado em 2026-11-20: ADV-13)* Sem o CT-42, o conferidor rodava no lugar certo e não reprovava nada, e o artefato saía com o mapa reprovado. "Engolir a falha" é o `|| true` ou qualquer `||` depois do comando do conferidor.
+
+*(alterado em 2026-11-20: ADV2-16 e ADV2-31, D31)* O CT-42 lê o YAML; quem prova que a reprovação do conferidor vira código de saída é o CT-B06, no `05`, com o conferidor rodado sobre um HTML do mapa quebrado. Medido no commit `4adaf9a`: o `site/verifica-mapa.mjs` grava `process.exitCode = reprovado ? 1 : 0`; rodado numa pasta de rascunho sobre uma cópia em que o HTML do `app-resumo-sem` não desenha nada, ele saiu com código 1 ("nenhum `<svg role="img">` em 15000 ms", nas quatro entradas da amostra), e sobre a cópia com o HTML gerado, com 0. O job `build` do `pages.yml` só roda na `main` (medido: `if: github.ref == 'refs/heads/main'`): um dispatch de outro ramo publicaria links para um commit que some com o ramo (Q9).
 
 #### Mutantes previstos
 
@@ -1446,18 +1636,27 @@ Molde: `[CT-40]` e `[CT-42]` de `tests/Kit/SiteDeDocumentacaoTest.php` (passos d
 | M3 | o conferidor do mapa roda depois do envio do artefato, ou antes de a prévia subir | CT-25 | linha `pages.yml`: "depois do conferidor de acessibilidade, com a mesma prévia, e antes do envio" reprova; o mutante aceita |
 | M4 | o workflow roda só o conferidor de acessibilidade, e o do mapa nunca roda | CT-25 | "o conferidor do mapa roda": reprova nos dois workflows; o mutante aceita |
 | M5 — revisão adversarial (ADV-13) | o passo do conferidor do mapa entra sem poder reprovar (`continue-on-error: true`, ou `\|\| true`) | CT-42 | linhas do `continue-on-error` e do `\|\| true`: reprova; o mutante aceita |
+| M6 — revisão adversarial (ADV2-16) | o conferidor registra a reprovação no log e termina com código 0, e o job passa | CT-B06 | linha do controle de processo: o conferidor, sobre um HTML do mapa que não desenha peça nenhuma, termina com código diferente de zero; o mutante termina com 0 |
+| M7 — revisão adversarial (ADV2-31) | o build do Pages roda a partir de outro ramo, por dispatch, e os links de prova apontam para um commit que some com o ramo | CT-42 | linha "o job `build` sem a condição da `main`": reprova; o mutante aceita |
 
 ---
 
-## Regra R24 — Todo diagrama publicado abre desenhado, com as peças do arquivo, sem erro de console nem exceção, no idioma da página
+## Regra R24 — Todo diagrama publicado abre desenhado, com as peças que a fonte dá a ele e a interface do visualizador montada, sem erro de console nem exceção, no idioma da página
 
 > `RQ-07`, `RQ-03`, `P-02` · perfil **padrão** · técnica: **rastreio exaustivo** no site construído · cenário: **CT-B01, no `05`** (costura browser, G4)
 
 *(alterado em 2026-11-20: ADV-31, ADV-28 e ADV-29)*
 - **A condição saiu.** A metade de condição do CT-B01 (o passo 4) e o M5 estão estacionados na Q11, com o ID reservado. A RQ-11 saiu da origem desta regra: o que restou não afirma modo.
-- **O oráculo é o rótulo de cada peça.** O CT-B01 confere, pelo id, que cada peça desenhada tem o rótulo que o arquivo dá a ela, e não só a contagem. Os pares id e rótulo pegam também a troca de rótulos entre peças, que um conjunto de nomes não pega.
+- **O oráculo é o rótulo de cada peça.** O CT-B01 confere, pelo id, que cada peça desenhada tem o rótulo que a fonte dá a ela, e não só a contagem. Os pares id e rótulo pegam também a troca de rótulos entre peças, que um conjunto de nomes não pega.
 - **A escuta.** Ela pega também a exceção não capturada.
 - **O CT-B01 serve também à R21.** Nenhum recurso de fora entra no HTML; o mutante dela, R21-M5, está na tabela da R21.
+- *(alterado em 2026-11-20: ADV2-20, ADV2-24 e ADV2-32)* **O comparativo também é aberto,** para a escuta de erro e a de recurso de fora (P-04 emendada); os cards e o passaporte dele ficam fora (CT-B02 e CT-B03).
+- **A exceção da interação** — a busca e o passaporte — passa a ser pega no CT-B03 e no CT-B04, que abrem os dois; o CT-B01 só abre o diagrama.
+- **O rótulo mostrado é o da fonte, inteiro.** O oráculo é a igualdade, pelo id, com o rótulo da fonte no idioma da página, e não "sem reticências": medido, o esqueleto escreve "…" à mão em 33 rótulos e 29 sublabels para caber na caixa, e o archify recusa no render o rótulo mais largo que a caixa nos tipos `architecture`, `dataflow`, `sequence` e `workflow` ("Label … is wider than component"). Medido no Chromium: o `[data-node-id]` sem escopo pega também o resultado da busca, um botão por peça (82 elementos para 41 peças no `admin-acesso` do esqueleto); dentro do SVG, há um elemento por peça (21 no `app-acesso` e 52 no `app-registro-sem` do commit `4adaf9a`). Por isso o seletor é `svg [data-node-id]`, e a conta é pelo conjunto de ids. *(corrigido em 2026-11-20: a leitura antiga, "dois elementos por peça no DOM", contava o resultado da busca)*
+- **A F-nn no desenho da peça** (D29) e o mutante dela, R6-M10, estão na R6.
+- *(alterado em 2026-11-20: medido no commit `4adaf9a`)* **O título mostrado é o `<h1>`.** Ele é igual ao título do arquivo no idioma da página. O `document.title` é a moldura do archify, a chave `page.title`: "Diagrama {título}" em pt e "{title} Diagram" em en. O comparativo não tem `<h1>` com o título dele: a casca mostra o subtítulo "base → cabeça", com os títulos dos dois diagramas, e fica fora do título, das peças e dos rótulos.
+- **O rótulo de cada peça é o da fonte.** No diagrama escrito à mão, é o campo de rótulo do tipo no esquema do archify: `label` em `architecture`, `workflow`, `sequence`, `dataflow`, `lifecycle`, `erd`, `tree` e `class`; `title` em `timeline`; `name` em `waterfall`. No construído, é o nome da peça no modelo, e o das caixas de agrupamento e de porta, o do arquivo. Medido: rótulo igual, pelo id, em todas as peças dos 9 diagramas aceitos no commit `4adaf9a` fora o comparativo, nos dois idiomas.
+- **O desenho já vem no HTML.** O archify grava o SVG pronto: sem JavaScript, o `app-acesso` tem as 21 peças e as 17 arestas. O que só existe com o script rodando é a interface do visualizador — a busca, o nível de leitura, os textos de interface, o passaporte. O CT-B01 confere que ela montou: a busca tem um resultado por peça desenhada, pelo id. Medido com JavaScript no `app-acesso`, no `app-registro-sem`, no `app-resumo-sem`, no `infra-registro`, no `kit-install-ci` e no `marcos-do-changelog`: 21 de 21, 52 de 52, 9 de 9, 39 de 39, 12 de 12 e 26 de 26; sem JavaScript, nenhum resultado. Os seletores são `svg [data-node-id]`, porque o resultado da busca também traz `data-node-id`.
 
 A tabela abaixo é a mesma do CT-B01.
 
@@ -1466,11 +1665,11 @@ A tabela abaixo é a mesma do CT-B01.
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M1 | o conferidor do mapa lista os diagramas varrendo o `dist/` por `index.html`, como o de acessibilidade (`site/verifica-acessibilidade.mjs:'index.html':78`), e não acha nenhum HTML do mapa | CT-B01 | "o total de diagramas abertos é o número de arquivos vezes dois": dá zero e reprova; o mutante aceita |
-| M2 | o gerador grava o HTML sem declarar UTF-8, e os acentos se trocam | CT-B01 | "o título … com os acentos intactos": reprova; o mutante aceita |
-| M3 | o HTML en sai com os textos pt | CT-B01 | idioma en, "o título é o do arquivo no idioma da página": reprova; o mutante aceita |
-| M4 | o visualizador não carrega (o script do archify não entrou no HTML), e a página fica em branco | CT-B01 | "desenha as peças que o arquivo daquele diagrama desenha": dá zero peça e reprova; o mutante aceita |
-| M6 — revisão adversarial (ADV-28) | o desenho tem o mesmo número de peças, com os rótulos trocados entre elas | CT-B01 | "cada peça desenhada tem, pelo id, o rótulo que o arquivo dá a ela, no idioma da página": reprova; o mutante aceita |
-| M7 — revisão adversarial (ADV-29) | o script do visualizador lança exceção não capturada na busca ou no detalhe, e o conferidor só escuta o console | CT-B01 | "nenhuma exceção não capturada": reprova; o mutante aceita |
+| M2 | o gerador grava o HTML sem declarar UTF-8, e os acentos se trocam | CT-B01 | "o `<h1>` é o título do arquivo no idioma da página, com os acentos intactos": reprova; o mutante aceita |
+| M3 | o HTML en sai com os textos pt | CT-B01 | idioma en, "o `<h1>` é o título do arquivo no idioma da página": reprova; o mutante aceita |
+| M4 | o script do visualizador não entra no HTML, ou quebra antes de montar a interface: o SVG estático aparece, sem busca nem nível de leitura *(reescrito em 2026-11-20: medido no commit `4adaf9a`, o SVG vem pronto no HTML, e "dá zero peça" não matava o mutante)* | CT-B01 | "a busca tem um resultado por peça desenhada, pelo id": dá zero resultado e reprova; o mutante aceita |
+| M6 — revisão adversarial (ADV-28) | o desenho tem o mesmo número de peças, com os rótulos trocados entre elas | CT-B01 | "toda peça que a fonte dá a ele está desenhada e tem, pelo id, o rótulo que a fonte dá a ela no idioma da página": reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV-29) | o script do visualizador lança exceção não capturada na busca ou no detalhe, e o conferidor só escuta o console *(alterado em 2026-11-20: ADV2-24, o matador passou do CT-B01, que não abre a busca, ao CT-B03 e ao CT-B04)* | CT-B03, CT-B04 | "com a busca aberta e o passaporte aberto, nenhuma exceção não capturada e nenhum erro de console": reprova; o mutante aceita |
 
 ---
 
@@ -1644,11 +1843,14 @@ A Q8 foi reclassificada para a raia desenho e decidida pela sessão: é o piso m
         | lista de classes com uma a mais, `App\Support\RelatorioNovo`, que o modelo não tem                          | reprova, nomeando a classe                                                                                    | classe nova esquecida       |
         | cópia da lista com `App\Support\TelaDeAutenticacao`, sem o motivo                                          | reprova, nomeando a classe                                                                                    | motivo ausente              |
         | cópia da lista com `App\Traits\TemUuid`, com o motivo "—"                                                  | reprova, nomeando a classe                                                                                    | motivo de enfeite           |
+        | cópia da lista com `App\Console\Commands\KitUpdate`, com o motivo "classe de apoio"                       | reprova, nomeando a classe                                                                                    | comando `kit:*` na lista    |
 ```
 
 O widget `AccountWidget` é registrado no `/admin` em `app/Providers/Filament/AdminPanelProvider.php:AccountWidget:158`.
 
 A guarda das classes recebe a lista de classes como parâmetro. Assim o controle acrescenta uma classe que não existe, sem tocar na árvore. O comando `kit:update` e o serviço `TelaDeAutenticacao` são os exemplos que a revisão deu de feature fora do registro (ADV-33): `app/Console/Commands/KitUpdate.php` e `app/Support/TelaDeAutenticacao.php`.
+
+*(alterado em 2026-11-20: ADV2-18)* Comando `kit:*` nunca entra na lista das sem feature própria, como a página de `recursos/` não entra na da R5 e o pacote com peça registrada não entra na da R27. Medido com `Artisan::all()`: 9 comandos `kit:*` — `kit:admin`, `kit:arte`, `kit:cobertura`, `kit:convites-lembrar`, `kit:info`, `kit:install`, `kit:midia-privada`, `kit:tenancy` e `kit:update`. No modelo do commit `4adaf9a`, nenhum dos 9 tem F-nn, e o catálogo da entrega (`0f38e2f`) dá a F-102 ao `kit:install` e a F-105 ao `kit:update`: o CT-41 e o CT-06 reprovam esse modelo até a sessão ligar as F-nn.
 
 #### Mutantes previstos
 
@@ -1660,10 +1862,11 @@ A guarda das classes recebe a lista de classes como parâmetro. Assim o controle
 | M4 — revisão adversarial (ADV-33) | a varredura para no registro dos painéis, e o comando `kit:update` fica sem F-nn e fora da lista | CT-41 | linha do `KitUpdate`: reprova; o mutante aceita |
 | M5 — revisão adversarial (ADV-33) | uma classe nova entra em `app/`, e ninguém a cataloga | CT-41 | linha da classe a mais, `RelatorioNovo`: reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV-33) | peça ou classe na lista sem o motivo, ou com motivo de enfeite | CT-29, CT-41 | CT-29, linha do `AccountWidget` na lista sem o motivo, e CT-41, linhas do `TelaDeAutenticacao` e do `TemUuid`: reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-18) | a feature que a varredura achou vai para a lista das sem feature própria com um motivo crível ("classe de apoio") | CT-41 | linha do `KitUpdate` na lista: reprova; o mutante aceita |
 
 ---
 
-## Regra R29 — Cada marco da linha do tempo cita uma versão do CHANGELOG com a data dela e um termo da seção dessa versão, e cada tempo medido traz a data e a fonte da medição
+## Regra R29 — Cada marco da linha do tempo cita uma versão do CHANGELOG com a data dela, e o título visível do marco aparece na seção dessa versão; e cada tempo medido traz a data e a fonte da medição
 
 > `P-03`, `P-06` · perfil **padrão** · técnica: **EP** (uma partição inválida por linha) + controles em cópia *(regra nova em 2026-11-20: Q10)*
 
@@ -1680,10 +1883,10 @@ A Q10 é de raia desenho e foi decidida pela sessão. Cada marco da linha do tem
 
       Exemplos:
         | mundo                                                                         | resultado                                                                                                                                                         | # partição          |
-        | publicados                                                                    | aceita: cada marco cita uma versão que tem cabeçalho no CHANGELOG, com a data desse cabeçalho, e traz um termo que aparece na seção dessa versão; cada tempo traz a data e a fonte da medição (o comando ou o run do CI) | válida |
+        | publicados | aceita: cada marco cita uma versão que tem cabeçalho no CHANGELOG, com a data desse cabeçalho, e o título visível do marco aparece na seção dessa versão; cada tempo traz a data e a fonte da medição (o comando ou o run do CI) | válida |
         | cópia com um marco da versão 0.99.0, que o CHANGELOG não tem                  | reprova, nomeando o marco                                                                                                                                         | versão inexistente  |
         | cópia com o marco da 0.56.0 datado de 2026-11-18 (o CHANGELOG diz 2026-11-19) | reprova, nomeando o marco                                                                                                                                         | data trocada        |
-        | cópia com o marco da 0.56.0, datado de 2026-11-19, com o termo "Passkeys", que a seção da 0.56.0 não traz | reprova, nomeando o marco                                                                                             | feature de outra versão |
+        | cópia com o marco "Passkeys" da 0.56.0, datado de 2026-11-19, que guarda o termo "login" | reprova, nomeando o marco | título que a seção não traz |
         | cópia com um marco do `[Unreleased]`                                          | reprova, nomeando o marco                                                                                                                                         | versão sem data     |
         | cópia com um tempo sem a fonte da medição                                     | reprova, nomeando o passo                                                                                                                                         | tempo sem fonte     |
         | cópia com um tempo sem a data da medição                                      | reprova, nomeando o passo                                                                                                                                         | tempo sem data      |
@@ -1698,11 +1901,12 @@ A Q10 é de raia desenho e foi decidida pela sessão. Cada marco da linha do tem
 | M3 | o `[Unreleased]` vira marco da linha do tempo | CT-31 | linha `[Unreleased]`: reprova; o mutante aceita |
 | M4 | tempo medido sem a fonte (o comando ou o run do CI) | CT-31 | linha "sem a fonte": reprova; o mutante aceita |
 | M5 | tempo medido sem a data da medição | CT-31 | linha "sem a data": reprova; o mutante aceita |
-| M6 — revisão adversarial (ADV-12) | o marco traz a versão e a data certas e atribui a ela a feature de outra versão | CT-31 | linha "Passkeys" na 0.56.0: reprova; o mutante aceita |
+| M6 — revisão adversarial (ADV-12) | o marco traz a versão e a data certas e atribui a ela a feature de outra versão | CT-31 | linha do marco "Passkeys": reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-25) | o marco guarda um termo da seção diferente do título que mostra ao leitor | CT-31 | linha do marco "Passkeys" com o termo "login": o título não está na seção, e reprova; o mutante aceita |
 
 *(alterado em 2026-11-20: ADV-12)*
 - **O termo vale como oráculo, e a F-nn não.** O marco afirma features de uma versão, e o termo é o que liga as duas. A F-nn não serve: o CHANGELOG cita F-nn em só cinco versões (medido na base).
-- **O termo do marco.** Aparece no texto da seção da versão, entre o cabeçalho dela e o próximo. A seção da 0.56.0 não traz "Passkeys" (medido na base).
+- **O termo do marco é o título visível dele** *(alterado em 2026-11-20: ADV2-25)*, e não um campo à escolha do marco. Ele aparece no texto da seção da versão, entre o cabeçalho dela e o próximo. Medido na seção da 0.56.0: "login" está nela, e "Passkeys", não; com o termo à escolha, o marco "Passkeys" passaria guardando "login".
 
 ---
 
@@ -1712,8 +1916,11 @@ A Q10 é de raia desenho e foi decidida pela sessão. Cada marco da linha do tem
 
 *(alterado em 2026-11-20: fatos de plataforma medidos pela sessão, ADV-06 e ADV-30)*
 - **O catálogo pt que o kit entrega.** O archify, no commit fixado, tem o `examples/locales/pt.json`, com 461 chaves, mas ele não está no manifesto dos catálogos embutidos. O kit entrega a interface pt pelas traduções do próprio diagrama: essas 461, mais 25 chaves do kit e as sobrescritas dos tipos de peça. O en é o catálogo embutido, `locales/en.json`, com 486 chaves.
+- *(alterado em 2026-11-20: medido no commit `4adaf9a`)* **O catálogo chega em duas partes.** O archify embute em cada HTML só as 390 chaves de interface (`<script id="archify-i18n-data">`, as mesmas 390 no pt e no en), e aplica as outras 96 no render — o título da página, a descrição, o contexto do nó, as legendas e os eixos de `timeline` e `waterfall` —, sem embuti-las. Por isso o CT-B07 lê as 390 no HTML pt e as 96 na fonte do kit (o `examples/locales/pt.json` do archify fixado e o `site/mapa/interface.json`, que o build junta), e compara as 486 com o `locales/en.json`. Medido: nenhuma das 486 sem texto pt; iguais ao en, 9 a 11 por HTML entre as 390 (os construtores de arquitetura sobrescrevem as dos tipos) e 14 na fonte, todas entre as 14 do archify. O mesmo vale para o CT-B04: o texto pt de cada chave é o embutido ou, nas 96, o da fonte.
 - **Por que o CT-B07.** Como todo texto pt sai do que o kit entrega, uma chave com o texto en copiado não mostra o aviso de idioma reserva. Por isso o CT-B07 compara os dois catálogos, chave a chave.
 - **Por que a busca e o passaporte abertos.** A busca e o passaporte montam os textos deles na interação. Por isso o CT-B04 lê a interface também com os dois abertos.
+- *(alterado em 2026-11-20: ADV2-26 e ADV2-27)* **A lista fechada do CT-B07 tem teto:** só as 14 chaves cujo pt, no `examples/locales/pt.json` do archify fixado, é igual ao en, e as chaves só de marcadores. Medido: 14 das 461 chaves.
+- **Os critérios da legenda no CT-B04.** Valem para o mapa de arquitetura, o único tipo cuja legenda nomeia os tipos de peça: medido no commit `4adaf9a`, a árvore, a `timeline`, o `waterfall`, o `erd` e o `sequence` não têm legenda de tipo, e a do `workflow` e a do `dataflow` falam de passos e de dados. Em pt, a legenda traz o nome pt de cada tipo de peça desenhado, como pedaço do rótulo do grupo dele: os da RQ-24 — painel, recurso, página, widget, plugin, provider, middleware, serviço e model — e, fora dela, policy, comando, Livewire e settings. Em en, nenhum texto de interface igual ao pt de uma chave cujo en é outro; nenhum aviso de idioma reserva; e, no mapa de arquitetura, a legenda com o nome en de cada tipo de peça desenhado — panel, resource, page, widget, plugin, provider, middleware, service, model, policy, setting, command, Livewire —, como pedaço do rótulo. Medido no esqueleto: a legenda en do `admin-acesso` traz panel, page, resource, widget, Livewire, provider, service, model, settings, policy, middleware e plugin. No commit `4adaf9a`, no `app-acesso`: em pt, "Tela (painel, página, recurso, widget, Livewire)", "Código do kit (provider, serviço, comando)", "Dados (model, settings)", "Pacote ou plugin de terceiros" e "Acesso (middleware, policy)"; em en, os mesmos grupos com os nomes en; e nenhum dos tipos desenhados (página, serviço, plugin, middleware, Livewire, model) falta. "Plugin de pacote" e "serviço próprio", por extenso, reprovariam dado correto: a legenda diz "Pacote ou plugin de terceiros" e "serviço".
 
 A tabela abaixo é a mesma do CT-B04 e do CT-B07.
 
@@ -1721,14 +1928,15 @@ A tabela abaixo é a mesma do CT-B04 e do CT-B07.
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M1 | uma chave da interface do archify sem tradução pt cai no inglês, com o aviso de idioma reserva | CT-B04 | "nenhuma chave da interface cai no inglês, e nenhum aviso de idioma reserva aparece": reprova; o mutante aceita |
+| M1 | uma chave da interface do archify sem tradução pt cai no inglês, com o aviso de idioma reserva | CT-B04 | "nenhum texto de interface é igual ao en de uma chave cujo texto pt é outro, nenhum aviso de idioma reserva aparece": reprova; o mutante aceita |
 | M2 | o documento pt se declara `lang="en"` (o idioma não chega ao HTML) | CT-B04 | "o `lang` do documento começa por `pt`": reprova; o mutante aceita |
-| M3 | a legenda dos tipos de peça fica com os rótulos do archify em inglês | CT-B04 | "a legenda dos tipos de peça usa os nomes da RQ-24": reprova; o mutante aceita |
-| M4 | a exceção do comparativo vale para todo diagrama, e a interface inteira fica em inglês sem reprovar | CT-B04 | "na versão pt de todo diagrama fora o comparativo, … nenhuma cai no inglês": reprova; o mutante aceita |
-| M5 | a versão en recebe a tradução pt (catálogo de tradução trocado de idioma) | CT-B04 | versão en, "a interface está em inglês": reprova; o mutante aceita |
-| M6 — revisão adversarial (ADV-30) | a busca e o passaporte montam os textos na interação, e uma chave deles cai no inglês | CT-B04 | "com a busca aberta e o passaporte de uma peça aberto, toda chave visível mostra o texto pt": reprova; o mutante aceita |
+| M3 | a legenda dos tipos de peça fica com os rótulos do archify em inglês | CT-B04 | "a legenda traz o nome pt de cada tipo de peça desenhado, como pedaço do rótulo": reprova; o mutante aceita |
+| M4 | a exceção do comparativo vale para todo diagrama, e a interface inteira fica em inglês sem reprovar | CT-B04 | "na versão pt de todo diagrama fora o comparativo, nenhum texto de interface é igual ao en de uma chave cujo texto pt é outro": reprova; o mutante aceita |
+| M5 | a versão en recebe a tradução pt (catálogo de tradução trocado de idioma) *(alterado em 2026-11-20: ADV2-27, a asserção antiga não tinha critério)* | CT-B04 | versão en, "nenhum texto de interface igual ao pt de uma chave cujo en é outro, e a legenda com os nomes en dos tipos": reprova; o mutante aceita |
+| M6 — revisão adversarial (ADV-30) | a busca e o passaporte montam os textos na interação, e uma chave deles cai no inglês | CT-B04 | "com a busca aberta e o passaporte de uma peça aberto, nenhum texto visível é igual ao en de uma chave cujo texto pt é outro": reprova; o mutante aceita |
 | M7 — revisão adversarial (ADV-06) | para calar o aviso de idioma reserva, o catálogo pt do kit recebe o texto en nas chaves não traduzidas | CT-B07 | linha "a chave da busca traz o texto en": reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV-06) | a lista fechada de textos iguais aceita a chave sem o motivo | CT-B07 | linha "na lista, sem o motivo": reprova; o mutante aceita |
+| M9 — revisão adversarial (ADV2-26) | quem copia o texto en para calar o aviso acrescenta a chave à lista fechada, com um motivo que não é de enfeite | CT-B07 | linha `viewer.finder.placeholder` na lista, com motivo: reprova; o mutante aceita |
 
 ---
 
@@ -1742,6 +1950,8 @@ Os dois defeitos tolerados são estes:
 
 Qualquer outra violação serious ou critical, qualquer `console.error` e qualquer exceção não capturada reprovam *(alterado em 2026-11-20: ADV-29; o mutante da exceção está na R24, como M7, e o teto de seis desta regra fica)*. A tabela abaixo é a mesma do `05`.
 
+*(alterado em 2026-11-20: ADV2-19)* A tolerância decide por alvo, e não pela violação inteira: a violação com alvos mistos reprova pelo alvo que não é tolerado. Medido: o `site/verifica-mapa.mjs` já filtra os alvos da violação (`v.nodes.filter`).
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -1752,12 +1962,13 @@ Qualquer outra violação serious ou critical, qualquer `console.error` e qualqu
 | M4 | amostra vazia: o conferidor não acha diagrama e não audita nada | CT-B05 | "a amostra tem exatamente uma entrada por tipo publicado, idioma e tema, e nenhuma é vazia": reprova; o mutante aceita |
 | M5 | um tipo publicado fica fora da amostra | CT-B05 | idem, pelo tipo que falta: reprova; o mutante aceita |
 | M6 | o comparativo não é auditado | CT-B05 | "mais o comparativo no tema escuro": reprova; o mutante aceita |
+| M7 — revisão adversarial (ADV2-19) | a função de decisão tolera a violação inteira quando algum alvo, ou o primeiro, é tolerado | CT-B06 | linha "`color-contrast` de dois alvos: `.node-outline-heading > small` e um parágrafo do corpo": reprova pelo parágrafo; o mutante tolera |
 
 ---
 
-## Regra R33 — A página do mapa declara, nos dois idiomas, as duas exceções da P-11 e o limite da varredura da P-12
+## Regra R33 — A página do mapa declara, nos dois idiomas, as duas exceções da P-11, a do comparativo na P-04 e o limite da varredura da P-12
 
-> `P-11`, `P-12`, `P-02` · perfil **padrão** · técnica: **EP** (idioma) *(regra nova em 2026-11-20: Q12, fechada pela P-11; alterada na quarta rodada: P-12)*
+> `P-11`, `P-12`, `P-04`, `P-02` · perfil **padrão** · técnica: **EP** (idioma) *(regra nova em 2026-11-20: Q12, fechada pela P-11; alterada na quarta rodada: P-12)*
 
 ```gherkin
   Regra: O leitor sabe o que o mapa não cumpre, e por quê
@@ -1768,6 +1979,7 @@ Qualquer outra violação serious ou critical, qualquer `console.error` e qualqu
       Então a página diz que a casca do comparativo fica em inglês
       E a página nomeia os dois defeitos tolerados pela regra e pelo elemento: `nested-interactive` no `<svg>` raiz do diagrama, e `color-contrast` na contagem de grupo do índice de nós (`.node-outline-heading > small`)
       E a página diz qual é o piso da varredura — as peças que os painéis registram e as classes de `app/` fora de `app/Filament` — e que, além dele, a completude não tem garantia
+      E a página diz que o comparativo não leva cards nem passaporte, e que a base e a cabeça dele são diagramas do mapa com a prova de cada ligação (P-04)
 
       Exemplos:
         | idioma |
@@ -1783,41 +1995,46 @@ Qualquer outra violação serious ou critical, qualquer `console.error` e qualqu
 | M2 | a declaração está só na página pt | CT-34 | linha "en": reprova; o mutante aceita |
 | M3 | a declaração é genérica ("o archify tem defeitos de acessibilidade"), sem a regra e o elemento | CT-34 | "nomeia os dois defeitos pela regra e pelo elemento": reprova; o mutante aceita |
 | M4 — revisão adversarial (ADV-33) | a página apresenta o mapa como completo e não diz o piso da varredura nem o limite dela | CT-34 | "diz qual é o piso da varredura e que, além dele, a completude não tem garantia": reprova; o mutante aceita |
+| M5 — revisão adversarial (ADV2-20) | a página não declara a exceção do comparativo, e o leitor procura nele a prova que ele não tem | CT-34 | "diz que o comparativo não leva cards nem passaporte": reprova; o mutante aceita |
 
 ---
 
-## Regra R34 — Os diagramas de arquitetura de um painel que valem num modo desenham, juntos, todo o registro do painel nesse modo, e nada que ele não registra nesse modo
+## Regra R34 — Os diagramas de arquitetura e a árvore de registro de um painel que valem num modo desenham, juntos, todo o registro do painel nesse modo, e nada que ele não registra nesse modo
 
 > `P-09`, `RQ-11`, `RQ-10`, `P-05` · perfil **padrão** · técnica: **tabela de decisão** (o registro muda entre os modos × há arquitetura por modo; 3 painéis × 2 modos) + controles em cópia *(regra nova em 2026-11-20: ADV-05)*
 
 O `/app` muda de registro entre os modos: `IdentifyTenant` e `DefinirTenantDePermissoes` só existem com tenant (CT-11 e CT-12). O `/admin` e o `/infra`, não (Setup Global).
 
-A regra não manda o `/app` ter dois diagramas. Ela pede, em cada modo, que os diagramas `architecture` do painel que valem nesse modo — o do modo ou o compartilhado — desenhem juntos o registro do painel nesse modo, nem mais nem menos. O compartilhado só passa nos dois modos se o registro for o mesmo, e por isso o `/app` precisa de um por modo.
+A regra não manda o `/app` ter dois diagramas. Ela pede, em cada modo, que os diagramas `architecture` e a árvore de registro do painel que valem nesse modo — os do modo ou os compartilhados — desenhem juntos o registro do painel nesse modo, nem mais nem menos. O compartilhado só passa nos dois modos se o registro for o mesmo, e por isso o `/app` precisa de um por modo.
 
-A ligação de registro que só aparece num diagrama de outro tipo não conta aqui, embora conte no CT-14.
+*(alterado em 2026-11-20: fato da implementação, dado pelo coordenador, e medição no commit `4cc9517`)* O registro do painel sai na árvore de registro, que o construtor gera do modelo: o `/app` tem uma árvore por modo (`app-registro-sem` e `app-registro-com`), porque com tenant registra o `IdentifyTenant` e o `DefinirTenantDePermissoes`; o `/admin` e o `/infra` têm uma árvore só cada um, compartilhada pelos dois modos, porque o registro deles não muda entre os modos. Por isso a árvore de registro conta aqui, ao lado da arquitetura, e só contar a arquitetura reprovaria o `/admin` e o `/infra`, que não têm mapa de arquitetura. Medido no modelo do commit `4cc9517`: o registro do `/admin` tem 57 peças nos dois modos, e o do `/infra`, 84, iguais; o do `/app` tem 46 sem tenant e 48 com, e a diferença é o `IdentifyTenant` e o `DefinirTenantDePermissoes`. As duas árvores do `/app` estão nos arquivos desse commit; a do `/admin` e a do `/infra` ainda não, e o CT-37 e o CT-38 as cobram: sem elas, nada desenha o registro do `/admin` (falta 57) nem o do `/infra` (falta 84). No `/app`, os mapas e a árvore que valem em cada modo desenham juntos o registro dele, nem mais nem menos: 46 de 46 sem tenant e 48 de 48 com; os dois mapas compartilhados (`app-acesso` e `app-organizacoes`) não desenham peça nem ligação de um modo só, e nenhum dos 4 mapas desenha peça que só outro painel registra.
+
+A ligação de registro que só aparece num diagrama de outro tipo — fora a árvore de registro — não conta aqui, embora conte no CT-14.
 
 O modo com tenant só existe na suíte `Tenancy`. Sem tenant, o `/app` não registra os dois middlewares, e a cópia "só o compartilhado" passaria no CT-37. Quem a mata é o CT-38.
+
+*(alterado em 2026-11-20: ADV2-29)* O `TenantResource` está no registro do `/admin` nos dois modos e só abre com tenant. Afirmar que o diagrama sem tenant o desenha responderia à Q11 ("em que diagrama de modo ela entra"), e ao contrário da recomendação dela. Até a resposta, a linha admin do CT-37 tira do "nem mais nem menos" as peças de disponibilidade condicional, e a Q11 segura esse recorte.
 
 ```gherkin
   Regra: O que muda de registro entre os modos ganha um diagrama de arquitetura por modo
 
-    Esquema do Cenário: [CT-37] sem tenant, os diagramas de arquitetura de cada painel que valem nesse modo desenham o registro dele nesse modo, e nada além
+    Esquema do Cenário: [CT-37] sem tenant, os diagramas de arquitetura e a árvore de registro de cada painel que valem nesse modo desenham o registro dele nesse modo, e nada além
       Dado o modo multi-tenant desligado, com `kit.tenancy.enabled` lido como falso
       E o painel "<painel>" do registro de painéis, e os arquivos de diagrama "<mundo>"
-      Quando a guarda do mapa junta as ligações de registro que os diagramas `architecture` do painel que valem no modo sem tenant desenham
+      Quando a guarda do mapa junta as ligações de registro que os diagramas `architecture` e a árvore de registro do painel que valem no modo sem tenant desenham
       Então o resultado é "<resultado>"
 
       Exemplos:
         | painel | mundo                                                                                    | resultado                                                                                         |
-        | admin  | publicados                                                                               | aceita: o conjunto é o registro do painel sem tenant, nem mais nem menos                         |
+        | admin  | publicados                                                                               | aceita: o conjunto é o registro do painel sem tenant, nem mais nem menos, fora a peça de disponibilidade condicional (o `TenantResource`), que fica com a Q11 |
         | app    | publicados                                                                               | aceita (idem), sem `IdentifyTenant` nem `DefinirTenantDePermissoes`                              |
         | infra  | publicados                                                                               | aceita (idem), com a página `HealthCheckResults`, que o plugin registra                          |
-        | admin  | cópia em que o diagrama de arquitetura do admin não desenha o `FilamentShieldPlugin`      | reprova, nomeando o painel admin e o plugin                                                      |
+        | admin  | cópia em que nem a árvore de registro nem um diagrama de arquitetura do admin desenha o `FilamentShieldPlugin` | reprova, nomeando o painel admin e o plugin                                     |
 
-    Esquema do Cenário: [CT-38] com tenant, os diagramas de arquitetura de cada painel que valem nesse modo desenham o registro dele nesse modo, e nada além
+    Esquema do Cenário: [CT-38] com tenant, os diagramas de arquitetura e a árvore de registro de cada painel que valem nesse modo desenham o registro dele nesse modo, e nada além
       Dado o modo multi-tenant ligado, com `kit.tenancy.enabled` lido como verdadeiro
       E o painel "<painel>" do registro de painéis, e os arquivos de diagrama "<mundo>"
-      Quando a guarda do mapa junta as ligações de registro que os diagramas `architecture` do painel que valem no modo com tenant desenham
+      Quando a guarda do mapa junta as ligações de registro que os diagramas `architecture` e a árvore de registro do painel que valem no modo com tenant desenham
       Então o resultado é "<resultado>"
 
       Exemplos:
@@ -1825,17 +2042,17 @@ O modo com tenant só existe na suíte `Tenancy`. Sem tenant, o `/app` não regi
         | app    | publicados                                                                                                               | aceita: o conjunto é o registro do painel com tenant, inclusive `IdentifyTenant` e `DefinirTenantDePermissoes` |
         | admin  | publicados                                                                                                               | aceita: o conjunto é o registro do painel com tenant                                        |
         | infra  | publicados                                                                                                               | aceita (idem)                                                                               |
-        | app    | cópia em que o painel app só tem o diagrama de arquitetura compartilhado, sem `IdentifyTenant` nem `DefinirTenantDePermissoes` | reprova, nomeando o painel app e as duas peças                                    |
-        | app    | cópia em que a ligação "o painel app registra `IdentifyTenant`" só está num diagrama `workflow` marcado com tenant         | reprova, nomeando o painel app e `IdentifyTenant`                                           |
+        | app    | cópia em que o painel app só tem diagramas compartilhados — a arquitetura e a árvore —, sem `IdentifyTenant` nem `DefinirTenantDePermissoes` | reprova, nomeando o painel app e as duas peças                     |
+        | app    | cópia em que o `IdentifyTenant` só aparece no `sequence` `requisicao-autenticada-com`, e nem a árvore nem a arquitetura do `/app` com tenant o desenham | reprova, nomeando o painel app e `IdentifyTenant` |
 ```
 
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
-| M1 — revisão adversarial (ADV-05) | o `/app` sai com um só diagrama de arquitetura, compartilhado, que omite as peças do modo com tenant | CT-38 | linha "só o compartilhado": reprova; o mutante aceita, porque o compartilhado não desenha peça de um modo só (CT-19) |
-| M2 — revisão adversarial (ADV-05) | as ligações de registro do modo com tenant ficam num diagrama de outro tipo, marcado "com tenant" | CT-38 | linha "só num `workflow`": reprova; o mutante aceita, porque o CT-14 acha a ligação desenhada |
-| M3 | o diagrama de arquitetura de um painel esquece uma peça registrada, como a de plugin | CT-37 | linha "sem o `FilamentShieldPlugin`": reprova; o mutante aceita, se a ligação estiver noutro tipo de diagrama |
+| M1 — revisão adversarial (ADV-05) | o `/app` sai só com diagramas compartilhados — a arquitetura e a árvore —, que omitem as peças do modo com tenant | CT-38 | linha "só diagramas compartilhados": reprova; o mutante aceita, porque o compartilhado não desenha peça de um modo só (CT-19) |
+| M2 — revisão adversarial (ADV-05) | as ligações de registro do modo com tenant ficam num diagrama de outro tipo, marcado "com tenant" | CT-38 | linha "só no `requisicao-autenticada-com`": reprova; o mutante aceita, porque o CT-14 acha a ligação desenhada *(alterado em 2026-11-20: a linha de controle era um `workflow` hipotético; todo `workflow` do commit `4cc9517` é do kit inteiro, e o caso real é a pilha da requisição com tenant, que desenha o `IdentifyTenant`)* |
+| M3 | a árvore de registro de um painel esquece uma peça registrada, como a de plugin, e nenhum diagrama de arquitetura dele a desenha | CT-37 | linha "nem a árvore nem a arquitetura desenham o `FilamentShieldPlugin`": reprova; o mutante aceita, se a ligação estiver noutro tipo de diagrama |
 
 ---
 
@@ -1881,7 +2098,7 @@ O exemplo do convite vem do glossário: "Expirado … é o único que volta a Pe
 
 ---
 
-## Regra R36 — O que um diagrama desenha está no modelo: toda aresta é ligação do modelo no mesmo sentido — direta, de agrupamento ou de porta —, e o diagrama de painel só desenha peça do painel, peça do kit inteiro ou caixa de porta
+## Regra R36 — O que o mapa desenha está no modelo: no mapa de arquitetura e na árvore de registro, toda aresta é ligação do modelo no mesmo sentido — direta, de agrupamento ou de porta —, e todo diagrama de painel só desenha, como peça, peça do painel ou do kit inteiro, além da caixa de porta
 
 > `P-03`, `RQ-24`, `P-10`, `RQ-10` · perfil **padrão** · técnica: **EP** (forma da aresta) + controles em cópia *(regra nova em 2026-11-20: ADV-24 e ADV-27)*
 
@@ -1895,14 +2112,16 @@ O diagrama de um painel só desenha três coisas:
 - peça do kit inteiro: peça que nenhum painel registra, como model, serviço próprio, comando ou setting;
 - caixa de porta.
 
+*(alterado em 2026-11-20: medido no commit `4cc9517`, com os fluxos escritos a partir do código)* A regra da aresta vale para o mapa de arquitetura e para a árvore de registro, que desenham ligações do modelo. O fluxo (`sequence`, `workflow`, `dataflow`, `lifecycle`) desenha a ordem de execução: a mensagem e a transição dele não são ligação do modelo, e quem as confere é a âncora (R35). No fluxo de painel, a regra da peça vale para o nó que é peça do modelo, pelo nome exato; o nó que não é peça — o navegador, o provedor de IA, um formulário — fica fora dela. Medido nos 14 fluxos de painel escritos à mão do commit: 99 nós, 38 com o nome exato de uma peça do modelo, todos peça de um dos painéis do diagrama ou do kit inteiro, e 61 que não são peça; das 157 arestas, só 4 são ligação do modelo entre as duas pontas. A regra antiga, "toda aresta de todo diagrama", reprovaria esses fluxos.
+
 ```gherkin
   Regra: O desenho não inventa nem inverte ligação, e o diagrama de um painel não desenha o que é de outro
 
-    Esquema do Cenário: [CT-40] toda aresta desenhada é ligação do modelo no mesmo sentido, e todo diagrama de painel só desenha o que é dele, do kit inteiro ou porta
+    Esquema do Cenário: [CT-40] toda aresta de mapa é ligação do modelo no mesmo sentido, e todo diagrama de painel só desenha, como peça, o que é dele, do kit inteiro ou porta
       Dado o modelo e os arquivos de diagrama "<mundo>"
       Quando a guarda do mapa confere cada aresta e cada peça desenhada
       Então o resultado é "<resultado>"
-      E, nos publicados, a guarda conferiu todas as arestas de todos os diagramas
+      E, nos publicados, a guarda conferiu todas as arestas dos mapas de arquitetura e das árvores de registro, e todo nó que é peça do modelo nos diagramas de painel
 
       Exemplos:
         | mundo                                                                                                         | resultado                                     | # partição                    |
@@ -1919,10 +2138,49 @@ O diagrama de um painel só desenha três coisas:
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M1 — revisão adversarial (ADV-24) | o gerador inverte o sentido da aresta (`User` → `UserResource`) | CT-40 | linha "invertida": reprova; o mutante aceita, porque o CT-14 só vai do modelo ao desenho |
-| M2 — revisão adversarial (ADV-24) | um diagrama escrito à mão traz uma aresta que o modelo não tem | CT-40 | linha "inventada": reprova; o mutante aceita |
+| M2 — revisão adversarial (ADV-24) | um mapa de arquitetura escrito à mão traz uma aresta que o modelo não tem | CT-40 | linha "inventada": reprova; o mutante aceita |
 | M3 — revisão adversarial (ADV-24) | a aresta de agrupamento representa a ligação de uma peça que não é membro nomeado | CT-40 | linha "membro não nomeado": reprova; o mutante aceita |
 | M4 — revisão adversarial (ADV-24) | a porta aponta para um mapa que não desenha o outro lado da ligação | CT-40 | linha "porta para o mapa errado": reprova; o mutante aceita |
 | M5 — revisão adversarial (ADV-27) | o diagrama de um painel é copiado de outro e declarado com o painel novo | CT-40 | linha do `UserResource` no `/infra`: reprova; o mutante aceita, porque o CT-17 decide pelo painel que o arquivo declara |
+
+---
+
+## Regra R37 — Toda marca de disponibilidade que o mapa publica é a do código: a chave que decide o acesso da peça, com o valor de fábrica dela, ou o modo
+
+> `P-03`, `RQ-04`, `RQ-05`, `RQ-11` · perfil **padrão** · técnica: **EP** (uma partição inválida por linha) + controles em cópia *(regra nova em 2026-11-20: ADV2-30)*
+
+A Q11 não diz se o mapa marca a peça condicional (R30, estacionada). Mas, se marcar, a marca tem de ser a do código, e isso vale nas três leituras da Q11. No publicado sem marca nenhuma, a regra é vácua.
+- **A chave e o valor de fábrica.** A chave da marca é a que o `canAccess()` da peça lê, direto ou pelo apoio que ele chama, e o valor de fábrica é o default dela no `config/kit.php`. A chave vale pela variável do `.env` ou pela chave de config.
+- **O modo.** A marca de modo diz em que modo a peça abre, pela leitura de `kit.tenancy.enabled` no `canAccess()`.
+
+Medido no código:
+- o `canAccess()` do `AgenteIaResource` lê `AgentesDeIa::habilitado()` (`app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php:canAccess:70`), que lê `kit.agentes_ia.habilitado` (`app/Support/AgentesDeIa.php:habilitado:29`), cuja variável é `KIT_AGENTES_IA`, desligada de fábrica (`config/kit.php:'habilitado':682`);
+- o `canAccess()` do `TenantResource` lê `kit.tenancy.enabled` (`app/Filament/Admin/Resources/Tenants/TenantResource.php:canAccess:107`), cuja variável é `KIT_TENANCY`, desligada de fábrica (`config/kit.php:'enabled':452`);
+- o esqueleto publicado não tem marca de disponibilidade, e a regra hoje é vácua.
+
+```gherkin
+  Regra: O que o mapa diz sobre a disponibilidade de uma peça é o que o código decide
+
+    Esquema do Cenário: [CT-45] toda marca de disponibilidade publicada é a do código, com a chave que decide e o valor de fábrica, ou o modo
+      Dado o modelo e os arquivos de diagrama "<mundo>"
+      Quando a guarda do mapa confere cada marca de disponibilidade publicada contra o `canAccess()` da peça
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | mundo                                                                                         | resultado                                                        | # partição               |
+        | publicados                                                                                    | aceita: cada marca é a do código; sem marca nenhuma, aceita por vácuo | válida              |
+        | cópia que marca o `AgenteIaResource` com a chave `KIT_REGISTRO`, que não decide o acesso dele | reprova, nomeando a peça                                         | chave que não decide     |
+        | cópia que marca o `AgenteIaResource` com `KIT_AGENTES_IA` ligada de fábrica                   | reprova, nomeando a peça                                         | valor de fábrica trocado |
+        | cópia que marca o `TenantResource` como disponível só sem tenant                              | reprova, nomeando a peça                                         | modo invertido           |
+```
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 — revisão adversarial (ADV2-30) | o mapa marca a peça com uma chave vizinha, que não decide o acesso dela | CT-45 | linha `KIT_REGISTRO`: reprova; o mutante aceita |
+| M2 — revisão adversarial (ADV2-30) | a marca traz o valor de fábrica trocado | CT-45 | linha "ligada de fábrica": reprova; o mutante aceita |
+| M3 — revisão adversarial (ADV2-30) | a marca de modo sai invertida, e a tela de organizações aparece como disponível só sem tenant | CT-45 | linha "só sem tenant": reprova; o mutante aceita |
 
 ---
 
@@ -1934,13 +2192,13 @@ O diagrama de um painel só desenha três coisas:
 | Autorização exercida na ação | não se aplica: nenhuma ação, policy ou permissão nova. A Superfície Livewire do `02` não cria nada em `app/`, e o gate confere o diff (RQ-15) | — |
 | Idempotência (ancorada no agregado) | não se aplica: o build regenera o mapa do zero a partir do commit (P-07), e nada acumula entre uma execução e outra | — |
 | Concorrência | não se aplica: não há contador nem limite | — |
-| **Fronteira no ponto de entrada** (o modelo, o catálogo e as referências, conferidos a cada PR) | CT-01, CT-03, CT-04, CT-08, CT-09, CT-10, CT-21, CT-28, CT-29, CT-31, CT-35, CT-36, CT-39, CT-40, CT-41 | G1, G2 |
-| **Domínio condicionado** | CT-06 e CT-36 (origem × peça; F-nn × pacote nomeado × pacote da peça; rota do "onde fica" × peça), CT-08 (classe × tipo), CT-10 (forma da prova × arquivo; descoberta × pasta; plugin × peça; configuração × painel), CT-21 (tipo × painel × modo), CT-37 e CT-38 (registro × modo × arquitetura) | G2, G3 |
-| **Estado × operação de escrita** (número removido × reaproveitar; removido × ainda entregue) | CT-03, CT-04 (matriz da R3, 15 células), CT-36 (a removida que uma peça ainda entrega) | G1, G2 |
+| **Fronteira no ponto de entrada** (o modelo, o catálogo e as referências, conferidos a cada PR) | CT-01, CT-03, CT-04, CT-08, CT-09, CT-10, CT-21, CT-28, CT-29, CT-31, CT-35, CT-36, CT-39, CT-40, CT-41, CT-44, CT-45 | G1, G2, G3 |
+| **Domínio condicionado** | CT-06, CT-36 e CT-44 (origem × peça; F-nn × pacote nomeado × pacote da peça; rota do "onde fica" × peça; caminho × modo), CT-08 (classe × tipo), CT-10 (forma da prova × arquivo; trait × origem que o usa; método × lista de contrato; par de mapeamento × pontas), CT-21 (tipo × painel × modo; escopo do diagrama × peça registrada), CT-37 e CT-38 (registro × modo × arquitetura), CT-45 (marca × chave × valor de fábrica × modo) | G2, G3 |
+| **Estado × operação de escrita** (número removido × reaproveitar; removido × ainda entregue; removido × idioma) | CT-03, CT-04 (matriz da R3, 15 células), CT-36 (a removida que uma peça ainda entrega), CT-01 (removida num idioma só) | G1, G2 |
 | Ausente ≠ null ≠ vazio | CT-09 (trecho ausente, vazio, só de espaços), CT-03, CT-21, CT-28, CT-29, CT-35 e CT-41 (motivo ausente; motivo "—"; "não se aplica" sem porquê), CT-31 (tempo sem fonte; sem data), CT-39 (transição e estado sem âncora) | G1, G2 |
 | Paginação / ordenação | não se aplica: não há listagem paginada, e a ordem das linhas do catálogo não é cláusula. A ordem dos números é, e o CT-04 a cobre | — |
 | Timezone / DST | não se aplica: nenhuma data é calculada. As datas da linha do tempo são comparadas como texto com o cabeçalho do CHANGELOG (CT-31) | — |
-| Unicode / texto livre | CT-B01 (acentos intactos no HTML gerado), CT-B04 (interface pt, inclusive com a busca e o passaporte abertos), CT-B07 (catálogo pt sem o texto en), CT-16 e CT-21 (texto en traduzido; título igual só se é nome de peça ou de comando, marcado) | G4, G2 |
+| Unicode / texto livre | CT-B01 (acentos intactos no `<h1>`; rótulo igual ao da fonte), CT-B02 (item de card inteiro), CT-B04 (interface pt e en, inclusive com a busca e o passaporte abertos), CT-B07 (catálogo pt sem o texto en), CT-16 e CT-21 (termo do glossário; palavra funcional do pt em frase en) | G4, G2 |
 | Unicidade (+ soft delete) | CT-01 (F-nn em duas linhas), CT-08 (classe em duas peças). Soft delete não se aplica: não há banco | G1, G2 |
 | CRUD combinado | não se aplica: não há CRUD | — |
 | Mass assignment | não se aplica: não há formulário nem payload | — |
@@ -1949,7 +2207,7 @@ O diagrama de um painel só desenha três coisas:
 | **Superfície Livewire** | não se aplica: o `02` declara que nenhuma página, widget ou componente é criado ou alterado, e o plano não tem path em `app/` | — |
 | **Estado do framework usado sem validar** | lacuna declarada: o hash da URL do visualizador (`#focus=`, `#route=`) é entrada do leitor, mas quem o lê é o código do archify, não a entrega. Nenhum cenário da entrega o falsifica. Fica registrado para a dimensão de segurança do quality gate | G4 |
 | **IDOR e mass assignment por entidade** | não se aplica: a entrega não persiste entidade | — |
-| **Escopo com discriminante nulo** (o modo da peça e do diagrama) | CT-11, CT-12, CT-19, CT-37, CT-38 e CT-43: o modelo não dá a um modo o que o painel não registra nele, os diagramas de arquitetura de cada modo desenham o registro desse modo, e a célula não leva a diagrama do outro modo. A condição da peça está estacionada na Q11 (ADV-31). Nas ligações de uso, o modo vem da varredura: lacuna declarada, vinculada à P-05 ("sem promessa de que a varredura achou todas") | G2, G3 |
+| **Escopo com discriminante nulo** (o modo da peça, da ligação e do diagrama) | CT-11, CT-12, CT-19, CT-37, CT-38, CT-43 e CT-44: o modelo não dá a um modo o que o painel não registra nele, a ligação desenhada vale no modo do diagrama, os diagramas de arquitetura de cada modo desenham o registro desse modo, a célula não leva a diagrama do outro modo, e o caminho com organização resolve com tenant. A condição da peça está estacionada na Q11 (ADV-31); a marca publicada é conferida pela R37. Nas ligações de uso, o modo vem da varredura: lacuna declarada, vinculada à P-05 ("sem promessa de que a varredura achou todas") | G2, G3 |
 | **Saída do estado de erro** | não se aplica: nenhum cenário termina em 4xx nem em redirect. Os links da página ficam com `site/verifica-links.mjs` e com o CT-15 | — |
 | Cardinalidade 0/1/N | CT-06 (feature sem peça), CT-14 (ligação sem diagrama), CT-17 (célula sem diagrama), CT-29 (peça registrada sem F-nn), CT-39 (transição sem âncora), CT-41 (classe de `app/` sem F-nn), CT-B02 (diagrama de ligações sem prova), CT-B05 (amostra vazia) | G2, G4 |
 | Leitura de `docs/`, README, `CHANGELOG.md` ou `site/` fora da árvore do kit (item vivo do projeto, `.ai/rules/testes.md`) | sentinela `naArvoreDoKit()` no `beforeEach` dos dois arquivos (Setup Global), vigiada pelo `[CT-10]`/`[CT-11]` herdados de `RedeDeDocumentacaoTest` | G1, G2, G3 |
@@ -1976,58 +2234,68 @@ O diagrama de um painel só desenha três coisas:
 | a contagem "N de saída · M de entrada" do passaporte | é cálculo do archify, a partir das arestas que o diagrama já tem; a R36 confere as arestas |
 | um diagrama de arquitetura por modo para todo painel | a P-09 manda publicar uma vez o que é igual nos dois modos; a R34 cobra o registro de cada modo, e só o `/app` muda |
 | o executor não faz merge nem tag sem o OK do mantenedor (ADV-34) | controle de processo da RQ-26, conferido no quality gate e no PR (Cláusulas sem regra) |
+| o `archify check` como oráculo da biblioteca embutida | medido pela sessão: ele só acusa alteração do HTML com o recibo `.delivery.json`, que o `render` não grava (D32) |
+| "sem reticências" no rótulo de peça | o esqueleto escreve "…" à mão em 33 rótulos para caber na caixa; o rótulo é conferido por igualdade com o do arquivo (CT-B01), e o "…" do item de card, contra o modelo (CT-B02) |
+| uma peça de pacote em cada `architecture` da amostra do CT-B03 | o `app-resumo-sem` e o `app-resumo-com` do esqueleto não têm peça de pacote, nem, no commit `4adaf9a`, o `app-organizacoes`, o `app-resumo-sem` e o `app-resumo-com`; a amostra pede uma de pacote no conjunto dos `architecture` |
+| contar como "lista de features" os nós de diagrama cujo rótulo é nome de F-nn | o `infra-registro` tem 3 nós assim, e são peças; o ADV2-21 conta item de lista, linha de tabela e item de card |
+| a F-nn à vista no carregamento do mapa de arquitetura, sem zoom | o archify desenha o `tag` como detalhe fino, com opacidade 0 no nível de leitura do carregamento (medido no commit `4adaf9a`). O CT-B01 confere no nível cheio, como a D29 decidiu; se a F-nn tiver de aparecer sem zoom, muda a D29, e o ponto foi ao coordenador |
+| o título no `document.title` | é a moldura do archify ("Diagrama {título}", "{title} Diagram"); o título que o leitor vê é o `<h1>`, e é ele que o CT-B01 confere |
+| a forma do desenho sem JavaScript | o archify grava o SVG pronto no HTML; o que depende do script é a interface do visualizador, e o CT-B01 confere que ela montou |
+| token obrigatório na linha nova do catálogo | medido no commit `0f38e2f`: a F-118 ("Voltar ao topo") não tem token e está certa; a troca entre linhas novas sem token é a lacuna R1-M8 |
 
 ## Índice de Cenários
 
 | ID | Cenário | Regra | Técnica | Grupo | Costura | Arquivo | Mata |
 |----|---------|-------|---------|-------|---------|---------|------|
-| CT-01 | catálogo em paridade, a mesma feature em cada número, uma linha por F-nn, origem do glossário | R1 | EP + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R1-M1 a M5 |
-| CT-02 | só se cita F-nn que o catálogo tem, e ninguém lista feature por fora dele | R2 | EP + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R2-M1 a M4 |
+| CT-01 | catálogo em paridade, a mesma feature e o mesmo estado em cada número (tokens nas linhas novas), uma linha por F-nn, origem do glossário | R1 | EP + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R1-M1 a M7 |
+| CT-02 | só se cita F-nn que o catálogo tem, e ninguém lista feature por fora dele, nem só pelos nomes | R2 | EP + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R2-M1 a M5 |
 | CT-03 | número da base fica com a feature, ou removido com motivo, e não volta | R3 | estado × operação | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R3-M1 a M6 |
 | CT-04 | os novos começam na F-72, em sequência, sem sufixo | R4 | BVA 3-valores | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R4-M1, M2, M3 |
-| CT-05 | README da base e todas as páginas do site chegam ao catálogo, ou à lista das sem feature; os seis itens novos, pelo termo | R5 | EP por fonte | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R5-M1, M2, M4, M6 |
-| CT-06 | toda F-nn é entregue por peça desenhada da sua origem: do pacote que a linha nomeia, ou da rota do "onde fica" | R6 | EP por origem | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R6-M1, M2 |
+| CT-05 | README da base e o publicado, e todas as páginas do site, chegam ao catálogo; os seis itens novos e os itens novos do README, pelo termo | R5 | EP por fonte | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R5-M1, M2, M4, M6, M9 |
+| CT-06 | toda F-nn é entregue por peça desenhada da sua origem, e todo caminho do "onde fica" resolve sem tenant | R6 | EP por origem | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R6-M1, M2 |
 | CT-07 | a rule está no índice, alcança onde a feature nasce e manda o número só crescer | R7 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R7-M1 a M4 |
 | CT-08 | toda peça existe, tem o tipo da sua classe e aparece uma vez | R8 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R8-M1 a M6 |
-| CT-09 | toda prova resolve no commit que publica, fora de comentário, sem número de linha; todas as ligações conferidas | R9 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R9-M1 a M6, R13-M3 |
-| CT-10 | a prova é a da ligação: arquivo da origem, trait ou concern, provider (descoberta, plugin ou configuração), contrato do alvo ou arquivo do kit que liga a peça de pacote | R10 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R10-M1 a M9 |
-| CT-11 | sem tenant: registro → modelo, e o modo do modelo → registro | R11 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R11-M1, M4, M5 |
+| CT-09 | toda prova resolve no commit que publica, fora de comentário pelo tipo de arquivo, sem número de linha; todas as ligações conferidas | R9 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R9-M1 a M8, R13-M3 |
+| CT-10 | a prova é a da ligação: arquivo da origem, trait que ela usa, provider, método da lista de contrato, par de mapeamento ou arquivo do kit que liga a peça de pacote | R10 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R10-M1 a M12 |
+| CT-11 | sem tenant: registro (com as páginas da configuração) → modelo, e o modo do modelo → registro | R11 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R11-M1, M4, M5, M6 |
 | CT-12 | com tenant: registro → modelo, e o modo do modelo → registro | R11 | tabela de decisão | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R11-M3, M4 |
-| CT-13 | a guarda do registro reprova esquecer, sobrar e trocar de modo | R11 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R11-M1, M2 |
+| CT-13 | a guarda do registro reprova esquecer (inclusive a página da configuração), sobrar e trocar de modo | R11 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R11-M1, M2, M6 |
 | CT-14 | toda ligação desenhada em diagrama publicado; só aresta conta, e o agrupamento e a porta nomeiam os membros | R12 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R12-M1 a M6 |
 | CT-15 | a página de cada idioma leva, por `<a href>` relativo, a todo diagrama, e só aos que existem | R15 | EP | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R15-M1 a M5 |
-| CT-16 | textos de diagrama em pt e en, traduzidos; título igual só se é nome de peça ou de comando, marcado | R16 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R16-M1 a M5 |
-| CT-17 | grade painel × modo inteira, compartilhado marcado, sem diagrama do outro modo nem de outro painel | R17 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R17-M1, M3, M4, M5 |
+| CT-16 | textos de diagrama em pt e en, traduzidos: termo do glossário com o en dele, frase sem palavra do pt; título igual só se é nome de peça ou de comando, marcado | R16 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R16-M1 a M7 |
+| CT-17 | grade painel × modo inteira, compartilhado marcado e só ele, sem diagrama do outro modo nem de outro painel | R17 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R17-M1, M3, M4, M5, M7 |
 | CT-18 | painel novo sem diagrama reprova a grade | R17 | controle | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R17-M2 |
-| CT-19 | só se compartilha o que é igual, e o igual não se duplica | R18 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R18-M1, M2, M3 |
+| CT-19 | só se compartilha o que é igual, o igual não se duplica, e a ligação desenhada vale no modo do diagrama | R18 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R18-M1 a M4 |
 | CT-20 | cada tipo e o comparativo têm uso ou motivo | R19 | produto cartesiano | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R19-M1 |
-| CT-21 | toda célula tipo × painel × modo tem diagrama ou motivo, e o motivo en é traduzido | R19 | produto cartesiano + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R19-M2 a M6 |
-| CT-22 | comparativo do mesmo painel, de sem para com tenant | R20 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R20-M1, M2 |
-| CT-23 | as dependências do site são as da base, nas de execução e nas de desenvolvimento | R21 | EP (lista fechada) | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R21-M1, M2, M4 |
+| CT-21 | toda célula tipo × painel × modo tem diagrama ou motivo traduzido, e só o diagrama sem peça registrada é do kit inteiro | R19 | produto cartesiano + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R19-M2 a M8 |
+| CT-22 | comparativo do mesmo painel, de sem para com tenant, entre diagramas do mapa publicados | R20 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R20-M1, M2, M3 |
+| CT-23 | nenhuma dependência nova de visualização nos quatro campos do `site/package.json`, e `site/mapa/` só com os arquivos do mapa | R21 | EP (lista fechada) + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R21-M1, M2, M4, M6, M7 |
 | CT-24 | há fluxo publicado, e todo passo de `workflow`, `sequence` e `dataflow` é peça do modelo | R22 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R22-M1, M2 |
-| CT-25 | o mapa nasce no build, e o conferidor do mapa roda depois do de acessibilidade, antes do envio | R23 | EP por workflow | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R23-M1 a M4 |
+| CT-25 | o mapa nasce no build, o conferidor do mapa roda depois do de acessibilidade e antes do envio, e o build do Pages só roda na `main` | R23 | EP por workflow | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R23-M1 a M4 |
 | CT-26 | o README de cada idioma leva ao mapa do mesmo idioma | R25 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R25-M1, M2 |
 | CT-27 | os blocos Mermaid da base ficam onde estavam | R26 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R26-M1, M2, M3 |
 | CT-28 | todo pacote instalado está na referência e chega ao catálogo, ou à lista dos sem feature; a referência só lista pacote instalado | R27 | EP por partição de pacote + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R27-M1 a M6 |
 | CT-29 | sem tenant, toda peça registrada entrega F-nn ou está na lista com o motivo | R28 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R28-M1, M2, M3, M6 |
 | CT-30 | com tenant, toda peça registrada entrega F-nn ou está na lista com o motivo | R28 | tabela de decisão | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R28-M2 |
-| CT-31 | marcos da linha do tempo batem com o CHANGELOG, com um termo da seção da versão, e todo tempo tem data e fonte | R29 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R29-M1 a M6 |
+| CT-31 | marcos da linha do tempo batem com o CHANGELOG, com o título visível na seção da versão, e todo tempo tem data e fonte | R29 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R29-M1 a M7 |
 | ~~CT-32~~ | ~~o modelo guarda a condição e a âncora de toda peça que não abre nesta configuração~~ — estacionado — Q11 (ADV-17, ADV-31) | ~~R30~~ | — | — | — | — | — |
 | ~~CT-33~~ | ~~todo diagrama mostra a condição da peça condicional e não a dá como disponível no modo errado~~ — estacionado — Q11 (ADV-31) | ~~R30~~ | — | — | — | — | — |
-| CT-34 | a página do mapa declara as duas exceções da P-11 e o limite da varredura da P-12, nos dois idiomas | R33 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R33-M1 a M4 |
-| CT-35 | a guarda das fontes reprova o item casado com a feature errada, a página escondida na lista e o motivo de enfeite | R5 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R5-M3 a M8 |
-| CT-36 | a guarda da origem reprova a F-nn entregue pela peça errada e a removida que ainda é entregue | R6 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R6-M3 a M7 |
-| CT-37 | sem tenant, os diagramas de arquitetura de cada painel desenham o registro dele nesse modo | R34 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R34-M3 |
-| CT-38 | com tenant, os diagramas de arquitetura de cada painel desenham o registro dele nesse modo | R34 | tabela de decisão + controles | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R34-M1, M2 |
+| CT-34 | a página do mapa declara as duas exceções da P-11, a do comparativo e o limite da varredura, nos dois idiomas | R33 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R33-M1 a M5 |
+| CT-35 | a guarda das fontes reprova o item casado com a feature errada, o item novo sem F-nn, a página escondida na lista e o motivo de enfeite | R5 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R5-M3 a M9 |
+| CT-36 | a guarda da origem reprova a F-nn entregue pela peça errada, a removida que ainda é entregue e o caminho que não resolve | R6 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R6-M3 a M7, M9 |
+| CT-37 | sem tenant, os diagramas de arquitetura e a árvore de registro de cada painel desenham o registro dele nesse modo, fora a peça condicional | R34 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R34-M3 |
+| CT-38 | com tenant, os diagramas de arquitetura e a árvore de registro de cada painel desenham o registro dele nesse modo | R34 | tabela de decisão + controles | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R34-M1, M2 |
 | CT-39 | toda transição de fluxo tem âncora que resolve, todo estado de `lifecycle` também, e a ordem no mesmo método é a do código | R35 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R35-M1, M2, M3, R22-M3 |
-| CT-40 | toda aresta desenhada é ligação do modelo no mesmo sentido, e o diagrama de painel só desenha o que é dele, do kit inteiro ou porta | R36 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R36-M1 a M5 |
-| CT-41 | toda classe de `app/` fora de `app/Filament` entrega F-nn ou está na lista com o motivo | R28 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R28-M4, M5, M6 |
-| CT-42 | a falha do conferidor do mapa reprova o job | R23 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R23-M5 |
-| CT-43 | a guarda da grade reprova a célula que leva a diagrama do outro modo ou de outro painel | R17 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R17-M3, M6 |
-| CT-B01 | cada diagrama abre desenhado, cada peça com o seu rótulo, sem erro nem exceção, sem recurso de fora, no idioma da página (no `05`) | R24, R21 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R24-M1 a M4, M6, M7, R21-M5 |
-| CT-B02 | cada ligação desenhada, direta ou por agrupamento ou porta que nomeia os membros, traz a prova num card do painel lateral, à vista (no `05`) | R13 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R13-M1, M2, M4, M5, M6 |
-| CT-B03 | o leitor busca a peça, e o passaporte mostra as provas dela, com o link para o repositório do kit no commit do build (no `05`) | R14 | EP | G4 | browser | `site/verifica-mapa.mjs` | R14-M1 a M5 |
-| CT-B04 | a interface do visualizador fala o idioma da página, também com a busca e o passaporte abertos; só a casca do comparativo fica em inglês (no `05`) | R31 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R31-M1 a M6 |
+| CT-40 | toda aresta de mapa é ligação do modelo no mesmo sentido, e o diagrama de painel só desenha, como peça, o que é dele, do kit inteiro ou porta | R36 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R36-M1 a M5 |
+| CT-41 | toda classe de `app/` fora de `app/Filament` entrega F-nn ou está na lista com o motivo, e comando `kit:*` nunca está na lista | R28 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R28-M4 a M7 |
+| CT-42 | a falha do conferidor do mapa reprova o job, e o build do Pages só roda na `main` | R23 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R23-M5, M7 |
+| CT-43 | a guarda da grade reprova a célula com diagrama do outro modo ou de outro painel, e a marca de compartilhado num diagrama de um modo só | R17 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R17-M3, M6, M7 |
+| CT-44 | com tenant, todo caminho do "onde fica" com organização resolve no roteador | R6 | EP (idioma) | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R6-M9 |
+| CT-45 | toda marca de disponibilidade publicada é a do código: chave, valor de fábrica ou modo | R37 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R37-M1, M2, M3 |
+| CT-B01 | cada diagrama, inclusive o comparativo, abre com as peças e os rótulos da fonte, a interface do visualizador montada e a F-nn no desenho da peça, sem erro nem exceção, sem recurso de fora (no `05`) | R24, R21, R6 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R24-M1 a M4, M6, R21-M5, R6-M10 |
+| CT-B02 | cada ligação desenhada tem o seu item de prova inteiro num card do painel lateral, contado no DOM, e as arestas do DOM são as da fonte; fora o comparativo (no `05`) | R13, R12 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R13-M1, M2, M4 a M8, R12-M7 |
+| CT-B03 | o leitor busca a peça, e o passaporte mostra as provas dela, com a linha do trecho no commit do build, numa amostra por `architecture`; sem erro na interação (no `05`) | R14, R24 | EP + amostra | G4 | browser | `site/verifica-mapa.mjs` | R14-M1 a M6, R24-M7 |
+| CT-B04 | a interface do visualizador fala o idioma da página, com critério no pt e no en, também com a busca e o passaporte abertos e sem erro; só a casca do comparativo fica em inglês (no `05`) | R31, R24 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R31-M1 a M6, R24-M7 |
 | CT-B05 | a amostra de acessibilidade cobre cada tipo, idioma e tema, e o comparativo no escuro (no `05`) | R32 | amostra estratificada | G4 | browser | `site/verifica-mapa.mjs` | R32-M4, M5, M6 |
-| CT-B06 | a tolerância reconhece os dois defeitos pela regra e pelo elemento, e reprova o resto (no `05`) | R32 | controle sintético | G4 | browser | `site/verifica-mapa.mjs` | R32-M1, M2, M3 |
-| CT-B07 | o catálogo pt que o kit entrega não copia o texto en, fora a lista fechada com o motivo (no `05`) | R31 | controles | G4 | browser | `site/verifica-mapa.mjs` | R31-M7, M8 |
+| CT-B06 | a tolerância reconhece os dois defeitos pelo alvo, reprova o resto e a violação de alvos mistos, e a reprovação vira código de saída (no `05`) | R32, R23 | controle sintético | G4 | browser | `site/verifica-mapa.mjs` | R32-M1, M2, M3, M7, R23-M6 |
+| CT-B07 | o catálogo pt que o kit entrega — as 390 chaves embutidas em cada HTML pt e as 96 de render, na fonte — não copia o texto en, fora a lista fechada das 14 chaves medidas e das só de marcadores (no `05`) | R31 | controles | G4 | browser | `site/verifica-mapa.mjs` | R31-M7, M8, M9 |

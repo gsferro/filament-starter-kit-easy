@@ -2287,7 +2287,6 @@
     "verbo": "registra",
     "paineis": [],
     "modos": [
-      "sem",
       "com"
     ],
     "evidencia": {
@@ -4339,7 +4338,6 @@
       "app"
     ],
     "modos": [
-      "sem",
       "com"
     ],
     "evidencia": {
@@ -4451,7 +4449,6 @@
       "app"
     ],
     "modos": [
-      "sem",
       "com"
     ],
     "evidencia": {

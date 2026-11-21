@@ -10,6 +10,7 @@
     ],
     "origem": "proprio",
     "features": [
+      "F-30",
       "F-53",
       "F-54"
     ],
@@ -72,6 +73,7 @@
     ],
     "origem": "proprio",
     "features": [
+      "F-30",
       "F-54"
     ],
     "evidencia": [
@@ -171,7 +173,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Guardrails/GuardrailRegistry.php",
@@ -271,7 +275,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-43",
+      "F-55"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
@@ -289,7 +296,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Middleware/AiAuditMiddleware.php",
@@ -327,7 +336,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-54",
+      "F-55"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Ai/Support/ResolvedorDeTenant.php",
@@ -346,7 +358,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-103"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitAdmin.php",
@@ -365,7 +379,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-113"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitArte.php",
@@ -384,7 +400,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-112"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitCobertura.php",
@@ -403,7 +421,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-19"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitConvitesLembrar.php",
@@ -422,7 +442,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-104"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitInfo.php",
@@ -441,7 +463,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-102",
+      "F-106"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitInstall.php",
@@ -460,7 +485,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-100"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitMidiaPrivada.php",
@@ -479,7 +506,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-21"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitTenancy.php",
@@ -498,7 +527,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-105",
+      "F-114"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Console/Commands/KitUpdate.php",
@@ -517,7 +549,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "spatie/laravel-data",
-    "features": [],
+    "features": [
+      "F-18",
+      "F-111"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Data/Convite/FalhaDoConviteData.php",
@@ -536,7 +571,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "spatie/laravel-data",
-    "features": [],
+    "features": [
+      "F-18",
+      "F-111"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Data/Convite/ResultadoDoConviteEmMassaData.php",
@@ -556,7 +594,8 @@
     "origem": "pacote+proprio",
     "pacote": "spatie/laravel-data",
     "features": [
-      "F-54"
+      "F-54",
+      "F-111"
     ],
     "evidencia": [
       {
@@ -576,7 +615,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "spatie/laravel-data",
-    "features": [],
+    "features": [
+      "F-72",
+      "F-111"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Data/Social/PerfilSocialData.php",
@@ -597,7 +639,33 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/spatie-laravel-settings-plugin",
-    "features": [],
+    "features": [
+      "F-03a",
+      "F-03b",
+      "F-03c",
+      "F-68",
+      "F-72",
+      "F-73",
+      "F-74",
+      "F-75",
+      "F-76",
+      "F-79",
+      "F-80",
+      "F-81",
+      "F-82",
+      "F-83",
+      "F-84",
+      "F-86",
+      "F-88",
+      "F-91",
+      "F-93",
+      "F-94",
+      "F-95",
+      "F-96",
+      "F-98",
+      "F-101",
+      "F-119"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
@@ -618,7 +686,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "mddev31/filament-dynamic-dashboard",
-    "features": [],
+    "features": [
+      "F-86"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
@@ -663,7 +733,9 @@
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
     "features": [
-      "F-30"
+      "F-30",
+      "F-46",
+      "F-97"
     ],
     "evidencia": [
       {
@@ -689,7 +761,9 @@
       "F-15",
       "F-16",
       "F-18",
-      "F-20"
+      "F-20",
+      "F-46",
+      "F-120"
     ],
     "evidencia": [
       {
@@ -714,7 +788,8 @@
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
     "features": [
-      "F-31"
+      "F-31",
+      "F-46"
     ],
     "evidencia": [
       {
@@ -739,7 +814,8 @@
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
     "features": [
-      "F-31"
+      "F-31",
+      "F-46"
     ],
     "evidencia": [
       {
@@ -765,7 +841,8 @@
       "F-09",
       "F-12",
       "F-62",
-      "F-63"
+      "F-63",
+      "F-120"
     ],
     "evidencia": [
       {
@@ -791,7 +868,15 @@
       "F-23",
       "F-24",
       "F-27",
-      "F-28"
+      "F-28",
+      "F-46",
+      "F-70",
+      "F-78",
+      "F-83",
+      "F-87",
+      "F-89",
+      "F-90",
+      "F-97"
     ],
     "evidencia": [
       {
@@ -816,7 +901,12 @@
     "features": [
       "F-03b",
       "F-08",
-      "F-29"
+      "F-29",
+      "F-46",
+      "F-70",
+      "F-76",
+      "F-77",
+      "F-120"
     ],
     "evidencia": [
       {
@@ -838,7 +928,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-32"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Widgets/AgentesIaPorProvider.php",
@@ -859,7 +951,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/widgets",
-    "features": [],
+    "features": [
+      "F-32"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Widgets/AgentesIaStats.php",
@@ -880,7 +974,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "leandrocfe/filament-apex-charts",
-    "features": [],
+    "features": [
+      "F-32"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Widgets/ConvitesPorSituacao.php",
@@ -901,7 +997,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-32"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Widgets/ProgressoOnboarding.php",
@@ -922,7 +1020,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-32"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Widgets/UltimosUsuariosCadastrados.php",
@@ -943,7 +1043,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-32"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Widgets/UsuariosPorPapel.php",
@@ -964,7 +1066,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/widgets",
-    "features": [],
+    "features": [
+      "F-32"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Admin/Widgets/UsuariosVisaoGeralStats.php",
@@ -985,7 +1089,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-17"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
@@ -1006,7 +1112,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "mddev31/filament-dynamic-dashboard",
-    "features": [],
+    "features": [
+      "F-86"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/App/Pages/Dashboard.php",
@@ -1027,7 +1135,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "harvirsidhu/filament-cards",
-    "features": [],
+    "features": [
+      "F-68"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/App/Pages/HubDoNegocio.php",
@@ -1048,7 +1158,13 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-15",
+      "F-18",
+      "F-25",
+      "F-46",
+      "F-76"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/App/Resources/Convites/ConviteResource.php",
@@ -1069,7 +1185,13 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-46",
+      "F-61",
+      "F-97",
+      "F-100",
+      "F-101"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/App/Resources/Projetos/ProjetoResource.php",
@@ -1090,7 +1212,14 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-03b",
+      "F-25",
+      "F-46",
+      "F-69",
+      "F-70",
+      "F-76"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/App/Resources/Users/UserResource.php",
@@ -1111,7 +1240,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "brimham/filament-backup-monitor",
-    "features": [],
+    "features": [
+      "F-34"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Pages/BackupRunsPage.php",
@@ -1132,7 +1263,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "mddev31/filament-dynamic-dashboard",
-    "features": [],
+    "features": [
+      "F-86"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Pages/Dashboard.php",
@@ -1153,7 +1286,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "harvirsidhu/filament-cards",
-    "features": [],
+    "features": [
+      "F-68"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
@@ -1174,7 +1309,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-40"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Pages/Pulse.php",
@@ -1195,7 +1332,12 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-43",
+      "F-46",
+      "F-55",
+      "F-97"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
@@ -1216,7 +1358,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "mominalzaraa/filament-composer-release-notifier",
-    "features": [],
+    "features": [
+      "F-42",
+      "F-46"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Resources/ComposerReleasePackages/ComposerReleasePackageResource.php",
@@ -1237,7 +1382,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/AuditoriaPorEvento.php",
@@ -1258,7 +1405,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/AuditoriaRecente.php",
@@ -1279,7 +1428,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/AutenticacaoStats.php",
@@ -1300,7 +1451,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "mominalzaraa/filament-composer-release-notifier",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/ComposerReleaseOverviewWidget.php",
@@ -1321,7 +1474,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/FilasPorFila.php",
@@ -1342,7 +1497,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/FilasStats.php",
@@ -1363,7 +1520,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "leandrocfe/filament-apex-charts",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/FilasTaxaDeSucesso.php",
@@ -1384,7 +1543,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/IaCustoPorTask.php",
@@ -1405,7 +1566,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "leandrocfe/filament-apex-charts",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/IaExecucoesPorDia.php",
@@ -1426,7 +1589,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "leandrocfe/filament-apex-charts",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/IaExecucoesPorStatus.php",
@@ -1447,7 +1612,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/IaStats.php",
@@ -1468,7 +1635,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/IaTokensPorDriver.php",
@@ -1489,7 +1658,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/PacotesComposer.php",
@@ -1510,7 +1681,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/SaudeAplicacaoPorStatus.php",
@@ -1531,7 +1704,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/SaudeAplicacaoStats.php",
@@ -1552,7 +1727,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/UltimoBackup.php",
@@ -1573,7 +1750,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Infra/Widgets/UltimosAcessos.php",
@@ -1596,7 +1775,13 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "caresome/filament-auth-designer",
-    "features": [],
+    "features": [
+      "F-03",
+      "F-03a",
+      "F-74",
+      "F-76",
+      "F-78"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Pages/Auth/RegistroPorConvite.php",
@@ -1620,7 +1805,10 @@
     "origem": "pacote+proprio",
     "pacote": "caresome/filament-auth-designer",
     "features": [
-      "F-01"
+      "F-01",
+      "F-73",
+      "F-74",
+      "F-89"
     ],
     "evidencia": [
       {
@@ -1645,7 +1833,8 @@
     "origem": "pacote+proprio",
     "pacote": "caresome/filament-auth-designer",
     "features": [
-      "F-02"
+      "F-02",
+      "F-74"
     ],
     "evidencia": [
       {
@@ -1692,7 +1881,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "caresome/filament-auth-designer",
-    "features": [],
+    "features": [
+      "F-03c"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php",
@@ -1716,7 +1907,8 @@
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
     "features": [
-      "F-32"
+      "F-32",
+      "F-85"
     ],
     "evidencia": [
       {
@@ -1741,7 +1933,10 @@
     "origem": "pacote+proprio",
     "pacote": "jeffgreco13/filament-breezy",
     "features": [
-      "F-07"
+      "F-04",
+      "F-07",
+      "F-83",
+      "F-116"
     ],
     "evidencia": [
       {
@@ -1765,7 +1960,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
-    "features": [],
+    "features": [
+      "F-94"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Filament/Pages/PrimeirosPassos.php",
@@ -1787,7 +1984,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-77"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Controllers/Auth/ContaIndisponivelController.php",
@@ -1805,7 +2004,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-73"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Controllers/Auth/EntrarNoPainelController.php",
@@ -1823,7 +2024,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-72"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
@@ -1860,7 +2063,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "marjose123/filament-lockscreen",
-    "features": [],
+    "features": [
+      "F-06"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Middleware/BloquearSessaoComRetorno.php",
@@ -1879,7 +2084,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-22",
+      "F-24"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Middleware/DefinirTenantDePermissoes.php",
@@ -1901,7 +2109,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-31",
+      "F-94"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
@@ -1920,7 +2131,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-03c"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
@@ -1938,7 +2151,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-117"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Middleware/RaizDeUrlSemPublic.php",
@@ -1957,7 +2172,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-03",
+      "F-03a"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Responses/RespostaDeCadastro.php",
@@ -1976,7 +2194,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-73"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Http/Responses/RespostaDeLogin.php",
@@ -1994,7 +2215,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-37",
+      "F-79"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Listeners/AuditarConfiguracoesDoKit.php",
@@ -2013,7 +2237,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "livewire/livewire",
-    "features": [],
+    "features": [
+      "F-53"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Livewire/AssistenteChatWidget.php",
@@ -2032,7 +2258,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
-    "features": [],
+    "features": [
+      "F-94"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Livewire/ChecklistDoOnboarding.php",
@@ -2055,7 +2283,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "jeffgreco13/filament-breezy",
-    "features": [],
+    "features": [
+      "F-116"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Livewire/DefinirSenhaPorEmail.php",
@@ -2078,7 +2308,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "jeffgreco13/filament-breezy",
-    "features": [],
+    "features": [
+      "F-07",
+      "F-76"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Livewire/InformacoesPessoais.php",
@@ -2101,7 +2334,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "jeffgreco13/filament-breezy",
-    "features": [],
+    "features": [
+      "F-83"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Livewire/PreferenciasDeAparencia.php",
@@ -2122,7 +2357,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-30"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Models/AgenteIa.php",
@@ -2145,7 +2382,13 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-15",
+      "F-16",
+      "F-18",
+      "F-19",
+      "F-20"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Models/Convite.php",
@@ -2167,7 +2410,12 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-26",
+      "F-61",
+      "F-97",
+      "F-100"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Models/Projeto.php",
@@ -2188,7 +2436,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "spatie/laravel-permission",
-    "features": [],
+    "features": [
+      "F-09",
+      "F-12"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Models/Role.php",
@@ -2211,7 +2462,13 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-22",
+      "F-23",
+      "F-27",
+      "F-28",
+      "F-87"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Models/Tenant.php",
@@ -2234,7 +2491,17 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-03b",
+      "F-08",
+      "F-09",
+      "F-10",
+      "F-11",
+      "F-14",
+      "F-22",
+      "F-77",
+      "F-92"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Models/User.php",
@@ -2253,7 +2520,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-72"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Models/VinculoSocial.php",
@@ -2272,7 +2541,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-72"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Notifications/ConfirmarVinculoSocial.php",
@@ -2295,7 +2566,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-15",
+      "F-19"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Notifications/ConviteDeAcesso.php",
@@ -2314,7 +2588,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-72"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Notifications/PrimeiroAcessoSocial.php",
@@ -2332,7 +2608,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-86"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Observers/TenantObserver.php",
@@ -2350,7 +2628,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-30",
+      "F-63"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/AgenteIaPolicy.php",
@@ -2368,7 +2649,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-43"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/AiRunPolicy.php",
@@ -2386,7 +2669,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-37"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/AuditPolicy.php",
@@ -2404,7 +2689,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-38"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/AuthenticationLogPolicy.php",
@@ -2422,7 +2709,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-39"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/CommandRecordPolicy.php",
@@ -2440,7 +2729,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-42"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/ComposerReleasePackageSnapshotPolicy.php",
@@ -2458,7 +2749,12 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-13",
+      "F-15",
+      "F-20",
+      "F-63"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/ConvitePolicy.php",
@@ -2476,7 +2772,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-57"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/ExceptionPolicy.php",
@@ -2494,7 +2792,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-58"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/MailLogPolicy.php",
@@ -2512,7 +2812,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-31"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/OnboardingConditionPolicy.php",
@@ -2530,7 +2832,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-31"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/OnboardingFlowPolicy.php",
@@ -2548,7 +2852,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-61",
+      "F-97"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/ProjetoPolicy.php",
@@ -2566,7 +2873,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-35"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/QueueMonitorPolicy.php",
@@ -2584,7 +2893,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-12",
+      "F-120"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/RolePolicy.php",
@@ -2602,7 +2914,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-23"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/TenantPolicy.php",
@@ -2620,7 +2934,11 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-13",
+      "F-29",
+      "F-77"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Policies/UserPolicy.php",
@@ -2639,7 +2957,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-06",
+      "F-74"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/AppServiceProvider.php",
@@ -2657,7 +2978,16 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-48",
+      "F-50",
+      "F-53",
+      "F-60",
+      "F-81",
+      "F-96",
+      "F-98",
+      "F-118"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
@@ -2676,7 +3006,16 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-02",
+      "F-06",
+      "F-45",
+      "F-47",
+      "F-71",
+      "F-80",
+      "F-82"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -2695,7 +3034,22 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-02",
+      "F-03",
+      "F-03a",
+      "F-03c",
+      "F-06",
+      "F-22",
+      "F-27",
+      "F-45",
+      "F-47",
+      "F-71",
+      "F-80",
+      "F-82",
+      "F-88"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AppPanelProvider.php",
@@ -2714,7 +3068,22 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-02",
+      "F-06",
+      "F-33",
+      "F-34",
+      "F-36",
+      "F-41",
+      "F-45",
+      "F-47",
+      "F-59",
+      "F-62",
+      "F-71",
+      "F-80",
+      "F-82"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -2733,7 +3102,34 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "laravel/framework",
-    "features": [],
+    "features": [
+      "F-11",
+      "F-24",
+      "F-33",
+      "F-36",
+      "F-38",
+      "F-39",
+      "F-40",
+      "F-43",
+      "F-44",
+      "F-55",
+      "F-62",
+      "F-67",
+      "F-72",
+      "F-73",
+      "F-75",
+      "F-79",
+      "F-81",
+      "F-83",
+      "F-86",
+      "F-94",
+      "F-97",
+      "F-101",
+      "F-109",
+      "F-115",
+      "F-117",
+      "F-121"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/KitServiceProvider.php",
@@ -2751,7 +3147,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-86"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Services/Dashboard/CriadorDeDashboardPadrao.php",
@@ -2770,7 +3168,10 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "spatie/laravel-settings",
-    "features": [],
+    "features": [
+      "F-79",
+      "F-119"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Settings/ConfiguracoesDoKit.php",
@@ -2790,7 +3191,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-103",
+      "F-120"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/AdministradorDaInstalacao.php",
@@ -2810,7 +3214,11 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-30",
+      "F-53",
+      "F-84"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/AgentesDeIa.php",
@@ -2828,7 +3236,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-75",
+      "F-89"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/AparenciaDasTelasDeAcesso.php",
@@ -2850,7 +3261,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-83"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/AparenciaDoUsuario.php",
@@ -2868,7 +3281,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-81"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/AssinaturaDoRodape.php",
@@ -2886,7 +3301,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-21"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/AtivadorDeTenancy.php",
@@ -2927,7 +3344,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-102"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/BancoSqlite.php",
@@ -2966,7 +3385,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-80",
+      "F-92"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/CabecalhoDoPainel.php",
@@ -2986,7 +3408,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-96"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/CarregamentoDaTabela.php",
@@ -3005,7 +3429,8 @@
     ],
     "origem": "proprio",
     "features": [
-      "F-54"
+      "F-54",
+      "F-111"
     ],
     "evidencia": [
       {
@@ -3028,7 +3453,13 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-03a",
+      "F-72",
+      "F-73",
+      "F-74",
+      "F-81"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ConfiguracaoDoLogin.php",
@@ -3050,7 +3481,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-22",
+      "F-24"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ContextoDePapeis.php",
@@ -3072,7 +3506,11 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-27",
+      "F-66",
+      "F-80"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/CorPrimaria.php",
@@ -3092,7 +3530,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-102"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/CustomizadorDaInstalacao.php",
@@ -3114,7 +3554,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-86"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/DashboardDinamico.php",
@@ -3136,7 +3578,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-83"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/DensidadeDoLayout.php",
@@ -3158,7 +3602,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-73"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/DestinoAposLogin.php",
@@ -3179,7 +3626,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-80"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/DetalheDoUsuario.php",
@@ -3201,7 +3650,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-93"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/DockDeAtalhos.php",
@@ -3223,7 +3674,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-76"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/EmailComMais.php",
@@ -3242,7 +3695,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "ddr/filament-captcha",
-    "features": [],
+    "features": [
+      "F-74"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/GerenciadorAntiRobo.php",
@@ -3260,7 +3715,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-111"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/GuardaDoPadraoDeDto.php",
@@ -3278,7 +3735,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-106"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/HostLocal.php",
@@ -3300,7 +3759,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-80"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/IdentidadeDoKit.php",
@@ -3319,7 +3780,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/actions",
-    "features": [],
+    "features": [
+      "F-97"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ImportExport/ExportadorDoKit.php",
@@ -3338,7 +3801,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "filament/actions",
-    "features": [],
+    "features": [
+      "F-97"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ImportExport/ImportadorDoKit.php",
@@ -3360,7 +3825,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-83"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ModoDoMenu.php",
@@ -3400,7 +3867,11 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-09",
+      "F-12",
+      "F-48"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/Paineis.php",
@@ -3421,7 +3892,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-12",
+      "F-92"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/Papeis.php",
@@ -3439,7 +3913,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-62"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/PermissaoDaTela.php",
@@ -3457,7 +3933,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-62"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/PoliciesDeVendor.php",
@@ -3477,7 +3955,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-74"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ProvedorAntiRobo.php",
@@ -3497,7 +3977,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-72"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ProvedorSocial.php",
@@ -3515,7 +3997,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-109"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ProxiesConfiaveis.php",
@@ -3537,7 +4021,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-03a",
+      "F-78"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/RegistroAberto.php",
@@ -3559,7 +4046,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-57"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/RetencaoDeExcecoes.php",
@@ -3579,7 +4068,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-88"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/SeletorDeOrganizacao.php",
@@ -3597,7 +4088,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-102",
+      "F-103"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/SenhaDoAdministrador.php",
@@ -3615,7 +4109,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-102",
+      "F-106"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/SubstituicaoEmArquivo.php",
@@ -3635,7 +4132,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-83"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/TamanhoDaFonte.php",
@@ -3655,7 +4154,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-53",
+      "F-93"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/TelaDeAutenticacao.php",
@@ -3676,7 +4178,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-101"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/TetoDeUpload.php",
@@ -3698,7 +4202,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-31",
+      "F-94"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/TutorialGuiado.php",
@@ -3716,7 +4223,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-15"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/ValidadeDoConvite.php",
@@ -3735,7 +4244,9 @@
     ],
     "origem": "pacote+proprio",
     "pacote": "ddr/filament-captcha",
-    "features": [],
+    "features": [
+      "F-74"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/VerificacaoAntiRobo.php",
@@ -3753,7 +4264,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-102"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Support/VinculoDoSnyk.php",
@@ -3771,7 +4284,10 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-37",
+      "F-115"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Traits/AuditsFillables.php",
@@ -3792,7 +4308,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-26"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Traits/BelongsToTenant.php",
@@ -3810,7 +4328,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-110"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Traits/ModeloCacheavel.php",
@@ -3828,7 +4348,9 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-115"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Traits/TemUuid.php",
@@ -3851,7 +4373,9 @@
     ],
     "origem": "pacote",
     "pacote": "asmit/resized-column",
-    "features": [],
+    "features": [
+      "F-50"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -3874,7 +4398,9 @@
     ],
     "origem": "pacote",
     "pacote": "bezhansalleh/filament-exceptions",
-    "features": [],
+    "features": [
+      "F-57"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -3897,7 +4423,9 @@
     ],
     "origem": "pacote",
     "pacote": "bezhansalleh/filament-exceptions",
-    "features": [],
+    "features": [
+      "F-57"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -3918,7 +4446,12 @@
     ],
     "origem": "pacote",
     "pacote": "bezhansalleh/filament-shield",
-    "features": [],
+    "features": [
+      "F-09",
+      "F-12",
+      "F-62",
+      "F-63"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -3941,7 +4474,9 @@
     ],
     "origem": "pacote",
     "pacote": "bezhansalleh/filament-language-switch",
-    "features": [],
+    "features": [
+      "F-60"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
@@ -3962,7 +4497,10 @@
     ],
     "origem": "pacote",
     "pacote": "ssbityukov/filament-command-center",
-    "features": [],
+    "features": [
+      "F-39",
+      "F-67"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -3983,7 +4521,10 @@
     ],
     "origem": "pacote",
     "pacote": "ssbityukov/filament-command-center",
-    "features": [],
+    "features": [
+      "F-39",
+      "F-67"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4004,7 +4545,10 @@
     ],
     "origem": "pacote",
     "pacote": "ssbityukov/filament-command-center",
-    "features": [],
+    "features": [
+      "F-39",
+      "F-67"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4025,7 +4569,10 @@
     ],
     "origem": "pacote",
     "pacote": "ssbityukov/filament-command-center",
-    "features": [],
+    "features": [
+      "F-39",
+      "F-67"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4046,7 +4593,9 @@
     ],
     "origem": "pacote",
     "pacote": "ssbityukov/filament-command-center",
-    "features": [],
+    "features": [
+      "F-39"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4069,7 +4618,12 @@
     ],
     "origem": "pacote",
     "pacote": "caresome/filament-auth-designer",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-28",
+      "F-49",
+      "F-75"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4090,7 +4644,9 @@
     ],
     "origem": "pacote",
     "pacote": "cms-multi/filament-clear-cache",
-    "features": [],
+    "features": [
+      "F-44"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4111,7 +4667,9 @@
     ],
     "origem": "pacote",
     "pacote": "croustibat/filament-jobs-monitor",
-    "features": [],
+    "features": [
+      "F-35"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4132,7 +4690,9 @@
     ],
     "origem": "pacote",
     "pacote": "croustibat/filament-jobs-monitor",
-    "features": [],
+    "features": [
+      "F-35"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4155,7 +4715,9 @@
     ],
     "origem": "pacote",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-01"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4244,7 +4806,9 @@
     ],
     "origem": "pacote",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-22"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AppPanelProvider.php",
@@ -4267,7 +4831,10 @@
     ],
     "origem": "pacote",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-32",
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4289,7 +4856,10 @@
     ],
     "origem": "pacote",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-32",
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4312,7 +4882,9 @@
     ],
     "origem": "pacote",
     "pacote": "gsferro/filament-odometer-easy",
-    "features": [],
+    "features": [
+      "F-46"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4335,7 +4907,11 @@
     ],
     "origem": "pacote",
     "pacote": "harvirsidhu/filament-cards",
-    "features": [],
+    "features": [
+      "F-65",
+      "F-68",
+      "F-73"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4358,7 +4934,9 @@
     ],
     "origem": "pacote",
     "pacote": "hoceineel/filament-quick-action-dock",
-    "features": [],
+    "features": [
+      "F-93"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4519,7 +5097,13 @@
     ],
     "origem": "pacote",
     "pacote": "jeffgreco13/filament-breezy",
-    "features": [],
+    "features": [
+      "F-04",
+      "F-05",
+      "F-07",
+      "F-83",
+      "F-116"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4542,7 +5126,9 @@
     ],
     "origem": "pacote",
     "pacote": "jeffgreco13/filament-breezy",
-    "features": [],
+    "features": [
+      "F-04"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4563,7 +5149,9 @@
     ],
     "origem": "pacote",
     "pacote": "laboiteacode/filament-dependency-graph",
-    "features": [],
+    "features": [
+      "F-41"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4584,7 +5172,9 @@
     ],
     "origem": "pacote",
     "pacote": "laboiteacode/filament-dependency-graph",
-    "features": [],
+    "features": [
+      "F-41"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4605,7 +5195,9 @@
     ],
     "origem": "pacote",
     "pacote": "laboiteacode/filament-dashboard-widgets",
-    "features": [],
+    "features": [
+      "F-86"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AppPanelProvider.php",
@@ -4626,7 +5218,9 @@
     ],
     "origem": "pacote",
     "pacote": "laboiteacode/filament-logs-explorer",
-    "features": [],
+    "features": [
+      "F-36"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4647,7 +5241,9 @@
     ],
     "origem": "pacote",
     "pacote": "laboiteacode/filament-logs-explorer",
-    "features": [],
+    "features": [
+      "F-36"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4669,7 +5265,10 @@
     ],
     "origem": "pacote",
     "pacote": "leandrocfe/filament-apex-charts",
-    "features": [],
+    "features": [
+      "F-32",
+      "F-85"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4692,7 +5291,9 @@
     ],
     "origem": "pacote",
     "pacote": "marjose123/filament-lockscreen",
-    "features": [],
+    "features": [
+      "F-06"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4715,7 +5316,9 @@
     ],
     "origem": "pacote",
     "pacote": "marjose123/filament-lockscreen",
-    "features": [],
+    "features": [
+      "F-06"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4736,7 +5339,9 @@
     ],
     "origem": "pacote",
     "pacote": "mominalzaraa/filament-composer-release-notifier",
-    "features": [],
+    "features": [
+      "F-42"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4758,7 +5363,9 @@
     ],
     "origem": "pacote",
     "pacote": "mortalkiller/filament-page-header",
-    "features": [],
+    "features": [
+      "F-70"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4803,7 +5410,14 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-09",
+      "F-11",
+      "F-13",
+      "F-14",
+      "F-22"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AppPanelProvider.php",
@@ -4823,7 +5437,12 @@
       "com"
     ],
     "origem": "proprio",
-    "features": [],
+    "features": [
+      "F-01",
+      "F-09",
+      "F-11",
+      "F-14"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4865,7 +5484,9 @@
     ],
     "origem": "pacote",
     "pacote": "filament/filament",
-    "features": [],
+    "features": [
+      "F-66"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AppPanelProvider.php",
@@ -4909,7 +5530,9 @@
     ],
     "origem": "pacote",
     "pacote": "prodstarter/filament-notification-center",
-    "features": [],
+    "features": [
+      "F-47"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4930,7 +5553,10 @@
     ],
     "origem": "pacote",
     "pacote": "promethys/revive",
-    "features": [],
+    "features": [
+      "F-59",
+      "F-77"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4951,7 +5577,10 @@
     ],
     "origem": "pacote",
     "pacote": "promethys/revive",
-    "features": [],
+    "features": [
+      "F-59",
+      "F-77"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -4974,7 +5603,9 @@
     ],
     "origem": "pacote",
     "pacote": "pxlrbt/filament-environment-indicator",
-    "features": [],
+    "features": [
+      "F-51"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -4995,7 +5626,9 @@
     ],
     "origem": "pacote",
     "pacote": "shuvroroy/filament-spatie-laravel-health",
-    "features": [],
+    "features": [
+      "F-33"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -5016,7 +5649,9 @@
     ],
     "origem": "pacote",
     "pacote": "shuvroroy/filament-spatie-laravel-health",
-    "features": [],
+    "features": [
+      "F-33"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -5039,7 +5674,9 @@
     ],
     "origem": "pacote",
     "pacote": "solution-forest/filament-simplelightbox",
-    "features": [],
+    "features": [
+      "F-61"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -5060,7 +5697,9 @@
     ],
     "origem": "pacote",
     "pacote": "tapp/filament-auditing",
-    "features": [],
+    "features": [
+      "F-37"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -5081,7 +5720,9 @@
     ],
     "origem": "pacote",
     "pacote": "tapp/filament-auditing",
-    "features": [],
+    "features": [
+      "F-37"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -5102,7 +5743,9 @@
     ],
     "origem": "pacote",
     "pacote": "tapp/filament-authentication-log",
-    "features": [],
+    "features": [
+      "F-38"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -5123,7 +5766,9 @@
     ],
     "origem": "pacote",
     "pacote": "tapp/filament-authentication-log",
-    "features": [],
+    "features": [
+      "F-38"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -5144,7 +5789,9 @@
     ],
     "origem": "pacote",
     "pacote": "tapp/filament-maillog",
-    "features": [],
+    "features": [
+      "F-58"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -5165,7 +5812,9 @@
     ],
     "origem": "pacote",
     "pacote": "tapp/filament-maillog",
-    "features": [],
+    "features": [
+      "F-58"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
@@ -5188,7 +5837,10 @@
     ],
     "origem": "pacote",
     "pacote": "wallacemartinss/filament-onboarding",
-    "features": [],
+    "features": [
+      "F-31",
+      "F-94"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
@@ -5211,7 +5863,9 @@
     ],
     "origem": "pacote",
     "pacote": "wezlo/filament-search-spotlight",
-    "features": [],
+    "features": [
+      "F-45"
+    ],
     "evidencia": [
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
