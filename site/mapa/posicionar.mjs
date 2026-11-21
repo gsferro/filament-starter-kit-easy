@@ -11,12 +11,12 @@
  * com menos diagnósticos do `archify validate`, até não sobrar nenhum.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { obterArchify } from './archify.mjs';
-import { entradaDoArchify, idArchify } from './gerar.mjs';
+import { entradaDoArchify, idArchify, paraOComparativo } from './gerar.mjs';
 
 const [slug, ...opcoes] = process.argv.slice(2);
 if (!slug) {
@@ -56,11 +56,16 @@ const caixas = [
   ...(diagrama.portas ?? []).map((c) => ({ origem: c, chave: `porta-${c.para}` })),
 ];
 
-/** Quantos diagnósticos o archify dá para a grade; zero é aceita. */
-function avaliar(grade) {
-  for (const caixa of caixas) Object.assign(caixa.origem, grade.get(caixa.chave));
+// O mapa que é base ou cabeça de um comparativo também tem de valer na forma que o comparativo recebe.
+const doComparativo = readdirSync(fileURLToPath(new URL('./diagramas/', import.meta.url)))
+  .filter((nome) => nome.endsWith('.json'))
+  .map((nome) => JSON.parse(readFileSync(fileURLToPath(new URL(`./diagramas/${nome}`, import.meta.url)), 'utf8')))
+  .some((outro) => outro.tipo === 'compare' && [outro.base, outro.cabeca].includes(slug));
+
+/** Os diagnósticos que o archify dá para uma entrada; zero é aceita. */
+function validar(ir) {
   const entrada = join(temporaria, 'mapa.json');
-  writeFileSync(entrada, JSON.stringify(entradaDoArchify(diagrama, 'pt', catalogoPt)));
+  writeFileSync(entrada, JSON.stringify(ir));
   try {
     execFileSync(process.execPath, [cli, 'validate', 'architecture', entrada, '--json', '--repo-root', RAIZ], {
       encoding: 'utf8',
@@ -77,6 +82,16 @@ function avaliar(grade) {
     }
     return { nota: (erro.match(/\n- /g) ?? []).length || 1, erro };
   }
+}
+
+/** Quantos diagnósticos o archify dá para a grade (e, no mapa de comparativo, também na forma dele); zero é aceita. */
+function avaliar(grade) {
+  for (const caixa of caixas) Object.assign(caixa.origem, grade.get(caixa.chave));
+  const ir = entradaDoArchify(diagrama, 'pt', catalogoPt);
+  const mapa = validar(ir);
+  if (!doComparativo) return mapa;
+  const comparativo = validar(paraOComparativo(ir));
+  return { nota: mapa.nota + comparativo.nota, erro: [mapa.erro, comparativo.erro].filter(Boolean).join('\n') };
 }
 
 // As ligações desenhadas, para as camadas: as do próprio construtor, sem posição nenhuma.

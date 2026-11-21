@@ -526,6 +526,23 @@ function arquivosQueOGeradorNaoGerou(saida) {
   return estranhos;
 }
 
+/**
+ * Um mapa na forma que o comparativo recebe: uma seta por par de pontas, com o traço comum. O `compare` do archify
+ * falha com seta paralela (a seta por verbo da D36), e a casca dele não tem legenda de verbo nem cards (P-04); o
+ * verbo de cada ligação fica nos dois mapas publicados ao lado.
+ */
+function paraOComparativo(entrada) {
+  const pares = new Set();
+  const connections = [];
+  for (const conexao of entrada.connections ?? []) {
+    const par = `${conexao.from}--${conexao.to}`;
+    if (pares.has(par)) continue;
+    pares.add(par);
+    connections.push({ ...conexao, id: par, variant: 'default' });
+  }
+  return { ...entrada, connections };
+}
+
 function archify(cli, args) {
   try {
     execFileSync(process.execPath, [cli, ...args, '--repo-root', RAIZ], {
@@ -590,7 +607,7 @@ function gerar(argumentos) {
           if (tipo === 'compare') {
             const [base, cabeca] = [diagrama.base, diagrama.cabeca].map((alvo) => {
               const caminho = join(temporaria, `${slug}.${alvo}.${idioma}.json`);
-              writeFileSync(caminho, JSON.stringify(entradaDoArchify(porSlug.get(alvo), idioma, catalogoPt)));
+              writeFileSync(caminho, JSON.stringify(paraOComparativo(entradaDoArchify(porSlug.get(alvo), idioma, catalogoPt))));
               return caminho;
             });
             archify(cli, ['compare', 'architecture', base, cabeca, destino]);
@@ -619,7 +636,7 @@ function gerar(argumentos) {
   }
 }
 
-export { carregarModelo, entradaDoArchify, idArchify };
+export { carregarModelo, entradaDoArchify, idArchify, paraOComparativo };
 
 // Roda só quando chamado direto (`node mapa/gerar.mjs`); o posicionador importa as funções acima.
 const caminhoReal = (caminho) => {
