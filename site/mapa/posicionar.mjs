@@ -58,6 +58,16 @@ const doComparativo = readdirSync(fileURLToPath(new URL('./diagramas/', import.m
     }
   })
   .some((outro) => outro.tipo === 'compare' && [outro.base, outro.cabeca].includes(slug));
+// A entrada do mapa, montada sem o archify nos dois idiomas, antes de qualquer efeito: o modelo quebrado, a peça fora
+// do modelo e a prova que não resolve param aqui, nomeando o culpado (P-14).
+for (const idioma of ['pt', 'en']) {
+  try {
+    entradaDoArchify(diagrama, idioma, {});
+  } catch (erro) {
+    console.error(`[mapa] ERRO ${slug} ${idioma} — ${erro.message.replace(/^\[mapa\] ERRO /, '')}`);
+    process.exit(2);
+  }
+}
 const cli = obterArchify();
 const catalogoPt = JSON.parse(readFileSync(fileURLToPath(new URL('../.archify/archify/examples/locales/pt.json', import.meta.url)), 'utf8'));
 const temporaria = mkdtempSync(join(tmpdir(), 'posicionar-'));

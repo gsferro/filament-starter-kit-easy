@@ -176,7 +176,13 @@ function projetar(valor, idioma) {
     const { arquivo, trecho, line, end_line, path, ...resto } = valor;
     return { ...projetar(resto, idioma), ...linhaDaAncora(arquivo, trecho) };
   }
-  return Object.fromEntries(chaves.map((chave) => [chave, projetar(valor[chave], idioma)]));
+  try {
+    return Object.fromEntries(chaves.map((chave) => [chave, projetar(valor[chave], idioma)]));
+  } catch (erro) {
+    // a âncora que não resolve nomeia o nó que a cita — a peça, o participante, o estado (P-14)
+    if (typeof valor.id !== 'string') throw erro;
+    throw new Error(`${valor.id}: ${erro.message}`, { cause: erro });
+  }
 }
 
 /**
@@ -575,7 +581,8 @@ function archify(cli, args) {
  * `dist/` — vários autores conferem diagramas ao mesmo tempo sem um apagar o do outro.
  */
 function gerar(argumentos) {
-  // Tudo o que pode recusar vem antes de qualquer efeito — apagar, baixar o archify, renderizar (P-14).
+  // Tudo o que o gerador confere sozinho vem antes de qualquer efeito — apagar, baixar o archify, renderizar (P-14);
+  // só o layout fica para o archify, que o confere ao renderizar.
   const posicao = argumentos.indexOf('--saida');
   const pasta = posicao >= 0 ? argumentos[posicao + 1] : undefined;
   if (posicao >= 0 && (pasta === undefined || pasta.startsWith('--'))) {
@@ -609,10 +616,21 @@ function gerar(argumentos) {
       );
     }
   }
+  // Por último, o que custa ler o código citado: cada diagrama a gerar, nos dois idiomas, montado sem o archify — a
+  // prova que não resolve e a ligação sem prova param aqui, com o diagrama nomeado (P-14).
+  const aGerar = pedidos.length ? diagramas.filter((diagrama) => pedidos.includes(diagrama.slug)) : diagramas;
+  for (const slug of new Set(aGerar.flatMap((d) => (d.tipo === 'compare' ? [d.base, d.cabeca] : [d.slug])))) {
+    for (const idioma of Object.keys(IDIOMAS)) {
+      try {
+        entradaDoArchify(porSlug.get(slug), idioma, {});
+      } catch (erro) {
+        throw new Error(`[mapa] ERRO ${slug} ${idioma} — ${erro.message}`);
+      }
+    }
+  }
 
   const cli = obterArchify();
   const catalogoPt = lerJson(fileURLToPath(new URL('../.archify/archify/examples/locales/pt.json', import.meta.url)));
-  const aGerar = pedidos.length ? diagramas.filter((diagrama) => pedidos.includes(diagrama.slug)) : diagramas;
   const temporaria = mkdtempSync(join(tmpdir(), 'mapa-'));
 
   if (!pedidos.length) {
