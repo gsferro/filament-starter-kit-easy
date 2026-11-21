@@ -38,721 +38,665 @@ beforeEach(function (): void {
     }
 });
 
-if (! function_exists('publicacaoSemLinhas')) {
-    /** O texto sem as linhas que casam o padrão: a cópia adulterada em memória. */
-    function publicacaoSemLinhas(string $texto, string $padrao): string
-    {
-        return implode("\n", array_filter(preg_split('/\R/u', $texto), fn (string $linha): bool => preg_match($padrao, $linha) !== 1));
-    }
+/** O texto sem as linhas que casam o padrão: a cópia adulterada em memória. */
+function publicacaoSemLinhas(string $texto, string $padrao): string
+{
+    return implode("\n", array_filter(preg_split('/\R/u', $texto), fn (string $linha): bool => preg_match($padrao, $linha) !== 1));
 }
 
-if (! function_exists('publicacaoSemComentarioHtml')) {
-    function publicacaoSemComentarioHtml(string $texto): string
-    {
-        return (string) preg_replace('/<!--.*?-->/su', '', $texto);
-    }
+function publicacaoSemComentarioHtml(string $texto): string
+{
+    return (string) preg_replace('/<!--.*?-->/su', '', $texto);
 }
 
 /* ---------------------------------------------------------------- R7 */
 
-if (! function_exists('publicacaoCasaGlob')) {
-    /** O caminho casa o glob do índice das rules (`**` atravessa pastas; `*` e `?`, não). */
-    function publicacaoCasaGlob(string $glob, string $caminho): bool
-    {
-        $regex = strtr(preg_quote($glob, '#'), ['\*\*' => '.*', '\*' => '[^/]*', '\?' => '[^/]']);
+/** O caminho casa o glob do índice das rules (`**` atravessa pastas; `*` e `?`, não). */
+function publicacaoCasaGlob(string $glob, string $caminho): bool
+{
+    $regex = strtr(preg_quote($glob, '#'), ['\*\*' => '.*', '\*' => '[^/]*', '\?' => '[^/]']);
 
-        return preg_match('#^'.$regex.'$#u', $caminho) === 1;
-    }
+    return preg_match('#^'.$regex.'$#u', $caminho) === 1;
 }
 
-if (! function_exists('publicacaoGlobsDaRule')) {
-    /**
-     * Os caminhos da linha do índice das rules que aponta para a rule; `null` quando a linha não existe.
-     *
-     * @return ?list<string>
-     */
-    function publicacaoGlobsDaRule(string $indice, string $rule): ?array
-    {
-        foreach (preg_split('/\R/u', $indice) as $linha) {
-            $celulas = array_map('trim', explode('|', trim(trim($linha), '|')));
+/**
+ * Os caminhos da linha do índice das rules que aponta para a rule; `null` quando a linha não existe.
+ *
+ * @return ?list<string>
+ */
+function publicacaoGlobsDaRule(string $indice, string $rule): ?array
+{
+    foreach (preg_split('/\R/u', $indice) as $linha) {
+        $celulas = array_map('trim', explode('|', trim(trim($linha), '|')));
 
-            if (count($celulas) < 2 || ! str_contains($celulas[count($celulas) - 1], $rule)) {
-                continue;
-            }
-
-            return array_values(array_filter(
-                array_map(fn (string $glob): string => trim($glob, " `'\""), explode(',', $celulas[0])),
-                fn (string $glob): bool => $glob !== '',
-            ));
+        if (count($celulas) < 2 || ! str_contains($celulas[count($celulas) - 1], $rule)) {
+            continue;
         }
 
-        return null;
+        return array_values(array_filter(
+            array_map(fn (string $glob): string => trim($glob, " `'\""), explode(',', $celulas[0])),
+            fn (string $glob): bool => $glob !== '',
+        ));
     }
+
+    return null;
 }
 
 /* ---------------------------------------------------------------- R21 */
 
-if (! function_exists('publicacaoArquivosDaPasta')) {
-    /**
-     * Os arquivos de uma pasta, recursivo, relativos a ela e sempre com `/`.
-     *
-     * @return list<string>
-     */
-    function publicacaoArquivosDaPasta(string $pasta): array
-    {
-        $arquivos = [];
+/**
+ * Os arquivos de uma pasta, recursivo, relativos a ela e sempre com `/`.
+ *
+ * @return list<string>
+ */
+function publicacaoArquivosDaPasta(string $pasta): array
+{
+    $arquivos = [];
 
-        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
-            if ($arquivo->isFile()) {
-                $arquivos[] = str_replace('\\', '/', substr($arquivo->getPathname(), strlen($pasta) + 1));
-            }
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
+        if ($arquivo->isFile()) {
+            $arquivos[] = str_replace('\\', '/', substr($arquivo->getPathname(), strlen($pasta) + 1));
         }
-
-        sort($arquivos);
-
-        return $arquivos;
     }
+
+    sort($arquivos);
+
+    return $arquivos;
 }
 
-if (! function_exists('publicacaoConferirDependenciasDoSite')) {
-    /**
-     * R21: os quatro campos de dependência do `site/package.json` e os arquivos de `site/mapa/`
-     * contra a lista fechada. Devolve os motivos de reprovação, cada um nomeando o item; vazio é "aceita".
-     *
-     * @param  array<string, mixed>  $pacote
-     * @param  list<string>  $arquivosDoMapa  relativos a `site/mapa/`
-     * @return list<string>
-     */
-    function publicacaoConferirDependenciasDoSite(array $pacote, array $arquivosDoMapa): array
-    {
-        $base = [
-            'dependencies'    => ['@astrojs/starlight', 'astro', 'astro-mermaid', 'mermaid', 'sharp'],
-            'devDependencies' => ['axe-core', 'playwright', 'wait-on'],
-        ];
+/**
+ * R21: os quatro campos de dependência do `site/package.json` e os arquivos de `site/mapa/`
+ * contra a lista fechada. Devolve os motivos de reprovação, cada um nomeando o item; vazio é "aceita".
+ *
+ * @param  array<string, mixed>  $pacote
+ * @param  list<string>  $arquivosDoMapa  relativos a `site/mapa/`
+ * @return list<string>
+ */
+function publicacaoConferirDependenciasDoSite(array $pacote, array $arquivosDoMapa): array
+{
+    $base = [
+        'dependencies'    => ['@astrojs/starlight', 'astro', 'astro-mermaid', 'mermaid', 'sharp'],
+        'devDependencies' => ['axe-core', 'playwright', 'wait-on'],
+    ];
 
-        $reprovas = [];
+    $reprovas = [];
 
-        foreach ($base as $campo => $esperadas) {
-            $declaradas = array_keys((array) ($pacote[$campo] ?? []));
+    foreach ($base as $campo => $esperadas) {
+        $declaradas = array_keys((array) ($pacote[$campo] ?? []));
 
-            foreach (array_diff($declaradas, $esperadas) as $nome) {
-                $reprovas[] = "{$campo}: dependência fora da base, {$nome}";
-            }
-
-            foreach (array_diff($esperadas, $declaradas) as $nome) {
-                $reprovas[] = "{$campo}: dependência da base ausente, {$nome}";
-            }
+        foreach (array_diff($declaradas, $esperadas) as $nome) {
+            $reprovas[] = "{$campo}: dependência fora da base, {$nome}";
         }
 
-        foreach (['optionalDependencies', 'peerDependencies'] as $campo) {
-            foreach (array_keys((array) ($pacote[$campo] ?? [])) as $nome) {
-                $reprovas[] = "{$campo}: dependência declarada, {$nome}";
-            }
+        foreach (array_diff($esperadas, $declaradas) as $nome) {
+            $reprovas[] = "{$campo}: dependência da base ausente, {$nome}";
         }
-
-        // O download, o gerador, a interface, o posicionador, os dois arquivos do modelo e a pasta de diagramas.
-        $lista = ['archify.mjs', 'gerar.mjs', 'interface.json', 'posicionar.mjs', 'pecas.json', 'ligacoes.json'];
-
-        foreach ($arquivosDoMapa as $arquivo) {
-            if (! in_array($arquivo, $lista, true) && preg_match('#^diagramas/[^/]+\.json$#', $arquivo) !== 1) {
-                $reprovas[] = "site/mapa/: arquivo fora da lista, {$arquivo}";
-            }
-        }
-
-        return $reprovas;
     }
+
+    foreach (['optionalDependencies', 'peerDependencies'] as $campo) {
+        foreach (array_keys((array) ($pacote[$campo] ?? [])) as $nome) {
+            $reprovas[] = "{$campo}: dependência declarada, {$nome}";
+        }
+    }
+
+    // O download, o gerador, a interface, o posicionador, os dois arquivos do modelo e a pasta de diagramas.
+    $lista = ['archify.mjs', 'gerar.mjs', 'interface.json', 'posicionar.mjs', 'pecas.json', 'ligacoes.json'];
+
+    foreach ($arquivosDoMapa as $arquivo) {
+        if (! in_array($arquivo, $lista, true) && preg_match('#^diagramas/[^/]+\.json$#', $arquivo) !== 1) {
+            $reprovas[] = "site/mapa/: arquivo fora da lista, {$arquivo}";
+        }
+    }
+
+    return $reprovas;
 }
 
 /* ---------------------------------------------------------------- R23 */
 
-if (! function_exists('publicacaoWorkflow')) {
-    /** @return array<string, mixed> */
-    function publicacaoWorkflow(string $arquivo): array
-    {
-        return Yaml::parseFile(base_path($arquivo));
+/**
+ * A posição do primeiro passo cujo `run` ou `uses` contém o trecho; `null` se nenhum.
+ *
+ * @param  list<array<string, mixed>>  $passos
+ */
+function publicacaoIndiceDoPasso(array $passos, string $trecho): ?int
+{
+    foreach (array_values($passos) as $indice => $passo) {
+        if (str_contains((string) ($passo['run'] ?? ''), $trecho) || str_contains((string) ($passo['uses'] ?? ''), $trecho)) {
+            return $indice;
+        }
     }
+
+    return null;
 }
 
-if (! function_exists('publicacaoIndiceDoPasso')) {
-    /**
-     * A posição do primeiro passo cujo `run` ou `uses` contém o trecho; `null` se nenhum.
-     *
-     * @param  list<array<string, mixed>>  $passos
-     */
-    function publicacaoIndiceDoPasso(array $passos, string $trecho): ?int
-    {
-        foreach (array_values($passos) as $indice => $passo) {
-            if (str_contains((string) ($passo['run'] ?? ''), $trecho) || str_contains((string) ($passo['uses'] ?? ''), $trecho)) {
-                return $indice;
-            }
-        }
-
-        return null;
-    }
+/** @param  array<string, mixed>  $job */
+function publicacaoSoNaMain(array $job): bool
+{
+    return preg_match("~github\\.ref\\s*==\\s*'refs/heads/main'~", (string) ($job['if'] ?? '')) === 1;
 }
 
-if (! function_exists('publicacaoSoNaMain')) {
-    /** @param  array<string, mixed>  $job */
-    function publicacaoSoNaMain(array $job): bool
-    {
-        return preg_match("~github\\.ref\\s*==\\s*'refs/heads/main'~", (string) ($job['if'] ?? '')) === 1;
+/**
+ * R23, CT-25: o passo de build roda o build do site, o build do site gera os diagramas do mapa, e o
+ * conferidor do mapa roda depois do de acessibilidade, com a prévia que ele subiu, e (quando o
+ * job envia o artefato) antes do envio, num job que só roda na `main`.
+ *
+ * @param  array<string, mixed>  $workflow
+ * @param  array<string, mixed>  $pacoteDoSite
+ * @return list<string>
+ */
+function publicacaoConferirBuildDoMapa(array $workflow, string $job, array $pacoteDoSite, bool $enviaArtefato): array
+{
+    $definicao = $workflow['jobs'][$job] ?? null;
+
+    if (! is_array($definicao) || ! is_array($definicao['steps'] ?? null)) {
+        return ["o job \"{$job}\" não existe ou não tem passos"];
     }
-}
 
-if (! function_exists('publicacaoConferirBuildDoMapa')) {
-    /**
-     * R23, CT-25: o passo de build roda o build do site, o build do site gera os diagramas do mapa, e o
-     * conferidor do mapa roda depois do de acessibilidade, com a prévia que ele subiu, e (quando o
-     * job envia o artefato) antes do envio, num job que só roda na `main`.
-     *
-     * @param  array<string, mixed>  $workflow
-     * @param  array<string, mixed>  $pacoteDoSite
-     * @return list<string>
-     */
-    function publicacaoConferirBuildDoMapa(array $workflow, string $job, array $pacoteDoSite, bool $enviaArtefato): array
-    {
-        $definicao = $workflow['jobs'][$job] ?? null;
+    $passos   = array_values($definicao['steps']);
+    $reprovas = [];
 
-        if (! is_array($definicao) || ! is_array($definicao['steps'] ?? null)) {
-            return ["o job \"{$job}\" não existe ou não tem passos"];
-        }
+    $build = publicacaoIndiceDoPasso($passos, 'npm run build');
 
-        $passos   = array_values($definicao['steps']);
-        $reprovas = [];
+    if ($build === null) {
+        $reprovas[] = "o job \"{$job}\" não roda o build do site (npm run build)";
+    }
 
-        $build = publicacaoIndiceDoPasso($passos, 'npm run build');
+    $script = (string) ($pacoteDoSite['scripts']['build'] ?? '');
 
-        if ($build === null) {
-            $reprovas[] = "o job \"{$job}\" não roda o build do site (npm run build)";
-        }
+    if (! str_contains($script, 'astro build') || ! str_contains($script, 'mapa/gerar.mjs')) {
+        $reprovas[] = "o build do site não gera os diagramas do mapa: scripts.build é \"{$script}\"";
+    }
 
-        $script = (string) ($pacoteDoSite['scripts']['build'] ?? '');
+    $acessibilidade = publicacaoIndiceDoPasso($passos, 'verifica-acessibilidade.mjs');
+    $mapa           = publicacaoIndiceDoPasso($passos, 'verifica-mapa.mjs');
 
-        if (! str_contains($script, 'astro build') || ! str_contains($script, 'mapa/gerar.mjs')) {
-            $reprovas[] = "o build do site não gera os diagramas do mapa: scripts.build é \"{$script}\"";
-        }
+    if ($acessibilidade === null) {
+        $reprovas[] = "o job \"{$job}\" não roda o conferidor de acessibilidade";
+    }
 
-        $acessibilidade = publicacaoIndiceDoPasso($passos, 'verifica-acessibilidade.mjs');
-        $mapa           = publicacaoIndiceDoPasso($passos, 'verifica-mapa.mjs');
-
-        if ($acessibilidade === null) {
-            $reprovas[] = "o job \"{$job}\" não roda o conferidor de acessibilidade";
-        }
-
-        if ($mapa === null) {
-            $reprovas[] = "o job \"{$job}\" não roda o conferidor do mapa (verifica-mapa.mjs)";
-
-            return $reprovas;
-        }
-
-        $nome = (string) ($passos[$mapa]['name'] ?? 'verifica-mapa.mjs');
-
-        if (($passos[$mapa]['working-directory'] ?? null) !== 'site') {
-            $reprovas[] = "o passo \"{$nome}\" não roda o site/verifica-mapa.mjs: working-directory fora de site";
-        }
-
-        if ($build !== null && $mapa < $build) {
-            $reprovas[] = "o passo \"{$nome}\" roda antes do build do site";
-        }
-
-        if ($acessibilidade !== null && $mapa <= $acessibilidade) {
-            $reprovas[] = "o passo \"{$nome}\" não roda depois do conferidor de acessibilidade";
-        }
-
-        $previas = array_keys(array_filter($passos, fn (array $passo): bool => str_contains((string) ($passo['run'] ?? ''), 'astro preview')));
-
-        if (count($previas) !== 1 || ($acessibilidade !== null && $previas[0] > $acessibilidade)) {
-            $reprovas[] = "o job \"{$job}\" não sobe uma prévia só, até o conferidor de acessibilidade, para o conferidor do mapa usar";
-        }
-
-        preg_match('~http://localhost:\d+~', (string) ($passos[$mapa]['run'] ?? ''), $alvoDoMapa);
-        preg_match('~http://localhost:\d+~', (string) ($passos[$acessibilidade ?? $mapa]['run'] ?? ''), $alvoDaAcessibilidade);
-
-        if (($alvoDoMapa[0] ?? null) !== null && ($alvoDoMapa[0] ?? null) !== ($alvoDaAcessibilidade[0] ?? null)) {
-            $reprovas[] = "o passo \"{$nome}\" espera outra prévia ({$alvoDoMapa[0]}), e não a do conferidor de acessibilidade";
-        }
-
-        if ($enviaArtefato) {
-            $envio = publicacaoIndiceDoPasso($passos, 'upload-pages-artifact');
-
-            if ($envio === null) {
-                $reprovas[] = "o job \"{$job}\" não envia o artefato do Pages";
-            } elseif ($mapa >= $envio) {
-                $reprovas[] = "o passo \"{$nome}\" roda depois do envio do artefato";
-            }
-
-            if (! publicacaoSoNaMain($definicao)) {
-                $reprovas[] = "o job \"{$job}\" roda fora da main: sem a condição github.ref == 'refs/heads/main'";
-            }
-        }
+    if ($mapa === null) {
+        $reprovas[] = "o job \"{$job}\" não roda o conferidor do mapa (verifica-mapa.mjs)";
 
         return $reprovas;
     }
-}
 
-if (! function_exists('publicacaoConferirFalhaDoMapa')) {
-    /**
-     * R23, CT-42: a falha do conferidor do mapa reprova o job — o passo não tem `continue-on-error`, o
-     * comando não engole a falha (`||` depois do conferidor) — e, no Pages, o job só roda na `main`.
-     *
-     * @param  array<string, mixed>  $workflow
-     * @return list<string>
-     */
-    function publicacaoConferirFalhaDoMapa(array $workflow, string $job, bool $exigeMain): array
-    {
-        $definicao = $workflow['jobs'][$job] ?? null;
+    $nome = (string) ($passos[$mapa]['name'] ?? 'verifica-mapa.mjs');
 
-        if (! is_array($definicao)) {
-            return ["o job \"{$job}\" não existe"];
+    if (($passos[$mapa]['working-directory'] ?? null) !== 'site') {
+        $reprovas[] = "o passo \"{$nome}\" não roda o site/verifica-mapa.mjs: working-directory fora de site";
+    }
+
+    if ($build !== null && $mapa < $build) {
+        $reprovas[] = "o passo \"{$nome}\" roda antes do build do site";
+    }
+
+    if ($acessibilidade !== null && $mapa <= $acessibilidade) {
+        $reprovas[] = "o passo \"{$nome}\" não roda depois do conferidor de acessibilidade";
+    }
+
+    $previas = array_keys(array_filter($passos, fn (array $passo): bool => str_contains((string) ($passo['run'] ?? ''), 'astro preview')));
+
+    if (count($previas) !== 1 || ($acessibilidade !== null && $previas[0] > $acessibilidade)) {
+        $reprovas[] = "o job \"{$job}\" não sobe uma prévia só, até o conferidor de acessibilidade, para o conferidor do mapa usar";
+    }
+
+    preg_match('~http://localhost:\d+~', (string) ($passos[$mapa]['run'] ?? ''), $alvoDoMapa);
+    preg_match('~http://localhost:\d+~', (string) ($passos[$acessibilidade ?? $mapa]['run'] ?? ''), $alvoDaAcessibilidade);
+
+    if (($alvoDoMapa[0] ?? null) !== null && ($alvoDoMapa[0] ?? null) !== ($alvoDaAcessibilidade[0] ?? null)) {
+        $reprovas[] = "o passo \"{$nome}\" espera outra prévia ({$alvoDoMapa[0]}), e não a do conferidor de acessibilidade";
+    }
+
+    if ($enviaArtefato) {
+        $envio = publicacaoIndiceDoPasso($passos, 'upload-pages-artifact');
+
+        if ($envio === null) {
+            $reprovas[] = "o job \"{$job}\" não envia o artefato do Pages";
+        } elseif ($mapa >= $envio) {
+            $reprovas[] = "o passo \"{$nome}\" roda depois do envio do artefato";
         }
 
-        $reprovas = [];
-
-        if ($exigeMain && ! publicacaoSoNaMain($definicao)) {
+        if (! publicacaoSoNaMain($definicao)) {
             $reprovas[] = "o job \"{$job}\" roda fora da main: sem a condição github.ref == 'refs/heads/main'";
         }
-
-        $achou = false;
-
-        foreach ((array) ($definicao['steps'] ?? []) as $passo) {
-            $run      = (string) ($passo['run'] ?? '');
-            $posicao  = strpos($run, 'verifica-mapa.mjs');
-
-            if ($posicao === false) {
-                continue;
-            }
-
-            $achou    = true;
-            $nome     = (string) ($passo['name'] ?? $run);
-            $continua = $passo['continue-on-error'] ?? false;
-
-            if (! in_array($continua, [false, 'false'], true)) {
-                $reprovas[] = "o passo \"{$nome}\" tem continue-on-error: ".var_export($continua, true);
-            }
-
-            if (str_contains(substr($run, $posicao), '||')) {
-                $reprovas[] = "o passo \"{$nome}\" engole a falha do conferidor do mapa com ||";
-            }
-        }
-
-        if (! $achou) {
-            $reprovas[] = "o job \"{$job}\" não roda o conferidor do mapa (verifica-mapa.mjs)";
-        }
-
-        return $reprovas;
     }
+
+    return $reprovas;
 }
 
-if (! function_exists('publicacaoSlugsDoMapa')) {
-    /**
-     * Os nomes dos diagramas do mapa: a pasta de diagramas (`diagramasDoMapa()`, de `tests/Pest.php`) e os
-     * links da página do mapa.
-     *
-     * @return list<string>
-     */
-    function publicacaoSlugsDoMapa(): array
-    {
-        $slugs = array_keys(diagramasDoMapa());
+/**
+ * R23, CT-42: a falha do conferidor do mapa reprova o job — o passo não tem `continue-on-error`, o
+ * comando não engole a falha (`||` depois do conferidor) — e, no Pages, o job só roda na `main`.
+ *
+ * @param  array<string, mixed>  $workflow
+ * @return list<string>
+ */
+function publicacaoConferirFalhaDoMapa(array $workflow, string $job, bool $exigeMain): array
+{
+    $definicao = $workflow['jobs'][$job] ?? null;
 
-        foreach (['pt', 'en'] as $idioma) {
-            preg_match_all("~mapa/{$idioma}/([A-Za-z0-9_-]+)\\.html~", (string) file_get_contents(base_path("docs/{$idioma}/referencia/mapa-interativo.md")), $links);
-            $slugs = [...$slugs, ...$links[1]];
+    if (! is_array($definicao)) {
+        return ["o job \"{$job}\" não existe"];
+    }
+
+    $reprovas = [];
+
+    if ($exigeMain && ! publicacaoSoNaMain($definicao)) {
+        $reprovas[] = "o job \"{$job}\" roda fora da main: sem a condição github.ref == 'refs/heads/main'";
+    }
+
+    $achou = false;
+
+    foreach ((array) ($definicao['steps'] ?? []) as $passo) {
+        $run      = (string) ($passo['run'] ?? '');
+        $posicao  = strpos($run, 'verifica-mapa.mjs');
+
+        if ($posicao === false) {
+            continue;
         }
 
-        return array_values(array_unique($slugs));
+        $achou    = true;
+        $nome     = (string) ($passo['name'] ?? $run);
+        $continua = $passo['continue-on-error'] ?? false;
+
+        if (! in_array($continua, [false, 'false'], true)) {
+            $reprovas[] = "o passo \"{$nome}\" tem continue-on-error: ".var_export($continua, true);
+        }
+
+        if (str_contains(substr($run, $posicao), '||')) {
+            $reprovas[] = "o passo \"{$nome}\" engole a falha do conferidor do mapa com ||";
+        }
     }
+
+    if (! $achou) {
+        $reprovas[] = "o job \"{$job}\" não roda o conferidor do mapa (verifica-mapa.mjs)";
+    }
+
+    return $reprovas;
 }
 
-if (! function_exists('publicacaoHtmlsDoMapaVersionados')) {
-    /**
-     * Os HTML de diagrama do mapa no índice do git: os de uma pasta `mapa/`, e os que têm o nome de
-     * um diagrama sem ser o stub de redirecionamento de uma página do site.
-     *
-     * @param  list<string>  $versionados
-     * @param  list<string>  $slugs
-     * @return list<string>
-     */
-    function publicacaoHtmlsDoMapaVersionados(array $versionados, array $slugs): array
-    {
-        return array_values(array_filter($versionados, function (string $arquivo) use ($slugs): bool {
-            if (! str_ends_with($arquivo, '.html')) {
-                return false;
-            }
+/**
+ * Os nomes dos diagramas do mapa: a pasta de diagramas (`diagramasDoMapa()`, de `tests/Pest.php`) e os
+ * links da página do mapa.
+ *
+ * @return list<string>
+ */
+function publicacaoSlugsDoMapa(): array
+{
+    $slugs = array_keys(diagramasDoMapa());
 
-            if (preg_match('#(^|/)mapa/#', $arquivo) === 1) {
-                return true;
-            }
-
-            return in_array(basename($arquivo, '.html'), $slugs, true)
-                && (! is_file(base_path($arquivo)) || stripos((string) file_get_contents(base_path($arquivo)), 'http-equiv="refresh"') === false);
-        }));
+    foreach (['pt', 'en'] as $idioma) {
+        preg_match_all("~mapa/{$idioma}/([A-Za-z0-9_-]+)\\.html~", (string) file_get_contents(base_path("docs/{$idioma}/referencia/mapa-interativo.md")), $links);
+        $slugs = [...$slugs, ...$links[1]];
     }
+
+    return array_values(array_unique($slugs));
+}
+
+/**
+ * Os HTML de diagrama do mapa no índice do git: os de uma pasta `mapa/`, e os que têm o nome de
+ * um diagrama sem ser o stub de redirecionamento de uma página do site.
+ *
+ * @param  list<string>  $versionados
+ * @param  list<string>  $slugs
+ * @return list<string>
+ */
+function publicacaoHtmlsDoMapaVersionados(array $versionados, array $slugs): array
+{
+    return array_values(array_filter($versionados, function (string $arquivo) use ($slugs): bool {
+        if (! str_ends_with($arquivo, '.html')) {
+            return false;
+        }
+
+        if (preg_match('#(^|/)mapa/#', $arquivo) === 1) {
+            return true;
+        }
+
+        return in_array(basename($arquivo, '.html'), $slugs, true)
+            && (! is_file(base_path($arquivo)) || stripos((string) file_get_contents(base_path($arquivo)), 'http-equiv="refresh"') === false);
+    }));
 }
 
 /* ---------------------------------------------------------------- R25 */
 
-if (! function_exists('publicacaoSiteDoKit')) {
-    /** O endereço do site do kit, do repositório do `support.source` do `composer.json`. */
-    function publicacaoSiteDoKit(): string
-    {
-        $composer = json_decode((string) file_get_contents(base_path('composer.json')), true, flags: JSON_THROW_ON_ERROR);
+/** O endereço do site do kit, do repositório do `support.source` do `composer.json`. */
+function publicacaoSiteDoKit(): string
+{
+    $composer = composerDoKit();
 
-        preg_match('~github\.com/([^/]+)/([^/#?]+)~', (string) ($composer['support']['source'] ?? ''), $repositorio);
+    preg_match('~github\.com/([^/]+)/([^/#?]+)~', (string) ($composer['support']['source'] ?? ''), $repositorio);
 
-        return "https://{$repositorio[1]}.github.io/{$repositorio[2]}/";
-    }
+    return "https://{$repositorio[1]}.github.io/{$repositorio[2]}/";
 }
 
-if (! function_exists('publicacaoLinksDoMapa')) {
-    /**
-     * Os links (Markdown, de referência ou `href`) para a página do mapa, por idioma.
-     *
-     * @return array{pt: list<string>, en: list<string>}
-     */
-    function publicacaoLinksDoMapa(string $markdown): array
-    {
-        preg_match_all('~\]\(\s*<?([^)\s>]+)~u', $markdown, $inline);
-        preg_match_all('~href\s*=\s*["\']([^"\']+)["\']~iu', $markdown, $html);
-        preg_match_all('~^\s*\[[^\]]+\]:\s*<?(\S+?)>?\s*$~mu', $markdown, $referencias);
+/**
+ * Os links (Markdown, de referência ou `href`) para a página do mapa, por idioma.
+ *
+ * @return array{pt: list<string>, en: list<string>}
+ */
+function publicacaoLinksDoMapa(string $markdown): array
+{
+    preg_match_all('~\]\(\s*<?([^)\s>]+)~u', $markdown, $inline);
+    preg_match_all('~href\s*=\s*["\']([^"\']+)["\']~iu', $markdown, $html);
+    preg_match_all('~^\s*\[[^\]]+\]:\s*<?(\S+?)>?\s*$~mu', $markdown, $referencias);
 
-        $porIdioma = ['pt' => [], 'en' => []];
+    $porIdioma = ['pt' => [], 'en' => []];
 
-        foreach ([...$inline[1], ...$html[1], ...$referencias[1]] as $endereco) {
-            if (preg_match('~(?:^|/)(pt|en)/referencia/mapa-interativo(?:/|\.html|\.md)?(?:[?#].*)?$~u', $endereco, $idioma) === 1) {
-                $porIdioma[$idioma[1]][] = $endereco;
-            }
+    foreach ([...$inline[1], ...$html[1], ...$referencias[1]] as $endereco) {
+        if (preg_match('~(?:^|/)(pt|en)/referencia/mapa-interativo(?:/|\.html|\.md)?(?:[?#].*)?$~u', $endereco, $idioma) === 1) {
+            $porIdioma[$idioma[1]][] = $endereco;
         }
-
-        return $porIdioma;
     }
+
+    return $porIdioma;
 }
 
 /* ---------------------------------------------------------------- R26 */
 
-if (! function_exists('publicacaoInventarioMermaidCongelado')) {
-    /**
-     * O inventário Mermaid da base (`d9608c5a`), num idioma, com o arquivo de cada bloco CONGELADO
-     * (Setup Global): DG-01 a DG-20 em `docs/{idioma}/`, e o DG-01 também no README. Medido nesta
-     * escrita com `blocosMermaidDe()` sobre os arquivos daquele commit; o mapeamento é o mesmo nos
-     * dois idiomas.
-     *
-     * @return list<array{id: string, arquivo: string}>
-     */
-    function publicacaoInventarioMermaidCongelado(string $idioma): array
-    {
-        $paginas = [
-            'DG-01' => 'referencia/arquitetura-em-diagramas.md',
-            'DG-02' => 'referencia/arquitetura-em-diagramas.md',
-            'DG-03' => 'referencia/arquitetura-em-diagramas.md',
-            'DG-04' => 'autenticacao/index.md',
-            'DG-05' => 'autenticacao/login-unificado.md',
-            'DG-06' => 'autenticacao/login-social.md',
-            'DG-07' => 'autenticacao/convites.md',
-            'DG-08' => 'autenticacao/estados-de-usuario.md',
-            'DG-09' => 'autenticacao/convites.md',
-            'DG-10' => 'autenticacao/index.md',
-            'DG-11' => 'operacao/roteiro-de-features.md',
-            'DG-12' => 'recursos/trilhas-de-infraestrutura.md',
-            'DG-13' => 'referencia/arquitetura-em-diagramas.md',
-            'DG-14' => 'recursos/configuracoes-do-kit.md',
-            'DG-15' => 'comecar/instalacao-avancada.md',
-            'DG-16' => 'comecar/atualizando-o-projeto.md',
-            'DG-17' => 'comecar/atualizando-o-projeto.md',
-            'DG-18' => 'comecar/instalacao-avancada.md',
-            'DG-19' => 'operacao/desenvolvendo-o-kit.md',
-            'DG-20' => 'recursos/multi-tenancy.md',
-        ];
+/**
+ * O inventário Mermaid da base (`d9608c5a`), num idioma, com o arquivo de cada bloco CONGELADO
+ * (Setup Global): DG-01 a DG-20 em `docs/{idioma}/`, e o DG-01 também no README. Medido nesta
+ * escrita com `blocosMermaidDe()` sobre os arquivos daquele commit; o mapeamento é o mesmo nos
+ * dois idiomas.
+ *
+ * @return list<array{id: string, arquivo: string}>
+ */
+function publicacaoInventarioMermaidCongelado(string $idioma): array
+{
+    $paginas = [
+        'DG-01' => 'referencia/arquitetura-em-diagramas.md',
+        'DG-02' => 'referencia/arquitetura-em-diagramas.md',
+        'DG-03' => 'referencia/arquitetura-em-diagramas.md',
+        'DG-04' => 'autenticacao/index.md',
+        'DG-05' => 'autenticacao/login-unificado.md',
+        'DG-06' => 'autenticacao/login-social.md',
+        'DG-07' => 'autenticacao/convites.md',
+        'DG-08' => 'autenticacao/estados-de-usuario.md',
+        'DG-09' => 'autenticacao/convites.md',
+        'DG-10' => 'autenticacao/index.md',
+        'DG-11' => 'operacao/roteiro-de-features.md',
+        'DG-12' => 'recursos/trilhas-de-infraestrutura.md',
+        'DG-13' => 'referencia/arquitetura-em-diagramas.md',
+        'DG-14' => 'recursos/configuracoes-do-kit.md',
+        'DG-15' => 'comecar/instalacao-avancada.md',
+        'DG-16' => 'comecar/atualizando-o-projeto.md',
+        'DG-17' => 'comecar/atualizando-o-projeto.md',
+        'DG-18' => 'comecar/instalacao-avancada.md',
+        'DG-19' => 'operacao/desenvolvendo-o-kit.md',
+        'DG-20' => 'recursos/multi-tenancy.md',
+    ];
 
-        $inventario = [['id' => 'DG-01', 'arquivo' => $idioma === 'en' ? 'README.en.md' : 'README.md']];
+    $inventario = [['id' => 'DG-01', 'arquivo' => $idioma === 'en' ? 'README.en.md' : 'README.md']];
 
-        foreach ($paginas as $id => $pagina) {
-            $inventario[] = ['id' => $id, 'arquivo' => "docs/{$idioma}/{$pagina}"];
-        }
-
-        return $inventario;
+    foreach ($paginas as $id => $pagina) {
+        $inventario[] = ['id' => $id, 'arquivo' => "docs/{$idioma}/{$pagina}"];
     }
+
+    return $inventario;
 }
 
-if (! function_exists('publicacaoTemOCommitDaBase')) {
-    /** O commit da base existe aqui? O checkout raso do CI (`actions/checkout` sem `fetch-depth`) não o traz. */
-    function publicacaoTemOCommitDaBase(): bool
-    {
-        return trim(Process::path(base_path())->run(['git', 'cat-file', '-t', 'd9608c5a'])->output()) === 'commit';
-    }
+/** O commit da base existe aqui? O checkout raso do CI (`actions/checkout` sem `fetch-depth`) não o traz. */
+function publicacaoTemOCommitDaBase(): bool
+{
+    return trim(Process::path(base_path())->run(['git', 'cat-file', '-t', 'd9608c5a'])->output()) === 'commit';
 }
 
-if (! function_exists('publicacaoInventarioMermaidDaBase')) {
-    /**
-     * O inventário Mermaid da base congelada (`d9608c5a`), num idioma: `blocosMermaidDe()` rodado no
-     * README e nas páginas de `docs/{idioma}/` DAQUELE commit, como `blocosMermaidDaArvore()` faz na
-     * árvore — cada DG fora de comentário HTML, com o arquivo em que estava.
-     *
-     * @return list<array{id: string, arquivo: string}>
-     */
-    function publicacaoInventarioMermaidDaBase(string $idioma): array
-    {
-        $base   = 'd9608c5a';
-        $readme = $idioma === 'en' ? 'README.en.md' : 'README.md';
-        $saida  = Process::path(base_path())->run(['git', 'grep', '-l', 'mermaid', $base, '--', $readme, "docs/{$idioma}"])->throw()->output();
+/**
+ * O inventário Mermaid da base congelada (`d9608c5a`), num idioma: `blocosMermaidDe()` rodado no
+ * README e nas páginas de `docs/{idioma}/` DAQUELE commit, como `blocosMermaidDaArvore()` faz na
+ * árvore — cada DG fora de comentário HTML, com o arquivo em que estava.
+ *
+ * @return list<array{id: string, arquivo: string}>
+ */
+function publicacaoInventarioMermaidDaBase(string $idioma): array
+{
+    $base   = 'd9608c5a';
+    $readme = $idioma === 'en' ? 'README.en.md' : 'README.md';
+    $saida  = Process::path(base_path())->run(['git', 'grep', '-l', 'mermaid', $base, '--', $readme, "docs/{$idioma}"])->throw()->output();
 
-        $inventario = [];
+    $inventario = [];
 
-        foreach (array_filter(array_map('trim', explode("\n", $saida))) as $linha) {
-            $arquivo  = substr($linha, strlen($base) + 1);
-            $conteudo = Process::path(base_path())->run(['git', 'show', "{$base}:{$arquivo}"])->throw()->output();
+    foreach (array_filter(array_map('trim', explode("\n", $saida))) as $linha) {
+        $arquivo  = substr($linha, strlen($base) + 1);
+        $conteudo = Process::path(base_path())->run(['git', 'show', "{$base}:{$arquivo}"])->throw()->output();
 
-            foreach (blocosMermaidDe($conteudo) as $bloco) {
-                if ($bloco['idCatalogo'] !== null && ! $bloco['dentroDeComentarioHtml']) {
-                    $inventario[] = ['id' => $bloco['idCatalogo'], 'arquivo' => $arquivo];
-                }
+        foreach (blocosMermaidDe($conteudo) as $bloco) {
+            if ($bloco['idCatalogo'] !== null && ! $bloco['dentroDeComentarioHtml']) {
+                $inventario[] = ['id' => $bloco['idCatalogo'], 'arquivo' => $arquivo];
             }
         }
-
-        return $inventario;
     }
+
+    return $inventario;
 }
 
 /* ---------------------------------------------------------------- R27 */
 
-if (! function_exists('publicacaoPacotesInstalados')) {
-    /**
-     * Os pacotes que os manifestos declaram (Q16): o `composer.json` em `require` e `require-dev`, e o
-     * `package.json` da aplicação em `dependencies`, `devDependencies` e `optionalDependencies`. O
-     * `php` (e qualquer `ext-*`) é plataforma e fica fora da conta.
-     *
-     * @return list<string>
-     */
-    function publicacaoPacotesInstalados(): array
-    {
-        $composer = json_decode((string) file_get_contents(base_path('composer.json')), true, flags: JSON_THROW_ON_ERROR);
-        $npm      = json_decode((string) file_get_contents(base_path('package.json')), true, flags: JSON_THROW_ON_ERROR);
+/**
+ * Os pacotes que os manifestos declaram (Q16): o `composer.json` em `require` e `require-dev`, e o
+ * `package.json` da aplicação em `dependencies`, `devDependencies` e `optionalDependencies`. O
+ * `php` (e qualquer `ext-*`) é plataforma e fica fora da conta.
+ *
+ * @return list<string>
+ */
+function publicacaoPacotesInstalados(): array
+{
+    $composer = composerDoKit();
+    $npm      = json_decode((string) file_get_contents(base_path('package.json')), true, flags: JSON_THROW_ON_ERROR);
 
-        $nomes = [];
+    $nomes = [];
 
-        foreach (['require', 'require-dev'] as $campo) {
-            foreach (array_keys($composer[$campo] ?? []) as $nome) {
-                if ($nome !== 'php' && ! str_starts_with($nome, 'ext-')) {
-                    $nomes[] = strtolower($nome);
-                }
-            }
-        }
-
-        foreach (['dependencies', 'devDependencies', 'optionalDependencies'] as $campo) {
-            foreach (array_keys($npm[$campo] ?? []) as $nome) {
+    foreach (['require', 'require-dev'] as $campo) {
+        foreach (array_keys($composer[$campo] ?? []) as $nome) {
+            if ($nome !== 'php' && ! str_starts_with($nome, 'ext-')) {
                 $nomes[] = strtolower($nome);
             }
         }
-
-        return array_values(array_unique($nomes));
     }
+
+    foreach (['dependencies', 'devDependencies', 'optionalDependencies'] as $campo) {
+        foreach (array_keys($npm[$campo] ?? []) as $nome) {
+            $nomes[] = strtolower($nome);
+        }
+    }
+
+    return array_values(array_unique($nomes));
 }
 
-if (! function_exists('publicacaoPacotesDaReferencia')) {
-    /**
-     * Os pacotes que a referência lista fora da seção dos avaliados e não adotados. O nome sai do
-     * endereço do link da primeira célula: o texto `pest-plugin-laravel` leva a
-     * `pestphp/pest-plugin-laravel`.
-     *
-     * @return list<string>
-     */
-    function publicacaoPacotesDaReferencia(string $referencia): array
-    {
-        $pacotes   = [];
-        $avaliados = false;
+/**
+ * Os pacotes que a referência lista fora da seção dos avaliados e não adotados. O nome sai do
+ * endereço do link da primeira célula: o texto `pest-plugin-laravel` leva a
+ * `pestphp/pest-plugin-laravel`.
+ *
+ * @return list<string>
+ */
+function publicacaoPacotesDaReferencia(string $referencia): array
+{
+    $pacotes   = [];
+    $avaliados = false;
 
-        foreach (preg_split('/\R/u', $referencia) as $linha) {
-            if (str_starts_with($linha, '## ')) {
-                $avaliados = preg_match('/Avaliados e não adotados|Evaluated and not adopted/iu', $linha) === 1;
+    foreach (preg_split('/\R/u', $referencia) as $linha) {
+        if (str_starts_with($linha, '## ')) {
+            $avaliados = preg_match('/Avaliados e não adotados|Evaluated and not adopted/iu', $linha) === 1;
 
+            continue;
+        }
+
+        if ($avaliados || preg_match('/^\|([^|]*)\|/u', $linha, $celula) !== 1) {
+            continue;
+        }
+
+        preg_match_all('~\]\((https?://[^)\s]+)\)~u', $celula[1], $links);
+
+        foreach ($links[1] as $endereco) {
+            if (preg_match('~packagist\.org/packages/([^/?#]+/[^/?#]+)~', $endereco, $pacote) === 1
+                || preg_match('~npmjs\.com/package/((?:@[^/?#]+/)?[^/?#]+)~', $endereco, $pacote) === 1
+                || preg_match('~github\.com/([^/?#]+/[^/?#]+)~', $endereco, $pacote) === 1) {
+                $pacotes[] = strtolower($pacote[1]);
+            }
+        }
+    }
+
+    return array_values(array_unique($pacotes));
+}
+
+/**
+ * Os pacotes que uma F-nn de origem pacote, ou pacote com customização própria, nomeia na coluna
+ * Origem, pelo nome do Composer ou do npm entre crases (`@premissa` Q17).
+ *
+ * @return array<string, list<string>> pacote => F-nn
+ */
+function publicacaoPacotesNomeadosNoCatalogo(string $catalogo): array
+{
+    $nomeados = [];
+
+    foreach (preg_split('/\R/u', $catalogo) as $linha) {
+        if (preg_match('/^\|\s*(F-\d+[a-z]?)\s*\|[^|]*\|([^|]*)\|/u', $linha, $feature) !== 1
+            || preg_match('/^\s*(pacote|package)\b/iu', $feature[2]) !== 1) {
+            continue;
+        }
+
+        preg_match_all('/`([^`]+)`/u', $feature[2], $nomes);
+
+        foreach ($nomes[1] as $nome) {
+            $nomeados[strtolower(trim($nome))][] = $feature[1];
+        }
+    }
+
+    return $nomeados;
+}
+
+/**
+ * A lista da guarda dos pacotes instalados sem feature própria, com o motivo de cada um
+ * (`@premissa` Q17: mora na guarda, como a lista das páginas, Q14b). Pacote cuja classe um painel
+ * registra nunca entra aqui (ADV-04).
+ *
+ * @return array<string, string>
+ */
+function publicacaoPacotesSemFeaturePropria(): array
+{
+    return [
+        'laravel/framework'                 => 'é o framework sobre o qual o kit inteiro roda: a base de todas as features, e não uma feature que alguém usa por ele',
+        'laravel/tinker'                    => 'REPL de terminal (php artisan tinker) para quem desenvolve: não tem tela, rota nem peça nos painéis',
+        'laravel/reverb'                    => 'servidor WebSocket que o Docker sobe nos profiles app e realtime; o Echo do Filament não vem configurado, e nenhuma tela do kit o usa hoje',
+        'predis/predis'                     => 'cliente Redis em PHP puro: o driver de conexão do cache, da fila e da sessão quando o Redis está ligado, sem tela nem peça própria',
+        'livewire/blaze'                    => 'instalado sem uso no código do kit hoje: nenhum componente Blade do kit passa pelo otimizador',
+        'awcodes/filament-badgeable-column' => 'instalado sem uso no código do kit hoje: nenhuma tabela dos painéis usa a coluna com badges',
+        'lara-zeus/progress'                => 'instalado sem uso no código do kit hoje: nenhuma coluna nem entry dos painéis usa a barra de progresso',
+        'syriable/filament-activitylog'     => 'instalado sem uso no código do kit hoje: nenhum painel registra o plugin do log de atividades',
+        'filament/upgrade'                  => 'ferramenta de terminal para atualizar o Filament (composer upgrade:filament): roda só na máquina de quem mantém o kit',
+        'laravel/pail'                      => 'ferramenta de terminal que mostra os logs em tempo real para quem desenvolve: não entrega nada nos painéis',
+        'nunomaduro/collision'              => 'formata os erros no terminal e na saída dos testes para quem desenvolve: não entrega nada nos painéis',
+        '@tailwindcss/vite'                 => 'plugin de build que liga o Tailwind ao Vite na compilação dos temas: não tem tela nem peça',
+        'concurrently'                      => 'ferramenta de terminal que sobe servidor, fila, Vite e Reverb juntos no composer dev: só para quem desenvolve',
+        'laravel-vite-plugin'               => 'integração de build entre o Vite e o Laravel, que publica os assets compilados: não tem tela nem peça',
+        'tailwindcss'                       => 'framework de CSS dos temas dos painéis, usado só na compilação dos assets: não entrega feature por si',
+        'vite'                              => 'empacotador dos assets do front-end, usado só na compilação: não tem tela nem peça',
+        '@laravel/multiplex'                => 'dependência opcional que agrupa as requisições do Livewire: otimização de transporte, sem tela nem peça própria',
+    ];
+}
+
+/**
+ * Os pacotes de `vendor/` cuja classe um painel registra — plugin, recurso, página ou widget —,
+ * lidos do registro vivo (`registroVivoDoPainel()`, de `tests/Pest.php`).
+ *
+ * @return array<string, list<string>> pacote => "painel: classe"
+ */
+function publicacaoPacotesComPecaRegistrada(): array
+{
+    $vendor    = strtolower(str_replace('\\', '/', base_path('vendor'))).'/';
+    $porPacote = [];
+
+    foreach (Filament::getPanels() as $painel) {
+        $registro = registroVivoDoPainel($painel);
+        $classes  = [...$registro['plugin'], ...$registro['recurso'], ...$registro['pagina'], ...$registro['widget']];
+
+        foreach (array_unique($classes) as $classe) {
+            $arquivo = strtolower(str_replace('\\', '/', (string) (new ReflectionClass($classe))->getFileName()));
+
+            if (! str_starts_with($arquivo, $vendor)) {
                 continue;
             }
 
-            if ($avaliados || preg_match('/^\|([^|]*)\|/u', $linha, $celula) !== 1) {
-                continue;
-            }
+            [$fornecedor, $nome] = explode('/', substr($arquivo, strlen($vendor)), 3);
 
-            preg_match_all('~\]\((https?://[^)\s]+)\)~u', $celula[1], $links);
-
-            foreach ($links[1] as $endereco) {
-                if (preg_match('~packagist\.org/packages/([^/?#]+/[^/?#]+)~', $endereco, $pacote) === 1
-                    || preg_match('~npmjs\.com/package/((?:@[^/?#]+/)?[^/?#]+)~', $endereco, $pacote) === 1
-                    || preg_match('~github\.com/([^/?#]+/[^/?#]+)~', $endereco, $pacote) === 1) {
-                    $pacotes[] = strtolower($pacote[1]);
-                }
-            }
+            $porPacote["{$fornecedor}/{$nome}"][] = $painel->getId().': '.$classe;
         }
-
-        return array_values(array_unique($pacotes));
     }
+
+    return $porPacote;
 }
 
-if (! function_exists('publicacaoPacotesNomeadosNoCatalogo')) {
-    /**
-     * Os pacotes que uma F-nn de origem pacote, ou pacote com customização própria, nomeia na coluna
-     * Origem, pelo nome do Composer ou do npm entre crases (`@premissa` Q17).
-     *
-     * @return array<string, list<string>> pacote => F-nn
-     */
-    function publicacaoPacotesNomeadosNoCatalogo(string $catalogo): array
-    {
-        $nomeados = [];
+/**
+ * R27: instalado → referência e (F-nn de origem pacote ou lista dos sem feature própria);
+ * referência → instalado; e a lista sem motivo de enfeite e sem pacote com peça registrada.
+ *
+ * @param  list<string>  $instalados
+ * @param  array<string, string>  $semFeature
+ * @param  array<string, list<string>>  $comPecaRegistrada
+ * @return array{reprovas: list<string>, conferidos: list<string>}
+ */
+function publicacaoConferirPacotes(array $instalados, string $referencia, string $catalogo, array $semFeature, array $comPecaRegistrada): array
+{
+    $listados = publicacaoPacotesDaReferencia($referencia);
+    $nomeados = publicacaoPacotesNomeadosNoCatalogo($catalogo);
+    $reprovas = [];
 
-        foreach (preg_split('/\R/u', $catalogo) as $linha) {
-            if (preg_match('/^\|\s*(F-\d+[a-z]?)\s*\|[^|]*\|([^|]*)\|/u', $linha, $feature) !== 1
-                || preg_match('/^\s*(pacote|package)\b/iu', $feature[2]) !== 1) {
-                continue;
-            }
-
-            preg_match_all('/`([^`]+)`/u', $feature[2], $nomes);
-
-            foreach ($nomes[1] as $nome) {
-                $nomeados[strtolower(trim($nome))][] = $feature[1];
-            }
+    foreach ($semFeature as $pacote => $motivo) {
+        if (motivoDeEnfeite($motivo)) {
+            $reprovas[] = "{$pacote}: na lista dos sem feature própria sem motivo, ou com motivo de enfeite";
         }
 
-        return $nomeados;
+        if (isset($comPecaRegistrada[$pacote])) {
+            $reprovas[] = "{$pacote}: na lista dos sem feature própria, e um painel registra peça dele (".implode('; ', $comPecaRegistrada[$pacote]).')';
+        }
     }
-}
 
-if (! function_exists('publicacaoPacotesSemFeaturePropria')) {
-    /**
-     * A lista da guarda dos pacotes instalados sem feature própria, com o motivo de cada um
-     * (`@premissa` Q17: mora na guarda, como a lista das páginas, Q14b). Pacote cuja classe um painel
-     * registra nunca entra aqui (ADV-04).
-     *
-     * @return array<string, string>
-     */
-    function publicacaoPacotesSemFeaturePropria(): array
-    {
-        return [
-            'laravel/framework'                 => 'é o framework sobre o qual o kit inteiro roda: a base de todas as features, e não uma feature que alguém usa por ele',
-            'laravel/tinker'                    => 'REPL de terminal (php artisan tinker) para quem desenvolve: não tem tela, rota nem peça nos painéis',
-            'laravel/reverb'                    => 'servidor WebSocket que o Docker sobe nos profiles app e realtime; o Echo do Filament não vem configurado, e nenhuma tela do kit o usa hoje',
-            'predis/predis'                     => 'cliente Redis em PHP puro: o driver de conexão do cache, da fila e da sessão quando o Redis está ligado, sem tela nem peça própria',
-            'livewire/blaze'                    => 'instalado sem uso no código do kit hoje: nenhum componente Blade do kit passa pelo otimizador',
-            'awcodes/filament-badgeable-column' => 'instalado sem uso no código do kit hoje: nenhuma tabela dos painéis usa a coluna com badges',
-            'lara-zeus/progress'                => 'instalado sem uso no código do kit hoje: nenhuma coluna nem entry dos painéis usa a barra de progresso',
-            'syriable/filament-activitylog'     => 'instalado sem uso no código do kit hoje: nenhum painel registra o plugin do log de atividades',
-            'filament/upgrade'                  => 'ferramenta de terminal para atualizar o Filament (composer upgrade:filament): roda só na máquina de quem mantém o kit',
-            'laravel/pail'                      => 'ferramenta de terminal que mostra os logs em tempo real para quem desenvolve: não entrega nada nos painéis',
-            'nunomaduro/collision'              => 'formata os erros no terminal e na saída dos testes para quem desenvolve: não entrega nada nos painéis',
-            '@tailwindcss/vite'                 => 'plugin de build que liga o Tailwind ao Vite na compilação dos temas: não tem tela nem peça',
-            'concurrently'                      => 'ferramenta de terminal que sobe servidor, fila, Vite e Reverb juntos no composer dev: só para quem desenvolve',
-            'laravel-vite-plugin'               => 'integração de build entre o Vite e o Laravel, que publica os assets compilados: não tem tela nem peça',
-            'tailwindcss'                       => 'framework de CSS dos temas dos painéis, usado só na compilação dos assets: não entrega feature por si',
-            'vite'                              => 'empacotador dos assets do front-end, usado só na compilação: não tem tela nem peça',
-            '@laravel/multiplex'                => 'dependência opcional que agrupa as requisições do Livewire: otimização de transporte, sem tela nem peça própria',
-        ];
+    foreach ($instalados as $pacote) {
+        if (! in_array($pacote, $listados, true)) {
+            $reprovas[] = "{$pacote}: instalado e fora da referência de pacotes";
+        }
+
+        if (! isset($nomeados[$pacote]) && ! array_key_exists($pacote, $semFeature)) {
+            $reprovas[] = "{$pacote}: sem F-nn de origem pacote e fora da lista dos sem feature própria";
+        }
     }
-}
 
-if (! function_exists('publicacaoPacotesComPecaRegistrada')) {
-    /**
-     * Os pacotes de `vendor/` cuja classe um painel registra — plugin, recurso, página ou widget —,
-     * lidos do registro vivo (`registroVivoDoPainel()`, de `tests/Pest.php`).
-     *
-     * @return array<string, list<string>> pacote => "painel: classe"
-     */
-    function publicacaoPacotesComPecaRegistrada(): array
-    {
-        $vendor    = strtolower(str_replace('\\', '/', base_path('vendor'))).'/';
-        $porPacote = [];
-
-        foreach (Filament::getPanels() as $painel) {
-            $registro = registroVivoDoPainel($painel);
-            $classes  = [...$registro['plugin'], ...$registro['recurso'], ...$registro['pagina'], ...$registro['widget']];
-
-            foreach (array_unique($classes) as $classe) {
-                $arquivo = strtolower(str_replace('\\', '/', (string) (new ReflectionClass($classe))->getFileName()));
-
-                if (! str_starts_with($arquivo, $vendor)) {
-                    continue;
-                }
-
-                [$fornecedor, $nome] = explode('/', substr($arquivo, strlen($vendor)), 3);
-
-                $porPacote["{$fornecedor}/{$nome}"][] = $painel->getId().': '.$classe;
-            }
+    foreach ($listados as $pacote) {
+        if (! in_array($pacote, $instalados, true)) {
+            $reprovas[] = "{$pacote}: na referência de pacotes e não instalado";
         }
-
-        return $porPacote;
     }
-}
 
-if (! function_exists('publicacaoConferirPacotes')) {
-    /**
-     * R27: instalado → referência e (F-nn de origem pacote ou lista dos sem feature própria);
-     * referência → instalado; e a lista sem motivo de enfeite e sem pacote com peça registrada.
-     *
-     * @param  list<string>  $instalados
-     * @param  array<string, string>  $semFeature
-     * @param  array<string, list<string>>  $comPecaRegistrada
-     * @return array{reprovas: list<string>, conferidos: list<string>}
-     */
-    function publicacaoConferirPacotes(array $instalados, string $referencia, string $catalogo, array $semFeature, array $comPecaRegistrada): array
-    {
-        $listados = publicacaoPacotesDaReferencia($referencia);
-        $nomeados = publicacaoPacotesNomeadosNoCatalogo($catalogo);
-        $reprovas = [];
-
-        foreach ($semFeature as $pacote => $motivo) {
-            if (motivoDeEnfeite($motivo)) {
-                $reprovas[] = "{$pacote}: na lista dos sem feature própria sem motivo, ou com motivo de enfeite";
-            }
-
-            if (isset($comPecaRegistrada[$pacote])) {
-                $reprovas[] = "{$pacote}: na lista dos sem feature própria, e um painel registra peça dele (".implode('; ', $comPecaRegistrada[$pacote]).')';
-            }
-        }
-
-        foreach ($instalados as $pacote) {
-            if (! in_array($pacote, $listados, true)) {
-                $reprovas[] = "{$pacote}: instalado e fora da referência de pacotes";
-            }
-
-            if (! isset($nomeados[$pacote]) && ! array_key_exists($pacote, $semFeature)) {
-                $reprovas[] = "{$pacote}: sem F-nn de origem pacote e fora da lista dos sem feature própria";
-            }
-        }
-
-        foreach ($listados as $pacote) {
-            if (! in_array($pacote, $instalados, true)) {
-                $reprovas[] = "{$pacote}: na referência de pacotes e não instalado";
-            }
-        }
-
-        return ['reprovas' => $reprovas, 'conferidos' => $instalados];
-    }
+    return ['reprovas' => $reprovas, 'conferidos' => $instalados];
 }
 
 /* ---------------------------------------------------------------- R33 */
 
-if (! function_exists('publicacaoDeclaracoesDaPaginaDoMapa')) {
-    /**
-     * O que a página do mapa tem de dizer, por idioma (R33), com o `Então` que cada padrão confere.
-     *
-     * @return array<string, string>
-     */
-    function publicacaoDeclaracoesDaPaginaDoMapa(string $idioma): array
-    {
-        if ($idioma === 'en') {
-            return [
-                'a casca do comparativo fica em inglês'                                                            => '/comparison[^.]*shell[^.]*English/iu',
-                'o piso da varredura: as peças que os painéis registram e as classes de app/ fora de app/Filament' => '/floor[^.]*piece[^.]*panel[^.]*regist[^.]*class[^.]*app\/[^.]*outside[^.]*app\/Filament/iu',
-                'além do piso, a completude não tem garantia'                                                      => '/Completeness[^.]*floor[^.]*(?:does not|doesn\'t) guarantee/iu',
-                'o comparativo não leva cards nem passaporte'                                                      => '/comparison[^.]*no cards (?:or|nor) passport/iu',
-                'a base e a cabeça do comparativo são diagramas do mapa com a prova de cada ligação'               => '/comparison[^.]*proof of every link[^.]*diagrams it compares/iu',
-            ];
-        }
-
+/**
+ * O que a página do mapa tem de dizer, por idioma (R33), com o `Então` que cada padrão confere.
+ *
+ * @return array<string, string>
+ */
+function publicacaoDeclaracoesDaPaginaDoMapa(string $idioma): array
+{
+    if ($idioma === 'en') {
         return [
-            'a casca do comparativo fica em inglês'                                                            => '/comparativo[^.]*casca[^.]*inglês/iu',
-            'o piso da varredura: as peças que os painéis registram e as classes de app/ fora de app/Filament' => '/piso[^.]*peça[^.]*painel[^.]*regist[^.]*classe[^.]*app\/[^.]*fora de[^.]*app\/Filament/iu',
-            'além do piso, a completude não tem garantia'                                                      => '/Completude[^.]*piso[^.]*não garante/iu',
-            'o comparativo não leva cards nem passaporte'                                                      => '/comparativo[^.]*não leva cards nem passaporte/iu',
-            'a base e a cabeça do comparativo são diagramas do mapa com a prova de cada ligação'               => '/comparativo[^.]*prova de cada ligação[^.]*diagramas que ele compara/iu',
+            'a casca do comparativo fica em inglês'                                                            => '/comparison[^.]*shell[^.]*English/iu',
+            'o piso da varredura: as peças que os painéis registram e as classes de app/ fora de app/Filament' => '/floor[^.]*piece[^.]*panel[^.]*regist[^.]*class[^.]*app\/[^.]*outside[^.]*app\/Filament/iu',
+            'além do piso, a completude não tem garantia'                                                      => '/Completeness[^.]*floor[^.]*(?:does not|doesn\'t) guarantee/iu',
+            'o comparativo não leva cards nem passaporte'                                                      => '/comparison[^.]*no cards (?:or|nor) passport/iu',
+            'a base e a cabeça do comparativo são diagramas do mapa com a prova de cada ligação'               => '/comparison[^.]*proof of every link[^.]*diagrams it compares/iu',
         ];
     }
+
+    return [
+        'a casca do comparativo fica em inglês'                                                            => '/comparativo[^.]*casca[^.]*inglês/iu',
+        'o piso da varredura: as peças que os painéis registram e as classes de app/ fora de app/Filament' => '/piso[^.]*peça[^.]*painel[^.]*regist[^.]*classe[^.]*app\/[^.]*fora de[^.]*app\/Filament/iu',
+        'além do piso, a completude não tem garantia'                                                      => '/Completude[^.]*piso[^.]*não garante/iu',
+        'o comparativo não leva cards nem passaporte'                                                      => '/comparativo[^.]*não leva cards nem passaporte/iu',
+        'a base e a cabeça do comparativo são diagramas do mapa com a prova de cada ligação'               => '/comparativo[^.]*prova de cada ligação[^.]*diagramas que ele compara/iu',
+    ];
 }
 
 /* ================================================================ casos */
@@ -848,7 +792,7 @@ it('[CT-25] o mapa nasce no build do workflow, e o conferidor do mapa roda depoi
     $pacoteDoSite = json_decode((string) file_get_contents(base_path('site/package.json')), true, flags: JSON_THROW_ON_ERROR);
 
     // Então o build gera os diagramas; o conferidor do mapa roda depois do de acessibilidade, com a mesma prévia, e antes do envio
-    expect(publicacaoConferirBuildDoMapa(publicacaoWorkflow($arquivo), $job, $pacoteDoSite, $enviaArtefato))->toBe([])
+    expect(publicacaoConferirBuildDoMapa(Yaml::parseFile(base_path($arquivo)), $job, $pacoteDoSite, $enviaArtefato))->toBe([])
         ->and(base_path('site/verifica-mapa.mjs'))->toBeFile();
 
     // E nenhum HTML de diagrama do mapa está versionado no repositório
@@ -862,7 +806,7 @@ it('[CT-25] o mapa nasce no build do workflow, e o conferidor do mapa roda depoi
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Lê .github/, site/ e o diretório das páginas do site e invoca o git, que não viajam no pacote.');
 
 it('[CT-42] a falha do conferidor do mapa reprova o job, e o build do Pages só roda na main', function (string $arquivo, string $job, string $mundo): void {
-    $workflow  = publicacaoWorkflow($arquivo);
+    $workflow  = Yaml::parseFile(base_path($arquivo));
     $exigeMain = $arquivo === '.github/workflows/pages.yml';
     $publicado = publicacaoConferirFalhaDoMapa($workflow, $job, $exigeMain);
     $indice    = publicacaoIndiceDoPasso((array) ($workflow['jobs'][$job]['steps'] ?? []), 'verifica-mapa.mjs');
@@ -1037,261 +981,239 @@ it('[CT-34] a página do mapa de cada idioma declara a casca do comparativo em i
 
 /* ---------------------------------------------------------------- R39 e R40 (costura G5, forma de efeito) */
 
-if (! function_exists('publicacaoForaDoKit')) {
-    /**
-     * A trava da G5: o caminho (absoluto, existente ou não) fica fora da árvore do kit. A árvore tem o
-     * archify baixado em `site/.archify`, e o gerador, sob o defeito do achado A2, apagaria a pasta de
-     * `--saida`; por isso nenhuma ferramenta roda, grava ou apaga ali.
-     */
-    function publicacaoForaDoKit(string $caminho): void
-    {
-        $normalizar = fn (string $texto): string => rtrim(strtolower(str_replace('\\', '/', $texto)), '/').'/';
+/**
+ * A trava da G5: o caminho (absoluto, existente ou não) fica fora da árvore do kit. A árvore tem o
+ * archify baixado em `site/.archify`, e o gerador, sob o defeito do achado A2, apagaria a pasta de
+ * `--saida`; por isso nenhuma ferramenta roda, grava ou apaga ali.
+ */
+function publicacaoForaDoKit(string $caminho): void
+{
+    $normalizar = fn (string $texto): string => rtrim(strtolower(str_replace('\\', '/', $texto)), '/').'/';
 
-        if (str_starts_with($normalizar($caminho), $normalizar((string) realpath(base_path())))) {
-            throw new RuntimeException("A G5 não toca a árvore do kit, e o caminho {$caminho} está nela.");
-        }
+    if (str_starts_with($normalizar($caminho), $normalizar((string) realpath(base_path())))) {
+        throw new RuntimeException("A G5 não toca a árvore do kit, e o caminho {$caminho} está nela.");
     }
 }
 
-if (! function_exists('publicacaoPastaTemporaria')) {
-    /** Uma pasta temporária nova, no diretório temporário do sistema: a raiz do clone, da saída e do link. */
-    function publicacaoPastaTemporaria(): string
-    {
-        $raiz = realpath(sys_get_temp_dir()).DIRECTORY_SEPARATOR.'mapa-g5-'.bin2hex(random_bytes(6));
-        publicacaoForaDoKit($raiz);
-        mkdir($raiz);
+/** Uma pasta temporária nova, no diretório temporário do sistema: a raiz do clone, da saída e do link. */
+function publicacaoPastaTemporaria(): string
+{
+    $raiz = realpath(sys_get_temp_dir()).DIRECTORY_SEPARATOR.'mapa-g5-'.bin2hex(random_bytes(6));
+    publicacaoForaDoKit($raiz);
+    mkdir($raiz);
 
-        return $raiz;
+    return $raiz;
+}
+
+/** Apaga o caminho fora do kit; o link (a junção, no Windows) some sozinho, sem que a remoção entre no alvo. */
+function publicacaoApagarPasta(string $caminho): void
+{
+    publicacaoForaDoKit($caminho);
+
+    if (is_link($caminho)) {
+        PHP_OS_FAMILY === 'Windows' ? @rmdir($caminho) : @unlink($caminho);
+
+        return;
+    }
+
+    if (is_dir($caminho)) {
+        foreach (array_diff(scandir($caminho) ?: [], ['.', '..']) as $nome) {
+            publicacaoApagarPasta($caminho.DIRECTORY_SEPARATOR.$nome);
+        }
+
+        @rmdir($caminho);
+
+        return;
+    }
+
+    if (file_exists($caminho)) {
+        @chmod($caminho, 0666);
+        @unlink($caminho);
     }
 }
 
-if (! function_exists('publicacaoApagarPasta')) {
-    /** Apaga o caminho fora do kit; o link (a junção, no Windows) some sozinho, sem que a remoção entre no alvo. */
-    function publicacaoApagarPasta(string $caminho): void
-    {
-        publicacaoForaDoKit($caminho);
+/** O link para a pasta: uma junção no Windows (`mklink /J`, sem privilégio), ou um link simbólico no Linux. */
+function publicacaoLigarPasta(string $alvo, string $elo): void
+{
+    publicacaoForaDoKit($alvo);
+    publicacaoForaDoKit($elo);
 
-        if (is_link($caminho)) {
-            PHP_OS_FAMILY === 'Windows' ? @rmdir($caminho) : @unlink($caminho);
+    if (PHP_OS_FAMILY === 'Windows') {
+        Process::timeout(30)->run(['cmd', '/c', 'mklink', '/J', $elo, $alvo])->throw();
 
-            return;
-        }
+        return;
+    }
 
-        if (is_dir($caminho)) {
-            foreach (array_diff(scandir($caminho) ?: [], ['.', '..']) as $nome) {
-                publicacaoApagarPasta($caminho.DIRECTORY_SEPARATOR.$nome);
-            }
+    symlink($alvo, $elo);
+}
 
-            @rmdir($caminho);
+/** Tira o link, e só ele: o `rmdir` de uma junção não entra no alvo. */
+function publicacaoDesligarPasta(string $elo): void
+{
+    publicacaoForaDoKit($elo);
 
-            return;
-        }
-
-        if (file_exists($caminho)) {
-            @chmod($caminho, 0666);
-            @unlink($caminho);
-        }
+    if (file_exists($elo) || is_link($elo)) {
+        PHP_OS_FAMILY === 'Windows' ? @rmdir($elo) : @unlink($elo);
     }
 }
 
-if (! function_exists('publicacaoLigarPasta')) {
-    /** O link para a pasta: uma junção no Windows (`mklink /J`, sem privilégio), ou um link simbólico no Linux. */
-    function publicacaoLigarPasta(string $alvo, string $elo): void
-    {
-        publicacaoForaDoKit($alvo);
-        publicacaoForaDoKit($elo);
+/**
+ * O clone descartável da G5, dentro da pasta temporária: `git clone --shared` esparso do kit, com a
+ * raiz e `site/mapa`, no commit do teste. O `Dado` vira asserção aqui: o commit é o do kit; o clone
+ * não tem `site/.archify`; tem o `site/.gitignore` (sem ele, o `.archify` criado sujaria o
+ * `git status` pelo motivo errado); e o download está bloqueado — com `GIT_ALLOW_PROTOCOL=file`, o
+ * https é recusado na hora, sem rede.
+ *
+ * @return array{kit: string, site: string}
+ */
+function publicacaoCloneDescartavel(string $raiz): array
+{
+    publicacaoForaDoKit($raiz);
 
-        if (PHP_OS_FAMILY === 'Windows') {
-            Process::timeout(30)->run(['cmd', '/c', 'mklink', '/J', $elo, $alvo])->throw();
+    $kit    = $raiz.DIRECTORY_SEPARATOR.'kit';
+    $site   = $kit.DIRECTORY_SEPARATOR.'site';
+    $commit = trim(Process::path(base_path())->run(['git', 'rev-parse', 'HEAD'])->throw()->output());
 
-            return;
-        }
+    Process::path($raiz)->timeout(120)->run(['git', 'clone', '--quiet', '--shared', '--sparse', base_path(), 'kit'])->throw();
+    Process::path($kit)->timeout(120)->run(['git', 'sparse-checkout', 'add', 'site/mapa'])->throw();
 
-        symlink($alvo, $elo);
-    }
+    $bloqueio = Process::path($kit)->env(['GIT_ALLOW_PROTOCOL' => 'file'])->timeout(30)
+        ->run(['git', 'ls-remote', 'https://github.com/tt-a1i/archify.git']);
+
+    expect(trim(Process::path($kit)->run(['git', 'rev-parse', 'HEAD'])->throw()->output()))->toBe($commit, 'o clone não está no commit do kit')
+        ->and(file_exists($site.DIRECTORY_SEPARATOR.'.archify'))->toBeFalse('o clone nasceu com site/.archify')
+        ->and(is_file($site.DIRECTORY_SEPARATOR.'.gitignore'))->toBeTrue('o clone não tem o site/.gitignore')
+        ->and(array_values(array_filter(
+            ['gerar.mjs', 'posicionar.mjs', 'archify.mjs', 'pecas.json', 'ligacoes.json', 'diagramas/app-resumo-sem.json'],
+            fn (string $arquivo): bool => ! is_file($site.DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.$arquivo),
+        )))->toBe([], 'o clone não tem as ferramentas e o modelo do mapa')
+        ->and($bloqueio->successful())->toBeFalse('o download por https não está bloqueado no clone')
+        ->and(str_contains($bloqueio->errorOutput(), "transport 'https' not allowed"))->toBeTrue('o bloqueio não é o do GIT_ALLOW_PROTOCOL: '.$bloqueio->errorOutput());
+
+    return ['kit' => $kit, 'site' => $site];
 }
 
-if (! function_exists('publicacaoDesligarPasta')) {
-    /** Tira o link, e só ele: o `rmdir` de uma junção não entra no alvo. */
-    function publicacaoDesligarPasta(string $elo): void
-    {
-        publicacaoForaDoKit($elo);
+/**
+ * Roda uma ferramenta do mapa com o download do archify bloqueado, sem `throw()`: o código e a saída
+ * são o que o caso afirma. O diretório e todo argumento que é caminho passam pela trava da G5.
+ *
+ * @param  list<string>  $comando
+ * @return array{codigo: ?int, stdout: string, stderr: string}
+ */
+function publicacaoRodarNoClone(string $cwd, array $comando): array
+{
+    $caminhos = array_filter($comando, fn (string $argumento): bool => $argumento === '.' || preg_match('~[\\\\/]~', $argumento) === 1);
 
-        if (file_exists($elo) || is_link($elo)) {
-            PHP_OS_FAMILY === 'Windows' ? @rmdir($elo) : @unlink($elo);
-        }
+    foreach ([$cwd, ...$caminhos] as $caminho) {
+        $absoluto = preg_match('~^([a-zA-Z]:)?[\\\\/]~', $caminho) === 1 ? $caminho : $cwd.DIRECTORY_SEPARATOR.$caminho;
+        publicacaoForaDoKit(realpath($absoluto) ?: $absoluto);
     }
+
+    $rodada = Process::path($cwd)->env(['GIT_ALLOW_PROTOCOL' => 'file'])->timeout(120)->run($comando);
+
+    return ['codigo' => $rodada->exitCode(), 'stdout' => $rodada->output(), 'stderr' => $rodada->errorOutput()];
 }
 
-if (! function_exists('publicacaoCloneDescartavel')) {
-    /**
-     * O clone descartável da G5, dentro da pasta temporária: `git clone --shared` esparso do kit, com a
-     * raiz e `site/mapa`, no commit do teste. O `Dado` vira asserção aqui: o commit é o do kit; o clone
-     * não tem `site/.archify`; tem o `site/.gitignore` (sem ele, o `.archify` criado sujaria o
-     * `git status` pelo motivo errado); e o download está bloqueado — com `GIT_ALLOW_PROTOCOL=file`, o
-     * https é recusado na hora, sem rede.
-     *
-     * @return array{kit: string, site: string}
-     */
-    function publicacaoCloneDescartavel(string $raiz): array
-    {
-        publicacaoForaDoKit($raiz);
-
-        $kit    = $raiz.DIRECTORY_SEPARATOR.'kit';
-        $site   = $kit.DIRECTORY_SEPARATOR.'site';
-        $commit = trim(Process::path(base_path())->run(['git', 'rev-parse', 'HEAD'])->throw()->output());
-
-        Process::path($raiz)->timeout(120)->run(['git', 'clone', '--quiet', '--shared', '--sparse', base_path(), 'kit'])->throw();
-        Process::path($kit)->timeout(120)->run(['git', 'sparse-checkout', 'add', 'site/mapa'])->throw();
-
-        $bloqueio = Process::path($kit)->env(['GIT_ALLOW_PROTOCOL' => 'file'])->timeout(30)
-            ->run(['git', 'ls-remote', 'https://github.com/tt-a1i/archify.git']);
-
-        expect(trim(Process::path($kit)->run(['git', 'rev-parse', 'HEAD'])->throw()->output()))->toBe($commit, 'o clone não está no commit do kit')
-            ->and(file_exists($site.DIRECTORY_SEPARATOR.'.archify'))->toBeFalse('o clone nasceu com site/.archify')
-            ->and(is_file($site.DIRECTORY_SEPARATOR.'.gitignore'))->toBeTrue('o clone não tem o site/.gitignore')
-            ->and(array_values(array_filter(
-                ['gerar.mjs', 'posicionar.mjs', 'archify.mjs', 'pecas.json', 'ligacoes.json', 'diagramas/app-resumo-sem.json'],
-                fn (string $arquivo): bool => ! is_file($site.DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.$arquivo),
-            )))->toBe([], 'o clone não tem as ferramentas e o modelo do mapa')
-            ->and($bloqueio->successful())->toBeFalse('o download por https não está bloqueado no clone')
-            ->and(str_contains($bloqueio->errorOutput(), "transport 'https' not allowed"))->toBeTrue('o bloqueio não é o do GIT_ALLOW_PROTOCOL: '.$bloqueio->errorOutput());
-
-        return ['kit' => $kit, 'site' => $site];
-    }
+/** A impressão dos bytes do arquivo; `null` quando ele sumiu. */
+function publicacaoBytes(string $arquivo): ?string
+{
+    return is_file($arquivo) ? hash_file('sha256', $arquivo) : null;
 }
 
-if (! function_exists('publicacaoRodarNoClone')) {
-    /**
-     * Roda uma ferramenta do mapa com o download do archify bloqueado, sem `throw()`: o código e a saída
-     * são o que o caso afirma. O diretório e todo argumento que é caminho passam pela trava da G5.
-     *
-     * @param  list<string>  $comando
-     * @return array{codigo: ?int, stdout: string, stderr: string}
-     */
-    function publicacaoRodarNoClone(string $cwd, array $comando): array
-    {
-        $caminhos = array_filter($comando, fn (string $argumento): bool => $argumento === '.' || preg_match('~[\\\\/]~', $argumento) === 1);
+/**
+ * O HTML do mapa escrito nas pastas de saída: os `.html` de `pt/` e de `en/` de cada uma.
+ *
+ * @param  list<string>  $pastas
+ * @return list<string>
+ */
+function publicacaoHtmlsDoMapa(array $pastas): array
+{
+    $htmls = [];
 
-        foreach ([$cwd, ...$caminhos] as $caminho) {
-            $absoluto = preg_match('~^([a-zA-Z]:)?[\\\\/]~', $caminho) === 1 ? $caminho : $cwd.DIRECTORY_SEPARATOR.$caminho;
-            publicacaoForaDoKit(realpath($absoluto) ?: $absoluto);
+    foreach ($pastas as $pasta) {
+        foreach (['pt', 'en'] as $idioma) {
+            $htmls = [...$htmls, ...(glob($pasta.DIRECTORY_SEPARATOR.$idioma.DIRECTORY_SEPARATOR.'*.html') ?: [])];
         }
-
-        $rodada = Process::path($cwd)->env(['GIT_ALLOW_PROTOCOL' => 'file'])->timeout(120)->run($comando);
-
-        return ['codigo' => $rodada->exitCode(), 'stdout' => $rodada->output(), 'stderr' => $rodada->errorOutput()];
     }
+
+    return $htmls;
 }
 
-if (! function_exists('publicacaoBytes')) {
-    /** A impressão dos bytes do arquivo; `null` quando ele sumiu. */
-    function publicacaoBytes(string $arquivo): ?string
-    {
-        return is_file($arquivo) ? hash_file('sha256', $arquivo) : null;
+/**
+ * A decisão das recusas da G5 (CT-48, CT-49 e CT-50): a ferramenta termina com código diferente de
+ * zero, com uma linha `[mapa]` que nomeia o culpado — comparado sem caixa e com `/` — e diz o porquê
+ * na mesma linha, e nenhum dos efeitos aconteceu. Devolve as reprovas, com a saída literal, para que
+ * todo `Então` apareça numa rodada só.
+ *
+ * @param  array{codigo: ?int, stdout: string, stderr: string}  $rodada
+ * @param  list<string>  $culpado  os nomes do culpado, todos na mesma linha; o que começa por `~` é um padrão, aplicado à linha crua
+ * @param  ?string  $porQue  o padrão do porquê, na mesma linha do culpado
+ * @param  array<string, bool>  $efeitos  o efeito → aconteceu
+ * @return list<string>
+ */
+function publicacaoConferirRecusa(array $rodada, array $culpado, ?string $porQue, array $efeitos): array
+{
+    $normalizar = fn (string $texto): string => rtrim(strtolower(str_replace('\\', '/', $texto)), '/');
+    $saida      = $rodada['stdout']."\n".$rodada['stderr'];
+    $literal    = 'saída literal, código '.var_export($rodada['codigo'], true).': '.mb_substr(trim($saida), 0, 900);
+    $nomeiam    = array_filter(
+        preg_split('/\R/u', $saida),
+        fn (string $linha): bool => str_contains($linha, '[mapa]')
+            && array_filter($culpado, fn (string $nome): bool => str_starts_with($nome, '~') ? preg_match($nome, $linha) !== 1 : ! str_contains($normalizar($linha), $normalizar($nome))) === [],
+    );
+
+    $reprovas = [];
+
+    if ($rodada['codigo'] === 0) {
+        $reprovas[] = "terminou com código 0 — {$literal}";
     }
+
+    if ($nomeiam === []) {
+        $reprovas[] = 'nenhuma linha [mapa] nomeia '.implode(' e ', $culpado)." — {$literal}";
+    } elseif ($porQue !== null && array_filter($nomeiam, fn (string $linha): bool => preg_match($porQue, $linha) === 1) === []) {
+        $reprovas[] = "a linha [mapa] que nomeia o culpado não diz o porquê ({$porQue}) — {$literal}";
+    }
+
+    foreach ($efeitos as $efeito => $aconteceu) {
+        if ($aconteceu) {
+            $reprovas[] = $efeito;
+        }
+    }
+
+    return $reprovas;
 }
 
-if (! function_exists('publicacaoHtmlsDoMapa')) {
-    /**
-     * O HTML do mapa escrito nas pastas de saída: os `.html` de `pt/` e de `en/` de cada uma.
-     *
-     * @param  list<string>  $pastas
-     * @return list<string>
-     */
-    function publicacaoHtmlsDoMapa(array $pastas): array
-    {
-        $htmls = [];
+/**
+ * A decisão do CT-51: as chamadas pelo caminho real e pelo link terminam com o mesmo código e a mesma
+ * saída, fora o caminho (nas formas com `\`, com `/` e de `file:///`), e o código de cada uma é
+ * diferente de zero.
+ *
+ * @param  array<string, array{codigo: ?int, stdout: string, stderr: string}>  $rodadas  a via → a rodada
+ * @param  list<string>  $caminhos  os caminhos que a comparação ignora: o real e o do link
+ * @return list<string>
+ */
+function publicacaoConferirMesmaChamada(array $rodadas, array $caminhos): array
+{
+    $barras     = fn (string $texto): string => str_replace('\\', '/', $texto);
+    $semCaminho = fn (string $texto): string => trim(str_ireplace(array_map($barras, $caminhos), '<site>', $barras($texto)));
+    $vistas     = array_map(
+        fn (array $rodada): array => ['codigo' => $rodada['codigo'], 'stdout' => $semCaminho($rodada['stdout']), 'stderr' => $semCaminho($rodada['stderr'])],
+        $rodadas,
+    );
 
-        foreach ($pastas as $pasta) {
-            foreach (['pt', 'en'] as $idioma) {
-                $htmls = [...$htmls, ...(glob($pasta.DIRECTORY_SEPARATOR.$idioma.DIRECTORY_SEPARATOR.'*.html') ?: [])];
-            }
-        }
+    $reprovas = [];
 
-        return $htmls;
+    if (count(array_unique(array_map('serialize', $vistas))) !== 1) {
+        $reprovas[] = 'as chamadas não terminam com o mesmo código e a mesma saída: '.json_encode($vistas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
-}
 
-if (! function_exists('publicacaoConferirRecusa')) {
-    /**
-     * A decisão das recusas da G5 (CT-48, CT-49 e CT-50): a ferramenta termina com código diferente de
-     * zero, com uma linha `[mapa]` que nomeia o culpado — comparado sem caixa e com `/` — e diz o porquê
-     * na mesma linha, e nenhum dos efeitos aconteceu. Devolve as reprovas, com a saída literal, para que
-     * todo `Então` apareça numa rodada só.
-     *
-     * @param  array{codigo: ?int, stdout: string, stderr: string}  $rodada
-     * @param  list<string>  $culpado  os nomes do culpado, todos na mesma linha; o que começa por `~` é um padrão, aplicado à linha crua
-     * @param  ?string  $porQue  o padrão do porquê, na mesma linha do culpado
-     * @param  array<string, bool>  $efeitos  o efeito → aconteceu
-     * @return list<string>
-     */
-    function publicacaoConferirRecusa(array $rodada, array $culpado, ?string $porQue, array $efeitos): array
-    {
-        $normalizar = fn (string $texto): string => rtrim(strtolower(str_replace('\\', '/', $texto)), '/');
-        $saida      = $rodada['stdout']."\n".$rodada['stderr'];
-        $literal    = 'saída literal, código '.var_export($rodada['codigo'], true).': '.mb_substr(trim($saida), 0, 900);
-        $nomeiam    = array_filter(
-            preg_split('/\R/u', $saida),
-            fn (string $linha): bool => str_contains($linha, '[mapa]')
-                && array_filter($culpado, fn (string $nome): bool => str_starts_with($nome, '~') ? preg_match($nome, $linha) !== 1 : ! str_contains($normalizar($linha), $normalizar($nome))) === [],
-        );
-
-        $reprovas = [];
-
-        if ($rodada['codigo'] === 0) {
-            $reprovas[] = "terminou com código 0 — {$literal}";
+    foreach ($vistas as $via => $vista) {
+        if ($vista['codigo'] === 0) {
+            $reprovas[] = "pelo {$via}, o gerador terminou com código 0";
         }
-
-        if ($nomeiam === []) {
-            $reprovas[] = 'nenhuma linha [mapa] nomeia '.implode(' e ', $culpado)." — {$literal}";
-        } elseif ($porQue !== null && array_filter($nomeiam, fn (string $linha): bool => preg_match($porQue, $linha) === 1) === []) {
-            $reprovas[] = "a linha [mapa] que nomeia o culpado não diz o porquê ({$porQue}) — {$literal}";
-        }
-
-        foreach ($efeitos as $efeito => $aconteceu) {
-            if ($aconteceu) {
-                $reprovas[] = $efeito;
-            }
-        }
-
-        return $reprovas;
     }
-}
 
-if (! function_exists('publicacaoConferirMesmaChamada')) {
-    /**
-     * A decisão do CT-51: as chamadas pelo caminho real e pelo link terminam com o mesmo código e a mesma
-     * saída, fora o caminho (nas formas com `\`, com `/` e de `file:///`), e o código de cada uma é
-     * diferente de zero.
-     *
-     * @param  array<string, array{codigo: ?int, stdout: string, stderr: string}>  $rodadas  a via → a rodada
-     * @param  list<string>  $caminhos  os caminhos que a comparação ignora: o real e o do link
-     * @return list<string>
-     */
-    function publicacaoConferirMesmaChamada(array $rodadas, array $caminhos): array
-    {
-        $barras     = fn (string $texto): string => str_replace('\\', '/', $texto);
-        $semCaminho = fn (string $texto): string => trim(str_ireplace(array_map($barras, $caminhos), '<site>', $barras($texto)));
-        $vistas     = array_map(
-            fn (array $rodada): array => ['codigo' => $rodada['codigo'], 'stdout' => $semCaminho($rodada['stdout']), 'stderr' => $semCaminho($rodada['stderr'])],
-            $rodadas,
-        );
-
-        $reprovas = [];
-
-        if (count(array_unique(array_map('serialize', $vistas))) !== 1) {
-            $reprovas[] = 'as chamadas não terminam com o mesmo código e a mesma saída: '.json_encode($vistas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        }
-
-        foreach ($vistas as $via => $vista) {
-            if ($vista['codigo'] === 0) {
-                $reprovas[] = "pelo {$via}, o gerador terminou com código 0";
-            }
-        }
-
-        return $reprovas;
-    }
+    return $reprovas;
 }
 
 it('[CT-48] com --saida e sem slug, o gerador recusa, antes de qualquer efeito, a pasta que tem o que ele não gerou, e não apaga nada', function (string $pasta): void {
@@ -1374,42 +1296,38 @@ it('[CT-49] o argumento sem valor válido é recusado antes de qualquer efeito, 
     'posicionador: zero, abaixo do inteiro positivo (Q24)' => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas', '0'], '--tentativas'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
 
-if (! function_exists('publicacaoFotoDaPasta')) {
-    /**
-     * Os bytes de uma pasta: cada caminho relativo (com `/`) → a impressão do arquivo, ou `pasta`. Vazio
-     * quando a pasta não existe.
-     *
-     * @return array<string, string>
-     */
-    function publicacaoFotoDaPasta(string $pasta): array
-    {
-        if (! is_dir($pasta)) {
-            return [];
-        }
-
-        $foto = [];
-
-        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST) as $item) {
-            $foto[str_replace('\\', '/', substr($item->getPathname(), strlen($pasta) + 1))] = $item->isDir() ? 'pasta' : (string) hash_file('sha256', $item->getPathname());
-        }
-
-        ksort($foto);
-
-        return $foto;
+/**
+ * Os bytes de uma pasta: cada caminho relativo (com `/`) → a impressão do arquivo, ou `pasta`. Vazio
+ * quando a pasta não existe.
+ *
+ * @return array<string, string>
+ */
+function publicacaoFotoDaPasta(string $pasta): array
+{
+    if (! is_dir($pasta)) {
+        return [];
     }
+
+    $foto = [];
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST) as $item) {
+        $foto[str_replace('\\', '/', substr($item->getPathname(), strlen($pasta) + 1))] = $item->isDir() ? 'pasta' : (string) hash_file('sha256', $item->getPathname());
+    }
+
+    ksort($foto);
+
+    return $foto;
 }
 
-if (! function_exists('publicacaoDiferencaDaFoto')) {
-    /**
-     * Os caminhos que mudaram entre duas fotos da mesma pasta: o que sumiu, o que nasceu e o que mudou de bytes.
-     *
-     * @param  array<string, string>  $antes
-     * @param  array<string, string>  $depois
-     */
-    function publicacaoDiferencaDaFoto(array $antes, array $depois): string
-    {
-        return implode(', ', array_keys(array_diff_assoc($antes, $depois) + array_diff_assoc($depois, $antes)));
-    }
+/**
+ * Os caminhos que mudaram entre duas fotos da mesma pasta: o que sumiu, o que nasceu e o que mudou de bytes.
+ *
+ * @param  array<string, string>  $antes
+ * @param  array<string, string>  $depois
+ */
+function publicacaoDiferencaDaFoto(array $antes, array $depois): string
+{
+    return implode(', ', array_keys(array_diff_assoc($antes, $depois) + array_diff_assoc($depois, $antes)));
 }
 
 it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebrado, peça que não está no modelo, ou prova que não resolve — é recusado antes de qualquer efeito, com a mensagem [mapa] que nomeia o culpado', function (string $arquivo, string $defeito, array $comando, array $culpado): void {

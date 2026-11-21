@@ -33,31 +33,32 @@ if (!/^[1-9][0-9]*$/.test(valor ?? '')) {
 const TENTATIVAS = Number(valor);
 
 const RAIZ = fileURLToPath(new URL('../../', import.meta.url));
-const arquivo = fileURLToPath(new URL(`./diagramas/${slug}.json`, import.meta.url));
-let diagrama;
-try {
-  diagrama = JSON.parse(readFileSync(arquivo, 'utf8'));
-} catch (erro) {
-  console.error(`[mapa] ERRO site/mapa/diagramas/${slug}.json — ${erro.code === 'ENOENT' ? 'o diagrama não existe' : `JSON inválido: ${erro.message}`}`);
+const PASTA = fileURLToPath(new URL('./diagramas/', import.meta.url));
+const arquivo = join(PASTA, `${slug}.json`);
+// Os arquivos de diagrama, lidos antes de qualquer efeito: o quebrado é recusado nomeando o arquivo (P-14).
+const diagramas = new Map(
+  readdirSync(PASTA)
+    .filter((nome) => nome.endsWith('.json'))
+    .map((nome) => {
+      try {
+        return [nome, JSON.parse(readFileSync(join(PASTA, nome), 'utf8'))];
+      } catch (erro) {
+        console.error(`[mapa] ERRO site/mapa/diagramas/${nome} — JSON inválido: ${erro.message}`);
+        process.exit(2);
+      }
+    }),
+);
+const diagrama = diagramas.get(`${slug}.json`);
+if (!diagrama) {
+  console.error(`[mapa] ERRO site/mapa/diagramas/${slug}.json — o diagrama não existe`);
   process.exit(2);
 }
 if (diagrama.construtor !== 'mapa') {
   console.error(`[mapa] ${slug} não é um mapa de arquitetura construído do modelo`);
   process.exit(2);
 }
-// O mapa que é base ou cabeça de um comparativo também tem de valer na forma que o comparativo recebe; os outros
-// diagramas são lidos antes de qualquer efeito, e o quebrado é recusado nomeando o arquivo (P-14).
-const doComparativo = readdirSync(fileURLToPath(new URL('./diagramas/', import.meta.url)))
-  .filter((nome) => nome.endsWith('.json'))
-  .map((nome) => {
-    try {
-      return JSON.parse(readFileSync(fileURLToPath(new URL(`./diagramas/${nome}`, import.meta.url)), 'utf8'));
-    } catch (erro) {
-      console.error(`[mapa] ERRO site/mapa/diagramas/${nome} — JSON inválido: ${erro.message}`);
-      process.exit(2);
-    }
-  })
-  .some((outro) => outro.tipo === 'compare' && [outro.base, outro.cabeca].includes(slug));
+// O mapa que é base ou cabeça de um comparativo também tem de valer na forma que o comparativo recebe.
+const doComparativo = [...diagramas.values()].some((outro) => outro.tipo === 'compare' && [outro.base, outro.cabeca].includes(slug));
 // A entrada do mapa, montada sem o archify nos dois idiomas, antes de qualquer efeito: o modelo quebrado, a peça fora
 // do modelo e a prova que não resolve param aqui, nomeando o culpado (P-14).
 for (const idioma of ['pt', 'en']) {
@@ -117,8 +118,6 @@ const setas = ir.connections.map((c) => [c.from, c.to]);
 
 /** Camadas pelo maior caminho a partir das fontes (ciclos quebrados na ordem da busca). */
 function camadas() {
-  const saidas = new Map(caixas.map((c) => [c.chave, []]));
-  for (const [de, para] of setas) saidas.get(de)?.push(para);
   const camada = new Map();
   const visitando = new Set();
   const visitar = (no) => {
@@ -185,6 +184,5 @@ if (melhorNota > 0) {
   process.exit(1);
 }
 for (const caixa of caixas) Object.assign(caixa.origem, melhor.get(caixa.chave));
-diagrama.layout = { ...diagrama.layout, cols: colunas };
 writeFileSync(arquivo, JSON.stringify(diagrama, null, 2) + '\n');
 console.log(`[mapa] layout ${slug} gravado: ${colunas} colunas, ${caixas.length} caixas, ${setas.length} setas`);

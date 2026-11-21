@@ -90,12 +90,7 @@ const pecasDoModelo = new Map(lerJson(join(MODELO, 'pecas.json')).map((peca) => 
 const ligacoesDoModelo = lerJson(join(MODELO, 'ligacoes.json'));
 
 /** O primeiro diagrama de cada tipo, em ordem de nome de arquivo. */
-const representantes = new Map();
-for (const { tipo, slug } of diagramas) {
-  if (!representantes.has(tipo)) {
-    representantes.set(tipo, slug);
-  }
-}
+const representantes = new Map([...Map.groupBy(diagramas, (d) => d.tipo)].map(([tipo, [{ slug }]]) => [tipo, slug]));
 
 const amostra = [...representantes].flatMap(([tipo, slug]) =>
   IDIOMAS.flatMap((idioma) =>
@@ -176,8 +171,6 @@ function esperadoDoDiagrama(d, idioma) {
     destino: rotuloDe.get(ligacao.to),
     arquivo: ligacao.prova?.arquivo,
     trecho: ligacao.prova?.trecho,
-    de: ligacao.from,
-    para: ligacao.to,
   }));
 
   return {
@@ -293,9 +286,6 @@ const CATALOGO_EN = MODO_CONTROLE ? {} : lerJson(join(ARCHIFY, 'locales/en.json'
 const CATALOGO_PT_DO_ARCHIFY = MODO_CONTROLE ? {} : lerJson(join(ARCHIFY, 'examples/locales/pt.json'));
 const INTERFACE_DO_KIT = MODO_CONTROLE ? { pt: {}, tipos: {} } : lerJson(join(MODELO, 'interface.json'));
 
-/** O pt que o kit entrega, pela fonte, para um tipo de diagrama. */
-const ptDaFonte = (tipo) => ({ ...CATALOGO_PT_DO_ARCHIFY, ...INTERFACE_DO_KIT.pt, ...INTERFACE_DO_KIT.tipos?.[tipo]?.pt });
-
 /** As mensagens embutidas no HTML (`archify-i18n-data`), lidas do arquivo. */
 function mensagensEmbutidas(idioma, slug) {
   const caminho = join(DIST, 'mapa', idioma, `${slug}.html`);
@@ -307,7 +297,12 @@ function mensagensEmbutidas(idioma, slug) {
 }
 
 /** O catálogo pt de um HTML pt: o embutido, e a fonte do kit nas chaves que o archify aplica no render. */
-const catalogoPtDoHtml = (slug, tipo) => ({ ...ptDaFonte(tipo), ...mensagensEmbutidas('pt', slug) });
+const catalogoPtDoHtml = (slug, tipo) => ({
+  ...CATALOGO_PT_DO_ARCHIFY,
+  ...INTERFACE_DO_KIT.pt,
+  ...INTERFACE_DO_KIT.tipos?.[tipo]?.pt,
+  ...mensagensEmbutidas('pt', slug),
+});
 
 /** As 14 chaves cujo texto pt é igual ao en no commit fixado do archify (fato da base, CT-B07), e as de só marcadores. */
 const CHAVES_MEDIDAS = new Set([
@@ -475,7 +470,6 @@ function lerPagina() {
   }
   atributos.push(document.title);
 
-  const embutido = document.getElementById('archify-i18n-data');
   const itens = [...document.querySelectorAll('.reader-rail .card li')].map((li) => ({
     t: li.textContent.replace(/\s+/g, ' ').trim(),
     aVista: visivel(li),
@@ -494,38 +488,10 @@ function lerPagina() {
     recursos: document.querySelectorAll('script[src], link[rel="stylesheet"]').length,
     textos,
     atributos,
-    embutido: embutido ? JSON.parse(embutido.textContent) : null,
     avisoDeIdiomaReserva:
       document.querySelector('[data-locale-fallback], [data-i18n-fallback], .locale-fallback, .i18n-fallback, .i18n-warning') !== null ||
       /fall(s)? back to English|idioma reserva|locale fallback/i.test(document.body.innerText),
   };
-}
-
-/** Roda no navegador: o texto de interface visível e os atributos de um momento (busca e passaporte abertos). */
-function lerPaginaDaInterface() {
-  const visivel = (el) => el.checkVisibility({ checkVisibilityCSS: true }) && el.offsetHeight > 0;
-  const fora = (el) => el.closest('[data-node-id], .card, script, style, noscript, template, .node-finder-result') !== null;
-  const saida = [];
-  const andador = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-  for (let no = andador.nextNode(); no; no = andador.nextNode()) {
-    const pai = no.parentElement;
-    const t = no.textContent.replace(/\s+/g, ' ').trim();
-    if (t && pai && !fora(pai) && visivel(pai)) {
-      saida.push(t);
-    }
-  }
-  for (const el of document.querySelectorAll('[aria-label], [title], [placeholder], [data-legend-label]')) {
-    if (fora(el)) {
-      continue;
-    }
-    for (const nome of ['aria-label', 'title', 'placeholder', 'data-legend-label']) {
-      const v = el.getAttribute(nome);
-      if (v) {
-        saida.push(v.replace(/\s+/g, ' ').trim());
-      }
-    }
-  }
-  return saida;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -535,13 +501,13 @@ const duasPinturas = (pagina) => pagina.evaluate(() => new Promise((pronto) => r
 const urlDoDiagrama = (idioma, slug) => `${ORIGEM}${BASE}/mapa/${idioma}/${slug}.html`;
 const seletorDoNo = (id) => `[data-node-id="${id.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`;
 
-function conferirRecursos(ct, rotulo, requisicoes, leitura) {
+function conferirRecursos(rotulo, requisicoes, leitura) {
   const forasDaOrigem = requisicoes.filter((url) => !url.startsWith(ORIGEM) && !url.startsWith('data:') && !url.startsWith('blob:'));
   if (forasDaOrigem.length > 0) {
-    reprovar(ct, `${rotulo} — requisição fora da origem da prévia: ${forasDaOrigem[0].slice(0, 160)}`);
+    reprovar('CT-B01', `${rotulo} — requisição fora da origem da prévia: ${forasDaOrigem[0].slice(0, 160)}`);
   }
   if (leitura.recursos > 0) {
-    reprovar(ct, `${rotulo} — o documento tem ${leitura.recursos} <script src> ou <link rel="stylesheet">`);
+    reprovar('CT-B01', `${rotulo} — o documento tem ${leitura.recursos} <script src> ou <link rel="stylesheet">`);
   }
 }
 
@@ -585,7 +551,7 @@ function conferirBusca(rotulo, leitura) {
 }
 
 /** CT-B02: o item de prova de cada ligação desenhada, à vista e inteiro, e os pares de arestas. */
-function conferirProvas(rotulo, d, esperado, leitura) {
+function conferirProvas(rotulo, esperado, leitura) {
   const itens = leitura.itens.filter((item) => /^.+ → .+: \S+:\d+(?:-\d+)? — /s.test(item.t));
   const usados = new Set();
   /*
@@ -648,22 +614,17 @@ function conferirProvas(rotulo, d, esperado, leitura) {
     }
     contar('CT-B02', esperado.pares.size);
   }
-  void d;
 }
 
 /** CT-B04: o texto de interface lido não é o en de uma chave cujo pt é outro (ou o contrário, na versão en). */
-function conferirIdioma(rotulo, idioma, d, leitura, conjuntoProibido, ctExtra = 'CT-B04') {
-  if (idioma === 'pt' && !leitura.lang.startsWith('pt')) {
-    reprovar('CT-B04', `${rotulo} — o lang do documento é ${JSON.stringify(leitura.lang)}, e devia começar por pt`);
-  }
-  if (idioma === 'en' && !leitura.lang.startsWith('en')) {
-    reprovar('CT-B04', `${rotulo} — o lang do documento é ${JSON.stringify(leitura.lang)}, e devia começar por en`);
+function conferirIdioma(rotulo, idioma, leitura, conjuntoProibido) {
+  if (!leitura.lang.startsWith(idioma)) {
+    reprovar('CT-B04', `${rotulo} — o lang do documento é ${JSON.stringify(leitura.lang)}, e devia começar por ${idioma}`);
   }
   const proibidos = [...new Set([...leitura.textos, ...leitura.atributos])].filter((t) => conjuntoProibido.has(t));
   if (proibidos.length > 0) {
-    reprovar(ctExtra, `${rotulo} — texto de interface no idioma errado: ${JSON.stringify(proibidos[0])}`);
+    reprovar('CT-B04', `${rotulo} — texto de interface no idioma errado: ${JSON.stringify(proibidos[0])}`);
   }
-  void d;
 }
 
 /** O conjunto de textos que NÃO podem aparecer na interface de um idioma: o texto do outro, nas chaves em que os dois diferem. */
@@ -877,12 +838,7 @@ function amostraDePassaporte(d) {
  * nó (`data-node-context`), sem diferença de caixa — e, por isso, nunca o `kind` cru quando o nome pt é outro.
  */
 async function conferirTipoNoPassaporte(pagina, rotulo, d) {
-  const primeiros = new Map();
-  for (const tipo of d.types ?? []) {
-    if (!primeiros.has(tipo.kind)) {
-      primeiros.set(tipo.kind, tipo);
-    }
-  }
+  const primeiros = new Map([...Map.groupBy(d.types ?? [], (tipo) => tipo.kind)].map(([kind, [tipo]]) => [kind, tipo]));
   if (primeiros.size === 0) {
     reprovar('CT-B04', `${rotulo} — o diagrama de classes não tem tipo nenhum em types`);
     return;
@@ -965,7 +921,7 @@ async function conferirDiagrama(navegador, d, idioma, resumo) {
   resumo.abertos[idioma]++;
   let antesDaInteracao = erros.length;
 
-  conferirRecursos('CT-B01', rotulo, requisicoes, leitura);
+  conferirRecursos(rotulo, requisicoes, leitura);
 
   if (comparativo) {
     if (idioma === 'pt') {
@@ -981,8 +937,8 @@ async function conferirDiagrama(navegador, d, idioma, resumo) {
     if (leitura.h1 !== texto(d.titulo, idioma)) {
       reprovar('CT-B01', `${rotulo} — o <h1> é ${JSON.stringify(leitura.h1)}, e o título do arquivo é ${JSON.stringify(texto(d.titulo, idioma))}`);
     }
-    conferirProvas(rotulo, d, esperado, leitura);
-    conferirIdioma(rotulo, idioma, d, leitura, textosProibidos(idioma, d.slug, d.tipo));
+    conferirProvas(rotulo, esperado, leitura);
+    conferirIdioma(rotulo, idioma, leitura, textosProibidos(idioma, d.slug, d.tipo));
     if (idioma === 'pt' && leitura.avisoDeIdiomaReserva) {
       reprovar('CT-B04', `${rotulo} — o aviso de idioma reserva apareceu`);
     }
@@ -995,8 +951,7 @@ async function conferirDiagrama(navegador, d, idioma, resumo) {
     await conferirFeatures(pagina, rotulo, d, esperado, leitura);
 
     // interação: a busca e o passaporte abertos (CT-B03 na amostra de `architecture`; CT-B04 em todo pt)
-    const antes = erros.length;
-    antesDaInteracao = antes;
+    antesDaInteracao = erros.length;
     const amostraDoDiagrama = d.tipo === 'architecture' ? amostraDePassaporte(d) : {};
     const alvos = [];
     if (d.tipo === 'architecture') {
@@ -1029,9 +984,9 @@ async function conferirDiagrama(navegador, d, idioma, resumo) {
       }
       if (idioma === 'pt' && primeiraInteracao && !passaporte.erro) {
         primeiraInteracao = false;
-        const textosDaInteracao = await pagina.evaluate(lerPaginaDaInterface);
+        const { textos, atributos } = await pagina.evaluate(lerPagina);
         const proibidos = textosProibidos('pt', d.slug, d.tipo);
-        const achados = [...new Set(textosDaInteracao)].filter((t) => proibidos.has(t));
+        const achados = [...new Set([...textos, ...atributos])].filter((t) => proibidos.has(t));
         if (achados.length > 0) {
           reprovar('CT-B04', `${rotulo} — com a busca e o passaporte abertos, texto de interface no idioma errado: ${JSON.stringify(achados[0])}`);
         }
@@ -1042,7 +997,7 @@ async function conferirDiagrama(navegador, d, idioma, resumo) {
       await conferirTipoNoPassaporte(pagina, rotulo, d);
     }
 
-    for (const erro of erros.slice(antes)) {
+    for (const erro of erros.slice(antesDaInteracao)) {
       if (d.tipo === 'architecture') {
         reprovar('CT-B03', `${rotulo} — com a busca e o passaporte abertos: ${erro}`);
       }
@@ -1279,7 +1234,6 @@ async function conferirControleDeProcesso() {
       reprovar('CT-B06', `controle de processo — o código de saída foi ${codigo}, mas o log não nomeia o diagrama ${slug}`);
     }
     contar('CT-B06');
-    return { codigo, saida };
   } finally {
     servidor?.close();
     rmSync(pasta, { recursive: true, force: true });
@@ -1323,9 +1277,7 @@ async function conferirJsonQuebrado() {
 // ---------------------------------------------------------------------------------------------------
 function conferirCatalogoPt() {
   // as cópias, em memória, decididas pela mesma função que decide o catálogo real
-  const ptBase = { ...CATALOGO_EN, ...Object.fromEntries(Object.keys(LISTA_FECHADA).map((chave) => [chave, CATALOGO_EN[chave]])) };
   const ptTraduzido = Object.fromEntries(Object.entries(CATALOGO_EN).map(([chave, valor]) => [chave, LISTA_FECHADA[chave] ? valor : `${valor} (pt)`]));
-  void ptBase;
   const copias = [
     { nome: 'texto en copiado em viewer.finder.placeholder', pt: { ...ptTraduzido, 'viewer.finder.placeholder': CATALOGO_EN['viewer.finder.placeholder'] }, lista: LISTA_FECHADA, chave: 'viewer.finder.placeholder' },
     { nome: 'chave viewer.passport.evidence ausente', pt: Object.fromEntries(Object.entries(ptTraduzido).filter(([chave]) => chave !== 'viewer.passport.evidence')), lista: LISTA_FECHADA, chave: 'viewer.passport.evidence' },

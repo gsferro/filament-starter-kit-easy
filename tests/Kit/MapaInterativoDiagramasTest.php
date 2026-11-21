@@ -39,1313 +39,1311 @@ beforeEach(function (): void {
 |--------------------------------------------------------------------------
 */
 
-if (! function_exists('mapaDiagramasConstruir')) {
-    /** @return list<string> os tipos de visualização, na ordem das linhas da matriz tipo × painel × modo */
-    function mapaDiagramasTiposDaMatriz(): array
-    {
-        return ['tree', 'architecture', 'sequence', 'workflow', 'lifecycle', 'dataflow', 'erd', 'class', 'timeline', 'waterfall', 'compare'];
+/** @return list<string> os tipos de visualização, na ordem das linhas da matriz tipo × painel × modo */
+function mapaDiagramasTiposDaMatriz(): array
+{
+    return ['tree', 'architecture', 'sequence', 'workflow', 'lifecycle', 'dataflow', 'erd', 'class', 'timeline', 'waterfall', 'compare'];
+}
+
+/** @return list<string> as seis colunas da matriz, na ordem do cabeçalho */
+function mapaDiagramasColunas(): array
+{
+    return ['admin|sem', 'admin|com', 'app|sem', 'app|com', 'infra|sem', 'infra|com'];
+}
+
+function mapaDiagramasPt(mixed $valor): string
+{
+    if (is_array($valor)) {
+        return (string) ($valor['pt'] ?? '');
     }
 
-    /** @return list<string> as seis colunas da matriz, na ordem do cabeçalho */
-    function mapaDiagramasColunas(): array
-    {
-        return ['admin|sem', 'admin|com', 'app|sem', 'app|com', 'infra|sem', 'infra|com'];
+    return is_string($valor) ? $valor : '';
+}
+
+function mapaDiagramasEn(mixed $valor): string
+{
+    if (is_array($valor)) {
+        return (string) ($valor['en'] ?? '');
     }
 
-    function mapaDiagramasPt(mixed $valor): string
-    {
-        if (is_array($valor)) {
-            return (string) ($valor['pt'] ?? '');
-        }
+    return is_string($valor) ? $valor : '';
+}
 
-        return is_string($valor) ? $valor : '';
+function mapaDiagramasNomeDaPeca(array $modelo, string $id): string
+{
+    return (string) ($modelo['pecas'][$id]['nome'] ?? $id);
+}
+
+/** @return array<string, list<string>> nome curto => ids */
+function mapaDiagramasIdsPorNome(array $modelo): array
+{
+    $saida = [];
+    foreach ($modelo['pecas'] as $id => $peca) {
+        $saida[$peca['nome']][] = $id;
     }
 
-    function mapaDiagramasEn(mixed $valor): string
-    {
-        if (is_array($valor)) {
-            return (string) ($valor['en'] ?? '');
-        }
+    return $saida;
+}
 
-        return is_string($valor) ? $valor : '';
-    }
+/**
+ * @param  list<string>  $pecas
+ * @param  list<string>  $membros
+ * @param  list<string>  $nomeados
+ * @return array<string, mixed>
+ */
+function mapaDiagramasNo(string $tipo, string $rotulo, array $pecas = [], array $membros = [], array $nomeados = []): array
+{
+    return ['tipo' => $tipo, 'rotulo' => $rotulo, 'pecas' => $pecas, 'membros' => $membros, 'nomeados' => $nomeados, 'texto' => ''];
+}
 
-    function mapaDiagramasNomeDaPeca(array $modelo, string $id): string
-    {
-        return (string) ($modelo['pecas'][$id]['nome'] ?? $id);
-    }
+/**
+ * O desenho de um diagrama: nós (peça, agrupamento que nomeia os membros, porta) e arestas entre nós.
+ * O mapa de arquitetura e a árvore de registro saem do modelo (o arquivo diz só o recorte); os demais
+ * tipos são desenhados à mão, e a peça de um nó é a que ele nomeia, pelo id ou pelo nome exato.
+ *
+ * @return array<string, mixed>
+ */
+function mapaDiagramasConstruir(array $decl, array $modelo): array
+{
+    $pecas = $modelo['pecas'];
+    $ir    = [
+        'slug'       => $decl['slug'],
+        'tipo'       => $decl['tipo'],
+        'construtor' => $decl['construtor'] ?? null,
+        'paineis'    => $decl['paineis'] ?? [],
+        'modos'      => $decl['modos'] ?? [],
+        'nos'        => [],
+        'arestas'    => [],
+        // As ligações que o construtor transformou em aresta, já no painel e no modo do diagrama (R12, CT-B02).
+        'representadas' => [],
+        // O que o diagrama escrito à mão desenha, inteiro: a tabela do ERD não é peça, e só ela distingue um modo do outro.
+        'estrutura' => null,
+    ];
 
-    /** @return array<string, list<string>> nome curto => ids */
-    function mapaDiagramasIdsPorNome(array $modelo): array
-    {
-        $saida = [];
-        foreach ($modelo['pecas'] as $id => $peca) {
-            $saida[$peca['nome']][] = $id;
-        }
-
-        return $saida;
-    }
-
-    /**
-     * @param  list<string>  $pecas
-     * @param  list<string>  $membros
-     * @param  list<string>  $nomeados
-     * @return array<string, mixed>
-     */
-    function mapaDiagramasNo(string $tipo, string $rotulo, array $pecas = [], array $membros = [], array $nomeados = []): array
-    {
-        return ['tipo' => $tipo, 'rotulo' => $rotulo, 'pecas' => $pecas, 'membros' => $membros, 'nomeados' => $nomeados, 'texto' => ''];
-    }
-
-    /**
-     * O desenho de um diagrama: nós (peça, agrupamento que nomeia os membros, porta) e arestas entre nós.
-     * O mapa de arquitetura e a árvore de registro saem do modelo (o arquivo diz só o recorte); os demais
-     * tipos são desenhados à mão, e a peça de um nó é a que ele nomeia, pelo id ou pelo nome exato.
-     *
-     * @return array<string, mixed>
-     */
-    function mapaDiagramasConstruir(array $decl, array $modelo): array
-    {
-        $pecas = $modelo['pecas'];
-        $ir    = [
-            'slug'       => $decl['slug'],
-            'tipo'       => $decl['tipo'],
-            'construtor' => $decl['construtor'] ?? null,
-            'paineis'    => $decl['paineis'] ?? [],
-            'modos'      => $decl['modos'] ?? [],
-            'nos'        => [],
-            'arestas'    => [],
-            // As ligações que o construtor transformou em aresta, já no painel e no modo do diagrama (R12, CT-B02).
-            'representadas' => [],
-            // O que o diagrama escrito à mão desenha, inteiro: a tabela do ERD não é peça, e só ela distingue um modo do outro.
-            'estrutura' => null,
-        ];
-
-        if ($ir['construtor'] === 'registro') {
-            $raiz             = 'painel:'.$ir['paineis'][0];
-            $modo             = $ir['modos'][0];
-            $ir['nos'][$raiz] = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $raiz), [$raiz]);
-            foreach ($modelo['ligacoes'] as $ligacao) {
-                if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'], true)) {
-                    $ir['nos'][$ligacao['para']] = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $ligacao['para']), [$ligacao['para']]);
-                    $ir['arestas'][]             = [$raiz, $ligacao['para']];
-                    $ir['representadas'][]       = $ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo'];
-                }
-            }
-
-            return $ir;
-        }
-
-        if ($ir['construtor'] === 'mapa') {
-            $modo       = count($ir['modos']) === 1 ? $ir['modos'][0] : null;
-            $existe     = static fn (string $id): bool => $modo === null || in_array($modo, $pecas[$id]['registrada'] ?? [], true);
-            $desenhadas = [];
-            foreach ($decl['pecas'] ?? [] as $peca) {
-                if ($existe($peca['id'])) {
-                    $desenhadas[$peca['id']] = true;
-                    $ir['nos'][$peca['id']]  = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $peca['id']), [$peca['id']]);
-                }
-            }
-            $grupoDe = [];
-            foreach ($decl['agrupamentos'] ?? [] as $grupo) {
-                $membros = array_values(array_filter($grupo['membros'], $existe));
-                // O card "Quem está em …" nomeia os membros: é o que faz do agrupamento um desenho da ligação.
-                $ir['nos'][$grupo['id']] = mapaDiagramasNo('grupo', mapaDiagramasPt($grupo['rotulo']), [], $membros, $membros);
-                foreach ($membros as $membro) {
-                    $grupoDe[$membro] = $grupo['id'];
-                }
-            }
-            foreach ($decl['portas'] ?? [] as $porta) {
-                $ir['nos']['porta-'.$porta['para']] = mapaDiagramasNo('porta', mapaDiagramasPt($porta['rotulo']));
-            }
-            $ponta  = static fn (string $id): ?string => isset($desenhadas[$id]) ? $id : ($grupoDe[$id] ?? null);
-            $vistas = [];
-            foreach ($modelo['ligacoes'] as $ligacao) {
-                if ($modo !== null && ! in_array($modo, $ligacao['modos'], true)) {
-                    continue;
-                }
-                $doEscopo = $ir['paineis'] !== []
-                    ? array_intersect($ligacao['paineis'], $ir['paineis']) !== []
-                    : $ligacao['paineis'] === [];
-                if (! $doEscopo) {
-                    continue;
-                }
-                $de   = $ponta($ligacao['de']);
-                $para = $ponta($ligacao['para']);
-                if ($de === null || $para === null || $de === $para) {
-                    continue;
-                }
-                $ir['representadas'][] = $ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo'];
-                if (isset($vistas[$de.'|'.$para])) {
-                    continue;
-                }
-                $vistas[$de.'|'.$para] = true;
-                $ir['arestas'][]       = [$de, $para];
-            }
-
-            return $ir;
-        }
-
-        $porNome  = mapaDiagramasIdsPorNome($modelo);
-        $colecoes = [
-            'workflow'  => ['nodes', 'edges'], 'sequence' => ['participants', 'messages'], 'dataflow' => ['nodes', 'flows'],
-            'lifecycle' => ['states', 'transitions'], 'erd' => ['entities', 'relationships'], 'class' => ['types', 'relationships'],
-            'timeline'  => ['events', null], 'waterfall' => ['spans', null], 'architecture' => ['components', 'connections'],
-            'tree'      => ['nodes', null],
-        ];
-        [$chaveDosNos, $chaveDasArestas] = $colecoes[$decl['tipo']] ?? [null, null];
-        $ir['estrutura']                 = md5((string) json_encode([$decl[$chaveDosNos] ?? [], $chaveDasArestas !== null ? ($decl[$chaveDasArestas] ?? []) : []]));
-        foreach ($decl[$chaveDosNos] ?? [] as $no) {
-            $rotuloPt = mapaDiagramasPt($no['label'] ?? $no['name'] ?? '');
-            $rotuloEn = mapaDiagramasEn($no['label'] ?? $no['name'] ?? '');
-            $ids      = [];
-            if (isset($pecas[$no['id']])) {
-                $ids[] = $no['id'];
-            }
-            foreach ([$rotuloPt, $rotuloEn] as $rotulo) {
-                foreach ($porNome[$rotulo] ?? [] as $id) {
-                    $ids[] = $id;
-                }
-            }
-            $ir['nos'][$no['id']] = mapaDiagramasNo('peca', $rotuloPt, array_values(array_unique($ids)));
-        }
-        foreach ($chaveDasArestas !== null ? ($decl[$chaveDasArestas] ?? []) : [] as $aresta) {
-            if (isset($aresta['from'], $aresta['to'])) {
-                $ir['arestas'][] = [$aresta['from'], $aresta['to']];
+    if ($ir['construtor'] === 'registro') {
+        $raiz             = 'painel:'.$ir['paineis'][0];
+        $modo             = $ir['modos'][0];
+        $ir['nos'][$raiz] = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $raiz), [$raiz]);
+        foreach ($modelo['ligacoes'] as $ligacao) {
+            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'], true)) {
+                $ir['nos'][$ligacao['para']] = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $ligacao['para']), [$ligacao['para']]);
+                $ir['arestas'][]             = [$raiz, $ligacao['para']];
+                $ir['representadas'][]       = $ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo'];
             }
         }
 
         return $ir;
     }
 
-    /** @return list<string> as peças que o nó é ou nomeia */
-    function mapaDiagramasPontas(array $ir, string $no): array
-    {
-        $dado = $ir['nos'][$no] ?? null;
-
-        return $dado === null ? [] : array_values(array_unique([...$dado['pecas'], ...$dado['nomeados']]));
-    }
-
-    /** @return array<string, true> os pares "peça|peça" que as arestas do desenho cobrem */
-    function mapaDiagramasPares(array $ir): array
-    {
-        $pares = [];
-        foreach ($ir['arestas'] as $aresta) {
-            $origens  = mapaDiagramasPontas($ir, $aresta[0]);
-            $destinos = mapaDiagramasPontas($ir, $aresta[1]);
-            foreach ($origens as $origem) {
-                foreach ($destinos as $destino) {
-                    $pares[$origem.'|'.$destino] = true;
-                }
-            }
-        }
-
-        return $pares;
-    }
-
-    /** @return array<string, true> as peças que o desenho tem como nó ou como membro nomeado */
-    function mapaDiagramasPecasDesenhadas(array $ir): array
-    {
-        $saida = [];
-        foreach (array_keys($ir['nos']) as $no) {
-            foreach (mapaDiagramasPontas($ir, $no) as $peca) {
-                $saida[$peca] = true;
-            }
-        }
-
-        return $saida;
-    }
-
-    /**
-     * As ligações do modelo que um diagrama desenha ("de|para|verbo"). No construído, a aresta de agrupamento
-     * representa só as ligações do painel e do modo dele, que o construtor anotou; a aresta entre duas peças que
-     * nenhuma ligação anotada explica (a da cópia de controle) desenha toda ligação daquele par. No escrito à mão,
-     * a aresta desenha toda ligação do par de peças que as pontas nomeiam.
-     *
-     * @return list<string>
-     */
-    function mapaDiagramasLigacoesDesenhadas(array $modelo, array $ir): array
-    {
-        $chaves     = array_fill_keys($ir['representadas'] ?? [], true);
-        $explicados = [];
-        foreach (array_keys($chaves) as $chave) {
-            [$de, $para]               = explode('|', $chave);
-            $explicados[$de.'|'.$para] = true;
-        }
-        $construido = ($ir['construtor'] ?? null) !== null;
-        $pares      = [];
-        foreach ($ir['arestas'] as [$origem, $destino]) {
-            if ($construido && ((($ir['nos'][$origem]['tipo'] ?? '') !== 'peca') || (($ir['nos'][$destino]['tipo'] ?? '') !== 'peca'))) {
-                continue;
-            }
-            foreach (mapaDiagramasPontas($ir, $origem) as $de) {
-                foreach (mapaDiagramasPontas($ir, $destino) as $para) {
-                    if (! ($construido && isset($explicados[$de.'|'.$para]))) {
-                        $pares[$de.'|'.$para] = true;
-                    }
-                }
-            }
-        }
-        foreach ($modelo['ligacoes'] as $ligacao) {
-            if (isset($pares[$ligacao['de'].'|'.$ligacao['para']])) {
-                $chaves[$ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo']] = true;
-            }
-        }
-
-        return array_keys($chaves);
-    }
-
-    /**
-     * Os desenhos de todos os diagramas, a partir de um modelo, e os slugs que cada página publica.
-     *
-     * @return array{modelo: array, decls: array, irs: array<string, array>}
-     */
-    function mapaDiagramasMundoCom(array $modelo): array
-    {
-        $decls = diagramasDoMapa();
-        $irs   = [];
-        foreach ($decls as $slug => $decl) {
-            $irs[$slug] = mapaDiagramasConstruir($decl, $modelo);
-        }
-
-        return ['modelo' => $modelo, 'decls' => $decls, 'irs' => $irs];
-    }
-
-    function mapaDiagramasMundo(): array
-    {
-        static $mundo = null;
-
-        return $mundo ??= mapaDiagramasMundoCom(modeloDoMapaPorId());
-    }
-
-    function mapaDiagramasPagina(string $idioma): string
-    {
-        return (string) file_get_contents(base_path("docs/{$idioma}/referencia/mapa-interativo.md"));
-    }
-
-    /** @return list<string> todos os `<a href>` da página que apontam para o mapa */
-    function mapaDiagramasHrefsDoMapa(string $pagina): array
-    {
-        preg_match_all('/<a\s+href="([^"]*)"/u', $pagina, $m);
-
-        return array_values(array_filter($m[1], static fn (string $href): bool => str_contains($href, 'mapa/')));
-    }
-
-    /** @return list<string> os slugs que a página de um idioma publica */
-    function mapaDiagramasPublicados(string $idioma): array
-    {
-        $slugs = [];
-        foreach (mapaDiagramasHrefsDoMapa(mapaDiagramasPagina($idioma)) as $href) {
-            if (preg_match('#^(?:\.\./)+mapa/(?:pt|en)/([a-z0-9-]+)\.html$#', $href, $m) === 1) {
-                $slugs[$m[1]] = true;
-            }
-        }
-
-        return array_keys($slugs);
-    }
-
-    /**
-     * @return array{itens: list<array{slug: string, compartilhado: bool}>, motivo: string}
-     */
-    function mapaDiagramasCelula(string $celula): array
-    {
-        preg_match_all('#<a href="[^"]*?/([a-z0-9-]+)\.html">[^<]*</a>(\s*\((?:compartilhado|shared)\))?#u', $celula, $m, PREG_SET_ORDER);
-        $itens = array_map(static fn (array $achado): array => ['slug' => $achado[1], 'compartilhado' => isset($achado[2]) && $achado[2] !== ''], $m);
-        $texto = preg_replace('#<a href="[^"]*">[^<]*</a>(\s*\((?:compartilhado|shared)\))?#u', '', $celula);
-        $texto = trim((string) preg_replace('#<br\s*/?>#', ' ', (string) $texto));
-
-        return ['itens' => $itens, 'motivo' => $texto];
-    }
-
-    /** @return list<string> as células de uma linha de tabela Markdown */
-    function mapaDiagramasCelulasDaLinha(string $linha): array
-    {
-        $linha = trim($linha);
-        $linha = substr($linha, 1, -1);
-
-        return array_map('trim', explode('|', $linha));
-    }
-
-    /**
-     * A grade painel × modo da página.
-     *
-     * @return array<string, array<string, list<array{slug: string, compartilhado: bool}>>>
-     */
-    function mapaDiagramasGrade(string $idioma): array
-    {
-        $pagina = mapaDiagramasPagina($idioma);
-        $inicio = strpos($pagina, '<!-- mapa:grade -->');
-        $fim    = strpos($pagina, '<!-- /mapa:grade -->');
-        $grade  = [];
-        foreach (preg_split('/\R/', substr($pagina, (int) $inicio, (int) $fim - (int) $inicio)) as $linha) {
-            if (preg_match('/^\|\s*\*\*\/([a-z0-9-]+)\*\*\s*\|/u', $linha, $m) !== 1) {
-                continue;
-            }
-            $celulas      = mapaDiagramasCelulasDaLinha($linha);
-            $grade[$m[1]] = [
-                'sem' => mapaDiagramasCelula($celulas[1] ?? '')['itens'],
-                'com' => mapaDiagramasCelula($celulas[2] ?? '')['itens'],
-            ];
-        }
-
-        return $grade;
-    }
-
-    /**
-     * A matriz tipo × painel × modo: uma linha por tipo, na ordem fixa, e seis células por linha.
-     *
-     * @return list<array{tipo: string, celulas: array<string, array{itens: list<array{slug: string, compartilhado: bool}>, motivo: string}>}>
-     */
-    function mapaDiagramasMatriz(string $idioma): array
-    {
-        $pagina  = mapaDiagramasPagina($idioma);
-        $inicio  = strpos($pagina, '<!-- mapa:matriz -->');
-        $fim     = strpos($pagina, '<!-- /mapa:matriz -->');
-        $linhas  = [];
-        $posicao = 0;
-        foreach (preg_split('/\R/', substr($pagina, (int) $inicio, (int) $fim - (int) $inicio)) as $linha) {
-            if (! str_starts_with($linha, '|') || str_starts_with($linha, '|---')) {
-                continue;
-            }
-            $celulas = mapaDiagramasCelulasDaLinha($linha);
-            if (! str_contains($celulas[1] ?? '', '<a href') && str_starts_with($celulas[1] ?? '', '/admin')) {
-                continue; // o cabeçalho
-            }
-            $porColuna = [];
-            foreach (mapaDiagramasColunas() as $indice => $coluna) {
-                $porColuna[$coluna] = mapaDiagramasCelula($celulas[$indice + 1] ?? '');
-            }
-            $linhas[] = ['tipo' => mapaDiagramasTiposDaMatriz()[$posicao] ?? 'tipo-'.$posicao, 'celulas' => $porColuna];
-            $posicao++;
-        }
-
-        return $linhas;
-    }
-
-    /** Palavra funcional do pt como palavra: não colada a letra, dígito, `_`, `.`, `/` ou `-`. */
-    function mapaDiagramasTemPalavraDoPt(string $texto): bool
-    {
-        return preg_match('/(?<![\p{L}\p{N}_.\/-])(?:de|do|da|para|com|não|uma)(?![\p{L}\p{N}_.\/-])/iu', $texto) === 1;
-    }
-
-    function mapaDiagramasNumeroDePalavras(string $texto): int
-    {
-        return count(preg_split('/\s+/u', trim($texto), -1, PREG_SPLIT_NO_EMPTY) ?: []);
-    }
-
-    /** @return array<string, string> termo pt (minúsculo) => termo en (minúsculo) */
-    function mapaDiagramasGlossario(): array
-    {
-        static $glossario = null;
-
-        return $glossario ??= (function (): array {
-            $texto = (string) file_get_contents(base_path('wikis/glossario.md'));
-            preg_match_all('/^\|\s*(.+?)\s*\(en:\s*([^)]+)\)\s*\|/mu', $texto, $m, PREG_SET_ORDER);
-            $saida = [];
-            foreach ($m as $achado) {
-                $saida[mb_strtolower(trim($achado[1]))] = mb_strtolower(trim($achado[2]));
-            }
-
-            return $saida;
-        })();
-    }
-
-    /**
-     * @param  list<array{0: string, 1: ?string, 2: ?string}>  $saida
-     */
-    function mapaDiagramasColetarTextos(mixed $valor, string $caminho, array &$saida): void
-    {
-        if (! is_array($valor) || $valor === []) {
-            return;
-        }
-        if (array_diff(array_keys($valor), ['pt', 'en']) === []) {
-            $saida[] = [$caminho, $valor['pt'] ?? null, $valor['en'] ?? null];
-
-            return;
-        }
-        foreach ($valor as $chave => $filho) {
-            mapaDiagramasColetarTextos($filho, $caminho === '' ? (string) $chave : $caminho.'.'.$chave, $saida);
-        }
-    }
-
-    /**
-     * R16: os textos pt e en de cada diagrama.
-     *
-     * @return array{aceita: bool, motivo: string}
-     */
-    function mapaDiagramasConferirTextos(array $decls, array $modelo, array $glossario): array
-    {
-        $nomes  = array_flip(array_column($modelo['pecas'], 'nome'));
-        $falhas = [];
-        foreach ($decls as $slug => $decl) {
-            $titulo      = $decl['titulo'] ?? null;
-            $tituloEhPar = is_array($titulo) && isset($titulo['pt'], $titulo['en']);
-            if (! $tituloEhPar) {
-                $falhas[] = "{$slug}: o título não tem o texto pt e o texto en";
-            } elseif (trim($titulo['pt']) === trim($titulo['en'])) {
-                $nome                  = trim($titulo['pt']);
-                $ehNomeDePecaOuComando = isset($nomes[$nome]) || preg_match('/^kit:[a-z][a-z:-]*$/', $nome) === 1;
-                if (! ($decl['nomeDeCodigo'] ?? false)) {
-                    $falhas[] = "{$slug}: o título en é igual ao pt, sem a marca de nome de código ({$nome})";
-                } elseif (! $ehNomeDePecaOuComando) {
-                    $falhas[] = "{$slug}: o título \"{$nome}\" está marcado como nome de código, mas não é nome de peça nem de comando kit:*";
-                }
-            }
-            $textos = [];
-            mapaDiagramasColetarTextos($decl, '', $textos);
-            foreach ($textos as [$caminho, $pt, $en]) {
-                if ($pt === null || trim($pt) === '' || $en === null || trim($en) === '') {
-                    $falhas[] = "{$slug}: {$caminho} não tem o texto ".($en === null || trim((string) $en) === '' ? 'en' : 'pt');
-
-                    continue;
-                }
-                $tituloIgualMarcado = $caminho === 'titulo' && trim($pt) === trim($en) && ($decl['nomeDeCodigo'] ?? false);
-                if ($tituloIgualMarcado) {
-                    continue;
-                }
-                $termo = $glossario[mb_strtolower(trim($pt))] ?? null;
-                if ($termo !== null && mb_strtolower(trim($en)) !== $termo) {
-                    $falhas[] = "{$slug}: {$caminho} \"{$pt}\" é termo do glossário e o en é \"{$en}\", não \"{$termo}\"";
-
-                    continue;
-                }
-                if (mapaDiagramasNumeroDePalavras($en) >= 2 && mapaDiagramasTemPalavraDoPt($en)) {
-                    $falhas[] = "{$slug}: {$caminho} o texto en \"{$en}\" traz palavra funcional do pt";
-                }
-            }
-        }
-
-        return $falhas === []
-            ? ['aceita' => true, 'motivo' => 'aceita']
-            : ['aceita' => false, 'motivo' => 'reprova: '.implode(' | ', $falhas)];
-    }
-
-    /* ---------- R12: ligações desenhadas ---------- */
-
-    function mapaDiagramasDescricaoDaLigacao(array $modelo, array $ligacao): string
-    {
-        return mapaDiagramasNomeDaPeca($modelo, $ligacao['de']).' ('.$ligacao['de'].') → '
-            .mapaDiagramasNomeDaPeca($modelo, $ligacao['para']).' ('.$ligacao['para'].') ['.$ligacao['verbo'].']';
-    }
-
-    /**
-     * Toda ligação do modelo é desenhada por aresta de diagrama publicado: direta, ou por agrupamento ou
-     * porta que nomeia os membros. Menção em texto não conta.
-     *
-     * @param  array<string, array>  $irs
-     * @param  list<string>  $publicados
-     * @return array{aceita: bool, motivo: string, achadas: int}
-     */
-    function mapaDiagramasConferirLigacoes(array $modelo, array $irs, array $publicados): array
-    {
+    if ($ir['construtor'] === 'mapa') {
+        $modo       = count($ir['modos']) === 1 ? $ir['modos'][0] : null;
+        $existe     = static fn (string $id): bool => $modo === null || in_array($modo, $pecas[$id]['registrada'] ?? [], true);
         $desenhadas = [];
-        foreach ($irs as $slug => $ir) {
-            if (in_array($slug, $publicados, true)) {
-                $desenhadas += mapaDiagramasPares($ir);
+        foreach ($decl['pecas'] ?? [] as $peca) {
+            if ($existe($peca['id'])) {
+                $desenhadas[$peca['id']] = true;
+                $ir['nos'][$peca['id']]  = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $peca['id']), [$peca['id']]);
             }
         }
-        $falhas  = [];
-        $achadas = 0;
+        $grupoDe = [];
+        foreach ($decl['agrupamentos'] ?? [] as $grupo) {
+            $membros = array_values(array_filter($grupo['membros'], $existe));
+            // O card "Quem está em …" nomeia os membros: é o que faz do agrupamento um desenho da ligação.
+            $ir['nos'][$grupo['id']] = mapaDiagramasNo('grupo', mapaDiagramasPt($grupo['rotulo']), [], $membros, $membros);
+            foreach ($membros as $membro) {
+                $grupoDe[$membro] = $grupo['id'];
+            }
+        }
+        foreach ($decl['portas'] ?? [] as $porta) {
+            $ir['nos']['porta-'.$porta['para']] = mapaDiagramasNo('porta', mapaDiagramasPt($porta['rotulo']));
+        }
+        $ponta  = static fn (string $id): ?string => isset($desenhadas[$id]) ? $id : ($grupoDe[$id] ?? null);
+        $vistas = [];
         foreach ($modelo['ligacoes'] as $ligacao) {
-            if (isset($desenhadas[$ligacao['de'].'|'.$ligacao['para']])) {
-                $achadas++;
-
+            if ($modo !== null && ! in_array($modo, $ligacao['modos'], true)) {
                 continue;
             }
-            $dica = '';
-            foreach ($irs as $slug => $ir) {
-                if (! in_array($slug, $publicados, true)) {
-                    continue;
-                }
-                foreach ($ir['nos'] as $id => $no) {
-                    foreach ([$ligacao['de'], $ligacao['para']] as $ponta) {
-                        if ($no['tipo'] === 'grupo' && in_array($ponta, $no['membros'], true) && ! in_array($ponta, $no['nomeados'], true)) {
-                            $dica = " — o agrupamento {$id} do diagrama {$slug} não nomeia ".mapaDiagramasNomeDaPeca($modelo, $ponta);
-                        }
-                    }
-                }
+            $doEscopo = $ir['paineis'] !== []
+                ? array_intersect($ligacao['paineis'], $ir['paineis']) !== []
+                : $ligacao['paineis'] === [];
+            if (! $doEscopo) {
+                continue;
             }
-            $falhas[] = 'ligação não desenhada: '.mapaDiagramasDescricaoDaLigacao($modelo, $ligacao).$dica;
+            $de   = $ponta($ligacao['de']);
+            $para = $ponta($ligacao['para']);
+            if ($de === null || $para === null || $de === $para) {
+                continue;
+            }
+            $ir['representadas'][] = $ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo'];
+            if (isset($vistas[$de.'|'.$para])) {
+                continue;
+            }
+            $vistas[$de.'|'.$para] = true;
+            $ir['arestas'][]       = [$de, $para];
         }
 
-        return [
-            'aceita' => $falhas === [],
-            // O motivo traz todas: cortado, ele escondia a ligação que a linha de controle tem de ver nomeada.
-            'motivo'  => $falhas === [] ? 'aceita' : 'reprova, '.count($falhas).' ligação(ões): '.implode(' | ', $falhas),
-            'achadas' => $achadas,
+        return $ir;
+    }
+
+    $porNome  = mapaDiagramasIdsPorNome($modelo);
+    $colecoes = [
+        'workflow'  => ['nodes', 'edges'], 'sequence' => ['participants', 'messages'], 'dataflow' => ['nodes', 'flows'],
+        'lifecycle' => ['states', 'transitions'], 'erd' => ['entities', 'relationships'], 'class' => ['types', 'relationships'],
+        'timeline'  => ['events', null], 'waterfall' => ['spans', null], 'architecture' => ['components', 'connections'],
+        'tree'      => ['nodes', null],
+    ];
+    [$chaveDosNos, $chaveDasArestas] = $colecoes[$decl['tipo']] ?? [null, null];
+    $ir['estrutura']                 = md5((string) json_encode([$decl[$chaveDosNos] ?? [], $chaveDasArestas !== null ? ($decl[$chaveDasArestas] ?? []) : []]));
+    foreach ($decl[$chaveDosNos] ?? [] as $no) {
+        $rotuloPt = mapaDiagramasPt($no['label'] ?? $no['name'] ?? '');
+        $rotuloEn = mapaDiagramasEn($no['label'] ?? $no['name'] ?? '');
+        $ids      = [];
+        if (isset($pecas[$no['id']])) {
+            $ids[] = $no['id'];
+        }
+        foreach ([$rotuloPt, $rotuloEn] as $rotulo) {
+            foreach ($porNome[$rotulo] ?? [] as $id) {
+                $ids[] = $id;
+            }
+        }
+        $ir['nos'][$no['id']] = mapaDiagramasNo('peca', $rotuloPt, array_values(array_unique($ids)));
+    }
+    foreach ($chaveDasArestas !== null ? ($decl[$chaveDasArestas] ?? []) : [] as $aresta) {
+        if (isset($aresta['from'], $aresta['to'])) {
+            $ir['arestas'][] = [$aresta['from'], $aresta['to']];
+        }
+    }
+
+    return $ir;
+}
+
+/** @return list<string> as peças que o nó é ou nomeia */
+function mapaDiagramasPontas(array $ir, string $no): array
+{
+    $dado = $ir['nos'][$no] ?? null;
+
+    return $dado === null ? [] : array_values(array_unique([...$dado['pecas'], ...$dado['nomeados']]));
+}
+
+/** @return array<string, true> os pares "peça|peça" que as arestas do desenho cobrem */
+function mapaDiagramasPares(array $ir): array
+{
+    $pares = [];
+    foreach ($ir['arestas'] as $aresta) {
+        $origens  = mapaDiagramasPontas($ir, $aresta[0]);
+        $destinos = mapaDiagramasPontas($ir, $aresta[1]);
+        foreach ($origens as $origem) {
+            foreach ($destinos as $destino) {
+                $pares[$origem.'|'.$destino] = true;
+            }
+        }
+    }
+
+    return $pares;
+}
+
+/** @return array<string, true> as peças que o desenho tem como nó ou como membro nomeado */
+function mapaDiagramasPecasDesenhadas(array $ir): array
+{
+    $saida = [];
+    foreach (array_keys($ir['nos']) as $no) {
+        foreach (mapaDiagramasPontas($ir, $no) as $peca) {
+            $saida[$peca] = true;
+        }
+    }
+
+    return $saida;
+}
+
+/**
+ * As ligações do modelo que um diagrama desenha ("de|para|verbo"). No construído, a aresta de agrupamento
+ * representa só as ligações do painel e do modo dele, que o construtor anotou; a aresta entre duas peças que
+ * nenhuma ligação anotada explica (a da cópia de controle) desenha toda ligação daquele par. No escrito à mão,
+ * a aresta desenha toda ligação do par de peças que as pontas nomeiam.
+ *
+ * @return list<string>
+ */
+function mapaDiagramasLigacoesDesenhadas(array $modelo, array $ir): array
+{
+    $chaves     = array_fill_keys($ir['representadas'] ?? [], true);
+    $explicados = [];
+    foreach (array_keys($chaves) as $chave) {
+        [$de, $para]               = explode('|', $chave);
+        $explicados[$de.'|'.$para] = true;
+    }
+    $construido = ($ir['construtor'] ?? null) !== null;
+    $pares      = [];
+    foreach ($ir['arestas'] as [$origem, $destino]) {
+        if ($construido && ((($ir['nos'][$origem]['tipo'] ?? '') !== 'peca') || (($ir['nos'][$destino]['tipo'] ?? '') !== 'peca'))) {
+            continue;
+        }
+        foreach (mapaDiagramasPontas($ir, $origem) as $de) {
+            foreach (mapaDiagramasPontas($ir, $destino) as $para) {
+                if (! ($construido && isset($explicados[$de.'|'.$para]))) {
+                    $pares[$de.'|'.$para] = true;
+                }
+            }
+        }
+    }
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        if (isset($pares[$ligacao['de'].'|'.$ligacao['para']])) {
+            $chaves[$ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo']] = true;
+        }
+    }
+
+    return array_keys($chaves);
+}
+
+/**
+ * Os desenhos de todos os diagramas, a partir de um modelo, e os slugs que cada página publica.
+ *
+ * @return array{modelo: array, decls: array, irs: array<string, array>}
+ */
+function mapaDiagramasMundoCom(array $modelo): array
+{
+    $decls = diagramasDoMapa();
+    $irs   = [];
+    foreach ($decls as $slug => $decl) {
+        $irs[$slug] = mapaDiagramasConstruir($decl, $modelo);
+    }
+
+    return ['modelo' => $modelo, 'decls' => $decls, 'irs' => $irs];
+}
+
+function mapaDiagramasMundo(): array
+{
+    static $mundo = null;
+
+    return $mundo ??= mapaDiagramasMundoCom(modeloDoMapaPorId());
+}
+
+function mapaDiagramasPagina(string $idioma): string
+{
+    return (string) file_get_contents(base_path("docs/{$idioma}/referencia/mapa-interativo.md"));
+}
+
+/** @return list<string> todos os `<a href>` da página que apontam para o mapa */
+function mapaDiagramasHrefsDoMapa(string $pagina): array
+{
+    preg_match_all('/<a\s+href="([^"]*)"/u', $pagina, $m);
+
+    return array_values(array_filter($m[1], static fn (string $href): bool => str_contains($href, 'mapa/')));
+}
+
+/** @return list<string> os slugs que a página de um idioma publica */
+function mapaDiagramasPublicados(string $idioma): array
+{
+    $slugs = [];
+    foreach (mapaDiagramasHrefsDoMapa(mapaDiagramasPagina($idioma)) as $href) {
+        if (preg_match('#^(?:\.\./)+mapa/(?:pt|en)/([a-z0-9-]+)\.html$#', $href, $m) === 1) {
+            $slugs[$m[1]] = true;
+        }
+    }
+
+    return array_keys($slugs);
+}
+
+/**
+ * @return array{itens: list<array{slug: string, compartilhado: bool}>, motivo: string}
+ */
+function mapaDiagramasCelula(string $celula): array
+{
+    preg_match_all('#<a href="[^"]*?/([a-z0-9-]+)\.html">[^<]*</a>(\s*\((?:compartilhado|shared)\))?#u', $celula, $m, PREG_SET_ORDER);
+    $itens = array_map(static fn (array $achado): array => ['slug' => $achado[1], 'compartilhado' => isset($achado[2]) && $achado[2] !== ''], $m);
+    $texto = preg_replace('#<a href="[^"]*">[^<]*</a>(\s*\((?:compartilhado|shared)\))?#u', '', $celula);
+    $texto = trim((string) preg_replace('#<br\s*/?>#', ' ', (string) $texto));
+
+    return ['itens' => $itens, 'motivo' => $texto];
+}
+
+/** @return list<string> as células de uma linha de tabela Markdown */
+function mapaDiagramasCelulasDaLinha(string $linha): array
+{
+    $linha = trim($linha);
+    $linha = substr($linha, 1, -1);
+
+    return array_map('trim', explode('|', $linha));
+}
+
+/**
+ * A grade painel × modo da página.
+ *
+ * @return array<string, array<string, list<array{slug: string, compartilhado: bool}>>>
+ */
+function mapaDiagramasGrade(string $idioma): array
+{
+    $pagina = mapaDiagramasPagina($idioma);
+    $inicio = strpos($pagina, '<!-- mapa:grade -->');
+    $fim    = strpos($pagina, '<!-- /mapa:grade -->');
+    $grade  = [];
+    foreach (preg_split('/\R/', substr($pagina, (int) $inicio, (int) $fim - (int) $inicio)) as $linha) {
+        if (preg_match('/^\|\s*\*\*\/([a-z0-9-]+)\*\*\s*\|/u', $linha, $m) !== 1) {
+            continue;
+        }
+        $celulas      = mapaDiagramasCelulasDaLinha($linha);
+        $grade[$m[1]] = [
+            'sem' => mapaDiagramasCelula($celulas[1] ?? '')['itens'],
+            'com' => mapaDiagramasCelula($celulas[2] ?? '')['itens'],
         ];
     }
 
-    /** Copia os desenhos sem as arestas que cobrem o par (de, para). */
-    function mapaDiagramasSemDesenharAPar(array $irs, string $de, string $para): array
-    {
-        foreach ($irs as $slug => $ir) {
-            $ir['arestas'] = array_values(array_filter(
-                $ir['arestas'],
-                static fn (array $aresta): bool => ! (in_array($de, mapaDiagramasPontas($ir, $aresta[0]), true) && in_array($para, mapaDiagramasPontas($ir, $aresta[1]), true)),
-            ));
-            $irs[$slug] = $ir;
-        }
+    return $grade;
+}
 
-        return $irs;
+/**
+ * A matriz tipo × painel × modo: uma linha por tipo, na ordem fixa, e seis células por linha.
+ *
+ * @return list<array{tipo: string, celulas: array<string, array{itens: list<array{slug: string, compartilhado: bool}>, motivo: string}>}>
+ */
+function mapaDiagramasMatriz(string $idioma): array
+{
+    $pagina  = mapaDiagramasPagina($idioma);
+    $inicio  = strpos($pagina, '<!-- mapa:matriz -->');
+    $fim     = strpos($pagina, '<!-- /mapa:matriz -->');
+    $linhas  = [];
+    $posicao = 0;
+    foreach (preg_split('/\R/', substr($pagina, (int) $inicio, (int) $fim - (int) $inicio)) as $linha) {
+        if (! str_starts_with($linha, '|') || str_starts_with($linha, '|---')) {
+            continue;
+        }
+        $celulas = mapaDiagramasCelulasDaLinha($linha);
+        if (! str_contains($celulas[1] ?? '', '<a href') && str_starts_with($celulas[1] ?? '', '/admin')) {
+            continue; // o cabeçalho
+        }
+        $porColuna = [];
+        foreach (mapaDiagramasColunas() as $indice => $coluna) {
+            $porColuna[$coluna] = mapaDiagramasCelula($celulas[$indice + 1] ?? '');
+        }
+        $linhas[] = ['tipo' => mapaDiagramasTiposDaMatriz()[$posicao] ?? 'tipo-'.$posicao, 'celulas' => $porColuna];
+        $posicao++;
     }
 
-    /** O índice da ligação "origem registra destino" no modelo. */
-    function mapaDiagramasLigacaoDe(array $modelo, string $de, string $para, string $verbo): array
-    {
-        foreach ($modelo['ligacoes'] as $ligacao) {
-            if ($ligacao['de'] === $de && $ligacao['para'] === $para && $ligacao['verbo'] === $verbo) {
-                return $ligacao;
+    return $linhas;
+}
+
+/** Palavra funcional do pt como palavra: não colada a letra, dígito, `_`, `.`, `/` ou `-`. */
+function mapaDiagramasTemPalavraDoPt(string $texto): bool
+{
+    return preg_match('/(?<![\p{L}\p{N}_.\/-])(?:de|do|da|para|com|não|uma)(?![\p{L}\p{N}_.\/-])/iu', $texto) === 1;
+}
+
+function mapaDiagramasNumeroDePalavras(string $texto): int
+{
+    return count(preg_split('/\s+/u', trim($texto), -1, PREG_SPLIT_NO_EMPTY) ?: []);
+}
+
+/** @return array<string, string> termo pt (minúsculo) => termo en (minúsculo) */
+function mapaDiagramasGlossario(): array
+{
+    static $glossario = null;
+
+    return $glossario ??= (function (): array {
+        $texto = (string) file_get_contents(base_path('wikis/glossario.md'));
+        preg_match_all('/^\|\s*(.+?)\s*\(en:\s*([^)]+)\)\s*\|/mu', $texto, $m, PREG_SET_ORDER);
+        $saida = [];
+        foreach ($m as $achado) {
+            $saida[mb_strtolower(trim($achado[1]))] = mb_strtolower(trim($achado[2]));
+        }
+
+        return $saida;
+    })();
+}
+
+/**
+ * @param  list<array{0: string, 1: ?string, 2: ?string}>  $saida
+ */
+function mapaDiagramasColetarTextos(mixed $valor, string $caminho, array &$saida): void
+{
+    if (! is_array($valor) || $valor === []) {
+        return;
+    }
+    if (array_diff(array_keys($valor), ['pt', 'en']) === []) {
+        $saida[] = [$caminho, $valor['pt'] ?? null, $valor['en'] ?? null];
+
+        return;
+    }
+    foreach ($valor as $chave => $filho) {
+        mapaDiagramasColetarTextos($filho, $caminho === '' ? (string) $chave : $caminho.'.'.$chave, $saida);
+    }
+}
+
+/**
+ * R16: os textos pt e en de cada diagrama.
+ *
+ * @return array{aceita: bool, motivo: string}
+ */
+function mapaDiagramasConferirTextos(array $decls, array $modelo, array $glossario): array
+{
+    $nomes  = array_flip(array_column($modelo['pecas'], 'nome'));
+    $falhas = [];
+    foreach ($decls as $slug => $decl) {
+        $titulo      = $decl['titulo'] ?? null;
+        $tituloEhPar = is_array($titulo) && isset($titulo['pt'], $titulo['en']);
+        if (! $tituloEhPar) {
+            $falhas[] = "{$slug}: o título não tem o texto pt e o texto en";
+        } elseif (trim($titulo['pt']) === trim($titulo['en'])) {
+            $nome                  = trim($titulo['pt']);
+            $ehNomeDePecaOuComando = isset($nomes[$nome]) || preg_match('/^kit:[a-z][a-z:-]*$/', $nome) === 1;
+            if (! ($decl['nomeDeCodigo'] ?? false)) {
+                $falhas[] = "{$slug}: o título en é igual ao pt, sem a marca de nome de código ({$nome})";
+            } elseif (! $ehNomeDePecaOuComando) {
+                $falhas[] = "{$slug}: o título \"{$nome}\" está marcado como nome de código, mas não é nome de peça nem de comando kit:*";
             }
         }
+        $textos = [];
+        mapaDiagramasColetarTextos($decl, '', $textos);
+        foreach ($textos as [$caminho, $pt, $en]) {
+            if ($pt === null || trim($pt) === '' || $en === null || trim($en) === '') {
+                $falhas[] = "{$slug}: {$caminho} não tem o texto ".($en === null || trim((string) $en) === '' ? 'en' : 'pt');
 
-        throw new RuntimeException("a ligação {$de} {$verbo} {$para} não está no modelo");
+                continue;
+            }
+            $tituloIgualMarcado = $caminho === 'titulo' && trim($pt) === trim($en) && ($decl['nomeDeCodigo'] ?? false);
+            if ($tituloIgualMarcado) {
+                continue;
+            }
+            $termo = $glossario[mb_strtolower(trim($pt))] ?? null;
+            if ($termo !== null && mb_strtolower(trim($en)) !== $termo) {
+                $falhas[] = "{$slug}: {$caminho} \"{$pt}\" é termo do glossário e o en é \"{$en}\", não \"{$termo}\"";
+
+                continue;
+            }
+            if (mapaDiagramasNumeroDePalavras($en) >= 2 && mapaDiagramasTemPalavraDoPt($en)) {
+                $falhas[] = "{$slug}: {$caminho} o texto en \"{$en}\" traz palavra funcional do pt";
+            }
+        }
     }
 
-    /* ---------- R18: o modo de cada diagrama ---------- */
+    return $falhas === []
+        ? ['aceita' => true, 'motivo' => 'aceita']
+        : ['aceita' => false, 'motivo' => 'reprova: '.implode(' | ', $falhas)];
+}
 
-    /**
-     * O oráculo do código: a ligação cujo trecho está dentro do bloco `if (config('kit.tenancy.enabled'))`
-     * só vale com tenant, qualquer que seja o modo que o modelo lhe dá.
-     */
-    function mapaDiagramasSoComTenant(array $ligacao): bool
-    {
-        if (($ligacao['modos'] ?? []) === ['com']) {
+/* ---------- R12: ligações desenhadas ---------- */
+
+function mapaDiagramasDescricaoDaLigacao(array $modelo, array $ligacao): string
+{
+    return mapaDiagramasNomeDaPeca($modelo, $ligacao['de']).' ('.$ligacao['de'].') → '
+        .mapaDiagramasNomeDaPeca($modelo, $ligacao['para']).' ('.$ligacao['para'].') ['.$ligacao['verbo'].']';
+}
+
+/**
+ * Toda ligação do modelo é desenhada por aresta de diagrama publicado: direta, ou por agrupamento ou
+ * porta que nomeia os membros. Menção em texto não conta.
+ *
+ * @param  array<string, array>  $irs
+ * @param  list<string>  $publicados
+ * @return array{aceita: bool, motivo: string, achadas: int}
+ */
+function mapaDiagramasConferirLigacoes(array $modelo, array $irs, array $publicados): array
+{
+    $desenhadas = [];
+    foreach ($irs as $slug => $ir) {
+        if (in_array($slug, $publicados, true)) {
+            $desenhadas += mapaDiagramasPares($ir);
+        }
+    }
+    $falhas  = [];
+    $achadas = 0;
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        if (isset($desenhadas[$ligacao['de'].'|'.$ligacao['para']])) {
+            $achadas++;
+
+            continue;
+        }
+        $dica = '';
+        foreach ($irs as $slug => $ir) {
+            if (! in_array($slug, $publicados, true)) {
+                continue;
+            }
+            foreach ($ir['nos'] as $id => $no) {
+                foreach ([$ligacao['de'], $ligacao['para']] as $ponta) {
+                    if ($no['tipo'] === 'grupo' && in_array($ponta, $no['membros'], true) && ! in_array($ponta, $no['nomeados'], true)) {
+                        $dica = " — o agrupamento {$id} do diagrama {$slug} não nomeia ".mapaDiagramasNomeDaPeca($modelo, $ponta);
+                    }
+                }
+            }
+        }
+        $falhas[] = 'ligação não desenhada: '.mapaDiagramasDescricaoDaLigacao($modelo, $ligacao).$dica;
+    }
+
+    return [
+        'aceita' => $falhas === [],
+        // O motivo traz todas: cortado, ele escondia a ligação que a linha de controle tem de ver nomeada.
+        'motivo'  => $falhas === [] ? 'aceita' : 'reprova, '.count($falhas).' ligação(ões): '.implode(' | ', $falhas),
+        'achadas' => $achadas,
+    ];
+}
+
+/** Copia os desenhos sem as arestas que cobrem o par (de, para). */
+function mapaDiagramasSemDesenharAPar(array $irs, string $de, string $para): array
+{
+    foreach ($irs as $slug => $ir) {
+        $ir['arestas'] = array_values(array_filter(
+            $ir['arestas'],
+            static fn (array $aresta): bool => ! (in_array($de, mapaDiagramasPontas($ir, $aresta[0]), true) && in_array($para, mapaDiagramasPontas($ir, $aresta[1]), true)),
+        ));
+        $irs[$slug] = $ir;
+    }
+
+    return $irs;
+}
+
+/** O índice da ligação "origem registra destino" no modelo. */
+function mapaDiagramasLigacaoDe(array $modelo, string $de, string $para, string $verbo): array
+{
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        if ($ligacao['de'] === $de && $ligacao['para'] === $para && $ligacao['verbo'] === $verbo) {
+            return $ligacao;
+        }
+    }
+
+    throw new RuntimeException("a ligação {$de} {$verbo} {$para} não está no modelo");
+}
+
+/* ---------- R18: o modo de cada diagrama ---------- */
+
+/**
+ * O oráculo do código: a ligação cujo trecho está dentro do bloco `if (config('kit.tenancy.enabled'))`
+ * só vale com tenant, qualquer que seja o modo que o modelo lhe dá.
+ */
+function mapaDiagramasSoComTenant(array $ligacao): bool
+{
+    if (($ligacao['modos'] ?? []) === ['com']) {
+        return true;
+    }
+    $caminho = base_path($ligacao['evidencia']['arquivo'] ?? '');
+    if (! is_file($caminho)) {
+        return false;
+    }
+    $codigo     = codigoSemComentario((string) file_get_contents($caminho));
+    $trecho     = (string) ($ligacao['evidencia']['trecho'] ?? '');
+    $ocorrencia = $trecho === '' ? false : strpos($codigo, $trecho);
+    if ($ocorrencia === false) {
+        return false;
+    }
+    // Só o bloco cuja condição é a chave: o `config('kit.tenancy.enabled')` de um `->visible(fn …)` não abre bloco,
+    // e a próxima chave depois dele é o corpo de outro método.
+    preg_match_all("/\bif\s*\(\s*(?:\(bool\)\s*)?config\(\s*'kit\.tenancy\.enabled'[^)]*\)\s*\)\s*\{/", $codigo, $blocos, PREG_OFFSET_CAPTURE);
+    foreach ($blocos[0] as [$cabecalho, $posicao]) {
+        $abre  = $posicao + strlen($cabecalho) - 1;
+        $nivel = 0;
+        for ($i = $abre, $total = strlen($codigo); $i < $total; $i++) {
+            $nivel += match ($codigo[$i]) {
+                '{'     => 1,
+                '}'     => -1,
+                default => 0,
+            };
+            if ($nivel === 0) {
+                if ($ocorrencia > $abre && $ocorrencia < $i) {
+                    return true;
+                }
+
+                break;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @param  array<string, array>  $irs
+ * @return array{aceita: bool, motivo: string}
+ */
+function mapaDiagramasConferirModos(array $modelo, array $irs): array
+{
+    $falhas      = [];
+    $ambos       = ['sem', 'com'];
+    $assinaturas = [];
+    foreach ($irs as $slug => $ir) {
+        if ($ir['tipo'] === 'compare' || count($ir['modos']) === 0) {
+            continue;
+        }
+        $compartilhado = count($ir['modos']) === 2;
+        $pecas         = array_keys(mapaDiagramasPecasDesenhadas($ir));
+        foreach ($pecas as $peca) {
+            $registrada = $modelo['pecas'][$peca]['registrada'] ?? $ambos;
+            if ($compartilhado && array_diff($ambos, $registrada) !== []) {
+                $falhas[] = "o diagrama compartilhado {$slug} desenha a peça ".mapaDiagramasNomeDaPeca($modelo, $peca).', que só existe com tenant';
+            } elseif (! $compartilhado && ! in_array($ir['modos'][0], $registrada, true)) {
+                $falhas[] = "o diagrama {$slug} ({$ir['modos'][0]}) desenha a peça ".mapaDiagramasNomeDaPeca($modelo, $peca).', que só existe no outro modo';
+            }
+        }
+        $desenhadasNoDiagrama = array_fill_keys(mapaDiagramasLigacoesDesenhadas($modelo, $ir), true);
+        $ligacoesDesenhadas   = [];
+        foreach ($modelo['ligacoes'] as $ligacao) {
+            if (! isset($desenhadasNoDiagrama[$ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo']])) {
+                continue;
+            }
+            $ligacoesDesenhadas[] = $ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo'];
+            $efetivos             = mapaDiagramasSoComTenant($ligacao) ? ['com'] : $ligacao['modos'];
+            $erra                 = $compartilhado ? array_diff($ambos, $efetivos) !== [] : ! in_array($ir['modos'][0], $efetivos, true);
+            if ($erra) {
+                $falhas[] = "o diagrama {$slug} desenha a ligação ".mapaDiagramasDescricaoDaLigacao($modelo, $ligacao).', que só vale com tenant';
+            }
+        }
+        if (! $compartilhado) {
+            sort($pecas);
+            sort($ligacoesDesenhadas);
+            $chave                 = $ir['tipo'].'#'.implode(',', $ir['paineis']);
+            $assinaturas[$chave][] = [$slug, $ir['modos'][0], md5((string) json_encode([$pecas, $ligacoesDesenhadas, $ir['estrutura'] ?? null]))];
+        }
+    }
+    foreach ($assinaturas as $grupo) {
+        foreach ($grupo as $i => [$slugA, $modoA, $assinaturaA]) {
+            foreach (array_slice($grupo, $i + 1) as [$slugB, $modoB, $assinaturaB]) {
+                if ($modoA !== $modoB && $assinaturaA === $assinaturaB) {
+                    $falhas[] = "os diagramas {$slugA} e {$slugB} são do mesmo tipo e painel, um por modo, e desenham as mesmas peças e ligações";
+                }
+            }
+        }
+    }
+
+    return $falhas === []
+        ? ['aceita' => true, 'motivo' => 'aceita']
+        : ['aceita' => false, 'motivo' => 'reprova: '.implode(' | ', array_slice($falhas, 0, 15))];
+}
+
+/* ---------- R17: a grade ---------- */
+
+/**
+ * @param  array<string, array<string, list<array{slug: string, compartilhado: bool}>>>  $grade
+ * @param  list<string>  $paineis
+ * @return list<array{painel: string, modo: string, motivo: string}>
+ */
+function mapaDiagramasFalhasDaGrade(array $grade, array $paineis, array $decls): array
+{
+    $falhas = [];
+    foreach ($paineis as $painel) {
+        foreach (['sem', 'com'] as $modo) {
+            $outro  = $modo === 'sem' ? 'com' : 'sem';
+            $celula = $grade[$painel][$modo] ?? null;
+            if ($celula === null) {
+                $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a grade não tem a célula {$painel} × {$modo}"];
+
+                continue;
+            }
+            $validos = array_filter($celula, static fn (array $item): bool => isset($decls[$item['slug']])
+                && in_array($painel, $decls[$item['slug']]['paineis'], true)
+                && in_array($modo, $decls[$item['slug']]['modos'], true));
+            if ($validos === []) {
+                $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} não leva a diagrama do painel que vale nesse modo"];
+            }
+            foreach ($celula as $item) {
+                $decl = $decls[$item['slug']] ?? null;
+                if ($decl === null) {
+                    $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} leva a {$item['slug']}, que não existe"];
+
+                    continue;
+                }
+                if (! in_array($painel, $decl['paineis'], true)) {
+                    $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} leva a {$item['slug']}, que é de outro painel"];
+                } elseif (! in_array($modo, $decl['modos'], true)) {
+                    $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} leva a {$item['slug']}, que só vale no outro modo"];
+                } elseif (count($decl['modos']) === 2) {
+                    $naOutra = array_filter($grade[$painel][$outro] ?? [], static fn (array $outroItem): bool => $outroItem['slug'] === $item['slug'] && $outroItem['compartilhado']);
+                    if (! $item['compartilhado'] || $naOutra === []) {
+                        $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "{$item['slug']} vale nos dois modos e não está nas duas células do {$painel}, marcado como compartilhado"];
+                    }
+                }
+                if ($item['compartilhado'] && count($decl['modos']) < 2) {
+                    $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} marca {$item['slug']} como compartilhado, e ele vale num modo só"];
+                }
+            }
+        }
+    }
+
+    return $falhas;
+}
+
+/* ---------- R19 e R20 ---------- */
+
+/** @return array<string, true> as peças que algum painel registra */
+function mapaDiagramasRegistradasPorPainel(array $modelo): array
+{
+    $saida = [];
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        if (str_starts_with($ligacao['de'], 'painel:') && $ligacao['verbo'] === 'registra') {
+            $saida[$ligacao['para']] = true;
+        }
+    }
+
+    return $saida;
+}
+
+/**
+ * @param  list<array{tipo: string, celulas: array}>  $matriz
+ * @param  list<array{tipo: string, celulas: array}>|null  $matrizPt
+ * @param  array<string, array>  $irs
+ * @return array{aceita: bool, motivo: string}
+ */
+function mapaDiagramasConferirMatriz(array $matriz, array $decls, string $idioma, ?array $matrizPt, array $irs, array $modelo): array
+{
+    $falhas      = [];
+    $registradas = mapaDiagramasRegistradasPorPainel($modelo);
+    foreach ($matriz as $indice => $linha) {
+        $tipo = $linha['tipo'];
+        if (! in_array($tipo, mapaDiagramasTiposDaMatriz(), true)) {
+            $falhas[] = "o tipo {$tipo} não está no conjunto fechado de tipos";
+
+            continue;
+        }
+        foreach ($linha['celulas'] as $coluna => $celula) {
+            [$painel, $modo] = explode('|', $coluna);
+            $nome            = "a célula {$tipo} × {$painel} × {$modo}";
+            if ($celula['itens'] !== []) {
+                foreach ($celula['itens'] as $item) {
+                    $decl = $decls[$item['slug']] ?? null;
+                    if ($decl === null) {
+                        $falhas[] = "{$nome} leva a {$item['slug']}, que não existe";
+                    } elseif ($decl['tipo'] !== $tipo) {
+                        $falhas[] = "{$nome} leva a {$item['slug']}, que é do tipo {$decl['tipo']}";
+                    } elseif (! in_array($painel, $decl['paineis'], true)) {
+                        $falhas[] = "{$nome} leva a {$item['slug']}, que não é do painel {$painel}";
+                    } elseif (! in_array($modo, $decl['modos'], true)) {
+                        $falhas[] = "{$nome} leva a {$item['slug']}, que não vale no modo {$modo}";
+                    }
+                }
+
+                continue;
+            }
+            $motivo = $celula['motivo'];
+            if (motivoDeEnfeite($motivo)) {
+                $falhas[] = "{$nome} não tem diagrama e o motivo é vazio ou de enfeite (\"{$motivo}\")";
+
+                continue;
+            }
+            if (preg_match('/kit inteiro|kit-wide/u', $motivo) === 1) {
+                $doKit = array_filter($decls, static fn (array $decl): bool => $decl['tipo'] === $tipo && $decl['paineis'] === []);
+                if ($doKit === []) {
+                    $falhas[] = "{$nome} se resolve com o motivo \"do kit inteiro\" e não há diagrama do kit inteiro do tipo {$tipo}";
+                }
+            }
+            if ($idioma === 'en') {
+                if (mapaDiagramasNumeroDePalavras($motivo) >= 2 && mapaDiagramasTemPalavraDoPt($motivo)) {
+                    $falhas[] = "{$nome}: o motivo en \"{$motivo}\" traz palavra funcional do pt";
+                }
+                $motivoPt = $matrizPt[$indice]['celulas'][$coluna]['motivo'] ?? null;
+                if ($motivoPt !== null && $motivoPt === $motivo) {
+                    $falhas[] = "{$nome}: o motivo en é o texto pt copiado";
+                }
+            }
+        }
+    }
+    foreach ($irs as $slug => $ir) {
+        if ($ir['paineis'] === [] && $ir['tipo'] !== 'compare') {
+            $registrada = array_intersect_key(mapaDiagramasPecasDesenhadas($ir), $registradas);
+            foreach (array_keys($registrada) as $peca) {
+                $falhas[] = "o diagrama {$slug} é do kit inteiro (paineis vazio) e desenha ".mapaDiagramasNomeDaPeca($modelo, $peca).', que painel registra';
+            }
+        }
+    }
+
+    return $falhas === []
+        ? ['aceita' => true, 'motivo' => 'aceita']
+        : ['aceita' => false, 'motivo' => 'reprova: '.implode(' | ', array_slice($falhas, 0, 15))];
+}
+
+/**
+ * @param  list<string>  $publicados
+ * @return array{aceita: bool, motivo: string, comparativos: int}
+ */
+function mapaDiagramasConferirComparativos(array $decls, array $publicados): array
+{
+    $falhas = [];
+    $total  = 0;
+    foreach ($decls as $slug => $decl) {
+        if ($decl['tipo'] !== 'compare') {
+            continue;
+        }
+        $total++;
+        $base   = $decls[$decl['base'] ?? ''] ?? null;
+        $cabeca = $decls[$decl['cabeca'] ?? ''] ?? null;
+        if ($base === null || $cabeca === null) {
+            $falhas[] = "o comparativo {$slug} tem base ou cabeça que não é arquivo de diagrama do mapa";
+
+            continue;
+        }
+        if ($base['modos'] !== ['sem'] || $cabeca['modos'] !== ['com']) {
+            $falhas[] = "o comparativo {$slug} não vai do modo sem tenant (base {$base['slug']}) para o com tenant (cabeça {$cabeca['slug']})";
+        }
+        if ($base['paineis'] !== $cabeca['paineis'] || $base['paineis'] !== $decl['paineis']) {
+            $falhas[] = "o comparativo {$slug} mistura painéis: base ".implode(',', $base['paineis']).', cabeça '.implode(',', $cabeca['paineis']);
+        }
+        foreach ([$base['slug'], $cabeca['slug'], $slug] as $alvo) {
+            if (! in_array($alvo, $publicados, true)) {
+                $falhas[] = "o comparativo {$slug} usa {$alvo}, que a página não publica";
+            }
+        }
+    }
+
+    return [
+        'aceita'       => $falhas === [],
+        'motivo'       => $falhas === [] ? 'aceita' : 'reprova: '.implode(' | ', $falhas),
+        'comparativos' => $total,
+    ];
+}
+
+/* ---------- R22: fluxos ---------- */
+
+/** @return array<string, true> os arquivos das peças do modelo: a evidência e o caminho PSR-4 da classe */
+function mapaDiagramasArquivosDasPecas(array $modelo): array
+{
+    $saida = [];
+    foreach ($modelo['pecas'] as $id => $peca) {
+        foreach ($peca['evidencia'] ?? [] as $evidencia) {
+            $saida[$evidencia['arquivo']] = true;
+        }
+        if (str_starts_with($id, 'App\\')) {
+            $saida['app/'.str_replace('\\', '/', substr($id, 4)).'.php'] = true;
+        }
+    }
+
+    return $saida;
+}
+
+/**
+ * R22: há fluxo publicado e todo passo de workflow, sequence e dataflow percorre peça do modelo.
+ * O passo é a aresta (aresta do workflow, mensagem da sequência, fluxo do dataflow); ele percorre a peça
+ * quando uma ponta nomeia a peça (id, nome ou palavra do rótulo) ou quando a prova dele está no arquivo de uma peça.
+ *
+ * @return array{aceita: bool, motivo: string}
+ */
+function mapaDiagramasConferirFluxos(array $decls, array $modelo): array
+{
+    $fluxos = array_filter($decls, static fn (array $decl): bool => in_array($decl['tipo'], ['workflow', 'sequence', 'dataflow', 'lifecycle'], true));
+    if ($fluxos === []) {
+        return ['aceita' => false, 'motivo' => 'reprova: nenhum fluxo publicado'];
+    }
+    $arquivos   = mapaDiagramasArquivosDasPecas($modelo);
+    $porNome    = mapaDiagramasIdsPorNome($modelo);
+    $colecoes   = ['workflow' => ['nodes', 'edges'], 'sequence' => ['participants', 'messages'], 'dataflow' => ['nodes', 'flows']];
+    $nomeiaPeca = static function (array $no) use ($porNome, $modelo): bool {
+        if (isset($modelo['pecas'][$no['id'] ?? ''])) {
             return true;
         }
-        $caminho = base_path($ligacao['evidencia']['arquivo'] ?? '');
-        if (! is_file($caminho)) {
-            return false;
-        }
-        $codigo     = codigoSemComentario((string) file_get_contents($caminho));
-        $trecho     = (string) ($ligacao['evidencia']['trecho'] ?? '');
-        $ocorrencia = $trecho === '' ? false : strpos($codigo, $trecho);
-        if ($ocorrencia === false) {
-            return false;
-        }
-        // Só o bloco cuja condição é a chave: o `config('kit.tenancy.enabled')` de um `->visible(fn …)` não abre bloco,
-        // e a próxima chave depois dele é o corpo de outro método.
-        preg_match_all("/\bif\s*\(\s*(?:\(bool\)\s*)?config\(\s*'kit\.tenancy\.enabled'[^)]*\)\s*\)\s*\{/", $codigo, $blocos, PREG_OFFSET_CAPTURE);
-        foreach ($blocos[0] as [$cabecalho, $posicao]) {
-            $abre  = $posicao + strlen($cabecalho) - 1;
-            $nivel = 0;
-            for ($i = $abre, $total = strlen($codigo); $i < $total; $i++) {
-                $nivel += match ($codigo[$i]) {
-                    '{'     => 1,
-                    '}'     => -1,
-                    default => 0,
-                };
-                if ($nivel === 0) {
-                    if ($ocorrencia > $abre && $ocorrencia < $i) {
-                        return true;
-                    }
-
-                    break;
-                }
+        $texto = implode(' ', [mapaDiagramasPt($no['label'] ?? ''), mapaDiagramasEn($no['label'] ?? ''), mapaDiagramasPt($no['sublabel'] ?? ''), mapaDiagramasPt($no['tag'] ?? '')]);
+        preg_match_all('/[A-Za-z_][A-Za-z0-9_]*/', $texto, $m);
+        foreach ($m[0] as $palavra) {
+            if (isset($porNome[$palavra])) {
+                return true;
             }
         }
 
         return false;
-    }
-
-    /**
-     * @param  array<string, array>  $irs
-     * @return array{aceita: bool, motivo: string}
-     */
-    function mapaDiagramasConferirModos(array $modelo, array $irs): array
-    {
-        $falhas      = [];
-        $ambos       = ['sem', 'com'];
-        $assinaturas = [];
-        foreach ($irs as $slug => $ir) {
-            if ($ir['tipo'] === 'compare' || count($ir['modos']) === 0) {
+    };
+    $falhas = [];
+    foreach ($fluxos as $slug => $decl) {
+        if (! isset($colecoes[$decl['tipo']])) {
+            continue;
+        }
+        [$chaveDosNos, $chaveDasArestas] = $colecoes[$decl['tipo']];
+        $nos                             = [];
+        foreach ($decl[$chaveDosNos] ?? [] as $no) {
+            $nos[$no['id']] = $no;
+        }
+        foreach ($decl[$chaveDasArestas] ?? [] as $passo) {
+            // R22 (alterado no passo 8): no dataflow, o passo entre dois depósitos (`type: database`) não nomeia
+            // peça, como o estado do lifecycle; o passo com uma ponta fora de depósito continua obrigado.
+            $ehDeposito = static fn (string $id): bool => ($nos[$id]['type'] ?? null) === 'database';
+            if ($decl['tipo'] === 'dataflow' && $ehDeposito((string) ($passo['from'] ?? '')) && $ehDeposito((string) ($passo['to'] ?? ''))) {
                 continue;
             }
-            $compartilhado = count($ir['modos']) === 2;
-            $pecas         = array_keys(mapaDiagramasPecasDesenhadas($ir));
-            foreach ($pecas as $peca) {
-                $registrada = $modelo['pecas'][$peca]['registrada'] ?? $ambos;
-                if ($compartilhado && array_diff($ambos, $registrada) !== []) {
-                    $falhas[] = "o diagrama compartilhado {$slug} desenha a peça ".mapaDiagramasNomeDaPeca($modelo, $peca).', que só existe com tenant';
-                } elseif (! $compartilhado && ! in_array($ir['modos'][0], $registrada, true)) {
-                    $falhas[] = "o diagrama {$slug} ({$ir['modos'][0]}) desenha a peça ".mapaDiagramasNomeDaPeca($modelo, $peca).', que só existe no outro modo';
-                }
+            $de   = $nos[$passo['from'] ?? ''] ?? [];
+            $para = $nos[$passo['to'] ?? ''] ?? [];
+            // Só a prova do próprio passo: a âncora da outra ponta (R19: ela não faz do nó a peça) deixava passar o
+            // passo que nomeia peça que não existe sempre que ele saía de um nó ancorado (R22-M2).
+            $provas   = array_filter([$passo['prova']['arquivo'] ?? null]);
+            $percorre = ($de !== [] && $nomeiaPeca($de)) || ($para !== [] && $nomeiaPeca($para));
+            foreach ($provas as $arquivo) {
+                $percorre = $percorre || isset($arquivos[$arquivo]);
             }
-            $desenhadasNoDiagrama = array_fill_keys(mapaDiagramasLigacoesDesenhadas($modelo, $ir), true);
-            $ligacoesDesenhadas   = [];
-            foreach ($modelo['ligacoes'] as $ligacao) {
-                if (! isset($desenhadasNoDiagrama[$ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo']])) {
-                    continue;
-                }
-                $ligacoesDesenhadas[] = $ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo'];
-                $efetivos             = mapaDiagramasSoComTenant($ligacao) ? ['com'] : $ligacao['modos'];
-                $erra                 = $compartilhado ? array_diff($ambos, $efetivos) !== [] : ! in_array($ir['modos'][0], $efetivos, true);
-                if ($erra) {
-                    $falhas[] = "o diagrama {$slug} desenha a ligação ".mapaDiagramasDescricaoDaLigacao($modelo, $ligacao).', que só vale com tenant';
-                }
-            }
-            if (! $compartilhado) {
-                sort($pecas);
-                sort($ligacoesDesenhadas);
-                $chave                 = $ir['tipo'].'#'.implode(',', $ir['paineis']);
-                $assinaturas[$chave][] = [$slug, $ir['modos'][0], md5((string) json_encode([$pecas, $ligacoesDesenhadas, $ir['estrutura'] ?? null]))];
+            if (! $percorre) {
+                $falhas[] = "{$slug}: o passo ".($passo['id'] ?? ($passo['from'] ?? '?').' → '.($passo['to'] ?? '?')).' não percorre peça do modelo';
             }
         }
-        foreach ($assinaturas as $grupo) {
-            foreach ($grupo as $i => [$slugA, $modoA, $assinaturaA]) {
-                foreach (array_slice($grupo, $i + 1) as [$slugB, $modoB, $assinaturaB]) {
-                    if ($modoA !== $modoB && $assinaturaA === $assinaturaB) {
-                        $falhas[] = "os diagramas {$slugA} e {$slugB} são do mesmo tipo e painel, um por modo, e desenham as mesmas peças e ligações";
-                    }
-                }
-            }
-        }
-
-        return $falhas === []
-            ? ['aceita' => true, 'motivo' => 'aceita']
-            : ['aceita' => false, 'motivo' => 'reprova: '.implode(' | ', array_slice($falhas, 0, 15))];
     }
 
-    /* ---------- R17: a grade ---------- */
+    return $falhas === []
+        ? ['aceita' => true, 'motivo' => 'aceita']
+        : ['aceita' => false, 'motivo' => 'reprova: '.count($falhas).' passo(s): '.implode(' | ', $falhas)];
+}
 
-    /**
-     * @param  array<string, array<string, list<array{slug: string, compartilhado: bool}>>>  $grade
-     * @param  list<string>  $paineis
-     * @return list<array{painel: string, modo: string, motivo: string}>
-     */
-    function mapaDiagramasFalhasDaGrade(array $grade, array $paineis, array $decls): array
-    {
-        $falhas = [];
-        foreach ($paineis as $painel) {
-            foreach (['sem', 'com'] as $modo) {
-                $outro  = $modo === 'sem' ? 'com' : 'sem';
-                $celula = $grade[$painel][$modo] ?? null;
-                if ($celula === null) {
-                    $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a grade não tem a célula {$painel} × {$modo}"];
+/* ---------- R29: CHANGELOG ---------- */
 
-                    continue;
-                }
-                $validos = array_filter($celula, static fn (array $item): bool => isset($decls[$item['slug']])
-                    && in_array($painel, $decls[$item['slug']]['paineis'], true)
-                    && in_array($modo, $decls[$item['slug']]['modos'], true));
-                if ($validos === []) {
-                    $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} não leva a diagrama do painel que vale nesse modo"];
-                }
-                foreach ($celula as $item) {
-                    $decl = $decls[$item['slug']] ?? null;
-                    if ($decl === null) {
-                        $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} leva a {$item['slug']}, que não existe"];
+/** @return array<string, array{data: ?string, corpo: string}> */
+function mapaDiagramasSecoesDoChangelog(): array
+{
+    static $secoes = null;
 
-                        continue;
-                    }
-                    if (! in_array($painel, $decl['paineis'], true)) {
-                        $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} leva a {$item['slug']}, que é de outro painel"];
-                    } elseif (! in_array($modo, $decl['modos'], true)) {
-                        $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} leva a {$item['slug']}, que só vale no outro modo"];
-                    } elseif (count($decl['modos']) === 2) {
-                        $naOutra = array_filter($grade[$painel][$outro] ?? [], static fn (array $outroItem): bool => $outroItem['slug'] === $item['slug'] && $outroItem['compartilhado']);
-                        if (! $item['compartilhado'] || $naOutra === []) {
-                            $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "{$item['slug']} vale nos dois modos e não está nas duas células do {$painel}, marcado como compartilhado"];
-                        }
-                    }
-                    if ($item['compartilhado'] && count($decl['modos']) < 2) {
-                        $falhas[] = ['painel' => $painel, 'modo' => $modo, 'motivo' => "a célula {$painel} × {$modo} marca {$item['slug']} como compartilhado, e ele vale num modo só"];
-                    }
-                }
-            }
-        }
-
-        return $falhas;
-    }
-
-    /* ---------- R19 e R20 ---------- */
-
-    /** @return array<string, true> as peças que algum painel registra */
-    function mapaDiagramasRegistradasPorPainel(array $modelo): array
-    {
-        $saida = [];
-        foreach ($modelo['ligacoes'] as $ligacao) {
-            if (str_starts_with($ligacao['de'], 'painel:') && $ligacao['verbo'] === 'registra') {
-                $saida[$ligacao['para']] = true;
-            }
+    return $secoes ??= (function (): array {
+        $texto  = (string) file_get_contents(base_path('CHANGELOG.md'));
+        // O grupo da data sempre participa (vazio no [Unreleased]): o grupo opcional que não casa no fim some do
+        // PREG_SPLIT_DELIM_CAPTURE e desalinha as trincas versão/data/corpo.
+        $partes = preg_split('/^## \[([^\]]+)\]((?: - \d{4}-\d{2}-\d{2})?)[ \t]*$/m', $texto, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $saida  = [];
+        for ($i = 1; $i + 2 < count($partes) + 1; $i += 3) {
+            $data               = ltrim($partes[$i + 1], ' -');
+            $saida[$partes[$i]] = ['data' => $data !== '' ? $data : null, 'corpo' => $partes[$i + 2] ?? ''];
         }
 
         return $saida;
+    })();
+}
+
+function mapaDiagramasNormalizar(string $texto): string
+{
+    return mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', str_replace(['*', '`', '_'], '', $texto))));
+}
+
+/**
+ * @param  array<string, array>  $decls
+ * @param  array<string, array{data: ?string, corpo: string}>  $secoes
+ * @return array{aceita: bool, motivo: string, marcos: int, tempos: int}
+ */
+function mapaDiagramasConferirMarcosETempos(array $decls, array $secoes): array
+{
+    $falhas = [];
+    $marcos = 0;
+    $tempos = 0;
+    foreach ($decls as $slug => $decl) {
+        foreach ($decl['tipo'] === 'timeline' ? ($decl['events'] ?? []) : [] as $evento) {
+            $marcos++;
+            $titulo = mapaDiagramasPt($evento['title'] ?? '');
+            if (preg_match('/^(\d+\.\d+\.\d+|Unreleased)\s*[·—–:-]\s*(.+)$/u', $titulo, $m) !== 1) {
+                $falhas[] = "{$slug}: o marco \"{$titulo}\" não começa pelo número da versão";
+
+                continue;
+            }
+            [, $versao, $visivel] = $m;
+            $secao                = $secoes[$versao] ?? null;
+            if ($secao === null) {
+                $falhas[] = "{$slug}: o marco {$versao} cita versão que o CHANGELOG não tem";
+            } elseif ($secao['data'] === null) {
+                $falhas[] = "{$slug}: o marco {$versao} cita versão sem data";
+            } else {
+                if (substr((string) ($evento['at'] ?? ''), 0, 10) !== $secao['data']) {
+                    $falhas[] = "{$slug}: o marco {$versao} está datado de ".substr((string) ($evento['at'] ?? ''), 0, 10).", e o CHANGELOG diz {$secao['data']}";
+                }
+                if (! str_contains(mapaDiagramasNormalizar($secao['corpo']), mapaDiagramasNormalizar($visivel))) {
+                    $falhas[] = "{$slug}: o título visível do marco {$versao} (\"{$visivel}\") não aparece na seção dessa versão";
+                }
+            }
+        }
+        foreach ($decl['tipo'] === 'waterfall' ? ($decl['spans'] ?? []) : [] as $passo) {
+            $tempos++;
+            $detalhe = mapaDiagramasPt($passo['detail'] ?? '');
+            if (preg_match('#\b\d{2}/\d{2}/\d{4}\b#', $detalhe) !== 1) {
+                $falhas[] = "{$slug}: o tempo do passo {$passo['id']} não traz a data da medição";
+            }
+            if (preg_match('/\brun \d+|\blog d[oa]\b|\bphp artisan\b|\bcomposer\b|\bnpm\b/iu', $detalhe) !== 1) {
+                $falhas[] = "{$slug}: o tempo do passo {$passo['id']} não traz a fonte da medição";
+            }
+        }
     }
 
-    /**
-     * @param  list<array{tipo: string, celulas: array}>  $matriz
-     * @param  list<array{tipo: string, celulas: array}>|null  $matrizPt
-     * @param  array<string, array>  $irs
-     * @return array{aceita: bool, motivo: string}
-     */
-    function mapaDiagramasConferirMatriz(array $matriz, array $decls, string $idioma, ?array $matrizPt, array $irs, array $modelo): array
-    {
-        $falhas      = [];
-        $registradas = mapaDiagramasRegistradasPorPainel($modelo);
-        foreach ($matriz as $indice => $linha) {
-            $tipo = $linha['tipo'];
-            if (! in_array($tipo, mapaDiagramasTiposDaMatriz(), true)) {
-                $falhas[] = "o tipo {$tipo} não está no conjunto fechado de tipos";
+    return [
+        'aceita' => $falhas === [],
+        'motivo' => $falhas === [] ? 'aceita' : 'reprova: '.count($falhas).' item(ns): '.implode(' | ', array_slice($falhas, 0, 14)),
+        'marcos' => $marcos,
+        'tempos' => $tempos,
+    ];
+}
 
-                continue;
-            }
-            foreach ($linha['celulas'] as $coluna => $celula) {
-                [$painel, $modo] = explode('|', $coluna);
-                $nome            = "a célula {$tipo} × {$painel} × {$modo}";
-                if ($celula['itens'] !== []) {
-                    foreach ($celula['itens'] as $item) {
-                        $decl = $decls[$item['slug']] ?? null;
-                        if ($decl === null) {
-                            $falhas[] = "{$nome} leva a {$item['slug']}, que não existe";
-                        } elseif ($decl['tipo'] !== $tipo) {
-                            $falhas[] = "{$nome} leva a {$item['slug']}, que é do tipo {$decl['tipo']}";
-                        } elseif (! in_array($painel, $decl['paineis'], true)) {
-                            $falhas[] = "{$nome} leva a {$item['slug']}, que não é do painel {$painel}";
-                        } elseif (! in_array($modo, $decl['modos'], true)) {
-                            $falhas[] = "{$nome} leva a {$item['slug']}, que não vale no modo {$modo}";
-                        }
-                    }
+/* ---------- R6: origem e entrega ---------- */
 
-                    continue;
-                }
-                $motivo = $celula['motivo'];
-                if (motivoDeEnfeite($motivo)) {
-                    $falhas[] = "{$nome} não tem diagrama e o motivo é vazio ou de enfeite (\"{$motivo}\")";
-
-                    continue;
-                }
-                if (preg_match('/kit inteiro|kit-wide/u', $motivo) === 1) {
-                    $doKit = array_filter($decls, static fn (array $decl): bool => $decl['tipo'] === $tipo && $decl['paineis'] === []);
-                    if ($doKit === []) {
-                        $falhas[] = "{$nome} se resolve com o motivo \"do kit inteiro\" e não há diagrama do kit inteiro do tipo {$tipo}";
-                    }
-                }
-                if ($idioma === 'en') {
-                    if (mapaDiagramasNumeroDePalavras($motivo) >= 2 && mapaDiagramasTemPalavraDoPt($motivo)) {
-                        $falhas[] = "{$nome}: o motivo en \"{$motivo}\" traz palavra funcional do pt";
-                    }
-                    $motivoPt = $matrizPt[$indice]['celulas'][$coluna]['motivo'] ?? null;
-                    if ($motivoPt !== null && $motivoPt === $motivo) {
-                        $falhas[] = "{$nome}: o motivo en é o texto pt copiado";
-                    }
-                }
-            }
-        }
-        foreach ($irs as $slug => $ir) {
-            if ($ir['paineis'] === [] && $ir['tipo'] !== 'compare') {
-                $registrada = array_intersect_key(mapaDiagramasPecasDesenhadas($ir), $registradas);
-                foreach (array_keys($registrada) as $peca) {
-                    $falhas[] = "o diagrama {$slug} é do kit inteiro (paineis vazio) e desenha ".mapaDiagramasNomeDaPeca($modelo, $peca).', que painel registra';
-                }
-            }
-        }
-
-        return $falhas === []
-            ? ['aceita' => true, 'motivo' => 'aceita']
-            : ['aceita' => false, 'motivo' => 'reprova: '.implode(' | ', array_slice($falhas, 0, 15))];
-    }
-
-    /**
-     * @param  list<string>  $publicados
-     * @return array{aceita: bool, motivo: string, comparativos: int}
-     */
-    function mapaDiagramasConferirComparativos(array $decls, array $publicados): array
-    {
-        $falhas = [];
-        $total  = 0;
-        foreach ($decls as $slug => $decl) {
-            if ($decl['tipo'] !== 'compare') {
-                continue;
-            }
-            $total++;
-            $base   = $decls[$decl['base'] ?? ''] ?? null;
-            $cabeca = $decls[$decl['cabeca'] ?? ''] ?? null;
-            if ($base === null || $cabeca === null) {
-                $falhas[] = "o comparativo {$slug} tem base ou cabeça que não é arquivo de diagrama do mapa";
-
-                continue;
-            }
-            if ($base['modos'] !== ['sem'] || $cabeca['modos'] !== ['com']) {
-                $falhas[] = "o comparativo {$slug} não vai do modo sem tenant (base {$base['slug']}) para o com tenant (cabeça {$cabeca['slug']})";
-            }
-            if ($base['paineis'] !== $cabeca['paineis'] || $base['paineis'] !== $decl['paineis']) {
-                $falhas[] = "o comparativo {$slug} mistura painéis: base ".implode(',', $base['paineis']).', cabeça '.implode(',', $cabeca['paineis']);
-            }
-            foreach ([$base['slug'], $cabeca['slug'], $slug] as $alvo) {
-                if (! in_array($alvo, $publicados, true)) {
-                    $falhas[] = "o comparativo {$slug} usa {$alvo}, que a página não publica";
-                }
-            }
-        }
-
-        return [
-            'aceita'       => $falhas === [],
-            'motivo'       => $falhas === [] ? 'aceita' : 'reprova: '.implode(' | ', $falhas),
-            'comparativos' => $total,
+/**
+ * As linhas do catálogo (`linhasDoCatalogo()`, de `tests/Pest.php`) por F-nn, como a guarda da R6 as lê:
+ * a feature, a origem, os pacotes, o "onde fica" e a marca de removida, com o motivo.
+ *
+ * @param  list<list<string>>  $linhas
+ * @return array<string, array{feature: string, origem: string, pacotes: list<string>, onde: string, removida: bool, motivo: string}>
+ */
+function mapaDiagramasCatalogoPorFnn(array $linhas): array
+{
+    $saida = [];
+    foreach ($linhas as $celulas) {
+        $origem = mb_strtolower($celulas[2] ?? '');
+        $tipo   = str_contains($origem, 'customiza') ? 'custom' : ((str_starts_with($origem, 'pacote') || str_starts_with($origem, 'package')) ? 'pacote' : 'proprio');
+        preg_match_all('/`([^`]+)`/u', $celulas[2] ?? '', $pacotes);
+        $removida            = preg_match('/removid[ao]|\bremoved\b/iu', $celulas[1] ?? '') === 1;
+        $saida[$celulas[0]]  = [
+            'feature'  => $celulas[1] ?? '',
+            'origem'   => $tipo,
+            'pacotes'  => $pacotes[1],
+            'onde'     => $celulas[3] ?? '',
+            'removida' => $removida,
+            'motivo'   => $removida ? trim((string) preg_replace('/^.*?removid[ao]\s*:?/iu', '', $celulas[1] ?? '')) : '',
         ];
     }
 
-    /* ---------- R22: fluxos ---------- */
+    return $saida;
+}
 
-    /** @return array<string, true> os arquivos das peças do modelo: a evidência e o caminho PSR-4 da classe */
-    function mapaDiagramasArquivosDasPecas(array $modelo): array
-    {
-        $saida = [];
-        foreach ($modelo['pecas'] as $id => $peca) {
-            foreach ($peca['evidencia'] ?? [] as $evidencia) {
-                $saida[$evidencia['arquivo']] = true;
-            }
-            if (str_starts_with($id, 'App\\')) {
-                $saida['app/'.str_replace('\\', '/', substr($id, 4)).'.php'] = true;
-            }
-        }
+/** O caminho de rota da célula "onde fica": entre crases, começa por `/`, e a célula não traz "→". */
+function mapaDiagramasCaminhosDoOnde(string $onde): array
+{
+    if (str_contains($onde, '→')) {
+        return [];
+    }
+    preg_match_all('/`(\/[^`]*)`/u', $onde, $m);
 
-        return $saida;
+    return $m[1];
+}
+
+/**
+ * Os caminhos concretos de um caminho do catálogo: `{painel}` e `{panel}` valem para cada painel, `{/org}`
+ * vale sem a organização, `{org}` só existe com tenant (CT-44), a query sai, outro parâmetro aceita qualquer valor.
+ *
+ * @param  list<string>  $paineis
+ * @return list<string>
+ */
+function mapaDiagramasExpandirCaminho(string $caminho, array $paineis): array
+{
+    $caminho = (string) preg_replace('/[?#].*$/', '', $caminho);
+    if (str_contains($caminho, '{org}')) {
+        return [];
+    }
+    $caminho   = str_replace('{/org}', '', $caminho);
+    $variantes = (str_contains($caminho, '{painel}') || str_contains($caminho, '{panel}'))
+        ? array_map(static fn (string $painel): string => str_replace(['{painel}', '{panel}'], $painel, $caminho), $paineis)
+        : [$caminho];
+
+    return array_map(static fn (string $variante): string => (string) preg_replace('/\{[^}]+\}/', 'x', $variante), $variantes);
+}
+
+function mapaDiagramasResolverRota(string $caminho): ?string
+{
+    try {
+        $rota = app('router')->getRoutes()->match(Request::create($caminho, 'GET'));
+    } catch (NotFoundHttpException|MethodNotAllowedHttpException) {
+        return null;
     }
 
-    /**
-     * R22: há fluxo publicado e todo passo de workflow, sequence e dataflow percorre peça do modelo.
-     * O passo é a aresta (aresta do workflow, mensagem da sequência, fluxo do dataflow); ele percorre a peça
-     * quando uma ponta nomeia a peça (id, nome ou palavra do rótulo) ou quando a prova dele está no arquivo de uma peça.
-     *
-     * @return array{aceita: bool, motivo: string}
-     */
-    function mapaDiagramasConferirFluxos(array $decls, array $modelo): array
-    {
-        $fluxos = array_filter($decls, static fn (array $decl): bool => in_array($decl['tipo'], ['workflow', 'sequence', 'dataflow', 'lifecycle'], true));
-        if ($fluxos === []) {
-            return ['aceita' => false, 'motivo' => 'reprova: nenhum fluxo publicado'];
+    return $rota->isFallback ? null : $rota->getActionName();
+}
+
+/** @return list<string> a classe que responde e, nas páginas de recurso, o recurso dono */
+function mapaDiagramasCandidatasDaRota(string $acao): array
+{
+    $classe     = explode('@', $acao)[0];
+    $candidatas = [$classe];
+    if (class_exists($classe) && method_exists($classe, 'getResource')) {
+        try {
+            $candidatas[] = $classe::getResource();
+        } catch (Throwable) {
         }
-        $arquivos   = mapaDiagramasArquivosDasPecas($modelo);
-        $porNome    = mapaDiagramasIdsPorNome($modelo);
-        $colecoes   = ['workflow' => ['nodes', 'edges'], 'sequence' => ['participants', 'messages'], 'dataflow' => ['nodes', 'flows']];
-        $nomeiaPeca = static function (array $no) use ($porNome, $modelo): bool {
-            if (isset($modelo['pecas'][$no['id'] ?? ''])) {
-                return true;
+    }
+
+    return $candidatas;
+}
+
+/** O arquivo da peça é do pacote: `arquivoDaClasse()` (relativo à raiz) dentro de `vendor/{pacote}/`. */
+function mapaDiagramasPecaEhDoPacote(string $id, string $pacote): bool
+{
+    $arquivo = arquivoDaClasse($id);
+
+    return $arquivo !== null && str_contains('/'.$arquivo, '/vendor/'.$pacote.'/');
+}
+
+function mapaDiagramasPecaEhDoKit(array $modelo, string $id): bool
+{
+    $arquivo = arquivoDaClasse($id);
+    if ($arquivo === null) {
+        // painel:{id} e o alias `panel:{id}` não são classe: valem pelo arquivo da evidência, que é do kit.
+        $evidencia = $modelo['pecas'][$id]['evidencia'][0]['arquivo'] ?? '';
+
+        return $evidencia !== '' && ! str_starts_with($evidencia, 'vendor/');
+    }
+
+    return ! str_contains('/'.$arquivo, '/vendor/') && ! str_contains('/'.$arquivo, '/node_modules/');
+}
+
+/**
+ * A lista fechada das F-nn que a guarda trata como exceção nomeada, cada uma com o motivo (D33 do plano).
+ *
+ * @return array{sem_peca: array<string, string>, so_parte_do_kit: array<string, string>}
+ */
+function mapaDiagramasExcecoesDeOrigem(): array
+{
+    return [
+        'sem_peca' => [
+            'F-64'  => 'a feature é uma guarda de teste (tests/Kit/PermissoesDeAcoesTest.php), e teste não é peça com nome do app',
+            'F-99'  => 'a UI em pt-BR vem de arquivos de tradução (lang/pt_BR, lang/vendor), e nenhum arquivo de tradução é peça',
+            'F-107' => 'a feature é o docker-compose.yml, serviços e profiles do Compose, sem classe do kit',
+            'F-108' => 'a feature é o script de shell deploy_docker_local.sh, que roda no host, sem classe do app',
+        ],
+        'so_parte_do_kit' => [
+            'F-100' => 'a parte do pacote é um componente de formulário e uma coluna de tabela, que não são tipo de peça da R8; vale só a parte do kit',
+            'F-113' => 'o pacote é plugin do Pest e binário do npm, que não registram classe no app; vale só a parte do kit (kit:arte)',
+        ],
+    ];
+}
+
+/**
+ * R6: toda F-nn vigente é entregue por peça desenhada da origem que declara, todo caminho do "onde fica"
+ * resolve, e nenhuma peça entrega F-nn removida.
+ *
+ * @param  array<string, array>  $catalogo
+ * @param  array<string, true>  $desenhadas
+ * @param  list<string>  $paineis
+ * @return array{aceita: bool, motivo: string, conferidas: array<string, int>}
+ */
+function mapaDiagramasConferirOrigem(array $catalogo, array $modelo, array $desenhadas, array $paineis): array
+{
+    $excecoes  = mapaDiagramasExcecoesDeOrigem();
+    $entregues = [];
+    foreach ($modelo['pecas'] as $id => $peca) {
+        foreach ($peca['features'] as $fnn) {
+            $entregues[$fnn][] = $id;
+        }
+    }
+    $falhas     = [];
+    $conferidas = ['pacote' => 0, 'proprio' => 0, 'custom' => 0];
+    foreach ($catalogo as $fnn => $linha) {
+        if ($linha['removida']) {
+            foreach ($entregues[$fnn] ?? [] as $peca) {
+                $falhas[] = "{$fnn} está marcada como removida e a peça ".mapaDiagramasNomeDaPeca($modelo, $peca).' ainda a entrega';
             }
-            $texto = implode(' ', [mapaDiagramasPt($no['label'] ?? ''), mapaDiagramasEn($no['label'] ?? ''), mapaDiagramasPt($no['sublabel'] ?? ''), mapaDiagramasPt($no['tag'] ?? '')]);
-            preg_match_all('/[A-Za-z_][A-Za-z0-9_]*/', $texto, $m);
-            foreach ($m[0] as $palavra) {
-                if (isset($porNome[$palavra])) {
+
+            continue;
+        }
+        if (isset($excecoes['sem_peca'][$fnn])) {
+            continue;
+        }
+        $conferidas[$linha['origem']]++;
+        $pecas = array_values(array_filter($entregues[$fnn] ?? [], static fn (string $id): bool => isset($desenhadas[$id])));
+        if ($pecas === []) {
+            $falhas[] = "{$fnn} não é entregue por peça desenhada em diagrama publicado";
+
+            continue;
+        }
+        $doPacote = array_filter($pecas, static function (string $id) use ($linha): bool {
+            foreach ($linha['pacotes'] as $pacote) {
+                if (mapaDiagramasPecaEhDoPacote($id, $pacote)) {
                     return true;
                 }
             }
 
             return false;
-        };
-        $falhas = [];
-        foreach ($fluxos as $slug => $decl) {
-            if (! isset($colecoes[$decl['tipo']])) {
-                continue;
+        });
+        $doKit = array_filter($pecas, static fn (string $id): bool => mapaDiagramasPecaEhDoKit($modelo, $id));
+        $soKit = isset($excecoes['so_parte_do_kit'][$fnn]);
+        if ($linha['origem'] === 'pacote' && $doPacote === []) {
+            $falhas[] = "{$fnn} é de pacote ({$linha['feature']}) e nenhuma peça que a entrega é do pacote ".implode(', ', $linha['pacotes']);
+        }
+        if ($linha['origem'] === 'proprio' && $doKit === []) {
+            $falhas[] = "{$fnn} é de código próprio e só peça de pacote a entrega";
+        }
+        if ($linha['origem'] === 'custom') {
+            if ($doPacote === [] && ! $soKit) {
+                $falhas[] = "{$fnn} é de pacote com customização própria e nenhuma peça que a entrega é do pacote ".implode(', ', $linha['pacotes']);
             }
-            [$chaveDosNos, $chaveDasArestas] = $colecoes[$decl['tipo']];
-            $nos                             = [];
-            foreach ($decl[$chaveDosNos] ?? [] as $no) {
-                $nos[$no['id']] = $no;
-            }
-            foreach ($decl[$chaveDasArestas] ?? [] as $passo) {
-                // R22 (alterado no passo 8): no dataflow, o passo entre dois depósitos (`type: database`) não nomeia
-                // peça, como o estado do lifecycle; o passo com uma ponta fora de depósito continua obrigado.
-                $ehDeposito = static fn (string $id): bool => ($nos[$id]['type'] ?? null) === 'database';
-                if ($decl['tipo'] === 'dataflow' && $ehDeposito((string) ($passo['from'] ?? '')) && $ehDeposito((string) ($passo['to'] ?? ''))) {
-                    continue;
-                }
-                $de   = $nos[$passo['from'] ?? ''] ?? [];
-                $para = $nos[$passo['to'] ?? ''] ?? [];
-                // Só a prova do próprio passo: a âncora da outra ponta (R19: ela não faz do nó a peça) deixava passar o
-                // passo que nomeia peça que não existe sempre que ele saía de um nó ancorado (R22-M2).
-                $provas   = array_filter([$passo['prova']['arquivo'] ?? null]);
-                $percorre = ($de !== [] && $nomeiaPeca($de)) || ($para !== [] && $nomeiaPeca($para));
-                foreach ($provas as $arquivo) {
-                    $percorre = $percorre || isset($arquivos[$arquivo]);
-                }
-                if (! $percorre) {
-                    $falhas[] = "{$slug}: o passo ".($passo['id'] ?? ($passo['from'] ?? '?').' → '.($passo['to'] ?? '?')).' não percorre peça do modelo';
-                }
+            if ($doKit === []) {
+                $falhas[] = "{$fnn} é de pacote com customização própria e nenhuma peça que a entrega é do código do kit";
             }
         }
-
-        return $falhas === []
-            ? ['aceita' => true, 'motivo' => 'aceita']
-            : ['aceita' => false, 'motivo' => 'reprova: '.count($falhas).' passo(s): '.implode(' | ', $falhas)];
-    }
-
-    /* ---------- R29: CHANGELOG ---------- */
-
-    /** @return array<string, array{data: ?string, corpo: string}> */
-    function mapaDiagramasSecoesDoChangelog(): array
-    {
-        static $secoes = null;
-
-        return $secoes ??= (function (): array {
-            $texto  = (string) file_get_contents(base_path('CHANGELOG.md'));
-            // O grupo da data sempre participa (vazio no [Unreleased]): o grupo opcional que não casa no fim some do
-            // PREG_SPLIT_DELIM_CAPTURE e desalinha as trincas versão/data/corpo.
-            $partes = preg_split('/^## \[([^\]]+)\]((?: - \d{4}-\d{2}-\d{2})?)[ \t]*$/m', $texto, -1, PREG_SPLIT_DELIM_CAPTURE);
-            $saida  = [];
-            for ($i = 1; $i + 2 < count($partes) + 1; $i += 3) {
-                $data               = ltrim($partes[$i + 1], ' -');
-                $saida[$partes[$i]] = ['data' => $data !== '' ? $data : null, 'corpo' => $partes[$i + 2] ?? ''];
-            }
-
-            return $saida;
-        })();
-    }
-
-    function mapaDiagramasNormalizar(string $texto): string
-    {
-        return mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', str_replace(['*', '`', '_'], '', $texto))));
-    }
-
-    /**
-     * @param  array<string, array>  $decls
-     * @param  array<string, array{data: ?string, corpo: string}>  $secoes
-     * @return array{aceita: bool, motivo: string, marcos: int, tempos: int}
-     */
-    function mapaDiagramasConferirMarcosETempos(array $decls, array $secoes): array
-    {
-        $falhas = [];
-        $marcos = 0;
-        $tempos = 0;
-        foreach ($decls as $slug => $decl) {
-            foreach ($decl['tipo'] === 'timeline' ? ($decl['events'] ?? []) : [] as $evento) {
-                $marcos++;
-                $titulo = mapaDiagramasPt($evento['title'] ?? '');
-                if (preg_match('/^(\d+\.\d+\.\d+|Unreleased)\s*[·—–:-]\s*(.+)$/u', $titulo, $m) !== 1) {
-                    $falhas[] = "{$slug}: o marco \"{$titulo}\" não começa pelo número da versão";
+        $caminhos      = mapaDiagramasCaminhosDoOnde($linha['onde']);
+        $candidatas    = [];
+        $naoResolvem   = [];
+        $conferiuAlgum = false;
+        foreach ($caminhos as $caminho) {
+            foreach (mapaDiagramasExpandirCaminho($caminho, $paineis) as $concreto) {
+                $conferiuAlgum = true;
+                $acao          = mapaDiagramasResolverRota($concreto);
+                if ($acao === null) {
+                    $naoResolvem[] = $concreto;
 
                     continue;
                 }
-                [, $versao, $visivel] = $m;
-                $secao                = $secoes[$versao] ?? null;
-                if ($secao === null) {
-                    $falhas[] = "{$slug}: o marco {$versao} cita versão que o CHANGELOG não tem";
-                } elseif ($secao['data'] === null) {
-                    $falhas[] = "{$slug}: o marco {$versao} cita versão sem data";
-                } else {
-                    if (substr((string) ($evento['at'] ?? ''), 0, 10) !== $secao['data']) {
-                        $falhas[] = "{$slug}: o marco {$versao} está datado de ".substr((string) ($evento['at'] ?? ''), 0, 10).", e o CHANGELOG diz {$secao['data']}";
-                    }
-                    if (! str_contains(mapaDiagramasNormalizar($secao['corpo']), mapaDiagramasNormalizar($visivel))) {
-                        $falhas[] = "{$slug}: o título visível do marco {$versao} (\"{$visivel}\") não aparece na seção dessa versão";
-                    }
-                }
-            }
-            foreach ($decl['tipo'] === 'waterfall' ? ($decl['spans'] ?? []) : [] as $passo) {
-                $tempos++;
-                $detalhe = mapaDiagramasPt($passo['detail'] ?? '');
-                if (preg_match('#\b\d{2}/\d{2}/\d{4}\b#', $detalhe) !== 1) {
-                    $falhas[] = "{$slug}: o tempo do passo {$passo['id']} não traz a data da medição";
-                }
-                if (preg_match('/\brun \d+|\blog d[oa]\b|\bphp artisan\b|\bcomposer\b|\bnpm\b/iu', $detalhe) !== 1) {
-                    $falhas[] = "{$slug}: o tempo do passo {$passo['id']} não traz a fonte da medição";
-                }
+                $candidatas = [...$candidatas, ...mapaDiagramasCandidatasDaRota($acao)];
             }
         }
-
-        return [
-            'aceita' => $falhas === [],
-            'motivo' => $falhas === [] ? 'aceita' : 'reprova: '.count($falhas).' item(ns): '.implode(' | ', array_slice($falhas, 0, 14)),
-            'marcos' => $marcos,
-            'tempos' => $tempos,
-        ];
+        if ($naoResolvem !== []) {
+            $falhas[] = "{$fnn}: o caminho ".implode(', ', $naoResolvem).' não resolve no roteador';
+        }
+        if ($linha['origem'] === 'proprio' && $conferiuAlgum && $naoResolvem === [] && array_intersect($pecas, $candidatas) === []) {
+            $falhas[] = "{$fnn} é de código próprio e nenhuma peça que a entrega responde na rota ".implode(', ', $caminhos);
+        }
     }
 
-    /* ---------- R6: origem e entrega ---------- */
+    return [
+        'aceita'     => $falhas === [],
+        'motivo'     => $falhas === [] ? 'aceita' : 'reprova, '.count($falhas).' item(ns): '.implode(' | ', array_slice($falhas, 0, 15)),
+        'conferidas' => $conferidas,
+    ];
+}
 
-    /**
-     * As linhas do catálogo (`linhasDoCatalogo()`, de `tests/Pest.php`) por F-nn, como a guarda da R6 as lê:
-     * a feature, a origem, os pacotes, o "onde fica" e a marca de removida, com o motivo.
-     *
-     * @param  list<list<string>>  $linhas
-     * @return array<string, array{feature: string, origem: string, pacotes: list<string>, onde: string, removida: bool, motivo: string}>
-     */
-    function mapaDiagramasCatalogoPorFnn(array $linhas): array
-    {
-        $saida = [];
-        foreach ($linhas as $celulas) {
-            $origem = mb_strtolower($celulas[2] ?? '');
-            $tipo   = str_contains($origem, 'customiza') ? 'custom' : ((str_starts_with($origem, 'pacote') || str_starts_with($origem, 'package')) ? 'pacote' : 'proprio');
-            preg_match_all('/`([^`]+)`/u', $celulas[2] ?? '', $pacotes);
-            $removida            = preg_match('/removid[ao]|\bremoved\b/iu', $celulas[1] ?? '') === 1;
-            $saida[$celulas[0]]  = [
-                'feature'  => $celulas[1] ?? '',
-                'origem'   => $tipo,
-                'pacotes'  => $pacotes[1],
-                'onde'     => $celulas[3] ?? '',
-                'removida' => $removida,
-                'motivo'   => $removida ? trim((string) preg_replace('/^.*?removid[ao]\s*:?/iu', '', $celulas[1] ?? '')) : '',
-            ];
-        }
-
-        return $saida;
+/** Copia o modelo com a F-nn entregue só pelas peças dadas. */
+function mapaDiagramasEntregaSo(array $modelo, string $fnn, array $ids): array
+{
+    foreach ($modelo['pecas'] as $id => $peca) {
+        $modelo['pecas'][$id]['features'] = array_values(array_diff($peca['features'], [$fnn]));
+    }
+    foreach ($ids as $id) {
+        $modelo['pecas'][$id]['features'][] = $fnn;
     }
 
-    /** O caminho de rota da célula "onde fica": entre crases, começa por `/`, e a célula não traz "→". */
-    function mapaDiagramasCaminhosDoOnde(string $onde): array
-    {
-        if (str_contains($onde, '→')) {
-            return [];
-        }
-        preg_match_all('/`(\/[^`]*)`/u', $onde, $m);
+    return $modelo;
+}
 
-        return $m[1];
+function mapaDiagramasIdTerminadoEm(array $modelo, string $sufixo): string
+{
+    foreach (array_keys($modelo['pecas']) as $id) {
+        if (str_ends_with($id, '\\'.$sufixo)) {
+            return $id;
+        }
     }
 
-    /**
-     * Os caminhos concretos de um caminho do catálogo: `{painel}` e `{panel}` valem para cada painel, `{/org}`
-     * vale sem a organização, `{org}` só existe com tenant (CT-44), a query sai, outro parâmetro aceita qualquer valor.
-     *
-     * @param  list<string>  $paineis
-     * @return list<string>
-     */
-    function mapaDiagramasExpandirCaminho(string $caminho, array $paineis): array
-    {
-        $caminho = (string) preg_replace('/[?#].*$/', '', $caminho);
-        if (str_contains($caminho, '{org}')) {
-            return [];
-        }
-        $caminho   = str_replace('{/org}', '', $caminho);
-        $variantes = (str_contains($caminho, '{painel}') || str_contains($caminho, '{panel}'))
-            ? array_map(static fn (string $painel): string => str_replace(['{painel}', '{panel}'], $painel, $caminho), $paineis)
-            : [$caminho];
+    throw new RuntimeException("não há peça {$sufixo} no modelo");
+}
 
-        return array_map(static fn (string $variante): string => (string) preg_replace('/\{[^}]+\}/', 'x', $variante), $variantes);
+/* ---------- R34: o registro do painel (o registro vivo vem de `registroVivoDoPainel()`) ---------- */
+
+/**
+ * R34: os diagramas `architecture` e a árvore de registro do painel que valem no modo desenham, juntos, o
+ * registro dele nesse modo, nem mais nem menos (fora a peça de disponibilidade condicional).
+ *
+ * @param  array<string, array>  $irs
+ * @param  list<string>  $vivo
+ * @param  list<string>  $condicionais
+ * @return array{aceita: bool, motivo: string, registro: int}
+ */
+function mapaDiagramasConferirRegistro(array $modelo, array $irs, string $painel, string $modo, array $vivo, array $condicionais): array
+{
+    $raiz  = 'painel:'.$painel;
+    $pares = [];
+    foreach ($irs as $ir) {
+        $vale = in_array($painel, $ir['paineis'], true) && in_array($modo, $ir['modos'], true)
+            && ($ir['tipo'] === 'architecture' || $ir['construtor'] === 'registro');
+        if ($vale) {
+            $pares += mapaDiagramasPares($ir);
+        }
+    }
+    $desenhado = [];
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && isset($pares[$raiz.'|'.$ligacao['para']])) {
+            $desenhado[$ligacao['para']] = true;
+        }
+    }
+    $esperado  = array_values(array_diff($vivo, $condicionais));
+    $desenhado = array_values(array_diff(array_keys($desenhado), $condicionais));
+    $faltam    = array_diff($esperado, $desenhado);
+    $sobram    = array_diff($desenhado, $esperado);
+    $falhas    = [];
+    foreach ($faltam as $id) {
+        $falhas[] = 'falta no desenho do painel '.$painel.': '.mapaDiagramasNomeDaPeca($modelo, $id)." ({$id})";
+    }
+    foreach ($sobram as $id) {
+        $falhas[] = 'sobra no desenho do painel '.$painel.', que não o registra no modo '.$modo.': '.mapaDiagramasNomeDaPeca($modelo, $id)." ({$id})";
     }
 
-    function mapaDiagramasResolverRota(string $caminho): ?string
-    {
-        try {
-            $rota = app('router')->getRoutes()->match(Request::create($caminho, 'GET'));
-        } catch (NotFoundHttpException|MethodNotAllowedHttpException) {
-            return null;
-        }
-
-        return $rota->isFallback ? null : $rota->getActionName();
-    }
-
-    /** @return list<string> a classe que responde e, nas páginas de recurso, o recurso dono */
-    function mapaDiagramasCandidatasDaRota(string $acao): array
-    {
-        $classe     = explode('@', $acao)[0];
-        $candidatas = [$classe];
-        if (class_exists($classe) && method_exists($classe, 'getResource')) {
-            try {
-                $candidatas[] = $classe::getResource();
-            } catch (Throwable) {
-            }
-        }
-
-        return $candidatas;
-    }
-
-    /** O arquivo da peça é do pacote: `arquivoDaClasse()` (relativo à raiz) dentro de `vendor/{pacote}/`. */
-    function mapaDiagramasPecaEhDoPacote(string $id, string $pacote): bool
-    {
-        $arquivo = arquivoDaClasse($id);
-
-        return $arquivo !== null && str_contains('/'.$arquivo, '/vendor/'.$pacote.'/');
-    }
-
-    function mapaDiagramasPecaEhDoKit(array $modelo, string $id): bool
-    {
-        $arquivo = arquivoDaClasse($id);
-        if ($arquivo === null) {
-            // painel:{id} e o alias `panel:{id}` não são classe: valem pelo arquivo da evidência, que é do kit.
-            $evidencia = $modelo['pecas'][$id]['evidencia'][0]['arquivo'] ?? '';
-
-            return $evidencia !== '' && ! str_starts_with($evidencia, 'vendor/');
-        }
-
-        return ! str_contains('/'.$arquivo, '/vendor/') && ! str_contains('/'.$arquivo, '/node_modules/');
-    }
-
-    /**
-     * A lista fechada das F-nn que a guarda trata como exceção nomeada, cada uma com o motivo (D33 do plano).
-     *
-     * @return array{sem_peca: array<string, string>, so_parte_do_kit: array<string, string>}
-     */
-    function mapaDiagramasExcecoesDeOrigem(): array
-    {
-        return [
-            'sem_peca' => [
-                'F-64'  => 'a feature é uma guarda de teste (tests/Kit/PermissoesDeAcoesTest.php), e teste não é peça com nome do app',
-                'F-99'  => 'a UI em pt-BR vem de arquivos de tradução (lang/pt_BR, lang/vendor), e nenhum arquivo de tradução é peça',
-                'F-107' => 'a feature é o docker-compose.yml, serviços e profiles do Compose, sem classe do kit',
-                'F-108' => 'a feature é o script de shell deploy_docker_local.sh, que roda no host, sem classe do app',
-            ],
-            'so_parte_do_kit' => [
-                'F-100' => 'a parte do pacote é um componente de formulário e uma coluna de tabela, que não são tipo de peça da R8; vale só a parte do kit',
-                'F-113' => 'o pacote é plugin do Pest e binário do npm, que não registram classe no app; vale só a parte do kit (kit:arte)',
-            ],
-        ];
-    }
-
-    /**
-     * R6: toda F-nn vigente é entregue por peça desenhada da origem que declara, todo caminho do "onde fica"
-     * resolve, e nenhuma peça entrega F-nn removida.
-     *
-     * @param  array<string, array>  $catalogo
-     * @param  array<string, true>  $desenhadas
-     * @param  list<string>  $paineis
-     * @return array{aceita: bool, motivo: string, conferidas: array<string, int>}
-     */
-    function mapaDiagramasConferirOrigem(array $catalogo, array $modelo, array $desenhadas, array $paineis, ?array $excecoes = null): array
-    {
-        $excecoes ??= mapaDiagramasExcecoesDeOrigem();
-        $entregues = [];
-        foreach ($modelo['pecas'] as $id => $peca) {
-            foreach ($peca['features'] as $fnn) {
-                $entregues[$fnn][] = $id;
-            }
-        }
-        $falhas     = [];
-        $conferidas = ['pacote' => 0, 'proprio' => 0, 'custom' => 0];
-        foreach ($catalogo as $fnn => $linha) {
-            if ($linha['removida']) {
-                foreach ($entregues[$fnn] ?? [] as $peca) {
-                    $falhas[] = "{$fnn} está marcada como removida e a peça ".mapaDiagramasNomeDaPeca($modelo, $peca).' ainda a entrega';
-                }
-
-                continue;
-            }
-            if (isset($excecoes['sem_peca'][$fnn])) {
-                continue;
-            }
-            $conferidas[$linha['origem']]++;
-            $pecas = array_values(array_filter($entregues[$fnn] ?? [], static fn (string $id): bool => isset($desenhadas[$id])));
-            if ($pecas === []) {
-                $falhas[] = "{$fnn} não é entregue por peça desenhada em diagrama publicado";
-
-                continue;
-            }
-            $doPacote = array_filter($pecas, static function (string $id) use ($linha): bool {
-                foreach ($linha['pacotes'] as $pacote) {
-                    if (mapaDiagramasPecaEhDoPacote($id, $pacote)) {
-                        return true;
-                    }
-                }
-
-                return false;
-            });
-            $doKit = array_filter($pecas, static fn (string $id): bool => mapaDiagramasPecaEhDoKit($modelo, $id));
-            $soKit = isset($excecoes['so_parte_do_kit'][$fnn]);
-            if ($linha['origem'] === 'pacote' && $doPacote === []) {
-                $falhas[] = "{$fnn} é de pacote ({$linha['feature']}) e nenhuma peça que a entrega é do pacote ".implode(', ', $linha['pacotes']);
-            }
-            if ($linha['origem'] === 'proprio' && $doKit === []) {
-                $falhas[] = "{$fnn} é de código próprio e só peça de pacote a entrega";
-            }
-            if ($linha['origem'] === 'custom') {
-                if ($doPacote === [] && ! $soKit) {
-                    $falhas[] = "{$fnn} é de pacote com customização própria e nenhuma peça que a entrega é do pacote ".implode(', ', $linha['pacotes']);
-                }
-                if ($doKit === []) {
-                    $falhas[] = "{$fnn} é de pacote com customização própria e nenhuma peça que a entrega é do código do kit";
-                }
-            }
-            $caminhos      = mapaDiagramasCaminhosDoOnde($linha['onde']);
-            $candidatas    = [];
-            $naoResolvem   = [];
-            $conferiuAlgum = false;
-            foreach ($caminhos as $caminho) {
-                foreach (mapaDiagramasExpandirCaminho($caminho, $paineis) as $concreto) {
-                    $conferiuAlgum = true;
-                    $acao          = mapaDiagramasResolverRota($concreto);
-                    if ($acao === null) {
-                        $naoResolvem[] = $concreto;
-
-                        continue;
-                    }
-                    $candidatas = [...$candidatas, ...mapaDiagramasCandidatasDaRota($acao)];
-                }
-            }
-            if ($naoResolvem !== []) {
-                $falhas[] = "{$fnn}: o caminho ".implode(', ', $naoResolvem).' não resolve no roteador';
-            }
-            if ($linha['origem'] === 'proprio' && $conferiuAlgum && $naoResolvem === [] && array_intersect($pecas, $candidatas) === []) {
-                $falhas[] = "{$fnn} é de código próprio e nenhuma peça que a entrega responde na rota ".implode(', ', $caminhos);
-            }
-        }
-
-        return [
-            'aceita'     => $falhas === [],
-            'motivo'     => $falhas === [] ? 'aceita' : 'reprova, '.count($falhas).' item(ns): '.implode(' | ', array_slice($falhas, 0, 15)),
-            'conferidas' => $conferidas,
-        ];
-    }
-
-    /** Copia o modelo com a F-nn entregue só pelas peças dadas. */
-    function mapaDiagramasEntregaSo(array $modelo, string $fnn, array $ids): array
-    {
-        foreach ($modelo['pecas'] as $id => $peca) {
-            $modelo['pecas'][$id]['features'] = array_values(array_diff($peca['features'], [$fnn]));
-        }
-        foreach ($ids as $id) {
-            $modelo['pecas'][$id]['features'][] = $fnn;
-        }
-
-        return $modelo;
-    }
-
-    function mapaDiagramasIdTerminadoEm(array $modelo, string $sufixo): string
-    {
-        foreach (array_keys($modelo['pecas']) as $id) {
-            if (str_ends_with($id, '\\'.$sufixo)) {
-                return $id;
-            }
-        }
-
-        throw new RuntimeException("não há peça {$sufixo} no modelo");
-    }
-
-    /* ---------- R34: o registro do painel (o registro vivo vem de `registroVivoDoPainel()`) ---------- */
-
-    /**
-     * R34: os diagramas `architecture` e a árvore de registro do painel que valem no modo desenham, juntos, o
-     * registro dele nesse modo, nem mais nem menos (fora a peça de disponibilidade condicional).
-     *
-     * @param  array<string, array>  $irs
-     * @param  list<string>  $vivo
-     * @param  list<string>  $condicionais
-     * @return array{aceita: bool, motivo: string, registro: int}
-     */
-    function mapaDiagramasConferirRegistro(array $modelo, array $irs, string $painel, string $modo, array $vivo, array $condicionais): array
-    {
-        $raiz  = 'painel:'.$painel;
-        $pares = [];
-        foreach ($irs as $ir) {
-            $vale = in_array($painel, $ir['paineis'], true) && in_array($modo, $ir['modos'], true)
-                && ($ir['tipo'] === 'architecture' || $ir['construtor'] === 'registro');
-            if ($vale) {
-                $pares += mapaDiagramasPares($ir);
-            }
-        }
-        $desenhado = [];
-        foreach ($modelo['ligacoes'] as $ligacao) {
-            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && isset($pares[$raiz.'|'.$ligacao['para']])) {
-                $desenhado[$ligacao['para']] = true;
-            }
-        }
-        $esperado  = array_values(array_diff($vivo, $condicionais));
-        $desenhado = array_values(array_diff(array_keys($desenhado), $condicionais));
-        $faltam    = array_diff($esperado, $desenhado);
-        $sobram    = array_diff($desenhado, $esperado);
-        $falhas    = [];
-        foreach ($faltam as $id) {
-            $falhas[] = 'falta no desenho do painel '.$painel.': '.mapaDiagramasNomeDaPeca($modelo, $id)." ({$id})";
-        }
-        foreach ($sobram as $id) {
-            $falhas[] = 'sobra no desenho do painel '.$painel.', que não o registra no modo '.$modo.': '.mapaDiagramasNomeDaPeca($modelo, $id)." ({$id})";
-        }
-
-        return [
-            'aceita'   => $falhas === [],
-            'motivo'   => $falhas === [] ? 'aceita' : 'reprova, painel '.$painel.', '.count($falhas).' peça(s): '.implode(' | ', array_slice($falhas, 0, 15)),
-            'registro' => count($esperado),
-        ];
-    }
+    return [
+        'aceita'   => $falhas === [],
+        'motivo'   => $falhas === [] ? 'aceita' : 'reprova, painel '.$painel.', '.count($falhas).' peça(s): '.implode(' | ', array_slice($falhas, 0, 15)),
+        'registro' => count($esperado),
+    ];
 }
 
 /*
@@ -2136,187 +2134,185 @@ it('[CT-37] sem tenant, os diagramas de arquitetura e a árvore de registro de c
 | legenda do `04`.
 */
 
-if (! function_exists('mapaDiagramasConferirSetas')) {
-    /**
-     * O traço de cada verbo, como a legenda "Como ler as setas" o dá no `04` (R38): o oráculo, e não a tabela do gerador.
-     *
-     * @return array<string, string>
-     */
-    function mapaDiagramasTracoDoVerbo(): array
-    {
-        return ['registra' => 'emphasis', 'usa' => 'default', 'lê' => 'dashed', 'grava' => 'security'];
+/**
+ * O traço de cada verbo, como a legenda "Como ler as setas" o dá no `04` (R38): o oráculo, e não a tabela do gerador.
+ *
+ * @return array<string, string>
+ */
+function mapaDiagramasTracoDoVerbo(): array
+{
+    return ['registra' => 'emphasis', 'usa' => 'default', 'lê' => 'dashed', 'grava' => 'security'];
+}
+
+/**
+ * Os mapas de arquitetura construídos: os arquivos de `site/mapa/diagramas/` com o construtor `mapa`. A pasta é o
+ * manifesto, e o piso de não vácuo vem dela, e não do processo filho.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function mapaDiagramasMapasConstruidos(): array
+{
+    return array_filter(diagramasDoMapa(), static fn (array $decl): bool => ($decl['construtor'] ?? null) === 'mapa');
+}
+
+/**
+ * Os verbos das ligações do modelo que caem em cada par de pontas desenhadas de um mapa construído, pela regra de
+ * desenho da R12: a peça, ou o agrupamento que a nomeia, no painel e no modo do diagrama — as ligações que
+ * `mapaDiagramasConstruir()` anota como representadas. O par vem nos ids do archify: "origem → destino".
+ *
+ * @param  array<string, string>  $ids  id do modelo => id do archify
+ * @return array<string, array<string, true>>
+ */
+function mapaDiagramasVerbosPorPar(array $ir, array $ids): array
+{
+    $grupoDe = [];
+    foreach ($ir['nos'] as $no => $dado) {
+        if ($dado['tipo'] === 'grupo') {
+            foreach ($dado['membros'] as $membro) {
+                $grupoDe[$membro] = $no;
+            }
+        }
+    }
+    $ponta = static fn (string $id): string => ($ir['nos'][$id]['tipo'] ?? null) === 'peca' ? ($ids[$id] ?? $id) : ($grupoDe[$id] ?? '?'.$id);
+    $pares = [];
+    foreach ($ir['representadas'] as $chave) {
+        [$de, $para, $verbo]                            = explode('|', $chave);
+        $pares[$ponta($de).' → '.$ponta($para)][$verbo] = true;
     }
 
-    /**
-     * Os mapas de arquitetura construídos: os arquivos de `site/mapa/diagramas/` com o construtor `mapa`. A pasta é o
-     * manifesto, e o piso de não vácuo vem dela, e não do processo filho.
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    function mapaDiagramasMapasConstruidos(): array
-    {
-        return array_filter(diagramasDoMapa(), static fn (array $decl): bool => ($decl['construtor'] ?? null) === 'mapa');
-    }
+    return $pares;
+}
 
-    /**
-     * Os verbos das ligações do modelo que caem em cada par de pontas desenhadas de um mapa construído, pela regra de
-     * desenho da R12: a peça, ou o agrupamento que a nomeia, no painel e no modo do diagrama — as ligações que
-     * `mapaDiagramasConstruir()` anota como representadas. O par vem nos ids do archify: "origem → destino".
-     *
-     * @param  array<string, string>  $ids  id do modelo => id do archify
-     * @return array<string, array<string, true>>
-     */
-    function mapaDiagramasVerbosPorPar(array $ir, array $ids): array
-    {
-        $grupoDe = [];
-        foreach ($ir['nos'] as $no => $dado) {
-            if ($dado['tipo'] === 'grupo') {
-                foreach ($dado['membros'] as $membro) {
-                    $grupoDe[$membro] = $no;
+/**
+ * A guarda da seta (R38, CT-46): em cada mapa construído e em cada idioma, os traços das setas de cada par de
+ * pontas desenhadas são os dos verbos das ligações do modelo que caem nele — um por verbo, sem faltar, sobrar
+ * nem repetir. O diagrama que o gerador recusa reprova.
+ *
+ * @param  array<string, array<string, mixed>>  $decls  os mapas conferidos, por slug
+ * @return array{aceita: bool, motivo: string, falhas: list<array{mapa: string, par: string, verbo: ?string, texto: string}>, mapas: int, paresDeDoisVerbos: int}
+ */
+function mapaDiagramasConferirSetas(array $decls, array $modelo, array $gerado): array
+{
+    $tracoDoVerbo      = mapaDiagramasTracoDoVerbo();
+    $falhas            = [];
+    $mapas             = 0;
+    $paresDeDoisVerbos = 0;
+    foreach ($decls as $slug => $decl) {
+        $esperado = mapaDiagramasVerbosPorPar(mapaDiagramasConstruir($decl, $modelo), $gerado['ids']);
+        $paresDeDoisVerbos += count(array_filter($esperado, static fn (array $verbos): bool => count($verbos) > 1));
+        $conferido = false;
+        foreach (['pt', 'en'] as $idioma) {
+            $entrada = $gerado['diagramas'][$slug][$idioma] ?? ['erro' => 'o gerador não montou o diagrama'];
+            if (isset($entrada['erro'])) {
+                $falhas["{$slug}|erro"] = ['mapa' => $slug, 'par' => '', 'verbo' => null, 'texto' => "{$slug} ({$idioma}): {$entrada['erro']}"];
+
+                continue;
+            }
+            $conferido = true;
+            $tracos    = [];
+            foreach ($entrada['connections'] as $seta) {
+                $tracos[$seta['from'].' → '.$seta['to']][] = (string) $seta['variant'];
+            }
+            foreach (array_unique([...array_keys($esperado), ...array_keys($tracos)]) as $par) {
+                $verbos  = array_map('strval', array_keys($esperado[$par] ?? []));
+                $setas   = $tracos[$par] ?? [];
+                $devidos = array_map(static fn (string $verbo): string => $tracoDoVerbo[$verbo] ?? "?{$verbo}", $verbos);
+                foreach ($verbos as $indice => $verbo) {
+                    if (! in_array($devidos[$indice], $setas, true)) {
+                        $falhas["{$slug}|{$par}|{$verbo}"] = ['mapa' => $slug, 'par' => $par, 'verbo' => $verbo,
+                            'texto'                                  => "{$slug}: o par {$par} tem a ligação \"{$verbo}\" sem a seta dela (traço {$devidos[$indice]}); as setas do par: [".implode(', ', $setas).']'];
+                    }
+                }
+                foreach (array_count_values($setas) as $traco => $quantas) {
+                    if ($quantas > 1 || ! in_array((string) $traco, $devidos, true)) {
+                        $falhas["{$slug}|{$par}|traço {$traco}"] = ['mapa' => $slug, 'par' => $par, 'verbo' => null,
+                            'texto'                                        => "{$slug}: o par {$par} tem {$quantas} seta(s) com o traço {$traco}, e as ligações dele são [".implode(', ', $verbos).']'];
+                    }
                 }
             }
         }
-        $ponta = static fn (string $id): string => ($ir['nos'][$id]['tipo'] ?? null) === 'peca' ? ($ids[$id] ?? $id) : ($grupoDe[$id] ?? '?'.$id);
-        $pares = [];
-        foreach ($ir['representadas'] as $chave) {
-            [$de, $para, $verbo]                            = explode('|', $chave);
-            $pares[$ponta($de).' → '.$ponta($para)][$verbo] = true;
-        }
-
-        return $pares;
+        $mapas += $conferido ? 1 : 0;
     }
+    $lista = array_values($falhas);
+    if ($lista === []) {
+        return ['aceita' => true, 'motivo' => 'aceita', 'falhas' => [], 'mapas' => $mapas, 'paresDeDoisVerbos' => $paresDeDoisVerbos];
+    }
+    $pares        = array_values(array_unique(array_map(static fn (array $falha): string => $falha['mapa'].'|'.$falha['par'], $lista)));
+    $paresPorMapa = array_count_values(array_map(static fn (string $par): string => explode('|', $par)[0], $pares));
+    $motivo       = sprintf(
+        'reprova: %d falhas em %d pares de %d mapas — %s. Ex.: %s',
+        count($lista),
+        count($pares),
+        count($paresPorMapa),
+        implode(', ', array_map(static fn (string $mapa, int $quantos): string => "{$mapa} ({$quantos})", array_keys($paresPorMapa), $paresPorMapa)),
+        $lista[0]['texto'],
+    );
 
-    /**
-     * A guarda da seta (R38, CT-46): em cada mapa construído e em cada idioma, os traços das setas de cada par de
-     * pontas desenhadas são os dos verbos das ligações do modelo que caem nele — um por verbo, sem faltar, sobrar
-     * nem repetir. O diagrama que o gerador recusa reprova.
-     *
-     * @param  array<string, array<string, mixed>>  $decls  os mapas conferidos, por slug
-     * @return array{aceita: bool, motivo: string, falhas: list<array{mapa: string, par: string, verbo: ?string, texto: string}>, mapas: int, paresDeDoisVerbos: int}
-     */
-    function mapaDiagramasConferirSetas(array $decls, array $modelo, array $gerado): array
-    {
-        $tracoDoVerbo      = mapaDiagramasTracoDoVerbo();
-        $falhas            = [];
-        $mapas             = 0;
-        $paresDeDoisVerbos = 0;
-        foreach ($decls as $slug => $decl) {
-            $esperado = mapaDiagramasVerbosPorPar(mapaDiagramasConstruir($decl, $modelo), $gerado['ids']);
-            $paresDeDoisVerbos += count(array_filter($esperado, static fn (array $verbos): bool => count($verbos) > 1));
-            $conferido = false;
-            foreach (['pt', 'en'] as $idioma) {
-                $entrada = $gerado['diagramas'][$slug][$idioma] ?? ['erro' => 'o gerador não montou o diagrama'];
-                if (isset($entrada['erro'])) {
-                    $falhas["{$slug}|erro"] = ['mapa' => $slug, 'par' => '', 'verbo' => null, 'texto' => "{$slug} ({$idioma}): {$entrada['erro']}"];
+    return ['aceita' => false, 'motivo' => $motivo, 'falhas' => $lista, 'mapas' => $mapas, 'paresDeDoisVerbos' => $paresDeDoisVerbos];
+}
+
+/**
+ * A guarda da caixa (R38, CT-47): o rótulo secundário de cada caixa de agrupamento diz quantas peças ela nomeia no
+ * modo do diagrama — depois do filtro de modo —, com a palavra no número certo; a caixa que o filtro esvazia não
+ * é desenhada, ou o gerador recusa o diagrama nomeando o agrupamento.
+ *
+ * @param  array<string, array<string, mixed>>  $decls  os mapas conferidos, por slug
+ * @return array{aceita: bool, motivo: string, falhas: list<array{mapa: string, caixa: string, texto: string}>, mapas: int, caixas: int}
+ */
+function mapaDiagramasConferirCaixas(array $decls, array $modelo, array $gerado): array
+{
+    $falhas = [];
+    $mapas  = 0;
+    $caixas = 0;
+    foreach ($decls as $slug => $decl) {
+        $ir      = mapaDiagramasConstruir($decl, $modelo);
+        $membros = [];
+        $nomes   = [];
+        foreach ($decl['agrupamentos'] ?? [] as $grupo) {
+            $membros[$grupo['id']] = count($ir['nos'][$grupo['id']]['membros'] ?? []);
+            $nomes[$grupo['id']]   = [$grupo['id'], mapaDiagramasPt($grupo['rotulo'] ?? ''), mapaDiagramasEn($grupo['rotulo'] ?? '')];
+        }
+        $caixas += count($membros);
+        $mapas++;
+        foreach (['pt', 'en'] as $idioma) {
+            $entrada = $gerado['diagramas'][$slug][$idioma] ?? ['erro' => 'o gerador não montou o diagrama'];
+            if (isset($entrada['erro'])) {
+                $nomeiaVazia = array_filter(
+                    array_keys(array_filter($membros, static fn (int $quantos): bool => $quantos === 0)),
+                    static fn (string $id): bool => array_filter($nomes[$id], static fn (string $nome): bool => $nome !== '' && str_contains($entrada['erro'], $nome)) !== [],
+                );
+                if ($nomeiaVazia === []) {
+                    $falhas[] = ['mapa' => $slug, 'caixa' => '', 'texto' => "{$slug} ({$idioma}): o gerador recusou o diagrama sem nomear agrupamento vazio — {$entrada['erro']}"];
+                }
+
+                continue;
+            }
+            $desenhadas = array_column($entrada['components'], 'sublabel', 'id');
+            foreach ($membros as $id => $quantos) {
+                $id = (string) $id;
+                if ($quantos === 0) {
+                    if (array_key_exists($id, $desenhadas)) {
+                        $falhas[] = ['mapa' => $slug, 'caixa' => $id, 'texto' => "{$slug} ({$idioma}): a caixa {$id} não nomeia peça nenhuma no modo do diagrama e saiu desenhada, com \"{$desenhadas[$id]}\""];
+                    }
 
                     continue;
                 }
-                $conferido = true;
-                $tracos    = [];
-                foreach ($entrada['connections'] as $seta) {
-                    $tracos[$seta['from'].' → '.$seta['to']][] = (string) $seta['variant'];
-                }
-                foreach (array_unique([...array_keys($esperado), ...array_keys($tracos)]) as $par) {
-                    $verbos  = array_map('strval', array_keys($esperado[$par] ?? []));
-                    $setas   = $tracos[$par] ?? [];
-                    $devidos = array_map(static fn (string $verbo): string => $tracoDoVerbo[$verbo] ?? "?{$verbo}", $verbos);
-                    foreach ($verbos as $indice => $verbo) {
-                        if (! in_array($devidos[$indice], $setas, true)) {
-                            $falhas["{$slug}|{$par}|{$verbo}"] = ['mapa' => $slug, 'par' => $par, 'verbo' => $verbo,
-                                'texto'                                  => "{$slug}: o par {$par} tem a ligação \"{$verbo}\" sem a seta dela (traço {$devidos[$indice]}); as setas do par: [".implode(', ', $setas).']'];
-                        }
-                    }
-                    foreach (array_count_values($setas) as $traco => $quantas) {
-                        if ($quantas > 1 || ! in_array((string) $traco, $devidos, true)) {
-                            $falhas["{$slug}|{$par}|traço {$traco}"] = ['mapa' => $slug, 'par' => $par, 'verbo' => null,
-                                'texto'                                        => "{$slug}: o par {$par} tem {$quantas} seta(s) com o traço {$traco}, e as ligações dele são [".implode(', ', $verbos).']'];
-                        }
-                    }
+                $devido = $idioma === 'pt' ? ($quantos === 1 ? '1 peça' : "{$quantos} peças") : ($quantos === 1 ? '1 piece' : "{$quantos} pieces");
+                $diz    = array_key_exists($id, $desenhadas) ? '"'.$desenhadas[$id].'"' : 'nada (não foi desenhada)';
+                if (($desenhadas[$id] ?? null) !== $devido) {
+                    $falhas[] = ['mapa' => $slug, 'caixa' => $id, 'texto' => "{$slug} ({$idioma}): a caixa {$id} diz {$diz}, e nomeia {$quantos} no modo do diagrama: \"{$devido}\""];
                 }
             }
-            $mapas += $conferido ? 1 : 0;
         }
-        $lista = array_values($falhas);
-        if ($lista === []) {
-            return ['aceita' => true, 'motivo' => 'aceita', 'falhas' => [], 'mapas' => $mapas, 'paresDeDoisVerbos' => $paresDeDoisVerbos];
-        }
-        $pares        = array_values(array_unique(array_map(static fn (array $falha): string => $falha['mapa'].'|'.$falha['par'], $lista)));
-        $paresPorMapa = array_count_values(array_map(static fn (string $par): string => explode('|', $par)[0], $pares));
-        $motivo       = sprintf(
-            'reprova: %d falhas em %d pares de %d mapas — %s. Ex.: %s',
-            count($lista),
-            count($pares),
-            count($paresPorMapa),
-            implode(', ', array_map(static fn (string $mapa, int $quantos): string => "{$mapa} ({$quantos})", array_keys($paresPorMapa), $paresPorMapa)),
-            $lista[0]['texto'],
-        );
-
-        return ['aceita' => false, 'motivo' => $motivo, 'falhas' => $lista, 'mapas' => $mapas, 'paresDeDoisVerbos' => $paresDeDoisVerbos];
     }
 
-    /**
-     * A guarda da caixa (R38, CT-47): o rótulo secundário de cada caixa de agrupamento diz quantas peças ela nomeia no
-     * modo do diagrama — depois do filtro de modo —, com a palavra no número certo; a caixa que o filtro esvazia não
-     * é desenhada, ou o gerador recusa o diagrama nomeando o agrupamento.
-     *
-     * @param  array<string, array<string, mixed>>  $decls  os mapas conferidos, por slug
-     * @return array{aceita: bool, motivo: string, falhas: list<array{mapa: string, caixa: string, texto: string}>, mapas: int, caixas: int}
-     */
-    function mapaDiagramasConferirCaixas(array $decls, array $modelo, array $gerado): array
-    {
-        $falhas = [];
-        $mapas  = 0;
-        $caixas = 0;
-        foreach ($decls as $slug => $decl) {
-            $ir      = mapaDiagramasConstruir($decl, $modelo);
-            $membros = [];
-            $nomes   = [];
-            foreach ($decl['agrupamentos'] ?? [] as $grupo) {
-                $membros[$grupo['id']] = count($ir['nos'][$grupo['id']]['membros'] ?? []);
-                $nomes[$grupo['id']]   = [$grupo['id'], mapaDiagramasPt($grupo['rotulo'] ?? ''), mapaDiagramasEn($grupo['rotulo'] ?? '')];
-            }
-            $caixas += count($membros);
-            $mapas++;
-            foreach (['pt', 'en'] as $idioma) {
-                $entrada = $gerado['diagramas'][$slug][$idioma] ?? ['erro' => 'o gerador não montou o diagrama'];
-                if (isset($entrada['erro'])) {
-                    $nomeiaVazia = array_filter(
-                        array_keys(array_filter($membros, static fn (int $quantos): bool => $quantos === 0)),
-                        static fn (string $id): bool => array_filter($nomes[$id], static fn (string $nome): bool => $nome !== '' && str_contains($entrada['erro'], $nome)) !== [],
-                    );
-                    if ($nomeiaVazia === []) {
-                        $falhas[] = ['mapa' => $slug, 'caixa' => '', 'texto' => "{$slug} ({$idioma}): o gerador recusou o diagrama sem nomear agrupamento vazio — {$entrada['erro']}"];
-                    }
-
-                    continue;
-                }
-                $desenhadas = array_column($entrada['components'], 'sublabel', 'id');
-                foreach ($membros as $id => $quantos) {
-                    $id = (string) $id;
-                    if ($quantos === 0) {
-                        if (array_key_exists($id, $desenhadas)) {
-                            $falhas[] = ['mapa' => $slug, 'caixa' => $id, 'texto' => "{$slug} ({$idioma}): a caixa {$id} não nomeia peça nenhuma no modo do diagrama e saiu desenhada, com \"{$desenhadas[$id]}\""];
-                        }
-
-                        continue;
-                    }
-                    $devido = $idioma === 'pt' ? ($quantos === 1 ? '1 peça' : "{$quantos} peças") : ($quantos === 1 ? '1 piece' : "{$quantos} pieces");
-                    $diz    = array_key_exists($id, $desenhadas) ? '"'.$desenhadas[$id].'"' : 'nada (não foi desenhada)';
-                    if (($desenhadas[$id] ?? null) !== $devido) {
-                        $falhas[] = ['mapa' => $slug, 'caixa' => $id, 'texto' => "{$slug} ({$idioma}): a caixa {$id} diz {$diz}, e nomeia {$quantos} no modo do diagrama: \"{$devido}\""];
-                    }
-                }
-            }
-        }
-
-        return [
-            'aceita' => $falhas === [],
-            'motivo' => $falhas === [] ? 'aceita' : 'reprova: '.implode('; ', array_column($falhas, 'texto')),
-            'falhas' => $falhas,
-            'mapas'  => $mapas,
-            'caixas' => $caixas,
-        ];
-    }
+    return [
+        'aceita' => $falhas === [],
+        'motivo' => $falhas === [] ? 'aceita' : 'reprova: '.implode('; ', array_column($falhas, 'texto')),
+        'falhas' => $falhas,
+        'mapas'  => $mapas,
+        'caixas' => $caixas,
+    ];
 }
 
 it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, com o traço desse verbo, e cada par de pontas tem uma seta por verbo', function (string $mundo): void {
@@ -2331,7 +2327,7 @@ it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, co
         ->and(array_key_exists($slug, $decls))->toBeTrue("{$slug} é mapa construído");
 
     if ($mundo === 'publicados') {
-        $gerado    = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true], falhaComoExpectativa: true);
+        $gerado    = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true]);
         $resultado = mapaDiagramasConferirSetas($decls, $modelo, $gerado);
 
         expect(count($decls))->toBeGreaterThan(0)
@@ -2347,7 +2343,7 @@ it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, co
         $grava               = [...mapaDiagramasLigacaoDe($modelo, $recurso, $user, 'lê'), 'verbo' => 'grava'];
         $copia               = $modelo;
         $copia['ligacoes'][] = $grava;
-        $gerado              = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true, 'ligacoes' => [$grava]], falhaComoExpectativa: true);
+        $gerado              = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true, 'ligacoes' => [$grava]]);
         $par                 = $gerado['ids'][$recurso].' → '.$gerado['ids'][$user];
         $verbos              = array_keys(mapaDiagramasVerbosPorPar(mapaDiagramasConstruir($decls[$slug], $copia), $gerado['ids'])[$par] ?? []);
 
@@ -2366,7 +2362,7 @@ it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, co
     }
 
     // As duas linhas que adulteram a entrada do mapa: todas as setas do par saem, achadas pelas pontas, e entra o estado-alvo.
-    $gerado = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true], falhaComoExpectativa: true);
+    $gerado = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true]);
     $de     = $gerado['ids'][$recurso];
     $para   = $gerado['ids'][$user];
     $par    = "{$de} → {$para}";
@@ -2416,7 +2412,7 @@ it('[CT-47] a caixa de agrupamento diz quantas peças nomeia no modo do diagrama
     $decls  = mapaDiagramasMapasConstruidos();
 
     if ($mundo === 'publicados') {
-        $gerado       = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true], falhaComoExpectativa: true);
+        $gerado       = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true]);
         $resultado    = mapaDiagramasConferirCaixas($decls, $modelo, $gerado);
         $agrupamentos = array_sum(array_map(static fn (array $decl): int => count($decl['agrupamentos'] ?? []), $decls));
 
@@ -2448,7 +2444,7 @@ it('[CT-47] a caixa de agrupamento diz quantas peças nomeia no modo do diagrama
         'col'     => 0,
     ];
     $copia     = [$slug => [...$decls[$slug], 'agrupamentos' => [...($decls[$slug]['agrupamentos'] ?? []), $grupo]]];
-    $gerado    = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true, 'agrupamentos' => [$slug => [$grupo]], 'slugs' => [$slug]], falhaComoExpectativa: true);
+    $gerado    = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true, 'agrupamentos' => [$slug => [$grupo]], 'slugs' => [$slug]]);
     $resultado = mapaDiagramasConferirCaixas($copia, $modelo, $gerado);
     $daCaixa   = array_values(array_filter($resultado['falhas'], static fn (array $falha): bool => in_array($falha['caixa'], [$id, ''], true)));
 

@@ -3987,13 +3987,7 @@ function modeloDoMapa(): array
  */
 function pecasPorId(array $pecas): array
 {
-    $porId = [];
-
-    foreach ($pecas as $peca) {
-        $porId[$peca['id']] ??= $peca;
-    }
-
-    return $porId;
+    return collect($pecas)->unique('id')->keyBy('id')->all();
 }
 
 /**
@@ -4269,14 +4263,13 @@ function versaoDoNode(): string
  *
  * Devolve o id do archify de cada peça do modelo e, por slug e por idioma, a entrada sem o `meta`, ou o erro com
  * que o gerador recusou o diagrama. Um mundo por processo, porque o modelo de `carregarModelo()` é cache mutável;
- * o mesmo pedido monta uma vez por execução da suíte. Sem `node`, ou com o filho quebrado, o caso reprova (Q21):
- * por exceção ou, com `$falhaComoExpectativa`, por expectativa — que conta uma asserção na primeira montagem do
- * pedido, e só nela.
+ * o mesmo pedido monta uma vez por execução da suíte. Sem `node`, ou com o filho quebrado, o caso reprova (Q21), por
+ * expectativa — que conta uma asserção na primeira montagem do pedido, e só nela.
  *
  * @param  array{extras?: list<array<string, mixed>>, soExtras?: bool, construtor?: string, slugs?: list<string>, ligacoes?: list<array<string, mixed>>, agrupamentos?: array<string, list<array<string, mixed>>>, idiomas?: list<string>, marcarAncoras?: bool, soCaixasESetas?: bool, textosNaRevisao?: array<string, string>}  $pedido
  * @return array{ids: array<string, string>, diagramas: array<string, array<string, array<string, mixed>>>}
  */
-function entradasDoGeradorDoMapa(array $pedido = [], bool $falhaComoExpectativa = false): array
+function entradasDoGeradorDoMapa(array $pedido = []): array
 {
     static $montadas = [];
 
@@ -4357,11 +4350,7 @@ function entradasDoGeradorDoMapa(array $pedido = [], bool $falhaComoExpectativa 
         File::deleteDirectory($pasta);
     }
 
-    if ($falhaComoExpectativa) {
-        expect($processo->successful())->toBeTrue('o node não montou a entrada do archify: '.$processo->errorOutput());
-    } elseif (! $processo->successful()) {
-        throw new RuntimeException('o node não montou a entrada do archify: '.trim($processo->errorOutput().$processo->output()));
-    }
+    expect($processo->successful())->toBeTrue('o node não montou a entrada do archify: '.trim($processo->errorOutput().$processo->output()));
 
     return $montadas[$json] = json_decode($processo->output(), true, 512, JSON_THROW_ON_ERROR);
 }

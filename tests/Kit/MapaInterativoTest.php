@@ -36,9 +36,7 @@ use Laravel\Ai\Contracts\HasMiddleware;
 use Livewire\Component;
 use Spatie\LaravelSettings\Settings;
 
-if (! defined('MAPA_MODELO_SKIP')) {
-    define('MAPA_MODELO_SKIP', 'o modelo do mapa, o catálogo e a página moram em site/, docs/ e README, que não viajam no pacote (export-ignore)');
-}
+define('MAPA_MODELO_SKIP', 'o modelo do mapa, o catálogo e a página moram em site/, docs/ e README, que não viajam no pacote (export-ignore)');
 
 /*
 |--------------------------------------------------------------------------
@@ -46,27 +44,21 @@ if (! defined('MAPA_MODELO_SKIP')) {
 |--------------------------------------------------------------------------
 */
 
-if (! defined('MAPA_MODELO_TIPOS')) {
-    /** Os 13 tipos de peça (RQ-24 e glossário), conforme o Setup Global do `04`. */
-    define('MAPA_MODELO_TIPOS', ['painel', 'recurso', 'pagina', 'widget', 'plugin', 'provider', 'middleware', 'servico', 'model', 'policy', 'setting', 'comando', 'livewire']);
-}
+/** Os 13 tipos de peça (RQ-24 e glossário), conforme o Setup Global do `04`. */
+define('MAPA_MODELO_TIPOS', ['painel', 'recurso', 'pagina', 'widget', 'plugin', 'provider', 'middleware', 'servico', 'model', 'policy', 'setting', 'comando', 'livewire']);
 
-if (! defined('MAPA_MODELO_METODOS_DE_CONTRATO')) {
-    /** Os métodos de contrato do alvo, das interfaces de `vendor/filament/filament/src/Models/Contracts` (R10, ADV2-08). */
-    define('MAPA_MODELO_METODOS_DE_CONTRATO', ['canAccessPanel', 'canAccessTenant', 'getTenants', 'getDefaultTenant', 'getCurrentTenantLabel', 'getFilamentName', 'getFilamentAvatarUrl']);
-}
+/** Os métodos de contrato do alvo, das interfaces de `vendor/filament/filament/src/Models/Contracts` (R10, ADV2-08). */
+define('MAPA_MODELO_METODOS_DE_CONTRATO', ['canAccessPanel', 'canAccessTenant', 'getTenants', 'getDefaultTenant', 'getCurrentTenantLabel', 'getFilamentName', 'getFilamentAvatarUrl']);
 
-if (! defined('MAPA_MODELO_SEM_FEATURE_PROPRIA')) {
-    /**
-     * A lista da guarda das peças e classes sem feature própria (P-12), com o motivo. Copiada de
-     * `mapa-pesquisa/modelo/sem-feature-propria.json`.
-     */
-    define('MAPA_MODELO_SEM_FEATURE_PROPRIA', [
-        'App\\Http\\Controllers\\Controller' => 'classe base abstrata e vazia que o Laravel gera para os controllers; não tem método nem comportamento, e os controllers do kit que entregam feature (LoginSocialController, ContaIndisponivelController, EntrarNoPainelController) já têm a F-nn deles',
-        'App\\Support\\BooleanoDoEnv'        => 'conversor do valor bruto de uma variável do .env em booleano com padrão (vazio ou irreconhecível cai no padrão), chamado pelo config/kit.php para várias chaves; é a infraestrutura de leitura da configuração, e cada feature que usa uma dessas chaves já tem a sua F-nn',
-        'App\\Support\\NumeroDoEnv'          => 'conversor do valor bruto de uma variável do .env em número positivo com padrão, chamado pelo config/kit.php (paginação, teto de upload e outras); é a infraestrutura de leitura da configuração, e cada feature que lê um desses números já tem a sua F-nn',
-    ]);
-}
+/**
+ * A lista da guarda das peças e classes sem feature própria (P-12), com o motivo. Copiada de
+ * `mapa-pesquisa/modelo/sem-feature-propria.json`.
+ */
+define('MAPA_MODELO_SEM_FEATURE_PROPRIA', [
+    'App\\Http\\Controllers\\Controller' => 'classe base abstrata e vazia que o Laravel gera para os controllers; não tem método nem comportamento, e os controllers do kit que entregam feature (LoginSocialController, ContaIndisponivelController, EntrarNoPainelController) já têm a F-nn deles',
+    'App\\Support\\BooleanoDoEnv'        => 'conversor do valor bruto de uma variável do .env em booleano com padrão (vazio ou irreconhecível cai no padrão), chamado pelo config/kit.php para várias chaves; é a infraestrutura de leitura da configuração, e cada feature que usa uma dessas chaves já tem a sua F-nn',
+    'App\\Support\\NumeroDoEnv'          => 'conversor do valor bruto de uma variável do .env em número positivo com padrão, chamado pelo config/kit.php (paginação, teto de upload e outras); é a infraestrutura de leitura da configuração, e cada feature que lê um desses números já tem a sua F-nn',
+]);
 
 /*
 |--------------------------------------------------------------------------
@@ -75,289 +67,263 @@ if (! defined('MAPA_MODELO_SEM_FEATURE_PROPRIA')) {
 | O modelo, os diagramas, o catálogo e o índice do git vêm de `tests/Pest.php`.
 */
 
-if (! function_exists('mapaModeloNome')) {
-    /** O nome curto de uma peça: a última parte da classe, ou o próprio id (`panel:admin`, `painel:app`). */
-    function mapaModeloNome(string $id): string
-    {
-        $partes = explode('\\', $id);
-
-        return end($partes);
-    }
+function mapaModeloNorm(string $texto): string
+{
+    return str_replace("\r\n", "\n", $texto);
 }
 
-if (! function_exists('mapaModeloNorm')) {
-    function mapaModeloNorm(string $texto): string
-    {
-        return str_replace("\r\n", "\n", $texto);
-    }
+/**
+ * @param  list<string>  $violacoes
+ * @param  array<string, mixed>  $extra
+ * @return array<string, mixed>
+ */
+function mapaModeloResultado(array $violacoes, array $extra = []): array
+{
+    return [
+        'aceita'    => $violacoes === [],
+        'motivo'    => $violacoes === [] ? null : implode('; ', array_slice($violacoes, 0, 60)),
+        'violacoes' => $violacoes,
+    ] + $extra;
 }
 
-if (! function_exists('mapaModeloResultado')) {
-    /**
-     * @param  list<string>  $violacoes
-     * @param  array<string, mixed>  $extra
-     * @return array<string, mixed>
-     */
-    function mapaModeloResultado(array $violacoes, array $extra = []): array
-    {
-        return [
-            'aceita'    => $violacoes === [],
-            'motivo'    => $violacoes === [] ? null : implode('; ', array_slice($violacoes, 0, 60)),
-            'violacoes' => $violacoes,
-        ] + $extra;
+/**
+ * O texto do arquivo com cada byte de comentário trocado por espaço e as quebras de linha mantidas: o mesmo
+ * tamanho e as mesmas linhas, pela sintaxe do tipo do arquivo (`04`, Guarda e controles, ADV2-06 e Q20). É o que
+ * diz se o trecho está fora de comentário NUMA linha (CT-52), onde apagar o comentário deslocaria as linhas.
+ */
+function mapaModeloMascararComentarios(string $arquivo, string $conteudo): string
+{
+    $mascarar = static fn (string $texto): string => (string) preg_replace('/[^\n]/', ' ', $texto);
+    $porRegex = static fn (string $padrao): string => (string) preg_replace_callback($padrao, static fn (array $m): string => $mascarar($m[0]), $conteudo);
+
+    if (str_ends_with($arquivo, '.blade.php')) {
+        return $porRegex('/\{\{--.*?--\}\}|<!--.*?-->/s');
     }
+
+    if (str_ends_with($arquivo, '.php')) {
+        $saida = '';
+
+        foreach (token_get_all($conteudo) as $token) {
+            $saida .= ! is_array($token) ? $token : (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? $mascarar($token[1]) : $token[1]);
+        }
+
+        return $saida;
+    }
+
+    if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
+        return $porRegex('~/\*.*?\*/|(?<![:\w])//[^\n]*~s');
+    }
+
+    if (preg_match('/\.ya?ml$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
+        return $porRegex('/(?<=^|[ \t])#[^\n]*/m');
+    }
+
+    if (str_ends_with($arquivo, '.md')) {
+        return $porRegex('/<!--.*?-->/s');
+    }
+
+    return $conteudo;
 }
 
-if (! function_exists('mapaModeloMascararComentarios')) {
-    /**
-     * O texto do arquivo com cada byte de comentário trocado por espaço e as quebras de linha mantidas: o mesmo
-     * tamanho e as mesmas linhas, pela sintaxe do tipo do arquivo (`04`, Guarda e controles, ADV2-06 e Q20). É o que
-     * diz se o trecho está fora de comentário NUMA linha (CT-52), onde apagar o comentário deslocaria as linhas.
-     */
-    function mapaModeloMascararComentarios(string $arquivo, string $conteudo): string
-    {
-        $mascarar = static fn (string $texto): string => (string) preg_replace('/[^\n]/', ' ', $texto);
-        $porRegex = static fn (string $padrao): string => (string) preg_replace_callback($padrao, static fn (array $m): string => $mascarar($m[0]), $conteudo);
-
-        if (str_ends_with($arquivo, '.blade.php')) {
-            return $porRegex('/\{\{--.*?--\}\}|<!--.*?-->/s');
-        }
-
-        if (str_ends_with($arquivo, '.php')) {
-            $saida = '';
-
-            foreach (token_get_all($conteudo) as $token) {
-                $saida .= ! is_array($token) ? $token : (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? $mascarar($token[1]) : $token[1]);
-            }
-
-            return $saida;
-        }
-
-        if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
-            return $porRegex('~/\*.*?\*/|(?<![:\w])//[^\n]*~s');
-        }
-
-        if (preg_match('/\.ya?ml$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
-            return $porRegex('/(?<=^|[ \t])#[^\n]*/m');
-        }
-
-        if (str_ends_with($arquivo, '.md')) {
-            return $porRegex('/<!--.*?-->/s');
-        }
-
-        return $conteudo;
+/**
+ * O código do arquivo sem comentário, pela sintaxe do tipo dele (`04`, Guarda e controles, ADV2-06). Em YAML e
+ * `.env`, o `#` até o fim da linha; em Markdown, o `<!-- -->` (Q20, step 9, achado A7); JSON não tem comentário.
+ */
+function mapaModeloSemComentario(string $arquivo, string $conteudo): string
+{
+    if (preg_match('/\.(ya?ml|md)$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
+        return mapaModeloMascararComentarios($arquivo, $conteudo);
     }
+
+    if (str_ends_with($arquivo, '.blade.php')) {
+        return preg_replace(['/\{\{--.*?--\}\}/s', '/<!--.*?-->/s'], '', $conteudo) ?? $conteudo;
+    }
+
+    if (str_ends_with($arquivo, '.php')) {
+        return codigoSemComentario($conteudo);
+    }
+
+    if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
+        $sem = preg_replace('~/\*.*?\*/~s', '', $conteudo) ?? $conteudo;
+
+        return preg_replace('~(?<![:\w])//[^\n]*~', '', $sem) ?? $sem;
+    }
+
+    return $conteudo;
 }
 
-if (! function_exists('mapaModeloSemComentario')) {
-    /**
-     * O código do arquivo sem comentário, pela sintaxe do tipo dele (`04`, Guarda e controles, ADV2-06). Em YAML e
-     * `.env`, o `#` até o fim da linha; em Markdown, o `<!-- -->` (Q20, step 9, achado A7); JSON não tem comentário.
-     */
-    function mapaModeloSemComentario(string $arquivo, string $conteudo): string
-    {
-        if (preg_match('/\.(ya?ml|md)$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
-            return mapaModeloMascararComentarios($arquivo, $conteudo);
-        }
+/**
+ * O código sem comentário de um arquivo do repositório, ou `null` se não é arquivo. A sobrescrita
+ * troca o conteúdo em memória (o controle "cópia do arquivo sem a linha do trecho").
+ *
+ * @param  array<string, string>  $sobrescritas
+ */
+function mapaModeloCodigo(string $arquivo, array $sobrescritas = []): ?string
+{
+    static $cache = [];
 
-        if (str_ends_with($arquivo, '.blade.php')) {
-            return preg_replace(['/\{\{--.*?--\}\}/s', '/<!--.*?-->/s'], '', $conteudo) ?? $conteudo;
-        }
-
-        if (str_ends_with($arquivo, '.php')) {
-            return codigoSemComentario($conteudo);
-        }
-
-        if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
-            $sem = preg_replace('~/\*.*?\*/~s', '', $conteudo) ?? $conteudo;
-
-            return preg_replace('~(?<![:\w])//[^\n]*~', '', $sem) ?? $sem;
-        }
-
-        return $conteudo;
+    if (isset($sobrescritas[$arquivo])) {
+        return mapaModeloSemComentario($arquivo, mapaModeloNorm($sobrescritas[$arquivo]));
     }
+
+    if (array_key_exists($arquivo, $cache)) {
+        return $cache[$arquivo];
+    }
+
+    $caminho = base_path($arquivo);
+
+    return $cache[$arquivo] = is_file($caminho)
+        ? mapaModeloSemComentario($arquivo, mapaModeloNorm((string) file_get_contents($caminho)))
+        : null;
 }
 
-if (! function_exists('mapaModeloCodigo')) {
-    /**
-     * O código sem comentário de um arquivo do repositório, ou `null` se não é arquivo. A sobrescrita
-     * troca o conteúdo em memória (o controle "cópia do arquivo sem a linha do trecho").
-     *
-     * @param  array<string, string>  $sobrescritas
-     */
-    function mapaModeloCodigo(string $arquivo, array $sobrescritas = []): ?string
-    {
-        static $cache = [];
+/**
+ * R9: a prova resolve no commit que publica. O arquivo é versionado no kit, o trecho está nele fora de
+ * comentário, e a prova não guarda número de linha (campo próprio, ou colado no caminho).
+ *
+ * A âncora tem chaves fechadas — `arquivo`, `trecho` e, opcional, `label` (step 9, achado A10): qualquer outra
+ * (`linha`, `line`, `end_line`, `path`) reprova, porque o gerador a deixa vencer a que ele calcula.
+ *
+ * @param  array<string, mixed>  $campos  os campos além de `arquivo` e `trecho`
+ * @param  array<string, string>  $sobrescritas
+ * @return array{aceita: bool, motivo: ?string}
+ */
+function mapaModeloConferirProva(string $nome, mixed $arquivo, mixed $trecho, array $campos = [], array $sobrescritas = []): array
+{
+    $reprova = static fn (string $motivo): array => ['aceita' => false, 'motivo' => "{$nome}: {$motivo}"];
 
-        if (isset($sobrescritas[$arquivo])) {
-            return mapaModeloSemComentario($arquivo, mapaModeloNorm($sobrescritas[$arquivo]));
+    foreach (array_keys($campos) as $campo) {
+        if ($campo === 'label') {
+            continue;
         }
 
-        if (array_key_exists($arquivo, $cache)) {
-            return $cache[$arquivo];
-        }
-
-        $caminho = base_path($arquivo);
-
-        return $cache[$arquivo] = is_file($caminho)
-            ? mapaModeloSemComentario($arquivo, mapaModeloNorm((string) file_get_contents($caminho)))
-            : null;
+        return $reprova(in_array($campo, ['linha', 'line', 'end_line'], true)
+            ? "a prova guarda o número da linha no campo `{$campo}`"
+            : "a prova traz a chave `{$campo}`, fora das chaves da âncora (arquivo, trecho e label)");
     }
+
+    if (! is_string($arquivo) || trim($arquivo) === '') {
+        return $reprova('a prova não tem arquivo');
+    }
+
+    if (preg_match('/(:\d+|#L\d+)$/', $arquivo) === 1) {
+        return $reprova("a prova guarda o número da linha no caminho {$arquivo}");
+    }
+
+    if (! is_string($trecho) || trim($trecho) === '') {
+        return $reprova("a prova de {$arquivo} não tem trecho (ausente, vazio ou só de espaços)");
+    }
+
+    $codigo = mapaModeloCodigo($arquivo, $sobrescritas);
+
+    if ($codigo === null) {
+        return $reprova("o arquivo {$arquivo} não existe");
+    }
+
+    if (! in_array($arquivo, arquivosVersionados(), true)) {
+        return $reprova("o arquivo {$arquivo} está fora do commit (não é versionado no kit)");
+    }
+
+    if (! str_contains($codigo, mapaModeloNorm($trecho))) {
+        return $reprova("o trecho não está em {$arquivo} fora de comentário");
+    }
+
+    return ['aceita' => true, 'motivo' => null];
 }
 
-if (! function_exists('mapaModeloConferirProva')) {
-    /**
-     * R9: a prova resolve no commit que publica. O arquivo é versionado no kit, o trecho está nele fora de
-     * comentário, e a prova não guarda número de linha (campo próprio, ou colado no caminho).
-     *
-     * A âncora tem chaves fechadas — `arquivo`, `trecho` e, opcional, `label` (step 9, achado A10): qualquer outra
-     * (`linha`, `line`, `end_line`, `path`) reprova, porque o gerador a deixa vencer a que ele calcula.
-     *
-     * @param  array<string, mixed>  $campos  os campos além de `arquivo` e `trecho`
-     * @param  array<string, string>  $sobrescritas
-     * @return array{aceita: bool, motivo: ?string}
-     */
-    function mapaModeloConferirProva(string $nome, mixed $arquivo, mixed $trecho, array $campos = [], array $sobrescritas = []): array
-    {
-        $reprova = static fn (string $motivo): array => ['aceita' => false, 'motivo' => "{$nome}: {$motivo}"];
-
-        foreach (array_keys($campos) as $campo) {
-            if ($campo === 'label') {
-                continue;
-            }
-
-            return $reprova(in_array($campo, ['linha', 'line', 'end_line'], true)
-                ? "a prova guarda o número da linha no campo `{$campo}`"
-                : "a prova traz a chave `{$campo}`, fora das chaves da âncora (arquivo, trecho e label)");
-        }
-
-        if (! is_string($arquivo) || trim($arquivo) === '') {
-            return $reprova('a prova não tem arquivo');
-        }
-
-        if (preg_match('/(:\d+|#L\d+)$/', $arquivo) === 1) {
-            return $reprova("a prova guarda o número da linha no caminho {$arquivo}");
-        }
-
-        if (! is_string($trecho) || trim($trecho) === '') {
-            return $reprova("a prova de {$arquivo} não tem trecho (ausente, vazio ou só de espaços)");
-        }
-
-        $codigo = mapaModeloCodigo($arquivo, $sobrescritas);
-
-        if ($codigo === null) {
-            return $reprova("o arquivo {$arquivo} não existe");
-        }
-
-        if (! in_array($arquivo, arquivosVersionados(), true)) {
-            return $reprova("o arquivo {$arquivo} está fora do commit (não é versionado no kit)");
-        }
-
-        if (! str_contains($codigo, mapaModeloNorm($trecho))) {
-            return $reprova("o trecho não está em {$arquivo} fora de comentário");
-        }
-
-        return ['aceita' => true, 'motivo' => null];
+/**
+ * As peças (ou nós) de um arquivo de diagrama cuja prova não é a âncora fechada: guarda número de linha (num
+ * campo ou colado no caminho), traz chave fora de `arquivo`, `trecho` e `label` (step 9, achado A10), ou tem no
+ * `sources` uma fonte que não é âncora `{arquivo, trecho}`.
+ *
+ * @return list<string>
+ */
+function mapaModeloAncorasForaDoFormato(mixed $no, string $contexto = ''): array
+{
+    if (! is_array($no)) {
+        return [];
     }
+
+    if (isset($no['id']) && is_string($no['id'])) {
+        $contexto = $no['id'];
+    }
+
+    $quem    = $contexto !== '' ? $contexto : '(sem id)';
+    $achados = [];
+
+    if (array_key_exists('arquivo', $no) || array_key_exists('trecho', $no)) {
+        foreach (array_diff(array_keys($no), ['arquivo', 'trecho', 'label']) as $chave) {
+            $achados[] = "{$quem} (chave `{$chave}`)";
+        }
+
+        if (is_string($no['arquivo'] ?? null) && preg_match('/(:\d+|#L\d+)$/', $no['arquivo']) === 1) {
+            $achados[] = "{$quem} (linha no caminho {$no['arquivo']})";
+        }
+    }
+
+    foreach (is_array($no['sources'] ?? null) ? $no['sources'] : [] as $fonte) {
+        if (! is_array($fonte) || ! array_key_exists('arquivo', $fonte) || ! array_key_exists('trecho', $fonte)) {
+            $achados[] = "{$quem} (fonte que não é âncora {arquivo, trecho})";
+        }
+    }
+
+    foreach ($no as $filho) {
+        $achados = array_merge($achados, mapaModeloAncorasForaDoFormato($filho, $contexto));
+    }
+
+    return $achados;
 }
 
-if (! function_exists('mapaModeloAncorasForaDoFormato')) {
-    /**
-     * As peças (ou nós) de um arquivo de diagrama cuja prova não é a âncora fechada: guarda número de linha (num
-     * campo ou colado no caminho), traz chave fora de `arquivo`, `trecho` e `label` (step 9, achado A10), ou tem no
-     * `sources` uma fonte que não é âncora `{arquivo, trecho}`.
-     *
-     * @return list<string>
-     */
-    function mapaModeloAncorasForaDoFormato(mixed $no, string $contexto = ''): array
-    {
-        if (! is_array($no)) {
-            return [];
+/**
+ * R9 sobre o modelo inteiro: a prova de TODAS as ligações (e não só as de registro) e a ausência de linha
+ * nas provas dos arquivos de diagrama.
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @param  array<string, array<string, mixed>>  $diagramas
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirProvas(array $modelo, array $diagramas): array
+{
+    $violacoes  = [];
+    $conferidas = 0;
+    $porPainel  = [];
+    $evidencias = 0;
+
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        $nome      = 'a ligação '.class_basename($ligacao['de']).' → '.class_basename($ligacao['para']);
+        $evidencia = is_array($ligacao['evidencia'] ?? null) ? $ligacao['evidencia'] : [];
+        $campos    = array_intersect_key($ligacao, ['linha' => 1, 'line' => 1]) + array_diff_key($evidencia, ['arquivo' => 1, 'trecho' => 1]);
+        $resultado = mapaModeloConferirProva($nome, $evidencia['arquivo'] ?? null, $evidencia['trecho'] ?? null, $campos);
+
+        $conferidas++;
+
+        foreach ($ligacao['paineis'] ?? [] as $painel) {
+            $porPainel[$painel] = ($porPainel[$painel] ?? 0) + 1;
         }
 
-        if (isset($no['id']) && is_string($no['id'])) {
-            $contexto = $no['id'];
+        if (! $resultado['aceita']) {
+            $violacoes[] = $resultado['motivo'];
         }
-
-        $quem    = $contexto !== '' ? $contexto : '(sem id)';
-        $achados = [];
-
-        if (array_key_exists('arquivo', $no) || array_key_exists('trecho', $no)) {
-            foreach (array_diff(array_keys($no), ['arquivo', 'trecho', 'label']) as $chave) {
-                $achados[] = "{$quem} (chave `{$chave}`)";
-            }
-
-            if (is_string($no['arquivo'] ?? null) && preg_match('/(:\d+|#L\d+)$/', $no['arquivo']) === 1) {
-                $achados[] = "{$quem} (linha no caminho {$no['arquivo']})";
-            }
-        }
-
-        foreach (is_array($no['sources'] ?? null) ? $no['sources'] : [] as $fonte) {
-            if (! is_array($fonte) || ! array_key_exists('arquivo', $fonte) || ! array_key_exists('trecho', $fonte)) {
-                $achados[] = "{$quem} (fonte que não é âncora {arquivo, trecho})";
-            }
-        }
-
-        foreach ($no as $filho) {
-            $achados = array_merge($achados, mapaModeloAncorasForaDoFormato($filho, $contexto));
-        }
-
-        return $achados;
     }
-}
 
-if (! function_exists('mapaModeloConferirProvas')) {
-    /**
-     * R9 sobre o modelo inteiro: a prova de TODAS as ligações (e não só as de registro) e a ausência de linha
-     * nas provas dos arquivos de diagrama.
-     *
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @param  array<string, array<string, mixed>>  $diagramas
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirProvas(array $modelo, array $diagramas): array
-    {
-        $violacoes  = [];
-        $conferidas = 0;
-        $porPainel  = [];
-        $evidencias = 0;
+    // A10: a evidência de cada peça do modelo de peças também tem as chaves fechadas da âncora.
+    foreach ($modelo['pecas'] as $peca) {
+        foreach (is_array($peca['evidencia'] ?? null) ? $peca['evidencia'] : [] as $ancora) {
+            $evidencias++;
 
-        foreach ($modelo['ligacoes'] as $ligacao) {
-            $nome      = 'a ligação '.mapaModeloNome($ligacao['de']).' → '.mapaModeloNome($ligacao['para']);
-            $evidencia = is_array($ligacao['evidencia'] ?? null) ? $ligacao['evidencia'] : [];
-            $campos    = array_intersect_key($ligacao, ['linha' => 1, 'line' => 1]) + array_diff_key($evidencia, ['arquivo' => 1, 'trecho' => 1]);
-            $resultado = mapaModeloConferirProva($nome, $evidencia['arquivo'] ?? null, $evidencia['trecho'] ?? null, $campos);
-
-            $conferidas++;
-
-            foreach ($ligacao['paineis'] ?? [] as $painel) {
-                $porPainel[$painel] = ($porPainel[$painel] ?? 0) + 1;
-            }
-
-            if (! $resultado['aceita']) {
-                $violacoes[] = $resultado['motivo'];
+            foreach (is_array($ancora) ? array_diff(array_keys($ancora), ['arquivo', 'trecho', 'label']) : ['(não é âncora)'] as $chave) {
+                $violacoes[] = "a evidência da peça {$peca['id']} traz a chave `{$chave}`, fora das chaves da âncora (arquivo, trecho e label)";
             }
         }
-
-        // A10: a evidência de cada peça do modelo de peças também tem as chaves fechadas da âncora.
-        foreach ($modelo['pecas'] as $peca) {
-            foreach (is_array($peca['evidencia'] ?? null) ? $peca['evidencia'] : [] as $ancora) {
-                $evidencias++;
-
-                foreach (is_array($ancora) ? array_diff(array_keys($ancora), ['arquivo', 'trecho', 'label']) : ['(não é âncora)'] as $chave) {
-                    $violacoes[] = "a evidência da peça {$peca['id']} traz a chave `{$chave}`, fora das chaves da âncora (arquivo, trecho e label)";
-                }
-            }
-        }
-
-        foreach ($diagramas as $slug => $diagrama) {
-            foreach (mapaModeloAncorasForaDoFormato($diagrama) as $peca) {
-                $violacoes[] = "o diagrama {$slug} guarda, na prova da peça {$peca}, o que a âncora não tem (número de linha ou chave fora de arquivo, trecho e label)";
-            }
-        }
-
-        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'porPainel' => $porPainel, 'evidencias' => $evidencias]);
     }
+
+    foreach ($diagramas as $slug => $diagrama) {
+        foreach (mapaModeloAncorasForaDoFormato($diagrama) as $peca) {
+            $violacoes[] = "o diagrama {$slug} guarda, na prova da peça {$peca}, o que a âncora não tem (número de linha ou chave fora de arquivo, trecho e label)";
+        }
+    }
+
+    return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'porPainel' => $porPainel, 'evidencias' => $evidencias]);
 }
 
 /*
@@ -367,37 +333,35 @@ if (! function_exists('mapaModeloConferirProvas')) {
 | O registro vivo do painel e o que o modelo lhe dá no modo vêm de `tests/Pest.php`.
 */
 
-if (! function_exists('mapaModeloConferirRegistro')) {
-    /**
-     * R11: tudo que o painel registra tem ligação de registro no modelo (painel → modelo), e o modelo não dá ao
-     * modo o que o painel não registra (modelo → painel).
-     *
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @param  list<string>|null  $paineis
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirRegistro(array $modelo, string $modo, ?array $paineis = null): array
-    {
-        $violacoes  = [];
-        $conferidas = 0;
+/**
+ * R11: tudo que o painel registra tem ligação de registro no modelo (painel → modelo), e o modelo não dá ao
+ * modo o que o painel não registra (modelo → painel).
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @param  list<string>|null  $paineis
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirRegistro(array $modelo, string $modo, ?array $paineis = null): array
+{
+    $violacoes  = [];
+    $conferidas = 0;
 
-        foreach ($paineis ?? array_keys(Filament::getPanels()) as $id) {
-            $vivo     = array_merge(...array_values(registroVivoDoPainel(Filament::getPanel($id))));
-            $noModelo = registradasNoModelo($modelo, $id, $modo);
+    foreach ($paineis ?? array_keys(Filament::getPanels()) as $id) {
+        $vivo     = array_merge(...array_values(registroVivoDoPainel(Filament::getPanel($id))));
+        $noModelo = registradasNoModelo($modelo, $id, $modo);
 
-            foreach (array_diff($vivo, $noModelo) as $peca) {
-                $violacoes[] = "o painel {$id} registra ".mapaModeloNome($peca)." ({$peca}) e o modelo não tem a ligação de registro";
-            }
-
-            foreach (array_diff($noModelo, $vivo) as $peca) {
-                $violacoes[] = 'o modelo dá '.mapaModeloNome($peca)." ({$peca}) ao painel {$id} no modo {$modo} e o painel não o registra";
-            }
-
-            $conferidas += count($vivo);
+        foreach (array_diff($vivo, $noModelo) as $peca) {
+            $violacoes[] = "o painel {$id} registra ".class_basename($peca)." ({$peca}) e o modelo não tem a ligação de registro";
         }
 
-        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas]);
+        foreach (array_diff($noModelo, $vivo) as $peca) {
+            $violacoes[] = 'o modelo dá '.class_basename($peca)." ({$peca}) ao painel {$id} no modo {$modo} e o painel não o registra";
+        }
+
+        $conferidas += count($vivo);
     }
+
+    return mapaModeloResultado($violacoes, ['conferidas' => $conferidas]);
 }
 
 /*
@@ -406,337 +370,325 @@ if (! function_exists('mapaModeloConferirRegistro')) {
 |--------------------------------------------------------------------------
 */
 
-if (! function_exists('mapaModeloUsosDoArquivo')) {
-    /**
-     * O mapa nome-curto → classe dos `use` de um código PHP.
-     *
-     * @return array<string, string>
-     */
-    function mapaModeloUsosDoArquivo(string $codigo): array
-    {
-        preg_match_all('/^use\s+([\w\\\\]+)(?:\s+as\s+(\w+))?;/m', $codigo, $m, PREG_SET_ORDER);
+/**
+ * O mapa nome-curto → classe dos `use` de um código PHP.
+ *
+ * @return array<string, string>
+ */
+function mapaModeloUsosDoArquivo(string $codigo): array
+{
+    preg_match_all('/^use\s+([\w\\\\]+)(?:\s+as\s+(\w+))?;/m', $codigo, $m, PREG_SET_ORDER);
 
-        $usos = [];
+    $usos = [];
 
-        foreach ($m as $uso) {
-            $usos[$uso[2] ?? mapaModeloNome($uso[1])] = $uso[1];
-        }
-
-        return $usos;
+    foreach ($m as $uso) {
+        $usos[$uso[2] ?? class_basename($uso[1])] = $uso[1];
     }
+
+    return $usos;
 }
 
-if (! function_exists('mapaModeloResolverNomeCurto')) {
-    /** A classe que um nome curto designa num código PHP: pelo `use` ou pelo namespace do arquivo; `null` se não existe. */
-    function mapaModeloResolverNomeCurto(string $codigo, string $curto): ?string
-    {
-        $usos = mapaModeloUsosDoArquivo($codigo);
+/** A classe que um nome curto designa num código PHP: pelo `use` ou pelo namespace do arquivo; `null` se não existe. */
+function mapaModeloResolverNomeCurto(string $codigo, string $curto): ?string
+{
+    $usos = mapaModeloUsosDoArquivo($codigo);
 
-        if (isset($usos[$curto])) {
-            return class_exists($usos[$curto]) ? $usos[$curto] : null;
-        }
-
-        if (preg_match('/^namespace\s+([\w\\\\]+);/m', $codigo, $m) === 1 && class_exists($m[1].'\\'.$curto)) {
-            return $m[1].'\\'.$curto;
-        }
-
-        return null;
+    if (isset($usos[$curto])) {
+        return class_exists($usos[$curto]) ? $usos[$curto] : null;
     }
+
+    if (preg_match('/^namespace\s+([\w\\\\]+);/m', $codigo, $m) === 1 && class_exists($m[1].'\\'.$curto)) {
+        return $m[1].'\\'.$curto;
+    }
+
+    return null;
 }
 
-if (! function_exists('mapaModeloContextoDeTipos')) {
-    /**
-     * O que a tabela de tipos da R8 consulta além da herança: as policies que o `Gate` devolve para um model, e
-     * os middlewares que um painel ou a aplicação registram (o alias `panel:{id}` é tratado à parte).
-     *
-     * @return array{politicas: array<string, true>, middlewares: array<string, true>}
-     */
-    function mapaModeloContextoDeTipos(): array
-    {
-        static $contexto = null;
+/**
+ * O que a tabela de tipos da R8 consulta além da herança: as policies que o `Gate` devolve para um model, e
+ * os middlewares que um painel ou a aplicação registram (o alias `panel:{id}` é tratado à parte).
+ *
+ * @return array{politicas: array<string, true>, middlewares: array<string, true>}
+ */
+function mapaModeloContextoDeTipos(): array
+{
+    static $contexto = null;
 
-        if ($contexto !== null) {
-            return $contexto;
-        }
+    if ($contexto !== null) {
+        return $contexto;
+    }
 
-        $politicas = [];
+    $politicas = [];
 
-        foreach (Gate::policies() as $politica) {
-            $politicas[$politica] = true;
-        }
+    foreach (Gate::policies() as $politica) {
+        $politicas[$politica] = true;
+    }
 
-        foreach (modeloDoMapa()['pecas'] as $peca) {
-            if ($peca['tipo'] === 'model' && class_exists($peca['id'])) {
-                try {
-                    $politica = Gate::getPolicyFor($peca['id']);
-                } catch (Throwable) {
-                    $politica = null;
-                }
+    foreach (modeloDoMapa()['pecas'] as $peca) {
+        if ($peca['tipo'] === 'model' && class_exists($peca['id'])) {
+            try {
+                $politica = Gate::getPolicyFor($peca['id']);
+            } catch (Throwable) {
+                $politica = null;
+            }
 
-                if (is_object($politica)) {
-                    $politicas[$politica::class] = true;
-                }
+            if (is_object($politica)) {
+                $politicas[$politica::class] = true;
             }
         }
+    }
 
-        $middlewares = [];
-        $guardar     = static function (mixed $middleware) use (&$middlewares): void {
-            if (is_string($middleware) && ! str_starts_with($middleware, 'panel:')) {
-                $middlewares[explode(':', $middleware, 2)[0]] = true;
+    $middlewares = [];
+    $guardar     = static function (mixed $middleware) use (&$middlewares): void {
+        if (is_string($middleware) && ! str_starts_with($middleware, 'panel:')) {
+            $middlewares[explode(':', $middleware, 2)[0]] = true;
+        }
+    };
+
+    foreach (Filament::getPanels() as $painel) {
+        foreach ([$painel->getMiddleware(), $painel->getAuthMiddleware(), $painel->getTenantMiddleware()] as $lista) {
+            array_map($guardar, $lista);
+        }
+    }
+
+    $roteador = app('router');
+    array_map($guardar, array_values($roteador->getMiddleware()));
+
+    foreach ($roteador->getMiddlewareGroups() as $grupo) {
+        array_map($guardar, $grupo);
+    }
+
+    array_map($guardar, app(Kernel::class)->getGlobalMiddleware());
+
+    foreach ($roteador->getRoutes()->getRoutes() as $rota) {
+        array_map($guardar, $rota->gatherMiddleware());
+    }
+
+    // Os que um provider de painel ou o bootstrap registram dentro de uma condição (o middleware de
+    // organização só entra com a tenancy ligada, e esta suíte roda sem ela): a classe citada com `::class`
+    // nesses arquivos e que é middleware (tem `handle`).
+    $fontes = array_merge([base_path('bootstrap/app.php')], glob(app_path('Providers/Filament/*.php')) ?: []);
+
+    foreach ($fontes as $fonte) {
+        $codigo = codigoSemComentario((string) file_get_contents($fonte));
+        $usos   = mapaModeloUsosDoArquivo($codigo);
+
+        preg_match_all('/\b([A-Z]\w*)::class/', $codigo, $m);
+
+        foreach (array_unique($m[1]) as $curto) {
+            $classe = $usos[$curto] ?? null;
+
+            if ($classe !== null && class_exists($classe) && method_exists($classe, 'handle')) {
+                $middlewares[$classe] = true;
             }
-        };
+        }
+    }
 
-        foreach (Filament::getPanels() as $painel) {
-            foreach ([$painel->getMiddleware(), $painel->getAuthMiddleware(), $painel->getTenantMiddleware()] as $lista) {
-                array_map($guardar, $lista);
+    // A classe que a aplicação põe, pelo container, no lugar de um middleware registrado: o painel registra a
+    // classe do pacote, e o `bind` do kit faz o container entregar a dele.
+    $ligacoesDoContainer = app()->getBindings();
+
+    foreach (array_keys($middlewares) as $registrado) {
+        if (! isset($ligacoesDoContainer[$registrado]) || ! class_exists($registrado)) {
+            continue;
+        }
+
+        try {
+            $concreta = get_class(app($registrado));
+        } catch (Throwable) {
+            continue;
+        }
+
+        if ($concreta !== $registrado) {
+            $middlewares[$concreta] = true;
+        }
+    }
+
+    // Os que a aplicação registra como middleware no pipeline de um agente (`Laravel\Ai\Contracts\HasMiddleware`):
+    // a classe citada no `middleware()` do agente, direto ou pelo registro que ele consulta, e que tem `handle`.
+    foreach (mapaModeloClassesDeApp() as $agente) {
+        if (! class_exists($agente) || ! is_subclass_of($agente, HasMiddleware::class)) {
+            continue;
+        }
+
+        $codigo = codigoSemComentario((string) file_get_contents(base_path((string) arquivoDaClasse($agente))));
+        $corpo  = mapaModeloCorpoDoMetodo($codigo, 'middleware');
+
+        preg_match_all('/\bnew\s+([A-Z]\w*)|\b([A-Z]\w*)::(?:class\b|\w+\s*\()/', (string) $corpo, $citacoes, PREG_SET_ORDER);
+
+        foreach ($citacoes as $citacao) {
+            $classe = mapaModeloResolverNomeCurto($codigo, $citacao[1] !== '' ? $citacao[1] : $citacao[2]);
+
+            if ($classe === null) {
+                continue;
             }
-        }
 
-        $roteador = app('router');
-        array_map($guardar, array_values($roteador->getMiddleware()));
+            if (method_exists($classe, 'handle')) {
+                $middlewares[$classe] = true;
 
-        foreach ($roteador->getMiddlewareGroups() as $grupo) {
-            array_map($guardar, $grupo);
-        }
+                continue;
+            }
 
-        array_map($guardar, app(Kernel::class)->getGlobalMiddleware());
+            if (! str_starts_with($classe, 'App\\')) {
+                continue;
+            }
 
-        foreach ($roteador->getRoutes()->getRoutes() as $rota) {
-            array_map($guardar, $rota->gatherMiddleware());
-        }
-
-        // Os que um provider de painel ou o bootstrap registram dentro de uma condição (o middleware de
-        // organização só entra com a tenancy ligada, e esta suíte roda sem ela): a classe citada com `::class`
-        // nesses arquivos e que é middleware (tem `handle`).
-        $fontes = array_merge([base_path('bootstrap/app.php')], glob(app_path('Providers/Filament/*.php')) ?: []);
-
-        foreach ($fontes as $fonte) {
-            $codigo = codigoSemComentario((string) file_get_contents($fonte));
-            $usos   = mapaModeloUsosDoArquivo($codigo);
-
-            preg_match_all('/\b([A-Z]\w*)::class/', $codigo, $m);
+            $registro = codigoSemComentario((string) file_get_contents(base_path((string) arquivoDaClasse($classe))));
+            preg_match_all('/\b([A-Z]\w*)::class\b/', $registro, $m);
 
             foreach (array_unique($m[1]) as $curto) {
-                $classe = $usos[$curto] ?? null;
+                $registrada = mapaModeloResolverNomeCurto($registro, $curto);
 
-                if ($classe !== null && class_exists($classe) && method_exists($classe, 'handle')) {
-                    $middlewares[$classe] = true;
+                if ($registrada !== null && method_exists($registrada, 'handle')) {
+                    $middlewares[$registrada] = true;
                 }
             }
         }
-
-        // A classe que a aplicação põe, pelo container, no lugar de um middleware registrado: o painel registra a
-        // classe do pacote, e o `bind` do kit faz o container entregar a dele.
-        $ligacoesDoContainer = app()->getBindings();
-
-        foreach (array_keys($middlewares) as $registrado) {
-            if (! isset($ligacoesDoContainer[$registrado]) || ! class_exists($registrado)) {
-                continue;
-            }
-
-            try {
-                $concreta = get_class(app($registrado));
-            } catch (Throwable) {
-                continue;
-            }
-
-            if ($concreta !== $registrado) {
-                $middlewares[$concreta] = true;
-            }
-        }
-
-        // Os que a aplicação registra como middleware no pipeline de um agente (`Laravel\Ai\Contracts\HasMiddleware`):
-        // a classe citada no `middleware()` do agente, direto ou pelo registro que ele consulta, e que tem `handle`.
-        foreach (mapaModeloClassesDeApp() as $agente) {
-            if (! class_exists($agente) || ! is_subclass_of($agente, HasMiddleware::class)) {
-                continue;
-            }
-
-            $codigo = codigoSemComentario((string) file_get_contents(base_path((string) arquivoDaClasse($agente))));
-            $corpo  = mapaModeloCorpoDoMetodo($codigo, 'middleware');
-
-            preg_match_all('/\bnew\s+([A-Z]\w*)|\b([A-Z]\w*)::(?:class\b|\w+\s*\()/', (string) $corpo, $citacoes, PREG_SET_ORDER);
-
-            foreach ($citacoes as $citacao) {
-                $classe = mapaModeloResolverNomeCurto($codigo, $citacao[1] !== '' ? $citacao[1] : $citacao[2]);
-
-                if ($classe === null) {
-                    continue;
-                }
-
-                if (method_exists($classe, 'handle')) {
-                    $middlewares[$classe] = true;
-
-                    continue;
-                }
-
-                if (! str_starts_with($classe, 'App\\')) {
-                    continue;
-                }
-
-                $registro = codigoSemComentario((string) file_get_contents(base_path((string) arquivoDaClasse($classe))));
-                preg_match_all('/\b([A-Z]\w*)::class\b/', $registro, $m);
-
-                foreach (array_unique($m[1]) as $curto) {
-                    $registrada = mapaModeloResolverNomeCurto($registro, $curto);
-
-                    if ($registrada !== null && method_exists($registrada, 'handle')) {
-                        $middlewares[$registrada] = true;
-                    }
-                }
-            }
-        }
-
-        return $contexto = ['politicas' => $politicas, 'middlewares' => $middlewares];
     }
+
+    return $contexto = ['politicas' => $politicas, 'middlewares' => $middlewares];
 }
 
-if (! function_exists('mapaModeloTipoEsperado')) {
-    /**
-     * O tipo que a classe tem, pela tabela da R8: a primeira linha que ela satisfaz, na ordem.
-     *
-     * @param  array{politicas: array<string, true>, middlewares: array<string, true>}  $contexto
-     */
-    function mapaModeloTipoEsperado(string $id, array $contexto): string
-    {
-        if (str_starts_with($id, 'painel:')) {
-            return 'painel';
-        }
-
-        if (preg_match('/^panel:[\w-]+$/', $id) === 1) {
-            return 'middleware';
-        }
-
-        $herancas = [
-            'recurso'  => \Filament\Resources\Resource::class,
-            'pagina'   => BasePage::class,
-            'widget'   => Widget::class,
-            'plugin'   => Plugin::class,
-            'model'    => Model::class,
-            'provider' => ServiceProvider::class,
-            'comando'  => Command::class,
-            'setting'  => Settings::class,
-            'livewire' => Component::class,
-        ];
-
-        foreach ($herancas as $tipo => $base) {
-            if (is_subclass_of($id, $base)) {
-                return $tipo;
-            }
-        }
-
-        if (isset($contexto['politicas'][$id])) {
-            return 'policy';
-        }
-
-        if (isset($contexto['middlewares'][$id])) {
-            return 'middleware';
-        }
-
-        return 'servico';
+/**
+ * O tipo que a classe tem, pela tabela da R8: a primeira linha que ela satisfaz, na ordem.
+ *
+ * @param  array{politicas: array<string, true>, middlewares: array<string, true>}  $contexto
+ */
+function mapaModeloTipoEsperado(string $id, array $contexto): string
+{
+    if (str_starts_with($id, 'painel:')) {
+        return 'painel';
     }
+
+    if (preg_match('/^panel:[\w-]+$/', $id) === 1) {
+        return 'middleware';
+    }
+
+    $herancas = [
+        'recurso'  => \Filament\Resources\Resource::class,
+        'pagina'   => BasePage::class,
+        'widget'   => Widget::class,
+        'plugin'   => Plugin::class,
+        'model'    => Model::class,
+        'provider' => ServiceProvider::class,
+        'comando'  => Command::class,
+        'setting'  => Settings::class,
+        'livewire' => Component::class,
+    ];
+
+    foreach ($herancas as $tipo => $base) {
+        if (is_subclass_of($id, $base)) {
+            return $tipo;
+        }
+    }
+
+    if (isset($contexto['politicas'][$id])) {
+        return 'policy';
+    }
+
+    if (isset($contexto['middlewares'][$id])) {
+        return 'middleware';
+    }
+
+    return 'servico';
 }
 
-if (! function_exists('mapaModeloPacotesInstalados')) {
-    /**
-     * Os pacotes instalados: o que o Composer instalou e o que os manifestos declaram.
-     *
-     * @return array<string, true>
-     */
-    function mapaModeloPacotesInstalados(): array
-    {
-        static $nomes = null;
+/**
+ * Os pacotes instalados: o que o Composer instalou e o que os manifestos declaram.
+ *
+ * @return array<string, true>
+ */
+function mapaModeloPacotesInstalados(): array
+{
+    static $nomes = null;
 
-        if ($nomes === null) {
-            $nomes     = [];
-            $instalado = json_decode((string) file_get_contents(base_path('vendor/composer/installed.json')), true);
+    if ($nomes === null) {
+        $nomes     = [];
+        $instalado = json_decode((string) file_get_contents(base_path('vendor/composer/installed.json')), true);
 
-            foreach ($instalado['packages'] ?? $instalado ?? [] as $pacote) {
-                $nomes[$pacote['name']] = true;
-            }
+        foreach ($instalado['packages'] ?? $instalado ?? [] as $pacote) {
+            $nomes[$pacote['name']] = true;
+        }
 
-            $composer = json_decode((string) file_get_contents(base_path('composer.json')), true);
+        $composer = json_decode((string) file_get_contents(base_path('composer.json')), true);
 
-            foreach (array_merge($composer['require'] ?? [], $composer['require-dev'] ?? []) as $nome => $versao) {
+        foreach (array_merge($composer['require'] ?? [], $composer['require-dev'] ?? []) as $nome => $versao) {
+            $nomes[$nome] = true;
+        }
+
+        $npm = json_decode((string) file_get_contents(base_path('package.json')), true);
+
+        foreach (['dependencies', 'devDependencies', 'optionalDependencies'] as $campo) {
+            foreach (array_keys($npm[$campo] ?? []) as $nome) {
                 $nomes[$nome] = true;
             }
-
-            $npm = json_decode((string) file_get_contents(base_path('package.json')), true);
-
-            foreach (['dependencies', 'devDependencies', 'optionalDependencies'] as $campo) {
-                foreach (array_keys($npm[$campo] ?? []) as $nome) {
-                    $nomes[$nome] = true;
-                }
-            }
         }
-
-        return $nomes;
     }
+
+    return $nomes;
 }
 
-if (! function_exists('mapaModeloConferirPecas')) {
-    /**
-     * R8: toda peça existe no código, é do tipo que a classe dela é, está no conjunto fechado e aparece uma vez.
-     *
-     * @param  list<array<string, mixed>>  $pecas
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirPecas(array $pecas): array
-    {
-        $violacoes  = [];
-        $vistos     = [];
-        $paineis    = array_keys(Filament::getPanels());
-        $instalados = mapaModeloPacotesInstalados();
-        $contexto   = mapaModeloContextoDeTipos();
+/**
+ * R8: toda peça existe no código, é do tipo que a classe dela é, está no conjunto fechado e aparece uma vez.
+ *
+ * @param  list<array<string, mixed>>  $pecas
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirPecas(array $pecas): array
+{
+    $violacoes  = [];
+    $vistos     = [];
+    $paineis    = array_keys(Filament::getPanels());
+    $instalados = mapaModeloPacotesInstalados();
+    $contexto   = mapaModeloContextoDeTipos();
 
-        foreach ($pecas as $peca) {
-            $id          = $peca['id'];
-            $tipo        = (string) ($peca['tipo'] ?? '');
-            $vistos[$id] = ($vistos[$id] ?? 0) + 1;
+    foreach ($pecas as $peca) {
+        $id          = $peca['id'];
+        $tipo        = (string) ($peca['tipo'] ?? '');
+        $vistos[$id] = ($vistos[$id] ?? 0) + 1;
 
-            if (! in_array($tipo, MAPA_MODELO_TIPOS, true)) {
-                $violacoes[] = "a peça {$id} tem o tipo \"{$tipo}\", que não é um dos 13 do conjunto fechado";
+        if (! in_array($tipo, MAPA_MODELO_TIPOS, true)) {
+            $violacoes[] = "a peça {$id} tem o tipo \"{$tipo}\", que não é um dos 13 do conjunto fechado";
 
-                continue;
-            }
-
-            if (isset($peca['pacote']) && ! isset($instalados[$peca['pacote']])) {
-                $violacoes[] = "a peça {$id} é do pacote {$peca['pacote']}, que não está instalado";
-
-                continue;
-            }
-
-            if ($tipo === 'painel') {
-                $painel = str_starts_with($id, 'painel:') ? substr($id, 7) : $id;
-
-                if (! in_array($painel, $paineis, true)) {
-                    $violacoes[] = "o painel {$painel} ({$id}) não está no registro de painéis";
-                }
-
-                continue;
-            }
-
-            if (! classeExiste($id) && preg_match('/^panel:[\w-]+$/', $id) !== 1) {
-                $violacoes[] = "a classe {$id} não existe no código";
-
-                continue;
-            }
-
-            $esperado = mapaModeloTipoEsperado($id, $contexto);
-
-            if ($esperado !== $tipo) {
-                $violacoes[] = "a classe {$id} é do tipo {$esperado}, e o modelo a declara do tipo {$tipo}";
-            }
+            continue;
         }
 
-        foreach ($vistos as $id => $vezes) {
-            if ($vezes > 1) {
-                $violacoes[] = "a classe {$id} aparece em {$vezes} peças";
-            }
+        if (isset($peca['pacote']) && ! isset($instalados[$peca['pacote']])) {
+            $violacoes[] = "a peça {$id} é do pacote {$peca['pacote']}, que não está instalado";
+
+            continue;
         }
 
-        return mapaModeloResultado($violacoes, ['conferidas' => count($pecas)]);
+        if ($tipo === 'painel') {
+            $painel = str_starts_with($id, 'painel:') ? substr($id, 7) : $id;
+
+            if (! in_array($painel, $paineis, true)) {
+                $violacoes[] = "o painel {$painel} ({$id}) não está no registro de painéis";
+            }
+
+            continue;
+        }
+
+        if (! classeExiste($id) && preg_match('/^panel:[\w-]+$/', $id) !== 1) {
+            $violacoes[] = "a classe {$id} não existe no código";
+
+            continue;
+        }
+
+        $esperado = mapaModeloTipoEsperado($id, $contexto);
+
+        if ($esperado !== $tipo) {
+            $violacoes[] = "a classe {$id} é do tipo {$esperado}, e o modelo a declara do tipo {$tipo}";
+        }
     }
+
+    foreach ($vistos as $id => $vezes) {
+        if ($vezes > 1) {
+            $violacoes[] = "a classe {$id} aparece em {$vezes} peças";
+        }
+    }
+
+    return mapaModeloResultado($violacoes, ['conferidas' => count($pecas)]);
 }
 
 /*
@@ -746,238 +698,226 @@ if (! function_exists('mapaModeloConferirPecas')) {
 | O arquivo de uma classe vem de `arquivoDaClasse()`, em `tests/Pest.php`.
 */
 
-if (! function_exists('mapaModeloNomeia')) {
-    /** O texto nomeia a peça pelo nome inteiro (palavra), e não por parte de outro nome. */
-    function mapaModeloNomeia(string $texto, string $nome): bool
-    {
-        return preg_match('/(?<![\w])'.preg_quote($nome, '/').'(?!\w)/', $texto) === 1;
+/** O texto nomeia a peça pelo nome inteiro (palavra), e não por parte de outro nome. */
+function mapaModeloNomeia(string $texto, string $nome): bool
+{
+    return preg_match('/(?<![\w])'.preg_quote($nome, '/').'(?!\w)/', $texto) === 1;
+}
+
+/**
+ * O `register()` do plugin, num painel de rascunho, devolve a peça? (Setup Global: não confere pelo nome.) A
+ * peça pode ser recurso, página, widget ou middleware (step 9, achado A9: o `Locker` pelo `Lockscreen`, o
+ * `MustTwoFactor` pelo `BreezyCore`). O plugin é avaliado como o painel vivo o configura — uma cópia da
+ * instância registrada nele —, e só sem ela pelo `make()`: o `BreezyCore` só põe o `MustTwoFactor` com o 2FA ligado.
+ */
+function mapaModeloPluginTraz(string $plugin, string $peca, string $painelVivo): bool
+{
+    try {
+        $instancia = null;
+
+        foreach ((Filament::getPanels()[$painelVivo] ?? null)?->getPlugins() ?? [] as $registrado) {
+            if ($registrado::class === $plugin) {
+                $instancia = clone $registrado;
+
+                break;
+            }
+        }
+
+        $painel = Panel::make()->id('mapa-modelo-teste')->path('mapa-modelo-teste');
+        ($instancia ?? $plugin::make())->register($painel);
+
+        $middlewares = array_map(
+            static fn (string $middleware): string => explode(':', $middleware, 2)[0],
+            array_filter(array_merge($painel->getMiddleware(), $painel->getAuthMiddleware()), static fn (mixed $middleware): bool => is_string($middleware) && ! str_starts_with($middleware, 'panel:')),
+        );
+
+        $trazidas = array_merge(array_filter(array_map('classeDoRegistro', array_merge($painel->getResources(), $painel->getPages(), $painel->getWidgets()))), $middlewares);
+
+        return in_array($peca, $trazidas, true);
+    } catch (Throwable) {
+        return false;
     }
 }
 
-if (! function_exists('mapaModeloPluginTraz')) {
-    /**
-     * O `register()` do plugin, num painel de rascunho, devolve a peça? (Setup Global: não confere pelo nome.) A
-     * peça pode ser recurso, página, widget ou middleware (step 9, achado A9: o `Locker` pelo `Lockscreen`, o
-     * `MustTwoFactor` pelo `BreezyCore`). O plugin é avaliado como o painel vivo o configura — uma cópia da
-     * instância registrada nele —, e só sem ela pelo `make()`: o `BreezyCore` só põe o `MustTwoFactor` com o 2FA ligado.
-     */
-    function mapaModeloPluginTraz(string $plugin, string $peca, ?string $painelVivo = null): bool
-    {
-        try {
-            $instancia = null;
+/**
+ * A forma do invólucro do kit (step 9, achado A9): o nome curto chamado no provider resolve, pelos `use` dele,
+ * para uma classe de `app/`, e o arquivo dessa classe nomeia a classe da peça.
+ */
+function mapaModeloInvolucroNomeia(string $codigoDoProvider, string $curto, string $peca): bool
+{
+    $classe  = mapaModeloResolverNomeCurto($codigoDoProvider, $curto);
+    $arquivo = $classe !== null ? arquivoDaClasse($classe) : null;
 
-            foreach ((Filament::getPanels()[$painelVivo ?? ''] ?? null)?->getPlugins() ?? [] as $registrado) {
-                if ($registrado::class === $plugin) {
-                    $instancia = clone $registrado;
+    if ($arquivo === null || ! str_starts_with($arquivo, 'app/')) {
+        return false;
+    }
 
-                    break;
+    $codigo = (string) mapaModeloCodigo($arquivo);
+    $nome   = class_basename($peca);
+
+    return str_contains($codigo, $peca)
+        || (mapaModeloNomeia($codigo, $nome) && mapaModeloResolverNomeCurto($codigo, $nome) === $peca);
+}
+
+/** O pacote (`vendor/{fornecedor}/{pacote}`) de onde a classe vem, pelo arquivo dela; `null` fora de `vendor/`. */
+function mapaModeloPacoteDaClasse(string $classe): ?string
+{
+    $arquivo = arquivoDaClasse($classe);
+
+    return $arquivo !== null && preg_match('#^vendor/([^/]+/[^/]+)/#', $arquivo, $m) === 1 ? $m[1] : null;
+}
+
+/** O arquivo está em `app/Providers`, ou é um trait que uma classe de `app/Providers` usa (step 9, achado A9). */
+function mapaModeloArquivoDeProvider(string $caminho): bool
+{
+    static $traits = null;
+
+    if (str_starts_with($caminho, 'app/Providers/')) {
+        return true;
+    }
+
+    if ($traits === null) {
+        $traits = [];
+        $pasta  = app_path('Providers');
+
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
+            $classe = 'App\\Providers\\'.str_replace(['/', '.php'], ['\\', ''], str_replace('\\', '/', substr($arquivo->getPathname(), strlen($pasta) + 1)));
+
+            if ($arquivo->getExtension() === 'php' && class_exists($classe)) {
+                foreach (class_uses_recursive($classe) as $trait) {
+                    $traits[] = arquivoDaClasse($trait);
                 }
             }
-
-            $painel = Panel::make()->id('mapa-modelo-teste')->path('mapa-modelo-teste');
-            ($instancia ?? $plugin::make())->register($painel);
-
-            $middlewares = array_map(
-                static fn (string $middleware): string => explode(':', $middleware, 2)[0],
-                array_filter(array_merge($painel->getMiddleware(), $painel->getAuthMiddleware()), static fn (mixed $middleware): bool => is_string($middleware) && ! str_starts_with($middleware, 'panel:')),
-            );
-
-            $trazidas = array_merge(array_filter(array_map('classeDoRegistro', array_merge($painel->getResources(), $painel->getPages(), $painel->getWidgets()))), $middlewares);
-
-            return in_array($peca, $trazidas, true);
-        } catch (Throwable) {
-            return false;
         }
     }
+
+    return in_array($caminho, $traits, true);
 }
 
-if (! function_exists('mapaModeloInvolucroNomeia')) {
-    /**
-     * A forma do invólucro do kit (step 9, achado A9): o nome curto chamado no provider resolve, pelos `use` dele,
-     * para uma classe de `app/`, e o arquivo dessa classe nomeia a classe da peça.
-     */
-    function mapaModeloInvolucroNomeia(string $codigoDoProvider, string $curto, string $peca): bool
-    {
-        $classe  = mapaModeloResolverNomeCurto($codigoDoProvider, $curto);
-        $arquivo = $classe !== null ? arquivoDaClasse($classe) : null;
+/**
+ * R10: a prova é a da ligação. Na ordem: a prova resolve (R9); as duas pontas são peças; e o arquivo é de
+ * uma das formas válidas — o da origem, o trait que ela usa, o provider do painel (descoberta, plugin ou
+ * configuração), o método de contrato do alvo, ou, para origem de pacote, o arquivo do kit que a liga.
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return array{aceita: bool, motivo: ?string, regra: ?string, forma?: string}
+ */
+function mapaModeloConferirFormaDaProva(array $modelo, string $de, string $para, mixed $arquivo, mixed $trecho): array
+{
+    $nomeDe   = class_basename($de);
+    $nomePara = class_basename($para);
+    $ligacao  = "a ligação {$nomeDe} → {$nomePara}";
+    $reprova  = static fn (string $regra, string $motivo): array => ['aceita' => false, 'motivo' => $motivo, 'regra' => $regra];
 
-        if ($arquivo === null || ! str_starts_with($arquivo, 'app/')) {
-            return false;
-        }
+    $prova = mapaModeloConferirProva($ligacao, $arquivo, $trecho);
 
-        $codigo = (string) mapaModeloCodigo($arquivo);
-        $nome   = mapaModeloNome($peca);
-
-        return str_contains($codigo, $peca)
-            || (mapaModeloNomeia($codigo, $nome) && mapaModeloResolverNomeCurto($codigo, $nome) === $peca);
+    if (! $prova['aceita']) {
+        return $reprova('prova', $prova['motivo']);
     }
-}
 
-if (! function_exists('mapaModeloPacoteDaClasse')) {
-    /** O pacote (`vendor/{fornecedor}/{pacote}`) de onde a classe vem, pelo arquivo dela; `null` fora de `vendor/`. */
-    function mapaModeloPacoteDaClasse(string $classe): ?string
-    {
-        $arquivo = arquivoDaClasse($classe);
+    $porId = pecasPorId($modelo['pecas']);
 
-        return $arquivo !== null && preg_match('#^vendor/([^/]+/[^/]+)/#', $arquivo, $m) === 1 ? $m[1] : null;
-    }
-}
-
-if (! function_exists('mapaModeloArquivoDeProvider')) {
-    /** O arquivo está em `app/Providers`, ou é um trait que uma classe de `app/Providers` usa (step 9, achado A9). */
-    function mapaModeloArquivoDeProvider(string $caminho): bool
-    {
-        static $traits = null;
-
-        if (str_starts_with($caminho, 'app/Providers/')) {
-            return true;
+    foreach ([$de, $para] as $ponta) {
+        if (! isset($porId[$ponta])) {
+            return $reprova('ponta', "{$ligacao}: a ponta ".class_basename($ponta)." ({$ponta}) não é peça do modelo");
         }
+    }
 
-        if ($traits === null) {
-            $traits = [];
-            $pasta  = app_path('Providers');
+    $caminho = (string) $arquivo;
+    $texto   = (string) $trecho;
+    $aceita  = static fn (string $forma): array => ['aceita' => true, 'motivo' => null, 'regra' => null, 'forma' => $forma];
 
-            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
-                $classe = 'App\\Providers\\'.str_replace(['/', '.php'], ['\\', ''], str_replace('\\', '/', substr($arquivo->getPathname(), strlen($pasta) + 1)));
+    // Arquivo da origem, com o nome da peça usada.
+    if (arquivoDaClasse($de) === $caminho && mapaModeloNomeia($texto, $nomePara)) {
+        return $aceita('arquivo da origem');
+    }
 
-                if ($arquivo->getExtension() === 'php' && class_exists($classe)) {
-                    foreach (class_uses_recursive($classe) as $trait) {
-                        $traits[] = arquivoDaClasse($trait);
+    // Trait ou concern que a origem usa.
+    if (class_exists($de)) {
+        foreach (class_uses_recursive($de) as $trait) {
+            if (arquivoDaClasse($trait) === $caminho && mapaModeloNomeia($texto, $nomePara)) {
+                return $aceita('trait da origem');
+            }
+        }
+    }
+
+    // Provider do painel, nas ligações do painel.
+    if (str_starts_with($de, 'painel:')) {
+        $painel = substr($de, 7);
+
+        if ($caminho === 'app/Providers/Filament/'.ucfirst($painel).'PanelProvider.php') {
+            $destinoArquivo = arquivoDaClasse($para);
+
+            if (preg_match_all('/->discover\w+\(\s*in:\s*app_path\(\'([^\']+)\'\)/', $texto, $m) > 0) {
+                foreach ($m[1] as $pasta) {
+                    if ($destinoArquivo !== null && str_starts_with($destinoArquivo, 'app/'.trim($pasta, '/').'/')) {
+                        return $aceita('descoberta por pasta');
                     }
                 }
             }
-        }
 
-        return in_array($caminho, $traits, true);
+            if (mapaModeloNomeia($texto, $nomePara)) {
+                return $aceita('registro pelo nome da peça');
+            }
+
+            if (preg_match('/(\w+)::make\(\)/', $texto, $m) === 1) {
+                foreach ($modelo['pecas'] as $candidata) {
+                    if ($candidata['tipo'] === 'plugin' && class_basename($candidata['id']) === $m[1] && mapaModeloPluginTraz($candidata['id'], $para, $painel)) {
+                        return $aceita('registro do plugin que traz a peça');
+                    }
+                }
+            }
+
+            // Invólucro do kit que registra o plugin (step 9, A9): `X::make()` ou `X::plugin()`, com `X` de `app/`.
+            if (preg_match_all('/(\w+)::(?:make|plugin)\(\)/', $texto, $chamadas) > 0) {
+                foreach ($chamadas[1] as $curto) {
+                    if (mapaModeloInvolucroNomeia((string) mapaModeloCodigo($caminho), $curto, $para)) {
+                        return $aceita('invólucro do kit que registra o plugin');
+                    }
+                }
+            }
+
+            if ($para === "panel:{$painel}" && str_contains($texto, "->id('{$painel}')")) {
+                return $aceita('configuração do painel (alias)');
+            }
+
+            if ($nomePara === 'IdentifyTenant' && str_contains($texto, '->tenant(')) {
+                return $aceita('configuração do painel (organização)');
+            }
+        }
     }
-}
 
-if (! function_exists('mapaModeloConferirFormaDaProva')) {
-    /**
-     * R10: a prova é a da ligação. Na ordem: a prova resolve (R9); as duas pontas são peças; e o arquivo é de
-     * uma das formas válidas — o da origem, o trait que ela usa, o provider do painel (descoberta, plugin ou
-     * configuração), o método de contrato do alvo, ou, para origem de pacote, o arquivo do kit que a liga.
-     *
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @return array{aceita: bool, motivo: ?string, regra: ?string, forma?: string}
-     */
-    function mapaModeloConferirFormaDaProva(array $modelo, string $de, string $para, mixed $arquivo, mixed $trecho): array
-    {
-        $nomeDe   = mapaModeloNome($de);
-        $nomePara = mapaModeloNome($para);
-        $ligacao  = "a ligação {$nomeDe} → {$nomePara}";
-        $reprova  = static fn (string $regra, string $motivo): array => ['aceita' => false, 'motivo' => $motivo, 'regra' => $regra];
+    // Configuração global do pacote que registra a peça sozinho (step 9, A9): `Y::configureUsing(` num arquivo de
+    // `app/Providers` ou num trait dele, com `Y` classe do mesmo pacote da peça.
+    if (str_starts_with($de, 'painel:') && mapaModeloArquivoDeProvider($caminho) && preg_match_all('/(\w+)::configureUsing\(/', $texto, $chamadas) > 0) {
+        $pacoteDaPeca = mapaModeloPacoteDaClasse($para);
 
-        $prova = mapaModeloConferirProva($ligacao, $arquivo, $trecho);
+        foreach ($chamadas[1] as $curto) {
+            $classe = mapaModeloResolverNomeCurto((string) mapaModeloCodigo($caminho), $curto);
 
-        if (! $prova['aceita']) {
-            return $reprova('prova', $prova['motivo']);
-        }
-
-        $porId = pecasPorId($modelo['pecas']);
-
-        foreach ([$de, $para] as $ponta) {
-            if (! isset($porId[$ponta])) {
-                return $reprova('ponta', "{$ligacao}: a ponta ".mapaModeloNome($ponta)." ({$ponta}) não é peça do modelo");
+            if ($pacoteDaPeca !== null && $classe !== null && mapaModeloPacoteDaClasse($classe) === $pacoteDaPeca) {
+                return $aceita('configuração global do pacote');
             }
         }
-
-        $caminho = (string) $arquivo;
-        $texto   = (string) $trecho;
-        $aceita  = static fn (string $forma): array => ['aceita' => true, 'motivo' => null, 'regra' => null, 'forma' => $forma];
-
-        // Arquivo da origem, com o nome da peça usada.
-        if (arquivoDaClasse($de) === $caminho && mapaModeloNomeia($texto, $nomePara)) {
-            return $aceita('arquivo da origem');
-        }
-
-        // Trait ou concern que a origem usa.
-        if (class_exists($de)) {
-            foreach (class_uses_recursive($de) as $trait) {
-                if (arquivoDaClasse($trait) === $caminho && mapaModeloNomeia($texto, $nomePara)) {
-                    return $aceita('trait da origem');
-                }
-            }
-        }
-
-        // Provider do painel, nas ligações do painel.
-        if (str_starts_with($de, 'painel:')) {
-            $painel = substr($de, 7);
-
-            if ($caminho === 'app/Providers/Filament/'.ucfirst($painel).'PanelProvider.php') {
-                $destinoArquivo = arquivoDaClasse($para);
-
-                if (preg_match_all('/->discover\w+\(\s*in:\s*app_path\(\'([^\']+)\'\)/', $texto, $m) > 0) {
-                    foreach ($m[1] as $pasta) {
-                        if ($destinoArquivo !== null && str_starts_with($destinoArquivo, 'app/'.trim($pasta, '/').'/')) {
-                            return $aceita('descoberta por pasta');
-                        }
-                    }
-                }
-
-                if (mapaModeloNomeia($texto, $nomePara)) {
-                    return $aceita('registro pelo nome da peça');
-                }
-
-                if (preg_match('/(\w+)::make\(\)/', $texto, $m) === 1) {
-                    foreach ($modelo['pecas'] as $candidata) {
-                        if ($candidata['tipo'] === 'plugin' && mapaModeloNome($candidata['id']) === $m[1] && mapaModeloPluginTraz($candidata['id'], $para, $painel)) {
-                            return $aceita('registro do plugin que traz a peça');
-                        }
-                    }
-                }
-
-                // Invólucro do kit que registra o plugin (step 9, A9): `X::make()` ou `X::plugin()`, com `X` de `app/`.
-                if (preg_match_all('/(\w+)::(?:make|plugin)\(\)/', $texto, $chamadas) > 0) {
-                    foreach ($chamadas[1] as $curto) {
-                        if (mapaModeloInvolucroNomeia((string) mapaModeloCodigo($caminho), $curto, $para)) {
-                            return $aceita('invólucro do kit que registra o plugin');
-                        }
-                    }
-                }
-
-                if ($para === "panel:{$painel}" && str_contains($texto, "->id('{$painel}')")) {
-                    return $aceita('configuração do painel (alias)');
-                }
-
-                if ($nomePara === 'IdentifyTenant' && str_contains($texto, '->tenant(')) {
-                    return $aceita('configuração do painel (organização)');
-                }
-            }
-        }
-
-        // Configuração global do pacote que registra a peça sozinho (step 9, A9): `Y::configureUsing(` num arquivo de
-        // `app/Providers` ou num trait dele, com `Y` classe do mesmo pacote da peça.
-        if (str_starts_with($de, 'painel:') && mapaModeloArquivoDeProvider($caminho) && preg_match_all('/(\w+)::configureUsing\(/', $texto, $chamadas) > 0) {
-            $pacoteDaPeca = mapaModeloPacoteDaClasse($para);
-
-            foreach ($chamadas[1] as $curto) {
-                $classe = mapaModeloResolverNomeCurto((string) mapaModeloCodigo($caminho), $curto);
-
-                if ($pacoteDaPeca !== null && $classe !== null && mapaModeloPacoteDaClasse($classe) === $pacoteDaPeca) {
-                    return $aceita('configuração global do pacote');
-                }
-            }
-        }
-
-        // Método de contrato do alvo.
-        if (arquivoDaClasse($para) === $caminho && preg_match('/function\s+('.implode('|', MAPA_MODELO_METODOS_DE_CONTRATO).')\s*\(/', $texto) === 1) {
-            return $aceita('método de contrato do alvo');
-        }
-
-        // Arquivo do kit que liga a peça de pacote (D26) e o par de mapeamento (D27).
-        if (($porId[$de]['origem'] ?? null) === 'pacote' && ! str_starts_with($caminho, 'vendor/')) {
-            if (preg_match('/^\s*\w+::class\s*=>\s*\w+::class,?\s*$/', $texto) === 1) {
-                if (mapaModeloNomeia($texto, $nomeDe) && mapaModeloNomeia($texto, $nomePara)) {
-                    return $aceita('par de mapeamento');
-                }
-            } elseif (mapaModeloNomeia($texto, $nomePara) && mapaModeloNomeia((string) mapaModeloCodigo($caminho), $nomeDe)) {
-                return $aceita('arquivo do kit que liga a peça de pacote');
-            }
-        }
-
-        return $reprova('forma', "{$ligacao}: o arquivo {$caminho} não é um arquivo que esta ligação permita com o trecho dado");
     }
+
+    // Método de contrato do alvo.
+    if (arquivoDaClasse($para) === $caminho && preg_match('/function\s+('.implode('|', MAPA_MODELO_METODOS_DE_CONTRATO).')\s*\(/', $texto) === 1) {
+        return $aceita('método de contrato do alvo');
+    }
+
+    // Arquivo do kit que liga a peça de pacote (D26) e o par de mapeamento (D27).
+    if (($porId[$de]['origem'] ?? null) === 'pacote' && ! str_starts_with($caminho, 'vendor/')) {
+        if (preg_match('/^\s*\w+::class\s*=>\s*\w+::class,?\s*$/', $texto) === 1) {
+            if (mapaModeloNomeia($texto, $nomeDe) && mapaModeloNomeia($texto, $nomePara)) {
+                return $aceita('par de mapeamento');
+            }
+        } elseif (mapaModeloNomeia($texto, $nomePara) && mapaModeloNomeia((string) mapaModeloCodigo($caminho), $nomeDe)) {
+            return $aceita('arquivo do kit que liga a peça de pacote');
+        }
+    }
+
+    return $reprova('forma', "{$ligacao}: o arquivo {$caminho} não é um arquivo que esta ligação permita com o trecho dado");
 }
 
 /*
@@ -987,126 +927,118 @@ if (! function_exists('mapaModeloConferirFormaDaProva')) {
 | A F-nn da peça (`fnnDaPeca()`) e o motivo de enfeite (`motivoDeEnfeite()`) vêm de `tests/Pest.php`.
 */
 
-if (! function_exists('mapaModeloComandosKit')) {
-    /**
-     * Os comandos `kit:*`, por classe, que nunca entram na lista das sem feature própria (ADV2-18).
-     *
-     * @return array<string, string>
-     */
-    function mapaModeloComandosKit(): array
-    {
-        static $comandos = null;
+/**
+ * Os comandos `kit:*`, por classe, que nunca entram na lista das sem feature própria (ADV2-18).
+ *
+ * @return array<string, string>
+ */
+function mapaModeloComandosKit(): array
+{
+    static $comandos = null;
 
-        if ($comandos === null) {
-            $comandos = [];
+    if ($comandos === null) {
+        $comandos = [];
 
-            foreach (Artisan::all() as $nome => $comando) {
-                if (str_starts_with($nome, 'kit:')) {
-                    $comandos[$comando::class] = $nome;
-                }
+        foreach (Artisan::all() as $nome => $comando) {
+            if (str_starts_with($nome, 'kit:')) {
+                $comandos[$comando::class] = $nome;
             }
         }
-
-        return $comandos;
     }
+
+    return $comandos;
 }
 
-if (! function_exists('mapaModeloClassesDeApp')) {
-    /**
-     * Os arquivos PHP de `app/` fora de `app/Filament`, como classe (PSR-4), lidos da árvore.
-     *
-     * @return list<string>
-     */
-    function mapaModeloClassesDeApp(): array
-    {
-        static $classes = null;
+/**
+ * Os arquivos PHP de `app/` fora de `app/Filament`, como classe (PSR-4), lidos da árvore.
+ *
+ * @return list<string>
+ */
+function mapaModeloClassesDeApp(): array
+{
+    static $classes = null;
 
-        if ($classes === null) {
-            $classes  = [];
-            $raiz     = str_replace('\\', '/', app_path()).'/';
-            $iterador = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path(), FilesystemIterator::SKIP_DOTS));
+    if ($classes === null) {
+        $classes  = [];
+        $raiz     = str_replace('\\', '/', app_path()).'/';
+        $iterador = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path(), FilesystemIterator::SKIP_DOTS));
 
-            foreach ($iterador as $arquivo) {
-                $relativo = substr(str_replace('\\', '/', $arquivo->getPathname()), strlen($raiz));
+        foreach ($iterador as $arquivo) {
+            $relativo = substr(str_replace('\\', '/', $arquivo->getPathname()), strlen($raiz));
 
-                if (! str_ends_with($relativo, '.php') || str_starts_with($relativo, 'Filament/')) {
-                    continue;
-                }
-
-                $classes[] = 'App\\'.str_replace('/', '\\', substr($relativo, 0, -4));
-            }
-
-            sort($classes);
-        }
-
-        return $classes;
-    }
-}
-
-if (! function_exists('mapaModeloConferirFeatures')) {
-    /**
-     * R28: cada peça (ou classe) entrega ao menos uma F-nn que o catálogo tem, ou está na lista com o motivo; e
-     * comando `kit:*` nunca está na lista.
-     *
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @param  list<string>  $ids
-     * @param  list<string>  $catalogo
-     * @param  array<string, mixed>  $lista
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirFeatures(array $modelo, array $ids, array $catalogo, array $lista): array
-    {
-        $porId     = pecasPorId($modelo['pecas']);
-        $kit       = mapaModeloComandosKit();
-        $violacoes = [];
-
-        foreach ($lista as $id => $motivo) {
-            if (motivoDeEnfeite($motivo)) {
-                $violacoes[] = mapaModeloNome($id)." ({$id}) está na lista das sem feature própria sem motivo, ou com motivo de enfeite";
-            }
-
-            if (isset($kit[$id])) {
-                $violacoes[] = 'o comando '.mapaModeloNome($id)." ({$kit[$id]}) é kit:* e nunca entra na lista das sem feature própria";
-            }
-        }
-
-        foreach ($ids as $id) {
-            if (! isset($porId[$id])) {
-                $violacoes[] = mapaModeloNome($id)." ({$id}) não é peça do modelo, nem está na lista";
-
+            if (! str_ends_with($relativo, '.php') || str_starts_with($relativo, 'Filament/')) {
                 continue;
             }
 
-            if (array_key_exists($id, $lista)) {
-                continue;
-            }
-
-            if (fnnDaPeca($porId, $id, $catalogo) === []) {
-                $violacoes[] = 'a peça '.mapaModeloNome($id)." ({$id}) não entrega F-nn que o catálogo tenha (features: [".implode(', ', $porId[$id]['features'] ?? []).']) e está fora da lista';
-            }
+            $classes[] = 'App\\'.str_replace('/', '\\', substr($relativo, 0, -4));
         }
 
-        return mapaModeloResultado($violacoes, ['conferidas' => count($ids)]);
+        sort($classes);
     }
+
+    return $classes;
 }
 
-if (! function_exists('mapaModeloComPeca')) {
-    /**
-     * Uma cópia do modelo com a peça trocada.
-     *
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @return array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}
-     */
-    function mapaModeloComPeca(array $modelo, string $id, callable $troca): array
-    {
-        foreach ($modelo['pecas'] as $i => $peca) {
-            if ($peca['id'] === $id) {
-                $modelo['pecas'][$i] = $troca($peca);
-            }
+/**
+ * R28: cada peça (ou classe) entrega ao menos uma F-nn que o catálogo tem, ou está na lista com o motivo; e
+ * comando `kit:*` nunca está na lista.
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @param  list<string>  $ids
+ * @param  list<string>  $catalogo
+ * @param  array<string, mixed>  $lista
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirFeatures(array $modelo, array $ids, array $catalogo, array $lista): array
+{
+    $porId     = pecasPorId($modelo['pecas']);
+    $kit       = mapaModeloComandosKit();
+    $violacoes = [];
+
+    foreach ($lista as $id => $motivo) {
+        if (motivoDeEnfeite($motivo)) {
+            $violacoes[] = class_basename($id)." ({$id}) está na lista das sem feature própria sem motivo, ou com motivo de enfeite";
         }
 
-        return $modelo;
+        if (isset($kit[$id])) {
+            $violacoes[] = 'o comando '.class_basename($id)." ({$kit[$id]}) é kit:* e nunca entra na lista das sem feature própria";
+        }
     }
+
+    foreach ($ids as $id) {
+        if (! isset($porId[$id])) {
+            $violacoes[] = class_basename($id)." ({$id}) não é peça do modelo, nem está na lista";
+
+            continue;
+        }
+
+        if (array_key_exists($id, $lista)) {
+            continue;
+        }
+
+        if (fnnDaPeca($porId, $id, $catalogo) === []) {
+            $violacoes[] = 'a peça '.class_basename($id)." ({$id}) não entrega F-nn que o catálogo tenha (features: [".implode(', ', $porId[$id]['features'] ?? []).']) e está fora da lista';
+        }
+    }
+
+    return mapaModeloResultado($violacoes, ['conferidas' => count($ids)]);
+}
+
+/**
+ * Uma cópia do modelo com a peça trocada.
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}
+ */
+function mapaModeloComPeca(array $modelo, string $id, callable $troca): array
+{
+    foreach ($modelo['pecas'] as $i => $peca) {
+        if ($peca['id'] === $id) {
+            $modelo['pecas'][$i] = $troca($peca);
+        }
+    }
+
+    return $modelo;
 }
 
 /*
@@ -1115,150 +1047,144 @@ if (! function_exists('mapaModeloComPeca')) {
 |--------------------------------------------------------------------------
 */
 
-if (! function_exists('mapaModeloPosicaoDoTrecho')) {
-    /**
-     * Onde o trecho está no código (fora de comentário) e em que método.
-     *
-     * @param  array<string, string>  $sobrescritas
-     * @return array{pos: int, metodo: ?string}|null
-     */
-    function mapaModeloPosicaoDoTrecho(string $arquivo, string $trecho, array $sobrescritas = []): ?array
-    {
-        $codigo = mapaModeloCodigo($arquivo, $sobrescritas);
-        $pos    = $codigo === null ? false : strpos($codigo, mapaModeloNorm($trecho));
+/**
+ * Onde o trecho está no código (fora de comentário) e em que método.
+ *
+ * @param  array<string, string>  $sobrescritas
+ * @return array{pos: int, metodo: ?string}|null
+ */
+function mapaModeloPosicaoDoTrecho(string $arquivo, string $trecho, array $sobrescritas = []): ?array
+{
+    $codigo = mapaModeloCodigo($arquivo, $sobrescritas);
+    $pos    = $codigo === null ? false : strpos($codigo, mapaModeloNorm($trecho));
 
-        if ($pos === false) {
-            return null;
-        }
-
-        preg_match_all('/function\s+&?\s*(\w+)\s*\(/', substr($codigo, 0, $pos), $m);
-
-        return ['pos' => $pos, 'metodo' => $m[1] === [] ? null : end($m[1])];
+    if ($pos === false) {
+        return null;
     }
+
+    preg_match_all('/function\s+&?\s*(\w+)\s*\(/', substr($codigo, 0, $pos), $m);
+
+    return ['pos' => $pos, 'metodo' => $m[1] === [] ? null : end($m[1])];
 }
 
-if (! function_exists('mapaModeloParesSeguidos')) {
-    /**
-     * As transições seguidas de um fluxo (R35), em pares de índices [primeira, segunda]. No `sequence`, a mensagem e
-     * a que vem logo depois dela no tempo. No `workflow` e no `dataflow`, a seta e uma seta adiante na lista que sai
-     * do passo onde ela chega: duas setas que saem do mesmo passo são ramos, e não seguidas.
-     *
-     * @param  array<int, array<string, mixed>>  $transicoes
-     * @return list<array{0: int, 1: int}>
-     */
-    function mapaModeloParesSeguidos(string $tipo, array $transicoes): array
-    {
-        $indices = array_keys($transicoes);
-        $pares   = [];
+/**
+ * As transições seguidas de um fluxo (R35), em pares de índices [primeira, segunda]. No `sequence`, a mensagem e
+ * a que vem logo depois dela no tempo. No `workflow` e no `dataflow`, a seta e uma seta adiante na lista que sai
+ * do passo onde ela chega: duas setas que saem do mesmo passo são ramos, e não seguidas.
+ *
+ * @param  array<int, array<string, mixed>>  $transicoes
+ * @return list<array{0: int, 1: int}>
+ */
+function mapaModeloParesSeguidos(string $tipo, array $transicoes): array
+{
+    $indices = array_keys($transicoes);
+    $pares   = [];
 
-        foreach ($indices as $posicao => $i) {
-            if ($tipo === 'sequence') {
-                if (isset($indices[$posicao + 1])) {
-                    $pares[] = [$i, $indices[$posicao + 1]];
-                }
+    foreach ($indices as $posicao => $i) {
+        if ($tipo === 'sequence') {
+            if (isset($indices[$posicao + 1])) {
+                $pares[] = [$i, $indices[$posicao + 1]];
+            }
+
+            continue;
+        }
+
+        foreach (array_slice($indices, $posicao + 1) as $j) {
+            if (isset($transicoes[$j]['from'], $transicoes[$i]['to']) && $transicoes[$j]['from'] === $transicoes[$i]['to']) {
+                $pares[] = [$i, $j];
+            }
+        }
+    }
+
+    return $pares;
+}
+
+/**
+ * R35: toda transição de fluxo tem âncora que resolve (R9); no `lifecycle`, todo estado também; e duas
+ * transições seguidas, ancoradas no mesmo método, estão na ordem do código.
+ *
+ * @param  array<string, array<string, mixed>>  $diagramas
+ * @param  array<string, string>  $sobrescritas
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirFluxos(array $diagramas, array $sobrescritas = []): array
+{
+    $colecoes   = ['workflow' => 'edges', 'sequence' => 'messages', 'dataflow' => 'flows', 'lifecycle' => 'transitions'];
+    $violacoes  = [];
+    $conferidas = 0;
+
+    foreach ($diagramas as $slug => $diagrama) {
+        $tipo = $diagrama['tipo'] ?? null;
+
+        if (! isset($colecoes[$tipo])) {
+            continue;
+        }
+
+        $posicoes = [];
+        $nomes    = [];
+
+        foreach ($diagrama[$colecoes[$tipo]] ?? [] as $i => $transicao) {
+            $nomes[$i]    = "o diagrama {$slug}, transição ".($transicao['from'] ?? '?').' → '.($transicao['to'] ?? '?').(isset($transicao['id']) ? " ({$transicao['id']})" : '');
+            $posicoes[$i] = null;
+            $conferidas++;
+
+            $ancora = $transicao['prova'] ?? null;
+
+            if (! is_array($ancora)) {
+                $violacoes[] = "{$nomes[$i]} não tem âncora";
 
                 continue;
             }
 
-            foreach (array_slice($indices, $posicao + 1) as $j) {
-                if (isset($transicoes[$j]['from'], $transicoes[$i]['to']) && $transicoes[$j]['from'] === $transicoes[$i]['to']) {
-                    $pares[] = [$i, $j];
-                }
-            }
-        }
+            $resultado = mapaModeloConferirProva($nomes[$i], $ancora['arquivo'] ?? null, $ancora['trecho'] ?? null, array_intersect_key($ancora, ['linha' => 1, 'line' => 1]), $sobrescritas);
 
-        return $pares;
-    }
-}
+            if (! $resultado['aceita']) {
+                $violacoes[] = $resultado['motivo'];
 
-if (! function_exists('mapaModeloConferirFluxos')) {
-    /**
-     * R35: toda transição de fluxo tem âncora que resolve (R9); no `lifecycle`, todo estado também; e duas
-     * transições seguidas, ancoradas no mesmo método, estão na ordem do código.
-     *
-     * @param  array<string, array<string, mixed>>  $diagramas
-     * @param  array<string, string>  $sobrescritas
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirFluxos(array $diagramas, array $sobrescritas = []): array
-    {
-        $colecoes   = ['workflow' => 'edges', 'sequence' => 'messages', 'dataflow' => 'flows', 'lifecycle' => 'transitions'];
-        $violacoes  = [];
-        $conferidas = 0;
-
-        foreach ($diagramas as $slug => $diagrama) {
-            $tipo = $diagrama['tipo'] ?? null;
-
-            if (! isset($colecoes[$tipo])) {
                 continue;
             }
 
-            $posicoes = [];
-            $nomes    = [];
+            $posicoes[$i] = ['arquivo' => $ancora['arquivo']] + (mapaModeloPosicaoDoTrecho($ancora['arquivo'], $ancora['trecho'], $sobrescritas) ?? ['pos' => -1, 'metodo' => null]);
+        }
 
-            foreach ($diagrama[$colecoes[$tipo]] ?? [] as $i => $transicao) {
-                $nomes[$i]    = "o diagrama {$slug}, transição ".($transicao['from'] ?? '?').' → '.($transicao['to'] ?? '?').(isset($transicao['id']) ? " ({$transicao['id']})" : '');
-                $posicoes[$i] = null;
+        if ($tipo === 'lifecycle') {
+            foreach ($diagrama['states'] ?? [] as $estado) {
                 $conferidas++;
+                $nome = "o diagrama {$slug}, estado ".($estado['id'] ?? '?');
 
-                $ancora = $transicao['prova'] ?? null;
-
-                if (! is_array($ancora)) {
-                    $violacoes[] = "{$nomes[$i]} não tem âncora";
-
-                    continue;
-                }
-
-                $resultado = mapaModeloConferirProva($nomes[$i], $ancora['arquivo'] ?? null, $ancora['trecho'] ?? null, array_intersect_key($ancora, ['linha' => 1, 'line' => 1]), $sobrescritas);
-
-                if (! $resultado['aceita']) {
-                    $violacoes[] = $resultado['motivo'];
+                if (($estado['sources'] ?? []) === []) {
+                    $violacoes[] = "{$nome} não tem âncora";
 
                     continue;
                 }
 
-                $posicoes[$i] = ['arquivo' => $ancora['arquivo']] + (mapaModeloPosicaoDoTrecho($ancora['arquivo'], $ancora['trecho'], $sobrescritas) ?? ['pos' => -1, 'metodo' => null]);
+                foreach ($estado['sources'] as $fonte) {
+                    $resultado = mapaModeloConferirProva($nome, $fonte['arquivo'] ?? null, $fonte['trecho'] ?? null, array_intersect_key($fonte, ['linha' => 1, 'line' => 1]), $sobrescritas);
+
+                    if (! $resultado['aceita']) {
+                        $violacoes[] = $resultado['motivo'];
+                    }
+                }
             }
 
-            if ($tipo === 'lifecycle') {
-                foreach ($diagrama['states'] ?? [] as $estado) {
-                    $conferidas++;
-                    $nome = "o diagrama {$slug}, estado ".($estado['id'] ?? '?');
+            continue;
+        }
 
-                    if (($estado['sources'] ?? []) === []) {
-                        $violacoes[] = "{$nome} não tem âncora";
+        foreach (mapaModeloParesSeguidos($tipo, $diagrama[$colecoes[$tipo]] ?? []) as [$i, $j]) {
+            $a = $posicoes[$i] ?? null;
+            $b = $posicoes[$j] ?? null;
 
-                        continue;
-                    }
-
-                    foreach ($estado['sources'] as $fonte) {
-                        $resultado = mapaModeloConferirProva($nome, $fonte['arquivo'] ?? null, $fonte['trecho'] ?? null, array_intersect_key($fonte, ['linha' => 1, 'line' => 1]), $sobrescritas);
-
-                        if (! $resultado['aceita']) {
-                            $violacoes[] = $resultado['motivo'];
-                        }
-                    }
-                }
-
+            if ($a === null || $b === null || $a['arquivo'] !== $b['arquivo'] || $a['metodo'] === null || $a['metodo'] !== $b['metodo']) {
                 continue;
             }
 
-            foreach (mapaModeloParesSeguidos($tipo, $diagrama[$colecoes[$tipo]] ?? []) as [$i, $j]) {
-                $a = $posicoes[$i] ?? null;
-                $b = $posicoes[$j] ?? null;
-
-                if ($a === null || $b === null || $a['arquivo'] !== $b['arquivo'] || $a['metodo'] === null || $a['metodo'] !== $b['metodo']) {
-                    continue;
-                }
-
-                if ($a['pos'] > $b['pos']) {
-                    $violacoes[] = "{$nomes[$i]} vem antes de {$nomes[$j]}, mas o trecho dela está depois no método {$a['metodo']} de {$a['arquivo']}";
-                }
+            if ($a['pos'] > $b['pos']) {
+                $violacoes[] = "{$nomes[$i]} vem antes de {$nomes[$j]}, mas o trecho dela está depois no método {$a['metodo']} de {$a['arquivo']}";
             }
         }
-
-        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas]);
     }
+
+    return mapaModeloResultado($violacoes, ['conferidas' => $conferidas]);
 }
 
 /*
@@ -1267,260 +1193,244 @@ if (! function_exists('mapaModeloConferirFluxos')) {
 |--------------------------------------------------------------------------
 */
 
-if (! function_exists('mapaModeloArestasDoDiagrama')) {
-    /**
-     * As arestas de um diagrama de mapa ou de árvore de registro: as que o gerador deriva do modelo (o recorte
-     * do painel e do modo, com as pontas nos agrupamentos) e as que a cópia traz em `arestas`. Cada uma diz o
-     * que representa: as ligações do modelo.
-     *
-     * @param  array<string, mixed>  $diagrama
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @return list<array{de: string, para: string, representa: list<array{de: string, para: string}>}>
-     */
-    function mapaModeloArestasDoDiagrama(array $diagrama, array $modelo): array
-    {
-        $porId      = pecasPorId($modelo['pecas']);
-        $arestas    = [];
-        $construtor = $diagrama['construtor'] ?? null;
+/**
+ * As arestas de um diagrama de mapa ou de árvore de registro: as que o gerador deriva do modelo (o recorte
+ * do painel e do modo, com as pontas nos agrupamentos) e as que a cópia traz em `arestas`. Cada uma diz o
+ * que representa: as ligações do modelo.
+ *
+ * @param  array<string, mixed>  $diagrama
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return list<array{de: string, para: string, representa: list<array{de: string, para: string}>}>
+ */
+function mapaModeloArestasDoDiagrama(array $diagrama, array $modelo): array
+{
+    $porId      = pecasPorId($modelo['pecas']);
+    $arestas    = [];
+    $construtor = $diagrama['construtor'] ?? null;
 
-        if ($construtor === 'mapa') {
-            $modo       = count($diagrama['modos'] ?? []) === 1 ? $diagrama['modos'][0] : null;
-            $existe     = static fn (string $id): bool => $modo === null || in_array($modo, $porId[$id]['registrada'] ?? [], true);
-            $pecas      = array_values(array_filter($diagrama['pecas'] ?? [], static fn (array $p): bool => $existe($p['id'])));
-            $desenhadas = array_flip(array_column($pecas, 'id'));
-            $grupoDe    = [];
+    if ($construtor === 'mapa') {
+        $modo       = count($diagrama['modos'] ?? []) === 1 ? $diagrama['modos'][0] : null;
+        $existe     = static fn (string $id): bool => $modo === null || in_array($modo, $porId[$id]['registrada'] ?? [], true);
+        $pecas      = array_values(array_filter($diagrama['pecas'] ?? [], static fn (array $p): bool => $existe($p['id'])));
+        $desenhadas = array_flip(array_column($pecas, 'id'));
+        $grupoDe    = [];
 
-            foreach ($diagrama['agrupamentos'] ?? [] as $grupo) {
-                foreach ($grupo['membros'] as $membro) {
-                    if ($existe($membro)) {
-                        $grupoDe[$membro] = $grupo['id'];
-                    }
-                }
-            }
-
-            $ponta = static fn (string $id): ?string => isset($desenhadas[$id]) ? $id : ($grupoDe[$id] ?? null);
-
-            foreach ($modelo['ligacoes'] as $ligacao) {
-                if ($modo !== null && ! in_array($modo, $ligacao['modos'] ?? [], true)) {
-                    continue;
-                }
-
-                $doEscopo = ($diagrama['paineis'] ?? []) !== []
-                    ? array_intersect($ligacao['paineis'] ?? [], $diagrama['paineis']) !== []
-                    : ($ligacao['paineis'] ?? []) === [];
-
-                if (! $doEscopo) {
-                    continue;
-                }
-
-                $de   = $ponta($ligacao['de']);
-                $para = $ponta($ligacao['para']);
-
-                if ($de === null || $para === null || $de === $para) {
-                    continue;
-                }
-
-                $arestas["{$de}--{$para}"] ??= ['de' => $de, 'para' => $para, 'representa' => []];
-                $arestas["{$de}--{$para}"]['representa'][] = ['de' => $ligacao['de'], 'para' => $ligacao['para']];
-            }
-        } elseif ($construtor === 'registro') {
-            $raiz = 'painel:'.$diagrama['paineis'][0];
-            $modo = $diagrama['modos'][0];
-
-            foreach ($modelo['ligacoes'] as $ligacao) {
-                if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'] ?? [], true)) {
-                    $arestas[] = ['de' => $raiz, 'para' => $ligacao['para'], 'representa' => [['de' => $ligacao['de'], 'para' => $ligacao['para']]]];
+        foreach ($diagrama['agrupamentos'] ?? [] as $grupo) {
+            foreach ($grupo['membros'] as $membro) {
+                if ($existe($membro)) {
+                    $grupoDe[$membro] = $grupo['id'];
                 }
             }
         }
 
-        foreach ($diagrama['arestas'] ?? [] as $aresta) {
-            $arestas[] = $aresta + ['representa' => [['de' => $aresta['de'], 'para' => $aresta['para']]]];
-        }
-
-        return array_values($arestas);
-    }
-}
-
-if (! function_exists('mapaModeloPecasDesenhadas')) {
-    /**
-     * As peças que o diagrama desenha como peça do modelo: o id (mapa e árvore) ou o rótulo que tem o nome exato
-     * de uma peça (fluxo e demais). Cada item traz as peças candidatas.
-     *
-     * @param  array<string, mixed>  $diagrama
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @return list<array{rotulo: string, candidatas: list<string>}>
-     */
-    function mapaModeloPecasDesenhadas(array $diagrama, array $modelo): array
-    {
-        $construtor = $diagrama['construtor'] ?? null;
-
-        if ($construtor === 'mapa') {
-            return array_map(static fn (array $p): array => ['rotulo' => mapaModeloNome($p['id']), 'candidatas' => [$p['id']]], $diagrama['pecas'] ?? []);
-        }
-
-        if ($construtor === 'registro') {
-            $modo = $diagrama['modos'][0];
-            $raiz = 'painel:'.$diagrama['paineis'][0];
-            $ids  = [$raiz];
-
-            foreach (mapaModeloArestasDoDiagrama($diagrama, $modelo) as $aresta) {
-                $ids[] = $aresta['para'];
-            }
-
-            return array_map(static fn (string $id): array => ['rotulo' => mapaModeloNome($id), 'candidatas' => [$id]], array_values(array_unique($ids)));
-        }
-
-        $nomes = [];
-
-        foreach ($modelo['pecas'] as $peca) {
-            $nomes[$peca['nome']][] = $peca['id'];
-        }
-
-        $achadas = [];
-
-        foreach (['nodes', 'participants', 'states', 'entities', 'types', 'events', 'spans', 'components'] as $colecao) {
-            foreach ($diagrama[$colecao] ?? [] as $no) {
-                $rotulo = $no['label'] ?? null;
-                $rotulo = is_array($rotulo) ? ($rotulo['pt'] ?? null) : $rotulo;
-
-                if (is_string($rotulo) && isset($nomes[$rotulo])) {
-                    $achadas[] = ['rotulo' => $rotulo, 'candidatas' => $nomes[$rotulo]];
-                }
-            }
-        }
-
-        return $achadas;
-    }
-}
-
-if (! function_exists('mapaModeloPecasDoPainel')) {
-    /**
-     * As peças que o diagrama de um painel pode desenhar: as do painel, as do kit inteiro e as pontas das
-     * ligações que partem do painel ou das peças dele (`04`, R36).
-     *
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @return array<string, true>
-     */
-    function mapaModeloPecasDoPainel(array $modelo, string $painel): array
-    {
-        $permitidas = [];
-
-        foreach ($modelo['pecas'] as $peca) {
-            if (($peca['paineis'] ?? []) === [] || in_array($painel, $peca['paineis'], true)) {
-                $permitidas[$peca['id']] = true;
-            }
-        }
-
-        $do = $permitidas;
+        $ponta = static fn (string $id): ?string => isset($desenhadas[$id]) ? $id : ($grupoDe[$id] ?? null);
 
         foreach ($modelo['ligacoes'] as $ligacao) {
-            if (isset($do[$ligacao['de']])) {
-                $permitidas[$ligacao['para']] = true;
-            }
-        }
-
-        return $permitidas;
-    }
-}
-
-if (! function_exists('mapaModeloConferirArestasEPecas')) {
-    /**
-     * R36: no mapa de arquitetura e na árvore de registro, toda aresta é ligação do modelo no mesmo sentido
-     * (direta, de agrupamento ou de porta); e todo diagrama de painel só desenha, como peça, peça do painel ou
-     * do kit inteiro.
-     *
-     * @param  array<string, array<string, mixed>>  $diagramas
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @param  array<string, array<string, mixed>>  $mundo  os diagramas onde procurar o outro lado de uma porta
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirArestasEPecas(array $diagramas, array $modelo, array $mundo): array
-    {
-        $violacoes         = [];
-        $arestasConferidas = 0;
-        $nosConferidos     = 0;
-        $existeLigacao     = static function (string $de, string $para) use ($modelo): bool {
-            foreach ($modelo['ligacoes'] as $ligacao) {
-                if ($ligacao['de'] === $de && $ligacao['para'] === $para) {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        foreach ($diagramas as $slug => $diagrama) {
-            if (in_array($diagrama['construtor'] ?? null, ['mapa', 'registro'], true)) {
-                $grupos = [];
-
-                foreach ($diagrama['agrupamentos'] ?? [] as $grupo) {
-                    $grupos[$grupo['id']] = $grupo['membros'];
-                }
-
-                $portas = [];
-
-                foreach ($diagrama['portas'] ?? [] as $porta) {
-                    $portas['porta-'.$porta['para']] = $porta['para'];
-                }
-
-                foreach (mapaModeloArestasDoDiagrama($diagrama, $modelo) as $aresta) {
-                    $arestasConferidas++;
-                    $nome = "no diagrama {$slug}, a aresta {$aresta['de']} → {$aresta['para']}";
-
-                    foreach ($aresta['representa'] as $representada) {
-                        $ligacao = mapaModeloNome($representada['de']).' → '.mapaModeloNome($representada['para']);
-
-                        if (! $existeLigacao($representada['de'], $representada['para'])) {
-                            $invertida   = $existeLigacao($representada['para'], $representada['de']) ? ' (a aresta está invertida: a ligação do modelo vai no outro sentido)' : '';
-                            $violacoes[] = "{$nome} representa a ligação {$ligacao}, que não existe no modelo{$invertida}";
-
-                            continue;
-                        }
-
-                        foreach (['de', 'para'] as $campo) {
-                            $ponta = $aresta[$campo];
-                            $peca  = $representada[$campo];
-
-                            if (isset($grupos[$ponta])) {
-                                if (! in_array($peca, $grupos[$ponta], true)) {
-                                    $violacoes[] = "{$nome}: o agrupamento {$ponta} não nomeia a peça ".mapaModeloNome($peca);
-                                }
-                            } elseif (isset($portas[$ponta])) {
-                                $desenhadas = array_column($mundo[$portas[$ponta]]['pecas'] ?? [], 'id');
-
-                                if (! in_array($peca, $desenhadas, true)) {
-                                    $violacoes[] = "{$nome}: a porta {$ponta} leva ao mapa {$portas[$ponta]}, que não desenha a peça ".mapaModeloNome($peca);
-                                }
-                            } elseif ($ponta !== $peca) {
-                                $violacoes[] = "{$nome} não confere com a ligação {$ligacao}";
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (($diagrama['paineis'] ?? []) === []) {
+            if ($modo !== null && ! in_array($modo, $ligacao['modos'] ?? [], true)) {
                 continue;
             }
 
-            $permitidas = [];
+            $doEscopo = ($diagrama['paineis'] ?? []) !== []
+                ? array_intersect($ligacao['paineis'] ?? [], $diagrama['paineis']) !== []
+                : ($ligacao['paineis'] ?? []) === [];
 
-            foreach ($diagrama['paineis'] as $painel) {
-                $permitidas += mapaModeloPecasDoPainel($modelo, $painel);
+            if (! $doEscopo) {
+                continue;
             }
 
-            foreach (mapaModeloPecasDesenhadas($diagrama, $modelo) as $desenhada) {
-                $nosConferidos++;
+            $de   = $ponta($ligacao['de']);
+            $para = $ponta($ligacao['para']);
 
-                if (array_intersect($desenhada['candidatas'], array_keys($permitidas)) === []) {
-                    $violacoes[] = "o diagrama {$slug} (painel ".implode(', ', $diagrama['paineis']).") desenha a peça {$desenhada['rotulo']}, que não é do painel nem do kit inteiro";
+            if ($de === null || $para === null || $de === $para) {
+                continue;
+            }
+
+            $arestas["{$de}--{$para}"] ??= ['de' => $de, 'para' => $para, 'representa' => []];
+            $arestas["{$de}--{$para}"]['representa'][] = ['de' => $ligacao['de'], 'para' => $ligacao['para']];
+        }
+    } elseif ($construtor === 'registro') {
+        $raiz = 'painel:'.$diagrama['paineis'][0];
+        $modo = $diagrama['modos'][0];
+
+        foreach ($modelo['ligacoes'] as $ligacao) {
+            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'] ?? [], true)) {
+                $arestas[] = ['de' => $raiz, 'para' => $ligacao['para'], 'representa' => [['de' => $ligacao['de'], 'para' => $ligacao['para']]]];
+            }
+        }
+    }
+
+    foreach ($diagrama['arestas'] ?? [] as $aresta) {
+        $arestas[] = $aresta + ['representa' => [['de' => $aresta['de'], 'para' => $aresta['para']]]];
+    }
+
+    return array_values($arestas);
+}
+
+/**
+ * As peças que o diagrama desenha como peça do modelo: o id (mapa e árvore) ou o rótulo que tem o nome exato
+ * de uma peça (fluxo e demais). Cada item traz as peças candidatas.
+ *
+ * @param  array<string, mixed>  $diagrama
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return list<array{rotulo: string, candidatas: list<string>}>
+ */
+function mapaModeloPecasDesenhadas(array $diagrama, array $modelo): array
+{
+    $construtor = $diagrama['construtor'] ?? null;
+
+    if ($construtor === 'mapa') {
+        return array_map(static fn (array $p): array => ['rotulo' => class_basename($p['id']), 'candidatas' => [$p['id']]], $diagrama['pecas'] ?? []);
+    }
+
+    if ($construtor === 'registro') {
+        $modo = $diagrama['modos'][0];
+        $raiz = 'painel:'.$diagrama['paineis'][0];
+        $ids  = [$raiz];
+
+        foreach (mapaModeloArestasDoDiagrama($diagrama, $modelo) as $aresta) {
+            $ids[] = $aresta['para'];
+        }
+
+        return array_map(static fn (string $id): array => ['rotulo' => class_basename($id), 'candidatas' => [$id]], array_values(array_unique($ids)));
+    }
+
+    $nomes = [];
+
+    foreach ($modelo['pecas'] as $peca) {
+        $nomes[$peca['nome']][] = $peca['id'];
+    }
+
+    $achadas = [];
+
+    foreach (['nodes', 'participants', 'states', 'entities', 'types', 'events', 'spans', 'components'] as $colecao) {
+        foreach ($diagrama[$colecao] ?? [] as $no) {
+            $rotulo = $no['label'] ?? null;
+            $rotulo = is_array($rotulo) ? ($rotulo['pt'] ?? null) : $rotulo;
+
+            if (is_string($rotulo) && isset($nomes[$rotulo])) {
+                $achadas[] = ['rotulo' => $rotulo, 'candidatas' => $nomes[$rotulo]];
+            }
+        }
+    }
+
+    return $achadas;
+}
+
+/**
+ * As peças que o diagrama de um painel pode desenhar: as do painel, as do kit inteiro e as pontas das
+ * ligações que partem do painel ou das peças dele (`04`, R36).
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return array<string, true>
+ */
+function mapaModeloPecasDoPainel(array $modelo, string $painel): array
+{
+    $permitidas = [];
+
+    foreach ($modelo['pecas'] as $peca) {
+        if (($peca['paineis'] ?? []) === [] || in_array($painel, $peca['paineis'], true)) {
+            $permitidas[$peca['id']] = true;
+        }
+    }
+
+    $do = $permitidas;
+
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        if (isset($do[$ligacao['de']])) {
+            $permitidas[$ligacao['para']] = true;
+        }
+    }
+
+    return $permitidas;
+}
+
+/**
+ * R36: no mapa de arquitetura e na árvore de registro, toda aresta é ligação do modelo no mesmo sentido
+ * (direta, de agrupamento ou de porta); e todo diagrama de painel só desenha, como peça, peça do painel ou
+ * do kit inteiro.
+ *
+ * @param  array<string, array<string, mixed>>  $diagramas
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @param  array<string, array<string, mixed>>  $mundo  os diagramas onde procurar o outro lado de uma porta
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirArestasEPecas(array $diagramas, array $modelo, array $mundo): array
+{
+    $violacoes         = [];
+    $arestasConferidas = 0;
+    $nosConferidos     = 0;
+    $existeLigacao     = static fn (string $de, string $para): bool => array_any($modelo['ligacoes'], static fn (array $l): bool => $l['de'] === $de && $l['para'] === $para);
+
+    foreach ($diagramas as $slug => $diagrama) {
+        if (in_array($diagrama['construtor'] ?? null, ['mapa', 'registro'], true)) {
+            $grupos = [];
+
+            foreach ($diagrama['agrupamentos'] ?? [] as $grupo) {
+                $grupos[$grupo['id']] = $grupo['membros'];
+            }
+
+            $portas = [];
+
+            foreach ($diagrama['portas'] ?? [] as $porta) {
+                $portas['porta-'.$porta['para']] = $porta['para'];
+            }
+
+            foreach (mapaModeloArestasDoDiagrama($diagrama, $modelo) as $aresta) {
+                $arestasConferidas++;
+                $nome = "no diagrama {$slug}, a aresta {$aresta['de']} → {$aresta['para']}";
+
+                foreach ($aresta['representa'] as $representada) {
+                    $ligacao = class_basename($representada['de']).' → '.class_basename($representada['para']);
+
+                    if (! $existeLigacao($representada['de'], $representada['para'])) {
+                        $invertida   = $existeLigacao($representada['para'], $representada['de']) ? ' (a aresta está invertida: a ligação do modelo vai no outro sentido)' : '';
+                        $violacoes[] = "{$nome} representa a ligação {$ligacao}, que não existe no modelo{$invertida}";
+
+                        continue;
+                    }
+
+                    foreach (['de', 'para'] as $campo) {
+                        $ponta = $aresta[$campo];
+                        $peca  = $representada[$campo];
+
+                        if (isset($grupos[$ponta])) {
+                            if (! in_array($peca, $grupos[$ponta], true)) {
+                                $violacoes[] = "{$nome}: o agrupamento {$ponta} não nomeia a peça ".class_basename($peca);
+                            }
+                        } elseif (isset($portas[$ponta])) {
+                            $desenhadas = array_column($mundo[$portas[$ponta]]['pecas'] ?? [], 'id');
+
+                            if (! in_array($peca, $desenhadas, true)) {
+                                $violacoes[] = "{$nome}: a porta {$ponta} leva ao mapa {$portas[$ponta]}, que não desenha a peça ".class_basename($peca);
+                            }
+                        } elseif ($ponta !== $peca) {
+                            $violacoes[] = "{$nome} não confere com a ligação {$ligacao}";
+                        }
+                    }
                 }
             }
         }
 
-        return mapaModeloResultado($violacoes, ['arestas' => $arestasConferidas, 'nos' => $nosConferidos]);
+        if (($diagrama['paineis'] ?? []) === []) {
+            continue;
+        }
+
+        $permitidas = [];
+
+        foreach ($diagrama['paineis'] as $painel) {
+            $permitidas += mapaModeloPecasDoPainel($modelo, $painel);
+        }
+
+        foreach (mapaModeloPecasDesenhadas($diagrama, $modelo) as $desenhada) {
+            $nosConferidos++;
+
+            if (array_intersect($desenhada['candidatas'], array_keys($permitidas)) === []) {
+                $violacoes[] = "o diagrama {$slug} (painel ".implode(', ', $diagrama['paineis']).") desenha a peça {$desenhada['rotulo']}, que não é do painel nem do kit inteiro";
+            }
+        }
     }
+
+    return mapaModeloResultado($violacoes, ['arestas' => $arestasConferidas, 'nos' => $nosConferidos]);
 }
 
 /*
@@ -1529,211 +1439,201 @@ if (! function_exists('mapaModeloConferirArestasEPecas')) {
 |--------------------------------------------------------------------------
 */
 
-if (! function_exists('mapaModeloCorpoDoMetodo')) {
-    /** O corpo de um método num código PHP, ou `null`. */
-    function mapaModeloCorpoDoMetodo(string $codigo, string $metodo): ?string
-    {
-        if (preg_match('/function\s+'.preg_quote($metodo, '/').'\s*\([^)]*\)\s*(?::\s*[\w?\\\\|]+)?\s*\{/', $codigo, $m, PREG_OFFSET_CAPTURE) !== 1) {
-            return null;
-        }
-
-        $inicio = $m[0][1] + strlen($m[0][0]);
-        $nivel  = 1;
-
-        for ($i = $inicio, $fim = strlen($codigo); $i < $fim; $i++) {
-            if ($codigo[$i] === '{') {
-                $nivel++;
-            } elseif ($codigo[$i] === '}' && --$nivel === 0) {
-                return substr($codigo, $inicio, $i - $inicio);
-            }
-        }
-
+/** O corpo de um método num código PHP, ou `null`. */
+function mapaModeloCorpoDoMetodo(string $codigo, string $metodo): ?string
+{
+    if (preg_match('/function\s+'.preg_quote($metodo, '/').'\s*\([^)]*\)\s*(?::\s*[\w?\\\\|]+)?\s*\{/', $codigo, $m, PREG_OFFSET_CAPTURE) !== 1) {
         return null;
     }
-}
 
-if (! function_exists('mapaModeloChavesQueDecidemOAcesso')) {
-    /**
-     * As chaves de config que o `canAccess()` da peça lê, direto ou pelo apoio estático que ele chama.
-     *
-     * @return list<string>
-     */
-    function mapaModeloChavesQueDecidemOAcesso(string $classe): array
-    {
-        $arquivo = arquivoDaClasse($classe);
-        $codigo  = $arquivo === null ? null : mapaModeloCodigo($arquivo);
-        $corpo   = $codigo === null ? null : mapaModeloCorpoDoMetodo($codigo, 'canAccess');
+    $inicio = $m[0][1] + strlen($m[0][0]);
+    $nivel  = 1;
 
-        if ($corpo === null) {
-            return [];
+    for ($i = $inicio, $fim = strlen($codigo); $i < $fim; $i++) {
+        if ($codigo[$i] === '{') {
+            $nivel++;
+        } elseif ($codigo[$i] === '}' && --$nivel === 0) {
+            return substr($codigo, $inicio, $i - $inicio);
         }
-
-        preg_match_all('/config\(\s*\'([^\']+)\'/', $corpo, $diretas);
-        $chaves = $diretas[1];
-
-        preg_match_all('/\b([A-Z]\w*)::(\w+)\(/', $corpo, $apoios, PREG_SET_ORDER);
-        $usos = mapaModeloUsosDoArquivo((string) $codigo);
-
-        foreach ($apoios as [, $curto, $metodo]) {
-            $apoio          = $usos[$curto] ?? null;
-            $arquivoDoApoio = $apoio === null ? null : arquivoDaClasse($apoio);
-            $codigoDoApoio  = $arquivoDoApoio === null ? null : mapaModeloCodigo($arquivoDoApoio);
-            $corpoDoApoio   = $codigoDoApoio === null ? null : mapaModeloCorpoDoMetodo($codigoDoApoio, $metodo);
-
-            if ($corpoDoApoio !== null) {
-                preg_match_all('/config\(\s*\'([^\']+)\'/', $corpoDoApoio, $doApoio);
-                $chaves = array_merge($chaves, $doApoio[1]);
-            }
-        }
-
-        return array_values(array_unique($chaves));
     }
+
+    return null;
 }
 
-if (! function_exists('mapaModeloVariavelEPadraoDaChave')) {
-    /**
-     * A variável do `.env` e o valor de fábrica de uma chave de `config/kit.php` (`kit.a.b`), pelo texto do
-     * arquivo — nunca pelo `config()`, que mede o ambiente de quem roda.
-     *
-     * @return array{variavel: string, padrao: mixed}|null
-     */
-    function mapaModeloVariavelEPadraoDaChave(string $chave): ?array
-    {
-        $caminho = explode('.', $chave);
+/**
+ * As chaves de config que o `canAccess()` da peça lê, direto ou pelo apoio estático que ele chama.
+ *
+ * @return list<string>
+ */
+function mapaModeloChavesQueDecidemOAcesso(string $classe): array
+{
+    $arquivo = arquivoDaClasse($classe);
+    $codigo  = $arquivo === null ? null : mapaModeloCodigo($arquivo);
+    $corpo   = $codigo === null ? null : mapaModeloCorpoDoMetodo($codigo, 'canAccess');
 
-        if (array_shift($caminho) !== 'kit' || $caminho === []) {
+    if ($corpo === null) {
+        return [];
+    }
+
+    preg_match_all('/config\(\s*\'([^\']+)\'/', $corpo, $diretas);
+    $chaves = $diretas[1];
+
+    preg_match_all('/\b([A-Z]\w*)::(\w+)\(/', $corpo, $apoios, PREG_SET_ORDER);
+    $usos = mapaModeloUsosDoArquivo((string) $codigo);
+
+    foreach ($apoios as [, $curto, $metodo]) {
+        $apoio          = $usos[$curto] ?? null;
+        $arquivoDoApoio = $apoio === null ? null : arquivoDaClasse($apoio);
+        $codigoDoApoio  = $arquivoDoApoio === null ? null : mapaModeloCodigo($arquivoDoApoio);
+        $corpoDoApoio   = $codigoDoApoio === null ? null : mapaModeloCorpoDoMetodo($codigoDoApoio, $metodo);
+
+        if ($corpoDoApoio !== null) {
+            preg_match_all('/config\(\s*\'([^\']+)\'/', $corpoDoApoio, $doApoio);
+            $chaves = array_merge($chaves, $doApoio[1]);
+        }
+    }
+
+    return array_values(array_unique($chaves));
+}
+
+/**
+ * A variável do `.env` e o valor de fábrica de uma chave de `config/kit.php` (`kit.a.b`), pelo texto do
+ * arquivo — nunca pelo `config()`, que mede o ambiente de quem roda.
+ *
+ * @return array{variavel: string, padrao: mixed}|null
+ */
+function mapaModeloVariavelEPadraoDaChave(string $chave): ?array
+{
+    $caminho = explode('.', $chave);
+
+    if (array_shift($caminho) !== 'kit' || $caminho === []) {
+        return null;
+    }
+
+    $fonte        = (string) mapaModeloCodigo('config/kit.php');
+    $deslocamento = 0;
+
+    foreach ($caminho as $i => $segmento) {
+        $ultimo = $i === array_key_last($caminho);
+        $padrao = $ultimo ? '/\''.preg_quote($segmento, '/').'\'\s*=>\s*([^\n]*)/' : '/\''.preg_quote($segmento, '/').'\'\s*=>\s*\[/';
+
+        if (preg_match($padrao, $fonte, $m, PREG_OFFSET_CAPTURE, $deslocamento) !== 1) {
             return null;
         }
 
-        $fonte        = (string) mapaModeloCodigo('config/kit.php');
-        $deslocamento = 0;
-
-        foreach ($caminho as $i => $segmento) {
-            $ultimo = $i === array_key_last($caminho);
-            $padrao = $ultimo ? '/\''.preg_quote($segmento, '/').'\'\s*=>\s*([^\n]*)/' : '/\''.preg_quote($segmento, '/').'\'\s*=>\s*\[/';
-
-            if (preg_match($padrao, $fonte, $m, PREG_OFFSET_CAPTURE, $deslocamento) !== 1) {
+        if ($ultimo) {
+            if (preg_match('/env\(\s*\'([A-Z0-9_]+)\'\s*(?:,\s*([^)]*?))?\s*\)/', $m[1][0], $env) !== 1) {
                 return null;
             }
 
-            if ($ultimo) {
-                if (preg_match('/env\(\s*\'([A-Z0-9_]+)\'\s*(?:,\s*([^)]*?))?\s*\)/', $m[1][0], $env) !== 1) {
-                    return null;
-                }
+            $bruto = trim($env[2] ?? 'null');
 
-                $bruto = trim($env[2] ?? 'null');
-
-                return ['variavel' => $env[1], 'padrao' => match (true) {
-                    $bruto === 'true'  => true,
-                    $bruto === 'false' => false,
-                    is_numeric($bruto) => $bruto + 0,
-                    default            => trim($bruto, '\'"'),
-                }];
-            }
-
-            $deslocamento = $m[0][1] + strlen($m[0][0]);
+            return ['variavel' => $env[1], 'padrao' => match (true) {
+                $bruto === 'true'  => true,
+                $bruto === 'false' => false,
+                is_numeric($bruto) => $bruto + 0,
+                default            => trim($bruto, '\'"'),
+            }];
         }
 
-        return null;
+        $deslocamento = $m[0][1] + strlen($m[0][0]);
     }
+
+    return null;
 }
 
-if (! function_exists('mapaModeloMarcasDeDisponibilidade')) {
-    /**
-     * As marcas de disponibilidade publicadas: o campo `disponibilidade` de uma peça do modelo ou de um nó de
-     * diagrama.
-     *
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @param  array<string, array<string, mixed>>  $diagramas
-     * @return list<array{peca: string, onde: string, marca: array<string, mixed>}>
-     */
-    function mapaModeloMarcasDeDisponibilidade(array $modelo, array $diagramas): array
-    {
-        $marcas = [];
+/**
+ * As marcas de disponibilidade publicadas: o campo `disponibilidade` de uma peça do modelo ou de um nó de
+ * diagrama.
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @param  array<string, array<string, mixed>>  $diagramas
+ * @return list<array{peca: string, onde: string, marca: array<string, mixed>}>
+ */
+function mapaModeloMarcasDeDisponibilidade(array $modelo, array $diagramas): array
+{
+    $marcas = [];
 
-        foreach ($modelo['pecas'] as $peca) {
-            if (isset($peca['disponibilidade'])) {
-                $marcas[] = ['peca' => $peca['id'], 'onde' => 'o modelo', 'marca' => $peca['disponibilidade']];
-            }
+    foreach ($modelo['pecas'] as $peca) {
+        if (isset($peca['disponibilidade'])) {
+            $marcas[] = ['peca' => $peca['id'], 'onde' => 'o modelo', 'marca' => $peca['disponibilidade']];
         }
-
-        $varrer = static function (mixed $no, string $slug) use (&$varrer, &$marcas): void {
-            if (! is_array($no)) {
-                return;
-            }
-
-            if (isset($no['disponibilidade'], $no['id'])) {
-                $marcas[] = ['peca' => (string) $no['id'], 'onde' => "o diagrama {$slug}", 'marca' => $no['disponibilidade']];
-            }
-
-            foreach ($no as $filho) {
-                $varrer($filho, $slug);
-            }
-        };
-
-        foreach ($diagramas as $slug => $diagrama) {
-            $varrer($diagrama, $slug);
-        }
-
-        return $marcas;
     }
+
+    $varrer = static function (mixed $no, string $slug) use (&$varrer, &$marcas): void {
+        if (! is_array($no)) {
+            return;
+        }
+
+        if (isset($no['disponibilidade'], $no['id'])) {
+            $marcas[] = ['peca' => (string) $no['id'], 'onde' => "o diagrama {$slug}", 'marca' => $no['disponibilidade']];
+        }
+
+        foreach ($no as $filho) {
+            $varrer($filho, $slug);
+        }
+    };
+
+    foreach ($diagramas as $slug => $diagrama) {
+        $varrer($diagrama, $slug);
+    }
+
+    return $marcas;
 }
 
-if (! function_exists('mapaModeloConferirDisponibilidade')) {
-    /**
-     * R37: toda marca de disponibilidade publicada é a do código — a chave que o `canAccess()` lê, com o valor de
-     * fábrica dela, ou o modo. Sem marca nenhuma, aceita por vácuo.
-     *
-     * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @param  array<string, array<string, mixed>>  $diagramas
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirDisponibilidade(array $modelo, array $diagramas): array
-    {
-        $violacoes = [];
-        $marcas    = mapaModeloMarcasDeDisponibilidade($modelo, $diagramas);
+/**
+ * R37: toda marca de disponibilidade publicada é a do código — a chave que o `canAccess()` lê, com o valor de
+ * fábrica dela, ou o modo. Sem marca nenhuma, aceita por vácuo.
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @param  array<string, array<string, mixed>>  $diagramas
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirDisponibilidade(array $modelo, array $diagramas): array
+{
+    $violacoes = [];
+    $marcas    = mapaModeloMarcasDeDisponibilidade($modelo, $diagramas);
 
-        foreach ($marcas as ['peca' => $peca, 'onde' => $onde, 'marca' => $marca]) {
-            $nome   = mapaModeloNome($peca);
-            $chaves = mapaModeloChavesQueDecidemOAcesso($peca);
+    foreach ($marcas as ['peca' => $peca, 'onde' => $onde, 'marca' => $marca]) {
+        $nome   = class_basename($peca);
+        $chaves = mapaModeloChavesQueDecidemOAcesso($peca);
 
-            if (isset($marca['modo'])) {
-                $decideOModo = in_array('kit.tenancy.enabled', $chaves, true);
+        if (isset($marca['modo'])) {
+            $decideOModo = in_array('kit.tenancy.enabled', $chaves, true);
 
-                if (! $decideOModo || $marca['modo'] !== 'com') {
-                    $violacoes[] = "{$onde} marca a peça {$nome} como disponível no modo \"{$marca['modo']}\", e o canAccess() dela lê [".implode(', ', $chaves).']';
-                }
-
-                continue;
+            if (! $decideOModo || $marca['modo'] !== 'com') {
+                $violacoes[] = "{$onde} marca a peça {$nome} como disponível no modo \"{$marca['modo']}\", e o canAccess() dela lê [".implode(', ', $chaves).']';
             }
 
-            $decisoras = [];
+            continue;
+        }
 
-            foreach ($chaves as $chave) {
-                $dados = mapaModeloVariavelEPadraoDaChave($chave);
+        $decisoras = [];
 
-                if ($dados !== null) {
-                    $decisoras[$dados['variavel']] = $dados['padrao'];
-                    $decisoras[$chave]             = $dados['padrao'];
-                    $decisoras[substr($chave, 4)]  = $dados['padrao'];
-                }
-            }
+        foreach ($chaves as $chave) {
+            $dados = mapaModeloVariavelEPadraoDaChave($chave);
 
-            $chaveDaMarca = (string) ($marca['chave'] ?? '');
-
-            if (! array_key_exists($chaveDaMarca, $decisoras)) {
-                $violacoes[] = "{$onde} marca a peça {$nome} com a chave {$chaveDaMarca}, que não decide o acesso dela (decidem: ".implode(', ', array_keys($decisoras)).')';
-
-                continue;
-            }
-
-            if (array_key_exists('padrao', $marca) && $marca['padrao'] !== $decisoras[$chaveDaMarca]) {
-                $violacoes[] = "{$onde} marca a peça {$nome} com {$chaveDaMarca} de fábrica ".var_export($marca['padrao'], true).', e o config/kit.php diz '.var_export($decisoras[$chaveDaMarca], true);
+            if ($dados !== null) {
+                $decisoras[$dados['variavel']] = $dados['padrao'];
+                $decisoras[$chave]             = $dados['padrao'];
+                $decisoras[substr($chave, 4)]  = $dados['padrao'];
             }
         }
 
-        return mapaModeloResultado($violacoes, ['marcas' => count($marcas)]);
+        $chaveDaMarca = (string) ($marca['chave'] ?? '');
+
+        if (! array_key_exists($chaveDaMarca, $decisoras)) {
+            $violacoes[] = "{$onde} marca a peça {$nome} com a chave {$chaveDaMarca}, que não decide o acesso dela (decidem: ".implode(', ', array_keys($decisoras)).')';
+
+            continue;
+        }
+
+        if (array_key_exists('padrao', $marca) && $marca['padrao'] !== $decisoras[$chaveDaMarca]) {
+            $violacoes[] = "{$onde} marca a peça {$nome} com {$chaveDaMarca} de fábrica ".var_export($marca['padrao'], true).', e o config/kit.php diz '.var_export($decisoras[$chaveDaMarca], true);
+        }
     }
+
+    return mapaModeloResultado($violacoes, ['marcas' => count($marcas)]);
 }
 
 /*
@@ -1859,7 +1759,7 @@ it('[CT-09] a prova de toda ligação resolve no commit que publica: o arquivo �
         $guarda                                      = mapaModeloConferirProvas($modelo, []);
 
         expect($guarda['aceita'])->toBeFalse('a guarda aceitou o campo linha no modelo')
-            ->and($guarda['motivo'])->toContain(mapaModeloNome($modelo['ligacoes'][0]['de']));
+            ->and($guarda['motivo'])->toContain(class_basename($modelo['ligacoes'][0]['de']));
 
         return;
     }
@@ -2042,7 +1942,7 @@ it('[CT-11] sem tenant, tudo que o painel registra está no modelo, e o modelo n
 
     $vivo     = array_merge(...array_values(registroVivoDoPainel(Filament::getPanel($painel))));
     $noModelo = registradasNoModelo($modelo, $painel, 'sem');
-    $comNome  = static fn (array $ids, string $nome): array => array_values(array_filter($ids, static fn (string $id): bool => mapaModeloNome($id) === $nome));
+    $comNome  = static fn (array $ids, string $nome): array => array_values(array_filter($ids, static fn (string $id): bool => class_basename($id) === $nome));
 
     foreach ($registrado as $nome) {
         expect($comNome($vivo, $nome))->not->toBeEmpty("{$nome} não está no registro do painel {$painel}")
@@ -2345,15 +2245,7 @@ it('[CT-40] toda aresta de mapa é ligação do modelo no mesmo sentido, e todo 
         return;
     }
 
-    $existeLigacao = static function (string $de, string $para) use ($modelo): bool {
-        foreach ($modelo['ligacoes'] as $ligacao) {
-            if ($ligacao['de'] === $de && $ligacao['para'] === $para) {
-                return true;
-            }
-        }
-
-        return false;
-    };
+    $existeLigacao = static fn (string $de, string $para): bool => array_any($modelo['ligacoes'], static fn (array $l): bool => $l['de'] === $de && $l['para'] === $para);
 
     $slug         = 'admin-acesso-e-autenticacao';
     $copia        = $diagramas[$slug];
@@ -2492,347 +2384,333 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
 | `tests/Pest.php`, que as guardas da R38 também usam.
 */
 
-if (! function_exists('mapaModeloTextosNaRevisao')) {
-    /**
-     * O texto de cada arquivo no `HEAD`, a revisão que o gerador lê (`git show`) para dar a linha à âncora; `null`
-     * para o que não está nela. Um `git cat-file --batch` só, para todos os arquivos.
-     *
-     * @param  list<string>  $arquivos
-     * @return array<string, ?string>
-     */
-    function mapaModeloTextosNaRevisao(array $arquivos): array
-    {
-        if ($arquivos === []) {
-            return [];
+/**
+ * O texto de cada arquivo no `HEAD`, a revisão que o gerador lê (`git show`) para dar a linha à âncora; `null`
+ * para o que não está nela. Um `git cat-file --batch` só, para todos os arquivos.
+ *
+ * @param  list<string>  $arquivos
+ * @return array<string, ?string>
+ */
+function mapaModeloTextosNaRevisao(array $arquivos): array
+{
+    if ($arquivos === []) {
+        return [];
+    }
+
+    $saida = Process::path(base_path())
+        ->input(implode('', array_map(static fn (string $arquivo): string => "HEAD:{$arquivo}\n", $arquivos)))
+        ->timeout(120)
+        ->run(['git', 'cat-file', '--batch'])
+        ->throw()
+        ->output();
+
+    $textos  = [];
+    $posicao = 0;
+
+    foreach ($arquivos as $arquivo) {
+        $fim = strpos($saida, "\n", $posicao);
+
+        if ($fim === false) {
+            $textos[$arquivo] = null;
+
+            continue;
         }
 
-        $saida = Process::path(base_path())
-            ->input(implode('', array_map(static fn (string $arquivo): string => "HEAD:{$arquivo}\n", $arquivos)))
-            ->timeout(120)
-            ->run(['git', 'cat-file', '--batch'])
-            ->throw()
-            ->output();
+        $cabecalho = substr($saida, $posicao, $fim - $posicao);
+        $posicao   = $fim + 1;
 
-        $textos  = [];
-        $posicao = 0;
+        if (preg_match('/^\S+ blob (\d+)$/', $cabecalho, $m) !== 1) {
+            $textos[$arquivo] = null;
 
-        foreach ($arquivos as $arquivo) {
-            $fim = strpos($saida, "\n", $posicao);
-
-            if ($fim === false) {
-                $textos[$arquivo] = null;
-
-                continue;
-            }
-
-            $cabecalho = substr($saida, $posicao, $fim - $posicao);
-            $posicao   = $fim + 1;
-
-            if (preg_match('/^\S+ blob (\d+)$/', $cabecalho, $m) !== 1) {
-                $textos[$arquivo] = null;
-
-                continue;
-            }
-
-            $textos[$arquivo] = str_replace("\r\n", "\n", substr($saida, $posicao, (int) $m[1]));
-            $posicao += (int) $m[1] + 1;
+            continue;
         }
 
-        return $textos;
+        $textos[$arquivo] = str_replace("\r\n", "\n", substr($saida, $posicao, (int) $m[1]));
+        $posicao += (int) $m[1] + 1;
     }
+
+    return $textos;
 }
 
-if (! function_exists('mapaModeloConferirLinhasDoBuild')) {
-    /**
-     * R9, CT-52: a linha que o build dá a cada prova — o item de prova de cada ligação desenhada e cada fonte de
-     * peça — tem o trecho da âncora fora de comentário, pela sintaxe do tipo do arquivo, no texto da revisão que o
-     * gerador lê. Diagrama que o gerador recusou reprova, com a mensagem dele. O texto trocado em memória (o
-     * controle do nowdoc, re-revisão RR-03) vale no lugar do da revisão, como valeu para o gerador.
-     *
-     * @param  array<string, array<string, mixed>>  $entradas  os `diagramas` de `entradasDoGeradorDoMapa()`, montados em `pt` e com as âncoras marcadas
-     * @param  array<string, string>  $textosNaRevisao  caminho → o texto que o gerador leu no lugar do `git show`
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirLinhasDoBuild(array $entradas, array $textosNaRevisao = []): array
-    {
-        $violacoes = [];
-        $ancoras   = [];
+/**
+ * R9, CT-52: a linha que o build dá a cada prova — o item de prova de cada ligação desenhada e cada fonte de
+ * peça — tem o trecho da âncora fora de comentário, pela sintaxe do tipo do arquivo, no texto da revisão que o
+ * gerador lê. Diagrama que o gerador recusou reprova, com a mensagem dele. O texto trocado em memória (o
+ * controle do nowdoc, re-revisão RR-03) vale no lugar do da revisão, como valeu para o gerador.
+ *
+ * @param  array<string, array<string, mixed>>  $entradas  os `diagramas` de `entradasDoGeradorDoMapa()`, montados em `pt` e com as âncoras marcadas
+ * @param  array<string, string>  $textosNaRevisao  caminho → o texto que o gerador leu no lugar do `git show`
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirLinhasDoBuild(array $entradas, array $textosNaRevisao = []): array
+{
+    $violacoes = [];
+    $ancoras   = [];
 
-        foreach ($entradas as $slug => $saida) {
-            if (isset($saida['pt']['erro'])) {
-                $violacoes[] = "o gerador recusou o diagrama {$slug}: {$saida['pt']['erro']}";
+    foreach ($entradas as $slug => $saida) {
+        if (isset($saida['pt']['erro'])) {
+            $violacoes[] = "o gerador recusou o diagrama {$slug}: {$saida['pt']['erro']}";
 
-                continue;
-            }
-
-            $coletar = static function (mixed $no, string $quem) use (&$coletar, &$ancoras, &$violacoes, $slug): void {
-                if (! is_array($no)) {
-                    return;
-                }
-
-                if (isset($no['id']) && is_string($no['id'])) {
-                    $quem = $no['id'];
-                }
-
-                if (array_key_exists('path', $no) && array_key_exists('line', $no)) {
-                    if (! is_string($no['label'] ?? null) || $no['label'] === '') {
-                        $violacoes[] = "o diagrama {$slug}: a fonte da peça {$quem} saiu do gerador sem a âncora que a projetou";
-
-                        return;
-                    }
-
-                    $ancoras[] = [$slug, "a fonte da peça {$quem}", (string) $no['path'], (int) $no['line'], $no['label']];
-
-                    return;
-                }
-
-                foreach ($no as $filho) {
-                    $coletar($filho, $quem);
-                }
-            };
-
-            $coletar(array_diff_key($saida['pt'], ['cards' => 1]), $slug);
-
-            foreach ($saida['pt']['cards'] ?? [] as $card) {
-                if (! str_starts_with((string) ($card['title'] ?? ''), 'Prova das ligações')) {
-                    continue;
-                }
-
-                foreach ($card['items'] ?? [] as $item) {
-                    if (! is_string($item) || preg_match('/^(.*?): (\S+):(\d+)(?:-\d+)? — (.*)$/su', $item, $m) !== 1) {
-                        $violacoes[] = "o diagrama {$slug}: o item de prova não traz arquivo e linha: ".json_encode($item, JSON_UNESCAPED_UNICODE);
-
-                        continue;
-                    }
-
-                    $ancoras[] = [$slug, "a ligação {$m[1]}", $m[2], (int) $m[3], $m[4]];
-                }
-            }
+            continue;
         }
 
-        $trocados   = array_map(static fn (string $texto): string => str_replace("\r\n", "\n", $texto), $textosNaRevisao);
-        $textos     = $trocados + mapaModeloTextosNaRevisao(array_values(array_diff(array_unique(array_column($ancoras, 2)), array_keys($trocados))));
-        $mascaras   = [];
-        $inicios    = [];
-        $repetidas  = [];
-        $conferidas = 0;
-
-        foreach ($ancoras as [$slug, $quem, $caminho, $linha, $trecho]) {
-            $conferidas++;
-            $texto = $textos[$caminho] ?? null;
-
-            if ($texto === null) {
-                $violacoes[] = "o diagrama {$slug}: {$quem}: {$caminho} não está na revisão que o gerador lê";
-
-                continue;
-            }
-
-            $mascaras[$caminho] ??= mapaModeloMascararComentarios($caminho, $texto);
-            $inicios[$caminho] ??= [0, ...array_map(static fn (array $quebra): int => $quebra[1] + 1, preg_match_all('/\n/', $texto, $q, PREG_OFFSET_CAPTURE) > 0 ? $q[0] : [])];
-
-            if (substr_count($texto, $trecho) > 1) {
-                $repetidas["{$caminho}\0{$trecho}"] = true;
-            }
-
-            $inicio = $inicios[$caminho][$linha - 1] ?? null;
-            $fim    = isset($inicios[$caminho][$linha]) ? $inicios[$caminho][$linha] - 1 : strlen($texto);
-            $achou  = false;
-
-            for ($busca = $inicio; $busca !== null && ($achado = strpos($texto, $trecho, $busca)) !== false && $achado <= $fim; $busca = $achado + 1) {
-                if (substr($mascaras[$caminho], $achado, strlen($trecho)) === $trecho) {
-                    $achou = true;
-
-                    break;
-                }
-            }
-
-            if (! $achou) {
-                $violacoes[] = "o diagrama {$slug}: {$quem}: a linha {$linha} de {$caminho}, que o build dá à prova, não tem o trecho "
-                    .json_encode($trecho, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).' fora de comentário';
-            }
-        }
-
-        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'repetidas' => count($repetidas)]);
-    }
-}
-
-if (! function_exists('mapaModeloDiagramaDeControle')) {
-    /**
-     * O diagrama escrito à mão, em memória, dos controles do CT-52: dois nós e uma ligação provada pela âncora dada.
-     *
-     * @return array<string, mixed>
-     */
-    function mapaModeloDiagramaDeControle(string $slug, string $arquivo, string $trecho): array
-    {
-        return [
-            'slug'           => $slug,
-            'tipo'           => 'workflow',
-            'titulo'         => ['pt' => 'Controle do CT-52', 'en' => 'CT-52 control'],
-            'paineis'        => [],
-            'modos'          => ['sem', 'com'],
-            'schema_version' => 1,
-            'diagram_type'   => 'workflow',
-            'nodes'          => [['id' => 'app-service-provider', 'label' => 'AppServiceProvider'], ['id' => 'locker', 'label' => 'Locker']],
-            'edges'          => [[
-                'id'    => 'liga-locker',
-                'from'  => 'app-service-provider',
-                'to'    => 'locker',
-                'label' => ['pt' => 'liga', 'en' => 'binds'],
-                'prova' => ['arquivo' => $arquivo, 'trecho' => $trecho],
-            ]],
-        ];
-    }
-}
-
-if (! function_exists('mapaModeloLinhaDoTrecho')) {
-    /** A linha (a partir de 1) da primeira ocorrência do trecho no texto, a partir do byte dado; `null` se não há. */
-    function mapaModeloLinhaDoTrecho(string $texto, string $trecho, int $aPartirDe = 0): ?int
-    {
-        $posicao = strpos($texto, $trecho, $aPartirDe);
-
-        return $posicao === false ? null : substr_count(substr($texto, 0, $posicao), "\n") + 1;
-    }
-}
-
-if (! function_exists('mapaModeloAncorasDoDiagrama')) {
-    /**
-     * Toda âncora de um arquivo de diagrama escrito à mão, com a coleção e o item onde ela mora (a fonte de
-     * participante, nó, entidade, tipo, evento e span; a prova de relação, de mensagem, de transição).
-     *
-     * @param  array<string, mixed>  $diagrama
-     * @return list<array{colecao: string, item: string, ancora: array<string, mixed>}>
-     */
-    function mapaModeloAncorasDoDiagrama(array $diagrama): array
-    {
-        $achadas = [];
-
-        $coletar = static function (mixed $no, string $colecao, string $item) use (&$coletar, &$achadas): void {
+        $coletar = static function (mixed $no, string $quem) use (&$coletar, &$ancoras, &$violacoes, $slug): void {
             if (! is_array($no)) {
                 return;
             }
 
-            if (array_key_exists('arquivo', $no) || array_key_exists('trecho', $no)) {
-                $achadas[] = ['colecao' => $colecao, 'item' => $item, 'ancora' => $no];
+            if (isset($no['id']) && is_string($no['id'])) {
+                $quem = $no['id'];
+            }
+
+            if (array_key_exists('path', $no) && array_key_exists('line', $no)) {
+                if (! is_string($no['label'] ?? null) || $no['label'] === '') {
+                    $violacoes[] = "o diagrama {$slug}: a fonte da peça {$quem} saiu do gerador sem a âncora que a projetou";
+
+                    return;
+                }
+
+                $ancoras[] = [$slug, "a fonte da peça {$quem}", (string) $no['path'], (int) $no['line'], $no['label']];
 
                 return;
             }
 
             foreach ($no as $filho) {
-                $coletar($filho, $colecao, $item);
+                $coletar($filho, $quem);
             }
         };
 
-        foreach ($diagrama as $colecao => $itens) {
-            if (! is_array($itens) || ! array_is_list($itens)) {
-                $coletar($itens, (string) $colecao, (string) $colecao);
+        $coletar(array_diff_key($saida['pt'], ['cards' => 1]), $slug);
 
+        foreach ($saida['pt']['cards'] ?? [] as $card) {
+            if (! str_starts_with((string) ($card['title'] ?? ''), 'Prova das ligações')) {
                 continue;
             }
 
-            foreach ($itens as $indice => $item) {
-                $id = is_array($item) && isset($item['id']) && is_scalar($item['id']) ? (string) $item['id'] : "#{$indice}";
-                $coletar($item, (string) $colecao, $id);
+            foreach ($card['items'] ?? [] as $item) {
+                if (! is_string($item) || preg_match('/^(.*?): (\S+):(\d+)(?:-\d+)? — (.*)$/su', $item, $m) !== 1) {
+                    $violacoes[] = "o diagrama {$slug}: o item de prova não traz arquivo e linha: ".json_encode($item, JSON_UNESCAPED_UNICODE);
+
+                    continue;
+                }
+
+                $ancoras[] = [$slug, "a ligação {$m[1]}", $m[2], (int) $m[3], $m[4]];
+            }
+        }
+    }
+
+    $trocados   = array_map(static fn (string $texto): string => str_replace("\r\n", "\n", $texto), $textosNaRevisao);
+    $textos     = $trocados + mapaModeloTextosNaRevisao(array_values(array_diff(array_unique(array_column($ancoras, 2)), array_keys($trocados))));
+    $mascaras   = [];
+    $inicios    = [];
+    $repetidas  = [];
+    $conferidas = 0;
+
+    foreach ($ancoras as [$slug, $quem, $caminho, $linha, $trecho]) {
+        $conferidas++;
+        $texto = $textos[$caminho] ?? null;
+
+        if ($texto === null) {
+            $violacoes[] = "o diagrama {$slug}: {$quem}: {$caminho} não está na revisão que o gerador lê";
+
+            continue;
+        }
+
+        $mascaras[$caminho] ??= mapaModeloMascararComentarios($caminho, $texto);
+        $inicios[$caminho] ??= [0, ...array_map(static fn (array $quebra): int => $quebra[1] + 1, preg_match_all('/\n/', $texto, $q, PREG_OFFSET_CAPTURE) > 0 ? $q[0] : [])];
+
+        if (substr_count($texto, $trecho) > 1) {
+            $repetidas["{$caminho}\0{$trecho}"] = true;
+        }
+
+        $inicio = $inicios[$caminho][$linha - 1] ?? null;
+        $fim    = isset($inicios[$caminho][$linha]) ? $inicios[$caminho][$linha] - 1 : strlen($texto);
+        $achou  = false;
+
+        for ($busca = $inicio; $busca !== null && ($achado = strpos($texto, $trecho, $busca)) !== false && $achado <= $fim; $busca = $achado + 1) {
+            if (substr($mascaras[$caminho], $achado, strlen($trecho)) === $trecho) {
+                $achou = true;
+
+                break;
             }
         }
 
-        return $achadas;
+        if (! $achou) {
+            $violacoes[] = "o diagrama {$slug}: {$quem}: a linha {$linha} de {$caminho}, que o build dá à prova, não tem o trecho "
+                .json_encode($trecho, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).' fora de comentário';
+        }
     }
+
+    return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'repetidas' => count($repetidas)]);
 }
 
-if (! function_exists('mapaModeloConferirAncoras')) {
-    /**
-     * R9, CT-53: a guarda da R9 — arquivo versionado, trecho fora de comentário pela sintaxe do tipo, sem número de
-     * linha e com as chaves fechadas — sobre a evidência de cada peça do modelo de peças e sobre toda âncora dos
-     * diagramas escritos à mão (os sem `construtor`).
-     *
-     * @param  list<array<string, mixed>>  $pecas
-     * @param  array<string, array<string, mixed>>  $diagramas
-     * @param  array<string, string>  $sobrescritas
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirAncoras(array $pecas, array $diagramas, array $sobrescritas = []): array
-    {
-        $violacoes  = [];
-        $conferidas = 0;
-        $porColecao = [];
-
-        $conferir = static function (string $nome, mixed $ancora, string $colecao) use (&$violacoes, &$conferidas, &$porColecao, $sobrescritas): void {
-            $ancora    = is_array($ancora) ? $ancora : [];
-            $resultado = mapaModeloConferirProva($nome, $ancora['arquivo'] ?? null, $ancora['trecho'] ?? null, array_diff_key($ancora, ['arquivo' => 1, 'trecho' => 1]), $sobrescritas);
-            $conferidas++;
-            $porColecao[$colecao] = ($porColecao[$colecao] ?? 0) + 1;
-
-            if (! $resultado['aceita']) {
-                $violacoes[] = $resultado['motivo'];
-            }
-        };
-
-        foreach ($pecas as $peca) {
-            foreach (is_array($peca['evidencia'] ?? null) ? $peca['evidencia'] : [] as $ancora) {
-                $conferir("a evidência da peça {$peca['id']}", $ancora, 'pecas');
-            }
-        }
-
-        foreach ($diagramas as $slug => $diagrama) {
-            if (array_key_exists('construtor', $diagrama)) {
-                continue;
-            }
-
-            foreach (mapaModeloAncorasDoDiagrama($diagrama) as ['colecao' => $colecao, 'item' => $item, 'ancora' => $ancora]) {
-                $conferir("o diagrama {$slug}, em {$colecao}, {$item}", $ancora, $colecao);
-            }
-        }
-
-        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'porColecao' => $porColecao]);
-    }
+/**
+ * O diagrama escrito à mão, em memória, dos controles do CT-52: dois nós e uma ligação provada pela âncora dada.
+ *
+ * @return array<string, mixed>
+ */
+function mapaModeloDiagramaDeControle(string $slug, string $arquivo, string $trecho): array
+{
+    return [
+        'slug'           => $slug,
+        'tipo'           => 'workflow',
+        'titulo'         => ['pt' => 'Controle do CT-52', 'en' => 'CT-52 control'],
+        'paineis'        => [],
+        'modos'          => ['sem', 'com'],
+        'schema_version' => 1,
+        'diagram_type'   => 'workflow',
+        'nodes'          => [['id' => 'app-service-provider', 'label' => 'AppServiceProvider'], ['id' => 'locker', 'label' => 'Locker']],
+        'edges'          => [[
+            'id'    => 'liga-locker',
+            'from'  => 'app-service-provider',
+            'to'    => 'locker',
+            'label' => ['pt' => 'liga', 'en' => 'binds'],
+            'prova' => ['arquivo' => $arquivo, 'trecho' => $trecho],
+        ]],
+    ];
 }
 
-if (! function_exists('mapaModeloConferirIdsConstruidos')) {
-    /**
-     * R36, CT-54: todo id que um arquivo de diagrama construído (com `construtor`) nomeia — a peça desenhada e o
-     * membro de agrupamento — é peça do modelo de peças. Lê o arquivo, e não o desenho: o gerador some com o id
-     * desconhecido no diagrama de um modo e o põe cru no card no de dois modos (step 9, achado A8).
-     *
-     * @param  array<string, array<string, mixed>>  $diagramas
-     * @param  list<array<string, mixed>>  $pecas
-     * @return array<string, mixed>
-     */
-    function mapaModeloConferirIdsConstruidos(array $diagramas, array $pecas): array
-    {
-        $doModelo   = array_flip(array_column($pecas, 'id'));
-        $violacoes  = [];
-        $arquivos   = [];
-        $conferidos = 0;
+/** A linha (a partir de 1) da primeira ocorrência do trecho no texto; `null` se não há. */
+function mapaModeloLinhaDoTrecho(string $texto, string $trecho): ?int
+{
+    $posicao = strpos($texto, $trecho);
 
-        foreach ($diagramas as $slug => $diagrama) {
-            if (! array_key_exists('construtor', $diagrama)) {
-                continue;
+    return $posicao === false ? null : substr_count(substr($texto, 0, $posicao), "\n") + 1;
+}
+
+/**
+ * Toda âncora de um arquivo de diagrama escrito à mão, com a coleção e o item onde ela mora (a fonte de
+ * participante, nó, entidade, tipo, evento e span; a prova de relação, de mensagem, de transição).
+ *
+ * @param  array<string, mixed>  $diagrama
+ * @return list<array{colecao: string, item: string, ancora: array<string, mixed>}>
+ */
+function mapaModeloAncorasDoDiagrama(array $diagrama): array
+{
+    $achadas = [];
+
+    $coletar = static function (mixed $no, string $colecao, string $item) use (&$coletar, &$achadas): void {
+        if (! is_array($no)) {
+            return;
+        }
+
+        if (array_key_exists('arquivo', $no) || array_key_exists('trecho', $no)) {
+            $achadas[] = ['colecao' => $colecao, 'item' => $item, 'ancora' => $no];
+
+            return;
+        }
+
+        foreach ($no as $filho) {
+            $coletar($filho, $colecao, $item);
+        }
+    };
+
+    foreach ($diagrama as $colecao => $itens) {
+        if (! is_array($itens) || ! array_is_list($itens)) {
+            $coletar($itens, (string) $colecao, (string) $colecao);
+
+            continue;
+        }
+
+        foreach ($itens as $indice => $item) {
+            $id = is_array($item) && isset($item['id']) && is_scalar($item['id']) ? (string) $item['id'] : "#{$indice}";
+            $coletar($item, (string) $colecao, $id);
+        }
+    }
+
+    return $achadas;
+}
+
+/**
+ * R9, CT-53: a guarda da R9 — arquivo versionado, trecho fora de comentário pela sintaxe do tipo, sem número de
+ * linha e com as chaves fechadas — sobre a evidência de cada peça do modelo de peças e sobre toda âncora dos
+ * diagramas escritos à mão (os sem `construtor`).
+ *
+ * @param  list<array<string, mixed>>  $pecas
+ * @param  array<string, array<string, mixed>>  $diagramas
+ * @param  array<string, string>  $sobrescritas
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirAncoras(array $pecas, array $diagramas, array $sobrescritas = []): array
+{
+    $violacoes  = [];
+    $conferidas = 0;
+    $porColecao = [];
+
+    $conferir = static function (string $nome, mixed $ancora, string $colecao) use (&$violacoes, &$conferidas, &$porColecao, $sobrescritas): void {
+        $ancora    = is_array($ancora) ? $ancora : [];
+        $resultado = mapaModeloConferirProva($nome, $ancora['arquivo'] ?? null, $ancora['trecho'] ?? null, array_diff_key($ancora, ['arquivo' => 1, 'trecho' => 1]), $sobrescritas);
+        $conferidas++;
+        $porColecao[$colecao] = ($porColecao[$colecao] ?? 0) + 1;
+
+        if (! $resultado['aceita']) {
+            $violacoes[] = $resultado['motivo'];
+        }
+    };
+
+    foreach ($pecas as $peca) {
+        foreach (is_array($peca['evidencia'] ?? null) ? $peca['evidencia'] : [] as $ancora) {
+            $conferir("a evidência da peça {$peca['id']}", $ancora, 'pecas');
+        }
+    }
+
+    foreach ($diagramas as $slug => $diagrama) {
+        if (array_key_exists('construtor', $diagrama)) {
+            continue;
+        }
+
+        foreach (mapaModeloAncorasDoDiagrama($diagrama) as ['colecao' => $colecao, 'item' => $item, 'ancora' => $ancora]) {
+            $conferir("o diagrama {$slug}, em {$colecao}, {$item}", $ancora, $colecao);
+        }
+    }
+
+    return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'porColecao' => $porColecao]);
+}
+
+/**
+ * R36, CT-54: todo id que um arquivo de diagrama construído (com `construtor`) nomeia — a peça desenhada e o
+ * membro de agrupamento — é peça do modelo de peças. Lê o arquivo, e não o desenho: o gerador some com o id
+ * desconhecido no diagrama de um modo e o põe cru no card no de dois modos (step 9, achado A8).
+ *
+ * @param  array<string, array<string, mixed>>  $diagramas
+ * @param  list<array<string, mixed>>  $pecas
+ * @return array<string, mixed>
+ */
+function mapaModeloConferirIdsConstruidos(array $diagramas, array $pecas): array
+{
+    $doModelo   = array_flip(array_column($pecas, 'id'));
+    $violacoes  = [];
+    $arquivos   = [];
+    $conferidos = 0;
+
+    foreach ($diagramas as $slug => $diagrama) {
+        if (! array_key_exists('construtor', $diagrama)) {
+            continue;
+        }
+
+        $arquivos[$slug] = ['paineis' => count($diagrama['paineis'] ?? []), 'modos' => count($diagrama['modos'] ?? [])];
+
+        foreach ($diagrama['pecas'] ?? [] as $desenhada) {
+            $conferidos++;
+            $id = (string) ($desenhada['id'] ?? '');
+
+            if (! isset($doModelo[$id])) {
+                $violacoes[] = "o diagrama {$slug} desenha a peça {$id}, que não é peça do modelo";
             }
+        }
 
-            $arquivos[$slug] = ['paineis' => count($diagrama['paineis'] ?? []), 'modos' => count($diagrama['modos'] ?? [])];
-
-            foreach ($diagrama['pecas'] ?? [] as $desenhada) {
+        foreach ($diagrama['agrupamentos'] ?? [] as $grupo) {
+            foreach ($grupo['membros'] ?? [] as $membro) {
                 $conferidos++;
-                $id = (string) ($desenhada['id'] ?? '');
 
-                if (! isset($doModelo[$id])) {
-                    $violacoes[] = "o diagrama {$slug} desenha a peça {$id}, que não é peça do modelo";
-                }
-            }
-
-            foreach ($diagrama['agrupamentos'] ?? [] as $grupo) {
-                foreach ($grupo['membros'] ?? [] as $membro) {
-                    $conferidos++;
-
-                    if (! isset($doModelo[$membro])) {
-                        $violacoes[] = "o diagrama {$slug} põe {$membro} no agrupamento {$grupo['id']}, e {$membro} não é peça do modelo";
-                    }
+                if (! isset($doModelo[$membro])) {
+                    $violacoes[] = "o diagrama {$slug} põe {$membro} no agrupamento {$grupo['id']}, e {$membro} não é peça do modelo";
                 }
             }
         }
-
-        return mapaModeloResultado($violacoes, ['arquivos' => $arquivos, 'conferidos' => $conferidos]);
     }
+
+    return mapaModeloResultado($violacoes, ['arquivos' => $arquivos, 'conferidos' => $conferidos]);
 }
 
 /*
@@ -2843,10 +2721,7 @@ if (! function_exists('mapaModeloConferirIdsConstruidos')) {
 
 it('[CT-52] a linha que o build dá a cada prova é a do código: o trecho está fora de comentário nela', function (string $mundo): void {
     // Dado o node do ambiente, lido pela versão: sem ele o caso reprova, e não pula (Q21)
-    $node = Process::run(['node', '--version']);
-
-    expect($node->successful())->toBeTrue('o node não respondeu: '.$node->errorOutput())
-        ->and(trim($node->output()))->toMatch('/^v\d+\.\d+\.\d+$/');
+    expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+$/');
 
     if ($mundo === 'publicados') {
         $diagramas = array_filter(diagramasDoMapa(), static fn (array $diagrama): bool => ($diagrama['tipo'] ?? null) !== 'compare');
