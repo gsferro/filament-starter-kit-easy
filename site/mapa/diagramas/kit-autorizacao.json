@@ -34,45 +34,46 @@
     },
     {
       "id": "App\\Providers\\KitServiceProvider",
-      "row": 4,
-      "col": 0
-    },
-    {
-      "id": "Filament\\Sentinel\\SentinelServiceProvider",
-      "row": 5,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\PermissaoDaTela",
-      "row": 6,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\PoliciesDeVendor",
       "row": 0,
       "col": 1
     },
     {
-      "id": "App\\Support\\AdministradorDaInstalacao",
+      "id": "Filament\\Sentinel\\SentinelServiceProvider",
       "row": 1,
       "col": 1
     },
     {
-      "id": "App\\Models\\User",
+      "id": "App\\Support\\PermissaoDaTela",
       "row": 2,
       "col": 1
     },
     {
-      "id": "App\\Support\\AparenciaDoUsuario",
+      "id": "App\\Support\\PoliciesDeVendor",
       "row": 3,
       "col": 1
+    },
+    {
+      "id": "App\\Support\\AdministradorDaInstalacao",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Models\\User",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\AparenciaDoUsuario",
+      "row": 2,
+      "col": 2
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

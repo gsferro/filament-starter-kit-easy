@@ -56,90 +56,91 @@
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\AuditoriaRecente",
-      "row": 8,
-      "col": 0
+      "row": 0,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\AutenticacaoStats",
-      "row": 9,
-      "col": 0
+      "row": 1,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\ComposerReleaseOverviewWidget",
-      "row": 10,
-      "col": 0
+      "row": 2,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\FilasPorFila",
-      "row": 11,
-      "col": 0
+      "row": 3,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\FilasStats",
-      "row": 12,
-      "col": 0
+      "row": 4,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\FilasTaxaDeSucesso",
-      "row": 13,
-      "col": 0
+      "row": 5,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\IaCustoPorTask",
-      "row": 14,
-      "col": 0
+      "row": 6,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\IaExecucoesPorDia",
-      "row": 15,
-      "col": 0
+      "row": 7,
+      "col": 1
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\IaExecucoesPorStatus",
-      "row": 16,
-      "col": 0
+      "row": 0,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\IaStats",
-      "row": 17,
-      "col": 0
+      "row": 1,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\IaTokensPorDriver",
-      "row": 18,
-      "col": 0
+      "row": 2,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\PacotesComposer",
-      "row": 19,
-      "col": 0
+      "row": 3,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoPorStatus",
-      "row": 20,
-      "col": 0
+      "row": 4,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoStats",
-      "row": 21,
-      "col": 0
+      "row": 5,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\UltimoBackup",
-      "row": 22,
-      "col": 0
+      "row": 6,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Infra\\Widgets\\UltimosAcessos",
-      "row": 23,
-      "col": 0
+      "row": 7,
+      "col": 2
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

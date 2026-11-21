@@ -92,17 +92,22 @@ function camadas() {
 }
 
 const camada = camadas();
-const colunas = Math.max(2, Math.min(diagrama.layout?.cols ?? 6, Math.max(...camada.values()) + 1));
-const porColuna = new Map();
-for (const caixa of caixas) {
-  const col = Math.min(camada.get(caixa.chave), colunas - 1);
-  porColuna.set(col, [...(porColuna.get(col) ?? []), caixa.chave]);
-}
-const linhas = Math.max(...[...porColuna.values()].map((v) => v.length)) + 1;
+/*
+ * Grade equilibrada: o visualizador encolhe o desenho alto até caber na tela, e uma coluna só de 24 caixas
+ * derruba o texto abaixo do piso de leitura (ADR-07). As caixas vão, na ordem das camadas, para cerca de
+ * √(1,5·n) colunas, até o teto do mapa — quem registra e usa continua à esquerda de quem é usado.
+ */
+// `layout.teto` (campo do kit) limita as colunas; `layout.cols` é a grade que o archify recebe.
+const colunas = Math.max(2, Math.min(diagrama.layout?.teto ?? 4, Math.max(Math.ceil(Math.sqrt(caixas.length * 1.5)), Math.max(...camada.values()) + 1)));
+diagrama.layout = { ...diagrama.layout, cols: colunas }; // a grade do archify já com as colunas desta busca
+const porColunaInicial = Math.ceil(caixas.length / colunas);
+const linhas = porColunaInicial + 1;
 
-/** A grade inicial: coluna pela camada, linha pela ordem na coluna. */
+/** A grade inicial: em ordem de camada, enchendo uma coluna de cada vez. */
 let melhor = new Map();
-for (const [col, chaves] of porColuna) chaves.forEach((chave, row) => melhor.set(chave, { row, col }));
+[...caixas]
+  .sort((a, b) => camada.get(a.chave) - camada.get(b.chave))
+  .forEach((caixa, i) => melhor.set(caixa.chave, { row: i % porColunaInicial, col: Math.floor(i / porColunaInicial) }));
 let { nota: melhorNota, erro: ultimoErro } = avaliar(melhor);
 console.log(`[mapa] layout ${slug} — tentativa 0: ${melhorNota} diagnósticos`);
 

@@ -51,73 +51,73 @@
     },
     {
       "id": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
-      "row": 7,
-      "col": 0
-    },
-    {
-      "id": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
-      "row": 8,
-      "col": 0
-    },
-    {
-      "id": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
-      "row": 9,
-      "col": 0
-    },
-    {
-      "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
-      "row": 10,
-      "col": 0
-    },
-    {
-      "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
-      "row": 11,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\AparenciaDoUsuario",
       "row": 0,
       "col": 1
     },
     {
-      "id": "App\\Support\\AvatarDeIniciais",
-      "row": 12,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\CarregamentoDaTabela",
-      "row": 13,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\DashboardDinamico",
+      "id": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
       "row": 1,
       "col": 1
     },
     {
+      "id": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\AparenciaDoUsuario",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\AvatarDeIniciais",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\CarregamentoDaTabela",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\DashboardDinamico",
+      "row": 4,
+      "col": 2
+    },
+    {
       "id": "App\\Support\\DensidadeDoLayout",
-      "row": 0,
+      "row": 5,
       "col": 2
     },
     {
       "id": "App\\Support\\DockDeAtalhos",
-      "row": 14,
-      "col": 0
+      "row": 0,
+      "col": 2
     },
     {
       "id": "App\\Support\\ModoDoMenu",
-      "row": 1,
+      "row": 6,
       "col": 2
     },
     {
       "id": "App\\Support\\TamanhoDaFonte",
-      "row": 15,
-      "col": 0
+      "row": 1,
+      "col": 2
     },
     {
       "id": "App\\Support\\TetoDeUpload",
-      "row": 16,
-      "col": 0
+      "row": 2,
+      "col": 2
     }
   ],
   "layout": {
@@ -125,6 +125,7 @@
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

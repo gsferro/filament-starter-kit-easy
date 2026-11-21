@@ -43,65 +43,66 @@
     },
     {
       "id": "App\\Support\\AssinaturaDoRodape",
-      "row": 6,
-      "col": 0
-    },
-    {
-      "id": "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
-      "row": 7,
-      "col": 0
-    },
-    {
-      "id": "App\\Services\\Dashboard\\CriadorDeDashboardPadrao",
       "row": 0,
       "col": 1
     },
     {
-      "id": "App\\Support\\ImportExport\\ExportadorDoKit",
-      "row": 8,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\ImportExport\\ImportadorDoKit",
-      "row": 9,
-      "col": 0
-    },
-    {
-      "id": "App\\Observers\\TenantObserver",
-      "row": 10,
-      "col": 0
-    },
-    {
-      "id": "App\\Models\\Tenant",
+      "id": "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
       "row": 1,
       "col": 1
     },
     {
-      "id": "App\\Support\\DashboardDinamico",
+      "id": "App\\Services\\Dashboard\\CriadorDeDashboardPadrao",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\ImportExport\\ExportadorDoKit",
       "row": 2,
       "col": 1
     },
     {
-      "id": "App\\Support\\AgentesDeIa",
+      "id": "App\\Support\\ImportExport\\ImportadorDoKit",
       "row": 3,
       "col": 1
     },
     {
-      "id": "App\\Support\\CarregamentoDaTabela",
+      "id": "App\\Observers\\TenantObserver",
       "row": 4,
       "col": 1
     },
     {
+      "id": "App\\Models\\Tenant",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DashboardDinamico",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\AgentesDeIa",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\CarregamentoDaTabela",
+      "row": 3,
+      "col": 2
+    },
+    {
       "id": "App\\Support\\Paineis",
-      "row": 5,
-      "col": 1
+      "row": 4,
+      "col": 2
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

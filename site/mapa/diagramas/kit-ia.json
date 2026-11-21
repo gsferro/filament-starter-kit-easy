@@ -20,7 +20,7 @@
     {
       "id": "App\\Ai\\Middleware\\AiAuditMiddleware",
       "row": 0,
-      "col": 1
+      "col": 2
     },
     {
       "id": "App\\Ai\\Middleware\\BudgetGuardMiddleware",
@@ -29,22 +29,22 @@
     },
     {
       "id": "App\\Ai\\Guardrails\\FiltroSaidaSensivelMiddleware",
-      "row": 7,
-      "col": 1
+      "row": 5,
+      "col": 0
     },
     {
       "id": "App\\Ai\\Guardrails\\GarantirPromptSeguroMiddleware",
-      "row": 2,
+      "row": 0,
       "col": 1
     },
     {
       "id": "App\\Ai\\Guardrails\\PiiRedactorMiddleware",
-      "row": 3,
+      "row": 1,
       "col": 1
     },
     {
       "id": "App\\Ai\\Guardrails\\PromptInjectionGuardMiddleware",
-      "row": 4,
+      "row": 2,
       "col": 1
     },
     {
@@ -54,8 +54,8 @@
     },
     {
       "id": "App\\Ai\\Agents\\Assistente",
-      "row": 9,
-      "col": 0
+      "row": 3,
+      "col": 1
     },
     {
       "id": "App\\Support\\Casts\\BooleanoFlexivelCast",
@@ -64,45 +64,46 @@
     },
     {
       "id": "App\\Ai\\Agents\\GuardaPrompt",
-      "row": 6,
-      "col": 1
+      "row": 1,
+      "col": 2
     },
     {
       "id": "App\\Ai\\Guardrails\\GuardrailRegistry",
-      "row": 11,
-      "col": 1
-    },
-    {
-      "id": "App\\Ai\\Guardrails\\PiiRedactor",
-      "row": 1,
-      "col": 1
-    },
-    {
-      "id": "App\\Ai\\Exceptions\\PromptInjecaoBloqueadaException",
       "row": 4,
       "col": 0
     },
     {
+      "id": "App\\Ai\\Guardrails\\PiiRedactor",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Ai\\Exceptions\\PromptInjecaoBloqueadaException",
+      "row": 3,
+      "col": 2
+    },
+    {
       "id": "App\\Ai\\Support\\ResolvedorDeTenant",
-      "row": 10,
+      "row": 4,
       "col": 1
     },
     {
       "id": "App\\Data\\Ia\\VeredictoDoGuardrailData",
-      "row": 8,
-      "col": 1
+      "row": 4,
+      "col": 2
     },
     {
       "id": "App\\Support\\AgentesDeIa",
-      "row": 9,
+      "row": 5,
       "col": 1
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

@@ -368,7 +368,7 @@ function mapaDeArquitetura(diagrama) {
       meta: { quality_profile: diagrama.qualidade ?? 'standard' },
       layout: {
         mode: 'grid',
-        ...Object.fromEntries(Object.entries(diagrama.layout ?? {}).filter(([k]) => k !== 'tamanho')),
+        ...Object.fromEntries(Object.entries(diagrama.layout ?? {}).filter(([k]) => k !== 'tamanho' && k !== 'teto')),
         cellW: Math.max(diagrama.layout?.cellW ?? 0, maior + 20),
       },
       components,

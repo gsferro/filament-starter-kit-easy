@@ -46,52 +46,52 @@
     },
     {
       "id": "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
-      "row": 6,
-      "col": 0
+      "row": 0,
+      "col": 1
     },
     {
       "id": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
-      "row": 7,
-      "col": 0
+      "row": 1,
+      "col": 1
     },
     {
       "id": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
-      "row": 8,
-      "col": 0
+      "row": 2,
+      "col": 1
     },
     {
       "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
-      "row": 9,
-      "col": 0
+      "row": 3,
+      "col": 1
     },
     {
       "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
-      "row": 10,
-      "col": 0
+      "row": 4,
+      "col": 1
     },
     {
       "id": "App\\Support\\AparenciaDoUsuario",
       "row": 0,
-      "col": 1
+      "col": 2
     },
     {
       "id": "App\\Support\\DashboardDinamico",
       "row": 1,
-      "col": 1
+      "col": 2
     },
     {
       "id": "App\\Support\\DensidadeDoLayout",
-      "row": 0,
+      "row": 2,
       "col": 2
     },
     {
       "id": "App\\Support\\DockDeAtalhos",
-      "row": 11,
-      "col": 0
+      "row": 5,
+      "col": 1
     },
     {
       "id": "App\\Support\\ModoDoMenu",
-      "row": 1,
+      "row": 3,
       "col": 2
     }
   ],
@@ -100,6 +100,7 @@
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

@@ -14,8 +14,8 @@
   "pecas": [
     {
       "id": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
-      "row": 0,
-      "col": 1
+      "row": 2,
+      "col": 2
     },
     {
       "id": "App\\Http\\Middleware\\ExigirEmailVerificado",
@@ -59,85 +59,86 @@
     },
     {
       "id": "Laravel\\Socialite\\SocialiteServiceProvider",
-      "row": 8,
-      "col": 0
+      "row": 0,
+      "col": 1
     },
     {
       "id": "App\\Support\\AparenciaDasTelasDeAcesso",
-      "row": 9,
-      "col": 0
-    },
-    {
-      "id": "App\\Notifications\\ConfirmarVinculoSocial",
-      "row": 10,
-      "col": 0
-    },
-    {
-      "id": "App\\Http\\Controllers\\Auth\\EntrarNoPainelController",
-      "row": 11,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\GerenciadorAntiRobo",
       "row": 1,
       "col": 1
     },
     {
-      "id": "App\\Http\\Controllers\\Auth\\LoginSocialController",
-      "row": 12,
-      "col": 0
-    },
-    {
-      "id": "App\\Data\\Social\\PerfilSocialData",
-      "row": 13,
-      "col": 0
-    },
-    {
-      "id": "App\\Notifications\\PrimeiroAcessoSocial",
-      "row": 14,
-      "col": 0
-    },
-    {
-      "id": "App\\Http\\Responses\\RespostaDeCadastro",
-      "row": 15,
-      "col": 0
-    },
-    {
-      "id": "App\\Http\\Responses\\RespostaDeLogin",
-      "row": 16,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\VerificacaoAntiRobo",
-      "row": 17,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\ConfiguracaoDoLogin",
+      "id": "App\\Notifications\\ConfirmarVinculoSocial",
       "row": 2,
       "col": 1
     },
     {
-      "id": "App\\Support\\DestinoAposLogin",
+      "id": "App\\Http\\Controllers\\Auth\\EntrarNoPainelController",
       "row": 3,
       "col": 1
     },
     {
-      "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+      "id": "App\\Support\\GerenciadorAntiRobo",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Http\\Controllers\\Auth\\LoginSocialController",
       "row": 4,
       "col": 1
     },
     {
-      "id": "App\\Support\\RegistroAberto",
+      "id": "App\\Data\\Social\\PerfilSocialData",
       "row": 5,
       "col": 1
+    },
+    {
+      "id": "App\\Notifications\\PrimeiroAcessoSocial",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Http\\Responses\\RespostaDeCadastro",
+      "row": 7,
+      "col": 1
+    },
+    {
+      "id": "App\\Http\\Responses\\RespostaDeLogin",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\VerificacaoAntiRobo",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\ConfiguracaoDoLogin",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DestinoAposLogin",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+      "row": 7,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\RegistroAberto",
+      "row": 6,
+      "col": 2
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

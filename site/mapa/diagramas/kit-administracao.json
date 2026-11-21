@@ -14,13 +14,13 @@
   "pecas": [
     {
       "id": "App\\Policies\\AgenteIaPolicy",
-      "row": 0,
-      "col": 0
+      "row": 3,
+      "col": 1
     },
     {
       "id": "App\\Policies\\OnboardingConditionPolicy",
-      "row": 1,
-      "col": 0
+      "row": 2,
+      "col": 1
     },
     {
       "id": "App\\Policies\\OnboardingFlowPolicy",
@@ -29,35 +29,36 @@
     },
     {
       "id": "Laravel\\Ai\\AiServiceProvider",
-      "row": 3,
+      "row": 1,
       "col": 0
     },
     {
       "id": "App\\Ai\\Agents\\AgenteBase",
-      "row": 4,
-      "col": 0
+      "row": 1,
+      "col": 1
     },
     {
       "id": "App\\Ai\\Exceptions\\AgenteInativoException",
-      "row": 5,
-      "col": 0
+      "row": 0,
+      "col": 1
     },
     {
       "id": "App\\Settings\\ConfiguracoesDoKit",
-      "row": 6,
+      "row": 0,
       "col": 0
     },
     {
       "id": "App\\Models\\AgenteIa",
-      "row": 0,
-      "col": 1
+      "row": 3,
+      "col": 0
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

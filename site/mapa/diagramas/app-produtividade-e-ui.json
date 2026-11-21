@@ -51,73 +51,73 @@
     },
     {
       "id": "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
-      "row": 7,
-      "col": 0
-    },
-    {
-      "id": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
-      "row": 8,
-      "col": 0
-    },
-    {
-      "id": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
-      "row": 9,
-      "col": 0
-    },
-    {
-      "id": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
-      "row": 10,
-      "col": 0
-    },
-    {
-      "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
-      "row": 11,
-      "col": 0
-    },
-    {
-      "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
-      "row": 12,
-      "col": 0
-    },
-    {
-      "id": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
-      "row": 13,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\AparenciaDoUsuario",
       "row": 0,
       "col": 1
     },
     {
-      "id": "App\\Support\\AvatarDeIniciais",
-      "row": 14,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\DashboardDinamico",
+      "id": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
       "row": 1,
       "col": 1
     },
     {
-      "id": "App\\Support\\DensidadeDoLayout",
+      "id": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\AparenciaDoUsuario",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\AvatarDeIniciais",
       "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DashboardDinamico",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DensidadeDoLayout",
+      "row": 5,
       "col": 2
     },
     {
       "id": "App\\Support\\DockDeAtalhos",
-      "row": 15,
-      "col": 0
-    },
-    {
-      "id": "App\\Support\\ModoDoMenu",
       "row": 1,
       "col": 2
     },
     {
+      "id": "App\\Support\\ModoDoMenu",
+      "row": 6,
+      "col": 2
+    },
+    {
       "id": "App\\Support\\TetoDeUpload",
-      "row": 2,
-      "col": 1
+      "row": 4,
+      "col": 2
     }
   ],
   "layout": {
@@ -125,6 +125,7 @@
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

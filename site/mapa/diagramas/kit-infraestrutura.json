@@ -39,55 +39,56 @@
     },
     {
       "id": "App\\Policies\\ComposerReleasePackageSnapshotPolicy",
-      "row": 5,
-      "col": 0
+      "row": 0,
+      "col": 1
     },
     {
       "id": "App\\Policies\\ExceptionPolicy",
-      "row": 6,
-      "col": 0
+      "row": 1,
+      "col": 1
     },
     {
       "id": "App\\Policies\\MailLogPolicy",
-      "row": 7,
-      "col": 0
+      "row": 2,
+      "col": 1
     },
     {
       "id": "App\\Policies\\QueueMonitorPolicy",
-      "row": 8,
-      "col": 0
+      "row": 3,
+      "col": 1
     },
     {
       "id": "App\\Listeners\\AuditarConfiguracoesDoKit",
-      "row": 9,
-      "col": 0
+      "row": 4,
+      "col": 1
     },
     {
       "id": "App\\Traits\\AuditsFillables",
-      "row": 10,
-      "col": 0
+      "row": 0,
+      "col": 2
     },
     {
       "id": "App\\Ai\\Health\\LocalAiCheck",
-      "row": 11,
-      "col": 0
+      "row": 1,
+      "col": 2
     },
     {
       "id": "App\\Ai\\Listeners\\RegistrarAiRun",
-      "row": 12,
-      "col": 0
+      "row": 2,
+      "col": 2
     },
     {
       "id": "Dotswan\\FilamentLaravelPulse\\Widgets\\PulseServers",
-      "row": 13,
-      "col": 0
+      "row": 3,
+      "col": 2
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

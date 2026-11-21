@@ -21,44 +21,45 @@
     {
       "id": "Filament\\Http\\Middleware\\IdentifyTenant",
       "row": 1,
-      "col": 0
+      "col": 1
     },
     {
       "id": "App\\Models\\Projeto",
-      "row": 2,
+      "row": 1,
       "col": 0
     },
     {
       "id": "App\\Models\\Tenant",
-      "row": 3,
-      "col": 0
+      "row": 2,
+      "col": 1
     },
     {
       "id": "App\\Traits\\BelongsToTenant",
-      "row": 0,
+      "row": 3,
       "col": 1
     },
     {
       "id": "App\\Support\\ContextoDePapeis",
-      "row": 4,
+      "row": 3,
       "col": 0
     },
     {
       "id": "App\\Support\\CorPrimaria",
-      "row": 5,
-      "col": 0
+      "row": 0,
+      "col": 1
     },
     {
       "id": "App\\Support\\SeletorDeOrganizacao",
-      "row": 6,
+      "row": 2,
       "col": 0
     }
   ],
   "layout": {
-    "cols": 2,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

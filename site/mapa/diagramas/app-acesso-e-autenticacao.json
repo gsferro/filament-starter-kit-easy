@@ -16,12 +16,12 @@
   "pecas": [
     {
       "id": "App\\Livewire\\DefinirSenhaPorEmail",
-      "row": 0,
+      "row": 1,
       "col": 1
     },
     {
       "id": "App\\Livewire\\InformacoesPessoais",
-      "row": 1,
+      "row": 2,
       "col": 1
     },
     {
@@ -41,33 +41,33 @@
     },
     {
       "id": "App\\Models\\User",
-      "row": 0,
-      "col": 3
+      "row": 6,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Pages\\MyProfilePage",
-      "row": 2,
-      "col": 1
-    },
-    {
-      "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
       "row": 3,
       "col": 1
     },
     {
-      "id": "App\\Filament\\Pages\\Auth\\TelaLogin",
+      "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
       "row": 4,
       "col": 1
     },
     {
-      "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+      "id": "App\\Filament\\Pages\\Auth\\TelaLogin",
       "row": 5,
       "col": 1
     },
     {
-      "id": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+      "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
       "row": 6,
       "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+      "row": 0,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
@@ -91,40 +91,41 @@
     },
     {
       "id": "App\\Filament\\App\\Resources\\Users\\UserResource",
-      "row": 7,
-      "col": 0
+      "row": 0,
+      "col": 1
     },
     {
       "id": "App\\Support\\ConfiguracaoDoLogin",
-      "row": 0,
-      "col": 2
-    },
-    {
-      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
       "row": 1,
       "col": 2
     },
     {
-      "id": "App\\Support\\DestinoAposLogin",
+      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
       "row": 2,
       "col": 2
     },
     {
-      "id": "App\\Support\\EmailComMais",
+      "id": "App\\Support\\DestinoAposLogin",
       "row": 3,
       "col": 2
     },
     {
-      "id": "App\\Support\\RegistroAberto",
+      "id": "App\\Support\\EmailComMais",
       "row": 4,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\RegistroAberto",
+      "row": 5,
       "col": 2
     }
   ],
   "layout": {
-    "cols": 4,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }

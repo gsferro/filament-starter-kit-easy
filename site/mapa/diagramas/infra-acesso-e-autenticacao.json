@@ -41,8 +41,8 @@
     },
     {
       "id": "App\\Models\\User",
-      "row": 0,
-      "col": 3
+      "row": 4,
+      "col": 2
     },
     {
       "id": "App\\Filament\\Pages\\MyProfilePage",
@@ -86,35 +86,36 @@
     },
     {
       "id": "App\\Support\\ConfiguracaoDoLogin",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
       "row": 0,
       "col": 2
     },
     {
-      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
-      "row": 3,
-      "col": 2
-    },
-    {
       "id": "App\\Support\\DestinoAposLogin",
-      "row": 2,
-      "col": 2
-    },
-    {
-      "id": "App\\Support\\EmailComMais",
       "row": 1,
       "col": 2
     },
     {
+      "id": "App\\Support\\EmailComMais",
+      "row": 2,
+      "col": 2
+    },
+    {
       "id": "App\\Support\\RegistroAberto",
-      "row": 4,
+      "row": 3,
       "col": 2
     }
   ],
   "layout": {
-    "cols": 4,
+    "cols": 3,
     "cellW": 230,
     "cellH": 64,
     "gapX": 80,
-    "gapY": 44
+    "gapY": 44,
+    "teto": 3
   }
 }
