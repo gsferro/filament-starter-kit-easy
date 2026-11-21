@@ -45,6 +45,19 @@ if (diagrama.construtor !== 'mapa') {
   console.error(`[mapa] ${slug} não é um mapa de arquitetura construído do modelo`);
   process.exit(2);
 }
+// O mapa que é base ou cabeça de um comparativo também tem de valer na forma que o comparativo recebe; os outros
+// diagramas são lidos antes de qualquer efeito, e o quebrado é recusado nomeando o arquivo (P-14).
+const doComparativo = readdirSync(fileURLToPath(new URL('./diagramas/', import.meta.url)))
+  .filter((nome) => nome.endsWith('.json'))
+  .map((nome) => {
+    try {
+      return JSON.parse(readFileSync(fileURLToPath(new URL(`./diagramas/${nome}`, import.meta.url)), 'utf8'));
+    } catch (erro) {
+      console.error(`[mapa] ERRO site/mapa/diagramas/${nome} — JSON inválido: ${erro.message}`);
+      process.exit(2);
+    }
+  })
+  .some((outro) => outro.tipo === 'compare' && [outro.base, outro.cabeca].includes(slug));
 const cli = obterArchify();
 const catalogoPt = JSON.parse(readFileSync(fileURLToPath(new URL('../.archify/archify/examples/locales/pt.json', import.meta.url)), 'utf8'));
 const temporaria = mkdtempSync(join(tmpdir(), 'posicionar-'));
@@ -55,12 +68,6 @@ const caixas = [
   ...(diagrama.agrupamentos ?? []).map((c) => ({ origem: c, chave: c.id })),
   ...(diagrama.portas ?? []).map((c) => ({ origem: c, chave: `porta-${c.para}` })),
 ];
-
-// O mapa que é base ou cabeça de um comparativo também tem de valer na forma que o comparativo recebe.
-const doComparativo = readdirSync(fileURLToPath(new URL('./diagramas/', import.meta.url)))
-  .filter((nome) => nome.endsWith('.json'))
-  .map((nome) => JSON.parse(readFileSync(fileURLToPath(new URL(`./diagramas/${nome}`, import.meta.url)), 'utf8')))
-  .some((outro) => outro.tipo === 'compare' && [outro.base, outro.cabeca].includes(slug));
 
 /** Os diagnósticos que o archify dá para uma entrada; zero é aceita. */
 function validar(ir) {

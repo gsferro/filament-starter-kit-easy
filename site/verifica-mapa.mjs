@@ -195,7 +195,8 @@ function esperadoDoMapa(d, idioma) {
   const modos = d.modos;
   const existe = (id) => (pecasDoModelo.get(id)?.registrada ?? []).some((modo) => modos.includes(modo));
   const desenhadas = d.pecas.filter(({ id }) => existe(id)).map(({ id }) => pecasDoModelo.get(id));
-  const agrupamentos = (d.agrupamentos ?? []).map((g) => ({ ...g, membros: g.membros.filter(existe) }));
+  // A caixa que o filtro de modo esvazia não é desenhada (P-13), e o esperado também não a pede.
+  const agrupamentos = (d.agrupamentos ?? []).map((g) => ({ ...g, membros: g.membros.filter(existe) })).filter((g) => g.membros.length);
   const idsDesenhados = new Set(desenhadas.map((p) => p.id));
   const grupoDe = new Map(agrupamentos.flatMap((g) => g.membros.map((membro) => [membro, g.id])));
   const ponta = (id) => (idsDesenhados.has(id) ? idNoDesenho(id) : (grupoDe.get(id) ?? null));

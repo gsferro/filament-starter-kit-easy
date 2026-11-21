@@ -84,49 +84,55 @@ const interfaceDoKit = lerJson(fileURLToPath(new URL('./interface.json', import.
 const textos = new Map();
 
 /**
- * As faixas de comentário de um arquivo, pela sintaxe do tipo dele — a mesma régua da guarda da R9 (D34): em PHP,
- * `//`, `#` (fora de `#[`) e `/* *\/`, com as strings puladas; em Blade, `{{-- --}}` e `<!-- -->`; em JS e stub,
- * `//` e `/* *\/`; em YAML e `.env`, `#` no começo da linha ou depois de espaço; em Markdown, `<!-- -->`.
+ * As faixas de comentário de um PHP, como o tokenizador do PHP as vê (`T_COMMENT` e `T_DOC_COMMENT`, a régua da
+ * guarda da R9): `//` e `#` (fora de `#[`) até o fim da linha ou o `?>`, e `/* *\/`. Antes do `<?php` e depois do
+ * `?>` é HTML, e string — entre aspas, heredoc e nowdoc — não tem comentário (re-revisão, RR-03).
  */
-function faixasDeComentario(arquivo, texto) {
-  const nome = arquivo.toLowerCase();
-  const delimitadas = (pares) => {
-    const faixas = [];
-    for (const [abre, fecha] of pares) {
-      for (let i = texto.indexOf(abre); i >= 0; i = texto.indexOf(abre, i + 1)) {
-        const fim = texto.indexOf(fecha, i + abre.length);
-        faixas.push([i, fim < 0 ? texto.length : fim + fecha.length]);
-      }
-    }
-    return faixas;
-  };
-  const deCodigo = (cerquilha, aspas) => {
-    const faixas = [];
-    for (let i = 0; i < texto.length; i++) {
+function comentariosDoPhp(texto) {
+  const faixas = [];
+  const fimOuTudo = (indice) => (indice < 0 ? texto.length : indice);
+  const abertura = /<\?(?:php|=)/g;
+  const heredoc = /<<<[ \t]*(['"]?)([A-Za-z_\x80-￿][\w\x80-￿]*)\1\r?\n/y;
+  for (let i = 0; ; i += 2) {
+    abertura.lastIndex = i;
+    const tag = abertura.exec(texto);
+    if (!tag) return faixas;
+    for (i = tag.index + tag[0].length; i < texto.length && !texto.startsWith('?>', i); i++) {
       const c = texto[i];
-      if (aspas.includes(c)) {
+      heredoc.lastIndex = i;
+      const cabeca = heredoc.exec(texto);
+      if (cabeca) {
+        const fecho = new RegExp(`^[ \\t]*${cabeca[2]}(?![\\w\\x80-\\uffff])`, 'gm');
+        fecho.lastIndex = i + cabeca[0].length;
+        const fim = fecho.exec(texto);
+        i = fim ? fecho.lastIndex - 1 : texto.length;
+      } else if (c === "'" || c === '"' || c === '`') {
         for (i++; i < texto.length && texto[i] !== c; i++) if (texto[i] === '\\') i++;
       } else if (c === '/' && texto[i + 1] === '*') {
         const fim = texto.indexOf('*/', i + 2);
         faixas.push([i, fim < 0 ? texto.length : fim + 2]);
         i = fim < 0 ? texto.length : fim + 1;
-      } else if ((c === '/' && texto[i + 1] === '/') || (cerquilha && c === '#' && texto[i + 1] !== '[')) {
-        const fim = texto.indexOf('\n', i);
-        faixas.push([i, fim < 0 ? texto.length : fim]);
-        i = fim < 0 ? texto.length : fim;
+      } else if ((c === '/' && texto[i + 1] === '/') || (c === '#' && texto[i + 1] !== '[')) {
+        const fim = Math.min(fimOuTudo(texto.indexOf('\n', i)), fimOuTudo(texto.indexOf('?>', i)));
+        faixas.push([i, fim]);
+        i = fim - 1;
       }
     }
-    return faixas;
-  };
-  if (nome.endsWith('.blade.php')) return delimitadas([['{{--', '--}}'], ['<!--', '-->']]);
-  if (nome.endsWith('.php')) return deCodigo(true, ['"', "'"]);
-  if (/\.(m?js|cjs|ts|stub)$/.test(nome)) return deCodigo(false, ['"', "'", '`']);
-  if (/\.ya?ml$/.test(nome) || /(^|\/)\.env/.test(nome)) {
-    const faixas = [];
-    for (const m of texto.matchAll(/(^|[ \t])#[^\n]*/gm)) faixas.push([m.index + m[1].length, m.index + m[0].length]);
-    return faixas;
   }
-  if (nome.endsWith('.md')) return delimitadas([['<!--', '-->']]);
+}
+
+/**
+ * As faixas de comentário de um arquivo, pela sintaxe do tipo dele, com a mesma régua da guarda da R9
+ * (`mapaModeloMascararComentarios()`, D34): PHP pelo tokenizador; Blade, `{{-- --}}` e `<!-- -->`; JS e stub, `/* *\/`
+ * e `//` (fora de `://`); YAML e `.env`, `#` no começo da linha ou depois de espaço; Markdown, `<!-- -->`.
+ */
+function faixasDeComentario(arquivo, texto) {
+  const porRegex = (padrao) => [...texto.matchAll(padrao)].map((m) => [m.index, m.index + m[0].length]);
+  if (arquivo.endsWith('.blade.php')) return porRegex(/\{\{--[\s\S]*?--\}\}|<!--[\s\S]*?-->/g);
+  if (arquivo.endsWith('.php')) return comentariosDoPhp(texto);
+  if (/\.(m?js|ts|stub)$/.test(arquivo)) return porRegex(/\/\*[\s\S]*?\*\/|(?<![:\w])\/\/[^\n]*/g);
+  if (/\.ya?ml$/.test(arquivo) || arquivo.split('/').pop().startsWith('.env')) return porRegex(/(?<=^|[ \t])#[^\n]*/gm);
+  if (arquivo.endsWith('.md')) return porRegex(/<!--[\s\S]*?-->/g);
   return [];
 }
 
@@ -138,13 +144,13 @@ function linhaDaAncora(arquivo, trecho) {
   const texto = textos.get(arquivo);
   if (!comentarios.has(arquivo)) comentarios.set(arquivo, faixasDeComentario(arquivo, texto));
   const faixas = comentarios.get(arquivo);
-  const emComentario = (indice) => faixas.some(([inicio, fim]) => indice >= inicio && indice < fim);
+  const tocaComentario = (indice) => faixas.some(([inicio, fim]) => indice < fim && indice + trecho.length > inicio);
   let posicao = texto.indexOf(trecho);
   if (posicao < 0) {
     throw new Error(`o trecho ${JSON.stringify(trecho)} não está em ${arquivo} na revisão ${revisao.slice(0, 7)}`);
   }
-  // A linha da prova é a do código: a ocorrência num comentário (um docblock que cita a linha) é pulada (R9, CT-52).
-  while (posicao >= 0 && emComentario(posicao)) posicao = texto.indexOf(trecho, posicao + 1);
+  // A linha da prova é a do código: a ocorrência que toca um comentário (um docblock que cita a linha) é pulada (R9, CT-52).
+  while (posicao >= 0 && tocaComentario(posicao)) posicao = texto.indexOf(trecho, posicao + 1);
   if (posicao < 0) {
     throw new Error(`o trecho ${JSON.stringify(trecho)} só aparece em comentário em ${arquivo} na revisão ${revisao.slice(0, 7)}`);
   }
@@ -166,7 +172,8 @@ function projetar(valor, idioma) {
     return projetar(valor[idioma], idioma);
   }
   if ('arquivo' in valor && 'trecho' in valor) {
-    const { arquivo, trecho, ...resto } = valor;
+    // a linha e o arquivo do link são só os que o gerador acha: `line`, `end_line` e `path` da âncora não passam (RR-04)
+    const { arquivo, trecho, line, end_line, path, ...resto } = valor;
     return { ...projetar(resto, idioma), ...linhaDaAncora(arquivo, trecho) };
   }
   return Object.fromEntries(chaves.map((chave) => [chave, projetar(valor[chave], idioma)]));
@@ -323,15 +330,9 @@ function arvoreDeRegistro(diagrama) {
   };
 }
 
-/**
- * Mapa de arquitetura (resumo ou domínio): as peças do recorte, os agrupamentos que nomeiam os membros
- * (P-10) e as portas para outros mapas, na grade do arquivo; as ligações são as do modelo entre o que está
- * desenhado, no painel e no modo do diagrama, com o verbo no traço e a prova em card.
- */
-function mapaDeArquitetura(diagrama) {
-  const { pecas, ligacoes } = carregarModelo();
-  const modo = diagrama.modos.length === 1 ? diagrama.modos[0] : null;
-  // Diagrama de um modo só não desenha nem agrupa peça que o painel não registra nesse modo (P-09).
+/** A peça desenhada e o membro de agrupamento de um mapa construído que não estão no modelo são recusados (P-14). */
+function conferirPecasDoMapa(diagrama) {
+  const { pecas } = carregarModelo();
   for (const { id } of diagrama.pecas) {
     if (!pecas.has(id)) throw new Error(`a peça ${id} do diagrama não está no modelo`);
   }
@@ -340,6 +341,18 @@ function mapaDeArquitetura(diagrama) {
       if (!pecas.has(membro)) throw new Error(`o membro ${membro} do agrupamento ${g.id} não está no modelo`);
     }
   }
+}
+
+/**
+ * Mapa de arquitetura (resumo ou domínio): as peças do recorte, os agrupamentos que nomeiam os membros
+ * (P-10) e as portas para outros mapas, na grade do arquivo; as ligações são as do modelo entre o que está
+ * desenhado, no painel e no modo do diagrama, com o verbo no traço e a prova em card.
+ */
+function mapaDeArquitetura(diagrama) {
+  const { pecas, ligacoes } = carregarModelo();
+  const modo = diagrama.modos.length === 1 ? diagrama.modos[0] : null;
+  conferirPecasDoMapa(diagrama);
+  // Diagrama de um modo só não desenha nem agrupa peça que o painel não registra nesse modo (P-09).
   const existe = (id) => !modo || (pecas.get(id)?.registrada ?? []).includes(modo);
   diagrama = {
     ...diagrama,
@@ -358,7 +371,6 @@ function mapaDeArquitetura(diagrama) {
   const components = [
     ...diagrama.pecas.map(({ id, row, col }) => {
       const peca = pecas.get(id);
-      if (!peca) throw new Error(`a peça ${id} não está no modelo`);
       return {
         id: idArchify(id),
         type: TIPO_ARCHIFY[peca.tipo],
@@ -500,14 +512,16 @@ function completarCatalogoEmbutido(destino, idioma) {
   const achado = html.match(embutido);
   if (!achado) throw new Error('o HTML não tem o catálogo embutido (archify-i18n-data)');
   const dados = JSON.parse(achado[2]);
-  dados.messages = { ...chaves, ...dados.messages };
+  // o nome do kit vence: é o que o conferidor espera no passaporte (CT-B04), mesmo se o archify ganhar a chave (R2-5)
+  dados.messages = { ...dados.messages, ...chaves };
   const json = JSON.stringify(dados).replace(/</g, '\\u003c');
   writeFileSync(destino, html.replace(embutido, (_, abre, __, fecha) => `${abre}${json}${fecha}`));
 }
 
 /**
- * O que, na pasta de saída, o gerador não gerou: tudo o que não é `pt/` ou `en/` com HTML dentro. A pasta que não
- * existe é aceita; o arquivo no lugar da pasta, não.
+ * O que, na pasta de saída, o gerador não gerou: tudo o que não é `pt/` ou `en/` com o HTML do mapa dentro — e o
+ * recibo do `compare`, que uma geração interrompida deixa ao lado do HTML (R2-3). A pasta que não existe é aceita;
+ * o arquivo no lugar da pasta, não.
  */
 function arquivosQueOGeradorNaoGerou(saida) {
   if (!existsSync(saida)) return [];
@@ -515,12 +529,12 @@ function arquivosQueOGeradorNaoGerou(saida) {
   const estranhos = [];
   for (const nome of readdirSync(saida)) {
     const caminho = join(saida, nome);
-    if (!(nome in IDIOMAS) || !statSync(caminho).isDirectory()) {
+    if (!Object.hasOwn(IDIOMAS, nome) || !statSync(caminho).isDirectory()) {
       estranhos.push(nome);
       continue;
     }
     for (const arquivo of readdirSync(caminho)) {
-      if (!arquivo.endsWith('.html') || !statSync(join(caminho, arquivo)).isFile()) estranhos.push(`${nome}/${arquivo}`);
+      if (!/\.(html|receipt\.json)$/.test(arquivo) || !statSync(join(caminho, arquivo)).isFile()) estranhos.push(`${nome}/${arquivo}`);
     }
   }
   return estranhos;
@@ -578,6 +592,14 @@ function gerar(argumentos) {
   const porSlug = new Map(diagramas.map((diagrama) => [diagrama.slug, diagrama]));
   const desconhecidos = pedidos.filter((slug) => !porSlug.has(slug));
   if (desconhecidos.length) throw new Error(`[mapa] ERRO — diagrama inexistente: ${desconhecidos.join(', ')}`);
+  // A peça fora do modelo também, em todo mapa construído, como o JSON quebrado (RR-01).
+  for (const diagrama of diagramas.filter((d) => d.construtor === 'mapa')) {
+    try {
+      conferirPecasDoMapa(diagrama);
+    } catch (erro) {
+      throw new Error(`[mapa] ERRO ${diagrama.slug} — ${erro.message}`);
+    }
+  }
   // Sem slug, a pasta de saída é refeita: só se ela não tiver nada que o gerador não gerou (o HTML do mapa em pt/ e en/).
   if (!pedidos.length) {
     const estranhos = arquivosQueOGeradorNaoGerou(saida);
