@@ -1,72 +1,73 @@
 # Progresso — Mapa interativo do kit com a skill archify
 
-**Estado**: em implementação (passo 1, em paralelo com a re-revisão adversarial única do step 7, que não bloqueia o esqueleto e bloqueia os despachos de `fw-executor-ct` e `fw-executor-ctb`)
+**Estado**: em implementação — passos 1 a 10 entregues e as guardas verdes (passo 8); a seguir, a revisão do diff (step 9), a reconciliação (step 10), o quality gate (step 11) e o PR
 
 > Base do PR (`{base}`): `main` · Branch: `feat/mapa-interativo-do-kit`
 
 ## 1. Esqueleto andante — um diagrama de cada tipo, do modelo ao `dist/`, num clone raso no Linux
 - [x] `site/mapa/archify.mjs` baixa e confere o commit declarado — 3,9 s no primeiro download (142 MB, raso), sem rede nas seguintes; num contêiner limpo também
-- [x] `site/mapa/interface.json` *(desvio: era `pt-BR.json`)* com as 25 chaves que faltam no catálogo do archify e as sobrescritas de tipo de peça (D2, D12)
-- [x] `site/.gitignore` com `.archify/`
-- [x] `site/verifica-mapa.mjs` com a amostra e a tolerância da ADR-06 (D17), e o passo dele no `pages.yml` e no job `site` do `ci.yml`; os CT-B do `05` entram no passo 8 (`fw-executor-ctb`)
-- [x] Um diagrama de cada tipo e um comparativo, pt e en, por `npm run build`, `verifica-links`, `verifica-acessibilidade` e `verifica-mapa` (42 HTML na amostra, 11 tipos; tolerados 40 `nested-interactive` e 4 `color-contrast`) num `git clone --depth 1` dentro de `mcr.microsoft.com/playwright:v1.63.0-noble`
-- [x] Cinco conferências inéditas: saída en (o passaporte diz "PACKAGE", e nenhum "Frontend", "Cloud", "Message bus" ou "Backend" no texto visível); `verifica-links` sobre o HTML do archify (0 quebrado); `--repo-root` num clone raso de 1 commit (o build passou com a prova conferida); download pelo commit num contêiner limpo. O piso de 6,5 px **não** foi medido pelo `visual-check` do archify (ver a nota), e fica com a medição do conferidor do mapa (CT-B do `05`)
-- [x] Tempos: `render` ≈ 0,36 s por HTML (26 HTML em 15 s no Windows; build inteiro com o mapa em 19 s no Linux); `verifica-mapa` na amostra em 19 s; `visual-check` de 1,2 a 17 s por HTML. Decisão: amostra (ADR-06), e o `visual-check` fica fora do CI
+- [x] `site/mapa/interface.json` *(desvio: era `pt-BR.json`)* com as 25 chaves que faltam no catálogo do archify e as sobrescritas de tipo de peça (D2, D12) — commit `ae5d20fa`; a seção `foraDoCatalogo` entrou no `89ac5121`
+- [x] `site/.gitignore` com `.archify/` — commit `ae5d20fa`
+- [x] `site/verifica-mapa.mjs` com a amostra e a tolerância da ADR-06 (D17), e o passo dele no `pages.yml` e no job `site` do `ci.yml`; os CT-B do `05` entram no passo 8 (`fw-executor-ctb`) — commits `ae5d20fa` e `4c2ca275`; CT-25 e CT-42 verdes
+- [x] Um diagrama de cada tipo e um comparativo, pt e en, por `npm run build`, `verifica-links`, `verifica-acessibilidade` e `verifica-mapa` — 42 HTML na amostra, 11 tipos; tolerados 40 `nested-interactive` e 4 `color-contrast`; num `git clone --depth 1` dentro de `mcr.microsoft.com/playwright:v1.63.0-noble`
+- [x] Cinco conferências inéditas — saída en (o passaporte diz "PACKAGE", e nenhum "Frontend", "Cloud", "Message bus" ou "Backend" no texto visível); `verifica-links` sobre o HTML do archify (0 quebrado); `--repo-root` num clone raso de 1 commit (o build passou com a prova conferida); download pelo commit num contêiner limpo. O piso de 6,5 px **não** foi medido pelo `visual-check` do archify (ver a nota), e fica com a medição do conferidor do mapa (CT-B do `05`)
+- [x] Tempos — `render` ≈ 0,36 s por HTML (26 HTML em 15 s no Windows; build inteiro com o mapa em 19 s no Linux); `verifica-mapa` na amostra em 19 s; `visual-check` de 1,2 a 17 s por HTML. Decisão: amostra (ADR-06), e o `visual-check` fica fora do CI
 
 ## 2. Modelo do mapa — peças, ligações e diagramas
-- [ ] `site/mapa/pecas.json` e `ligacoes.json` normalizados das varreduras, com ids estáveis entre os modos
-- [ ] `site/mapa/diagramas/{slug}.json` — architecture com layout, trees de registro e os curados (ERD, classes, tempos); a contagem fechada registrada aqui
-- [ ] `site/mapa/posicionar.mjs` (desenvolvimento)
-- [ ] Evidência em âncora de trecho, conferida contra a revisão do branch
+- [x] `site/mapa/pecas.json` e `ligacoes.json` normalizados das varreduras, com ids estáveis entre os modos — commits `40b4fc24`, `bfde932d` e `dc4f25ef`: 284 peças e 413 ligações, cada peça com os modos em que existe (`registrada`); CT-08 a CT-13 verdes
+- [x] `site/mapa/diagramas/{slug}.json` — architecture com layout, trees de registro e os curados (ERD, classes, tempos); a contagem fechada registrada aqui — 87 arquivos: 36 curados e 51 construídos (46 mapas, 4 árvores de registro e 1 comparativo); commits `40b4fc24`, `4cc9517c`, `bdb7e881`, `dc4f25ef` e `efe38295`
+- [x] `site/mapa/posicionar.mjs` (desenvolvimento) — commits `40b4fc24` e `6c6ef44b` (grade equilibrada para o piso de leitura)
+- [x] Evidência em âncora de trecho, conferida contra a revisão do branch — o gerador resolve a linha pelo `git show` do commit do build; CT-09 verde e CT-B03 (o link do passaporte no commit do build) verde
 
 ## 3. Fluxos bilíngues
-- [ ] `site/mapa/diagramas/{slug}.json` dos fluxos da matriz, escritos a partir do código (D5)
-- [ ] Texto en traduzido pelo Codex e revisado
+- [x] `site/mapa/diagramas/{slug}.json` dos fluxos da matriz, escritos a partir do código (D5) — commit `4cc9517c` (despacho #14); a ordem do código conferida pelo CT-39, e os passos pelo CT-24, depois das correções do `efe38295`
+- [x] Texto en traduzido pelo Codex e revisado — despachos #11 e #12 (esqueleto e comparativo) e a tradução dos curados (`codex-curados.log` no scratchpad); conferido pelo CT-16 (en sem palavra do pt e título traduzido)
 
 ## 4. Gerador
-- [ ] `site/mapa/gerar.mjs` — construtores de architecture e da tree de registro, e a projeção genérica de idioma e âncoras
-- [ ] `site/package.json` (`build`)
-- [ ] Cards de prova (P-04) em todo diagrama com ligação
-- [ ] `compare architecture` por painel
+- [x] `site/mapa/gerar.mjs` — construtores de architecture e da tree de registro, e a projeção genérica de idioma e âncoras — commits `ae5d20fa`, `40b4fc24`, `bdb7e881` e `89ac5121`
+- [x] `site/package.json` (`build`) — commit `ae5d20fa`: `astro build && node mapa/gerar.mjs`
+- [x] Cards de prova (P-04) em todo diagrama com ligação — CT-B02 verde: 2.898 conferências, um item de prova à vista e inteiro por ligação desenhada
+- [x] `compare architecture` por painel — um comparativo, o do `/app` (o `/admin` e o `/infra` não mudam de estrutura entre os modos, e o igual não se duplica, P-09); CT-22 verde
 
 ## 5. Catálogo único
-- [ ] Coluna Origem nas oito seções, pt e en
-- [ ] Features novas a partir de F-72
-- [ ] Defasagens corrigidas
-- [ ] Conferência independente pelo Codex
+- [x] Coluna Origem nas oito seções, pt e en — commit `0f38e2fd`: nas dez tabelas (as duas seções de instalação e de desenvolvimento entraram no fim); CT-01 verde
+- [x] Features novas a partir de F-72 — F-72 a F-121, sem buraco nem sufixo; CT-04 verde
+- [x] Defasagens corrigidas — 16, sem trocar número (despacho #13); CT-03 verde
+- [x] Conferência independente pelo Codex — *(desvio)* a conferência independente do catálogo ficou com as guardas do G1a (CT-01 a CT-05 e CT-35, 688 asserções), escritas por executor que não viu o plano nem a implementação, e não com o Codex
 
 ## 6. Página do mapa no site
-- [ ] `docs/{pt,en}/referencia/mapa-interativo.md`
-- [ ] Slug, stub e redirect (diff do conversor só com a página nova)
-- [ ] Links no índice de referência e na página de diagramas
+- [x] `docs/{pt,en}/referencia/mapa-interativo.md` — commits `e7d6eb52`, `bdb7e881`, `12ed91e0` e `efe38295`; CT-15 e CT-34 verdes
+- [x] Slug, stub e redirect (diff do conversor só com a página nova) — commit `e7d6eb52`
+- [x] Links no índice de referência e na página de diagramas — commit `e7d6eb52`
 
 ## 7. README
-- [ ] Seção do mapa em pt e en
-- [ ] Contadores
+- [x] Seção do mapa em pt e en — commit `e7d6eb52`; CT-26 verde
+- [x] Contadores — commit `47512761`
 
 ## 8. Guardas
-- [ ] `tests/Kit/MapaInterativoTest.php`
-- [ ] `tests/Tenancy/MapaInterativoTenancyTest.php`
+- [x] `tests/Kit/MapaInterativoTest.php` (e os outros três arquivos do Kit, ver `## Testes`) — commit `4c2ca275`
+- [x] `tests/Tenancy/MapaInterativoTenancyTest.php` — 13 casos verdes, commit `4c2ca275`
 
 ## 9. Rule do catálogo
-- [ ] `.ai/rules/catalogo-de-features.md` e a linha no índice
+- [x] `.ai/rules/catalogo-de-features.md` e a linha no índice — commit `4adaf9ae`; CT-07 verde
 
 ## 10. Documentação de manutenção e CHANGELOG
-- [ ] `docs/{pt,en}/operacao/desenvolvendo-o-kit.md`
-- [ ] `CHANGELOG.md` (`[Unreleased]`)
+- [x] `docs/{pt,en}/operacao/desenvolvendo-o-kit.md` — commit `4adaf9ae` (seção "Como o mapa interativo é gerado")
+- [x] `CHANGELOG.md` (`[Unreleased]`) — commit `47512761`
 
 ## 11. PR com CI verde
 - [ ] PR aberto para `main`
 - [ ] CI verde
 
 ## Testes
-*(alterado em 2026-11-20: o lote G1 e o G2 do `04` foram divididos em três arquivos, para executores paralelos com
-dono único por arquivo; os CT seguem os mesmos)*
-- [ ] `tests/Kit/MapaInterativoCatalogoTest.php` — G1: R1 a R5, R7, R21 (CT-23), R23, R25, R26, R27, R33
-- [ ] `tests/Kit/MapaInterativoTest.php` — G2, modelo: R8, R9, R10, R11 (CT-11, CT-13), R28 (CT-29, CT-41), R35, R36, R37
-- [ ] `tests/Kit/MapaInterativoDiagramasTest.php` — G2, diagramas e página: R6, R12, R15 a R20, R22, R29, R34 (CT-37)
-- [ ] `tests/Tenancy/MapaInterativoTenancyTest.php` (CT-12, CT-30, CT-38, CT-44)
-- [ ] `site/verifica-mapa.mjs` (CT-B01 a CT-B07) — conferidor Node + Playwright do site construído (D17); o
+*(alterado em 2026-11-20: o lote G1 e o G2 do `04` foram divididos em quatro arquivos, para executores paralelos com
+dono único por arquivo; os CT seguem os mesmos. O G1 virou dois no redespacho #17, depois da queda por contexto)*
+- [x] `tests/Kit/MapaInterativoCatalogoTest.php` — G1, catálogo: R1 a R5 (CT-01 a CT-05, CT-35) — 45 casos, 688 asserções, verdes
+- [x] `tests/Kit/MapaInterativoPublicacaoTest.php` — G1, publicação: R7, R21 (CT-23), R23 (CT-25, CT-42), R25, R26, R27, R33 — 27 casos, verdes
+- [x] `tests/Kit/MapaInterativoTest.php` — G2, modelo: R8, R9, R10, R11 (CT-11, CT-13), R28 (CT-29, CT-41), R35, R36, R37 — 81 casos, verdes
+- [x] `tests/Kit/MapaInterativoDiagramasTest.php` — G2, diagramas e página: R6, R12, R15 a R20, R22, R29, R34 (CT-37) — 90 casos, verdes
+- [x] `tests/Tenancy/MapaInterativoTenancyTest.php` (CT-12, CT-30, CT-38, CT-44) — 13 casos, verdes
+- [x] `site/verifica-mapa.mjs` (CT-B01 a CT-B07) — 87 diagramas × 2 idiomas, 0 reprovação (CT-B01 2.070 conferências, CT-B02 2.898) — conferidor Node + Playwright do site construído (D17); o
   `ids-ct.sh` só lê `it()`/`test()` do Pest e acusa estes sete como sem teste, por desenho; a conferência deles é o
   próprio conferidor no `pages.yml` e no job `site` do `ci.yml`
 
@@ -103,6 +104,11 @@ Não fatiado — 2026-11-20: 26 RQ vigentes, 41 CT (dois deles estacionados na Q
 
 | Rule | Glob que casou | Aplicada / n.a. / violada | Evidência |
 |---|---|---|---|
+| `.ai/rules/catalogo-de-features.md` | `docs/pt/operacao/roteiro-de-features.md`, `docs/en/operacao/roteiro-de-features.md` | aplicada | o número só cresce: o catálogo ganhou F-72 a F-121 em sequência, e a correção do passo 8 mudou só a origem da F-97 (`filament/actions`), sem trocar, reaproveitar ou remover número; CT-01 a CT-05 e CT-07 verdes |
+| `.ai/rules/kit.md` | `tests/Kit/**` | n.a. | a regra única (o `Livewire::test` leva cabeçalho e query só na montagem) não se aplica: as guardas do mapa não montam componente Livewire |
+| `.ai/rules/specs.md` | `wikis/specs/**` | aplicada | citação de vendor por símbolo (`vendor/filament/filament/src/Panel/Concerns/HasComponents.php:getPages:442` na revisão profunda), citação de teste pelo ID do CT; `citacoes.sh` silencioso |
+| `.ai/rules/testes.md` | `tests/**` | aplicada, depois de corrigida | o contrato dos executores (helper só no próprio arquivo, sem acesso ao `tests/Pest.php`) produziu clones com outro nome nos cinco arquivos de guarda, o que a seção "Helper de teste usado por mais de um arquivo vive em `tests/Pest.php`" proíbe; o despacho #19 os juntou em 13 helpers do `tests/Pest.php` (`motivoDeEnfeite`, `modeloDoMapa`, `registroVivoDoPainel`, `linhasDoCatalogo`, `arquivoDaClasse`…), com as cópias antigas rodando à sombra das novas em toda chamada real e as contagens do JUnit iguais antes e depois; todo caso que lê `docs/`, README, `site/` ou a wiki pula fora da árvore do kit, e o motivo do pulo não escreve o caminho (CT-10 do `RedeDeDocumentacaoTest`); citação de CT antigo em docblock vai sem colchete |
+| `.ai/rules/testes-browser.md` | `tests/Browser/**` (`RoteiroDoKitTest.php`) | n.a. | só o docblock do roteiro mudou (o roteiro saiu do README para o catálogo do site); nenhum cenário de navegador novo; os CT-B do mapa rodam no conferidor Node do site construído, fora do `pest-plugin-browser` (D17) |
 
 ## Quality Gate
 
@@ -173,12 +179,37 @@ Roteiro manual: não — 2026-11-20 — sem resposta a Q5 — a entrega é um si
 | 12 | 1 | Codex CLI 0.163.0 — tradução en dos 35 textos do par r1 do comparativo do `/app` | gpt-6.1-sol | idem #11 | 35 chaves | 7.221 tokens | D24 idem; `git status` idêntico antes e depois; 35 chaves, nenhuma faltando, nenhuma curta que cresceu |
 | 13 | 5 | `general-purpose` — catálogo único: dono exclusivo das F-72 em diante, coluna Origem, as defasagens (F-07 en), os 4 pacotes da referência e o mapa de ids provisórios → F-nn em `catalogo-mapa.json` | opus | a conversa | 124 F-nn por idioma (74 da base + F-72 a F-121, uma por id provisório da pesquisa, P-01 a P-50, nenhum descartado); coluna Origem nas 10 tabelas (67 pacote com customização, 53 código próprio, 4 pacote; as seções "Instalação e operação" e "Desenvolvimento" entraram no fim); os seis itens do README casam por palavra inteira (F-93, F-94, F-95, F-73, F-74, F-76); todo caminho do "Onde" resolve (os `/app/{org}…` só com tenant); 16 defasagens corrigidas sem trocar número (F-06, F-07 en, F-17, F-26, F-30, F-31, F-32, F-33, F-41, F-44, F-45, F-50, F-53, F-54, F-61, F-68); a referência lista os 91 pacotes dos manifestos; `catalogo-mapa.json` com o mapa de ids provisórios, a tabela README → F-nn e as listas sugeridas para a guarda | 715.214 tokens · 55 min | contagens refeitas por `grep -c` (124/50 nos dois idiomas); 4 linhas amostradas (F-73, F-76, F-93, F-102 em pt; F-76, F-93 em en) com o termo, a Origem e o link da página; `git status` só com os quatro arquivos do pedido e os diagramas dos autores do #14; testes do pedido 613/616 — a falha pré-existente do contador e os dois `[CT-22]` do link da sessão para a página do mapa, que ainda não existia. Pendências que o agente apontou fora dos seus arquivos foram devolvidas a ele na tarefa seguinte (#15) |
 | 15 | 2 | o agente do #13 (`SendMessage`) — associação peça → F-nn pela R6, lista das sem feature própria pela R28 e F-nn sem peça, com a peça proposta; e as três pendências de documentação que ele achou | opus | idem #13 | 238 peças com F-nn, 3 na lista das sem feature própria (o `Controller` base, o `BooleanoDoEnv` e o `NumeroDoEnv`), 27 F-nn sem peça (21 com peça proposta e prova; 6 impossíveis, das quais F-100 e F-113 só na parte do pacote); origens e "onde fica" do catálogo ajustados à peça real nos dois idiomas; as três pendências de documentação corrigidas; um defeito novo do kit (com `BROADCAST_CONNECTION=reverb` o polling do sininho desliga e o Echo não está configurado: o sininho nunca atualiza) | 961.766 tokens · 21 min, depois de interrompido e retomado | o modelo regenerado com os arquivos dele: 267 peças, 253 com F-nn, nenhuma proposta recusada pela âncora; o piso da P-12 fechado (235 peças, nenhuma sem F-nn fora da lista); só 4 F-nn do catálogo sem peça (as da D33); testes do site 88/88, com o `[CT-22]` verde |
-| 16 | 8 | Workflow `wf_52cdca17-14b` — 5 executores em paralelo, um arquivo cada: `fw-executor-ct` nos lotes G1 (catálogo), G2a (modelo), G2b (diagramas e página) e G3 (tenancy), e `fw-executor-ctb` no G4 (CT-B no `site/verifica-mapa.mjs`); contrato em `brief-executores.md` | herdado dos agentes | o `01`, o `02` e a conversa | em curso | — | — |
+| 16 | 8 | Workflow `wf_52cdca17-14b` — 5 executores em paralelo, um arquivo cada: `fw-executor-ct` nos lotes G1 (catálogo), G2a (modelo), G2b (diagramas e página) e G3 (tenancy), e `fw-executor-ctb` no G4 (CT-B no `site/verifica-mapa.mjs`); contrato em `brief-executores.md` | sonnet (do agente) | o `01`, o `02` e a conversa | 2 de 5 devolveram: G3 com 4 CT verdes (13 testes) e 3 correções do `04`; G4 com 7 CT-B, 5 verdes e 2 vermelhos de implementação (a F-nn abreviada com "+N" no `tag`, contra o CT-B01; o tipo `class` sem tradução no passaporte, contra o CT-B04) e 5 correções do `05`. G1, G2a e G2b terminaram sem devolver — no teto de 40 turnos do agente (`maxTurns: 40` do `fw-executor-ct`), e não por contexto, como a sessão supôs de início *(corrigido em 2026-11-20, depois do #17: as transcrições acabam no meio de um passo, e o frontmatter do agente tem o teto)*: G1 não gravou nada; G2a e G2b deixaram os 10 e os 15 CT dos seus lotes escritos, com 6 e 9 vermelhos sem classificação | 1.150.422 tokens · 25 min | a sessão rodou os dois arquivos parciais (81 testes, 75 verdes; 89 testes, 73 verdes) e conferiu o `git status`: só os arquivos dos lotes. Os dois vermelhos do G4 decididos pela sessão: o "+N" fica (o archify recusa o `tag` largo, e a caixa larga derrubaria o piso de leitura da ADR-07), com o `05` corrigido para exigir as três primeiras F-nn e "+N" no desenho e a linha inteira no card "F-nn de cada peça" (causa a, D29 emendada); o `class` ganhou `viewer.kind.class` e `viewer.kind.abstract` no catálogo pt do kit (`site/mapa/interface.json`, causa b) |
+| 17 | 8 | Workflow `wf_97ad8881-688` — redespacho: `fw-executor-ct` em G1a (catálogo, R1–R5, arquivo novo `MapaInterativoCatalogoTest.php`), G1b (publicação, R7, R21, R23, R25–R27, R33, arquivo novo `MapaInterativoPublicacaoTest.php`), T2a e T2b (triagem dos 6 e dos 9 vermelhos dos arquivos parciais do #16), com o `04` lido só pelos intervalos de linha de cada regra | opus (sobreposição da sessão, pelo diagnóstico errado de contexto) | o `01`, o `02` e a conversa | 4 de 4 sem texto, de novo no teto de 40 turnos: G1a e G1b não gravaram; o T2a corrigiu o CT-08 (verde) e parou no meio do CT-39; o T2b não editou. Agente de workflow não se retoma por `SendMessage` (sem transcrição alcançável) | 622.282 tokens · 16 min | `git status` e contagem de linhas: só o `MapaInterativoTest.php` mudou (2.347 → 2.461 linhas); o run da sessão depois: 81 testes, 76 verdes (CT-10 ×4 e CT-39 vermelhos); o de diagramas, igual (9 vermelhos) |
+| 18 | 8 | `Agent` (retomável por `SendMessage` no teto de turnos) — os mesmos quatro lotes do #17, com o recorte do `04` de cada um num arquivo (`scratchpad/lotes/{G1a,G1b,T2a,T2b}.md`: Setup Global, as regras do lote e o Índice), para caber nos 40 turnos; G1a e T2b retomados uma vez pelo `SendMessage` | opus (sobreposição da sessão) | o `01`, o `02` e a conversa | 4 de 4 devolveram, todos dentro do teto. G1a: 6 CT, 45 casos verdes, 2 correções do `04` (a F-99 dos exemplos existe hoje; 15 itens do README da base sem F-nn, e não 6) — retomado para os termos dos 15. G1b: 8 CT, 27 casos, 1 vermelho b (CT-34: a página descrevia o segundo defeito do archify em prosa) e a lista dos 17 pacotes sem feature própria. T2a: os 5 vermelhos são b — CT-10 (o modelo não tinha as peças dos exemplos do `04`) e CT-39 (6 pares fora da ordem do código em 4 fluxos). T2b: 9 vermelhos — b no CT-06/CT-36 (10 F-nn sem peça de `vendor/`), CT-16, CT-21 e CT-24 (17 passos); a no CT-14 (motivo cortado) e no CT-19 (a ligação desenhada é a que o construtor faz aresta); retomado para a correção da R22, achou 7 erros escondidos do CT-31 (o leitor do CHANGELOG do teste) e, corrigido, o vermelho b dos 13 marcos | G1a 227.708 + 243.876 tokens · 22 min + 1 min; G1b 232.608 · 22 min; T2a 165.643 · 14 min; T2b 220.703 + 260.430 · 12 min + 4 min | a sessão corrigiu toda divergência b na implementação (commits `dc4f25ef`, `efe38295`, `89ac5121`) e gravou as correções a no `04`/`05`; rodou os cinco arquivos com JUnit (256 casos, 0 erro, 0 falha, 0 pulado — o JSON do Pest não conta erro, e foi assim que o CT-31 ficou escondido) e o conferidor de browser (0 reprovação); auditou por fora o CT-14 (as provas dos cards do gerador cobrem 413 de 413 ligações) e amostrou três mudanças de teste: CT-08 (middleware de agente de IA e do `bind`, nota no `04`), CT-14 (corte do motivo) e CT-19 (ligação desenhada pelo construtor) |
+| 19 | 8 | `general-purpose` como construtor — juntar no `tests/Pest.php` os helpers clonados entre os cinco arquivos de guarda (rule `testes.md` e o Setup Global do `04`), com o comportamento preservado | opus | o `01`, o `02`, o `03` e a conversa | 13 helpers canônicos (`motivoDeEnfeite`, `modeloDoMapa`, `modeloDoMapaPorId`, `pecasPorId`, `diagramasDoMapa`, `registroVivoDoPainel`, `classeDoRegistro`, `classeExiste`, `registradasNoModelo`, `arquivoDaClasse`, `fnnDaPeca`, `linhasDoCatalogo`, `arquivosVersionados`) no lugar de 34 cópias; ficaram como estão, com o motivo medido, os pares de semântica diferente (pacotes instalados com e sem os transitivos, as guardas da R11 e da R34 com formatos próprios). Corrigiu também os 11 motivos de `skip()` que escreviam `docs/` e já reprovavam o CT-10 da `RedeDeDocumentacaoTest` | 566.308 tokens · 46 min | a sessão rodou os cinco arquivos, a `HelpersDeTesteTest` e a `RedeDeDocumentacaoTest` com JUnit: 264 e 13 casos, 0 erro, 0 falha, 0 pulado; `git status` só com os seis arquivos de teste e a wiki da sessão |
 | 14 | 3 | Workflow `wf_23c4acca-a3e` — 7 autores de diagramas curados em paralelo, arquivos disjuntos (contrato em `brief-autores.md` no scratchpad): sequências transversais, sequências por painel, workflows `kit:*`, ciclos de vida, fluxos de dados, ERD e classes, linha do tempo e tempos | herdado da sessão | a conversa | 7/7 autores, 0 erro; 36 arquivos de diagrama curado (7 sequências transversais, com a pilha da requisição dividida na comum e na do `/app` com tenant; 5 sequências por painel; 3 workflows `kit:*`; 3 ciclos de vida; 2 fluxos de dados; 10 ERD; 3 de classes, a linha do tempo e 2 cascatas de tempos; o `kit-install-ci` do esqueleto apagado), todos com prova em toda ligação, textos em pt e as linhas `[mapa]` pt e en sem ERRO; o que ficou de fora por falta de prova no kit (passo feito só em `vendor/`) está listado por autor no journal do workflow. Um autor mediu um **defeito do kit**: a poda agendada da trilha de exceções não roda (`TypeError` de `getModelPruneInterval()` com `CarbonImmutable` no console, onde o painel padrão `/app` registra o plugin sem `modelPruneInterval`) — relatado ao mantenedor, não corrigido (RQ-15) | 3.131.596 tokens · 44 min | os 36 renderizados pela sessão com `gerar.mjs --saida` (todos sem ERRO); cada autor conferiu as âncoras com script próprio (primeira ocorrência na linha, fora de comentário, 12+ caracteres, fora de `vendor/`) e os limites da D5, D10 e D21; amostra da sessão: o defeito relatado conferido nos fatos citados (o `->registerNavigation(false)` do `/app` e o `->modelPruneInterval(…)` só no `/infra`) |
 
 ## Blockers
 
 ## Desvios do Plano
+
+Do passo 8 (guardas), 2026-11-20 — o que as guardas pediram à implementação (causa b) e ao oráculo (causa a):
+- **O modelo cresceu de 267 para 284 peças e de 397 para 413 ligações.** A R6 lê "peça do pacote" como classe em
+  `vendor/{pacote}/`, e dez F-nn só tinham classes do kit marcadas com o nome do pacote: entraram as peças de
+  `vendor/` que o kit estende ou usa (RequestPasswordReset, EmailVerification, BackupRunsPage do pacote,
+  CaptchaManager, SettingsPage, DynamicDashboard, BreakdownWidget, Exporter, Data e `Filament\Panel`, que entrega
+  a F-82 pela configuração do painel — sem estender a lista fechada da D33). Os exemplos do código de hoje da R10
+  e os fluxos da R22 pediram TelaBloqueio, LockerScreen, Exception, MailLog, TelaDoisFatores, CreateConvite e
+  ConvitesTable. Doze mapas foram reposicionados; o piso de leitura ficou em 6,67 px no menor (medido no Chromium
+  local, 34 HTML).
+- **A F-97 nomeia `filament/actions`**, o pacote onde o Exporter e o Importer vivem (era `filament/filament`).
+- **O mapa do kit inteiro não desenha o Locker** (R19): a ligação BloquearSessaoComRetorno → Locker passou a valer
+  nos três painéis e é desenhada no `admin-acesso-e-autenticacao`.
+- **O `tag` de F-nn segue abreviado com "+N"** (D29 emendada): o `05` foi corrigido no CT-B01 para exigir as três
+  primeiras F-nn e "+N" no desenho e a linha inteira no card "F-nn de cada peça" (causa a).
+- **O tipo `class` em português no passaporte** (CT-B04): o archify descarta chave fora do catálogo canônico, e o
+  gerador completa o catálogo embutido do HTML pt depois do render.
+- **A R22 ganhou a exceção do depósito no `dataflow`** (causa a, gravada no `04` com uma linha de controle nova):
+  o passo entre dois nós `type: database` não nomeia peça, como o estado do `lifecycle`.
+- **Treze marcos da linha do tempo** trocaram a paráfrase por um trecho da seção da versão no CHANGELOG (R29).
+- **Os testes ficaram em cinco arquivos**, um dono por arquivo; o Índice de Cenários do `04` aponta cada CT ao seu.
+
 
 Do passo 1 (esqueleto andante), 2026-11-20:
 - `site/mapa/pt-BR.json` virou `site/mapa/interface.json`: o arquivo guarda as 25 chaves pt e as sobrescritas
@@ -244,6 +275,13 @@ Dos passos 2 a 6, 2026-11-20:
 - **Tamanho**: 26 HTML do mapa = 26 MB no `dist/` (≈ 0,9 MB cada, o runtime do archify embutido). A matriz
   inteira, perto de 70 diagramas × 2 idiomas, dá ≈ 130 MB — abaixo do limite de 1 GB do site publicado do GitHub
   Pages.
+- **O tipo `class` em inglês no passaporte pt** (guardas, CT-B04, causa b): o visualizador escreve o tipo do nó por
+  `viewer.kind.<tipo>`, e o catálogo do archify fixado só tem os tipos do `architecture` e dos fluxos; para `class`
+  e `abstract` ele escreve o nome cru, em inglês ("Class"). Pôr a chave no `meta.translations` não serve: o
+  archify descarta, em silêncio, toda chave fora do catálogo canônico (medido: o HTML saiu com as 390 de sempre). O
+  gerador passou a completar o catálogo embutido do HTML depois do render com as chaves de `foraDoCatalogo` do
+  `site/mapa/interface.json` (`site/mapa/gerar.mjs:completarCatalogoEmbutido`): "Classe" e "Classe abstrata", só
+  no pt (o en cai no próprio nome, que é o certo). Medido: 392 chaves no pt, 390 no en.
 
 ## Referências Abertas
 

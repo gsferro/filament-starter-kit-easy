@@ -70,7 +70,7 @@
 | R2 — README, páginas do site e mapa só citam F-nn que o catálogo tem, e nenhum deles lista feature por fora dele | A (padrão) | RQ-22, RQ-21, P-08 | EP + controles | CT-02 |
 | R3 — Toda F-nn da base continua com a sua feature, ou fica marcada como removida com o motivo, e a removida não volta | A (padrão) | P-08, RQ-22 | estado × operação + controles | CT-03 |
 | R4 — A feature nova recebe o próximo número livre: a F-72, e as seguintes em sequência, sem buraco e sem sufixo novo | A (padrão) | P-08 | BVA 3-valores (escalada) | CT-04 |
-| R5 — Todo item de feature do README da base e toda página do site correspondem a ao menos uma F-nn — os seis itens que a base não cobre, pelo termo fixado —, ou a página está na lista das que não descrevem feature, com o motivo | A (padrão) | RQ-19, RQ-04, RQ-05, P-02 | EP por fonte + controles | CT-05, CT-35 |
+| R5 — Todo item de feature do README da base e toda página do site correspondem a ao menos uma F-nn — os quinze itens que a base não cobre, pelo termo fixado —, ou a página está na lista das que não descrevem feature, com o motivo | A (padrão) | RQ-19, RQ-04, RQ-05, P-02 | EP por fonte + controles | CT-05, CT-35 |
 | R6 — Toda F-nn vigente é entregue por peça desenhada da origem que ela declara — do pacote que a linha nomeia, ou, no código próprio, da rota do "onde fica" —, com a F-nn no desenho da peça; todo caminho do "onde fica" resolve; e nenhuma peça entrega F-nn removida | A/B (padrão) | RQ-04, RQ-05, RQ-21, P-03, P-10, P-08 | EP por origem + tabela de decisão + controles | CT-06, CT-36, CT-44, CT-B01 (no `05`) |
 | R7 — Manter o catálogo único é uma rule indexada, que alcança os lugares onde a feature nasce e manda o número só crescer | F (mínimo) | RQ-23, P-08 | EP | CT-07 |
 | R8 — Toda peça do modelo é peça com nome que existe, do tipo que a classe dela é, dentro do conjunto fechado, e aparece uma vez | B (padrão) | RQ-24, P-03 | EP + tabela de decisão (classe × tipo) + controles | CT-08 |
@@ -491,7 +491,7 @@ Medido no catálogo da entrega (commit `0f38e2f`, F-72 a F-121): as 50 linhas no
       Exemplos:
         | mundo                                                                                       | resultado                                   |
         | publicados                                                                                  | aceita                                      |
-        | cópia de uma página de `docs/pt/` que cita a F-99                                           | reprova, nomeando a página e a F-99         |
+        | cópia de uma página de `docs/pt/` que cita a F-199                                          | reprova, nomeando a página e a F-199        |
         | cópia do modelo em que uma peça cita a sua feature pelo nome, sem F-nn                      | reprova, nomeando a peça                    |
         | cópia do `README.en.md` que cita uma F-nn que só o catálogo pt tem                          | reprova, nomeando a F-nn e o `README.en.md` |
         | cópia da página do mapa com uma tabela de três F-nn                                         | reprova, nomeando a página                  |
@@ -512,12 +512,14 @@ A varredura cobre o README, `docs/` e `site/mapa/`. Ficam de fora `tests/` e `ap
 
 Medido: nos cards dos 13 arquivos do esqueleto, nenhum item é nome de F-nn. A página do mapa ainda não existe; pelo passo 6 do `01`, as tabelas e listas dela são a grade painel × modo, com `<a href>` em cada célula, os fluxos, a matriz de tipos com o motivo de cada célula vazia e os limites, e nenhuma é lista de nomes de feature.
 
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* A F-nn que o catálogo não tem é a F-199: a F-99 dos exemplos derivados virou feature (UI 100% em pt-BR) na unificação. A guarda confere antes que o catálogo não tem o número da cópia.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M1 | o mapa guarda uma lista própria de features, pelo nome, ao lado do catálogo *(alterado em 2026-11-20: ADV-20, a asserção antiga não divergia)* | CT-02 | linhas "tabela de três F-nn na página do mapa" e "lista de features num arquivo do mapa": reprova nomeando a página ou o arquivo; o mutante aceita |
-| M2 | uma página do site cita número que o catálogo não tem (inventado, ou de antes da unificação) | CT-02 | linha "F-99": reprova nomeando a página; o mutante aceita |
+| M2 | uma página do site cita número que o catálogo não tem (inventado, ou de antes da unificação) | CT-02 | linha "F-199": reprova nomeando a página; o mutante aceita |
 | M3 | o README en cita F-nn que só o catálogo pt ganhou | CT-02 | linha `README.en.md`: reprova; o mutante aceita |
 | M4 | a peça aponta a feature pelo nome, e não pela F-nn | CT-02 | linha "peça cita a feature pelo nome": reprova nomeando a peça; o mutante aceita |
 | M5 — revisão adversarial (ADV2-21) | a lista própria de features vem só com os nomes, sem número, e não acende nenhum dos dois sinais | CT-02 | linhas da lista de três nomes na página do mapa e do card de três nomes: reprova; o mutante aceita |
@@ -619,7 +621,7 @@ A linha "publicado" não é vazia: a base está defasada em relação ao README 
 
 ---
 
-## Regra R5 — Todo item de feature do README da base e toda página do site correspondem a ao menos uma F-nn — os seis itens que a base não cobre, pelo termo fixado —, ou a página está na lista das que não descrevem feature, com o motivo
+## Regra R5 — Todo item de feature do README da base e toda página do site correspondem a ao menos uma F-nn — os quinze itens que a base não cobre, pelo termo fixado —, ou a página está na lista das que não descrevem feature, com o motivo
 
 > `RQ-19`, `RQ-04`, `RQ-05`, `P-02` · perfil **padrão** · técnica: **EP por fonte** + controles em cópia
 
@@ -639,8 +641,8 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
 
       Exemplos:
         | fonte                                  | idioma | itens                       | correspondência                                                    | casamento                                                                                                            |
-        | lista de features do README da base    | pt     | 46                          | a tabela da base congelada na guarda                               | cada um dos seis itens que a base não cobre casa com uma F-nn cuja linha traz o termo pt do item, como palavra inteira (tabela abaixo)      |
-        | lista de features do README da base    | en     | 46                          | a tabela da base congelada na guarda                               | cada um dos seis itens que a base não cobre casa com uma F-nn cuja linha traz o termo en do item, como palavra inteira (tabela abaixo)      |
+        | lista de features do README da base    | pt     | 46                          | a tabela da base congelada na guarda                               | cada um dos quinze itens que a base não cobre casa com uma F-nn cuja linha traz o termo pt do item, como palavra inteira (tabela abaixo)      |
+        | lista de features do README da base    | en     | 46                          | a tabela da base congelada na guarda                               | cada um dos quinze itens que a base não cobre casa com uma F-nn cuja linha traz o termo en do item, como palavra inteira (tabela abaixo)      |
         | todas as páginas de `docs/pt/`         | pt     | as da árvore (39 na base)   | o link da linha do catálogo para a página, ou a lista da guarda    | a linha de cada F-nn casada leva por link à própria página                                                           |
         | todas as páginas de `docs/en/`         | en     | as da árvore (39 na base)   | o link da linha do catálogo para a página, ou a lista da guarda    | a linha de cada F-nn casada leva por link à própria página                                                           |
         | lista de features do README publicado  | pt     | as da lista publicada (46 na base) | o título do item: o da base, pela tabela congelada; o novo, pela tabela da guarda, com a F-nn e o termo | todo item cujo título não é de um dos 46 da base casa com uma F-nn cuja linha traz o termo dele, como palavra inteira |
@@ -656,7 +658,7 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
         | mundo                                                                                                           | resultado                                 | # partição                        |
         | cópia da tabela que casa o item "Dock de atalhos" do README pt com a F-06 (Bloqueio de sessão), cuja linha não traz `dock` | reprova, nomeando o item     | termo ausente da linha casada     |
         | cópia da tabela que casa o item "Dock de atalhos" do README pt com a F-56 (Inferência local), cuja linha traz "docker", e não a palavra `dock` | reprova, nomeando o item | termo só como pedaço de palavra |
-        | cópia da tabela que casa o item "Tutorial guiado" do README pt com a F-99, que o catálogo não tem                | reprova, nomeando o item e a F-99         | F-nn inexistente                  |
+        | cópia da tabela que casa o item "Tutorial guiado" do README pt com a F-199, que o catálogo não tem               | reprova, nomeando o item e a F-199        | F-nn inexistente                  |
         | cópia da lista com a página `recursos/dock-de-atalhos.md`, com motivo                                            | reprova, nomeando a página                | página de recurso na lista        |
         | cópia da lista com a página `comecar/index.md`, sem o motivo                                                     | reprova, nomeando a página                | motivo ausente                    |
         | cópia da lista com a página `comecar/index.md`, com o motivo "—"                                                 | reprova, nomeando a página                | motivo de enfeite                 |
@@ -679,10 +681,23 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
 | Página única de login / Single login page | `página única` | `single login` |
 | Proteção anti-robô opcional / Optional anti-robot protection | `anti-robô` | `anti-robot` |
 | "+" no e-mail do cadastro / "+" in the sign-up e-mail | `"+"` | `"+"` |
+| Aparência das telas de acesso escolhida na tela / Sign-in screen appearance chosen on screen | `telas de acesso` | `sign-in screen` |
+| DTO com `spatie/laravel-data` / DTOs with `spatie/laravel-data` | `Laravel Data` | `Laravel Data` |
+| Login social por painel / Social login per panel | `login social` | `social login` |
+| Desligada por padrão / Off by default | `interruptor` | `switch` |
+| UI 100% em pt-BR, inclusive nos plugins que só trazem inglês / 100% pt-BR UI, including plugins that ship English only | `pt-BR` | `pt-BR` |
+| Aviso de alterações não salvas / Unsaved-changes warning | `não salvas` | `unsaved` |
+| Densidade do layout em três níveis / Layout density in three steps | `densidade` | `density` |
+| Carregamento contínuo de tabela / Continuous table loading | `carregamento contínuo` | `continuous` |
+| Link de acesso direto ao painel de cada organização / Direct link to each organization's panel | `cada organização` | `each organization` |
+
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* Medido no `d9608c5a` com a tabela congelada da guarda: são 15 os itens do README da base sem F-nn na base, e não 6. Os nove a mais (as nove últimas linhas acima) casavam sem termo, e o R5-M6 não os alcançava; agora todos têm termo, e o CT-05 e o CT-35 conferem os quinze. O termo de cada um está na célula "Feature" da F-nn casada (F-75, F-111, F-72, F-84, F-99, F-82, F-83, F-96 e F-87), nos dois idiomas.
 
 *(alterado em 2026-11-20: ADV2-03)* A R5 lê também a lista publicada do README, e não só a da base. O item é reconhecido pelo título: o texto em negrito do começo; sem negrito, o texto antes do primeiro ":", "—" ou "("; e, sem nenhum dos dois, o item inteiro. Medido nos dois READMEs: 46 itens e 46 títulos diferentes por idioma, 26 em negrito, 17 pelo separador e 3 pelo item inteiro. O item cujo título não é de um dos 46 da base fica na tabela da guarda, com a F-nn e o termo, como os seis do ADV-01.
 
 *(alterado em 2026-11-20: ADV-21 e ADV-22)* O CT-35 dá a cada mutante da guarda das fontes uma cópia que o mata, sem depender de a árvore real estar errada.
+
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* A lista das páginas que não descrevem feature mora na guarda do catálogo, com o motivo de cada uma: os seis índices, o próprio catálogo, `operacao/desenvolvendo-o-kit.md`, `referencia/arquitetura-em-diagramas.md`, `referencia/estudo-advanced-tables.md` e `referencia/mapa-interativo.md` (11 por idioma; as quatro últimas são as que o trabalho do catálogo sugeriu, conferidas pela sessão). A marca de removida é a palavra removida/removed na célula "Feature", com o motivo depois do ":".
 
 #### Mutantes previstos
 
@@ -690,7 +705,7 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
 |---|---|---|---|
 | M1 | a unificação esquece um item do README que a base do catálogo não tinha (dock de atalhos, tutorial guiado, "+" no e-mail) | CT-05 | linha README pt: o item fica sem F-nn e a contagem de casados fica abaixo de 46; o mutante aceita |
 | M2 | a lista unificada só entra no catálogo pt | CT-05 | linha README en: reprova; o mutante aceita |
-| M3 | a tabela da guarda aponta F-nn que o catálogo não tem | CT-35 | linha da F-99: reprova; o mutante aceita |
+| M3 | a tabela da guarda aponta F-nn que o catálogo não tem | CT-35 | linha da F-199: reprova; o mutante aceita |
 | M4 | uma página fica sem F-nn e fora da lista, ou entra na lista sem o motivo (a página nova de `comecar/`, criada depois da base) | CT-05, CT-35 | CT-05, linhas de páginas, lidas da árvore: a página sem nenhuma das duas coisas reprova; CT-35, linha "sem o motivo": reprova; o mutante aceita |
 | M5 | página de recurso jogada na lista das que não descrevem feature, para fugir do catálogo | CT-35 | linha `recursos/dock-de-atalhos.md`: reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV-01) | a tabela da guarda, escrita pela mesma mão que escreve o catálogo, casa um item novo do README com a F-nn de outra feature | CT-05, CT-35 | CT-35, linha do dock casado com a F-06: reprova; e, no publicado, o CT-05 exige o termo na linha casada; o mutante aceita |
@@ -770,6 +785,10 @@ O piso de não vácuo é o do CT-01: cada F-nn tem exatamente uma origem, e as t
   - **Na árvore de registro, no sublabel.** O esquema `tree` do archify não tem `tag` — só `architecture`, `workflow`, `dataflow`, `lifecycle` e `erd` o têm, e no `erd` ele é a faixa de domínio, e não um texto da entidade. A F-nn vai no sublabel, à vista no carregamento. Medido: 5 peças com F-nn em cada árvore do `/app`, com opacidade 1.
   - **No carregamento, o `tag` não aparece.** A P-10 não conta como desenho a etiqueta que o zoom esconde, e o ADV2-05 era "a F-nn não chega ao leitor". O oráculo segue a D29 e pede o nível cheio; se a F-nn tiver de aparecer sem zoom, a D29 muda (por exemplo, a F-nn no sublabel, como na árvore), e o ponto foi ao coordenador.
 - **O CT-36 controla com cópias.** Cada mutante da guarda da origem morre sem depender de a árvore real estar errada.
+
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)*
+- **A lista fechada da D33.** Seis F-nn não têm peça possível no modelo e ficam na guarda com o motivo de cada uma: F-64 (guarda de teste), F-99 (arquivos de tradução), F-107 (`docker-compose.yml`) e F-108 (`deploy_docker_local.sh`), sem peça nenhuma; F-100 (o componente de formulário da media library) e F-113 (o plugin de browser do Pest e o Playwright), conferidas só pela parte do kit. A decisão nasceu na implementação (D33, depois deste `04`).
+- **O CT-44** confere todo caminho do "onde fica" com `{org}` ou `{/org}`, sem a restrição "sem →" do CT-06: entram a F-13, a F-15, a F-22, a F-25, a F-88 e a F-92.
 
 #### Mutantes previstos
 
@@ -860,6 +879,8 @@ Os tipos válidos são os 13 do Setup Global.
 | policy | é a que o `Gate` devolve para um model |
 | middleware | é registrada como middleware por um painel ou pela aplicação, ou é o alias `panel:{id}` |
 | serviço próprio | é do código do kit e não cai em nenhuma linha acima |
+
+*(alterado em 2026-11-20 — guardas do passo 8, leitura fixada pelo executor e conferida pela sessão)* "Middleware registrado pela aplicação" inclui dois casos que o painel não lista: a classe que o `bind` do container põe no lugar de um middleware registrado (o `BloquearSessaoComRetorno` no lugar do `Locker`), e o middleware do pipeline de um agente de IA (`LaravelAiContractsHasMiddleware`): a classe com `handle` citada no `middleware()` do agente, direto ou pelo registro que ele consulta (os guardrails de `AppAiGuardrails`). Sem isso, a guarda dava aos guardrails o tipo `servico`, e o modelo, com razão, `middleware`.
 
 #### Mutantes previstos
 
@@ -1082,6 +1103,8 @@ As âncoras das colunas "registrado" e "fora" vêm do código de hoje:
 
 Elas provam que cada suíte roda no seu modo e que cada guarda leu o registro, e não um conjunto vazio nem a disponibilidade.
 
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* O diagrama vale no modo quando o campo `modos` dele contém o modo; o compartilhado (`sem` e `com`) vale nos dois. A ligação conta como desenhada quando as duas pontas estão desenhadas, como peça ou como membro de agrupamento — a mesma regra do construtor.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -1127,6 +1150,8 @@ A P-10 conta como desenho a aresta direta e o agrupamento que nomeia os membros.
         | cópia sem essa ligação em diagrama nenhum                                                                   | reprova, nomeando a ligação        | ausente                           |
         | cópia em que essa ligação só está num diagrama que a página não leva                                        | reprova, nomeando a ligação        | diagrama órfão                    |
 ```
+
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* No diagrama construído, a ligação desenhada é a que o construtor transforma em aresta: as duas pontas desenhadas (peça ou membro de agrupamento), no painel e no modo do diagrama (a ligação de outro painel ou só do outro modo não conta), como os itens de prova do CT-B02. Expandir os pares pelas caixas de agrupamento sem esse filtro contava ligações do modo com tenant no diagrama sem tenant.
 
 #### Mutantes previstos
 
@@ -1391,6 +1416,8 @@ As linhas usam `DefinirTenantDePermissoes`, que o `/app` só registra com tenant
         | cópia em que o diagrama de arquitetura do painel app sem tenant desenha "o painel app usa o model `Tenant`", que o código só faz com tenant (o `->tenant()` no bloco `kit.tenancy.enabled`) | reprova, nomeando o diagrama e a ligação | ligação do modo errado |
 ```
 
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* "As mesmas peças e ligações" lê a ligação desenhada como na R12. No ERD, cujas tabelas não são peças do modelo, a comparação inclui a estrutura do próprio diagrama (entidades e relações): sem isso, os dois ERDs de identidade pareciam vazios e iguais. Só conta como "só com tenant" o bloco `if (config('kit.tenancy.enabled')) {`; a primeira chave depois de um `config('kit.tenancy.enabled')` dentro de um `->visible(fn …)` é o corpo de outro método.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -1572,10 +1599,14 @@ O `package.json` da raiz já está congelado pelo `[CT-12]` herdado de `tests/Ki
         | publicados                                                  | aceita: há ao menos um diagrama de fluxo, de um dos quatro tipos de fluxo, e todo passo desses três tipos nomeia peça do modelo |
         | cópia em que um passo de fluxo nomeia `ConviteService`      | reprova, nomeando o passo e o diagrama                                                                      |
         | cópia sem nenhum diagrama de fluxo                          | reprova: nenhum fluxo publicado                                                                             |
+        | cópia em que, no `dataflow`, uma ponta de um passo entre dois depósitos vira nó `backend` que nomeia `ConviteService` | reprova, nomeando o passo e o diagrama                                          |
 ```
 
 *(alterado em 2026-11-20: ADV-11 e ADV-32)*
 - **Os tipos se separam.** O `lifecycle` não nomeia peça: os estados não estão entre os 13 tipos da R8. Por isso o CT-24 confere os passos só dos outros três tipos de fluxo. O estado e a transição do `lifecycle` têm âncora no código (R35).
+*(alterado em 2026-11-20 — guardas do passo 8: o executor leu "passo" e "nomeia" sem definição no `04`, e o dado real tem passo entre depósitos)*
+- **O passo.** É a aresta: a mensagem do `sequence` e a seta do `workflow` e do `dataflow`. Ele percorre peça quando uma das pontas é peça do modelo — pelo id ou pelo nome exato do rótulo, como na R19 — ou quando a prova do próprio passo está no arquivo de uma peça. A âncora da outra ponta não conta: era ela que deixava passar a linha `ConviteService`.
+- **O depósito do `dataflow` fica de fora, como o estado do `lifecycle`.** O passo entre dois nós de depósito (`type: database` — arquivo de configuração, migração de settings, tabela) não nomeia peça, porque depósito não é tipo de peça da R8; a âncora dele é guardada pela R35. Medido no commit do passo 8: só o `configuracoes-config` tem passo assim (`.env` → `config/*.php` → migração de settings → tabela `settings`). O passo com ao menos uma ponta fora de depósito continua obrigado a percorrer peça, e a linha nova do Exemplo prova que a exceção não engole o mutante M2.
 - **A âncora vem da P-03.** Pelo glossário, fluxo não é ligação, e a RQ-24 não pede prova em cada seta. Mas a P-03 vale para todo fluxo publicado: cada transição afirma algo sobre o código e precisa de uma guarda que falhe quando o código deixar de bater. Essa guarda é a âncora da R35, e não depende da lista de fluxos (Q6).
 
 #### Mutantes previstos
@@ -1717,6 +1748,8 @@ O link vale com a URL do site (`…/<idioma>/referencia/mapa-interativo/`) ou co
       E entre eles estão o DG-11, no catálogo de features, e o DG-19, em "Desenvolvendo o kit": duas páginas que esta entrega reescreve
 ```
 
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* O inventário dos blocos Mermaid da base fica congelado na guarda (21 pares por idioma, medidos com `blocosMermaidDe()` no `d9608c5a`). O git só confere essa lista quando `git cat-file -t d9608c5a` resolve: o checkout raso do `ci.yml` não traz o commit, e o caso não pode quebrar no CI por isso.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -1770,6 +1803,8 @@ O pacote vem do endereço do link: o texto `pest-plugin-laravel` leva a `pestphp
 - **Pacote com peça registrada não vai para a lista.** O pacote cuja classe um painel registra nunca entra na lista dos sem feature própria: a classe do plugin, do recurso, da página ou do widget está em `vendor/{pacote}/`, e o registro dos painéis está de pé. Essa linha lê o registro, o que a aplicação de pé do arnês do kit permite.
 - **Motivo de enfeite** tem a definição do Setup Global.
 
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* A lista dos pacotes sem feature própria mora na guarda da publicação, com o motivo de cada um: `laravel/framework`, `laravel/tinker`, `laravel/reverb`, `predis/predis`, `livewire/blaze`, `awcodes/filament-badgeable-column`, `lara-zeus/progress`, `syriable/filament-activitylog`, `filament/upgrade`, `laravel/pail`, `nunomaduro/collision`, `@tailwindcss/vite`, `concurrently`, `laravel-vite-plugin`, `tailwindcss`, `vite` e `@laravel/multiplex` — os 17 instalados que nenhuma F-nn de origem pacote nomeia, conferidos pela sessão contra a lista que o trabalho do catálogo sugeriu. "Nomeado" é o pacote entre crases na coluna Origem que começa por "pacote"/"package"; na referência, conta todo link da primeira célula.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -1814,7 +1849,7 @@ A Q8 foi reclassificada para a raia desenho e decidida pela sessão: é o piso m
         | infra  | publicado                                                      | aceita (idem), inclusive a página `HealthCheckResults`, que o plugin registra                           |
         | admin  | cópia em que `TenantResource` não entrega F-nn nenhuma e está fora da lista | reprova, nomeando `TenantResource`                                                        |
         | infra  | cópia em que a página `HealthCheckResults` não entrega F-nn nenhuma e está fora da lista | reprova, nomeando a página                                                     |
-        | admin  | cópia em que o widget `AccountWidget` aponta a F-99, que o catálogo não tem | reprova, nomeando o widget                                                                  |
+        | admin  | cópia em que o widget `AccountWidget` aponta a F-999, que o catálogo não tem | reprova, nomeando o widget                                                                  |
         | admin  | cópia em que o widget `AccountWidget` não entrega F-nn e está na lista sem o motivo | reprova, nomeando o widget                                                          |
 
     Esquema do Cenário: [CT-30] com tenant, toda peça que o painel registra entrega ao menos uma F-nn do catálogo, ou está na lista com o motivo
@@ -1852,13 +1887,15 @@ A guarda das classes recebe a lista de classes como parâmetro. Assim o controle
 
 *(alterado em 2026-11-20: ADV2-18)* Comando `kit:*` nunca entra na lista das sem feature própria, como a página de `recursos/` não entra na da R5 e o pacote com peça registrada não entra na da R27. Medido com `Artisan::all()`: 9 comandos `kit:*` — `kit:admin`, `kit:arte`, `kit:cobertura`, `kit:convites-lembrar`, `kit:info`, `kit:install`, `kit:midia-privada`, `kit:tenancy` e `kit:update`. No modelo do commit `4adaf9a`, nenhum dos 9 tem F-nn, e o catálogo da entrega (`0f38e2f`) dá a F-102 ao `kit:install` e a F-105 ao `kit:update`: o CT-41 e o CT-06 reprovam esse modelo até a sessão ligar as F-nn.
 
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* A lista das peças e classes sem feature própria mora na guarda do modelo (`tests/Kit/MapaInterativoTest.php`), com o motivo de cada uma: hoje, só classes de `app/` (o `Controller` base, o `BooleanoDoEnv` e o `NumeroDoEnv`). Nenhuma peça registrada está nela; a guarda com tenant (CT-30) a recebe vazia, e passa porque toda peça registrada entrega F-nn.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M1 | um recurso novo entra no painel sem F-nn e fora da lista (a varredura o esqueceu) *(alterado em 2026-11-20: P-12, a lista com motivo vale para peça registrada)* | CT-29 | linha "`TenantResource` sem F-nn e fora da lista": reprova; o mutante aceita |
 | M2 | a guarda confere só `getResources()` e esquece a página que o plugin registra | CT-29, CT-30 | CT-29, linha "`HealthCheckResults` sem F-nn", e CT-30, linha "infra": reprova; o mutante aceita |
-| M3 | a peça aponta uma F-nn que o catálogo não tem | CT-29 | linha "`AccountWidget` aponta a F-99": reprova; o mutante aceita |
+| M3 | a peça aponta uma F-nn que o catálogo não tem | CT-29 | linha "`AccountWidget` aponta a F-999": reprova; o mutante aceita |
 | M4 — revisão adversarial (ADV-33) | a varredura para no registro dos painéis, e o comando `kit:update` fica sem F-nn e fora da lista | CT-41 | linha do `KitUpdate`: reprova; o mutante aceita |
 | M5 — revisão adversarial (ADV-33) | uma classe nova entra em `app/`, e ninguém a cataloga | CT-41 | linha da classe a mais, `RelatorioNovo`: reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV-33) | peça ou classe na lista sem o motivo, ou com motivo de enfeite | CT-29, CT-41 | CT-29, linha do `AccountWidget` na lista sem o motivo, e CT-41, linhas do `TelaDeAutenticacao` e do `TemUuid`: reprova; o mutante aceita |
@@ -2046,6 +2083,8 @@ O modo com tenant só existe na suíte `Tenancy`. Sem tenant, o `/app` não regi
         | app    | cópia em que o `IdentifyTenant` só aparece no `sequence` `requisicao-autenticada-com`, e nem a árvore nem a arquitetura do `/app` com tenant o desenham | reprova, nomeando o painel app e `IdentifyTenant` |
 ```
 
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* Vale a mesma leitura da R11 para o diagrama que vale no modo (`modos` contém o modo) e para a ponta desenhada (peça ou membro de agrupamento).
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -2085,6 +2124,8 @@ O modo com tenant só existe na suíte `Tenancy`. Sem tenant, o `/app` não regi
 ```
 
 O exemplo do convite vem do glossário: "Expirado … é o único que volta a Pendente". A cópia põe o diagrama em memória, então a linha vale mesmo que a Q6 não leve esse fluxo ao mapa.
+
+*(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* "Seguidas": no `sequence`, a mensagem seguinte no tempo (o `y` cresce com a ordem da lista); no `workflow` e no `dataflow`, a seta encadeada, e ramos não contam. "Mesmo método": o método nomeado que envolve o trecho, com as closures de dentro dele. Medido no passo 8: seis pares fora de ordem em quatro diagramas, corrigidos na implementação por re-âncora (a linha que prova a transição na ordem do código, ou noutro arquivo) e por uma troca de ordem entre duas respostas alternativas do mesmo `handle`.
 
 #### Mutantes previstos
 
@@ -2245,51 +2286,53 @@ Medido no código:
 
 ## Índice de Cenários
 
+*(alterado em 2026-11-20 — guardas do passo 8: os testes do G1 e do G2 ficaram em quatro arquivos por área, um dono por arquivo; os CT são os mesmos)*
+
 | ID | Cenário | Regra | Técnica | Grupo | Costura | Arquivo | Mata |
 |----|---------|-------|---------|-------|---------|---------|------|
-| CT-01 | catálogo em paridade, a mesma feature e o mesmo estado em cada número (tokens nas linhas novas), uma linha por F-nn, origem do glossário | R1 | EP + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R1-M1 a M7 |
-| CT-02 | só se cita F-nn que o catálogo tem, e ninguém lista feature por fora dele, nem só pelos nomes | R2 | EP + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R2-M1 a M5 |
-| CT-03 | número da base fica com a feature, ou removido com motivo, e não volta | R3 | estado × operação | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R3-M1 a M6 |
-| CT-04 | os novos começam na F-72, em sequência, sem sufixo | R4 | BVA 3-valores | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R4-M1, M2, M3 |
-| CT-05 | README da base e o publicado, e todas as páginas do site, chegam ao catálogo; os seis itens novos e os itens novos do README, pelo termo | R5 | EP por fonte | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R5-M1, M2, M4, M6, M9 |
-| CT-06 | toda F-nn é entregue por peça desenhada da sua origem, e todo caminho do "onde fica" resolve sem tenant | R6 | EP por origem | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R6-M1, M2 |
-| CT-07 | a rule está no índice, alcança onde a feature nasce e manda o número só crescer | R7 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R7-M1 a M4 |
+| CT-01 | catálogo em paridade, a mesma feature e o mesmo estado em cada número (tokens nas linhas novas), uma linha por F-nn, origem do glossário | R1 | EP + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoCatalogoTest.php` | R1-M1 a M7 |
+| CT-02 | só se cita F-nn que o catálogo tem, e ninguém lista feature por fora dele, nem só pelos nomes | R2 | EP + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoCatalogoTest.php` | R2-M1 a M5 |
+| CT-03 | número da base fica com a feature, ou removido com motivo, e não volta | R3 | estado × operação | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoCatalogoTest.php` | R3-M1 a M6 |
+| CT-04 | os novos começam na F-72, em sequência, sem sufixo | R4 | BVA 3-valores | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoCatalogoTest.php` | R4-M1, M2, M3 |
+| CT-05 | README da base e o publicado, e todas as páginas do site, chegam ao catálogo; os seis itens novos e os itens novos do README, pelo termo | R5 | EP por fonte | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoCatalogoTest.php` | R5-M1, M2, M4, M6, M9 |
+| CT-06 | toda F-nn é entregue por peça desenhada da sua origem, e todo caminho do "onde fica" resolve sem tenant | R6 | EP por origem | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R6-M1, M2 |
+| CT-07 | a rule está no índice, alcança onde a feature nasce e manda o número só crescer | R7 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R7-M1 a M4 |
 | CT-08 | toda peça existe, tem o tipo da sua classe e aparece uma vez | R8 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R8-M1 a M6 |
 | CT-09 | toda prova resolve no commit que publica, fora de comentário pelo tipo de arquivo, sem número de linha; todas as ligações conferidas | R9 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R9-M1 a M8, R13-M3 |
 | CT-10 | a prova é a da ligação: arquivo da origem, trait que ela usa, provider, método da lista de contrato, par de mapeamento ou arquivo do kit que liga a peça de pacote | R10 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R10-M1 a M12 |
 | CT-11 | sem tenant: registro (com as páginas da configuração) → modelo, e o modo do modelo → registro | R11 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R11-M1, M4, M5, M6 |
 | CT-12 | com tenant: registro → modelo, e o modo do modelo → registro | R11 | tabela de decisão | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R11-M3, M4 |
 | CT-13 | a guarda do registro reprova esquecer (inclusive a página da configuração), sobrar e trocar de modo | R11 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R11-M1, M2, M6 |
-| CT-14 | toda ligação desenhada em diagrama publicado; só aresta conta, e o agrupamento e a porta nomeiam os membros | R12 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R12-M1 a M6 |
-| CT-15 | a página de cada idioma leva, por `<a href>` relativo, a todo diagrama, e só aos que existem | R15 | EP | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R15-M1 a M5 |
-| CT-16 | textos de diagrama em pt e en, traduzidos: termo do glossário com o en dele, frase sem palavra do pt; título igual só se é nome de peça ou de comando, marcado | R16 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R16-M1 a M7 |
-| CT-17 | grade painel × modo inteira, compartilhado marcado e só ele, sem diagrama do outro modo nem de outro painel | R17 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R17-M1, M3, M4, M5, M7 |
-| CT-18 | painel novo sem diagrama reprova a grade | R17 | controle | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R17-M2 |
-| CT-19 | só se compartilha o que é igual, o igual não se duplica, e a ligação desenhada vale no modo do diagrama | R18 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R18-M1 a M4 |
-| CT-20 | cada tipo e o comparativo têm uso ou motivo | R19 | produto cartesiano | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R19-M1 |
-| CT-21 | toda célula tipo × painel × modo tem diagrama ou motivo traduzido, e só o diagrama sem peça registrada é do kit inteiro | R19 | produto cartesiano + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R19-M2 a M8 |
-| CT-22 | comparativo do mesmo painel, de sem para com tenant, entre diagramas do mapa publicados | R20 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R20-M1, M2, M3 |
-| CT-23 | nenhuma dependência nova de visualização nos quatro campos do `site/package.json`, e `site/mapa/` só com os arquivos do mapa | R21 | EP (lista fechada) + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R21-M1, M2, M4, M6, M7 |
-| CT-24 | há fluxo publicado, e todo passo de `workflow`, `sequence` e `dataflow` é peça do modelo | R22 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R22-M1, M2 |
-| CT-25 | o mapa nasce no build, o conferidor do mapa roda depois do de acessibilidade e antes do envio, e o build do Pages só roda na `main` | R23 | EP por workflow | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R23-M1 a M4 |
-| CT-26 | o README de cada idioma leva ao mapa do mesmo idioma | R25 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R25-M1, M2 |
-| CT-27 | os blocos Mermaid da base ficam onde estavam | R26 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R26-M1, M2, M3 |
-| CT-28 | todo pacote instalado está na referência e chega ao catálogo, ou à lista dos sem feature; a referência só lista pacote instalado | R27 | EP por partição de pacote + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R27-M1 a M6 |
+| CT-14 | toda ligação desenhada em diagrama publicado; só aresta conta, e o agrupamento e a porta nomeiam os membros | R12 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R12-M1 a M6 |
+| CT-15 | a página de cada idioma leva, por `<a href>` relativo, a todo diagrama, e só aos que existem | R15 | EP | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R15-M1 a M5 |
+| CT-16 | textos de diagrama em pt e en, traduzidos: termo do glossário com o en dele, frase sem palavra do pt; título igual só se é nome de peça ou de comando, marcado | R16 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R16-M1 a M7 |
+| CT-17 | grade painel × modo inteira, compartilhado marcado e só ele, sem diagrama do outro modo nem de outro painel | R17 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R17-M1, M3, M4, M5, M7 |
+| CT-18 | painel novo sem diagrama reprova a grade | R17 | controle | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R17-M2 |
+| CT-19 | só se compartilha o que é igual, o igual não se duplica, e a ligação desenhada vale no modo do diagrama | R18 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R18-M1 a M4 |
+| CT-20 | cada tipo e o comparativo têm uso ou motivo | R19 | produto cartesiano | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R19-M1 |
+| CT-21 | toda célula tipo × painel × modo tem diagrama ou motivo traduzido, e só o diagrama sem peça registrada é do kit inteiro | R19 | produto cartesiano + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R19-M2 a M8 |
+| CT-22 | comparativo do mesmo painel, de sem para com tenant, entre diagramas do mapa publicados | R20 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R20-M1, M2, M3 |
+| CT-23 | nenhuma dependência nova de visualização nos quatro campos do `site/package.json`, e `site/mapa/` só com os arquivos do mapa | R21 | EP (lista fechada) + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R21-M1, M2, M4, M6, M7 |
+| CT-24 | há fluxo publicado, e todo passo de `workflow`, `sequence` e `dataflow` é peça do modelo | R22 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R22-M1, M2 |
+| CT-25 | o mapa nasce no build, o conferidor do mapa roda depois do de acessibilidade e antes do envio, e o build do Pages só roda na `main` | R23 | EP por workflow | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R23-M1 a M4 |
+| CT-26 | o README de cada idioma leva ao mapa do mesmo idioma | R25 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R25-M1, M2 |
+| CT-27 | os blocos Mermaid da base ficam onde estavam | R26 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R26-M1, M2, M3 |
+| CT-28 | todo pacote instalado está na referência e chega ao catálogo, ou à lista dos sem feature; a referência só lista pacote instalado | R27 | EP por partição de pacote + controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R27-M1 a M6 |
 | CT-29 | sem tenant, toda peça registrada entrega F-nn ou está na lista com o motivo | R28 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R28-M1, M2, M3, M6 |
 | CT-30 | com tenant, toda peça registrada entrega F-nn ou está na lista com o motivo | R28 | tabela de decisão | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R28-M2 |
-| CT-31 | marcos da linha do tempo batem com o CHANGELOG, com o título visível na seção da versão, e todo tempo tem data e fonte | R29 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R29-M1 a M7 |
+| CT-31 | marcos da linha do tempo batem com o CHANGELOG, com o título visível na seção da versão, e todo tempo tem data e fonte | R29 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R29-M1 a M7 |
 | ~~CT-32~~ | ~~o modelo guarda a condição e a âncora de toda peça que não abre nesta configuração~~ — estacionado — Q11 (ADV-17, ADV-31) | ~~R30~~ | — | — | — | — | — |
 | ~~CT-33~~ | ~~todo diagrama mostra a condição da peça condicional e não a dá como disponível no modo errado~~ — estacionado — Q11 (ADV-31) | ~~R30~~ | — | — | — | — | — |
-| CT-34 | a página do mapa declara as duas exceções da P-11, a do comparativo e o limite da varredura, nos dois idiomas | R33 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R33-M1 a M5 |
-| CT-35 | a guarda das fontes reprova o item casado com a feature errada, o item novo sem F-nn, a página escondida na lista e o motivo de enfeite | R5 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R5-M3 a M9 |
-| CT-36 | a guarda da origem reprova a F-nn entregue pela peça errada, a removida que ainda é entregue e o caminho que não resolve | R6 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R6-M3 a M7, M9 |
-| CT-37 | sem tenant, os diagramas de arquitetura e a árvore de registro de cada painel desenham o registro dele nesse modo, fora a peça condicional | R34 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R34-M3 |
+| CT-34 | a página do mapa declara as duas exceções da P-11, a do comparativo e o limite da varredura, nos dois idiomas | R33 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R33-M1 a M5 |
+| CT-35 | a guarda das fontes reprova o item casado com a feature errada, o item novo sem F-nn, a página escondida na lista e o motivo de enfeite | R5 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoCatalogoTest.php` | R5-M3 a M9 |
+| CT-36 | a guarda da origem reprova a F-nn entregue pela peça errada, a removida que ainda é entregue e o caminho que não resolve | R6 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R6-M3 a M7, M9 |
+| CT-37 | sem tenant, os diagramas de arquitetura e a árvore de registro de cada painel desenham o registro dele nesse modo, fora a peça condicional | R34 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R34-M3 |
 | CT-38 | com tenant, os diagramas de arquitetura e a árvore de registro de cada painel desenham o registro dele nesse modo | R34 | tabela de decisão + controles | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R34-M1, M2 |
 | CT-39 | toda transição de fluxo tem âncora que resolve, todo estado de `lifecycle` também, e a ordem no mesmo método é a do código | R35 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R35-M1, M2, M3, R22-M3 |
 | CT-40 | toda aresta de mapa é ligação do modelo no mesmo sentido, e o diagrama de painel só desenha, como peça, o que é dele, do kit inteiro ou porta | R36 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R36-M1 a M5 |
 | CT-41 | toda classe de `app/` fora de `app/Filament` entrega F-nn ou está na lista com o motivo, e comando `kit:*` nunca está na lista | R28 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R28-M4 a M7 |
-| CT-42 | a falha do conferidor do mapa reprova o job, e o build do Pages só roda na `main` | R23 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R23-M5, M7 |
-| CT-43 | a guarda da grade reprova a célula com diagrama do outro modo ou de outro painel, e a marca de compartilhado num diagrama de um modo só | R17 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R17-M3, M6, M7 |
+| CT-42 | a falha do conferidor do mapa reprova o job, e o build do Pages só roda na `main` | R23 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R23-M5, M7 |
+| CT-43 | a guarda da grade reprova a célula com diagrama do outro modo ou de outro painel, e a marca de compartilhado num diagrama de um modo só | R17 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R17-M3, M6, M7 |
 | CT-44 | com tenant, todo caminho do "onde fica" com organização resolve no roteador | R6 | EP (idioma) | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R6-M9 |
 | CT-45 | toda marca de disponibilidade publicada é a do código: chave, valor de fábrica ou modo | R37 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R37-M1, M2, M3 |
 | CT-B01 | cada diagrama, inclusive o comparativo, abre com as peças e os rótulos da fonte, a interface do visualizador montada e a F-nn no desenho da peça, sem erro nem exceção, sem recurso de fora (no `05`) | R24, R21, R6 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R24-M1 a M4, M6, R21-M5, R6-M10 |
