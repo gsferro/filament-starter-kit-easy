@@ -273,7 +273,7 @@
       },
       "prova": {
         "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-        "trecho": "->usingPage(TelaLogin::class)"
+        "trecho": "Authenticate::class,"
       }
     },
     {
@@ -383,34 +383,15 @@
         "en": "only /app Page and Resource routes; in /admin and /infra, page responds after prior step"
       },
       "prova": {
-        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-        "trecho": "->emailVerifiedMiddlewareName(ExigirEmailVerificado::class)"
-      }
-    },
-    {
-      "id": "email-pendente",
-      "from": "exigiremail",
-      "to": "navegador",
-      "y": 883,
-      "label": {
-        "pt": "302 verificação de e-mail",
-        "en": "302 email verification"
-      },
-      "variant": "security",
-      "note": {
-        "pt": "chave ligada e conta sem email_verified_at: vai ao aviso de verificação; quem espera JSON recebe 403",
-        "en": "key on, account lacks email_verified_at: goes to verification notice; JSON requests get 403"
-      },
-      "prova": {
         "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
-        "trecho": "$resposta = parent::handle($request, $next, $redirectToRoute);"
+        "trecho": "final class ExigirEmailVerificado extends EnsureEmailIsVerified"
       }
     },
     {
       "id": "pagina",
       "from": "exigiremail",
       "to": "navegador",
-      "y": 978,
+      "y": 883,
       "label": {
         "pt": "200 página",
         "en": "200 page"
@@ -423,6 +404,25 @@
       "prova": {
         "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
         "trecho": "return $next($request);"
+      }
+    },
+    {
+      "id": "email-pendente",
+      "from": "exigiremail",
+      "to": "navegador",
+      "y": 978,
+      "label": {
+        "pt": "302 verificação de e-mail",
+        "en": "302 email verification"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "chave ligada e conta sem email_verified_at: vai ao aviso de verificação; quem espera JSON recebe 403",
+        "en": "key on, account lacks email_verified_at: goes to verification notice; JSON requests get 403"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+        "trecho": "$resposta = parent::handle($request, $next, $redirectToRoute);"
       }
     }
   ],

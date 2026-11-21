@@ -3,7 +3,7 @@
   "tipo": "architecture",
   "construtor": "mapa",
   "titulo": {
-    "pt": "/infra — Multi-tenancy (opt-in)",
+    "pt": "/infra — Multi-tenancy (opcional)",
     "en": "/infra — Multi-tenancy (opt-in)"
   },
   "paineis": [

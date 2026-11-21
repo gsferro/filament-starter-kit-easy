@@ -1,7 +1,10 @@
 {
   "slug": "erd-onboarding",
   "tipo": "erd",
-  "titulo": "Onboarding",
+  "titulo": {
+    "pt": "Tutorial guiado: fluxos, passos e condições",
+    "en": "Guided tour: flows, steps and conditions"
+  },
   "paineis": [],
   "modos": [
     "sem",

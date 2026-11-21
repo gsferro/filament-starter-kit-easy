@@ -243,8 +243,8 @@
         "en": "chat mounts only in kit.agentes_ia.paineis panels (else 404); validates up to 2,000 characters and shows an optimistic bubble"
       },
       "prova": {
-        "arquivo": "resources/views/livewire/assistente-chat-widget.blade.php",
-        "trecho": "<form wire:submit=\"enviar\""
+        "arquivo": "app/Livewire/AssistenteChatWidget.php",
+        "trecho": "public function enviar(): void"
       }
     },
     {
@@ -457,7 +457,7 @@
       },
       "prova": {
         "arquivo": "app/Livewire/AssistenteChatWidget.php",
-        "trecho": "$this->stream(content: $evento->delta, name: 'resposta-parcial');"
+        "trecho": "if ($evento instanceof TextDelta) {"
       }
     },
     {
@@ -475,8 +475,8 @@
         "en": "browser renders reply as it arrives"
       },
       "prova": {
-        "arquivo": "resources/views/livewire/assistente-chat-widget.blade.php",
-        "trecho": "wire:stream=\"resposta-parcial\""
+        "arquivo": "app/Livewire/AssistenteChatWidget.php",
+        "trecho": "$this->stream(content: $evento->delta, name: 'resposta-parcial');"
       }
     },
     {

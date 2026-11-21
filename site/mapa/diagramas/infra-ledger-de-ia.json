@@ -215,7 +215,7 @@
     },
     {
       "from": 652,
-      "to": 1451,
+      "to": 1521,
       "label": {
         "pt": "Leitura no /infra",
         "en": "Reading in /infra"
@@ -359,7 +359,7 @@
     {
       "id": "exportar",
       "from": "navegador",
-      "to": "exporter",
+      "to": "resource",
       "y": 1163,
       "label": {
         "pt": "Exportar CSV",
@@ -372,6 +372,20 @@
       },
       "prova": {
         "arquivo": "app/Filament/Infra/Resources/AiRuns/Pages/ListAiRuns.php",
+        "trecho": "ExportAction::make()"
+      }
+    },
+    {
+      "id": "exportador",
+      "from": "resource",
+      "to": "exporter",
+      "y": 1233,
+      "label": {
+        "pt": "monta o CSV",
+        "en": "builds the CSV"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/Pages/ListAiRuns.php",
         "trecho": "->exporter(AiRunExporter::class)"
       }
     },
@@ -379,7 +393,7 @@
       "id": "colunas",
       "from": "exporter",
       "to": "airun",
-      "y": 1233,
+      "y": 1303,
       "label": {
         "pt": "colunas de custo e tempo",
         "en": "cost and time columns"
@@ -398,7 +412,7 @@
       "id": "abrir-dashboard",
       "from": "navegador",
       "to": "iastats",
-      "y": 1336,
+      "y": 1406,
       "label": {
         "pt": "GET /infra (painel inicial)",
         "en": "GET /infra (home panel)"
@@ -413,7 +427,7 @@
       "id": "totais",
       "from": "iastats",
       "to": "airun",
-      "y": 1366,
+      "y": 1436,
       "label": {
         "pt": "total, erros, tokens, custo",
         "en": "total, errors, tokens, cost"

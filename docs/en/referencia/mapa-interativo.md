@@ -89,7 +89,7 @@ model, the classes, the releases and the timings.
 - Data model (ER): <a href="../../../mapa/en/erd-identidade-e-permissoes.html">Identity and permissions, no tenant</a>
 - Data model (ER): <a href="../../../mapa/en/erd-identidade-e-permissoes-com-tenant.html">Identity and permissions, with tenant</a>
 - Data model (ER): <a href="../../../mapa/en/erd-monitoramento.html">Monitoring and ops</a>
-- Data model (ER): <a href="../../../mapa/en/erd-onboarding.html">Onboarding</a>
+- Data model (ER): <a href="../../../mapa/en/erd-onboarding.html">Guided tour: flows, steps and conditions</a>
 - Data model (ER): <a href="../../../mapa/en/erd-organizacoes-convites.html">Organization/invitation</a>
 - Data model (ER): <a href="../../../mapa/en/erd-painel.html">Panel: dashboards, saved views and notifications</a>
 - Classes: <a href="../../../mapa/en/classes-heranca-e-contratos.html">Kit models: base classes and contracts</a>
@@ -106,7 +106,7 @@ model, the classes, the releases and the timings.
   passport: the proof of every link it draws is in the two diagrams it compares, next to it in the tables above.
 - **Accessibility**: CI opens one diagram of each type, in each language and theme, and fails on any `serious` or
   `critical` WCAG 2.1 AA violation, with two defects of archify itself, recognized by rule and element — the
-  `nested-interactive` on the diagram `<svg>` and the contrast of the node index count (2.5:1). axe does not check
+  `nested-interactive` on the diagram `<svg>` and the `color-contrast` of the node index group count (`.node-outline-heading > small`, 2.5:1). axe does not check
   the contrast of the text inside the drawing. The feature catalog and the
   [Architecture in diagrams](../arquitetura-em-diagramas/) page are the text alternative.
 - **Theme**: the site theme switch does not reach the viewer, which follows the system theme; the comparison

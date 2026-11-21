@@ -178,8 +178,8 @@
         "en": "first sets spatie/permission team_id to organization and saves tenant_corrente in session, read by lock screen"
       },
       "prova": {
-        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-        "trecho": "->emailVerifiedMiddlewareName(ExigirEmailVerificado::class)"
+        "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+        "trecho": "final class ExigirEmailVerificado extends EnsureEmailIsVerified"
       }
     },
     {

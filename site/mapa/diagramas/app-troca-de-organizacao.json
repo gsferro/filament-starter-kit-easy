@@ -360,8 +360,8 @@
         "en": "header branding comes from open organization (CabecalhoDoPainel)"
       },
       "prova": {
-        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-        "trecho": "->brandLogo(fn (): string|Htmlable|null => CabecalhoDoPainel::marca())"
+        "arquivo": "app/Support/CabecalhoDoPainel.php",
+        "trecho": "public static function marca(): string|Htmlable|null"
       }
     }
   ],

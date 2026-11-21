@@ -3,7 +3,7 @@
   "tipo": "architecture",
   "construtor": "mapa",
   "titulo": {
-    "pt": "/app — Multi-tenancy (opt-in), com tenant ativo",
+    "pt": "/app — Multi-tenancy (opcional), com tenant ativo",
     "en": "/app — Multi-tenancy (opt-in), tenancy on"
   },
   "paineis": [

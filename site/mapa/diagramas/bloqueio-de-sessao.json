@@ -281,7 +281,7 @@
       },
       "prova": {
         "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
-        "trecho": "$resposta = parent::authenticate();"
+        "trecho": "public function authenticate(): Redirector|RedirectResponse|Application|null"
       }
     },
     {

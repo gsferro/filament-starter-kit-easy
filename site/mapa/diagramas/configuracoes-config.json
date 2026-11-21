@@ -101,7 +101,7 @@
     },
     {
       "id": "config-kit",
-      "type": "backend",
+      "type": "database",
       "label": "config/*.php",
       "sublabel": "kit, app, mail, services",
       "stage": 1,
@@ -126,7 +126,7 @@
     },
     {
       "id": "migracoes",
-      "type": "backend",
+      "type": "database",
       "label": "database/settings",
       "sublabel": {
         "pt": "migrations de settings",

@@ -66,8 +66,8 @@
       "id": "v0_1_0",
       "at": "2026-08-12T12:00:00-03:00",
       "title": {
-        "pt": "0.1.0 · Skeleton Laravel 13 + Filament 5 e kit:install",
-        "en": "0.1.0 · Laravel 13 + Filament 5 skeleton and kit:install"
+        "pt": "0.1.0 · Skeleton Laravel 13 + Filament 5",
+        "en": "0.1.0 · Laravel 13 + Filament 5 skeleton"
       },
       "detail": {
         "pt": "12/08/2026. Primeira versão: o skeleton Laravel 13 + Filament 5, instalável por composer create-project, com o comando kit:install e os três painéis (/app, /admin e /infra).",
@@ -90,8 +90,8 @@
       "id": "v0_3_0",
       "at": "2026-08-12T12:00:00-03:00",
       "title": {
-        "pt": "0.3.0 · Comando kit:update",
-        "en": "0.3.0 · kit:update command"
+        "pt": "0.3.0 · Comando php artisan kit:update",
+        "en": "0.3.0 · php artisan kit:update command"
       },
       "detail": {
         "pt": "12/08/2026. O comando php artisan kit:update compara o projeto com uma versão nova do kit e aplica só o que for aprovado, arquivo a arquivo.",
@@ -114,8 +114,8 @@
       "id": "v0_8_0",
       "at": "2026-08-13T12:00:00-03:00",
       "title": {
-        "pt": "0.8.0 · wikis/, a documentação que o agente de IA lê",
-        "en": "0.8.0 · wikis/, docs read by the AI agent"
+        "pt": "0.8.0 · A documentação que o agente de IA lê",
+        "en": "0.8.0 · The docs the AI agent reads"
       },
       "detail": {
         "pt": "13/08/2026. A pasta wikis/ reúne o que o código não conta sozinho, para o agente de IA ler antes de codar. A mesma versão traz skills e plugins de IA e o README em inglês.",
@@ -138,8 +138,8 @@
       "id": "v0_9_1",
       "at": "2026-08-13T12:00:00-03:00",
       "title": {
-        "pt": "0.9.1 · Multi-tenancy opt-in com kit:tenancy",
-        "en": "0.9.1 · Opt-in multi-tenancy with kit:tenancy"
+        "pt": "0.9.1 · Multi-tenancy opt-in",
+        "en": "0.9.1 · Opt-in multi-tenancy"
       },
       "detail": {
         "pt": "13/08/2026. php artisan kit:tenancy liga o modo multi-tenant: o /app vira /app/{tenant}, e a trait BelongsToTenant escopa as models de negócio.",
@@ -162,8 +162,8 @@
       "id": "v0_10_0",
       "at": "2026-08-13T12:00:00-03:00",
       "title": {
-        "pt": "0.10.0 · Tela de bloqueio de sessão com o layout do login",
-        "en": "0.10.0 · Session lock screen with login layout"
+        "pt": "0.10.0 · A tela de bloqueio de sessão agora usa o layout do login",
+        "en": "0.10.0 · Session lock screen now uses the login layout"
       },
       "detail": {
         "pt": "13/08/2026. A tela de bloqueio de sessão passa a usar o layout do login, nos três painéis.",
@@ -186,8 +186,8 @@
       "id": "v0_11_0",
       "at": "2026-08-13T12:00:00-03:00",
       "title": {
-        "pt": "0.11.0 · Convite por e-mail e painel dado pelo papel",
-        "en": "0.11.0 · Email invitation and panel set by role"
+        "pt": "0.11.0 · O painel passa a ser dado do papel",
+        "en": "0.11.0 · Panel access now comes from the role"
       },
       "detail": {
         "pt": "13/08/2026. O cadastro de quem vem de fora passa por convite por e-mail, e o acesso a painel passa a vir do papel, pela coluna roles.painel.",
@@ -210,8 +210,8 @@
       "id": "v0_12_0",
       "at": "2026-08-14T12:00:00-03:00",
       "title": {
-        "pt": "0.12.0 · Convite para quem já tem conta e convite em massa",
-        "en": "0.12.0 · Invitations for existing accounts and bulk invites"
+        "pt": "0.12.0 · Convite para quem já tem conta",
+        "en": "0.12.0 · Invitations for existing accounts"
       },
       "detail": {
         "pt": "14/08/2026. O convite deixa de ser só uma porta para gente nova: convite para quem já tem conta, convite em massa e lembretes de convite pendente.",
@@ -234,8 +234,8 @@
       "id": "v0_13_0",
       "at": "2026-08-14T12:00:00-03:00",
       "title": {
-        "pt": "0.13.0 · Suíte de testes de browser sobre as 52 telas",
-        "en": "0.13.0 · Browser test suite for all 52 screens"
+        "pt": "0.13.0 · Navegador real, com JavaScript executando",
+        "en": "0.13.0 · Real browser, with JavaScript running"
       },
       "detail": {
         "pt": "14/08/2026. Testes em navegador real, com JavaScript executando, sobre as 52 telas dos três painéis.",
@@ -330,8 +330,8 @@
       "id": "v0_17_0",
       "at": "2026-08-18T12:00:00-03:00",
       "title": {
-        "pt": "0.17.0 · Camada de mídia, Lixeira e mais quatro pacotes",
-        "en": "0.17.0 · Media layer, Trash and four more packages"
+        "pt": "0.17.0 · Seis pacotes novos, todos Filament v5",
+        "en": "0.17.0 · Six new packages, all Filament v5"
       },
       "detail": {
         "pt": "18/08/2026. Seis pacotes novos, todos Filament v5 e gratuitos, entre eles a camada de mídia (filament/spatie-laravel-media-library-plugin) e a Lixeira do /infra (promethys/revive).",
@@ -354,8 +354,8 @@
       "id": "v0_19_0",
       "at": "2026-08-24T12:00:00-03:00",
       "title": {
-        "pt": "0.19.0 · Configurações do kit em /admin, com 19 propriedades",
-        "en": "0.19.0 · Kit settings in /admin, with 19 properties"
+        "pt": "0.19.0 · 19 propriedades em quatro abas",
+        "en": "0.19.0 · 19 settings in four tabs"
       },
       "detail": {
         "pt": "24/08/2026. O que era pergunta do kit:install gravada no .env passa a ser editável numa página de configurações do kit em /admin.",
@@ -426,8 +426,8 @@
       "id": "v0_22_0",
       "at": "2026-08-31T12:00:00-03:00",
       "title": {
-        "pt": "0.22.0 · Anti-robô sobre ddr/filament-captcha, com reCAPTCHA v3",
-        "en": "0.22.0 · Bot check via ddr/filament-captcha, reCAPTCHA v3"
+        "pt": "0.22.0 · Proteção anti-robô sobre o pacote ddr/filament-captcha",
+        "en": "0.22.0 · Anti-robot protection on ddr/filament-captcha"
       },
       "detail": {
         "pt": "31/08/2026. Proteção anti-robô sobre o pacote ddr/filament-captcha, com o reCAPTCHA v3 como quarto provedor, ao lado do reCAPTCHA v2, do Turnstile e do hCaptcha.",
@@ -522,8 +522,8 @@
       "id": "v0_37_0",
       "at": "2026-09-20T12:00:00-03:00",
       "title": {
-        "pt": "0.37.0 · Site gerado pelo Astro Starlight",
-        "en": "0.37.0 · Site built by Astro Starlight"
+        "pt": "0.37.0 · O site de documentação passou a ser gerado pelo Astro Starlight",
+        "en": "0.37.0 · Docs site now built by Astro Starlight"
       },
       "detail": {
         "pt": "20/09/2026. O site de documentação passa a ser gerado pelo Astro Starlight e publicado por GitHub Actions; sai o Jekyll embutido do GitHub Pages.",
@@ -594,8 +594,8 @@
       "id": "v0_45_0",
       "at": "2026-10-06T12:00:00-03:00",
       "title": {
-        "pt": "0.45.0 · Deploy de vários ambientes atrás do Traefik",
-        "en": "0.45.0 · Multi-environment deploy behind Traefik"
+        "pt": "0.45.0 · Deploy opt-in de vários ambientes no mesmo servidor",
+        "en": "0.45.0 · Opt-in multi-environment deploy on one server"
       },
       "detail": {
         "pt": "06/10/2026. Deploy opt-in de vários ambientes no mesmo servidor, atrás do Traefik, por um override de exemplo do docker-compose.",
