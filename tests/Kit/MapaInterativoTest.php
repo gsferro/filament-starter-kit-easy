@@ -4,7 +4,8 @@
  * As guardas da costura G2 do `04-casos-de-teste.md` da wiki `feat/mapa-interativo-do-kit`: o modelo do mapa
  * (`site/mapa/pecas.json`, `ligacoes.json` e `diagramas/`) contra a aplicação de pé, sem tenant.
  *
- * Lote deste arquivo: R8, R9, R10, R11 (CT-11 e CT-13), R28 (CT-29 e CT-41), R35, R36 e R37.
+ * Lote deste arquivo: R8, R9 (CT-09, CT-52 e CT-53), R10, R11 (CT-11 e CT-13), R28 (CT-29 e CT-41), R35,
+ * R36 (CT-40 e CT-54) e R37. O CT-52 é da costura G5: roda o gerador do mapa num `node`, na forma de leitura.
  * Os demais lotes de G2 (R6, R12, R15 a R20, R22, R29, R34) são de outros arquivos de lote.
  *
  * Escrito a partir do `04`: `app/`, `config/` e `site/mapa/` só foram lidos para achar NOMES (classe, caminho,
@@ -29,6 +30,7 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Ai\Contracts\HasMiddleware;
 use Livewire\Component;
@@ -106,10 +108,58 @@ if (! function_exists('mapaModeloResultado')) {
     }
 }
 
+if (! function_exists('mapaModeloMascararComentarios')) {
+    /**
+     * O texto do arquivo com cada byte de comentário trocado por espaço e as quebras de linha mantidas: o mesmo
+     * tamanho e as mesmas linhas, pela sintaxe do tipo do arquivo (`04`, Guarda e controles, ADV2-06 e Q20). É o que
+     * diz se o trecho está fora de comentário NUMA linha (CT-52), onde apagar o comentário deslocaria as linhas.
+     */
+    function mapaModeloMascararComentarios(string $arquivo, string $conteudo): string
+    {
+        $mascarar = static fn (string $texto): string => (string) preg_replace('/[^\n]/', ' ', $texto);
+        $porRegex = static fn (string $padrao): string => (string) preg_replace_callback($padrao, static fn (array $m): string => $mascarar($m[0]), $conteudo);
+
+        if (str_ends_with($arquivo, '.blade.php')) {
+            return $porRegex('/\{\{--.*?--\}\}|<!--.*?-->/s');
+        }
+
+        if (str_ends_with($arquivo, '.php')) {
+            $saida = '';
+
+            foreach (token_get_all($conteudo) as $token) {
+                $saida .= ! is_array($token) ? $token : (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? $mascarar($token[1]) : $token[1]);
+            }
+
+            return $saida;
+        }
+
+        if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
+            return $porRegex('~/\*.*?\*/|(?<![:\w])//[^\n]*~s');
+        }
+
+        if (preg_match('/\.ya?ml$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
+            return $porRegex('/(?<=^|[ \t])#[^\n]*/m');
+        }
+
+        if (str_ends_with($arquivo, '.md')) {
+            return $porRegex('/<!--.*?-->/s');
+        }
+
+        return $conteudo;
+    }
+}
+
 if (! function_exists('mapaModeloSemComentario')) {
-    /** O código do arquivo sem comentário, pela sintaxe do tipo dele (`04`, Guarda e controles, ADV2-06). */
+    /**
+     * O código do arquivo sem comentário, pela sintaxe do tipo dele (`04`, Guarda e controles, ADV2-06). Em YAML e
+     * `.env`, o `#` até o fim da linha; em Markdown, o `<!-- -->` (Q20, step 9, achado A7); JSON não tem comentário.
+     */
     function mapaModeloSemComentario(string $arquivo, string $conteudo): string
     {
+        if (preg_match('/\.(ya?ml|md)$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
+            return mapaModeloMascararComentarios($arquivo, $conteudo);
+        }
+
         if (str_ends_with($arquivo, '.blade.php')) {
             return preg_replace(['/\{\{--.*?--\}\}/s', '/<!--.*?-->/s'], '', $conteudo) ?? $conteudo;
         }
@@ -160,7 +210,10 @@ if (! function_exists('mapaModeloConferirProva')) {
      * R9: a prova resolve no commit que publica. O arquivo é versionado no kit, o trecho está nele fora de
      * comentário, e a prova não guarda número de linha (campo próprio, ou colado no caminho).
      *
-     * @param  array<string, mixed>  $campos  os campos além de `arquivo` e `trecho` (`linha`, `line`)
+     * A âncora tem chaves fechadas — `arquivo`, `trecho` e, opcional, `label` (step 9, achado A10): qualquer outra
+     * (`linha`, `line`, `end_line`, `path`) reprova, porque o gerador a deixa vencer a que ele calcula.
+     *
+     * @param  array<string, mixed>  $campos  os campos além de `arquivo` e `trecho`
      * @param  array<string, string>  $sobrescritas
      * @return array{aceita: bool, motivo: ?string}
      */
@@ -168,10 +221,14 @@ if (! function_exists('mapaModeloConferirProva')) {
     {
         $reprova = static fn (string $motivo): array => ['aceita' => false, 'motivo' => "{$nome}: {$motivo}"];
 
-        foreach (['linha', 'line'] as $campo) {
-            if (array_key_exists($campo, $campos)) {
-                return $reprova("a prova guarda o número da linha no campo `{$campo}`");
+        foreach (array_keys($campos) as $campo) {
+            if ($campo === 'label') {
+                continue;
             }
+
+            return $reprova(in_array($campo, ['linha', 'line', 'end_line'], true)
+                ? "a prova guarda o número da linha no campo `{$campo}`"
+                : "a prova traz a chave `{$campo}`, fora das chaves da âncora (arquivo, trecho e label)");
         }
 
         if (! is_string($arquivo) || trim($arquivo) === '') {
@@ -204,13 +261,15 @@ if (! function_exists('mapaModeloConferirProva')) {
     }
 }
 
-if (! function_exists('mapaModeloLinhasNoDiagrama')) {
+if (! function_exists('mapaModeloAncorasForaDoFormato')) {
     /**
-     * As peças (ou nós) de um arquivo de diagrama cuja prova guarda número de linha.
+     * As peças (ou nós) de um arquivo de diagrama cuja prova não é a âncora fechada: guarda número de linha (num
+     * campo ou colado no caminho), traz chave fora de `arquivo`, `trecho` e `label` (step 9, achado A10), ou tem no
+     * `sources` uma fonte que não é âncora `{arquivo, trecho}`.
      *
      * @return list<string>
      */
-    function mapaModeloLinhasNoDiagrama(mixed $no, string $contexto = ''): array
+    function mapaModeloAncorasForaDoFormato(mixed $no, string $contexto = ''): array
     {
         if (! is_array($no)) {
             return [];
@@ -220,18 +279,27 @@ if (! function_exists('mapaModeloLinhasNoDiagrama')) {
             $contexto = $no['id'];
         }
 
+        $quem    = $contexto !== '' ? $contexto : '(sem id)';
         $achados = [];
 
-        if (array_key_exists('arquivo', $no) && (
-            array_key_exists('line', $no)
-            || array_key_exists('linha', $no)
-            || (is_string($no['arquivo']) && preg_match('/(:\d+|#L\d+)$/', $no['arquivo']) === 1)
-        )) {
-            $achados[] = $contexto !== '' ? $contexto : '(sem id)';
+        if (array_key_exists('arquivo', $no) || array_key_exists('trecho', $no)) {
+            foreach (array_diff(array_keys($no), ['arquivo', 'trecho', 'label']) as $chave) {
+                $achados[] = "{$quem} (chave `{$chave}`)";
+            }
+
+            if (is_string($no['arquivo'] ?? null) && preg_match('/(:\d+|#L\d+)$/', $no['arquivo']) === 1) {
+                $achados[] = "{$quem} (linha no caminho {$no['arquivo']})";
+            }
+        }
+
+        foreach (is_array($no['sources'] ?? null) ? $no['sources'] : [] as $fonte) {
+            if (! is_array($fonte) || ! array_key_exists('arquivo', $fonte) || ! array_key_exists('trecho', $fonte)) {
+                $achados[] = "{$quem} (fonte que não é âncora {arquivo, trecho})";
+            }
         }
 
         foreach ($no as $filho) {
-            $achados = array_merge($achados, mapaModeloLinhasNoDiagrama($filho, $contexto));
+            $achados = array_merge($achados, mapaModeloAncorasForaDoFormato($filho, $contexto));
         }
 
         return $achados;
@@ -252,11 +320,12 @@ if (! function_exists('mapaModeloConferirProvas')) {
         $violacoes  = [];
         $conferidas = 0;
         $porPainel  = [];
+        $evidencias = 0;
 
         foreach ($modelo['ligacoes'] as $ligacao) {
             $nome      = 'a ligação '.mapaModeloNome($ligacao['de']).' → '.mapaModeloNome($ligacao['para']);
-            $evidencia = $ligacao['evidencia'] ?? [];
-            $campos    = array_intersect_key($ligacao, ['linha' => 1, 'line' => 1]) + array_intersect_key($evidencia, ['linha' => 1, 'line' => 1]);
+            $evidencia = is_array($ligacao['evidencia'] ?? null) ? $ligacao['evidencia'] : [];
+            $campos    = array_intersect_key($ligacao, ['linha' => 1, 'line' => 1]) + array_diff_key($evidencia, ['arquivo' => 1, 'trecho' => 1]);
             $resultado = mapaModeloConferirProva($nome, $evidencia['arquivo'] ?? null, $evidencia['trecho'] ?? null, $campos);
 
             $conferidas++;
@@ -270,13 +339,24 @@ if (! function_exists('mapaModeloConferirProvas')) {
             }
         }
 
-        foreach ($diagramas as $slug => $diagrama) {
-            foreach (mapaModeloLinhasNoDiagrama($diagrama) as $peca) {
-                $violacoes[] = "o diagrama {$slug} guarda número de linha na prova da peça {$peca}";
+        // A10: a evidência de cada peça do modelo de peças também tem as chaves fechadas da âncora.
+        foreach ($modelo['pecas'] as $peca) {
+            foreach (is_array($peca['evidencia'] ?? null) ? $peca['evidencia'] : [] as $ancora) {
+                $evidencias++;
+
+                foreach (is_array($ancora) ? array_diff(array_keys($ancora), ['arquivo', 'trecho', 'label']) : ['(não é âncora)'] as $chave) {
+                    $violacoes[] = "a evidência da peça {$peca['id']} traz a chave `{$chave}`, fora das chaves da âncora (arquivo, trecho e label)";
+                }
             }
         }
 
-        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'porPainel' => $porPainel]);
+        foreach ($diagramas as $slug => $diagrama) {
+            foreach (mapaModeloAncorasForaDoFormato($diagrama) as $peca) {
+                $violacoes[] = "o diagrama {$slug} guarda, na prova da peça {$peca}, o que a âncora não tem (número de linha ou chave fora de arquivo, trecho e label)";
+            }
+        }
+
+        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'porPainel' => $porPainel, 'evidencias' => $evidencias]);
     }
 }
 
@@ -675,19 +755,100 @@ if (! function_exists('mapaModeloNomeia')) {
 }
 
 if (! function_exists('mapaModeloPluginTraz')) {
-    /** O `register()` do plugin, num painel de teste, devolve a peça? (Setup Global: não confere pelo nome.) */
-    function mapaModeloPluginTraz(string $plugin, string $peca): bool
+    /**
+     * O `register()` do plugin, num painel de rascunho, devolve a peça? (Setup Global: não confere pelo nome.) A
+     * peça pode ser recurso, página, widget ou middleware (step 9, achado A9: o `Locker` pelo `Lockscreen`, o
+     * `MustTwoFactor` pelo `BreezyCore`). O plugin é avaliado como o painel vivo o configura — uma cópia da
+     * instância registrada nele —, e só sem ela pelo `make()`: o `BreezyCore` só põe o `MustTwoFactor` com o 2FA ligado.
+     */
+    function mapaModeloPluginTraz(string $plugin, string $peca, ?string $painelVivo = null): bool
     {
         try {
-            $painel = Panel::make()->id('mapa-modelo-teste')->path('mapa-modelo-teste');
-            $plugin::make()->register($painel);
+            $instancia = null;
 
-            $trazidas = array_filter(array_map('classeDoRegistro', array_merge($painel->getResources(), $painel->getPages(), $painel->getWidgets())));
+            foreach ((Filament::getPanels()[$painelVivo ?? ''] ?? null)?->getPlugins() ?? [] as $registrado) {
+                if ($registrado::class === $plugin) {
+                    $instancia = clone $registrado;
+
+                    break;
+                }
+            }
+
+            $painel = Panel::make()->id('mapa-modelo-teste')->path('mapa-modelo-teste');
+            ($instancia ?? $plugin::make())->register($painel);
+
+            $middlewares = array_map(
+                static fn (string $middleware): string => explode(':', $middleware, 2)[0],
+                array_filter(array_merge($painel->getMiddleware(), $painel->getAuthMiddleware()), static fn (mixed $middleware): bool => is_string($middleware) && ! str_starts_with($middleware, 'panel:')),
+            );
+
+            $trazidas = array_merge(array_filter(array_map('classeDoRegistro', array_merge($painel->getResources(), $painel->getPages(), $painel->getWidgets()))), $middlewares);
 
             return in_array($peca, $trazidas, true);
         } catch (Throwable) {
             return false;
         }
+    }
+}
+
+if (! function_exists('mapaModeloInvolucroNomeia')) {
+    /**
+     * A forma do invólucro do kit (step 9, achado A9): o nome curto chamado no provider resolve, pelos `use` dele,
+     * para uma classe de `app/`, e o arquivo dessa classe nomeia a classe da peça.
+     */
+    function mapaModeloInvolucroNomeia(string $codigoDoProvider, string $curto, string $peca): bool
+    {
+        $classe  = mapaModeloResolverNomeCurto($codigoDoProvider, $curto);
+        $arquivo = $classe !== null ? arquivoDaClasse($classe) : null;
+
+        if ($arquivo === null || ! str_starts_with($arquivo, 'app/')) {
+            return false;
+        }
+
+        $codigo = (string) mapaModeloCodigo($arquivo);
+        $nome   = mapaModeloNome($peca);
+
+        return str_contains($codigo, $peca)
+            || (mapaModeloNomeia($codigo, $nome) && mapaModeloResolverNomeCurto($codigo, $nome) === $peca);
+    }
+}
+
+if (! function_exists('mapaModeloPacoteDaClasse')) {
+    /** O pacote (`vendor/{fornecedor}/{pacote}`) de onde a classe vem, pelo arquivo dela; `null` fora de `vendor/`. */
+    function mapaModeloPacoteDaClasse(string $classe): ?string
+    {
+        $arquivo = arquivoDaClasse($classe);
+
+        return $arquivo !== null && preg_match('#^vendor/([^/]+/[^/]+)/#', $arquivo, $m) === 1 ? $m[1] : null;
+    }
+}
+
+if (! function_exists('mapaModeloArquivoDeProvider')) {
+    /** O arquivo está em `app/Providers`, ou é um trait que uma classe de `app/Providers` usa (step 9, achado A9). */
+    function mapaModeloArquivoDeProvider(string $caminho): bool
+    {
+        static $traits = null;
+
+        if (str_starts_with($caminho, 'app/Providers/')) {
+            return true;
+        }
+
+        if ($traits === null) {
+            $traits = [];
+            $pasta  = app_path('Providers');
+
+            foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($pasta, FilesystemIterator::SKIP_DOTS)) as $arquivo) {
+                $classe = 'App\\Providers\\'.str_replace(['/', '.php'], ['\\', ''], str_replace('\\', '/', substr($arquivo->getPathname(), strlen($pasta) + 1)));
+
+                if ($arquivo->getExtension() === 'php' && class_exists($classe)) {
+                    foreach (class_uses_recursive($classe) as $trait) {
+                        $traits[] = arquivoDaClasse($trait);
+                    }
+                }
+            }
+        }
+
+        return in_array($caminho, $traits, true);
     }
 }
 
@@ -760,8 +921,17 @@ if (! function_exists('mapaModeloConferirFormaDaProva')) {
 
                 if (preg_match('/(\w+)::make\(\)/', $texto, $m) === 1) {
                     foreach ($modelo['pecas'] as $candidata) {
-                        if ($candidata['tipo'] === 'plugin' && mapaModeloNome($candidata['id']) === $m[1] && mapaModeloPluginTraz($candidata['id'], $para)) {
+                        if ($candidata['tipo'] === 'plugin' && mapaModeloNome($candidata['id']) === $m[1] && mapaModeloPluginTraz($candidata['id'], $para, $painel)) {
                             return $aceita('registro do plugin que traz a peça');
+                        }
+                    }
+                }
+
+                // Invólucro do kit que registra o plugin (step 9, A9): `X::make()` ou `X::plugin()`, com `X` de `app/`.
+                if (preg_match_all('/(\w+)::(?:make|plugin)\(\)/', $texto, $chamadas) > 0) {
+                    foreach ($chamadas[1] as $curto) {
+                        if (mapaModeloInvolucroNomeia((string) mapaModeloCodigo($caminho), $curto, $para)) {
+                            return $aceita('invólucro do kit que registra o plugin');
                         }
                     }
                 }
@@ -772,6 +942,20 @@ if (! function_exists('mapaModeloConferirFormaDaProva')) {
 
                 if ($nomePara === 'IdentifyTenant' && str_contains($texto, '->tenant(')) {
                     return $aceita('configuração do painel (organização)');
+                }
+            }
+        }
+
+        // Configuração global do pacote que registra a peça sozinho (step 9, A9): `Y::configureUsing(` num arquivo de
+        // `app/Providers` ou num trait dele, com `Y` classe do mesmo pacote da peça.
+        if (str_starts_with($de, 'painel:') && mapaModeloArquivoDeProvider($caminho) && preg_match_all('/(\w+)::configureUsing\(/', $texto, $chamadas) > 0) {
+            $pacoteDaPeca = mapaModeloPacoteDaClasse($para);
+
+            foreach ($chamadas[1] as $curto) {
+                $classe = mapaModeloResolverNomeCurto((string) mapaModeloCodigo($caminho), $curto);
+
+                if ($pacoteDaPeca !== null && $classe !== null && mapaModeloPacoteDaClasse($classe) === $pacoteDaPeca) {
+                    return $aceita('configuração global do pacote');
                 }
             }
         }
@@ -1644,6 +1828,29 @@ it('[CT-09] a prova de toda ligação resolve no commit que publica: o arquivo �
 
         expect($guarda['conferidas'])->toBeGreaterThanOrEqual($registradas);
 
+        // a guarda das chaves fechadas (A10) olhou a evidência de toda peça do modelo de peças
+        expect($guarda['evidencias'])->toBe(array_sum(array_map(static fn (array $peca): int => count($peca['evidencia'] ?? []), $modelo['pecas'])))
+            ->and($guarda['evidencias'])->toBeGreaterThanOrEqual(count($modelo['pecas']));
+
+        return;
+    }
+
+    if (str_ends_with($mundo, 'na evidência de peça')) {
+        // step 9, achado A10: a chave a mais na evidência do `UserResource` do `/admin`
+        $chave  = explode(' ', $mundo)[0];
+        $peca   = 'App\\Filament\\Admin\\Resources\\Users\\UserResource';
+        $indice = array_search($peca, array_column($modelo['pecas'], 'id'), true);
+
+        expect($indice)->not->toBeFalse("{$peca} deveria ser peça do modelo")
+            ->and($modelo['pecas'][$indice]['evidencia'][0]['arquivo'] ?? null)->toBe('app/Filament/Admin/Resources/Users/UserResource.php');
+
+        $modelo['pecas'][$indice]['evidencia'][0][$chave] = ['line' => 240, 'end_line' => 241, 'path' => 'app/Models/User.php'][$chave];
+        $guarda                                           = mapaModeloConferirProvas($modelo, []);
+
+        expect($guarda['aceita'])->toBeFalse("a guarda aceitou a chave {$chave} na evidência da peça")
+            ->and($guarda['motivo'])->toContain($peca)
+            ->and($guarda['motivo'])->toContain("`{$chave}`");
+
         return;
     }
 
@@ -1692,20 +1899,23 @@ it('[CT-09] a prova de toda ligação resolve no commit que publica: o arquivo �
     expect($guarda['aceita'])->toBeFalse("a guarda aceitou a prova ({$mundo})")
         ->and($guarda['motivo'])->toContain($nomeando);
 })->with([
-    'publicado'                         => ['publicado', '', '', '', 'aceita', ''],
-    'prova válida: arquivo versionado'  => ['valida', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', 'FilamentShieldPlugin::make()', 'aceita', ''],
-    'sem trecho'                        => ['sem trecho', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', '', 'reprova', 'o painel admin registra o plugin do Shield'],
-    'trecho vazio'                      => ['trecho vazio', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', '', 'reprova', 'o painel admin registra o plugin do Shield'],
-    'trecho só de espaços'              => ['trecho só de espaços', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', '   ', 'reprova', 'o painel admin registra o plugin do Shield'],
-    'trecho que saiu do código'         => ['sem a linha do trecho', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', 'FilamentShieldPlugin::make()', 'reprova', 'o painel admin registra o plugin do Shield'],
-    'trecho só em comentário'           => ['comentario', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', 'ver a nota longa no AppPanelProvider', 'reprova', 'o painel admin registra o plugin do Shield'],
-    'arquivo inexistente'               => ['inexistente', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPainelProvider.php', 'FilamentShieldPlugin::make()', 'reprova', 'app/Providers/Filament/AdminPainelProvider.php'],
-    'arquivo fora do git'               => ['arquivo fora do git', 'o painel admin registra o plugin do Shield', 'bootstrap/cache/packages.php', '', 'reprova', 'bootstrap/cache/packages.php'],
-    'arquivo de pacote, fora do commit' => ['vendor', 'o painel infra registra a página `HealthCheckResults`', 'vendor/shuvroroy/filament-spatie-laravel-health/src/FilamentSpatieLaravelHealthPlugin.php', '$panel->pages([$this->getPage()]);', 'reprova', 'vendor/shuvroroy/filament-spatie-laravel-health/src/FilamentSpatieLaravelHealthPlugin.php'],
-    'prova com número de linha'         => ['linha no caminho', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php:240', 'FilamentShieldPlugin::make()', 'reprova', 'o painel admin registra o plugin do Shield'],
-    'trecho só em comentário Blade'     => ['blade', 'a página ConvitesRecebidos', 'resources/views/filament/pages/convites-recebidos.blade.php', 'ConvitesRecebidos::table()', 'reprova', 'a página ConvitesRecebidos'],
-    'linha num campo do modelo'         => ['campo linha no modelo', '', '', '', 'reprova', ''],
-    'linha nas provas do diagrama'      => ['linha nas provas do diagrama', '', '', '', 'reprova', ''],
+    'publicado'                             => ['publicado', '', '', '', 'aceita', ''],
+    'prova válida: arquivo versionado'      => ['valida', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', 'FilamentShieldPlugin::make()', 'aceita', ''],
+    'sem trecho'                            => ['sem trecho', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', '', 'reprova', 'o painel admin registra o plugin do Shield'],
+    'trecho vazio'                          => ['trecho vazio', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', '', 'reprova', 'o painel admin registra o plugin do Shield'],
+    'trecho só de espaços'                  => ['trecho só de espaços', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', '   ', 'reprova', 'o painel admin registra o plugin do Shield'],
+    'trecho que saiu do código'             => ['sem a linha do trecho', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', 'FilamentShieldPlugin::make()', 'reprova', 'o painel admin registra o plugin do Shield'],
+    'trecho só em comentário'               => ['comentario', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php', 'ver a nota longa no AppPanelProvider', 'reprova', 'o painel admin registra o plugin do Shield'],
+    'arquivo inexistente'                   => ['inexistente', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPainelProvider.php', 'FilamentShieldPlugin::make()', 'reprova', 'app/Providers/Filament/AdminPainelProvider.php'],
+    'arquivo fora do git'                   => ['arquivo fora do git', 'o painel admin registra o plugin do Shield', 'bootstrap/cache/packages.php', '', 'reprova', 'bootstrap/cache/packages.php'],
+    'arquivo de pacote, fora do commit'     => ['vendor', 'o painel infra registra a página `HealthCheckResults`', 'vendor/shuvroroy/filament-spatie-laravel-health/src/FilamentSpatieLaravelHealthPlugin.php', '$panel->pages([$this->getPage()]);', 'reprova', 'vendor/shuvroroy/filament-spatie-laravel-health/src/FilamentSpatieLaravelHealthPlugin.php'],
+    'prova com número de linha'             => ['linha no caminho', 'o painel admin registra o plugin do Shield', 'app/Providers/Filament/AdminPanelProvider.php:240', 'FilamentShieldPlugin::make()', 'reprova', 'o painel admin registra o plugin do Shield'],
+    'trecho só em comentário Blade'         => ['blade', 'a página ConvitesRecebidos', 'resources/views/filament/pages/convites-recebidos.blade.php', 'ConvitesRecebidos::table()', 'reprova', 'a página ConvitesRecebidos'],
+    'linha num campo do modelo'             => ['campo linha no modelo', '', '', '', 'reprova', ''],
+    'linha nas provas do diagrama'          => ['linha nas provas do diagrama', '', '', '', 'reprova', ''],
+    'linha na evidência de peça'            => ['line na evidência de peça', '', '', '', 'reprova', ''],
+    'fim de intervalo na evidência de peça' => ['end_line na evidência de peça', '', '', '', 'reprova', ''],
+    'outro caminho na evidência de peça'    => ['path na evidência de peça', '', '', '', 'reprova', ''],
 ])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
 
 /*
@@ -1716,6 +1926,27 @@ it('[CT-09] a prova de toda ligação resolve no commit que publica: o arquivo �
 
 it('[CT-10] a prova é a da ligação: está num arquivo que a ligação permite, e o trecho é o dela', function (string $de, string $para, string $arquivo, string $trecho, string $resultado, string $regra, string $nomeando, bool $semUser): void {
     $modelo = modeloDoMapa();
+
+    if ($de === 'publicado') {
+        // step 9, achado A9: cada ligação publicada pela MESMA função das linhas de controle
+        $reprovadas = [];
+        $conferidas = 0;
+
+        foreach ($modelo['ligacoes'] as $ligacao) {
+            $resultado = mapaModeloConferirFormaDaProva($modelo, $ligacao['de'], $ligacao['para'], $ligacao['evidencia']['arquivo'] ?? null, $ligacao['evidencia']['trecho'] ?? null);
+            $conferidas++;
+
+            if (! $resultado['aceita']) {
+                $reprovadas[] = $resultado['motivo'];
+            }
+        }
+
+        expect($conferidas)->toBe(count($modelo['ligacoes']))
+            ->and($conferidas)->toBeGreaterThan(0)
+            ->and($reprovadas)->toBe([], count($reprovadas).' de '.$conferidas.' ligações publicadas reprovam: '.implode(' | ', $reprovadas));
+
+        return;
+    }
 
     if ($semUser) {
         $modelo['pecas'] = array_values(array_filter($modelo['pecas'], static fn (array $p): bool => $p['id'] !== 'App\\Models\\User'));
@@ -1751,8 +1982,23 @@ it('[CT-10] a prova é a da ligação: está num arquivo que a ligação permite
     $par              = 'Exception::class                      => ExceptionPolicy::class,';
     $mapeamento       = 'app/Support/PoliciesDeVendor.php';
     $tenantMiddleware = 'Filament\\Http\\Middleware\\IdentifyTenant';
+    $lockerMiddleware = 'lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker';
+    $mustTwoFactor    = 'Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor';
+    $dock             = 'HoceineEl\\QuickActionDock\\QuickActionDockPlugin';
+    $onboarding       = 'Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin';
+    $idioma           = 'BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale';
+    $global           = 'app/Providers/Concerns/ConfiguraFilamentGlobal.php';
 
     return [
+        'aceita: plugin que traz o middleware (step 9)'                     => ['painel:admin', $lockerMiddleware, $providerAdmin, 'Lockscreen::make()', 'aceita', '', '', false],
+        'aceita: invólucro do kit, o dock (step 9)'                         => ['painel:admin', $dock, $providerAdmin, 'PluginDoDock::make(),', 'aceita', '', '', false],
+        'aceita: invólucro do kit, o tutorial (step 9)'                     => ['painel:admin', $onboarding, $providerAdmin, 'TutorialGuiado::plugin(),', 'aceita', '', '', false],
+        'aceita: configuração global do pacote (step 9)'                    => ['painel:admin', $idioma, $global, 'LanguageSwitch::configureUsing(', 'aceita', '', '', false],
+        'reprova: plugin que não traz o middleware (step 9)'                => ['painel:admin', $mustTwoFactor, $providerAdmin, 'Lockscreen::make()', 'reprova', 'forma', 'painel:admin → MustTwoFactor', false],
+        'reprova: invólucro cujo arquivo não nomeia a peça (step 9)'        => ['painel:admin', $dock, $providerAdmin, 'TutorialGuiado::plugin(),', 'reprova', 'forma', 'painel:admin → QuickActionDockPlugin', false],
+        'reprova: configuração global de classe de outro pacote (step 9)'   => ['painel:admin', $idioma, $global, 'Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));', 'reprova', 'forma', 'painel:admin → SwitchLanguageLocale', false],
+        'publicado: cada ligação do modelo publicado, uma por uma (step 9)' => ['publicado', '', '', '', 'aceita', '', '', false],
+
         'aceita: arquivo da origem'                           => [$admin, $user, 'app/Filament/Admin/Resources/Users/UserResource.php', $modelUser, 'aceita', '', '', false],
         'aceita: trait que a origem usa'                      => ['App\\Models\\Projeto', $tenant, $trait, $belongsTo, 'aceita', '', '', false],
         'aceita: descoberta que alcança a pasta'              => ['painel:admin', $admin, $providerAdmin, "->discoverResources(in: app_path('Filament/Admin/Resources')", 'aceita', '', '', false],
@@ -2236,4 +2482,661 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
     'AgenteIaResource com a chave KIT_REGISTRO'             => ['chave que não decide', 'reprova', 'AgenteIaResource'],
     'AgenteIaResource com KIT_AGENTES_IA ligada de fábrica' => ['valor de fábrica trocado', 'reprova', 'AgenteIaResource'],
     'TenantResource disponível só sem tenant'               => ['modo invertido', 'reprova', 'TenantResource'],
+])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
+
+/*
+|--------------------------------------------------------------------------
+| Helpers do step 9: a linha que o build dá (CT-52), as âncoras sem guarda (CT-53) e os ids dos construídos (CT-54)
+|--------------------------------------------------------------------------
+*/
+
+if (! defined('MAPA_MODELO_LEITURA_DO_GERADOR')) {
+    /**
+     * A forma de leitura da costura G5 (`04`, Costuras de Teste): um `node` que importa `site/mapa/gerar.mjs` e
+     * devolve, por diagrama, a entrada que o gerador entrega ao archify (`entradaDoArchify`, a função exportada),
+     * sem baixar o archify nem renderizar. Cada âncora leva o próprio trecho no `label` — a única chave opcional da
+     * âncora —, para a guarda achar, na linha que o gerador calculou, o trecho que a projetou. O caminho do gerador
+     * vem por `MAPA_GERAR`, e não pelo `argv`: o gerador roda o build inteiro quando o `argv[1]` é ele mesmo.
+     */
+    define('MAPA_MODELO_LEITURA_DO_GERADOR', <<<'JS'
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const gerador = process.env.MAPA_GERAR;
+const { carregarModelo, entradaDoArchify } = await import(pathToFileURL(gerador).href);
+
+let bruto = '';
+for await (const pedaco of process.stdin) bruto += pedaco;
+const { extras = [], soExtras = false } = JSON.parse(bruto || '{}');
+
+const marcar = (valor) => {
+  if (Array.isArray(valor)) return valor.forEach(marcar);
+  if (valor === null || typeof valor !== 'object') return;
+  if (typeof valor.arquivo === 'string' && typeof valor.trecho === 'string') valor.label = valor.trecho;
+  Object.values(valor).forEach(marcar);
+};
+
+marcar([...carregarModelo().pecas.values()]);
+const pasta = join(dirname(gerador), 'diagramas');
+const publicados = soExtras ? [] : readdirSync(pasta).filter((nome) => nome.endsWith('.json')).sort()
+  .map((nome) => JSON.parse(readFileSync(join(pasta, nome), 'utf8')));
+const saida = {};
+for (const diagrama of [...publicados, ...extras]) {
+  if (diagrama.tipo === 'compare') continue;
+  marcar(diagrama);
+  try {
+    const ir = entradaDoArchify(diagrama, 'pt', {});
+    delete ir.meta;
+    saida[diagrama.slug] = { tipo: diagrama.tipo, ir };
+  } catch (erro) {
+    saida[diagrama.slug] = { tipo: diagrama.tipo, erro: String(erro?.message ?? erro) };
+  }
+}
+process.stdout.write(JSON.stringify(saida));
+JS);
+}
+
+if (! function_exists('mapaModeloEntradasDoArchify')) {
+    /**
+     * A entrada que o gerador monta para o archify, por slug (`{tipo, ir}` ou `{tipo, erro}`), rodada num `node`
+     * filho. O script vai para um arquivo temporário fora do repositório e sai no `finally`; nada é escrito em
+     * `site/`. Os controles passam diagramas em memória (`$extras`); `$soExtras` deixa os publicados de fora.
+     *
+     * @param  list<array<string, mixed>>  $extras
+     * @return array<string, array<string, mixed>>
+     */
+    function mapaModeloEntradasDoArchify(array $extras = [], bool $soExtras = false): array
+    {
+        $script = sys_get_temp_dir().DIRECTORY_SEPARATOR.'mapa-modelo-leitura-'.bin2hex(random_bytes(6)).'.mjs';
+
+        try {
+            file_put_contents($script, MAPA_MODELO_LEITURA_DO_GERADOR);
+
+            $processo = Process::path(base_path())
+                ->env(['MAPA_GERAR' => base_path('site/mapa/gerar.mjs')])
+                ->input(json_encode(['extras' => $extras, 'soExtras' => $soExtras], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))
+                ->timeout(300)
+                ->run(['node', $script]);
+
+            if (! $processo->successful()) {
+                throw new RuntimeException('o node não montou a entrada do archify: '.trim($processo->errorOutput().$processo->output()));
+            }
+
+            return json_decode($processo->output(), true, 512, JSON_THROW_ON_ERROR);
+        } finally {
+            if (is_file($script)) {
+                unlink($script);
+            }
+        }
+    }
+}
+
+if (! function_exists('mapaModeloTextosNaRevisao')) {
+    /**
+     * O texto de cada arquivo no `HEAD`, a revisão que o gerador lê (`git show`) para dar a linha à âncora; `null`
+     * para o que não está nela. Um `git cat-file --batch` só, para todos os arquivos.
+     *
+     * @param  list<string>  $arquivos
+     * @return array<string, ?string>
+     */
+    function mapaModeloTextosNaRevisao(array $arquivos): array
+    {
+        if ($arquivos === []) {
+            return [];
+        }
+
+        $saida = Process::path(base_path())
+            ->input(implode('', array_map(static fn (string $arquivo): string => "HEAD:{$arquivo}\n", $arquivos)))
+            ->timeout(120)
+            ->run(['git', 'cat-file', '--batch'])
+            ->throw()
+            ->output();
+
+        $textos  = [];
+        $posicao = 0;
+
+        foreach ($arquivos as $arquivo) {
+            $fim = strpos($saida, "\n", $posicao);
+
+            if ($fim === false) {
+                $textos[$arquivo] = null;
+
+                continue;
+            }
+
+            $cabecalho = substr($saida, $posicao, $fim - $posicao);
+            $posicao   = $fim + 1;
+
+            if (preg_match('/^\S+ blob (\d+)$/', $cabecalho, $m) !== 1) {
+                $textos[$arquivo] = null;
+
+                continue;
+            }
+
+            $textos[$arquivo] = str_replace("\r\n", "\n", substr($saida, $posicao, (int) $m[1]));
+            $posicao += (int) $m[1] + 1;
+        }
+
+        return $textos;
+    }
+}
+
+if (! function_exists('mapaModeloConferirLinhasDoBuild')) {
+    /**
+     * R9, CT-52: a linha que o build dá a cada prova — o item de prova de cada ligação desenhada e cada fonte de
+     * peça — tem o trecho da âncora fora de comentário, pela sintaxe do tipo do arquivo, no texto da revisão que o
+     * gerador lê. Diagrama que o gerador recusou reprova, com a mensagem dele.
+     *
+     * @param  array<string, array<string, mixed>>  $entradas  a saída de `mapaModeloEntradasDoArchify()`
+     * @return array<string, mixed>
+     */
+    function mapaModeloConferirLinhasDoBuild(array $entradas): array
+    {
+        $violacoes = [];
+        $ancoras   = [];
+
+        foreach ($entradas as $slug => $saida) {
+            if (isset($saida['erro'])) {
+                $violacoes[] = "o gerador recusou o diagrama {$slug}: {$saida['erro']}";
+
+                continue;
+            }
+
+            $coletar = static function (mixed $no, string $quem) use (&$coletar, &$ancoras, &$violacoes, $slug): void {
+                if (! is_array($no)) {
+                    return;
+                }
+
+                if (isset($no['id']) && is_string($no['id'])) {
+                    $quem = $no['id'];
+                }
+
+                if (array_key_exists('path', $no) && array_key_exists('line', $no)) {
+                    if (! is_string($no['label'] ?? null) || $no['label'] === '') {
+                        $violacoes[] = "o diagrama {$slug}: a fonte da peça {$quem} saiu do gerador sem a âncora que a projetou";
+
+                        return;
+                    }
+
+                    $ancoras[] = [$slug, "a fonte da peça {$quem}", (string) $no['path'], (int) $no['line'], $no['label']];
+
+                    return;
+                }
+
+                foreach ($no as $filho) {
+                    $coletar($filho, $quem);
+                }
+            };
+
+            $coletar(array_diff_key($saida['ir'], ['cards' => 1]), $slug);
+
+            foreach ($saida['ir']['cards'] ?? [] as $card) {
+                if (! str_starts_with((string) ($card['title'] ?? ''), 'Prova das ligações')) {
+                    continue;
+                }
+
+                foreach ($card['items'] ?? [] as $item) {
+                    if (! is_string($item) || preg_match('/^(.*?): (\S+):(\d+)(?:-\d+)? — (.*)$/su', $item, $m) !== 1) {
+                        $violacoes[] = "o diagrama {$slug}: o item de prova não traz arquivo e linha: ".json_encode($item, JSON_UNESCAPED_UNICODE);
+
+                        continue;
+                    }
+
+                    $ancoras[] = [$slug, "a ligação {$m[1]}", $m[2], (int) $m[3], $m[4]];
+                }
+            }
+        }
+
+        $textos     = mapaModeloTextosNaRevisao(array_values(array_unique(array_column($ancoras, 2))));
+        $mascaras   = [];
+        $inicios    = [];
+        $repetidas  = [];
+        $conferidas = 0;
+
+        foreach ($ancoras as [$slug, $quem, $caminho, $linha, $trecho]) {
+            $conferidas++;
+            $texto = $textos[$caminho] ?? null;
+
+            if ($texto === null) {
+                $violacoes[] = "o diagrama {$slug}: {$quem}: {$caminho} não está na revisão que o gerador lê";
+
+                continue;
+            }
+
+            $mascaras[$caminho] ??= mapaModeloMascararComentarios($caminho, $texto);
+            $inicios[$caminho] ??= [0, ...array_map(static fn (array $quebra): int => $quebra[1] + 1, preg_match_all('/\n/', $texto, $q, PREG_OFFSET_CAPTURE) > 0 ? $q[0] : [])];
+
+            if (substr_count($texto, $trecho) > 1) {
+                $repetidas["{$caminho}\0{$trecho}"] = true;
+            }
+
+            $inicio = $inicios[$caminho][$linha - 1] ?? null;
+            $fim    = isset($inicios[$caminho][$linha]) ? $inicios[$caminho][$linha] - 1 : strlen($texto);
+            $achou  = false;
+
+            for ($busca = $inicio; $busca !== null && ($achado = strpos($texto, $trecho, $busca)) !== false && $achado <= $fim; $busca = $achado + 1) {
+                if (substr($mascaras[$caminho], $achado, strlen($trecho)) === $trecho) {
+                    $achou = true;
+
+                    break;
+                }
+            }
+
+            if (! $achou) {
+                $violacoes[] = "o diagrama {$slug}: {$quem}: a linha {$linha} de {$caminho}, que o build dá à prova, não tem o trecho "
+                    .json_encode($trecho, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).' fora de comentário';
+            }
+        }
+
+        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'repetidas' => count($repetidas)]);
+    }
+}
+
+if (! function_exists('mapaModeloAncorasDoDiagrama')) {
+    /**
+     * Toda âncora de um arquivo de diagrama escrito à mão, com a coleção e o item onde ela mora (a fonte de
+     * participante, nó, entidade, tipo, evento e span; a prova de relação, de mensagem, de transição).
+     *
+     * @param  array<string, mixed>  $diagrama
+     * @return list<array{colecao: string, item: string, ancora: array<string, mixed>}>
+     */
+    function mapaModeloAncorasDoDiagrama(array $diagrama): array
+    {
+        $achadas = [];
+
+        $coletar = static function (mixed $no, string $colecao, string $item) use (&$coletar, &$achadas): void {
+            if (! is_array($no)) {
+                return;
+            }
+
+            if (array_key_exists('arquivo', $no) || array_key_exists('trecho', $no)) {
+                $achadas[] = ['colecao' => $colecao, 'item' => $item, 'ancora' => $no];
+
+                return;
+            }
+
+            foreach ($no as $filho) {
+                $coletar($filho, $colecao, $item);
+            }
+        };
+
+        foreach ($diagrama as $colecao => $itens) {
+            if (! is_array($itens) || ! array_is_list($itens)) {
+                $coletar($itens, (string) $colecao, (string) $colecao);
+
+                continue;
+            }
+
+            foreach ($itens as $indice => $item) {
+                $id = is_array($item) && isset($item['id']) && is_scalar($item['id']) ? (string) $item['id'] : "#{$indice}";
+                $coletar($item, (string) $colecao, $id);
+            }
+        }
+
+        return $achadas;
+    }
+}
+
+if (! function_exists('mapaModeloConferirAncoras')) {
+    /**
+     * R9, CT-53: a guarda da R9 — arquivo versionado, trecho fora de comentário pela sintaxe do tipo, sem número de
+     * linha e com as chaves fechadas — sobre a evidência de cada peça do modelo de peças e sobre toda âncora dos
+     * diagramas escritos à mão (os sem `construtor`).
+     *
+     * @param  list<array<string, mixed>>  $pecas
+     * @param  array<string, array<string, mixed>>  $diagramas
+     * @param  array<string, string>  $sobrescritas
+     * @return array<string, mixed>
+     */
+    function mapaModeloConferirAncoras(array $pecas, array $diagramas, array $sobrescritas = []): array
+    {
+        $violacoes  = [];
+        $conferidas = 0;
+        $porColecao = [];
+
+        $conferir = static function (string $nome, mixed $ancora, string $colecao) use (&$violacoes, &$conferidas, &$porColecao, $sobrescritas): void {
+            $ancora    = is_array($ancora) ? $ancora : [];
+            $resultado = mapaModeloConferirProva($nome, $ancora['arquivo'] ?? null, $ancora['trecho'] ?? null, array_diff_key($ancora, ['arquivo' => 1, 'trecho' => 1]), $sobrescritas);
+            $conferidas++;
+            $porColecao[$colecao] = ($porColecao[$colecao] ?? 0) + 1;
+
+            if (! $resultado['aceita']) {
+                $violacoes[] = $resultado['motivo'];
+            }
+        };
+
+        foreach ($pecas as $peca) {
+            foreach (is_array($peca['evidencia'] ?? null) ? $peca['evidencia'] : [] as $ancora) {
+                $conferir("a evidência da peça {$peca['id']}", $ancora, 'pecas');
+            }
+        }
+
+        foreach ($diagramas as $slug => $diagrama) {
+            if (array_key_exists('construtor', $diagrama)) {
+                continue;
+            }
+
+            foreach (mapaModeloAncorasDoDiagrama($diagrama) as ['colecao' => $colecao, 'item' => $item, 'ancora' => $ancora]) {
+                $conferir("o diagrama {$slug}, em {$colecao}, {$item}", $ancora, $colecao);
+            }
+        }
+
+        return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'porColecao' => $porColecao]);
+    }
+}
+
+if (! function_exists('mapaModeloConferirIdsConstruidos')) {
+    /**
+     * R36, CT-54: todo id que um arquivo de diagrama construído (com `construtor`) nomeia — a peça desenhada e o
+     * membro de agrupamento — é peça do modelo de peças. Lê o arquivo, e não o desenho: o gerador some com o id
+     * desconhecido no diagrama de um modo e o põe cru no card no de dois modos (step 9, achado A8).
+     *
+     * @param  array<string, array<string, mixed>>  $diagramas
+     * @param  list<array<string, mixed>>  $pecas
+     * @return array<string, mixed>
+     */
+    function mapaModeloConferirIdsConstruidos(array $diagramas, array $pecas): array
+    {
+        $doModelo   = array_flip(array_column($pecas, 'id'));
+        $violacoes  = [];
+        $arquivos   = [];
+        $conferidos = 0;
+
+        foreach ($diagramas as $slug => $diagrama) {
+            if (! array_key_exists('construtor', $diagrama)) {
+                continue;
+            }
+
+            $arquivos[$slug] = ['paineis' => count($diagrama['paineis'] ?? []), 'modos' => count($diagrama['modos'] ?? [])];
+
+            foreach ($diagrama['pecas'] ?? [] as $desenhada) {
+                $conferidos++;
+                $id = (string) ($desenhada['id'] ?? '');
+
+                if (! isset($doModelo[$id])) {
+                    $violacoes[] = "o diagrama {$slug} desenha a peça {$id}, que não é peça do modelo";
+                }
+            }
+
+            foreach ($diagrama['agrupamentos'] ?? [] as $grupo) {
+                foreach ($grupo['membros'] ?? [] as $membro) {
+                    $conferidos++;
+
+                    if (! isset($doModelo[$membro])) {
+                        $violacoes[] = "o diagrama {$slug} põe {$membro} no agrupamento {$grupo['id']}, e {$membro} não é peça do modelo";
+                    }
+                }
+            }
+        }
+
+        return mapaModeloResultado($violacoes, ['arquivos' => $arquivos, 'conferidos' => $conferidos]);
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| [CT-52] R9 — a linha que o build dá a cada prova é a do código (costura G5, forma de leitura)
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-52] a linha que o build dá a cada prova é a do código: o trecho está fora de comentário nela', function (string $mundo): void {
+    // Dado o node do ambiente, lido pela versão: sem ele o caso reprova, e não pula (Q21)
+    $node = Process::run(['node', '--version']);
+
+    expect($node->successful())->toBeTrue('o node não respondeu: '.$node->errorOutput())
+        ->and(trim($node->output()))->toMatch('/^v\d+\.\d+\.\d+$/');
+
+    if ($mundo === 'publicados') {
+        $diagramas = array_filter(diagramasDoMapa(), static fn (array $diagrama): bool => ($diagrama['tipo'] ?? null) !== 'compare');
+        $entradas  = mapaModeloEntradasDoArchify();
+
+        // o gerador montou a entrada de cada diagrama publicado (o comparativo é a soma de dois deles)
+        expect(array_keys($entradas))->toEqualCanonicalizing(array_keys($diagramas));
+
+        $guarda = mapaModeloConferirLinhasDoBuild($entradas);
+
+        expect($guarda['aceita'])->toBeTrue((string) $guarda['motivo']);
+
+        // conferiu tantas provas quantas o gerador projeta: cada fonte de peça e cada item de prova de ligação
+        $projetadas = 0;
+
+        foreach ($entradas as $saida) {
+            $projetadas += substr_count(json_encode(array_diff_key($saida['ir'] ?? [], ['cards' => 1]), JSON_THROW_ON_ERROR), '"line":');
+
+            foreach ($saida['ir']['cards'] ?? [] as $card) {
+                if (str_starts_with((string) ($card['title'] ?? ''), 'Prova das ligações')) {
+                    $projetadas += count($card['items'] ?? []);
+                }
+            }
+        }
+
+        expect($guarda['conferidas'])->toBe($projetadas)
+            ->and($projetadas)->toBeGreaterThan(count(modeloDoMapa()['ligacoes']))
+            ->and($guarda['repetidas'])->toBeGreaterThanOrEqual(1, 'nenhuma âncora conferida tem o trecho mais de uma vez no arquivo');
+
+        return;
+    }
+
+    // o controle: em app/Providers/AppServiceProvider.php, `Locker::class` aparece primeiro num comentário `//`
+    // e depois no código (premissa conferida aqui, no texto da revisão que o gerador lê)
+    $arquivo  = 'app/Providers/AppServiceProvider.php';
+    $trecho   = 'Locker::class';
+    $texto    = (string) (mapaModeloTextosNaRevisao([$arquivo])[$arquivo] ?? '');
+    $mascara  = mapaModeloMascararComentarios($arquivo, $texto);
+    $primeira = strpos($texto, $trecho);
+
+    expect($primeira)->not->toBeFalse("{$trecho} deveria estar em {$arquivo}")
+        ->and(substr($mascara, (int) $primeira, strlen($trecho)))->not->toBe($trecho, 'a primeira ocorrência deveria estar num comentário')
+        ->and(str_contains($mascara, $trecho))->toBeTrue("{$trecho} deveria estar também fora de comentário");
+
+    $controle = [
+        'slug'           => 'controle-ct52-locker',
+        'tipo'           => 'workflow',
+        'titulo'         => ['pt' => 'Controle do CT-52', 'en' => 'CT-52 control'],
+        'paineis'        => [],
+        'modos'          => ['sem', 'com'],
+        'schema_version' => 1,
+        'diagram_type'   => 'workflow',
+        'nodes'          => [['id' => 'app-service-provider', 'label' => 'AppServiceProvider'], ['id' => 'locker', 'label' => 'Locker']],
+        'edges'          => [[
+            'id'    => 'liga-locker',
+            'from'  => 'app-service-provider',
+            'to'    => 'locker',
+            'label' => ['pt' => 'liga', 'en' => 'binds'],
+            'prova' => ['arquivo' => $arquivo, 'trecho' => $trecho],
+        ]],
+    ];
+
+    $saida = mapaModeloEntradasDoArchify([$controle], true)['controle-ct52-locker'] ?? null;
+
+    expect($saida)->not->toBeNull('o gerador não devolveu o diagrama de controle');
+
+    if (isset($saida['erro'])) {
+        // o gerador recusou a âncora ambígua: aceita, se a mensagem nomeia a ligação
+        expect(str_contains($saida['erro'], 'app-service-provider → locker') || str_contains($saida['erro'], 'AppServiceProvider → Locker'))
+            ->toBeTrue('o gerador recusou a prova sem nomear a ligação: '.$saida['erro']);
+
+        return;
+    }
+
+    $guarda = mapaModeloConferirLinhasDoBuild(['controle-ct52-locker' => $saida]);
+
+    expect($guarda['conferidas'])->toBeGreaterThanOrEqual(1, 'o item de prova da ligação de controle não saiu do gerador')
+        ->and($guarda['aceita'])->toBeTrue((string) $guarda['motivo']);
+})->with([
+    'publicados'                                            => ['publicados'],
+    'diagrama em memória com o trecho antes num comentário' => ['controle'],
+])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
+
+/*
+|--------------------------------------------------------------------------
+| [CT-53] R9 — toda âncora do mapa resolve na suíte do kit
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-53] toda âncora do mapa resolve na suíte do kit: a evidência de cada peça do modelo e toda âncora dos diagramas escritos à mão', function (string $mundo): void {
+    $pecas        = modeloDoMapa()['pecas'];
+    $diagramas    = diagramasDoMapa();
+    $sobrescritas = [];
+    $nomeando     = [];
+
+    switch ($mundo) {
+        case 'evidência que saiu do código':
+            $peca   = 'App\\Filament\\Admin\\Resources\\Users\\UserResource';
+            $indice = array_search($peca, array_column($pecas, 'id'), true);
+
+            expect($indice)->not->toBeFalse()
+                ->and($pecas[$indice]['evidencia'][0]['arquivo'] ?? null)->toBe('app/Filament/Admin/Resources/Users/UserResource.php');
+
+            $pecas[$indice]['evidencia'][0]['trecho'] = 'trecho que não está no UserResource do admin';
+            $nomeando                                 = [$peca];
+            break;
+
+        case 'migração que não existe':
+            $migracao = 'database/migrations/2026_01_01_000000_create_tabela_que_nao_existe.php';
+
+            expect(is_file(base_path($migracao)))->toBeFalse()
+                ->and($diagramas['erd-identidade-e-permissoes']['entities'][0]['sources'][0]['arquivo'] ?? '')->toStartWith('database/migrations/');
+
+            $diagramas['erd-identidade-e-permissoes']['entities'][0]['sources'][0]['arquivo']  = $migracao;
+            $nomeando                                                                          = ['erd-identidade-e-permissoes', $migracao];
+            break;
+
+        case 'trecho fora do CHANGELOG':
+            $trecho = '## [9.99.9] - 2099-12-31';
+
+            expect($diagramas['marcos-do-changelog']['events'][0]['sources'][0]['arquivo'] ?? null)->toBe('CHANGELOG.md')
+                ->and(str_contains((string) file_get_contents(base_path('CHANGELOG.md')), $trecho))->toBeFalse();
+
+            $diagramas['marcos-do-changelog']['events'][0]['sources'][0]['trecho'] = $trecho;
+            $nomeando                                                              = ['marcos-do-changelog'];
+            break;
+
+        case 'relação só em comentário':
+            $relacao = $diagramas['classes-heranca-e-contratos']['relationships'][0];
+            $arquivo = $relacao['prova']['arquivo'];
+            $trecho  = 'class User implements ProvaQueSoExisteNumComentario';
+
+            // cópia em memória do arquivo da prova com o trecho só num comentário
+            $sobrescritas[$arquivo] = file_get_contents(base_path($arquivo))."\n// {$trecho}\n";
+
+            expect(str_contains((string) mapaModeloCodigo($arquivo, $sobrescritas), $trecho))->toBeFalse()
+                ->and(str_contains($sobrescritas[$arquivo], $trecho))->toBeTrue();
+
+            $diagramas['classes-heranca-e-contratos']['relationships'][0]['prova']['trecho'] = $trecho;
+            $nomeando                                                                        = ['classes-heranca-e-contratos', (string) $relacao['id']];
+            break;
+
+        case 'span só em comentário de YAML':
+            $arquivo = '.github/workflows/ci.yml';
+            $trecho  = 'job-que-so-existe-num-comentario:';
+
+            // cópia em memória do workflow com o trecho só numa linha de comentário `#` (Q20)
+            $sobrescritas[$arquivo] = file_get_contents(base_path($arquivo))."\n# {$trecho}\n";
+
+            expect(in_array($arquivo, arquivosVersionados(), true))->toBeTrue()
+                ->and(str_contains((string) mapaModeloCodigo($arquivo, $sobrescritas), $trecho))->toBeFalse();
+
+            $diagramas['tempos-ci']['spans'][0]['sources'][0] = ['arquivo' => $arquivo, 'trecho' => $trecho, 'label' => 'controle do CT-53'];
+            $nomeando                                         = ['tempos-ci'];
+            break;
+    }
+
+    $guarda = mapaModeloConferirAncoras($pecas, $diagramas, $sobrescritas);
+
+    if ($mundo === 'publicados') {
+        expect($guarda['aceita'])->toBeTrue((string) $guarda['motivo']);
+
+        // conferiu tantas âncoras quantas o modelo de peças e os diagramas escritos à mão têm
+        $esperadas = array_sum(array_map(static fn (array $peca): int => count($peca['evidencia'] ?? []), $pecas));
+
+        foreach ($diagramas as $diagrama) {
+            if (! array_key_exists('construtor', $diagrama)) {
+                $esperadas += substr_count(json_encode($diagrama, JSON_THROW_ON_ERROR), '"arquivo":');
+            }
+        }
+
+        expect($guarda['conferidas'])->toBe($esperadas)
+            ->and($guarda['conferidas'])->toBeGreaterThan(count($pecas));
+
+        foreach (['participants', 'nodes', 'entities', 'types', 'events', 'spans', 'relationships'] as $colecao) {
+            expect($guarda['porColecao'][$colecao] ?? 0)->toBeGreaterThanOrEqual(1, "nenhuma âncora de {$colecao} foi conferida");
+        }
+
+        return;
+    }
+
+    expect($guarda['aceita'])->toBeFalse("a guarda aceitou a cópia: {$mundo}");
+
+    foreach ($nomeando as $nome) {
+        expect($guarda['motivo'])->toContain($nome);
+    }
+})->with([
+    'publicados'                                                           => ['publicados'],
+    'cópia com a evidência do UserResource do /admin fora do código'       => ['evidência que saiu do código'],
+    'cópia do erd-identidade-e-permissoes com uma migração que não existe' => ['migração que não existe'],
+    'cópia do marcos-do-changelog com um trecho fora do CHANGELOG'         => ['trecho fora do CHANGELOG'],
+    'cópia do classes-heranca-e-contratos com a prova só em comentário'    => ['relação só em comentário'],
+    'cópia do tempos-ci com o trecho só num comentário de YAML'            => ['span só em comentário de YAML'],
+])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
+
+/*
+|--------------------------------------------------------------------------
+| [CT-54] R36 — todo id de um diagrama construído é peça do modelo
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-54] todo id que um arquivo de diagrama construído nomeia — peça desenhada ou membro de agrupamento — é peça do modelo, em diagrama de painel e do kit inteiro, de um modo ou dos dois', function (string $mundo, string $slug, string $onde, int $paineis, int $modos): void {
+    $pecas     = modeloDoMapa()['pecas'];
+    $diagramas = diagramasDoMapa();
+    $intruso   = 'App\\Support\\PecaQueNaoExiste';
+
+    if ($mundo === 'publicados') {
+        $guarda      = mapaModeloConferirIdsConstruidos($diagramas, $pecas);
+        $construidos = array_keys(array_filter($diagramas, static fn (array $diagrama): bool => array_key_exists('construtor', $diagrama)));
+
+        expect($guarda['aceita'])->toBeTrue((string) $guarda['motivo'])
+            ->and(array_keys($guarda['arquivos']))->toEqualCanonicalizing($construidos)
+            ->and($construidos)->not->toBeEmpty()
+            ->and($guarda['conferidos'])->toBeGreaterThan(0);
+
+        // os de painel e os do kit inteiro, de um modo e dos dois
+        $comoSao = array_values($guarda['arquivos']);
+
+        expect(array_filter($comoSao, static fn (array $arquivo): bool => $arquivo['paineis'] > 0))->not->toBeEmpty()
+            ->and(array_filter($comoSao, static fn (array $arquivo): bool => $arquivo['paineis'] === 0))->not->toBeEmpty()
+            ->and(array_filter($comoSao, static fn (array $arquivo): bool => $arquivo['modos'] === 1))->not->toBeEmpty()
+            ->and(array_filter($comoSao, static fn (array $arquivo): bool => $arquivo['modos'] === 2))->not->toBeEmpty();
+
+        return;
+    }
+
+    // Dado: o arquivo construído é do kit inteiro ou de painel, de um modo ou dos dois, e o intruso não é peça
+    $copia = $diagramas[$slug];
+
+    expect($copia['construtor'] ?? null)->toBe('mapa')
+        ->and(count($copia['paineis'] ?? []))->toBe($paineis)
+        ->and(count($copia['modos'] ?? []))->toBe($modos)
+        ->and(classeExiste($intruso))->toBeFalse()
+        ->and(pecasPorId($pecas))->not->toHaveKey($intruso);
+
+    if ($onde === 'membro') {
+        expect($copia['agrupamentos'] ?? [])->not->toBeEmpty();
+        $copia['agrupamentos'][0]['membros'][] = $intruso;
+    } else {
+        $copia['pecas'][] = ['id' => $intruso, 'row' => 9, 'col' => 9];
+    }
+
+    $diagramas[$slug] = $copia;
+    $guarda           = mapaModeloConferirIdsConstruidos($diagramas, $pecas);
+
+    expect($guarda['aceita'])->toBeFalse("a guarda aceitou o id desconhecido em {$slug}")
+        ->and($guarda['motivo'])->toContain($slug)
+        ->and($guarda['motivo'])->toContain($intruso);
+})->with([
+    'publicados'                                                        => ['publicados', '', '', 0, 0],
+    'cópia do kit-resumo-sem com um membro desconhecido no agrupamento' => ['copia', 'kit-resumo-sem', 'membro', 0, 1],
+    'cópia do admin-resumo com um membro desconhecido no agrupamento'   => ['copia', 'admin-resumo', 'membro', 1, 2],
+    'cópia do app-resumo-sem com uma peça desconhecida desenhada'       => ['copia', 'app-resumo-sem', 'peca', 1, 1],
 ])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);

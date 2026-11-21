@@ -1,16 +1,25 @@
 <?php
 
 /**
- * As guardas do mapa interativo que só existem com o modo multi-tenant ligado: CT-12 (R11), CT-30 (R28),
- * CT-38 (R34) e CT-44 (R6), todos da costura G3 do `04-casos-de-teste.md` da wiki
+ * As guardas do mapa interativo que só existem com o modo multi-tenant ligado: CT-12 e CT-55 (R11),
+ * CT-30 (R28), CT-38 (R34) e CT-44 (R6), todos da costura G3 do `04-casos-de-teste.md` da wiki
  * `feat/mapa-interativo-do-kit`.
  *
  * Escrito a partir do Gherkin do `04`; `app/` e `site/mapa/` foram lidos só para achar NOMES (classe,
  * arquivo, forma do modelo). O modo com tenant só existe com o `Tests\TenancyTestCase`, que fixa
  * `kit.tenancy.enabled` antes do boot.
  *
- * Cada guarda é uma função aplicada ao modelo publicado e a cópias adulteradas em memória: o controle
- * chama a mesma função da linha "publicado".
+ * Cada guarda é uma função aplicada ao modelo publicado. Onde há controle, a cópia é adulterada em
+ * memória e passa pela mesma função da linha "publicado". O que cada dataset tem (Q26 do `04`):
+ * - CT-12, a guarda do registro: só o publicado, uma linha por painel (app, admin e infra).
+ * - CT-55, os controles da mesma guarda, sobre os três painéis: o publicado e três cópias do modelo — a
+ *   sobra de uma peça fora dos cinco tipos de registro (o Livewire `InformacoesPessoais` dado ao `/app`
+ *   só com tenant), a falta do `IdentifyTenant` no `/app` e o `DefinirTenantDePermissoes` dado ao `/admin`.
+ * - CT-38, a guarda do desenho: o publicado de cada painel e três cópias — o `/app` só com os diagramas
+ *   compartilhados, o `IdentifyTenant` só no `sequence`, e o Livewire que a árvore do `/app` com tenant
+ *   desenha e o painel não registra (o "nada além").
+ * - CT-30, a guarda das F-nn, e CT-44, a guarda da rota: só o publicado (os três painéis; pt e en), sem
+ *   controle em cópia (D38). O achado A15 do step 9 fica com o CT-55 e com a linha do Livewire do CT-38.
  *
  * O modelo, os diagramas, o registro vivo, o que o modelo dá ao painel no modo, o catálogo, a F-nn da peça e
  * o motivo de enfeite moram em `tests/Pest.php`, porque as guardas sem tenant também os usam
@@ -43,17 +52,20 @@ if (! function_exists('mapaTenancyConferirRegistro')) {
      */
     function mapaTenancyConferirRegistro(array $modelo, Panel $painel, string $modo): array
     {
-        $vivo = registroVivoDoPainel($painel);
-        $dado = array_fill_keys(MAPA_TENANCY_TIPOS_DE_REGISTRO, []);
+        $vivo    = registroVivoDoPainel($painel);
+        $dado    = array_fill_keys(MAPA_TENANCY_TIPOS_DE_REGISTRO, []);
+        $motivos = [];
 
         foreach (registradasNoModelo($modelo, $painel->getId(), $modo) as $id) {
             $tipo = $modelo['pecas'][$id]['tipo'] ?? null;
             if (in_array($tipo, MAPA_TENANCY_TIPOS_DE_REGISTRO, true)) {
                 $dado[$tipo][] = $id;
-            }
-        }
 
-        $motivos = [];
+                continue;
+            }
+            // O painel só registra os cinco tipos: a peça de outro tipo que o modelo dá a ele no modo sobra (R11-M7).
+            $motivos[] = "o modelo dá {$id} (".($tipo ?? 'sem tipo').") ao painel {$painel->getId()} no modo {$modo} e ele não o registra";
+        }
 
         foreach (MAPA_TENANCY_TIPOS_DE_REGISTRO as $tipo) {
             foreach (array_diff($vivo[$tipo], $dado[$tipo]) as $id) {
@@ -316,6 +328,75 @@ it('[CT-12] com tenant, tudo que o painel registra está no modelo, e o modelo n
     ], [IdentifyTenant::class]],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'O modelo do mapa não viaja no pacote.');
 
+it('[CT-55] com tenant, a guarda do registro reprova o modelo que sobra peça de qualquer tipo, que esquece peça ou que troca o painel', function (string $mundo, string $resultado, array $nomeando): void {
+    // Dado o modo com tenant, lido, e os três painéis do registro, cada um com o hasTenancy() lido
+    mapaTenancyDadoModoComTenant();
+    $paineis = Filament::getPanels();
+    expect(array_keys($paineis))->toEqualCanonicalizing(['admin', 'app', 'infra'])
+        ->and($paineis['app']->hasTenancy())->toBeTrue()
+        ->and($paineis['admin']->hasTenancy())->toBeFalse()
+        ->and($paineis['infra']->hasTenancy())->toBeFalse();
+
+    $modelo      = modeloDoMapaPorId();
+    $livewire    = 'App\Livewire\InformacoesPessoais';
+    $organizacao = 'App\Http\Middleware\DefinirTenantDePermissoes';
+
+    switch ($mundo) {
+        case 'Livewire no app':
+            // uma peça do tipo Livewire, que o painel app não registra e que o modelo publicado não dá a ele
+            expect($modelo['pecas'][$livewire]['tipo'] ?? null)->toBe('livewire')
+                ->and(array_merge(...array_values(registroVivoDoPainel($paineis['app']))))->not->toContain($livewire)
+                ->and(registradasNoModelo($modelo, 'app', 'com'))->not->toContain($livewire);
+            $modelo['ligacoes'][] = ['de' => 'painel:app', 'para' => $livewire, 'verbo' => 'registra', 'paineis' => ['app'], 'modos' => ['com'], 'evidencia' => $modelo['pecas'][$livewire]['evidencia'][0]];
+            break;
+        case 'sem o IdentifyTenant':
+            // o painel app registra o IdentifyTenant com tenant, e a cópia tira a ligação dele
+            expect(registroVivoDoPainel($paineis['app'])['middleware'])->toContain(IdentifyTenant::class);
+            $antes              = count($modelo['ligacoes']);
+            $modelo['ligacoes'] = array_values(array_filter($modelo['ligacoes'], fn (array $l): bool => ! ($l['de'] === 'painel:app' && $l['para'] === IdentifyTenant::class && $l['verbo'] === 'registra')));
+            expect(count($modelo['ligacoes']))->toBe($antes - 1)
+                ->and(registradasNoModelo($modelo, 'app', 'com'))->not->toContain(IdentifyTenant::class);
+            break;
+        case 'organização no admin':
+            // a ligação do app fica; a cópia dá a mesma peça também ao admin, que não a registra
+            $doApp = array_values(array_filter($modelo['ligacoes'], fn (array $l): bool => $l['de'] === 'painel:app' && $l['para'] === $organizacao && $l['verbo'] === 'registra' && in_array('com', $l['modos'] ?? [], true)));
+            expect($doApp)->toHaveCount(1)
+                ->and(array_merge(...array_values(registroVivoDoPainel($paineis['admin']))))->not->toContain($organizacao);
+            $modelo['ligacoes'][] = ['de' => 'painel:admin', 'paineis' => ['admin'], 'modos' => ['com']] + $doApp[0];
+            break;
+    }
+
+    // Quando a guarda do mapa compara o registro dos três painéis com o modelo, no modo com tenant
+    $motivos = [];
+    foreach ($paineis as $painel) {
+        $motivos = [...$motivos, ...mapaTenancyConferirRegistro($modelo, $painel, 'com')];
+    }
+
+    if ($resultado === 'aceita') {
+        expect($motivos)->toBe([]);
+
+        return;
+    }
+
+    // Então reprova, com um motivo que nomeia a peça e o painel
+    expect($motivos === [])->toBeFalse('a guarda aceitou o modelo adulterado: '.$mundo);
+    $nomeiam = array_filter($motivos, function (string $motivo) use ($nomeando): bool {
+        foreach ($nomeando as $nome) {
+            if (! str_contains($motivo, $nome)) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+    expect($nomeiam)->not->toBeEmpty('nenhum motivo nomeia '.implode(' e ', $nomeando).': '.implode(' | ', $motivos));
+})->with([
+    'publicado'                                                          => ['publicado', 'aceita', []],
+    'cópia que dá ao app, só com tenant, o Livewire InformacoesPessoais' => ['Livewire no app', 'reprova', ['InformacoesPessoais', 'painel app']],
+    'cópia sem a ligação do IdentifyTenant no app com tenant'            => ['sem o IdentifyTenant', 'reprova', ['IdentifyTenant', 'painel app']],
+    'cópia que dá o DefinirTenantDePermissoes ao admin com tenant'       => ['organização no admin', 'reprova', ['DefinirTenantDePermissoes', 'painel admin']],
+])->skip(fn (): bool => ! naArvoreDoKit(), 'O modelo do mapa não viaja no pacote.');
+
 it('[CT-30] com tenant, toda peça que o painel registra entrega ao menos uma F-nn do catálogo, ou está na lista com o motivo', function (string $id, string $ancora): void {
     mapaTenancyDadoModoComTenant();
     $painel   = Filament::getPanel($id);
@@ -354,6 +435,17 @@ it('[CT-38] com tenant, os diagramas de arquitetura e a árvore de registro de c
         expect(array_column($diagramas, 'slug'))->toContain('requisicao-autenticada-com');
     }
 
+    if ($mundo === 'Livewire na árvore') {
+        // a cópia do modelo dá ao /app, só com tenant, o registro de uma peça Livewire que ele não registra; a árvore
+        // `app-registro-com`, que o construtor gera do modelo, passa a desenhá-la
+        $livewire = 'App\Livewire\InformacoesPessoais';
+        expect($modelo['pecas'][$livewire]['tipo'] ?? null)->toBe('livewire')
+            ->and(array_merge(...array_values(registroVivoDoPainel($painel))))->not->toContain($livewire)
+            ->and(registradasNoModelo($modelo, $id, 'com'))->not->toContain($livewire);
+        $modelo['ligacoes'][] = ['de' => "painel:{$id}", 'para' => $livewire, 'verbo' => 'registra', 'paineis' => [$id], 'modos' => ['com'], 'evidencia' => $modelo['pecas'][$livewire]['evidencia'][0]];
+        expect(mapaTenancyLigacoesDesenhadas($modelo, diagramasDoMapa()['app-registro-com'], $id, 'com'))->toContain($livewire);
+    }
+
     $motivos = mapaTenancyConferirDesenhoDoRegistro($modelo, $diagramas, $painel, 'com');
 
     if ($mundo === 'publicados') {
@@ -369,11 +461,12 @@ it('[CT-38] com tenant, os diagramas de arquitetura e a árvore de registro de c
         expect($texto)->toContain($peca);
     }
 })->with([
-    'app, publicados'                       => ['app', 'publicados', []],
-    'admin, publicados'                     => ['admin', 'publicados', []],
-    'infra, publicados'                     => ['infra', 'publicados', []],
-    'app, só diagramas compartilhados'      => ['app', 'só compartilhados', [IdentifyTenant::class, 'App\Http\Middleware\DefinirTenantDePermissoes']],
-    'app, só no requisicao-autenticada-com' => ['app', 'só no sequence', [IdentifyTenant::class]],
+    'app, publicados'                                                    => ['app', 'publicados', []],
+    'admin, publicados'                                                  => ['admin', 'publicados', []],
+    'infra, publicados'                                                  => ['infra', 'publicados', []],
+    'app, só diagramas compartilhados'                                   => ['app', 'só compartilhados', [IdentifyTenant::class, 'App\Http\Middleware\DefinirTenantDePermissoes']],
+    'app, só no requisicao-autenticada-com'                              => ['app', 'só no sequence', [IdentifyTenant::class]],
+    'app, cópia com o Livewire InformacoesPessoais na árvore com tenant' => ['app', 'Livewire na árvore', ['InformacoesPessoais']],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Os diagramas do mapa não viajam no pacote.');
 
 it('[CT-44] com tenant, todo caminho do "onde fica" que leva a organização resolve no roteador', function (string $idioma): void {

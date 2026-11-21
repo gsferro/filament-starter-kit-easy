@@ -4,12 +4,14 @@
  * Guardas dos diagramas e da página do mapa interativo — costura G2, metade dos diagramas.
  *
  * Fonte: `wikis/specs/feat/mapa-interativo-do-kit/mapa-interativo-do-kit/04-casos-de-teste.md`
- * (Setup Global e as regras R6, R12, R15 a R20, R22, R29 e, da R34, só o CT-37). Escrito a partir do
- * Gherkin do `04`, nunca do plano: `site/mapa/`, `docs/` e `app/` só foram lidos para achar NOMES
- * (arquivo, campo, classe), nunca para decidir o que é esperado.
+ * (Setup Global e as regras R6, R12, R15 a R20, R22, R29, da R34 só o CT-37, e a R38, do step 9). Escrito a
+ * partir do Gherkin do `04`, nunca do plano: `site/mapa/`, `docs/` e `app/` só foram lidos para achar NOMES
+ * (arquivo, campo, classe, função exportada), nunca para decidir o que é esperado.
  *
  * Lote: CT-06, CT-14, CT-15, CT-16, CT-17, CT-18, CT-19, CT-20, CT-21, CT-22, CT-24, CT-31, CT-36,
  * CT-37 e CT-43. O CT-44 é da suíte Tenancy e o CT-38 também: ficam fora deste arquivo.
+ * Do step 9 (revisão do diff): CT-46 e CT-47 (R38), pela costura G5 na forma de leitura — um `node` filho
+ * importa `site/mapa/gerar.mjs` e devolve a entrada que o gerador entrega ao archify, sem baixar nem renderizar.
  *
  * Toda guarda é uma função aplicada ao modelo publicado e a cópias adulteradas EM MEMÓRIA, nunca
  * ao arquivo real: a linha "publicados" e as linhas de controle chamam a MESMA função.
@@ -21,6 +23,8 @@
 
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -2118,3 +2122,442 @@ it('[CT-37] sem tenant, os diagramas de arquitetura e a árvore de registro de c
     'infra publicados'                     => ['infra', 'publicados'],
     'admin sem o Shield em nenhum desenho' => ['admin', 'cópia sem o FilamentShieldPlugin'],
 ]);
+
+/*
+|--------------------------------------------------------------------------
+| R38 — o traço da seta e a caixa de agrupamento do mapa de arquitetura (CT-46, CT-47)
+|--------------------------------------------------------------------------
+|
+| Costura G5, forma de leitura: um `node` filho importa `site/mapa/gerar.mjs` e devolve, mapa a mapa e idioma
+| a idioma, a entrada que `entradaDoArchify()` entrega ao archify, sem baixar o archify nem renderizar. A cópia
+| em memória do modelo é a que `carregarModelo()` devolve, alterada no filho antes da montagem; a do arquivo do
+| diagrama é um agrupamento a mais na cópia que o filho lê. Nada é escrito em `site/`: o script e o pedido
+| moram numa pasta temporária do sistema, apagada no fim. A guarda acha as ligações de cada par pela regra de
+| desenho da R12 (`mapaDiagramasConstruir()`), e o traço de cada verbo vem da legenda do `04`.
+*/
+
+if (! function_exists('mapaDiagramasEntradasDoGerador')) {
+    /** O `node` do ambiente, lido pela versão. Sem ele o caso reprova, e não pula (Q21). */
+    function mapaDiagramasVersaoDoNode(): string
+    {
+        $processo = Process::path(base_path())->timeout(60)->run(['node', '--version']);
+
+        expect($processo->successful())->toBeTrue('o ambiente não tem node: '.$processo->errorOutput());
+
+        return trim($processo->output());
+    }
+
+    /**
+     * O traço de cada verbo, como a legenda "Como ler as setas" o dá no `04` (R38): o oráculo, e não a tabela do gerador.
+     *
+     * @return array<string, string>
+     */
+    function mapaDiagramasTracoDoVerbo(): array
+    {
+        return ['registra' => 'emphasis', 'usa' => 'default', 'lê' => 'dashed', 'grava' => 'security'];
+    }
+
+    /**
+     * Os mapas de arquitetura construídos: os arquivos de `site/mapa/diagramas/` com o construtor `mapa`. A pasta é o
+     * manifesto, e o piso de não vácuo vem dela, e não do processo filho.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    function mapaDiagramasMapasConstruidos(): array
+    {
+        return array_filter(diagramasDoMapa(), static fn (array $decl): bool => ($decl['construtor'] ?? null) === 'mapa');
+    }
+
+    /** O script do processo filho: lê o pedido, altera em memória o modelo e os diagramas, e monta a entrada do archify. */
+    function mapaDiagramasScriptDaEntrada(): string
+    {
+        return <<<'JS'
+            import { readFileSync, readdirSync } from 'node:fs';
+            import { join } from 'node:path';
+            import { pathToFileURL } from 'node:url';
+
+            const [gerador, pasta, arquivoDoPedido] = process.argv.slice(2);
+            const pedido = JSON.parse(readFileSync(arquivoDoPedido, 'utf8'));
+            const { carregarModelo, entradaDoArchify, idArchify } = await import(pathToFileURL(gerador).href);
+            const modelo = carregarModelo();
+            modelo.ligacoes.push(...(pedido.ligacoes ?? []));
+            const saida = { ids: {}, diagramas: {} };
+            for (const id of modelo.pecas.keys()) saida.ids[id] = idArchify(id);
+            for (const nome of readdirSync(pasta).filter((arquivo) => arquivo.endsWith('.json')).sort()) {
+              let diagrama = JSON.parse(readFileSync(join(pasta, nome), 'utf8'));
+              if (diagrama.construtor !== 'mapa') continue;
+              if (pedido.slugs?.length && !pedido.slugs.includes(diagrama.slug)) continue;
+              const extras = pedido.agrupamentos?.[diagrama.slug] ?? [];
+              if (extras.length) diagrama = { ...diagrama, agrupamentos: [...(diagrama.agrupamentos ?? []), ...extras] };
+              saida.diagramas[diagrama.slug] = {};
+              for (const idioma of ['pt', 'en']) {
+                try {
+                  const ir = entradaDoArchify(diagrama, idioma, {});
+                  saida.diagramas[diagrama.slug][idioma] = {
+                    components: (ir.components ?? []).map(({ id, sublabel }) => ({ id, sublabel: sublabel ?? null })),
+                    connections: (ir.connections ?? []).map(({ id, from, to, variant }) => ({ id, from, to, variant: variant ?? null })),
+                  };
+                } catch (erro) {
+                  saida.diagramas[diagrama.slug][idioma] = { erro: String(erro?.message ?? erro) };
+                }
+              }
+            }
+            process.stdout.write(JSON.stringify(saida));
+            JS;
+    }
+
+    /**
+     * A entrada que o gerador entrega ao archify, por mapa construído e por idioma: as caixas (`components`, com o
+     * rótulo secundário) e as setas (`connections`), ou o erro com que o gerador recusou o diagrama; e o id do
+     * archify de cada peça do modelo. Um mundo por processo, porque o modelo de `carregarModelo()` é cache mutável.
+     *
+     * @param  list<array<string, mixed>>  $ligacoes  acrescentadas à cópia em memória do modelo
+     * @param  array<string, list<array<string, mixed>>>  $agrupamentos  acrescentados, por slug, à cópia em memória do diagrama
+     * @param  list<string>  $slugs  só estes mapas; vazio, todos
+     * @return array{ids: array<string, string>, diagramas: array<string, array<string, array<string, mixed>>>}
+     */
+    function mapaDiagramasEntradasDoGerador(array $ligacoes = [], array $agrupamentos = [], array $slugs = []): array
+    {
+        static $cache = [];
+
+        $pedido = json_encode(['ligacoes' => $ligacoes, 'agrupamentos' => (object) $agrupamentos, 'slugs' => $slugs], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+        if (isset($cache[$pedido])) {
+            return $cache[$pedido];
+        }
+
+        $pasta = sys_get_temp_dir().DIRECTORY_SEPARATOR.'mapa-diagramas-'.bin2hex(random_bytes(6));
+        File::ensureDirectoryExists($pasta);
+
+        try {
+            file_put_contents($pasta.DIRECTORY_SEPARATOR.'entrada.mjs', mapaDiagramasScriptDaEntrada());
+            file_put_contents($pasta.DIRECTORY_SEPARATOR.'pedido.json', $pedido);
+            $processo = Process::path(base_path())->timeout(300)->run([
+                'node', $pasta.DIRECTORY_SEPARATOR.'entrada.mjs', base_path('site/mapa/gerar.mjs'), base_path('site/mapa/diagramas'), $pasta.DIRECTORY_SEPARATOR.'pedido.json',
+            ]);
+        } finally {
+            File::deleteDirectory($pasta);
+        }
+
+        expect($processo->successful())->toBeTrue('o node não montou a entrada do archify: '.$processo->errorOutput());
+
+        return $cache[$pedido] = json_decode($processo->output(), true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * Os verbos das ligações do modelo que caem em cada par de pontas desenhadas de um mapa construído, pela regra de
+     * desenho da R12: a peça, ou o agrupamento que a nomeia, no painel e no modo do diagrama — as ligações que
+     * `mapaDiagramasConstruir()` anota como representadas. O par vem nos ids do archify: "origem → destino".
+     *
+     * @param  array<string, string>  $ids  id do modelo => id do archify
+     * @return array<string, array<string, true>>
+     */
+    function mapaDiagramasVerbosPorPar(array $ir, array $ids): array
+    {
+        $grupoDe = [];
+        foreach ($ir['nos'] as $no => $dado) {
+            if ($dado['tipo'] === 'grupo') {
+                foreach ($dado['membros'] as $membro) {
+                    $grupoDe[$membro] = $no;
+                }
+            }
+        }
+        $ponta = static fn (string $id): string => ($ir['nos'][$id]['tipo'] ?? null) === 'peca' ? ($ids[$id] ?? $id) : ($grupoDe[$id] ?? '?'.$id);
+        $pares = [];
+        foreach ($ir['representadas'] as $chave) {
+            [$de, $para, $verbo]                            = explode('|', $chave);
+            $pares[$ponta($de).' → '.$ponta($para)][$verbo] = true;
+        }
+
+        return $pares;
+    }
+
+    /**
+     * A guarda da seta (R38, CT-46): em cada mapa construído e em cada idioma, os traços das setas de cada par de
+     * pontas desenhadas são os dos verbos das ligações do modelo que caem nele — um por verbo, sem faltar, sobrar
+     * nem repetir. O diagrama que o gerador recusa reprova.
+     *
+     * @param  array<string, array<string, mixed>>  $decls  os mapas conferidos, por slug
+     * @return array{aceita: bool, motivo: string, falhas: list<array{mapa: string, par: string, verbo: ?string, texto: string}>, mapas: int, paresDeDoisVerbos: int}
+     */
+    function mapaDiagramasConferirSetas(array $decls, array $modelo, array $gerado): array
+    {
+        $tracoDoVerbo      = mapaDiagramasTracoDoVerbo();
+        $falhas            = [];
+        $mapas             = 0;
+        $paresDeDoisVerbos = 0;
+        foreach ($decls as $slug => $decl) {
+            $esperado = mapaDiagramasVerbosPorPar(mapaDiagramasConstruir($decl, $modelo), $gerado['ids']);
+            $paresDeDoisVerbos += count(array_filter($esperado, static fn (array $verbos): bool => count($verbos) > 1));
+            $conferido = false;
+            foreach (['pt', 'en'] as $idioma) {
+                $entrada = $gerado['diagramas'][$slug][$idioma] ?? ['erro' => 'o gerador não montou o diagrama'];
+                if (isset($entrada['erro'])) {
+                    $falhas["{$slug}|erro"] = ['mapa' => $slug, 'par' => '', 'verbo' => null, 'texto' => "{$slug} ({$idioma}): {$entrada['erro']}"];
+
+                    continue;
+                }
+                $conferido = true;
+                $tracos    = [];
+                foreach ($entrada['connections'] as $seta) {
+                    $tracos[$seta['from'].' → '.$seta['to']][] = (string) $seta['variant'];
+                }
+                foreach (array_unique([...array_keys($esperado), ...array_keys($tracos)]) as $par) {
+                    $verbos  = array_map('strval', array_keys($esperado[$par] ?? []));
+                    $setas   = $tracos[$par] ?? [];
+                    $devidos = array_map(static fn (string $verbo): string => $tracoDoVerbo[$verbo] ?? "?{$verbo}", $verbos);
+                    foreach ($verbos as $indice => $verbo) {
+                        if (! in_array($devidos[$indice], $setas, true)) {
+                            $falhas["{$slug}|{$par}|{$verbo}"] = ['mapa' => $slug, 'par' => $par, 'verbo' => $verbo,
+                                'texto'                                  => "{$slug}: o par {$par} tem a ligação \"{$verbo}\" sem a seta dela (traço {$devidos[$indice]}); as setas do par: [".implode(', ', $setas).']'];
+                        }
+                    }
+                    foreach (array_count_values($setas) as $traco => $quantas) {
+                        if ($quantas > 1 || ! in_array((string) $traco, $devidos, true)) {
+                            $falhas["{$slug}|{$par}|traço {$traco}"] = ['mapa' => $slug, 'par' => $par, 'verbo' => null,
+                                'texto'                                        => "{$slug}: o par {$par} tem {$quantas} seta(s) com o traço {$traco}, e as ligações dele são [".implode(', ', $verbos).']'];
+                        }
+                    }
+                }
+            }
+            $mapas += $conferido ? 1 : 0;
+        }
+        $lista = array_values($falhas);
+        if ($lista === []) {
+            return ['aceita' => true, 'motivo' => 'aceita', 'falhas' => [], 'mapas' => $mapas, 'paresDeDoisVerbos' => $paresDeDoisVerbos];
+        }
+        $pares        = array_values(array_unique(array_map(static fn (array $falha): string => $falha['mapa'].'|'.$falha['par'], $lista)));
+        $paresPorMapa = array_count_values(array_map(static fn (string $par): string => explode('|', $par)[0], $pares));
+        $motivo       = sprintf(
+            'reprova: %d falhas em %d pares de %d mapas — %s. Ex.: %s',
+            count($lista),
+            count($pares),
+            count($paresPorMapa),
+            implode(', ', array_map(static fn (string $mapa, int $quantos): string => "{$mapa} ({$quantos})", array_keys($paresPorMapa), $paresPorMapa)),
+            $lista[0]['texto'],
+        );
+
+        return ['aceita' => false, 'motivo' => $motivo, 'falhas' => $lista, 'mapas' => $mapas, 'paresDeDoisVerbos' => $paresDeDoisVerbos];
+    }
+
+    /**
+     * A guarda da caixa (R38, CT-47): o rótulo secundário de cada caixa de agrupamento diz quantas peças ela nomeia no
+     * modo do diagrama — depois do filtro de modo —, com a palavra no número certo; a caixa que o filtro esvazia não
+     * é desenhada, ou o gerador recusa o diagrama nomeando o agrupamento.
+     *
+     * @param  array<string, array<string, mixed>>  $decls  os mapas conferidos, por slug
+     * @return array{aceita: bool, motivo: string, falhas: list<array{mapa: string, caixa: string, texto: string}>, mapas: int, caixas: int}
+     */
+    function mapaDiagramasConferirCaixas(array $decls, array $modelo, array $gerado): array
+    {
+        $falhas = [];
+        $mapas  = 0;
+        $caixas = 0;
+        foreach ($decls as $slug => $decl) {
+            $ir      = mapaDiagramasConstruir($decl, $modelo);
+            $membros = [];
+            $nomes   = [];
+            foreach ($decl['agrupamentos'] ?? [] as $grupo) {
+                $membros[$grupo['id']] = count($ir['nos'][$grupo['id']]['membros'] ?? []);
+                $nomes[$grupo['id']]   = [$grupo['id'], mapaDiagramasPt($grupo['rotulo'] ?? ''), mapaDiagramasEn($grupo['rotulo'] ?? '')];
+            }
+            $caixas += count($membros);
+            $mapas++;
+            foreach (['pt', 'en'] as $idioma) {
+                $entrada = $gerado['diagramas'][$slug][$idioma] ?? ['erro' => 'o gerador não montou o diagrama'];
+                if (isset($entrada['erro'])) {
+                    $nomeiaVazia = array_filter(
+                        array_keys(array_filter($membros, static fn (int $quantos): bool => $quantos === 0)),
+                        static fn (string $id): bool => array_filter($nomes[$id], static fn (string $nome): bool => $nome !== '' && str_contains($entrada['erro'], $nome)) !== [],
+                    );
+                    if ($nomeiaVazia === []) {
+                        $falhas[] = ['mapa' => $slug, 'caixa' => '', 'texto' => "{$slug} ({$idioma}): o gerador recusou o diagrama sem nomear agrupamento vazio — {$entrada['erro']}"];
+                    }
+
+                    continue;
+                }
+                $desenhadas = array_column($entrada['components'], 'sublabel', 'id');
+                foreach ($membros as $id => $quantos) {
+                    $id = (string) $id;
+                    if ($quantos === 0) {
+                        if (array_key_exists($id, $desenhadas)) {
+                            $falhas[] = ['mapa' => $slug, 'caixa' => $id, 'texto' => "{$slug} ({$idioma}): a caixa {$id} não nomeia peça nenhuma no modo do diagrama e saiu desenhada, com \"{$desenhadas[$id]}\""];
+                        }
+
+                        continue;
+                    }
+                    $devido = $idioma === 'pt' ? ($quantos === 1 ? '1 peça' : "{$quantos} peças") : ($quantos === 1 ? '1 piece' : "{$quantos} pieces");
+                    $diz    = array_key_exists($id, $desenhadas) ? '"'.$desenhadas[$id].'"' : 'nada (não foi desenhada)';
+                    if (($desenhadas[$id] ?? null) !== $devido) {
+                        $falhas[] = ['mapa' => $slug, 'caixa' => $id, 'texto' => "{$slug} ({$idioma}): a caixa {$id} diz {$diz}, e nomeia {$quantos} no modo do diagrama: \"{$devido}\""];
+                    }
+                }
+            }
+        }
+
+        return [
+            'aceita' => $falhas === [],
+            'motivo' => $falhas === [] ? 'aceita' : 'reprova: '.implode('; ', array_column($falhas, 'texto')),
+            'falhas' => $falhas,
+            'mapas'  => $mapas,
+            'caixas' => $caixas,
+        ];
+    }
+}
+
+it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, com o traço desse verbo, e cada par de pontas tem uma seta por verbo', function (string $mundo): void {
+    expect(mapaDiagramasVersaoDoNode())->toMatch('/^v\d+\.\d+\.\d+/');
+
+    $modelo  = modeloDoMapaPorId();
+    $decls   = mapaDiagramasMapasConstruidos();
+    $slug    = 'app-acesso-e-autenticacao';
+    $recurso = 'App\Filament\App\Resources\Users\UserResource';
+    $user    = 'App\Models\User';
+    expect(array_key_exists($recurso, $modelo['pecas']) && array_key_exists($user, $modelo['pecas']))->toBeTrue('o UserResource do /app e o User são peças do modelo')
+        ->and(array_key_exists($slug, $decls))->toBeTrue("{$slug} é mapa construído");
+
+    if ($mundo === 'publicados') {
+        $gerado    = mapaDiagramasEntradasDoGerador();
+        $resultado = mapaDiagramasConferirSetas($decls, $modelo, $gerado);
+
+        expect(count($decls))->toBeGreaterThan(0)
+            ->and(array_keys($gerado['diagramas']))->toEqualCanonicalizing(array_keys($decls))
+            ->and($resultado['mapas'])->toBe(count($decls))
+            ->and($resultado['paresDeDoisVerbos'])->toBeGreaterThanOrEqual(1)
+            ->and($resultado['motivo'])->toBe('aceita');
+
+        return;
+    }
+
+    if ($mundo === 'três verbos num par') {
+        $grava               = [...mapaDiagramasLigacaoDe($modelo, $recurso, $user, 'lê'), 'verbo' => 'grava'];
+        $copia               = $modelo;
+        $copia['ligacoes'][] = $grava;
+        $gerado              = mapaDiagramasEntradasDoGerador([$grava]);
+        $par                 = $gerado['ids'][$recurso].' → '.$gerado['ids'][$user];
+        $verbos              = array_keys(mapaDiagramasVerbosPorPar(mapaDiagramasConstruir($decls[$slug], $copia), $gerado['ids'])[$par] ?? []);
+
+        expect($verbos)->toEqualCanonicalizing(['lê', 'usa', 'grava']);
+        foreach (['pt', 'en'] as $idioma) {
+            $tracos = array_column(array_filter(
+                $gerado['diagramas'][$slug][$idioma]['connections'] ?? [],
+                static fn (array $seta): bool => $par === $seta['from'].' → '.$seta['to'],
+            ), 'variant');
+            sort($tracos);
+            expect($tracos)->toBe(['dashed', 'default', 'security'], "{$slug} ({$idioma}): o par {$par} tem lê, usa e grava, e deveria ter três setas, uma por verbo, com três traços");
+        }
+        expect(mapaDiagramasConferirSetas($decls, $copia, $gerado)['motivo'])->toBe('aceita');
+
+        return;
+    }
+
+    // As duas linhas que adulteram a entrada do mapa: todas as setas do par saem, achadas pelas pontas, e entra o estado-alvo.
+    $gerado = mapaDiagramasEntradasDoGerador();
+    $de     = $gerado['ids'][$recurso];
+    $para   = $gerado['ids'][$user];
+    $par    = "{$de} → {$para}";
+    expect(array_keys(mapaDiagramasVerbosPorPar(mapaDiagramasConstruir($decls[$slug], $modelo), $gerado['ids'])[$par] ?? []))->toEqualCanonicalizing(['lê', 'usa']);
+
+    $seta          = static fn (string $sufixo, string $traco): array => ['id' => "{$de}--{$para}{$sufixo}", 'from' => $de, 'to' => $para, 'variant' => $traco];
+    $comSetasNoPar = static function (array $gerado, array $setas) use ($slug, $de, $para): array {
+        foreach (['pt', 'en'] as $idioma) {
+            $outras = array_filter(
+                $gerado['diagramas'][$slug][$idioma]['connections'],
+                static fn (array $seta): bool => ! ($seta['from'] === $de && $seta['to'] === $para),
+            );
+            $gerado['diagramas'][$slug][$idioma]['connections'] = [...array_values($outras), ...$setas];
+        }
+
+        return $gerado;
+    };
+
+    // Controle positivo: com uma seta por verbo, cada uma com o seu traço, a guarda não acusa o par — o veredito abaixo vem da adulteração.
+    $certo = mapaDiagramasConferirSetas([$slug => $decls[$slug]], $modelo, $comSetasNoPar($gerado, [$seta('--le', 'dashed'), $seta('--usa', 'default')]));
+    expect(array_values(array_filter($certo['falhas'], static fn (array $falha): bool => $falha['par'] === $par)))->toBe([]);
+
+    $alvo = $mundo === 'par sem a seta de um dos verbos'
+        ? [$seta('', 'dashed')]
+        : [$seta('--le', 'dashed'), $seta('--usa', 'dashed')];
+    $resultado = mapaDiagramasConferirSetas([$slug => $decls[$slug]], $modelo, $comSetasNoPar($gerado, $alvo));
+    $doPar     = array_values(array_filter($resultado['falhas'], static fn (array $falha): bool => $falha['mapa'] === $slug && $falha['par'] === $par));
+
+    expect($resultado['aceita'])->toBeFalse()
+        ->and($doPar)->not->toBeEmpty();
+
+    if ($mundo === 'par sem a seta de um dos verbos') {
+        $semSeta = array_values(array_filter($doPar, static fn (array $falha): bool => $falha['verbo'] === 'usa'));
+        expect($semSeta)->toHaveCount(1)
+            ->and($semSeta[0]['texto'])->toContain($slug, $de, $para, '"usa"');
+
+        return;
+    }
+
+    expect(implode("\n", array_column($doPar, 'texto')))->toContain($slug, $de, $para);
+})->with(['publicados', 'par sem a seta de um dos verbos', 'seta com o traço de outro verbo', 'três verbos num par']);
+
+it('[CT-47] a caixa de agrupamento diz quantas peças nomeia no modo do diagrama, no número certo, e a caixa vazia não é desenhada', function (string $mundo): void {
+    expect(mapaDiagramasVersaoDoNode())->toMatch('/^v\d+\.\d+\.\d+/');
+
+    $modelo = modeloDoMapaPorId();
+    $decls  = mapaDiagramasMapasConstruidos();
+
+    if ($mundo === 'publicados') {
+        $gerado       = mapaDiagramasEntradasDoGerador();
+        $resultado    = mapaDiagramasConferirCaixas($decls, $modelo, $gerado);
+        $agrupamentos = array_sum(array_map(static fn (array $decl): int => count($decl['agrupamentos'] ?? []), $decls));
+
+        expect(count($decls))->toBeGreaterThan(0)
+            ->and($agrupamentos)->toBeGreaterThan(0)
+            ->and($resultado['mapas'])->toBe(count($decls))
+            ->and($resultado['caixas'])->toBe($agrupamentos)
+            ->and($resultado['motivo'])->toBe('aceita');
+
+        return;
+    }
+
+    // O Dado: o painel app registra o UserResource sem tenant, e o IdentifyTenant e o DefinirTenantDePermissoes só com tenant.
+    $slug        = 'app-resumo-sem';
+    $recurso     = 'App\Filament\App\Resources\Users\UserResource';
+    $soComTenant = ['Filament\Http\Middleware\IdentifyTenant', 'App\Http\Middleware\DefinirTenantDePermissoes'];
+    expect($decls[$slug]['modos'] ?? null)->toBe(['sem'])
+        ->and($modelo['pecas'][$recurso]['registrada'] ?? [])->toContain('sem');
+    foreach ($soComTenant as $id) {
+        expect($modelo['pecas'][$id]['registrada'] ?? null)->toBe(['com']);
+    }
+
+    $id    = 'grupo-controle-da-caixa';
+    $grupo = [
+        'id'      => $id,
+        'rotulo'  => ['pt' => 'Controle da caixa', 'en' => 'Box control'],
+        'membros' => $mundo === 'três membros, um no modo' ? [$recurso, ...$soComTenant] : $soComTenant,
+        'row'     => 4,
+        'col'     => 0,
+    ];
+    $copia     = [$slug => [...$decls[$slug], 'agrupamentos' => [...($decls[$slug]['agrupamentos'] ?? []), $grupo]]];
+    $gerado    = mapaDiagramasEntradasDoGerador([], [$slug => [$grupo]], [$slug]);
+    $resultado = mapaDiagramasConferirCaixas($copia, $modelo, $gerado);
+    $daCaixa   = array_values(array_filter($resultado['falhas'], static fn (array $falha): bool => in_array($falha['caixa'], [$id, ''], true)));
+
+    // Controle positivo: com a caixa como o 04 a quer (o rótulo no singular, ou fora do desenho), a guarda não a acusa.
+    $consertado = $gerado;
+    foreach (['pt' => '1 peça', 'en' => '1 piece'] as $idioma => $umaPeca) {
+        $componentes                                           = $consertado['diagramas'][$slug][$idioma]['components'] ?? [];
+        $consertado['diagramas'][$slug][$idioma]['components'] = $mundo === 'três membros, um no modo'
+            ? array_map(static fn (array $componente): array => $componente['id'] === $id ? [...$componente, 'sublabel' => $umaPeca] : $componente, $componentes)
+            : array_values(array_filter($componentes, static fn (array $componente): bool => $componente['id'] !== $id));
+    }
+    expect(array_values(array_filter(mapaDiagramasConferirCaixas($copia, $modelo, $consertado)['falhas'], static fn (array $falha): bool => $falha['caixa'] === $id)))->toBe([]);
+
+    foreach (['pt' => '1 peça', 'en' => '1 piece'] as $idioma => $umaPeca) {
+        $entrada = $gerado['diagramas'][$slug][$idioma] ?? [];
+        $caixa   = collect($entrada['components'] ?? [])->firstWhere('id', $id);
+        if ($mundo === 'três membros, um no modo') {
+            expect($caixa['sublabel'] ?? null)->toBe($umaPeca, "{$slug} ({$idioma}): a caixa de três membros, um só registrado sem tenant");
+
+            continue;
+        }
+        $recusou = isset($entrada['erro']) && (str_contains($entrada['erro'], $id) || str_contains($entrada['erro'], 'Controle da caixa') || str_contains($entrada['erro'], 'Box control'));
+        expect($recusou || $caixa === null)->toBeTrue("{$slug} ({$idioma}): a caixa sem membro no modo saiu desenhada, com \"".($caixa['sublabel'] ?? '').'"');
+    }
+    expect($daCaixa)->toBe([]);
+})->with(['publicados', 'três membros, um no modo', 'nenhum membro no modo']);

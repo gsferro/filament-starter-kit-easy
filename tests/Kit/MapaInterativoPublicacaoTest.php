@@ -22,6 +22,13 @@ use Symfony\Component\Yaml\Yaml;
 | O índice do git (`arquivosVersionados()`), os diagramas (`diagramasDoMapa()`), o registro vivo do
 | painel (`registroVivoDoPainel()`) e o motivo de enfeite (`motivoDeEnfeite()`) moram em
 | `tests/Pest.php`, porque as outras guardas do mapa também os usam (`.ai/rules/testes.md`).
+|
+| [CT-48] e [CT-51] (R39), [CT-49] e [CT-50] (R40) são da costura G5, forma de efeito: o gerador e o
+| posicionador rodam como processo filho do `node`, SEMPRE num clone descartável do kit no commit do
+| teste (`git clone --shared` esparso, com a raiz e `site/mapa`), numa pasta temporária nova, sem
+| `site/.archify` e com o download do archify bloqueado (`GIT_ALLOW_PROTOCOL=file`). Nunca na árvore
+| do kit: ela tem o archify baixado, e o gerador, sob o defeito do achado A2, apagaria a pasta de
+| `--saida`. `publicacaoForaDoKit()` trava todo caminho em que a G5 roda, grava ou apaga.
 */
 
 beforeEach(function (): void {
@@ -1026,3 +1033,431 @@ it('[CT-34] a página do mapa de cada idioma declara a casca do comparativo em i
 
     expect($ausentes)->toBe([], "[{$idioma}] a página não nomeia: ".implode(', ', $ausentes));
 })->with(['pt', 'en'])->skip(fn (): bool => ! naArvoreDoKit(), 'Lê o diretório das páginas do site, que não viaja no pacote.');
+
+/* ---------------------------------------------------------------- R39 e R40 (costura G5, forma de efeito) */
+
+if (! function_exists('publicacaoForaDoKit')) {
+    /**
+     * A trava da G5: o caminho (absoluto, existente ou não) fica fora da árvore do kit. A árvore tem o
+     * archify baixado em `site/.archify`, e o gerador, sob o defeito do achado A2, apagaria a pasta de
+     * `--saida`; por isso nenhuma ferramenta roda, grava ou apaga ali.
+     */
+    function publicacaoForaDoKit(string $caminho): void
+    {
+        $normalizar = fn (string $texto): string => rtrim(strtolower(str_replace('\\', '/', $texto)), '/').'/';
+
+        if (str_starts_with($normalizar($caminho), $normalizar((string) realpath(base_path())))) {
+            throw new RuntimeException("A G5 não toca a árvore do kit, e o caminho {$caminho} está nela.");
+        }
+    }
+}
+
+if (! function_exists('publicacaoPastaTemporaria')) {
+    /** Uma pasta temporária nova, no diretório temporário do sistema: a raiz do clone, da saída e do link. */
+    function publicacaoPastaTemporaria(): string
+    {
+        $raiz = realpath(sys_get_temp_dir()).DIRECTORY_SEPARATOR.'mapa-g5-'.bin2hex(random_bytes(6));
+        publicacaoForaDoKit($raiz);
+        mkdir($raiz);
+
+        return $raiz;
+    }
+}
+
+if (! function_exists('publicacaoApagarPasta')) {
+    /** Apaga o caminho fora do kit; o link (a junção, no Windows) some sozinho, sem que a remoção entre no alvo. */
+    function publicacaoApagarPasta(string $caminho): void
+    {
+        publicacaoForaDoKit($caminho);
+
+        if (is_link($caminho)) {
+            PHP_OS_FAMILY === 'Windows' ? @rmdir($caminho) : @unlink($caminho);
+
+            return;
+        }
+
+        if (is_dir($caminho)) {
+            foreach (array_diff(scandir($caminho) ?: [], ['.', '..']) as $nome) {
+                publicacaoApagarPasta($caminho.DIRECTORY_SEPARATOR.$nome);
+            }
+
+            @rmdir($caminho);
+
+            return;
+        }
+
+        if (file_exists($caminho)) {
+            @chmod($caminho, 0666);
+            @unlink($caminho);
+        }
+    }
+}
+
+if (! function_exists('publicacaoLigarPasta')) {
+    /** O link para a pasta: uma junção no Windows (`mklink /J`, sem privilégio), ou um link simbólico no Linux. */
+    function publicacaoLigarPasta(string $alvo, string $elo): void
+    {
+        publicacaoForaDoKit($alvo);
+        publicacaoForaDoKit($elo);
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            Process::timeout(30)->run(['cmd', '/c', 'mklink', '/J', $elo, $alvo])->throw();
+
+            return;
+        }
+
+        symlink($alvo, $elo);
+    }
+}
+
+if (! function_exists('publicacaoDesligarPasta')) {
+    /** Tira o link, e só ele: o `rmdir` de uma junção não entra no alvo. */
+    function publicacaoDesligarPasta(string $elo): void
+    {
+        publicacaoForaDoKit($elo);
+
+        if (file_exists($elo) || is_link($elo)) {
+            PHP_OS_FAMILY === 'Windows' ? @rmdir($elo) : @unlink($elo);
+        }
+    }
+}
+
+if (! function_exists('publicacaoNodeDoAmbiente')) {
+    /** O `node` do ambiente, lido pela versão: sem ele o caso da G5 reprova, e não pula (Q21). */
+    function publicacaoNodeDoAmbiente(): string
+    {
+        $versao = Process::timeout(30)->run(['node', '--version']);
+
+        expect($versao->successful())->toBeTrue('o node do ambiente não respondeu ao --version: '.$versao->errorOutput())
+            ->and(trim($versao->output()))->toMatch('/^v\d+\.\d+\.\d+$/');
+
+        return trim($versao->output());
+    }
+}
+
+if (! function_exists('publicacaoCloneDescartavel')) {
+    /**
+     * O clone descartável da G5, dentro da pasta temporária: `git clone --shared` esparso do kit, com a
+     * raiz e `site/mapa`, no commit do teste. O `Dado` vira asserção aqui: o commit é o do kit; o clone
+     * não tem `site/.archify`; tem o `site/.gitignore` (sem ele, o `.archify` criado sujaria o
+     * `git status` pelo motivo errado); e o download está bloqueado — com `GIT_ALLOW_PROTOCOL=file`, o
+     * https é recusado na hora, sem rede.
+     *
+     * @return array{kit: string, site: string}
+     */
+    function publicacaoCloneDescartavel(string $raiz): array
+    {
+        publicacaoForaDoKit($raiz);
+
+        $kit    = $raiz.DIRECTORY_SEPARATOR.'kit';
+        $site   = $kit.DIRECTORY_SEPARATOR.'site';
+        $commit = trim(Process::path(base_path())->run(['git', 'rev-parse', 'HEAD'])->throw()->output());
+
+        Process::path($raiz)->timeout(120)->run(['git', 'clone', '--quiet', '--shared', '--sparse', base_path(), 'kit'])->throw();
+        Process::path($kit)->timeout(120)->run(['git', 'sparse-checkout', 'add', 'site/mapa'])->throw();
+
+        $bloqueio = Process::path($kit)->env(['GIT_ALLOW_PROTOCOL' => 'file'])->timeout(30)
+            ->run(['git', 'ls-remote', 'https://github.com/tt-a1i/archify.git']);
+
+        expect(trim(Process::path($kit)->run(['git', 'rev-parse', 'HEAD'])->throw()->output()))->toBe($commit, 'o clone não está no commit do kit')
+            ->and(file_exists($site.DIRECTORY_SEPARATOR.'.archify'))->toBeFalse('o clone nasceu com site/.archify')
+            ->and(is_file($site.DIRECTORY_SEPARATOR.'.gitignore'))->toBeTrue('o clone não tem o site/.gitignore')
+            ->and(array_values(array_filter(
+                ['gerar.mjs', 'posicionar.mjs', 'archify.mjs', 'pecas.json', 'ligacoes.json', 'diagramas/app-resumo-sem.json'],
+                fn (string $arquivo): bool => ! is_file($site.DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.$arquivo),
+            )))->toBe([], 'o clone não tem as ferramentas e o modelo do mapa')
+            ->and($bloqueio->successful())->toBeFalse('o download por https não está bloqueado no clone')
+            ->and(str_contains($bloqueio->errorOutput(), "transport 'https' not allowed"))->toBeTrue('o bloqueio não é o do GIT_ALLOW_PROTOCOL: '.$bloqueio->errorOutput());
+
+        return ['kit' => $kit, 'site' => $site];
+    }
+}
+
+if (! function_exists('publicacaoRodarNoClone')) {
+    /**
+     * Roda uma ferramenta do mapa com o download do archify bloqueado, sem `throw()`: o código e a saída
+     * são o que o caso afirma. O diretório e todo argumento que é caminho passam pela trava da G5.
+     *
+     * @param  list<string>  $comando
+     * @return array{codigo: ?int, stdout: string, stderr: string}
+     */
+    function publicacaoRodarNoClone(string $cwd, array $comando): array
+    {
+        $caminhos = array_filter($comando, fn (string $argumento): bool => $argumento === '.' || preg_match('~[\\\\/]~', $argumento) === 1);
+
+        foreach ([$cwd, ...$caminhos] as $caminho) {
+            $absoluto = preg_match('~^([a-zA-Z]:)?[\\\\/]~', $caminho) === 1 ? $caminho : $cwd.DIRECTORY_SEPARATOR.$caminho;
+            publicacaoForaDoKit(realpath($absoluto) ?: $absoluto);
+        }
+
+        $rodada = Process::path($cwd)->env(['GIT_ALLOW_PROTOCOL' => 'file'])->timeout(120)->run($comando);
+
+        return ['codigo' => $rodada->exitCode(), 'stdout' => $rodada->output(), 'stderr' => $rodada->errorOutput()];
+    }
+}
+
+if (! function_exists('publicacaoBytes')) {
+    /** A impressão dos bytes do arquivo; `null` quando ele sumiu. */
+    function publicacaoBytes(string $arquivo): ?string
+    {
+        return is_file($arquivo) ? hash_file('sha256', $arquivo) : null;
+    }
+}
+
+if (! function_exists('publicacaoHtmlsDoMapa')) {
+    /**
+     * O HTML do mapa escrito nas pastas de saída: os `.html` de `pt/` e de `en/` de cada uma.
+     *
+     * @param  list<string>  $pastas
+     * @return list<string>
+     */
+    function publicacaoHtmlsDoMapa(array $pastas): array
+    {
+        $htmls = [];
+
+        foreach ($pastas as $pasta) {
+            foreach (['pt', 'en'] as $idioma) {
+                $htmls = [...$htmls, ...(glob($pasta.DIRECTORY_SEPARATOR.$idioma.DIRECTORY_SEPARATOR.'*.html') ?: [])];
+            }
+        }
+
+        return $htmls;
+    }
+}
+
+if (! function_exists('publicacaoConferirRecusa')) {
+    /**
+     * A decisão das recusas da G5 (CT-48, CT-49 e CT-50): a ferramenta termina com código diferente de
+     * zero, com uma linha `[mapa]` que nomeia o culpado — comparado sem caixa e com `/` — e diz o porquê
+     * na mesma linha, e nenhum dos efeitos aconteceu. Devolve as reprovas, com a saída literal, para que
+     * todo `Então` apareça numa rodada só.
+     *
+     * @param  array{codigo: ?int, stdout: string, stderr: string}  $rodada
+     * @param  list<string>  $culpado  as formas aceitas do nome do culpado
+     * @param  ?string  $porQue  o padrão do porquê, na mesma linha do culpado
+     * @param  array<string, bool>  $efeitos  o efeito → aconteceu
+     * @return list<string>
+     */
+    function publicacaoConferirRecusa(array $rodada, array $culpado, ?string $porQue, array $efeitos): array
+    {
+        $normalizar = fn (string $texto): string => rtrim(strtolower(str_replace('\\', '/', $texto)), '/');
+        $saida      = $rodada['stdout']."\n".$rodada['stderr'];
+        $literal    = 'saída literal, código '.var_export($rodada['codigo'], true).': '.mb_substr(trim($saida), 0, 900);
+        $nomeiam    = array_filter(
+            preg_split('/\R/u', $saida),
+            fn (string $linha): bool => str_contains($linha, '[mapa]')
+                && array_filter($culpado, fn (string $nome): bool => str_contains($normalizar($linha), $normalizar($nome))) !== [],
+        );
+
+        $reprovas = [];
+
+        if ($rodada['codigo'] === 0) {
+            $reprovas[] = "terminou com código 0 — {$literal}";
+        }
+
+        if ($nomeiam === []) {
+            $reprovas[] = 'nenhuma linha [mapa] nomeia '.implode(' ou ', $culpado)." — {$literal}";
+        } elseif ($porQue !== null && array_filter($nomeiam, fn (string $linha): bool => preg_match($porQue, $linha) === 1) === []) {
+            $reprovas[] = "a linha [mapa] que nomeia o culpado não diz o porquê ({$porQue}) — {$literal}";
+        }
+
+        foreach ($efeitos as $efeito => $aconteceu) {
+            if ($aconteceu) {
+                $reprovas[] = $efeito;
+            }
+        }
+
+        return $reprovas;
+    }
+}
+
+if (! function_exists('publicacaoConferirMesmaChamada')) {
+    /**
+     * A decisão do CT-51: as chamadas pelo caminho real e pelo link terminam com o mesmo código e a mesma
+     * saída, fora o caminho (nas formas com `\`, com `/` e de `file:///`), e o código de cada uma é
+     * diferente de zero.
+     *
+     * @param  array<string, array{codigo: ?int, stdout: string, stderr: string}>  $rodadas  a via → a rodada
+     * @param  list<string>  $caminhos  os caminhos que a comparação ignora: o real e o do link
+     * @return list<string>
+     */
+    function publicacaoConferirMesmaChamada(array $rodadas, array $caminhos): array
+    {
+        $barras     = fn (string $texto): string => str_replace('\\', '/', $texto);
+        $semCaminho = fn (string $texto): string => trim(str_ireplace(array_map($barras, $caminhos), '<site>', $barras($texto)));
+        $vistas     = array_map(
+            fn (array $rodada): array => ['codigo' => $rodada['codigo'], 'stdout' => $semCaminho($rodada['stdout']), 'stderr' => $semCaminho($rodada['stderr'])],
+            $rodadas,
+        );
+
+        $reprovas = [];
+
+        if (count(array_unique(array_map('serialize', $vistas))) !== 1) {
+            $reprovas[] = 'as chamadas não terminam com o mesmo código e a mesma saída: '.json_encode($vistas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        foreach ($vistas as $via => $vista) {
+            if ($vista['codigo'] === 0) {
+                $reprovas[] = "pelo {$via}, o gerador terminou com código 0";
+            }
+        }
+
+        return $reprovas;
+    }
+}
+
+it('[CT-48] com --saida e sem slug, o gerador recusa, antes de qualquer efeito, a pasta que tem o que ele não gerou, e não apaga nada', function (string $pasta): void {
+    $raiz = publicacaoPastaTemporaria();
+
+    try {
+        // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
+        publicacaoNodeDoAmbiente();
+        $clone  = publicacaoCloneDescartavel($raiz);
+        $status = fn (): string => trim(Process::path($clone['kit'])->run(['git', 'status', '--porcelain', '--untracked-files=all', '--', 'site'])->throw()->output());
+
+        // E a pasta de saída: a do autor, com o leia-me.txt e nenhum HTML do mapa; ou `.`, a própria site/ do clone
+        $saida  = $pasta === 'autor' ? $raiz.DIRECTORY_SEPARATOR.'saida' : $clone['site'];
+        $leiaMe = $saida.DIRECTORY_SEPARATOR.'leia-me.txt';
+
+        if ($pasta === 'autor') {
+            mkdir($saida);
+            file_put_contents($leiaMe, "Rascunho do autor, que o gerador não gerou.\n");
+        }
+
+        $bytesDoLeiaMe = publicacaoBytes($leiaMe);
+
+        expect(publicacaoHtmlsDoMapa([$saida]))->toBe([], 'a pasta de saída já tinha HTML do mapa')
+            ->and($pasta === 'autor' ? $bytesDoLeiaMe !== null : $status() === '')->toBeTrue('a pasta de saída não nasceu como o Exemplo diz');
+
+        // Quando o autor roda, de site/ do clone, node mapa/gerar.mjs --saida com essa pasta e sem slug
+        $rodada = publicacaoRodarNoClone($clone['site'], ['node', 'mapa/gerar.mjs', '--saida', $pasta === 'autor' ? $saida : '.']);
+
+        $statusDepois = $status();
+        $htmls        = publicacaoHtmlsDoMapa([$saida, $clone['site'].DIRECTORY_SEPARATOR.'dist'.DIRECTORY_SEPARATOR.'mapa']);
+
+        // Então código diferente de zero, com a mensagem [mapa] que nomeia a pasta e diz por que a recusa;
+        // E <intacto> continua, com os mesmos bytes; E nada foi baixado nem gerado
+        expect(publicacaoConferirRecusa($rodada, [$saida], '/arquivo|n[ãa]o\s+(o\s+)?ger|leia-me\.txt|\bfiles?\b|not\s+generated/iu', [
+            'o leia-me.txt do autor não continua com os mesmos bytes'                          => $pasta === 'autor' && publicacaoBytes($leiaMe) !== $bytesDoLeiaMe,
+            "o git status de site/ do clone não está limpo: {$statusDepois}"                   => $pasta === 'site' && $statusDepois !== '',
+            'o clone ganhou site/.archify: o download do archify foi tentado antes da recusa'  => file_exists($clone['site'].DIRECTORY_SEPARATOR.'.archify'),
+            'o gerador escreveu HTML do mapa: '.implode(', ', $htmls)                          => $htmls !== [],
+        ]))->toBe([]);
+    } finally {
+        publicacaoApagarPasta($raiz);
+    }
+})->with([
+    'uma pasta temporária com o leia-me.txt do autor e nenhum HTML do mapa'  => ['autor'],
+    '`.`, a própria site/ do clone'                                          => ['site'],
+])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
+
+it('[CT-49] o argumento sem valor válido é recusado antes de qualquer efeito, com a mensagem [mapa] que nomeia o argumento', function (array $comando, string $argumento): void {
+    $raiz = publicacaoPastaTemporaria();
+
+    try {
+        // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
+        publicacaoNodeDoAmbiente();
+        $clone    = publicacaoCloneDescartavel($raiz);
+        $diagrama = $clone['site'].DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.'diagramas'.DIRECTORY_SEPARATOR.'app-resumo-sem.json';
+        $bytes    = publicacaoBytes($diagrama);
+
+        // Quando o autor roda, de site/ do clone, o comando
+        $rodada = publicacaoRodarNoClone($clone['site'], $comando);
+
+        // Então código diferente de zero, com a mensagem [mapa] que nomeia o argumento e diz o valor que ele espera:
+        // a pasta, no --saida; o número inteiro positivo, no --tentativas (Q24)
+        $valorEsperado = match ($argumento) {
+            '--saida'      => '/pasta|diret[óo]rio|folder|directory/iu',
+            '--tentativas' => '/^(?=.*(inteiro|integer|n[úu]mero|number))(?=.*(positiv|maior\s+que\s+(0|zero)|>\s*0|≥\s*1|>=\s*1|pelo\s+menos\s+1|at\s+least\s+1|greater\s+than\s+(0|zero)))/iu',
+        };
+
+        // E nada foi baixado nem gravado
+        expect(publicacaoConferirRecusa($rodada, [$argumento], $valorEsperado, [
+            'o clone ganhou site/.archify: o download do archify foi tentado antes da recusa'  => file_exists($clone['site'].DIRECTORY_SEPARATOR.'.archify'),
+            'o site/mapa/diagramas/app-resumo-sem.json do clone não tem os mesmos bytes'       => publicacaoBytes($diagrama) !== $bytes,
+        ]))->toBe([]);
+    } finally {
+        publicacaoApagarPasta($raiz);
+    }
+})->with([
+    'gerador: pasta ausente'                               => [['node', 'mapa/gerar.mjs', '--saida'], '--saida'],
+    'posicionador: número ausente'                         => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas'], '--tentativas'],
+    'posicionador: valor não numérico'                     => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas', 'muitas'], '--tentativas'],
+    'posicionador: zero, abaixo do inteiro positivo (Q24)' => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas', '0'], '--tentativas'],
+])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
+
+it('[CT-50] o arquivo de entrada com JSON quebrado é recusado antes de qualquer efeito, com a mensagem [mapa] que nomeia o arquivo', function (string $arquivo, array $comando): void {
+    $raiz = publicacaoPastaTemporaria();
+
+    try {
+        // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
+        publicacaoNodeDoAmbiente();
+        $clone = publicacaoCloneDescartavel($raiz);
+        $saida = $raiz.DIRECTORY_SEPARATOR.'saida';
+        mkdir($saida);
+
+        // E, no clone, o arquivo com JSON quebrado: o existente sem o último fecho; o diagrama a mais, cortado.
+        // O texto quebrado não traz o nome do arquivo nem o [mapa], para que o eco do JSON.parse não passe por nomeação.
+        $caminho  = $clone['kit'].DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $arquivo);
+        $quebrado = is_file($caminho) ? substr(rtrim((string) file_get_contents($caminho)), 0, -1) : '{"tipo": "architecture"';
+
+        expect(json_decode($quebrado))->toBeNull('o JSON da cópia não está quebrado')
+            ->and(str_contains($quebrado, basename($arquivo)) || str_contains($quebrado, '[mapa]'))->toBeFalse('o JSON quebrado ecoaria o nome do arquivo ou o [mapa]');
+
+        publicacaoForaDoKit($caminho);
+        file_put_contents($caminho, $quebrado);
+
+        // Quando o autor roda, de site/ do clone, o comando
+        $rodada = publicacaoRodarNoClone($clone['site'], array_map(fn (string $parte): string => $parte === '{saida}' ? $saida : $parte, $comando));
+
+        $htmls = publicacaoHtmlsDoMapa([$saida, $clone['site'].DIRECTORY_SEPARATOR.'dist'.DIRECTORY_SEPARATOR.'mapa']);
+
+        // Então código diferente de zero, com a mensagem [mapa] que nomeia o arquivo; E nada foi baixado nem gerado
+        expect(publicacaoConferirRecusa($rodada, [basename($arquivo)], null, [
+            'o clone ganhou site/.archify: o download do archify foi tentado antes da recusa'   => file_exists($clone['site'].DIRECTORY_SEPARATOR.'.archify'),
+            'a ferramenta escreveu HTML do mapa: '.implode(', ', $htmls)                        => $htmls !== [],
+        ]))->toBe([]);
+    } finally {
+        publicacaoApagarPasta($raiz);
+    }
+})->with([
+    'gerador: diagrama quebrado, mesmo fora do pedido' => ['site/mapa/diagramas/zz-quebrado.json', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem']],
+    'gerador: modelo de peças quebrado'                => ['site/mapa/pecas.json', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem']],
+    'gerador: modelo de ligações quebrado'             => ['site/mapa/ligacoes.json', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem']],
+    'posicionador: diagrama quebrado'                  => ['site/mapa/diagramas/app-resumo-sem.json', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem']],
+])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
+
+it('[CT-51] o gerador chamado por um caminho que passa por um link faz o mesmo que pelo caminho real, e não termina com 0 calado', function (): void {
+    $raiz = publicacaoPastaTemporaria();
+    $elo  = $raiz.DIRECTORY_SEPARATOR.'elo';
+
+    try {
+        // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
+        publicacaoNodeDoAmbiente();
+        $clone = publicacaoCloneDescartavel($raiz);
+
+        // E um link para site/ do clone: uma junção no Windows (mklink /J, sem privilégio), ou um link simbólico no Linux
+        publicacaoLigarPasta($clone['site'], $elo);
+
+        expect(is_file($elo.DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.'gerar.mjs'))->toBeTrue('o link não leva a site/ do clone');
+
+        // Quando o autor pede mapa/gerar.mjs --saida com uma pasta temporária vazia e o slug diagrama-que-nao-existe,
+        // uma vez pelo caminho real de site/ do clone e outra pelo link, com o site/.archify apagado entre as duas
+        $saida   = $raiz.DIRECTORY_SEPARATOR.'saida';
+        $rodadas = [];
+
+        foreach (['caminho real' => $clone['site'], 'link' => $elo] as $via => $site) {
+            publicacaoApagarPasta($clone['site'].DIRECTORY_SEPARATOR.'.archify');
+            publicacaoApagarPasta($saida);
+            mkdir($saida);
+
+            $rodadas[$via] = publicacaoRodarNoClone($raiz, ['node', $site.DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.'gerar.mjs', '--saida', $saida, 'diagrama-que-nao-existe']);
+        }
+
+        // Então as duas terminam com o mesmo código e a mesma saída, fora o caminho; E o código das duas é diferente de zero
+        expect(publicacaoConferirMesmaChamada($rodadas, [$clone['site'], $elo]))->toBe([]);
+    } finally {
+        publicacaoDesligarPasta($elo);
+        publicacaoApagarPasta($raiz);
+    }
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');

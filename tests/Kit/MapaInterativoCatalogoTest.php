@@ -1461,6 +1461,10 @@ it('[CT-35] a guarda das fontes reprova o item casado com a feature errada, a p�
                 'cópia da lista com a página comecar/index.md, sem o motivo'                             => ['comecar/index.md' => null],
                 'cópia da lista com a página comecar/index.md, com o motivo "—"'                         => ['comecar/index.md' => '—'],
                 'cópia da lista com a página comecar/index.md, com o motivo "não se aplica", sem porquê' => ['comecar/index.md' => 'não se aplica'],
+                'cópia da lista com a página comecar/index.md, com o motivo "N/A"'                       => ['comecar/index.md' => 'N/A'],
+                'cópia da lista com a página comecar/index.md, com o motivo "not applicable"'            => ['comecar/index.md' => 'not applicable'],
+                'cópia da lista com a página comecar/index.md, com o motivo "Does not apply"'            => ['comecar/index.md' => 'Does not apply'],
+                'cópia da lista com a página comecar/index.md, com o motivo 0, que não é texto'          => ['comecar/index.md' => 0],
             });
     }
 
@@ -1469,12 +1473,52 @@ it('[CT-35] a guarda das fontes reprova o item casado com a feature errada, a p�
     expect($veredito['aceita'])->toBeFalse('a guarda aceitou a cópia: '.$mundo);
     catalogoNomeia($veredito['motivos'], $nomeados);
 })->with([
-    'termo ausente da linha casada'     => ['cópia da tabela que casa "Dock de atalhos" com a F-06', [['Dock de atalhos', 'F-06']]],
-    'termo só como pedaço de palavra'   => ['cópia da tabela que casa "Dock de atalhos" com a F-56', [['Dock de atalhos', 'F-56']]],
-    'F-nn inexistente'                  => ['cópia da tabela que casa "Tutorial guiado" com a F-199', [['Tutorial guiado', 'F-199']]],
-    'página de recurso na lista'        => ['cópia da lista com a página recursos/dock-de-atalhos.md, com motivo', [['recursos/dock-de-atalhos.md']]],
-    'motivo ausente'                    => ['cópia da lista com a página comecar/index.md, sem o motivo', [['comecar/index.md']]],
-    'motivo de enfeite (—)'             => ['cópia da lista com a página comecar/index.md, com o motivo "—"', [['comecar/index.md']]],
-    'motivo de enfeite (não se aplica)' => ['cópia da lista com a página comecar/index.md, com o motivo "não se aplica", sem porquê', [['comecar/index.md']]],
-    'item novo sem F-nn'                => ['cópia do README pt com o item "Mapa interativo" fora da tabela', [['Mapa interativo']]],
+    'termo ausente da linha casada'                                    => ['cópia da tabela que casa "Dock de atalhos" com a F-06', [['Dock de atalhos', 'F-06']]],
+    'termo só como pedaço de palavra'                                  => ['cópia da tabela que casa "Dock de atalhos" com a F-56', [['Dock de atalhos', 'F-56']]],
+    'F-nn inexistente'                                                 => ['cópia da tabela que casa "Tutorial guiado" com a F-199', [['Tutorial guiado', 'F-199']]],
+    'página de recurso na lista'                                       => ['cópia da lista com a página recursos/dock-de-atalhos.md, com motivo', [['recursos/dock-de-atalhos.md']]],
+    'motivo ausente'                                                   => ['cópia da lista com a página comecar/index.md, sem o motivo', [['comecar/index.md']]],
+    'motivo de enfeite (—)'                                            => ['cópia da lista com a página comecar/index.md, com o motivo "—"', [['comecar/index.md']]],
+    'motivo de enfeite (não se aplica)'                                => ['cópia da lista com a página comecar/index.md, com o motivo "não se aplica", sem porquê', [['comecar/index.md']]],
+    'item novo sem F-nn'                                               => ['cópia do README pt com o item "Mapa interativo" fora da tabela', [['Mapa interativo']]],
+    'motivo de enfeite, tabela do Setup Global (N/A)'                  => ['cópia da lista com a página comecar/index.md, com o motivo "N/A"', [['comecar/index.md']]],
+    'motivo de enfeite, tabela do Setup Global (not applicable)'       => ['cópia da lista com a página comecar/index.md, com o motivo "not applicable"', [['comecar/index.md']]],
+    'motivo de enfeite, tabela do Setup Global (Does not apply)'       => ['cópia da lista com a página comecar/index.md, com o motivo "Does not apply"', [['comecar/index.md']]],
+    'motivo de enfeite, tabela do Setup Global (0, que não é texto)'   => ['cópia da lista com a página comecar/index.md, com o motivo 0, que não é texto', [['comecar/index.md']]],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório das páginas do site e o README não viajam no pacote: a guarda das fontes só roda na árvore do kit');
+
+it('[CT-35] a guarda das fontes decide cada entrada da tabela do motivo de enfeite do Setup Global como a tabela, pela motivoDeEnfeite() única', function (mixed $motivo, string $resultado): void {
+    $lista = array_replace(catalogoPaginasSemFeature(), ['comecar/index.md' => $motivo]);
+
+    expect(motivoDeEnfeite($motivo))->toBe($resultado === 'reprova', 'a motivoDeEnfeite() de tests/Pest.php decide a entrada '.var_export($motivo, true).' diferente da tabela do Setup Global');
+
+    $veredito = catalogoConferirFonte('paginas', array_keys(paginasDoSite('pt')), linhasDoCatalogo('pt'), catalogoTabelaDoReadme('pt'), $lista);
+
+    if ($resultado === 'reprova') {
+        expect($veredito['aceita'])->toBeFalse('a guarda aceitou como motivo a entrada de enfeite '.var_export($motivo, true));
+        catalogoNomeia($veredito['motivos'], [['comecar/index.md', 'motivo de enfeite']]);
+
+        return;
+    }
+
+    expect($veredito['casados'])->toHaveKey('comecar/index.md');
+    expect($veredito['casados']['comecar/index.md'])->toBe(['lista']);
+    expect(array_values(array_filter($veredito['motivos'], fn (string $motivoDaGuarda): bool => str_contains($motivoDaGuarda, 'comecar/index.md'))))->toBe([]);
+    expect($veredito['aceita'])->toBeTrue('Motivos: '.implode(' | ', $veredito['motivos']));
+})->with([
+    'vazio'                                => ['', 'reprova'],
+    'ausente ou nulo'                      => [null, 'reprova'],
+    'só travessão (—)'                     => ['—', 'reprova'],
+    'hífen e espaço (- )'                  => ['- ', 'reprova'],
+    'reticências (...)'                    => ['...', 'reprova'],
+    'não se aplica'                        => ['não se aplica', 'reprova'],
+    'nao se aplica'                        => ['nao se aplica', 'reprova'],
+    'not applicable'                       => ['not applicable', 'reprova'],
+    'Not applicable.'                      => ['Not applicable.', 'reprova'],
+    'does not apply'                       => ['does not apply', 'reprova'],
+    'Does not apply'                       => ['Does not apply', 'reprova'],
+    'N/A'                                  => ['N/A', 'reprova'],
+    'n/a'                                  => ['n/a', 'reprova'],
+    'o número 0, que não é texto'          => [0, 'reprova'],
+    'não se aplica: com o porquê (motivo)' => ['não se aplica: a classe é abstrata e vazia', 'aceita'],
+])->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório das páginas do site não viaja no pacote: a guarda das fontes só roda na árvore do kit');

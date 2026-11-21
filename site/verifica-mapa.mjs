@@ -14,8 +14,11 @@
  *  - CT-B04  a interface do visualizador fala o idioma da página;
  *  - CT-B05  AMOSTRA de acessibilidade (axe): um HTML do mapa por tipo, idioma e tema, mais o
  *            comparativo no escuro — a ADR-06, com as duas tolerâncias abaixo;
- *  - CT-B06  controles sintéticos da tolerância e o controle de processo (código de saída);
- *  - CT-B07  o catálogo pt entregue ao visualizador não copia o texto en, fora a lista fechada.
+ *  - CT-B06  controles sintéticos da tolerância, o controle de processo (código de saída) e o controle do
+ *            caminho com que o conferidor se relança;
+ *  - CT-B07  o catálogo pt entregue ao visualizador não copia o texto en, fora a lista fechada;
+ *  - CT-B08  rodado como processo sobre uma pasta de diagramas com um JSON quebrado, reprova com a
+ *            mensagem `[mapa]` que nomeia o arquivo.
  *
  * O ESPERADO vem da FONTE (`mapa/diagramas/`, `mapa/pecas.json`, `mapa/ligacoes.json`), nunca do
  * `dist/`: o oráculo não pode sair do artefato que ele confere. As rotas vêm dos arquivos de diagrama,
@@ -31,8 +34,8 @@
  * Uma versão nova do archify que mude o elemento de um deles reprova aqui — e é o desejado: a
  * troca de versão (ADR-02) passa a exigir rever esta tolerância.
  *
- * Variáveis de ambiente (só o controle de processo do CT-B06 as usa, para rodar este mesmo arquivo
- * como processo filho sobre uma pasta de diagramas e uma prévia de controle):
+ * Variáveis de ambiente (só os controles de processo do CT-B06 e do CT-B08 as usam, para rodar este
+ * mesmo arquivo como processo filho sobre uma pasta de diagramas e uma prévia de controle):
  *  VERIFICA_MAPA_DIAGRAMAS, VERIFICA_MAPA_DIST, VERIFICA_MAPA_TIMEOUT_MS e VERIFICA_MAPA_CONTROLE.
  */
 import { chromium } from 'playwright';
@@ -41,6 +44,7 @@ import { createServer } from 'node:http';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const PORTA = process.argv[2] || '4321';
 const BASE = (process.env.DOCS_BASE || '').replace(/\/+$/, '');
@@ -54,7 +58,15 @@ const MODO_CONTROLE = process.env.VERIFICA_MAPA_CONTROLE === '1';
 const ORIGEM = `http://localhost:${PORTA}`;
 const IDIOMAS = ['pt', 'en'];
 
-const lerJson = (caminho) => JSON.parse(readFileSync(caminho, 'utf8'));
+/** Lê um JSON; o quebrado reprova com a mensagem `[mapa]` que nomeia o arquivo, e não só com a do `JSON.parse` (A11, R40). */
+const lerJson = (caminho) => {
+  const conteudo = readFileSync(caminho, 'utf8');
+  try {
+    return JSON.parse(conteudo);
+  } catch (erro) {
+    throw new Error(`[mapa] ERRO — ${caminho}: JSON inválido (${erro.message})`);
+  }
+};
 const norm = (texto) => String(texto).replace(/\s+/g, ' ').trim();
 const texto = (valor, idioma) => (valor !== null && typeof valor === 'object' ? valor[idioma] : valor);
 
@@ -221,23 +233,31 @@ function esperadoDoMapa(d, idioma) {
     tipos: new Set(desenhadas.map((p) => p.tipo)),
   };
 }
-/** A árvore de registro: o painel, mais tudo o que ele registra no modo do diagrama. Cada registro é uma ligação. */
+/**
+ * A árvore de registro: o painel, mais tudo o que ele registra no modo do diagrama. Cada registro é uma ligação.
+ * A raiz é a peça painel do arquivo (`painel:{painel}`), e o rótulo esperado dela vem do MODELO, como o de toda peça
+ * construída — o nome dela —, nunca do `data-node-label` lido no HTML (step 9, achado A14; Q23 do `04`): o CT-B01
+ * confere o desenho da raiz, e o CT-B02, a origem de cada item de prova da árvore.
+ */
 function esperadoDaArvore(d) {
   const [painel] = d.paineis;
   const [modo] = d.modos;
   const raiz = `painel:${painel}`;
+  const nomeDaRaiz = pecasDoModelo.get(raiz)?.nome;
   const registros = ligacoesDoModelo.filter((l) => l.de === raiz && l.verbo === 'registra' && l.modos.includes(modo));
   const registradas = [...new Map(registros.map((l) => [l.para, pecasDoModelo.get(l.para)])).values()];
 
   return {
-    pecas: [{ id: idNoDesenho(raiz), rotulo: null, raiz: true }, ...registradas.map((p) => ({ id: idNoDesenho(p.id), rotulo: p.nome }))],
+    pecas: [{ id: idNoDesenho(raiz), rotulo: nomeDaRaiz, raiz: true }, ...registradas.map((p) => ({ id: idNoDesenho(p.id), rotulo: p.nome }))],
     caixas: [],
     ligacoes: registros.map((l) => ({
-      origem: null,
+      origem: nomeDaRaiz,
+      daRaiz: true,
       destino: pecasDoModelo.get(l.para).nome,
       arquivo: l.evidencia.arquivo,
       trecho: l.evidencia.trecho,
     })),
+    raiz: { peca: raiz, nome: nomeDaRaiz },
     pares: null,
     comFeature: registradas.filter((p) => p.features.length).map((p) => ({ id: idNoDesenho(p.id), nome: p.nome, features: p.features })),
     tipos: new Set(),
@@ -327,10 +347,44 @@ const LISTA_FECHADA = {
 /** Texto de marcador: sem nenhuma letra fora dos `{marcadores}`. */
 const soMarcadores = (valor) => !/\p{L}/u.test(String(valor).replace(/\{[^}]*\}/gu, ''));
 
-/** Motivo de enfeite (Setup Global do `04`): vazio, só travessão ou pontuação, ou "não se aplica" sem dizer por quê. */
+/**
+ * A tabela do motivo de enfeite (Setup Global do `04`, step 9, achado A13), a mesma que o CT-35 cita do lado da guarda
+ * do kit: as entradas que o Setup Global e a nota do A13 nomeiam, com a decisão de cada uma (true = é enfeite). É
+ * enfeite: vazio; ausente ou nulo; só travessão, pontuação ou símbolo; "não se aplica", "nao se aplica", "not
+ * applicable", "does not apply" ou "N/A", em qualquer caixa, com ou sem pontuação, sem dizer por quê; e o valor que não
+ * é texto. É motivo: o texto que diz por quê, mesmo começando por "não se aplica:".
+ */
+const TABELA_DO_MOTIVO_DE_ENFEITE = [
+  ['', true],
+  [undefined, true],
+  [null, true],
+  ['—', true],
+  ['- ', true],
+  ['...', true],
+  ['não se aplica', true],
+  ['nao se aplica', true],
+  ['not applicable', true],
+  ['Not applicable.', true],
+  ['does not apply', true],
+  ['Does not apply', true],
+  ['N/A', true],
+  ['n/a', true],
+  [0, true],
+  ['não se aplica: a classe é abstrata e vazia', false],
+];
+
+/**
+ * Motivo de enfeite: a tabela acima, decidida igual à guarda do kit (`tests/Pest.php:motivoDeEnfeite`). O valor que não
+ * é texto é enfeite; no texto, é enfeite o núcleo — minúsculo, sem pontuação nem símbolo — vazio, ou só "não se aplica",
+ * "nao se aplica", "not applicable", "does not apply" ou "n a" (o "N/A").
+ */
+const NUCLEOS_DE_ENFEITE = new Set(['não se aplica', 'nao se aplica', 'not applicable', 'does not apply', 'n a']);
 const motivoDeEnfeite = (motivo) => {
-  const limpo = String(motivo ?? '').replace(/[\s\p{P}\p{S}]+/gu, ' ').trim();
-  return limpo === '' || /^n[aã]o se aplica$/iu.test(limpo);
+  if (typeof motivo !== 'string') {
+    return true;
+  }
+  const nucleo = motivo.replace(/[^\p{L}\p{N}]+/gu, ' ').trim().toLowerCase();
+  return nucleo === '' || NUCLEOS_DE_ENFEITE.has(nucleo);
 };
 
 /**
@@ -496,8 +550,11 @@ function conferirPecas(rotulo, esperado, leitura, idioma) {
   for (const peca of esperado.pecas) {
     if (!desenhadas.has(peca.id)) {
       reprovar('CT-B01', `${rotulo} — a peça ${peca.id} não está desenhada`);
-    } else if (peca.rotulo !== null && desenhadas.get(peca.id) !== peca.rotulo) {
-      reprovar('CT-B01', `${rotulo} — a peça ${peca.id} tem o rótulo ${JSON.stringify(desenhadas.get(peca.id))}, e a fonte dá ${JSON.stringify(peca.rotulo)}`);
+    } else if (desenhadas.get(peca.id) !== peca.rotulo) {
+      // a raiz da árvore também: o esperado dela é o nome da peça painel no modelo, nunca o rótulo lido do HTML (A14)
+      const qual = peca.raiz ? `a raiz ${peca.id} (a peça painel do arquivo)` : `a peça ${peca.id}`;
+      const fonte = peca.raiz ? 'o modelo dá a ela o nome' : 'a fonte dá';
+      reprovar('CT-B01', `${rotulo} — ${qual} tem o rótulo ${JSON.stringify(desenhadas.get(peca.id))}, e ${fonte} ${JSON.stringify(peca.rotulo)}`);
     }
   }
   for (const caixa of esperado.caixas) {
@@ -528,30 +585,47 @@ function conferirBusca(rotulo, leitura) {
 
 /** CT-B02: o item de prova de cada ligação desenhada, à vista e inteiro, e os pares de arestas. */
 function conferirProvas(rotulo, d, esperado, leitura) {
-  const origemDaRaiz = leitura.nos.find((no) => esperado.pecas.some((p) => p.raiz && p.id === no.id))?.rotulo ?? null;
   const itens = leitura.itens.filter((item) => /^.+ → .+: \S+:\d+(?:-\d+)? — /s.test(item.t));
   const usados = new Set();
+  /*
+   * Na árvore de registro, o item casa pelo destino, pelo arquivo e pelo trecho, e a origem que ele nomeia se confere à
+   * parte, contra o nome da peça painel no modelo (A14): uma reprovação por árvore e idioma, com a contagem. Todo item
+   * da árvore continua com a origem conferida.
+   */
+  const origensDaRaiz = [];
 
   for (const ligacao of esperado.ligacoes) {
-    const origem = ligacao.origem ?? origemDaRaiz;
-    const prefixo = `${origem} → ${ligacao.destino}`;
+    const prefixo = `${ligacao.origem} → ${ligacao.destino}`;
+    const nomeia = ligacao.daRaiz
+      ? (item) => item.t.includes(` → ${ligacao.destino} (`) || item.t.includes(` → ${ligacao.destino}: `)
+      : (item) => item.t.startsWith(`${prefixo} (`) || item.t.startsWith(`${prefixo}: `);
     const indice = itens.findIndex(
-      (item, i) =>
-        !usados.has(i) &&
-        (item.t.startsWith(`${prefixo} (`) || item.t.startsWith(`${prefixo}: `)) &&
-        item.t.includes(`: ${ligacao.arquivo}:`) &&
-        item.t.endsWith(norm(ligacao.trecho)),
+      (item, i) => !usados.has(i) && nomeia(item) && item.t.includes(`: ${ligacao.arquivo}:`) && item.t.endsWith(norm(ligacao.trecho)),
     );
     if (indice < 0) {
       reprovar('CT-B02', `${rotulo} — nenhum item de prova para ${prefixo} com ${ligacao.arquivo} e o trecho ${JSON.stringify(ligacao.trecho.slice(0, 60))}`);
       continue;
     }
     usados.add(indice);
+    if (ligacao.daRaiz) {
+      origensDaRaiz.push(itens[indice].t.slice(0, itens[indice].t.indexOf(` → ${ligacao.destino}`)));
+    }
     if (!itens[indice].aVista) {
       reprovar('CT-B02', `${rotulo} — o item de prova de ${prefixo} não está à vista sem foco`);
     }
     if (itens[indice].cortado) {
       reprovar('CT-B02', `${rotulo} — o item de prova de ${prefixo} está cortado (scrollWidth > clientWidth + 1)`);
+    }
+  }
+
+  if (esperado.raiz) {
+    const outras = origensDaRaiz.filter((origem) => origem !== esperado.raiz.nome);
+    if (outras.length > 0) {
+      reprovar(
+        'CT-B02',
+        `${rotulo} — ${outras.length} de ${origensDaRaiz.length} itens de prova da árvore nomeiam a origem ${JSON.stringify(outras[0])}, ` +
+          `e o nome da peça painel do arquivo (${esperado.raiz.peca}) no modelo é ${JSON.stringify(esperado.raiz.nome)}`,
+      );
     }
   }
 
@@ -732,6 +806,8 @@ async function buscarEFocar(pagina, id, rotulo) {
     const repo = document.getElementById('focus-repository');
     return {
       rotulo: document.getElementById('focus-label')?.textContent ?? null,
+      // o tipo do nó em foco, no metadado do passaporte (`#focus-kind`, `[data-passport="kind"]`)
+      tipo: document.getElementById('focus-kind')?.textContent ?? null,
       evidencia: evidencia ? evidencia.textContent.replace(/\s+/g, ' ').trim() : null,
       repositorio: repo ? repo.href : null,
       links: [...document.querySelectorAll('.semantic-passport-evidence a[href*="/blob/"], .relationship-lens-copy a[href*="/blob/"]')].map((a) => a.href),
@@ -792,6 +868,47 @@ function amostraDePassaporte(d) {
   const pacote = pecas.find((p) => p.origem === 'pacote');
   const kit = pecas.find((p) => p.origem.includes('proprio'));
   return { pacote, kit };
+}
+
+/**
+ * CT-B04, passo 8 (step 9, achado A16): em cada diagrama de classes pt, o primeiro nó de cada `kind` dos `types` do
+ * arquivo. Com o passaporte dele aberto, o tipo que o passaporte mostra (`#focus-kind`) é o nome pt que o desenho dá ao
+ * nó (`data-node-context`), sem diferença de caixa — e, por isso, nunca o `kind` cru quando o nome pt é outro.
+ */
+async function conferirTipoNoPassaporte(pagina, rotulo, d) {
+  const primeiros = new Map();
+  for (const tipo of d.types ?? []) {
+    if (!primeiros.has(tipo.kind)) {
+      primeiros.set(tipo.kind, tipo);
+    }
+  }
+  if (primeiros.size === 0) {
+    reprovar('CT-B04', `${rotulo} — o diagrama de classes não tem tipo nenhum em types`);
+    return;
+  }
+  const caixa = (valor) => norm(valor ?? '').toLocaleLowerCase('pt-BR');
+  for (const [kind, tipo] of primeiros) {
+    const nome = texto(tipo.label, 'pt');
+    const contexto = await pagina.evaluate(
+      (id) => [...document.querySelectorAll('svg [data-node-id]')].find((n) => n.dataset.nodeId === id)?.dataset.nodeContext ?? null,
+      tipo.id,
+    );
+    const passaporte = await buscarEFocar(pagina, tipo.id, nome);
+    if (passaporte.erro) {
+      reprovar('CT-B04', `${rotulo} — ${nome} (${kind}): ${passaporte.erro}`);
+      continue;
+    }
+    if (!caixa(contexto) || !caixa(passaporte.tipo)) {
+      reprovar(
+        'CT-B04',
+        `${rotulo} — ${nome} (${kind}): o desenho dá ao nó o contexto ${JSON.stringify(contexto)}, e o passaporte mostra o tipo ${JSON.stringify(passaporte.tipo)}; os dois têm de ter texto`,
+      );
+    } else if (caixa(passaporte.tipo) !== caixa(contexto)) {
+      const cru = caixa(passaporte.tipo) === caixa(kind) ? ` (o kind cru "${kind}")` : '';
+      reprovar('CT-B04', `${rotulo} — ${nome} (${kind}): o passaporte mostra o tipo ${JSON.stringify(passaporte.tipo)}${cru}, e o desenho dá ao nó o nome pt ${JSON.stringify(contexto)}`);
+    }
+    contar('CT-B04:tipo');
+  }
 }
 
 /** Abre um diagrama, num idioma, e roda as conferências das costuras CT-B01 a CT-B04 que se leem na página. */
@@ -908,6 +1025,10 @@ async function conferirDiagrama(navegador, d, idioma, resumo) {
           reprovar('CT-B04', `${rotulo} — com a busca e o passaporte abertos, texto de interface no idioma errado: ${JSON.stringify(achados[0])}`);
         }
       }
+    }
+
+    if (idioma === 'pt' && d.tipo === 'class') {
+      await conferirTipoNoPassaporte(pagina, rotulo, d);
     }
 
     for (const erro of erros.slice(antes)) {
@@ -1079,6 +1200,43 @@ async function conferirControlesDaTolerancia(navegador) {
   await pagina.close();
 }
 
+/**
+ * O caminho no disco com que o conferidor se relança como processo filho, derivado da URL do módulo. Os controles de
+ * processo (CT-B06 e CT-B08) relançam por ela, e o controle de caminho (CT-B06, achado A12) a confere.
+ */
+const caminhoDoModulo = (urlDoModulo) => fileURLToPath(urlDoModulo);
+
+/** Roda este mesmo arquivo como processo filho, no modo de controle, e devolve o código de saída e a saída inteira. */
+async function rodarConferidor(porta, ambiente) {
+  const filho = spawn(process.execPath, [caminhoDoModulo(import.meta.url), porta], {
+    env: { ...process.env, DOCS_BASE: '', VERIFICA_MAPA_CONTROLE: '1', ...ambiente },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let saida = '';
+  filho.stdout.on('data', (pedaco) => (saida += pedaco));
+  filho.stderr.on('data', (pedaco) => (saida += pedaco));
+  const codigo = await new Promise((pronto) => filho.on('close', pronto));
+  return { codigo, saida };
+}
+
+/**
+ * O controle de caminho (CT-B06, achado A12): a URL de um módulo numa pasta "meus projetos/João", com o escape de URL,
+ * vira, pela mesma função com que o conferidor se relança, o caminho do arquivo no disco, sem escape.
+ */
+function conferirControleDeCaminho() {
+  const noDisco = join(tmpdir(), 'meus projetos', 'João', 'verifica-mapa.mjs');
+  const url = pathToFileURL(noDisco).href;
+  if (!url.endsWith('/meus%20projetos/Jo%C3%A3o/verifica-mapa.mjs')) {
+    reprovar('CT-B06', `controle de caminho — a URL de controle ${url} não traz o escape de URL (meus%20projetos/Jo%C3%A3o)`);
+  } else {
+    const derivado = caminhoDoModulo(url);
+    if (resolve(derivado) !== resolve(noDisco)) {
+      reprovar('CT-B06', `controle de caminho — a URL ${url} deriva o caminho ${derivado}, e o arquivo no disco é ${noDisco}`);
+    }
+  }
+  contar('CT-B06');
+}
+
 /** O controle de processo: este mesmo arquivo, rodado como processo, sobre uma prévia em que o HTML do diagrama não desenha nada. */
 async function conferirControleDeProcesso() {
   const pasta = mkdtempSync(join(tmpdir(), 'controle-mapa-'));
@@ -1098,21 +1256,11 @@ async function conferirControleDeProcesso() {
     await new Promise((pronto) => servidor.listen(0, '127.0.0.1', pronto));
     const porta = String(servidor.address().port);
 
-    const filho = spawn(process.execPath, [new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'), porta], {
-      env: {
-        ...process.env,
-        DOCS_BASE: '',
-        VERIFICA_MAPA_DIAGRAMAS: join(pasta, 'diagramas'),
-        VERIFICA_MAPA_DIST: join(pasta, 'dist'),
-        VERIFICA_MAPA_TIMEOUT_MS: '3000',
-        VERIFICA_MAPA_CONTROLE: '1',
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const { codigo, saida } = await rodarConferidor(porta, {
+      VERIFICA_MAPA_DIAGRAMAS: join(pasta, 'diagramas'),
+      VERIFICA_MAPA_DIST: join(pasta, 'dist'),
+      VERIFICA_MAPA_TIMEOUT_MS: '3000',
     });
-    let saida = '';
-    filho.stdout.on('data', (pedaco) => (saida += pedaco));
-    filho.stderr.on('data', (pedaco) => (saida += pedaco));
-    const codigo = await new Promise((pronto) => filho.on('close', pronto));
 
     if (codigo === 0 || codigo === null) {
       reprovar('CT-B06', `controle de processo — o conferidor terminou com código ${codigo} sobre um HTML que não desenha nada, e devia terminar com código diferente de zero`);
@@ -1123,6 +1271,38 @@ async function conferirControleDeProcesso() {
     return { codigo, saida };
   } finally {
     servidor?.close();
+    rmSync(pasta, { recursive: true, force: true });
+  }
+}
+
+/**
+ * CT-B08 (step 9, achado A11): este mesmo arquivo, rodado como processo sobre uma pasta de diagramas com o
+ * `tempos-ci.json` publicado e um `zz-quebrado.json` com JSON quebrado, termina com código diferente de zero e com a
+ * mensagem `[mapa]` que nomeia o arquivo — as duas coisas na mesma linha da saída.
+ */
+async function conferirJsonQuebrado() {
+  const pasta = mkdtempSync(join(tmpdir(), 'controle-mapa-json-'));
+  try {
+    mkdirSync(join(pasta, 'diagramas'), { recursive: true });
+    mkdirSync(join(pasta, 'dist'), { recursive: true });
+    cpSync(join(DIAGRAMAS, 'tempos-ci.json'), join(pasta, 'diagramas', 'tempos-ci.json'));
+    writeFileSync(join(pasta, 'diagramas', 'zz-quebrado.json'), '{ "slug": "zz-quebrado", "tipo": "workflow", }');
+
+    const { codigo, saida } = await rodarConferidor(PORTA, {
+      VERIFICA_MAPA_DIAGRAMAS: join(pasta, 'diagramas'),
+      VERIFICA_MAPA_DIST: join(pasta, 'dist'),
+      VERIFICA_MAPA_TIMEOUT_MS: '3000',
+    });
+    const linhas = saida.split(/\r?\n/);
+    if (codigo === 0 || codigo === null) {
+      reprovar('CT-B08', `o conferidor terminou com código ${codigo} sobre a pasta com zz-quebrado.json, e devia terminar com código diferente de zero`);
+    }
+    if (!linhas.some((linha) => linha.includes('[mapa]') && linha.includes('zz-quebrado.json'))) {
+      const erro = linhas.find((linha) => /Error/.test(linha)) ?? linhas.find((linha) => linha.trim()) ?? '';
+      reprovar('CT-B08', `a saída do conferidor (código ${codigo}) não traz a mensagem [mapa] que nomeia zz-quebrado.json; o erro dela: ${JSON.stringify(erro.trim().slice(0, 200))}`);
+    }
+    contar('CT-B08');
+  } finally {
     rmSync(pasta, { recursive: true, force: true });
   }
 }
@@ -1146,6 +1326,11 @@ function conferirCatalogoPt() {
       lista: { ...LISTA_FECHADA, 'viewer.finder.placeholder': 'o texto de exemplo da busca se escreve igual' },
       chave: 'viewer.finder.placeholder',
     },
+    // step 9, achado A13: o lado do conferidor da tabela do motivo de enfeite (Setup Global do `04`)
+    { nome: 'viewer.guide.facts com o motivo "N/A"', pt: ptTraduzido, lista: { ...LISTA_FECHADA, 'viewer.guide.facts': 'N/A' }, chave: 'viewer.guide.facts' },
+    { nome: 'viewer.guide.facts com o motivo "not applicable"', pt: ptTraduzido, lista: { ...LISTA_FECHADA, 'viewer.guide.facts': 'not applicable' }, chave: 'viewer.guide.facts' },
+    { nome: 'viewer.guide.facts com o motivo "Does not apply"', pt: ptTraduzido, lista: { ...LISTA_FECHADA, 'viewer.guide.facts': 'Does not apply' }, chave: 'viewer.guide.facts' },
+    { nome: 'viewer.guide.facts com o motivo 0, que não é texto', pt: ptTraduzido, lista: { ...LISTA_FECHADA, 'viewer.guide.facts': 0 }, chave: 'viewer.guide.facts' },
   ];
 
   // a cópia "válida" do mundo de controle: o pt traduzido com a lista fechada passa
@@ -1156,6 +1341,19 @@ function conferirCatalogoPt() {
     const reprovadas = decidirCatalogoPt(CATALOGO_EN, pt, lista);
     if (!reprovadas.some((linha) => linha.startsWith(`${chave} `))) {
       reprovar('CT-B07', `controle "${nome}" — devia reprovar nomeando ${chave}, e decidiu ${JSON.stringify(reprovadas)}`);
+    }
+    contar('CT-B07');
+  }
+
+  // a tabela do motivo de enfeite, entrada a entrada, pela mesma função que decide o catálogo real
+  for (const [motivo, enfeite] of TABELA_DO_MOTIVO_DE_ENFEITE) {
+    const reprovadas = decidirCatalogoPt(CATALOGO_EN, ptTraduzido, { ...LISTA_FECHADA, 'viewer.guide.facts': motivo });
+    const nomeou = reprovadas.some((linha) => linha.startsWith('viewer.guide.facts '));
+    if (nomeou !== enfeite) {
+      reprovar(
+        'CT-B07',
+        `tabela do motivo de enfeite — o motivo ${JSON.stringify(motivo) ?? 'undefined'} na lista, em viewer.guide.facts, devia ${enfeite ? 'reprovar, nomeando a chave' : 'ser aceito'}, e a decisão foi ${JSON.stringify(reprovadas)}`,
+      );
     }
     contar('CT-B07');
   }
@@ -1198,7 +1396,9 @@ await navegador.close();
 
 if (!MODO_CONTROLE) {
   conferirCatalogoPt();
+  conferirControleDeCaminho();
   await conferirControleDeProcesso();
+  await conferirJsonQuebrado();
 }
 
 // totais do CT-B01 e do CT-B03
@@ -1219,6 +1419,9 @@ if (conferencias['CT-B01:F-nn'] === undefined && diagramas.some((x) => x.constru
 if ((conferencias['CT-B02'] ?? 0) === 0) {
   reprovar('CT-B02', 'nenhuma ligação desenhada foi conferida (o total devia ser maior que zero)');
 }
+if (diagramas.some((x) => x.tipo === 'class') && (conferencias['CT-B04:tipo'] ?? 0) === 0) {
+  reprovar('CT-B04', 'nenhum tipo de nó de diagrama de classes foi conferido no passaporte pt (o total devia ser maior que zero)');
+}
 
 console.log(`mapa: ${resumo.abertos.pt} diagramas abertos em pt e ${resumo.abertos.en} em en, de ${diagramas.length} arquivos`);
 console.log(`mapa: amostra de acessibilidade, ${auditadas.length} HTML conferidos de ${amostra.length} (${representantes.size} tipos)`);
@@ -1226,10 +1429,10 @@ console.log(
   `tolerados (ADR-06): nested-interactive no <svg> raiz ${toleradas['nested-interactive']}×, ` +
     `color-contrast na contagem do índice ${toleradas['color-contrast']}×`,
 );
-for (const ct of ['CT-B01', 'CT-B01:F-nn', 'CT-B02', 'CT-B03', 'CT-B04', 'CT-B05', 'CT-B06', 'CT-B07']) {
+for (const ct of ['CT-B01', 'CT-B01:F-nn', 'CT-B02', 'CT-B03', 'CT-B04', 'CT-B04:tipo', 'CT-B05', 'CT-B06', 'CT-B07', 'CT-B08']) {
   const base = ct.split(':')[0];
   const reprovacoes = violacoes.filter((v) => v.startsWith(`[${base}]`)).length;
-  console.log(`  ${ct}: ${conferencias[ct] ?? 0} conferências, ${ct.includes(':') ? 'incluído no CT-B01' : `${reprovacoes} reprovação(ões)`}`);
+  console.log(`  ${ct}: ${conferencias[ct] ?? 0} conferências, ${ct.includes(':') ? `incluído no ${base}` : `${reprovacoes} reprovação(ões)`}`);
 }
 
 /*
@@ -1249,7 +1452,7 @@ if (violacoes.length > 0) {
   reprovado = true;
 }
 if (!reprovado) {
-  console.log('OK — mapa conferido (CT-B01 a CT-B07), sem violação serious/critical fora das duas toleradas, e sem erro no console.');
+  console.log('OK — mapa conferido (CT-B01 a CT-B08), sem violação serious/critical fora das duas toleradas, e sem erro no console.');
 }
 
 process.exitCode = reprovado ? 1 : 0;
