@@ -4262,7 +4262,10 @@ function versaoDoNode(): string
  * - `marcarAncoras`: cada âncora, da peça e do diagrama, leva o próprio trecho no `label` — a única chave
  *   opcional da âncora —, para que a guarda ache, na linha que o gerador calculou, o trecho que a projetou;
  * - `soCaixasESetas`: da entrada, só as caixas (`components`, com o rótulo secundário) e as setas
- *   (`connections`, com o traço).
+ *   (`connections`, com o traço);
+ * - `textosNaRevisao`: o texto que o filho devolve, por caminho relativo à raiz (com `/`), no lugar do
+ *   `git show <revisão>:<caminho>` com que o gerador lê o arquivo citado — o controle muda o arquivo em memória,
+ *   sem gravar nada no repositório.
  *
  * Devolve o id do archify de cada peça do modelo e, por slug e por idioma, a entrada sem o `meta`, ou o erro com
  * que o gerador recusou o diagrama. Um mundo por processo, porque o modelo de `carregarModelo()` é cache mutável;
@@ -4270,7 +4273,7 @@ function versaoDoNode(): string
  * por exceção ou, com `$falhaComoExpectativa`, por expectativa — que conta uma asserção na primeira montagem do
  * pedido, e só nela.
  *
- * @param  array{extras?: list<array<string, mixed>>, soExtras?: bool, construtor?: string, slugs?: list<string>, ligacoes?: list<array<string, mixed>>, agrupamentos?: array<string, list<array<string, mixed>>>, idiomas?: list<string>, marcarAncoras?: bool, soCaixasESetas?: bool}  $pedido
+ * @param  array{extras?: list<array<string, mixed>>, soExtras?: bool, construtor?: string, slugs?: list<string>, ligacoes?: list<array<string, mixed>>, agrupamentos?: array<string, list<array<string, mixed>>>, idiomas?: list<string>, marcarAncoras?: bool, soCaixasESetas?: bool, textosNaRevisao?: array<string, string>}  $pedido
  * @return array{ids: array<string, string>, diagramas: array<string, array<string, array<string, mixed>>>}
  */
 function entradasDoGeradorDoMapa(array $pedido = [], bool $falhaComoExpectativa = false): array
@@ -4284,12 +4287,23 @@ function entradasDoGeradorDoMapa(array $pedido = [], bool $falhaComoExpectativa 
     }
 
     $script = <<<'JS'
+        import childProcess from 'node:child_process';
         import { readFileSync, readdirSync } from 'node:fs';
+        import { syncBuiltinESMExports } from 'node:module';
         import { join } from 'node:path';
         import { pathToFileURL } from 'node:url';
 
         const [gerador, pasta, arquivoDoPedido] = process.argv.slice(2);
         const pedido = JSON.parse(readFileSync(arquivoDoPedido, 'utf8'));
+        const trocas = pedido.textosNaRevisao ?? {};
+        if (Object.keys(trocas).length) {
+          const original = childProcess.execFileSync;
+          childProcess.execFileSync = (comando, argumentos = [], opcoes) => {
+            const alvo = comando === 'git' && argumentos.includes('show') ? String(argumentos.at(-1)).replace(/^[^:]*:/, '') : null;
+            return alvo !== null && Object.hasOwn(trocas, alvo) ? trocas[alvo] : original(comando, argumentos, opcoes);
+          };
+          syncBuiltinESMExports();
+        }
         const { carregarModelo, entradaDoArchify, idArchify } = await import(pathToFileURL(gerador).href);
 
         const marcar = (valor) => {

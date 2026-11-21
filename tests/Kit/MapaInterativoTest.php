@@ -2546,12 +2546,14 @@ if (! function_exists('mapaModeloConferirLinhasDoBuild')) {
     /**
      * R9, CT-52: a linha que o build dá a cada prova — o item de prova de cada ligação desenhada e cada fonte de
      * peça — tem o trecho da âncora fora de comentário, pela sintaxe do tipo do arquivo, no texto da revisão que o
-     * gerador lê. Diagrama que o gerador recusou reprova, com a mensagem dele.
+     * gerador lê. Diagrama que o gerador recusou reprova, com a mensagem dele. O texto trocado em memória (o
+     * controle do nowdoc, re-revisão RR-03) vale no lugar do da revisão, como valeu para o gerador.
      *
      * @param  array<string, array<string, mixed>>  $entradas  os `diagramas` de `entradasDoGeradorDoMapa()`, montados em `pt` e com as âncoras marcadas
+     * @param  array<string, string>  $textosNaRevisao  caminho → o texto que o gerador leu no lugar do `git show`
      * @return array<string, mixed>
      */
-    function mapaModeloConferirLinhasDoBuild(array $entradas): array
+    function mapaModeloConferirLinhasDoBuild(array $entradas, array $textosNaRevisao = []): array
     {
         $violacoes = [];
         $ancoras   = [];
@@ -2608,7 +2610,8 @@ if (! function_exists('mapaModeloConferirLinhasDoBuild')) {
             }
         }
 
-        $textos     = mapaModeloTextosNaRevisao(array_values(array_unique(array_column($ancoras, 2))));
+        $trocados   = array_map(static fn (string $texto): string => str_replace("\r\n", "\n", $texto), $textosNaRevisao);
+        $textos     = $trocados + mapaModeloTextosNaRevisao(array_values(array_diff(array_unique(array_column($ancoras, 2)), array_keys($trocados))));
         $mascaras   = [];
         $inicios    = [];
         $repetidas  = [];
@@ -2650,6 +2653,44 @@ if (! function_exists('mapaModeloConferirLinhasDoBuild')) {
         }
 
         return mapaModeloResultado($violacoes, ['conferidas' => $conferidas, 'repetidas' => count($repetidas)]);
+    }
+}
+
+if (! function_exists('mapaModeloDiagramaDeControle')) {
+    /**
+     * O diagrama escrito à mão, em memória, dos controles do CT-52: dois nós e uma ligação provada pela âncora dada.
+     *
+     * @return array<string, mixed>
+     */
+    function mapaModeloDiagramaDeControle(string $slug, string $arquivo, string $trecho): array
+    {
+        return [
+            'slug'           => $slug,
+            'tipo'           => 'workflow',
+            'titulo'         => ['pt' => 'Controle do CT-52', 'en' => 'CT-52 control'],
+            'paineis'        => [],
+            'modos'          => ['sem', 'com'],
+            'schema_version' => 1,
+            'diagram_type'   => 'workflow',
+            'nodes'          => [['id' => 'app-service-provider', 'label' => 'AppServiceProvider'], ['id' => 'locker', 'label' => 'Locker']],
+            'edges'          => [[
+                'id'    => 'liga-locker',
+                'from'  => 'app-service-provider',
+                'to'    => 'locker',
+                'label' => ['pt' => 'liga', 'en' => 'binds'],
+                'prova' => ['arquivo' => $arquivo, 'trecho' => $trecho],
+            ]],
+        ];
+    }
+}
+
+if (! function_exists('mapaModeloLinhaDoTrecho')) {
+    /** A linha (a partir de 1) da primeira ocorrência do trecho no texto, a partir do byte dado; `null` se não há. */
+    function mapaModeloLinhaDoTrecho(string $texto, string $trecho, int $aPartirDe = 0): ?int
+    {
+        $posicao = strpos($texto, $trecho, $aPartirDe);
+
+        return $posicao === false ? null : substr_count(substr($texto, 0, $posicao), "\n") + 1;
     }
 }
 
@@ -2850,23 +2891,53 @@ it('[CT-52] a linha que o build dá a cada prova é a do código: o trecho está
         ->and(substr($mascara, (int) $primeira, strlen($trecho)))->not->toBe($trecho, 'a primeira ocorrência deveria estar num comentário')
         ->and(str_contains($mascara, $trecho))->toBeTrue("{$trecho} deveria estar também fora de comentário");
 
-    $controle = [
-        'slug'           => 'controle-ct52-locker',
-        'tipo'           => 'workflow',
-        'titulo'         => ['pt' => 'Controle do CT-52', 'en' => 'CT-52 control'],
-        'paineis'        => [],
-        'modos'          => ['sem', 'com'],
-        'schema_version' => 1,
-        'diagram_type'   => 'workflow',
-        'nodes'          => [['id' => 'app-service-provider', 'label' => 'AppServiceProvider'], ['id' => 'locker', 'label' => 'Locker']],
-        'edges'          => [[
-            'id'    => 'liga-locker',
-            'from'  => 'app-service-provider',
-            'to'    => 'locker',
-            'label' => ['pt' => 'liga', 'en' => 'binds'],
-            'prova' => ['arquivo' => $arquivo, 'trecho' => $trecho],
-        ]],
-    ];
+    if ($mundo === 'nowdoc') {
+        // re-revisão RR-03: o mesmo diagrama, sobre o texto do arquivo no commit do teste com um nowdoc de corpo com
+        // apóstrofo inserido em memória depois da linha 19 (o `{` do `register()`), antes do comentário que cita
+        // `Locker::class`. O texto chega ao gerador no lugar do `git show` dele; nada é gravado no repositório.
+        $linhas = explode("\n", $texto);
+
+        expect($linhas[17] ?? '')->toContain('function register(')
+            ->and(trim($linhas[18] ?? ''))->toBe('{', 'a linha 19 deveria ser o { do register()');
+
+        $comNowdoc    = implode("\n", [...array_slice($linhas, 0, 19), "\$aviso = <<<'TXT'", "it's a nowdoc", 'TXT;', ...array_slice($linhas, 19)]);
+        $mascarado    = mapaModeloMascararComentarios($arquivo, $comNowdoc);
+        $noComentario = mapaModeloLinhaDoTrecho($comNowdoc, $trecho);
+
+        // a premissa no texto adulterado: o comentário que cita o trecho vem depois do nowdoc, e o código, depois dele
+        expect($noComentario)->toBeGreaterThan(22)
+            ->and(substr($mascarado, (int) strpos($comNowdoc, $trecho), strlen($trecho)))->not->toBe($trecho, 'a primeira ocorrência deveria estar num comentário')
+            ->and(str_contains($mascarado, $trecho))->toBeTrue("{$trecho} deveria estar também fora de comentário");
+
+        // a sonda: um trecho único, de código, abaixo do nowdoc, cuja linha só bate se o texto adulterado chegou ao gerador
+        $sonda        = '$this->app->bind(LockerScreen::class, TelaBloqueio::class);';
+        $linhaDaSonda = mapaModeloLinhaDoTrecho($comNowdoc, $sonda);
+
+        expect(substr_count($comNowdoc, $sonda))->toBe(1)
+            ->and($linhaDaSonda)->not->toBe(mapaModeloLinhaDoTrecho($texto, $sonda));
+
+        $montado = entradasDoGeradorDoMapa([
+            'extras'          => [mapaModeloDiagramaDeControle('controle-ct52-nowdoc', $arquivo, $trecho), mapaModeloDiagramaDeControle('sonda-ct52-nowdoc', $arquivo, $sonda)],
+            'soExtras'        => true,
+            'idiomas'         => ['pt'],
+            'marcarAncoras'   => true,
+            'textosNaRevisao' => [$arquivo => $comNowdoc],
+        ])['diagramas'];
+
+        $itensDaSonda = array_merge(...array_map(static fn (array $card): array => $card['items'] ?? [], $montado['sonda-ct52-nowdoc']['pt']['cards'] ?? []));
+        $saiuNaLinha  = preg_match('/AppServiceProvider\.php:(\d+) — /u', implode("\n", array_filter($itensDaSonda, 'is_string')), $m) === 1 ? (int) $m[1] : null;
+
+        expect($saiuNaLinha)->toBe($linhaDaSonda, "o texto com o nowdoc não chegou ao gerador: a sonda saiu na linha {$saiuNaLinha}, e no texto com o nowdoc está na {$linhaDaSonda} (o pedido de entradasDoGeradorDoMapa() precisa trocar o git show pela opção textosNaRevisao)");
+
+        $guarda = mapaModeloConferirLinhasDoBuild(['controle-ct52-nowdoc' => $montado['controle-ct52-nowdoc'] ?? []], [$arquivo => $comNowdoc]);
+
+        expect($guarda['conferidas'])->toBeGreaterThanOrEqual(1, 'o item de prova da ligação de controle não saiu do gerador')
+            ->and($guarda['aceita'])->toBeTrue((string) $guarda['motivo']);
+
+        return;
+    }
+
+    $controle = mapaModeloDiagramaDeControle('controle-ct52-locker', $arquivo, $trecho);
 
     $saida = entradasDoGeradorDoMapa(['extras' => [$controle], 'soExtras' => true, 'idiomas' => ['pt'], 'marcarAncoras' => true])['diagramas']['controle-ct52-locker'] ?? null;
 
@@ -2885,8 +2956,9 @@ it('[CT-52] a linha que o build dá a cada prova é a do código: o trecho está
     expect($guarda['conferidas'])->toBeGreaterThanOrEqual(1, 'o item de prova da ligação de controle não saiu do gerador')
         ->and($guarda['aceita'])->toBeTrue((string) $guarda['motivo']);
 })->with([
-    'publicados'                                            => ['publicados'],
-    'diagrama em memória com o trecho antes num comentário' => ['controle'],
+    'publicados'                                                                    => ['publicados'],
+    'diagrama em memória com o trecho antes num comentário'                         => ['controle'],
+    'o mesmo diagrama, com um nowdoc de apóstrofo antes do comentário (re-revisão)' => ['nowdoc'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
 
 /*
