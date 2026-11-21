@@ -1221,7 +1221,7 @@ if (! function_exists('publicacaoConferirRecusa')) {
      * todo `Então` apareça numa rodada só.
      *
      * @param  array{codigo: ?int, stdout: string, stderr: string}  $rodada
-     * @param  list<string>  $culpado  os nomes do culpado, todos na mesma linha
+     * @param  list<string>  $culpado  os nomes do culpado, todos na mesma linha; o que começa por `~` é um padrão, aplicado à linha crua
      * @param  ?string  $porQue  o padrão do porquê, na mesma linha do culpado
      * @param  array<string, bool>  $efeitos  o efeito → aconteceu
      * @return list<string>
@@ -1234,7 +1234,7 @@ if (! function_exists('publicacaoConferirRecusa')) {
         $nomeiam    = array_filter(
             preg_split('/\R/u', $saida),
             fn (string $linha): bool => str_contains($linha, '[mapa]')
-                && array_filter($culpado, fn (string $nome): bool => ! str_contains($normalizar($linha), $normalizar($nome))) === [],
+                && array_filter($culpado, fn (string $nome): bool => str_starts_with($nome, '~') ? preg_match($nome, $linha) !== 1 : ! str_contains($normalizar($linha), $normalizar($nome))) === [],
         );
 
         $reprovas = [];
@@ -1412,7 +1412,7 @@ if (! function_exists('publicacaoDiferencaDaFoto')) {
     }
 }
 
-it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebrado, ou peça que não está no modelo — é recusado antes de qualquer efeito, com a mensagem [mapa] que nomeia o culpado', function (string $arquivo, string $defeito, array $comando, array $culpado): void {
+it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebrado, peça que não está no modelo, ou prova que não resolve — é recusado antes de qualquer efeito, com a mensagem [mapa] que nomeia o culpado', function (string $arquivo, string $defeito, array $comando, array $culpado): void {
     $raiz    = publicacaoPastaTemporaria();
     $intrusa = 'App\\Support\\PecaQueNaoExiste';
 
@@ -1420,9 +1420,24 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
         // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
         expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+$/');
         $clone     = publicacaoCloneDescartavel($raiz);
+        $mapa      = $clone['site'].DIRECTORY_SEPARATOR.'mapa';
         $saida     = $raiz.DIRECTORY_SEPARATOR.'saida';
-        $diagramas = $clone['site'].DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.'diagramas';
         $dist      = $clone['site'].DIRECTORY_SEPARATOR.'dist'.DIRECTORY_SEPARATOR.'mapa';
+        $naRevisao = fn (string $citado): string => Process::path($clone['kit'])->run(['git', 'show', 'HEAD:'.$citado])->throw()->output();
+        $umSo      = function (array $itens, Closure $casa, string $oQue): object {
+            $achados = array_values(array_filter($itens, $casa));
+
+            expect($achados)->toHaveCount(1, "o clone não tem exatamente um item: {$oQue}");
+
+            return $achados[0];
+        };
+
+        // Os arquivos de entrada do clone: os de diagrama e os do modelo
+        $entradas = fn (): array => [
+            ...publicacaoFotoDaPasta($mapa.DIRECTORY_SEPARATOR.'diagramas'),
+            'pecas.json'    => (string) publicacaoBytes($mapa.DIRECTORY_SEPARATOR.'pecas.json'),
+            'ligacoes.json' => (string) publicacaoBytes($mapa.DIRECTORY_SEPARATOR.'ligacoes.json'),
+        ];
         mkdir($saida);
 
         // A pasta de saída do comando: vazia, ou com o pt/ e o en/ de uma geração anterior — só HTML do mapa, a pasta que a P-14 aceita
@@ -1447,54 +1462,112 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
 
             file_put_contents($caminho, $quebrado);
         } else {
-            // A peça que não é peça do modelo, no diagrama construído: entre as peças desenhadas, ou como membro de um agrupamento
-            $modelo   = json_decode((string) file_get_contents($clone['site'].DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.'pecas.json'), flags: JSON_THROW_ON_ERROR);
-            $diagrama = json_decode((string) file_get_contents($caminho), flags: JSON_THROW_ON_ERROR);
+            $json = json_decode((string) file_get_contents($caminho), flags: JSON_THROW_ON_ERROR);
 
-            expect(array_values(array_filter($modelo, fn (object $peca): bool => $peca->id === $intrusa)))->toBe([], 'a peça da linha é peça do modelo')
-                ->and($diagrama->construtor ?? null)->toBe('mapa', 'o diagrama da linha não é construído do modelo');
+            if (str_starts_with($defeito, 'com a peça fora do modelo')) {
+                // A peça que não é peça do modelo, no diagrama construído: entre as peças desenhadas, ou como membro de um agrupamento
+                $modelo = json_decode((string) file_get_contents($mapa.DIRECTORY_SEPARATOR.'pecas.json'), flags: JSON_THROW_ON_ERROR);
 
-            match ($defeito) {
-                'com a peça fora do modelo entre as peças desenhadas'     => $diagrama->pecas[]                    = (object) ['id' => $intrusa, 'row' => max(array_map(fn (object $peca): int => (int) ($peca->row ?? 0), $diagrama->pecas)) + 1, 'col' => 0],
-                'com a peça fora do modelo como membro de um agrupamento' => $diagrama->agrupamentos[0]->membros[] = $intrusa,
-            };
+                expect(array_values(array_filter($modelo, fn (object $peca): bool => $peca->id === $intrusa)))->toBe([], 'a peça da linha é peça do modelo')
+                    ->and($json->construtor ?? null)->toBe('mapa', 'o diagrama da linha não é construído do modelo');
 
-            file_put_contents($caminho, json_encode($diagrama, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
+                if (str_ends_with($defeito, 'entre as peças desenhadas')) {
+                    $json->pecas[] = (object) ['id' => $intrusa, 'row' => max(array_map(fn (object $peca): int => (int) ($peca->row ?? 0), $json->pecas)) + 1, 'col' => 0];
+                } else {
+                    $json->agrupamentos[0]->membros[] = $intrusa;
+                }
+            } elseif ($defeito === 'com a primeira mensagem sem prova') {
+                expect($json->messages[0]->prova ?? null)->not->toBeNull('a primeira mensagem do diagrama escrito à mão não tem prova');
+
+                unset($json->messages[0]->prova);
+            } else {
+                // A âncora trocada: onde ela mora, o arquivo que ela cita, o trecho novo, e se ele só aparece em comentário
+                [$ancora, $citado, $trecho, $soEmComentario] = match ($defeito) {
+                    "com a prova da primeira mensagem trocada por ->id('financeiro'), que não está no arquivo" => [
+                        $json->messages[0]->prova, 'app/Providers/Filament/AdminPanelProvider.php', "->id('financeiro')", false,
+                    ],
+                    'com a evidência de AppServiceProvider registra BloquearSessaoComRetorno trocada por um trecho só de comentário' => [
+                        $umSo($json, fn (object $ligacao): bool => $ligacao->de === 'App\\Providers\\AppServiceProvider' && $ligacao->para === 'App\\Http\\Middleware\\BloquearSessaoComRetorno' && $ligacao->verbo === 'registra', 'a ligação AppServiceProvider registra BloquearSessaoComRetorno')->evidencia,
+                        'app/Providers/AppServiceProvider.php', 'pelo mesmo caminho: o plugin registra', true,
+                    ],
+                    'com a evidência do UserResource do /admin trocada por class UserResource extends Model, que não está no arquivo' => [
+                        $umSo($json, fn (object $peca): bool => $peca->id === 'App\\Filament\\Admin\\Resources\\Users\\UserResource', 'a peça UserResource do /admin')->evidencia[0],
+                        'app/Filament/Admin/Resources/Users/UserResource.php', 'class UserResource extends Model', false,
+                    ],
+                    'com a evidência de painel:app registra ConvitesRecebidos trocada por ConvitesRecebidos::make(), que não está no arquivo' => [
+                        $umSo($json, fn (object $ligacao): bool => $ligacao->de === 'painel:app' && $ligacao->para === 'App\\Filament\\App\\Pages\\ConvitesRecebidos' && $ligacao->verbo === 'registra', 'a ligação painel:app registra ConvitesRecebidos')->evidencia,
+                        'app/Providers/Filament/AppPanelProvider.php', 'ConvitesRecebidos::make(),', false,
+                    ],
+                };
+                $texto = $naRevisao($citado);
+
+                expect($ancora->arquivo)->toBe($citado, 'a âncora da linha não cita o arquivo que o 04 nomeia')
+                    ->and(str_contains($texto, $trecho))->toBe($soEmComentario, "o trecho novo não está no arquivo citado como o 04 diz: {$trecho}")
+                    ->and(str_contains(codigoSemComentario($texto), $trecho))->toBeFalse("o trecho novo está no código, fora de comentário: {$trecho}");
+
+                $ancora->trecho = $trecho;
+            }
+
+            file_put_contents($caminho, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
         }
 
-        $htmlsAntes     = publicacaoHtmlsDoMapa([$saida, $dist]);
-        $saidaAntes     = publicacaoFotoDaPasta($saida);
-        $diagramasAntes = publicacaoFotoDaPasta($diagramas);
+        // O diagrama que desenha a ligação: qualquer um dos que têm as duas pontas dela, entre eles o kit-acesso-e-autenticacao, que o 04 nomeia;
+        // e o app-resumo-sem, que o posicionador projeta, tem o ConvitesRecebidos
+        if (str_contains($defeito, 'BloquearSessaoComRetorno')) {
+            $desenham = array_values(array_map(
+                fn (string $diagrama): string => basename($diagrama, '.json'),
+                array_filter(glob($mapa.DIRECTORY_SEPARATOR.'diagramas'.DIRECTORY_SEPARATOR.'*.json') ?: [], fn (string $diagrama): bool => str_contains($texto = (string) file_get_contents($diagrama), 'BloquearSessaoComRetorno') && str_contains($texto, 'Providers\\\\AppServiceProvider')),
+            ));
 
-        expect($diagramasAntes)->not->toBe([], 'a foto dos diagramas do clone está vazia');
+            expect($desenham)->toContain('kit-acesso-e-autenticacao');
+
+            $culpado = array_map(fn (string $nome): string => $nome === '{o diagrama que desenha a ligação}' ? '~(?:'.implode('|', array_map(fn (string $slug): string => preg_quote($slug, '~'), $desenham)).')(?![a-z0-9-])~' : $nome, $culpado);
+        }
+
+        if (str_contains($defeito, 'ConvitesRecebidos')) {
+            expect((string) file_get_contents($mapa.DIRECTORY_SEPARATOR.'diagramas'.DIRECTORY_SEPARATOR.'app-resumo-sem.json'))->toContain('ConvitesRecebidos');
+        }
+
+        $htmlsAntes    = publicacaoHtmlsDoMapa([$saida, $dist]);
+        $saidaAntes    = publicacaoFotoDaPasta($saida);
+        $entradasAntes = $entradas();
+
+        expect(count($entradasAntes))->toBeGreaterThan(2, 'a foto dos arquivos de entrada do clone não tem os diagramas');
 
         // Quando o autor roda, de site/ do clone, o comando
         $rodada = publicacaoRodarNoClone($clone['site'], array_map(fn (string $parte): string => in_array($parte, ['{saida}', '{saida-anterior}'], true) ? $saida : $parte, $comando));
 
-        $htmlsNovos       = array_values(array_diff(publicacaoHtmlsDoMapa([$saida, $dist]), $htmlsAntes));
-        $saidaMudou       = publicacaoDiferencaDaFoto($saidaAntes, publicacaoFotoDaPasta($saida));
-        $diagramasMudaram = publicacaoDiferencaDaFoto($diagramasAntes, publicacaoFotoDaPasta($diagramas));
+        $htmlsNovos      = array_values(array_diff(publicacaoHtmlsDoMapa([$saida, $dist]), $htmlsAntes));
+        $saidaMudou      = publicacaoDiferencaDaFoto($saidaAntes, publicacaoFotoDaPasta($saida));
+        $entradasMudaram = publicacaoDiferencaDaFoto($entradasAntes, $entradas());
 
         // Então código diferente de zero, com a mensagem [mapa] que nomeia o culpado — todos os nomes dele, na mesma linha;
         // E nada foi baixado, gerado nem gravado: sem site/.archify, nenhum HTML do mapa escrito, e a pasta de saída e os
-        // arquivos de diagrama do clone com os mesmos bytes de antes do comando
+        // arquivos de entrada do clone — os de diagrama e os do modelo — com os mesmos bytes de antes do comando
         expect(publicacaoConferirRecusa($rodada, $culpado, null, [
-            'o clone ganhou site/.archify: o download do archify foi tentado antes da recusa' => file_exists($clone['site'].DIRECTORY_SEPARATOR.'.archify'),
-            'a ferramenta escreveu HTML do mapa: '.implode(', ', $htmlsNovos)                 => $htmlsNovos !== [],
-            "a pasta de saída não tem os mesmos bytes: {$saidaMudou}"                         => $saidaMudou !== '',
-            "os arquivos de diagrama do clone não têm os mesmos bytes: {$diagramasMudaram}"   => $diagramasMudaram !== '',
+            'o clone ganhou site/.archify: o download do archify foi tentado antes da recusa'                             => file_exists($clone['site'].DIRECTORY_SEPARATOR.'.archify'),
+            'a ferramenta escreveu HTML do mapa: '.implode(', ', $htmlsNovos)                                             => $htmlsNovos !== [],
+            "a pasta de saída não tem os mesmos bytes: {$saidaMudou}"                                                     => $saidaMudou !== '',
+            "os arquivos de entrada do clone (os de diagrama e os do modelo) não têm os mesmos bytes: {$entradasMudaram}" => $entradasMudaram !== '',
         ]))->toBe([]);
     } finally {
         publicacaoApagarPasta($raiz);
     }
 })->with([
-    'gerador: diagrama quebrado, mesmo fora do pedido'           => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['zz-quebrado.json']],
-    'gerador: modelo de peças quebrado'                          => ['site/mapa/pecas.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['pecas.json']],
-    'gerador: modelo de ligações quebrado'                       => ['site/mapa/ligacoes.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['ligacoes.json']],
-    'posicionador: diagrama quebrado'                            => ['site/mapa/diagramas/app-resumo-sem.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['app-resumo-sem.json']],
-    'gerador: peça fora do modelo (re-revisão)'                  => ['site/mapa/diagramas/admin-acesso-e-autenticacao.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'admin-acesso-e-autenticacao']],
-    'gerador: membro de agrupamento fora do modelo (re-revisão)' => ['site/mapa/diagramas/admin-resumo.json', 'com a peça fora do modelo como membro de um agrupamento', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'admin-resumo']],
-    'posicionador: diagrama irmão quebrado (re-revisão)'         => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['zz-quebrado.json']],
+    'gerador: diagrama quebrado, mesmo fora do pedido'                => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['zz-quebrado.json']],
+    'gerador: modelo de peças quebrado'                               => ['site/mapa/pecas.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['pecas.json']],
+    'gerador: modelo de ligações quebrado'                            => ['site/mapa/ligacoes.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['ligacoes.json']],
+    'posicionador: diagrama quebrado'                                 => ['site/mapa/diagramas/app-resumo-sem.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['app-resumo-sem.json']],
+    'gerador: peça fora do modelo (re-revisão)'                       => ['site/mapa/diagramas/admin-acesso-e-autenticacao.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'admin-acesso-e-autenticacao']],
+    'gerador: membro de agrupamento fora do modelo (re-revisão)'      => ['site/mapa/diagramas/admin-resumo.json', 'com a peça fora do modelo como membro de um agrupamento', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'admin-resumo']],
+    'posicionador: diagrama irmão quebrado (re-revisão)'              => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['zz-quebrado.json']],
+    'gerador: prova de ligação que não está no arquivo (step 10)'     => ['site/mapa/diagramas/requisicao-autenticada.json', "com a prova da primeira mensagem trocada por ->id('financeiro'), que não está no arquivo", ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ["->id('financeiro')", 'AdminPanelProvider.php', '~requisicao-autenticada(?![a-z0-9-])~']],
+    'gerador: evidência de ligação só em comentário (step 10)'        => ['site/mapa/ligacoes.json', 'com a evidência de AppServiceProvider registra BloquearSessaoComRetorno trocada por um trecho só de comentário', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AppServiceProvider.php', '{o diagrama que desenha a ligação}']],
+    'gerador: ligação sem prova (step 10)'                            => ['site/mapa/diagramas/requisicao-autenticada.json', 'com a primeira mensagem sem prova', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['navegador', 'setuppanel', '~requisicao-autenticada(?![a-z0-9-])~']],
+    'gerador: evidência de peça que não está no arquivo (step 10)'    => ['site/mapa/pecas.json', 'com a evidência do UserResource do /admin trocada por class UserResource extends Model, que não está no arquivo', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['~App(?:\\\\{1,2}|-)Filament(?:\\\\{1,2}|-)Admin(?:\\\\{1,2}|-)Resources(?:\\\\{1,2}|-)Users(?:\\\\{1,2}|-)UserResource~', 'UserResource.php']],
+    'posicionador: peça fora do modelo (step 10)'                     => ['site/mapa/diagramas/app-resumo-sem.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['PecaQueNaoExiste', '~app-resumo-sem(?![a-z0-9-])~']],
+    'posicionador: modelo quebrado (step 10)'                         => ['site/mapa/pecas.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['pecas.json']],
+    'posicionador: prova que não resolve (step 10)'                   => ['site/mapa/ligacoes.json', 'com a evidência de painel:app registra ConvitesRecebidos trocada por ConvitesRecebidos::make(), que não está no arquivo', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['AppPanelProvider.php', '~app-resumo-sem(?![a-z0-9-])~']],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
 
 it('[CT-51] o gerador chamado por um caminho que passa por um link faz o mesmo que pelo caminho real, e não termina com 0 calado', function (): void {
