@@ -61,5 +61,11 @@
         "legend.architecture.external": "Port to another map"
       }
     }
+  },
+  "foraDoCatalogo": {
+    "pt": {
+      "viewer.kind.class": "Classe",
+      "viewer.kind.abstract": "Classe abstrata"
+    }
   }
 }

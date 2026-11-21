@@ -405,6 +405,25 @@ function entradaDoArchify(diagrama, idioma, catalogoPt) {
   return ir;
 }
 
+/**
+ * O nome de tipo de nó que o catálogo do archify não tem: no commit fixado, só os tipos do `architecture` e dos
+ * fluxos têm `viewer.kind.*`, e o visualizador escreve o `class` e o `abstract` crus, em inglês, no passaporte e
+ * no filtro de tipos (R31). O archify descarta de `meta.translations` toda chave fora do catálogo canônico, então
+ * as chaves de `foraDoCatalogo` do `interface.json` entram no catálogo embutido do HTML depois do render.
+ */
+function completarCatalogoEmbutido(destino, idioma) {
+  const chaves = interfaceDoKit.foraDoCatalogo?.[idioma];
+  if (!chaves) return;
+  const embutido = /(<script id="archify-i18n-data" type="application\/json">)([\s\S]*?)(<\/script>)/;
+  const html = readFileSync(destino, 'utf8');
+  const achado = html.match(embutido);
+  if (!achado) throw new Error('o HTML não tem o catálogo embutido (archify-i18n-data)');
+  const dados = JSON.parse(achado[2]);
+  dados.messages = { ...chaves, ...dados.messages };
+  const json = JSON.stringify(dados).replace(/</g, '\\u003c');
+  writeFileSync(destino, html.replace(embutido, (_, abre, __, fecha) => `${abre}${json}${fecha}`));
+}
+
 function archify(cli, args) {
   try {
     execFileSync(process.execPath, [cli, ...args, '--repo-root', RAIZ], {
@@ -465,6 +484,7 @@ function gerar(argumentos) {
           const entrada = join(temporaria, `${slug}.${idioma}.json`);
           writeFileSync(entrada, JSON.stringify(ir));
           archify(cli, ['render', tipo, entrada, destino]);
+          completarCatalogoEmbutido(destino, idioma);
           const pecas = ir[PECAS[tipo]]?.length ?? 0;
           console.log(`[mapa] ${slug} ${idioma} — ${tipo}, ${pecas} peças, ${statSync(destino).size} B`);
         } catch (erro) {
