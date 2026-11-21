@@ -23,12 +23,24 @@ if (!slug) {
   console.error('uso: node mapa/posicionar.mjs <slug> [--tentativas 200]');
   process.exit(2);
 }
+// O argumento é conferido antes de qualquer efeito — ler o diagrama, baixar o archify, gravar (P-14).
 const posicao = opcoes.indexOf('--tentativas');
-const TENTATIVAS = posicao >= 0 ? Number(opcoes[posicao + 1]) : 200;
+const valor = posicao >= 0 ? opcoes[posicao + 1] : '200';
+if (!/^[1-9][0-9]*$/.test(valor ?? '')) {
+  console.error(`[mapa] ERRO --tentativas: espera um inteiro positivo, e recebeu ${valor === undefined ? 'nada' : JSON.stringify(valor)}`);
+  process.exit(2);
+}
+const TENTATIVAS = Number(valor);
 
 const RAIZ = fileURLToPath(new URL('../../', import.meta.url));
 const arquivo = fileURLToPath(new URL(`./diagramas/${slug}.json`, import.meta.url));
-const diagrama = JSON.parse(readFileSync(arquivo, 'utf8'));
+let diagrama;
+try {
+  diagrama = JSON.parse(readFileSync(arquivo, 'utf8'));
+} catch (erro) {
+  console.error(`[mapa] ERRO site/mapa/diagramas/${slug}.json — ${erro.code === 'ENOENT' ? 'o diagrama não existe' : `JSON inválido: ${erro.message}`}`);
+  process.exit(2);
+}
 if (diagrama.construtor !== 'mapa') {
   console.error(`[mapa] ${slug} não é um mapa de arquitetura construído do modelo`);
   process.exit(2);

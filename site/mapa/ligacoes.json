@@ -3826,7 +3826,7 @@
     ],
     "evidencia": {
       "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
-      "trecho": "Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));"
+      "trecho": "LanguageSwitch::configureUsing(function (LanguageSwitch $seletor): void {"
     }
   },
   {
@@ -4561,7 +4561,7 @@
     ],
     "evidencia": {
       "arquivo": "app/Providers/Filament/AppPanelProvider.php",
-      "trecho": "$tenant = Filament::getTenant();"
+      "trecho": "if (Filament::getCurrentPanel()?->getId() !== 'app' || ! $tenant instanceof Tenant) {"
     }
   },
   {
@@ -4751,7 +4751,7 @@
     ],
     "evidencia": {
       "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
-      "trecho": "Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));"
+      "trecho": "LanguageSwitch::configureUsing(function (LanguageSwitch $seletor): void {"
     }
   },
   {
@@ -5742,7 +5742,7 @@
     ],
     "evidencia": {
       "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
-      "trecho": "Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));"
+      "trecho": "LanguageSwitch::configureUsing(function (LanguageSwitch $seletor): void {"
     }
   },
   {

@@ -4681,7 +4681,7 @@
     "evidencia": [
       {
         "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
-        "trecho": "Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));"
+        "trecho": "LanguageSwitch::configureUsing(function (LanguageSwitch $seletor): void {"
       }
     ]
   },

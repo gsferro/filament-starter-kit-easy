@@ -15,8 +15,8 @@
   "pecas": [
     {
       "id": "painel:app",
-      "row": 0,
-      "col": 0
+      "row": 1,
+      "col": 1
     },
     {
       "id": "App\\Http\\Middleware\\DefinirTenantDePermissoes",
@@ -25,7 +25,7 @@
     },
     {
       "id": "Filament\\Http\\Middleware\\IdentifyTenant",
-      "row": 2,
+      "row": 3,
       "col": 0
     }
   ],
@@ -60,7 +60,7 @@
         "lockscreen\\FilamentLockscreen\\Lockscreen"
       ],
       "row": 3,
-      "col": 1
+      "col": 3
     },
     {
       "id": "grupo-autorizacao",
@@ -75,8 +75,8 @@
         "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
         "panel:app"
       ],
-      "row": 1,
-      "col": 3
+      "row": 0,
+      "col": 0
     },
     {
       "id": "grupo-convites",
@@ -90,8 +90,8 @@
         "App\\Models\\Convite",
         "App\\Notifications\\ConviteDeAcesso"
       ],
-      "row": 0,
-      "col": 1
+      "row": 1,
+      "col": 3
     },
     {
       "id": "grupo-multi-tenancy-opt-in",
@@ -128,7 +128,7 @@
         "Filament\\Widgets\\AccountWidget",
         "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin"
       ],
-      "row": 1,
+      "row": 0,
       "col": 1
     },
     {
@@ -142,8 +142,8 @@
         "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
         "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource"
       ],
-      "row": 2,
-      "col": 1
+      "row": 0,
+      "col": 3
     },
     {
       "id": "grupo-produtividade-e-ui",
@@ -174,7 +174,7 @@
         "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
         "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin"
       ],
-      "row": 0,
+      "row": 1,
       "col": 2
     },
     {
@@ -195,7 +195,7 @@
         "Illuminate\\View\\Middleware\\ShareErrorsFromSession"
       ],
       "row": 0,
-      "col": 3
+      "col": 2
     }
   ],
   "layout": {

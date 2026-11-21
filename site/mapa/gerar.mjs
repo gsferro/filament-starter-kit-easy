@@ -17,9 +17,9 @@
  * Para no primeiro diagrama que o archify recusar, com o diagnóstico dele, e sai com código 1.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { obterArchify } from './archify.mjs';
 
@@ -59,7 +59,15 @@ const LIGACOES = {
 
 const TITULO_DA_PROVA = { pt: 'Prova das ligações', en: 'Link proof' };
 
-const lerJson = (caminho) => JSON.parse(readFileSync(caminho, 'utf8'));
+/** Lê um JSON do kit; o quebrado é recusado nomeando o arquivo (P-14). */
+function lerJson(caminho) {
+  const texto = readFileSync(caminho, 'utf8');
+  try {
+    return JSON.parse(texto);
+  } catch (erro) {
+    throw new Error(`[mapa] ERRO ${relative(RAIZ, caminho).replaceAll('\\', '/')} — JSON inválido: ${erro.message}`);
+  }
+}
 const git = (...args) => execFileSync('git', ['-C', RAIZ, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 
 const revisao = git('rev-parse', 'HEAD').trim();
@@ -75,12 +83,70 @@ const interfaceDoKit = lerJson(fileURLToPath(new URL('./interface.json', import.
 /** O texto de cada arquivo citado, na revisão publicada; lido uma vez por arquivo. */
 const textos = new Map();
 
+/**
+ * As faixas de comentário de um arquivo, pela sintaxe do tipo dele — a mesma régua da guarda da R9 (D34): em PHP,
+ * `//`, `#` (fora de `#[`) e `/* *\/`, com as strings puladas; em Blade, `{{-- --}}` e `<!-- -->`; em JS e stub,
+ * `//` e `/* *\/`; em YAML e `.env`, `#` no começo da linha ou depois de espaço; em Markdown, `<!-- -->`.
+ */
+function faixasDeComentario(arquivo, texto) {
+  const nome = arquivo.toLowerCase();
+  const delimitadas = (pares) => {
+    const faixas = [];
+    for (const [abre, fecha] of pares) {
+      for (let i = texto.indexOf(abre); i >= 0; i = texto.indexOf(abre, i + 1)) {
+        const fim = texto.indexOf(fecha, i + abre.length);
+        faixas.push([i, fim < 0 ? texto.length : fim + fecha.length]);
+      }
+    }
+    return faixas;
+  };
+  const deCodigo = (cerquilha, aspas) => {
+    const faixas = [];
+    for (let i = 0; i < texto.length; i++) {
+      const c = texto[i];
+      if (aspas.includes(c)) {
+        for (i++; i < texto.length && texto[i] !== c; i++) if (texto[i] === '\\') i++;
+      } else if (c === '/' && texto[i + 1] === '*') {
+        const fim = texto.indexOf('*/', i + 2);
+        faixas.push([i, fim < 0 ? texto.length : fim + 2]);
+        i = fim < 0 ? texto.length : fim + 1;
+      } else if ((c === '/' && texto[i + 1] === '/') || (cerquilha && c === '#' && texto[i + 1] !== '[')) {
+        const fim = texto.indexOf('\n', i);
+        faixas.push([i, fim < 0 ? texto.length : fim]);
+        i = fim < 0 ? texto.length : fim;
+      }
+    }
+    return faixas;
+  };
+  if (nome.endsWith('.blade.php')) return delimitadas([['{{--', '--}}'], ['<!--', '-->']]);
+  if (nome.endsWith('.php')) return deCodigo(true, ['"', "'"]);
+  if (/\.(m?js|cjs|ts|stub)$/.test(nome)) return deCodigo(false, ['"', "'", '`']);
+  if (/\.ya?ml$/.test(nome) || /(^|\/)\.env/.test(nome)) {
+    const faixas = [];
+    for (const m of texto.matchAll(/(^|[ \t])#[^\n]*/gm)) faixas.push([m.index + m[1].length, m.index + m[0].length]);
+    return faixas;
+  }
+  if (nome.endsWith('.md')) return delimitadas([['<!--', '-->']]);
+  return [];
+}
+
+/** As faixas de comentário de cada arquivo citado, calculadas uma vez. */
+const comentarios = new Map();
+
 function linhaDaAncora(arquivo, trecho) {
   if (!textos.has(arquivo)) textos.set(arquivo, git('show', `${revisao}:${arquivo}`));
   const texto = textos.get(arquivo);
-  const posicao = texto.indexOf(trecho);
+  if (!comentarios.has(arquivo)) comentarios.set(arquivo, faixasDeComentario(arquivo, texto));
+  const faixas = comentarios.get(arquivo);
+  const emComentario = (indice) => faixas.some(([inicio, fim]) => indice >= inicio && indice < fim);
+  let posicao = texto.indexOf(trecho);
   if (posicao < 0) {
     throw new Error(`o trecho ${JSON.stringify(trecho)} não está em ${arquivo} na revisão ${revisao.slice(0, 7)}`);
+  }
+  // A linha da prova é a do código: a ocorrência num comentário (um docblock que cita a linha) é pulada (R9, CT-52).
+  while (posicao >= 0 && emComentario(posicao)) posicao = texto.indexOf(trecho, posicao + 1);
+  if (posicao < 0) {
+    throw new Error(`o trecho ${JSON.stringify(trecho)} só aparece em comentário em ${arquivo} na revisão ${revisao.slice(0, 7)}`);
   }
   const line = texto.slice(0, posicao).split('\n').length;
   const linhas = trecho.split('\n').length;
@@ -101,7 +167,7 @@ function projetar(valor, idioma) {
   }
   if ('arquivo' in valor && 'trecho' in valor) {
     const { arquivo, trecho, ...resto } = valor;
-    return { ...linhaDaAncora(arquivo, trecho), ...projetar(resto, idioma) };
+    return { ...projetar(resto, idioma), ...linhaDaAncora(arquivo, trecho) };
   }
   return Object.fromEntries(chaves.map((chave) => [chave, projetar(valor[chave], idioma)]));
 }
@@ -216,7 +282,7 @@ function arvoreDeRegistro(diagrama) {
   ];
   const nodes = [{
     id: idArchify(raiz),
-    label: { pt: `Painel /${painel}`, en: `Panel /${painel}` },
+    label: pecas.get(raiz).nome,
     sublabel: modo === 'com' ? { pt: 'com tenant ativo', en: 'tenancy on' } : { pt: 'sem tenant', en: 'tenancy off' },
     sources: pecas.get(raiz).evidencia.slice(0, 3),
   }];
@@ -239,7 +305,14 @@ function arvoreDeRegistro(diagrama) {
       });
     }
   }
-  const provas = registradas.map((l) => ({ de: idArchify(raiz), para: idArchify(l.para), rotulo: { pt: VERBO.registra.pt, en: VERBO.registra.en }, prova: l.evidencia }));
+  const provas = registradas.map((l) => ({
+    de: idArchify(raiz),
+    para: idArchify(l.para),
+    nomeDe: pecas.get(raiz).nome,
+    nomePara: pecas.get(l.para).nome,
+    rotulo: { pt: VERBO.registra.pt, en: VERBO.registra.en },
+    prova: l.evidencia,
+  }));
   const comFeatures = registradas.map((l) => pecas.get(l.para)).filter((peca) => peca.features.length);
   const cards = comFeatures.length
     ? [{ dot: 'emerald', title: { pt: 'F-nn de cada peça', en: 'F-nn of each piece' }, items: comFeatures.map((peca) => `${peca.nome}: ${peca.features.join(', ')}`) }]
@@ -259,11 +332,19 @@ function mapaDeArquitetura(diagrama) {
   const { pecas, ligacoes } = carregarModelo();
   const modo = diagrama.modos.length === 1 ? diagrama.modos[0] : null;
   // Diagrama de um modo só não desenha nem agrupa peça que o painel não registra nesse modo (P-09).
+  for (const { id } of diagrama.pecas) {
+    if (!pecas.has(id)) throw new Error(`a peça ${id} do diagrama não está no modelo`);
+  }
+  for (const g of diagrama.agrupamentos ?? []) {
+    for (const membro of g.membros) {
+      if (!pecas.has(membro)) throw new Error(`o membro ${membro} do agrupamento ${g.id} não está no modelo`);
+    }
+  }
   const existe = (id) => !modo || (pecas.get(id)?.registrada ?? []).includes(modo);
   diagrama = {
     ...diagrama,
     pecas: diagrama.pecas.filter(({ id }) => existe(id)),
-    agrupamentos: (diagrama.agrupamentos ?? []).map((g) => ({ ...g, membros: g.membros.filter(existe) })),
+    agrupamentos: (diagrama.agrupamentos ?? []).map((g) => ({ ...g, membros: g.membros.filter(existe) })).filter((g) => g.membros.length),
   };
   const desenhadas = new Set(diagrama.pecas.map(({ id }) => id));
   const grupoDe = new Map(diagrama.agrupamentos.flatMap((g) => g.membros.map((membro) => [membro, g.id])));
@@ -290,11 +371,11 @@ function mapaDeArquitetura(diagrama) {
         size: [largura(peca.nome), TAMANHO[1]],
       };
     }),
-    ...(diagrama.agrupamentos ?? []).map((g) => ({
+    ...diagrama.agrupamentos.map((g) => ({
       id: g.id,
       type: g.tipo ?? 'backend',
       label: g.rotulo,
-      sublabel: { pt: `${g.membros.length} peças`, en: `${g.membros.length} pieces` },
+      sublabel: g.membros.length === 1 ? { pt: '1 peça', en: '1 piece' } : { pt: `${g.membros.length} peças`, en: `${g.membros.length} pieces` },
       // a procedência da caixa é a dos membros: a prova dos três primeiros
       sources: g.membros.map((membro) => pecas.get(membro)?.evidencia[0]).filter(Boolean).slice(0, 3),
       row: g.row,
@@ -323,7 +404,7 @@ function mapaDeArquitetura(diagrama) {
     const de = ponta(l.de);
     const para = ponta(l.para);
     if (!de || !para || de === para) continue;
-    const id = `${de}--${para}`;
+    const id = `${de}--${para}--${VERBO[l.verbo].variante}`;
     if (!connections.has(id)) connections.set(id, { id, from: de, to: para, variant: VERBO[l.verbo].variante });
     verbos.add(l.verbo);
     provas.push({
@@ -353,7 +434,7 @@ function mapaDeArquitetura(diagrama) {
       items: comFeatures.map((peca) => `${peca.nome}: ${peca.features.join(', ')}`),
     });
   }
-  for (const g of diagrama.agrupamentos ?? []) {
+  for (const g of diagrama.agrupamentos) {
     cards.push({
       dot: 'violet',
       title: { pt: `Quem está em ${g.rotulo.pt}`, en: `Who is in ${g.rotulo.en}` },
@@ -424,6 +505,27 @@ function completarCatalogoEmbutido(destino, idioma) {
   writeFileSync(destino, html.replace(embutido, (_, abre, __, fecha) => `${abre}${json}${fecha}`));
 }
 
+/**
+ * O que, na pasta de saída, o gerador não gerou: tudo o que não é `pt/` ou `en/` com HTML dentro. A pasta que não
+ * existe é aceita; o arquivo no lugar da pasta, não.
+ */
+function arquivosQueOGeradorNaoGerou(saida) {
+  if (!existsSync(saida)) return [];
+  if (!statSync(saida).isDirectory()) return [saida];
+  const estranhos = [];
+  for (const nome of readdirSync(saida)) {
+    const caminho = join(saida, nome);
+    if (!(nome in IDIOMAS) || !statSync(caminho).isDirectory()) {
+      estranhos.push(nome);
+      continue;
+    }
+    for (const arquivo of readdirSync(caminho)) {
+      if (!arquivo.endsWith('.html') || !statSync(join(caminho, arquivo)).isFile()) estranhos.push(`${nome}/${arquivo}`);
+    }
+  }
+  return estranhos;
+}
+
 function archify(cli, args) {
   try {
     execFileSync(process.execPath, [cli, ...args, '--repo-root', RAIZ], {
@@ -442,23 +544,41 @@ function archify(cli, args) {
  * `dist/` — vários autores conferem diagramas ao mesmo tempo sem um apagar o do outro.
  */
 function gerar(argumentos) {
+  // Tudo o que pode recusar vem antes de qualquer efeito — apagar, baixar o archify, renderizar (P-14).
   const posicao = argumentos.indexOf('--saida');
-  const saida = posicao >= 0 ? resolve(argumentos[posicao + 1]) : SAIDA;
+  const pasta = posicao >= 0 ? argumentos[posicao + 1] : undefined;
+  if (posicao >= 0 && (pasta === undefined || pasta.startsWith('--'))) {
+    throw new Error('[mapa] ERRO --saida: falta a pasta (uso: node mapa/gerar.mjs --saida <pasta> [slug …])');
+  }
+  const saida = posicao >= 0 ? resolve(pasta) : SAIDA;
   const pedidos = posicao >= 0 ? argumentos.filter((_, indice) => indice !== posicao && indice !== posicao + 1) : argumentos;
 
-  const cli = obterArchify();
-  const catalogoPt = lerJson(fileURLToPath(new URL('../.archify/archify/examples/locales/pt.json', import.meta.url)));
   const diagramas = readdirSync(DIAGRAMAS)
     .filter((nome) => nome.endsWith('.json'))
     .sort()
     .map((nome) => lerJson(join(DIAGRAMAS, nome)));
+  carregarModelo();
   const porSlug = new Map(diagramas.map((diagrama) => [diagrama.slug, diagrama]));
   const desconhecidos = pedidos.filter((slug) => !porSlug.has(slug));
   if (desconhecidos.length) throw new Error(`[mapa] ERRO — diagrama inexistente: ${desconhecidos.join(', ')}`);
+  // Sem slug, a pasta de saída é refeita: só se ela não tiver nada que o gerador não gerou (o HTML do mapa em pt/ e en/).
+  if (!pedidos.length) {
+    const estranhos = arquivosQueOGeradorNaoGerou(saida);
+    if (estranhos.length) {
+      throw new Error(
+        `[mapa] ERRO --saida ${saida}: a pasta tem o que o gerador não gerou (${estranhos.slice(0, 5).join(', ')}${estranhos.length > 5 ? ', …' : ''}), e ele não apaga isso; use uma pasta vazia, nova ou só com o HTML do mapa`,
+      );
+    }
+  }
+
+  const cli = obterArchify();
+  const catalogoPt = lerJson(fileURLToPath(new URL('../.archify/archify/examples/locales/pt.json', import.meta.url)));
   const aGerar = pedidos.length ? diagramas.filter((diagrama) => pedidos.includes(diagrama.slug)) : diagramas;
   const temporaria = mkdtempSync(join(tmpdir(), 'mapa-'));
 
-  if (!pedidos.length) rmSync(saida, { recursive: true, force: true });
+  if (!pedidos.length) {
+    for (const idioma of Object.keys(IDIOMAS)) rmSync(join(saida, idioma), { recursive: true, force: true });
+  }
   try {
     for (const idioma of Object.keys(IDIOMAS)) {
       mkdirSync(join(saida, idioma), { recursive: true });
@@ -502,7 +622,14 @@ function gerar(argumentos) {
 export { carregarModelo, entradaDoArchify, idArchify };
 
 // Roda só quando chamado direto (`node mapa/gerar.mjs`); o posicionador importa as funções acima.
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
+const caminhoReal = (caminho) => {
+  try {
+    return realpathSync(caminho);
+  } catch {
+    return resolve(caminho);
+  }
+};
+if (process.argv[1] && caminhoReal(process.argv[1]) === caminhoReal(fileURLToPath(import.meta.url))) {
   try {
     gerar(process.argv.slice(2));
   } catch (erro) {

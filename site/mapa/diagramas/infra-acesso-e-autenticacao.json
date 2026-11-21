@@ -31,8 +31,8 @@
     },
     {
       "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
-      "row": 1,
-      "col": 0
+      "row": 6,
+      "col": 1
     },
     {
       "id": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
@@ -47,7 +47,7 @@
     {
       "id": "App\\Filament\\Pages\\MyProfilePage",
       "row": 2,
-      "col": 2
+      "col": 1
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
@@ -71,7 +71,7 @@
     },
     {
       "id": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
-      "row": 4,
+      "row": 1,
       "col": 0
     },
     {
@@ -81,8 +81,8 @@
     },
     {
       "id": "lockscreen\\FilamentLockscreen\\Lockscreen",
-      "row": 6,
-      "col": 0
+      "row": 4,
+      "col": 2
     },
     {
       "id": "App\\Support\\ConfiguracaoDoLogin",
@@ -97,7 +97,7 @@
     {
       "id": "App\\Support\\DestinoAposLogin",
       "row": 2,
-      "col": 1
+      "col": 2
     },
     {
       "id": "App\\Support\\EmailComMais",
@@ -106,13 +106,13 @@
     },
     {
       "id": "App\\Support\\RegistroAberto",
-      "row": 4,
-      "col": 2
+      "row": 6,
+      "col": 0
     },
     {
       "id": "App\\Filament\\Pages\\Auth\\TelaDoisFatores",
-      "row": 6,
-      "col": 1
+      "row": 4,
+      "col": 0
     }
   ],
   "layout": {

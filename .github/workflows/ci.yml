@@ -23,6 +23,12 @@ jobs:
           extensions: bcmath, intl, pcntl, zip, sqlite3, pdo_sqlite
           coverage: none
 
+      # As guardas do mapa interativo (P-14, costura G5) rodam o gerador e o posicionador do mapa
+      # como processo filho: o Node é contrato do job, na versão do site, e não o que o runner traz.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+
       - name: Cache das dependências PHP
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -204,6 +210,12 @@ jobs:
           # PCOV, e nao Xdebug: para cobertura de LINHA o Xdebug nao acrescenta nada e custa
           # muito mais. Ver ADR-01.
           coverage: pcov
+
+      # As guardas do mapa interativo (P-14, costura G5) rodam o gerador e o posicionador do mapa
+      # como processo filho: o Node é contrato do job, na versão do site, e não o que o runner traz.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
 
       - name: Cache das dependencias PHP
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

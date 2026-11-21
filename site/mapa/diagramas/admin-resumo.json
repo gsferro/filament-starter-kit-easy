@@ -52,8 +52,8 @@
         "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
         "lockscreen\\FilamentLockscreen\\Lockscreen"
       ],
-      "row": 0,
-      "col": 3
+      "row": 1,
+      "col": 2
     },
     {
       "id": "grupo-autorizacao",
@@ -70,8 +70,8 @@
         "BezhanSalleh\\FilamentShield\\FilamentShieldPlugin",
         "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin"
       ],
-      "row": 1,
-      "col": 3
+      "row": 2,
+      "col": 2
     },
     {
       "id": "grupo-convites",
@@ -85,7 +85,7 @@
         "App\\Notifications\\ConviteDeAcesso"
       ],
       "row": 2,
-      "col": 3
+      "col": 1
     },
     {
       "id": "grupo-multi-tenancy-opt-in",
@@ -99,8 +99,8 @@
         "App\\Support\\ContextoDePapeis",
         "App\\Support\\CorPrimaria"
       ],
-      "row": 3,
-      "col": 3
+      "row": 0,
+      "col": 2
     },
     {
       "id": "grupo-administracao",
@@ -132,8 +132,8 @@
         "Leandrocfe\\FilamentApexCharts\\FilamentApexChartsPlugin",
         "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin"
       ],
-      "row": 0,
-      "col": 2
+      "row": 1,
+      "col": 1
     },
     {
       "id": "grupo-infraestrutura",
@@ -146,7 +146,7 @@
         "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
         "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource"
       ],
-      "row": 0,
+      "row": 3,
       "col": 1
     },
     {
@@ -179,7 +179,7 @@
         "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin"
       ],
       "row": 1,
-      "col": 1
+      "col": 0
     },
     {
       "id": "grupo-ia",
@@ -190,7 +190,7 @@
       "membros": [
         "App\\Support\\TelaDeAutenticacao"
       ],
-      "row": 4,
+      "row": 0,
       "col": 3
     },
     {
@@ -203,7 +203,7 @@
         "App\\Support\\AdministradorDaInstalacao",
         "App\\Support\\CustomizadorDaInstalacao"
       ],
-      "row": 5,
+      "row": 2,
       "col": 3
     },
     {
@@ -225,7 +225,7 @@
         "panel:admin"
       ],
       "row": 2,
-      "col": 1
+      "col": 0
     }
   ],
   "layout": {

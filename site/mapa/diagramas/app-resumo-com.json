@@ -20,13 +20,13 @@
     },
     {
       "id": "App\\Http\\Middleware\\DefinirTenantDePermissoes",
-      "row": 0,
-      "col": 1
+      "row": 1,
+      "col": 0
     },
     {
       "id": "Filament\\Http\\Middleware\\IdentifyTenant",
-      "row": 1,
-      "col": 1
+      "row": 2,
+      "col": 0
     }
   ],
   "agrupamentos": [
@@ -59,8 +59,8 @@
         "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
         "lockscreen\\FilamentLockscreen\\Lockscreen"
       ],
-      "row": 0,
-      "col": 3
+      "row": 2,
+      "col": 2
     },
     {
       "id": "grupo-autorizacao",
@@ -75,7 +75,7 @@
         "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
         "panel:app"
       ],
-      "row": 1,
+      "row": 0,
       "col": 3
     },
     {
@@ -90,7 +90,7 @@
         "App\\Models\\Convite",
         "App\\Notifications\\ConviteDeAcesso"
       ],
-      "row": 2,
+      "row": 0,
       "col": 1
     },
     {
@@ -107,7 +107,7 @@
         "App\\Support\\SeletorDeOrganizacao",
         "App\\Traits\\BelongsToTenant"
       ],
-      "row": 2,
+      "row": 1,
       "col": 3
     },
     {
@@ -128,7 +128,7 @@
         "Filament\\Widgets\\AccountWidget",
         "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin"
       ],
-      "row": 3,
+      "row": 1,
       "col": 1
     },
     {
@@ -142,7 +142,7 @@
         "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
         "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource"
       ],
-      "row": 4,
+      "row": 2,
       "col": 1
     },
     {
@@ -174,7 +174,7 @@
         "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
         "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin"
       ],
-      "row": 0,
+      "row": 1,
       "col": 2
     },
     {
@@ -194,8 +194,8 @@
         "Illuminate\\Session\\Middleware\\StartSession",
         "Illuminate\\View\\Middleware\\ShareErrorsFromSession"
       ],
-      "row": 5,
-      "col": 1
+      "row": 0,
+      "col": 2
     }
   ],
   "layout": {
