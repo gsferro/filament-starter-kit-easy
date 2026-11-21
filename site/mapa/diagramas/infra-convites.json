@@ -1,0 +1,35 @@
+{
+  "slug": "infra-convites",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/infra — Convites",
+    "en": "/infra — Invitations"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Models\\Convite",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Notifications\\ConviteDeAcesso",
+      "row": 0,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

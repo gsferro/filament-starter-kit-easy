@@ -16,147 +16,174 @@
     {
       "id": "painel:app",
       "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Http\\Middleware\\DefinirTenantDePermissoes",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "Filament\\Http\\Middleware\\IdentifyTenant",
+      "row": 1,
       "col": 1
     }
   ],
   "agrupamentos": [
     {
-      "id": "grupo-organizacoes",
+      "id": "grupo-acesso-e-autenticacao",
       "rotulo": {
-        "pt": "Organizações e convites",
-        "en": "Organizations and invitations"
+        "pt": "Acesso e autenticação",
+        "en": "Access and authentication"
       },
       "membros": [
-        "App\\Filament\\App\\Pages\\ConvitesRecebidos",
-        "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+        "App\\Filament\\App\\Resources\\Users\\UserResource",
         "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
-        "App\\Support\\SeletorDeOrganizacao",
-        "App\\Models\\Convite",
-        "App\\Models\\Tenant",
-        "App\\Http\\Middleware\\DefinirTenantDePermissoes",
-        "Filament\\Http\\Middleware\\IdentifyTenant"
-      ],
-      "row": 1,
-      "col": 0
-    },
-    {
-      "id": "grupo-acesso",
-      "rotulo": {
-        "pt": "Acesso e login",
-        "en": "Access and login"
-      },
-      "membros": [
         "App\\Filament\\Pages\\Auth\\TelaLogin",
         "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
         "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
         "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
         "App\\Filament\\Pages\\MyProfilePage",
-        "App\\Support\\ConfiguracaoDoLogin",
-        "App\\Support\\DestinoAposLogin",
-        "App\\Support\\RegistroAberto",
         "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
-        "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
-        "Jeffgreco13\\FilamentBreezy\\BreezyCore",
-        "lockscreen\\FilamentLockscreen\\Lockscreen",
-        "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
-        "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
         "App\\Livewire\\DefinirSenhaPorEmail",
         "App\\Livewire\\InformacoesPessoais",
-        "App\\Livewire\\PreferenciasDeAparencia",
-        "App\\Support\\Paineis"
+        "App\\Models\\User",
+        "App\\Support\\ConfiguracaoDoLogin",
+        "App\\Support\\DestinoAposLogin",
+        "App\\Support\\EmailComMais",
+        "App\\Support\\RegistroAberto",
+        "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+        "Filament\\Http\\Middleware\\Authenticate",
+        "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+        "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+        "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+        "lockscreen\\FilamentLockscreen\\Lockscreen"
       ],
-      "row": 1,
-      "col": 2
+      "row": 0,
+      "col": 3
     },
     {
-      "id": "grupo-dashboard",
+      "id": "grupo-autorizacao",
       "rotulo": {
-        "pt": "Dashboard e tutorial",
-        "en": "Dashboard and tutorial"
+        "pt": "Autorização",
+        "en": "Authorization"
+      },
+      "membros": [
+        "App\\Filament\\App\\Pages\\HubDoNegocio",
+        "App\\Support\\Paineis",
+        "App\\Support\\Papeis",
+        "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+        "panel:app"
+      ],
+      "row": 1,
+      "col": 3
+    },
+    {
+      "id": "grupo-convites",
+      "rotulo": {
+        "pt": "Convites",
+        "en": "Invitations"
+      },
+      "membros": [
+        "App\\Filament\\App\\Pages\\ConvitesRecebidos",
+        "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+        "App\\Models\\Convite",
+        "App\\Notifications\\ConviteDeAcesso"
+      ],
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "grupo-multi-tenancy-opt-in",
+      "rotulo": {
+        "pt": "Multi-tenancy (opt-in)",
+        "en": "Multi-tenancy (opt-in)"
+      },
+      "membros": [
+        "App\\Models\\Projeto",
+        "App\\Models\\Tenant",
+        "App\\Support\\ContextoDePapeis",
+        "App\\Support\\CorPrimaria",
+        "App\\Support\\SeletorDeOrganizacao",
+        "App\\Traits\\BelongsToTenant"
+      ],
+      "row": 2,
+      "col": 3
+    },
+    {
+      "id": "grupo-administracao",
+      "rotulo": {
+        "pt": "Administração",
+        "en": "Administration"
+      },
+      "membros": [
+        "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
+        "App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource",
+        "App\\Filament\\Pages\\DashboardClassico",
+        "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+        "App\\Support\\CabecalhoDoPainel",
+        "App\\Support\\DetalheDoUsuario",
+        "App\\Support\\IdentidadeDoKit",
+        "App\\Support\\TutorialGuiado",
+        "Filament\\Widgets\\AccountWidget",
+        "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin"
+      ],
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "grupo-infraestrutura",
+      "rotulo": {
+        "pt": "Infraestrutura",
+        "en": "Infrastructure"
+      },
+      "membros": [
+        "App\\Support\\RetencaoDeExcecoes",
+        "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+        "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource"
+      ],
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "grupo-produtividade-e-ui",
+      "rotulo": {
+        "pt": "Produtividade e UI",
+        "en": "Productivity and UI"
       },
       "membros": [
         "App\\Filament\\App\\Pages\\Dashboard",
-        "App\\Filament\\Pages\\DashboardClassico",
-        "App\\Filament\\App\\Pages\\HubDoNegocio",
-        "App\\Filament\\Pages\\PrimeirosPassos",
-        "Filament\\Widgets\\AccountWidget",
-        "App\\Support\\DashboardDinamico",
-        "App\\Support\\TutorialGuiado",
-        "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
-        "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
-        "LaBoiteACode\\FilamentDashboardWidgets\\FilamentDashboardWidgetsPlugin",
-        "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
-        "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin"
-      ],
-      "row": 3,
-      "col": 0
-    },
-    {
-      "id": "grupo-dados",
-      "rotulo": {
-        "pt": "Dados do negócio",
-        "en": "Business data"
-      },
-      "membros": [
         "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
-        "App\\Models\\Projeto",
-        "App\\Filament\\App\\Resources\\Users\\UserResource",
-        "App\\Models\\User",
-        "App\\Support\\TetoDeUpload",
-        "App\\Support\\EmailComMais",
-        "App\\Support\\Papeis"
-      ],
-      "row": 3,
-      "col": 2
-    },
-    {
-      "id": "grupo-aparencia",
-      "rotulo": {
-        "pt": "Aparência e navegação",
-        "en": "Look and navigation"
-      },
-      "membros": [
+        "App\\Filament\\Pages\\PrimeirosPassos",
+        "App\\Livewire\\PreferenciasDeAparencia",
         "App\\Support\\AparenciaDoUsuario",
         "App\\Support\\AvatarDeIniciais",
-        "App\\Support\\CabecalhoDoPainel",
-        "App\\Support\\CorPrimaria",
-        "App\\Support\\IdentidadeDoKit",
+        "App\\Support\\DashboardDinamico",
+        "App\\Support\\DensidadeDoLayout",
+        "App\\Support\\DockDeAtalhos",
         "App\\Support\\ModoDoMenu",
+        "App\\Support\\TetoDeUpload",
+        "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+        "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale",
+        "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
         "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
-        "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
+        "LaBoiteACode\\FilamentDashboardWidgets\\FilamentDashboardWidgetsPlugin",
         "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
+        "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
         "pxlrbt\\FilamentEnvironmentIndicator\\EnvironmentIndicatorPlugin",
         "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
-        "Asmit\\ResizedColumn\\ResizedColumnPlugin",
-        "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
-        "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale"
+        "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin"
       ],
-      "row": 5,
-      "col": 0
-    },
-    {
-      "id": "grupo-excecoes",
-      "rotulo": {
-        "pt": "Exceções",
-        "en": "Exceptions"
-      },
-      "membros": [
-        "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
-        "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
-        "App\\Support\\RetencaoDeExcecoes"
-      ],
-      "row": 5,
+      "row": 0,
       "col": 2
     },
     {
-      "id": "grupo-pilha",
+      "id": "grupo-pilha-da-requisicao",
       "rotulo": {
         "pt": "Pilha da requisição",
         "en": "Request stack"
       },
       "membros": [
-        "panel:app",
-        "Filament\\Http\\Middleware\\Authenticate",
         "Filament\\Http\\Middleware\\AuthenticateSession",
         "Filament\\Http\\Middleware\\DisableBladeIconComponents",
         "Filament\\Http\\Middleware\\DispatchServingFilamentEvent",
@@ -167,23 +194,12 @@
         "Illuminate\\Session\\Middleware\\StartSession",
         "Illuminate\\View\\Middleware\\ShareErrorsFromSession"
       ],
-      "row": 7,
+      "row": 5,
       "col": 1
     }
   ],
-  "portas": [
-    {
-      "para": "app-organizacoes",
-      "rotulo": {
-        "pt": "→ Organizações e convites",
-        "en": "→ Organizations and invitations"
-      },
-      "row": 7,
-      "col": 0
-    }
-  ],
   "layout": {
-    "cols": 3,
+    "cols": 4,
     "cellW": 240,
     "cellH": 64,
     "gapX": 90,

@@ -1,0 +1,64 @@
+{
+  "slug": "app-multi-tenancy-opt-in-sem",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Multi-tenancy (opt-in), sem tenant",
+    "en": "/app — Multi-tenancy (opt-in), tenancy off"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Http\\Middleware\\DefinirTenantDePermissoes",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "Filament\\Http\\Middleware\\IdentifyTenant",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Models\\Projeto",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Models\\Tenant",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Traits\\BelongsToTenant",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\ContextoDePapeis",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\CorPrimaria",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\SeletorDeOrganizacao",
+      "row": 6,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

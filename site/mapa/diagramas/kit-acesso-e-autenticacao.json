@@ -1,0 +1,143 @@
+{
+  "slug": "kit-acesso-e-autenticacao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Acesso e autenticação",
+    "en": "Kit — Access and authentication"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Http\\Middleware\\ExigirEmailVerificado",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Models\\VinculoSocial",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaLoginUnificada",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Providers\\Filament\\AdminPanelProvider",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Providers\\Filament\\AppPanelProvider",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "App\\Providers\\AppServiceProvider",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "STS\\FilamentImpersonate\\FilamentImpersonateServiceProvider",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "App\\Providers\\Filament\\InfraPanelProvider",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "Laravel\\Socialite\\SocialiteServiceProvider",
+      "row": 8,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\AparenciaDasTelasDeAcesso",
+      "row": 9,
+      "col": 0
+    },
+    {
+      "id": "App\\Notifications\\ConfirmarVinculoSocial",
+      "row": 10,
+      "col": 0
+    },
+    {
+      "id": "App\\Http\\Controllers\\Auth\\EntrarNoPainelController",
+      "row": 11,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\GerenciadorAntiRobo",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Http\\Controllers\\Auth\\LoginSocialController",
+      "row": 12,
+      "col": 0
+    },
+    {
+      "id": "App\\Data\\Social\\PerfilSocialData",
+      "row": 13,
+      "col": 0
+    },
+    {
+      "id": "App\\Notifications\\PrimeiroAcessoSocial",
+      "row": 14,
+      "col": 0
+    },
+    {
+      "id": "App\\Http\\Responses\\RespostaDeCadastro",
+      "row": 15,
+      "col": 0
+    },
+    {
+      "id": "App\\Http\\Responses\\RespostaDeLogin",
+      "row": 16,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\VerificacaoAntiRobo",
+      "row": 17,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\ConfiguracaoDoLogin",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\DestinoAposLogin",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\RegistroAberto",
+      "row": 5,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

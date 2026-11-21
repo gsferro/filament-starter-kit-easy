@@ -1,0 +1,88 @@
+{
+  "slug": "kit-instalacao-e-operacao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Instalação e operação",
+    "en": "Kit — Installation and operations"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Console\\Commands\\KitAdmin",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Console\\Commands\\KitInfo",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Console\\Commands\\KitInstall",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Console\\Commands\\KitUpdate",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Http\\Middleware\\RaizDeUrlSemPublic",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "GeneaLabs\\LaravelModelCaching\\Providers\\Service",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\BancoSqlite",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\HostLocal",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "App\\Traits\\ModeloCacheavel",
+      "row": 8,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\ProxiesConfiaveis",
+      "row": 9,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\SenhaDoAdministrador",
+      "row": 10,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\SubstituicaoEmArquivo",
+      "row": 11,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\VinculoDoSnyk",
+      "row": 12,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

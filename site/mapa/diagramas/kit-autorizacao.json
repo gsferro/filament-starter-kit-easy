@@ -1,0 +1,78 @@
+{
+  "slug": "kit-autorizacao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Autorização",
+    "en": "Kit — Authorization"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Filament\\Pages\\BoasVindas",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\ConvitePolicy",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\RolePolicy",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\UserPolicy",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Providers\\KitServiceProvider",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "Filament\\Sentinel\\SentinelServiceProvider",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\PermissaoDaTela",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\PoliciesDeVendor",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\AdministradorDaInstalacao",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Models\\User",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\AparenciaDoUsuario",
+      "row": 3,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

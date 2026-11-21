@@ -1,0 +1,16 @@
+{
+  "slug": "infra-registro",
+  "tipo": "tree",
+  "construtor": "registro",
+  "titulo": {
+    "pt": "/infra — o que o painel registra",
+    "en": "/infra — what the panel registers"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ]
+}

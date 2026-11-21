@@ -1,0 +1,16 @@
+{
+  "slug": "admin-registro",
+  "tipo": "tree",
+  "construtor": "registro",
+  "titulo": {
+    "pt": "/admin — o que o painel registra",
+    "en": "/admin — what the panel registers"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ]
+}

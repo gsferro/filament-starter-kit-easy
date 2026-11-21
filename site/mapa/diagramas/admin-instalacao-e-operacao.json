@@ -1,0 +1,35 @@
+{
+  "slug": "admin-instalacao-e-operacao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/admin — Instalação e operação",
+    "en": "/admin — Installation and operations"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Support\\AdministradorDaInstalacao",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\CustomizadorDaInstalacao",
+      "row": 1,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

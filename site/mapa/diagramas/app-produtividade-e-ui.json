@@ -1,0 +1,130 @@
+{
+  "slug": "app-produtividade-e-ui",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Produtividade e UI",
+    "en": "/app — Productivity and UI"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Livewire\\PreferenciasDeAparencia",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\App\\Pages\\Dashboard",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Pages\\PrimeirosPassos",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "pxlrbt\\FilamentEnvironmentIndicator\\EnvironmentIndicatorPlugin",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "LaBoiteACode\\FilamentDashboardWidgets\\FilamentDashboardWidgetsPlugin",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
+      "row": 8,
+      "col": 0
+    },
+    {
+      "id": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
+      "row": 9,
+      "col": 0
+    },
+    {
+      "id": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+      "row": 10,
+      "col": 0
+    },
+    {
+      "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+      "row": 11,
+      "col": 0
+    },
+    {
+      "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+      "row": 12,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
+      "row": 13,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\AparenciaDoUsuario",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\AvatarDeIniciais",
+      "row": 14,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\DashboardDinamico",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\DensidadeDoLayout",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DockDeAtalhos",
+      "row": 15,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\ModoDoMenu",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\TetoDeUpload",
+      "row": 2,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

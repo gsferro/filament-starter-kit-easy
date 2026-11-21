@@ -1,0 +1,43 @@
+{
+  "slug": "kit-multi-tenancy-opt-in",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Multi-tenancy (opt-in)",
+    "en": "Kit — Multi-tenancy (opt-in)"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Console\\Commands\\KitTenancy",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\TenantPolicy",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\AtivadorDeTenancy",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel",
+      "row": 2,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

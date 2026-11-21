@@ -1,0 +1,60 @@
+{
+  "slug": "admin-autorizacao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/admin — Autorização",
+    "en": "/admin — Authorization"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Models\\Role",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Admin\\Pages\\HubDeAdministracao",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "BezhanSalleh\\FilamentShield\\FilamentShieldPlugin",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Roles\\RoleResource",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\Paineis",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\Papeis",
+      "row": 1,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

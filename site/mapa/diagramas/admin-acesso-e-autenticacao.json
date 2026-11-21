@@ -1,0 +1,140 @@
+{
+  "slug": "admin-acesso-e-autenticacao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/admin — Acesso e autenticação",
+    "en": "/admin — Access and authentication"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Livewire\\DefinirSenhaPorEmail",
+      "row": 1,
+      "col": 3
+    },
+    {
+      "id": "App\\Livewire\\InformacoesPessoais",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "Filament\\Http\\Middleware\\Authenticate",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Models\\User",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+      "row": 6,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Pages\\MyProfilePage",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaLogin",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Lockscreen",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+      "row": 8,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\ConfiguracaoDoLogin",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DestinoAposLogin",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\EmailComMais",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\ProvedorAntiRobo",
+      "row": 9,
+      "col": 3
+    },
+    {
+      "id": "App\\Support\\ProvedorSocial",
+      "row": 7,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\RegistroAberto",
+      "row": 4,
+      "col": 2
+    }
+  ],
+  "layout": {
+    "cols": 4,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

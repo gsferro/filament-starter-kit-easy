@@ -1,0 +1,45 @@
+{
+  "slug": "admin-multi-tenancy-opt-in",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/admin — Multi-tenancy (opt-in)",
+    "en": "/admin — Multi-tenancy (opt-in)"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Models\\Tenant",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Tenants\\TenantResource",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\ContextoDePapeis",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\CorPrimaria",
+      "row": 2,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

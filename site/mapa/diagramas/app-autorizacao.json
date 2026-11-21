@@ -1,0 +1,50 @@
+{
+  "slug": "app-autorizacao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Autorização",
+    "en": "/app — Authorization"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "panel:app",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\App\\Pages\\HubDoNegocio",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\Paineis",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\Papeis",
+      "row": 4,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "slug": "app-administracao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Administração",
+    "en": "/app — Administration"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Pages\\DashboardClassico",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\CabecalhoDoPainel",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\DetalheDoUsuario",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\IdentidadeDoKit",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\TutorialGuiado",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "Filament\\Widgets\\AccountWidget",
+      "row": 3,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 4,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

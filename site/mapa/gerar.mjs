@@ -269,6 +269,10 @@ function mapaDeArquitetura(diagrama) {
   const grupoDe = new Map(diagrama.agrupamentos.flatMap((g) => g.membros.map((membro) => [membro, g.id])));
   const ponta = (id) => (desenhadas.has(id) ? idArchify(id) : grupoDe.get(id) ?? null);
   const TAMANHO = diagrama.layout?.tamanho ?? [210, 56];
+  // A caixa cresce com o rótulo (o archify recusa rótulo mais largo que a caixa, ~6,6 px por caractere), e a
+  // célula da grade acompanha a maior caixa.
+  const largura = (rotulo) => Math.max(TAMANHO[0], Math.ceil(String(rotulo).length * 6.8) + 24);
+  const maior = Math.max(TAMANHO[0], ...diagrama.pecas.map(({ id }) => largura(pecas.get(id)?.nome ?? id)));
 
   const components = [
     ...diagrama.pecas.map(({ id, row, col }) => {
@@ -283,7 +287,7 @@ function mapaDeArquitetura(diagrama) {
         sources: peca.evidencia.slice(0, 3),
         row,
         col,
-        size: TAMANHO,
+        size: [largura(peca.nome), TAMANHO[1]],
       };
     }),
     ...(diagrama.agrupamentos ?? []).map((g) => ({
@@ -291,6 +295,8 @@ function mapaDeArquitetura(diagrama) {
       type: g.tipo ?? 'backend',
       label: g.rotulo,
       sublabel: { pt: `${g.membros.length} peças`, en: `${g.membros.length} pieces` },
+      // a procedência da caixa é a dos membros: a prova dos três primeiros
+      sources: g.membros.map((membro) => pecas.get(membro)?.evidencia[0]).filter(Boolean).slice(0, 3),
       row: g.row,
       col: g.col,
       size: TAMANHO,
@@ -311,7 +317,9 @@ function mapaDeArquitetura(diagrama) {
   const verbos = new Set();
   for (const l of ligacoes) {
     if (modo && !l.modos.includes(modo)) continue;
-    if (!l.paineis.some((p) => diagrama.paineis.includes(p))) continue;
+    // o diagrama de painel desenha as ligações do painel; o do kit inteiro, as que não são de painel nenhum
+    const doEscopo = diagrama.paineis.length ? l.paineis.some((p) => diagrama.paineis.includes(p)) : !l.paineis.length;
+    if (!doEscopo) continue;
     const de = ponta(l.de);
     const para = ponta(l.para);
     if (!de || !para || de === para) continue;
@@ -358,7 +366,11 @@ function mapaDeArquitetura(diagrama) {
       schema_version: 1,
       diagram_type: 'architecture',
       meta: { quality_profile: diagrama.qualidade ?? 'standard' },
-      layout: { mode: 'grid', ...Object.fromEntries(Object.entries(diagrama.layout ?? {}).filter(([k]) => k !== 'tamanho')) },
+      layout: {
+        mode: 'grid',
+        ...Object.fromEntries(Object.entries(diagrama.layout ?? {}).filter(([k]) => k !== 'tamanho')),
+        cellW: Math.max(diagrama.layout?.cellW ?? 0, maior + 20),
+      },
       components,
       connections: [...connections.values()],
       cards,

@@ -1,0 +1,43 @@
+{
+  "slug": "kit-convites",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Convites",
+    "en": "Kit — Invitations"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Console\\Commands\\KitConvitesLembrar",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Data\\Convite\\FalhaDoConviteData",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Data\\Convite\\ResultadoDoConviteEmMassaData",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\ValidadeDoConvite",
+      "row": 3,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

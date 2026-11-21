@@ -1,0 +1,45 @@
+{
+  "slug": "app-convites",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Convites",
+    "en": "/app — Invitations"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Models\\Convite",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\App\\Pages\\ConvitesRecebidos",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Notifications\\ConviteDeAcesso",
+      "row": 0,
+      "col": 2
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}
