@@ -42,6 +42,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -3938,4 +3939,295 @@ function comTelaAssentada(object $pagina): object
         JS);
 
     return $pagina;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mapa interativo — helpers compartilhados pelas guardas do mapa
+|--------------------------------------------------------------------------
+| Wiki `feat/mapa-interativo-do-kit`. As guardas moram em cinco arquivos,
+| escritos em lotes separados: tests/Kit/MapaInterativoTest.php,
+| MapaInterativoDiagramasTest.php, MapaInterativoCatalogoTest.php,
+| MapaInterativoPublicacaoTest.php e tests/Tenancy/MapaInterativoTenancyTest.php.
+| Cada lote trouxe a sua cópia, com prefixo, do que os outros também faziam:
+| ler o modelo e os diagramas, montar o registro de um painel num modo, achar
+| a F-nn de uma peça, ler o catálogo e o índice do git, e decidir o motivo de
+| enfeite. É o clone com outro nome que `.ai/rules/testes.md` proíbe, e o
+| Setup Global do `04` já mandava esses helpers para cá. O helper usado por
+| um arquivo só continua nele.
+|
+| Os que leem `site/` ou `docs/` ou invocam o `git` dependem da árvore do
+| kit (`export-ignore`): o caso que chama leva a sentinela `naArvoreDoKit()`.
+*/
+
+/**
+ * O modelo publicado do mapa: as peças de `site/mapa/pecas.json` e as ligações de
+ * `site/mapa/ligacoes.json`, como estão nos arquivos — duas listas, na ordem do arquivo.
+ *
+ * Lista, e não indexado pelo id, porque a guarda da R8 (o CT-08) precisa ver a peça repetida.
+ * Quem consulta a peça pelo id usa `modeloDoMapaPorId()`.
+ *
+ * @return array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}
+ */
+function modeloDoMapa(): array
+{
+    static $modelo = null;
+
+    return $modelo ??= [
+        'pecas'    => json_decode((string) file_get_contents(base_path('site/mapa/pecas.json')), true, 512, JSON_THROW_ON_ERROR),
+        'ligacoes' => json_decode((string) file_get_contents(base_path('site/mapa/ligacoes.json')), true, 512, JSON_THROW_ON_ERROR),
+    ];
+}
+
+/**
+ * As peças indexadas pelo id; com o id repetido, vale a primeira.
+ *
+ * @param  list<array<string, mixed>>  $pecas
+ * @return array<string, array<string, mixed>>
+ */
+function pecasPorId(array $pecas): array
+{
+    $porId = [];
+
+    foreach ($pecas as $peca) {
+        $porId[$peca['id']] ??= $peca;
+    }
+
+    return $porId;
+}
+
+/**
+ * O modelo publicado com as peças indexadas pelo id (`pecasPorId()`) e as ligações como estão.
+ *
+ * @return array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}
+ */
+function modeloDoMapaPorId(): array
+{
+    $modelo = modeloDoMapa();
+
+    return ['pecas' => pecasPorId($modelo['pecas']), 'ligacoes' => $modelo['ligacoes']];
+}
+
+/**
+ * Os arquivos de diagrama de `site/mapa/diagramas/`, por slug, na ordem dos caminhos. A pasta é o
+ * manifesto: o slug é o nome do arquivo.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function diagramasDoMapa(): array
+{
+    static $diagramas = null;
+
+    if ($diagramas === null) {
+        $arquivos = glob(base_path('site/mapa/diagramas/*.json')) ?: [];
+        sort($arquivos);
+        $diagramas = [];
+
+        foreach ($arquivos as $arquivo) {
+            $diagramas[basename($arquivo, '.json')] = json_decode((string) file_get_contents($arquivo), true, 512, JSON_THROW_ON_ERROR);
+        }
+    }
+
+    return $diagramas;
+}
+
+/**
+ * A classe de um item que um painel registra: a própria string; o `widget` de um
+ * `WidgetConfiguration`; a classe do objeto; o primeiro item de um callable em array. Closure não
+ * tem classe e devolve `null`.
+ */
+function classeDoRegistro(mixed $valor): ?string
+{
+    if ($valor instanceof Closure) {
+        return null;
+    }
+
+    if (is_string($valor)) {
+        return $valor;
+    }
+
+    if (is_object($valor)) {
+        return property_exists($valor, 'widget') && is_string($valor->widget) ? $valor->widget : $valor::class;
+    }
+
+    if (is_array($valor) && isset($valor[0]) && is_string($valor[0])) {
+        return $valor[0];
+    }
+
+    return null;
+}
+
+/** A classe, a interface, o trait ou o enum existe, pelo autoload. */
+function classeExiste(string $classe): bool
+{
+    return class_exists($classe) || interface_exists($classe) || trait_exists($classe) || enum_exists($classe);
+}
+
+/**
+ * O que o painel registra no modo em que a suíte roda, por tipo, lido do registro vivo (Setup
+ * Global do `04`, getters conferidos no vendor): `getResources()`; `getPages()` mais as páginas que
+ * o painel liga pela configuração (as rotas de autenticação, o perfil e, com tenant, as duas da
+ * organização); `getWidgets()`; `getPlugins()`; e os middlewares, em que o alias `panel:{id}` fica
+ * inteiro, `Classe:parametro` vira `Classe` e o de organização só conta com `hasTenancy()`.
+ *
+ * Quem precisa da lista sem o tipo junta as cinco: `array_merge(...array_values($registro))`.
+ *
+ * @return array{recurso: list<string>, pagina: list<string>, widget: list<string>, plugin: list<string>, middleware: list<string>}
+ */
+function registroVivoDoPainel(Panel $painel): array
+{
+    $unicos = static fn (array $itens): array => array_values(array_unique(array_filter(array_map('classeDoRegistro', $itens))));
+
+    $daConfiguracao = [
+        $painel->getLoginRouteAction(),
+        $painel->getRegistrationRouteAction(),
+        $painel->getRequestPasswordResetRouteAction(),
+        $painel->getResetPasswordRouteAction(),
+        $painel->getEmailVerificationPromptRouteAction(),
+        $painel->getProfilePage(),
+    ];
+
+    if ($painel->hasTenancy()) {
+        $daConfiguracao[] = $painel->getTenantRegistrationPage();
+        $daConfiguracao[] = $painel->getTenantProfilePage();
+    }
+
+    $paginas = array_values(array_filter(
+        $unicos(array_merge($painel->getPages(), $daConfiguracao)),
+        static fn (string $classe): bool => class_exists($classe),
+    ));
+
+    $middlewares = [];
+
+    foreach (array_merge($painel->getMiddleware(), $painel->getAuthMiddleware(), $painel->hasTenancy() ? $painel->getTenantMiddleware() : []) as $middleware) {
+        if (! is_string($middleware)) {
+            continue;
+        }
+
+        $middlewares[] = str_starts_with($middleware, 'panel:') ? $middleware : explode(':', $middleware, 2)[0];
+    }
+
+    return [
+        'recurso'    => $unicos($painel->getResources()),
+        'pagina'     => $paginas,
+        'widget'     => $unicos($painel->getWidgets()),
+        'plugin'     => array_values(array_unique(array_map(static fn (object $plugin): string => $plugin::class, array_values($painel->getPlugins())))),
+        'middleware' => array_values(array_unique($middlewares)),
+    ];
+}
+
+/**
+ * O que o modelo dá ao painel no modo: o destino de toda ligação `registra` que parte de
+ * `painel:{id}` e vale no modo.
+ *
+ * @param  array{pecas: array<array-key, array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return list<string>
+ */
+function registradasNoModelo(array $modelo, string $painel, string $modo): array
+{
+    $ids = [];
+
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        if ($ligacao['de'] === "painel:{$painel}" && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'] ?? [], true)) {
+            $ids[] = $ligacao['para'];
+        }
+    }
+
+    return array_values(array_unique($ids));
+}
+
+/**
+ * O arquivo da classe, relativo à raiz do projeto e com `/` (fora da raiz, o caminho absoluto), ou
+ * `null` quando a classe não existe ou não tem arquivo (`painel:{id}`, `panel:{id}`, classe interna).
+ */
+function arquivoDaClasse(string $classe): ?string
+{
+    if (! classeExiste($classe)) {
+        return null;
+    }
+
+    $arquivo = (new ReflectionClass($classe))->getFileName();
+
+    if ($arquivo === false) {
+        return null;
+    }
+
+    $raiz    = str_replace('\\', '/', base_path()).'/';
+    $arquivo = str_replace('\\', '/', $arquivo);
+
+    return str_starts_with($arquivo, $raiz) ? substr($arquivo, strlen($raiz)) : $arquivo;
+}
+
+/**
+ * As F-nn que a peça entrega e que o catálogo tem; vazio quando a peça não está no modelo.
+ *
+ * @param  array<string, array<string, mixed>>  $pecasPorId
+ * @param  list<string>  $catalogo
+ * @return list<string>
+ */
+function fnnDaPeca(array $pecasPorId, string $id, array $catalogo): array
+{
+    return array_values(array_intersect($pecasPorId[$id]['features'] ?? [], $catalogo));
+}
+
+/**
+ * As linhas de feature do catálogo de um idioma (`docs/{idioma}/operacao/roteiro-de-features.md`):
+ * cada linha é a lista das células, sem a marcação da tabela. A primeira célula é a F-nn; depois
+ * vêm a feature, a origem e o "onde fica".
+ *
+ * @return list<list<string>>
+ */
+function linhasDoCatalogo(string $idioma): array
+{
+    $linhas = [];
+
+    foreach (preg_split('/\R/u', (string) file_get_contents(base_path("docs/{$idioma}/operacao/roteiro-de-features.md"))) as $linha) {
+        $linha = trim($linha);
+
+        if (! str_starts_with($linha, '|')) {
+            continue;
+        }
+
+        $celulas = array_map('trim', array_slice(explode('|', $linha), 1, -1));
+
+        if (count($celulas) >= 7 && preg_match('/^F-\d+[a-z]?$/', $celulas[0]) === 1) {
+            $linhas[] = $celulas;
+        }
+    }
+
+    return $linhas;
+}
+
+/**
+ * Os arquivos no índice do git, relativos à raiz e com `/`: "no commit que publica" (Setup Global
+ * do `04`). Invocar o `git` exige a sentinela no caso que chama (o CT-26 de
+ * `tests/Kit/RedeDeDocumentacaoTest.php`).
+ *
+ * @return list<string>
+ */
+function arquivosVersionados(): array
+{
+    static $arquivos = null;
+
+    return $arquivos ??= array_values(array_filter(
+        explode("\0", Process::path(base_path())->run(['git', 'ls-files', '-z'])->throw()->output()),
+        static fn (string $arquivo): bool => $arquivo !== '',
+    ));
+}
+
+/**
+ * O motivo de enfeite (Setup Global do `04`, ADV-22), com uma definição só: o que não é string; o
+ * vazio, ou só de travessão, pontuação, símbolo ou espaço; e o que se reduz a "não se aplica" (ou
+ * "nao se aplica", "not applicable", "does not apply", "n/a") sem dizer por quê. "Não se aplica:
+ * o pacote não tem tela" diz por quê, e não é enfeite.
+ */
+function motivoDeEnfeite(mixed $motivo): bool
+{
+    if (! is_string($motivo)) {
+        return true;
+    }
+
+    $nucleo = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', $motivo)));
+
+    return $nucleo === '' || in_array($nucleo, ['não se aplica', 'nao se aplica', 'not applicable', 'does not apply', 'n a'], true);
 }

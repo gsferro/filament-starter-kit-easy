@@ -1,7 +1,6 @@
 <?php
 
 use Filament\Facades\Filament;
-use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Support\Facades\Process;
 use Symfony\Component\Yaml\Yaml;
 
@@ -19,27 +18,17 @@ use Symfony\Component\Yaml\Yaml;
 | Tudo aqui lê `site/`, `docs/`, os READMEs ou `.ai/rules/`, que não viajam para o projeto
 | instalado, ou invoca o `git`, que o `create-project` não entrega: a sentinela fica no
 | `beforeEach` (molde de `tests/Kit/GuardasDosDiagramasTest.php`) e no `->skip()` de cada caso.
+|
+| O índice do git (`arquivosVersionados()`), os diagramas (`diagramasDoMapa()`), o registro vivo do
+| painel (`registroVivoDoPainel()`) e o motivo de enfeite (`motivoDeEnfeite()`) moram em
+| `tests/Pest.php`, porque as outras guardas do mapa também os usam (`.ai/rules/testes.md`).
 */
 
 beforeEach(function (): void {
     if (! naArvoreDoKit()) {
-        test()->markTestSkipped('As guardas da publicação do mapa só existem na árvore do kit — o projeto instalado não recebe site/, docs/, os READMEs nem .ai/rules/.');
+        test()->markTestSkipped('As guardas da publicação do mapa só existem na árvore do kit — o projeto instalado não recebe site/, o diretório das páginas do site, os READMEs nem .ai/rules/.');
     }
 });
-
-if (! function_exists('publicacaoArquivosVersionados')) {
-    /**
-     * Os arquivos no índice do git: "no commit que publica" (Setup Global).
-     *
-     * @return list<string>
-     */
-    function publicacaoArquivosVersionados(): array
-    {
-        $saida = Process::path(base_path())->run(['git', '-c', 'core.quotepath=off', 'ls-files'])->throw()->output();
-
-        return array_values(array_filter(array_map('trim', explode("\n", $saida)), fn (string $linha): bool => $linha !== ''));
-    }
-}
 
 if (! function_exists('publicacaoSemLinhas')) {
     /** O texto sem as linhas que casam o padrão: a cópia adulterada em memória. */
@@ -348,13 +337,14 @@ if (! function_exists('publicacaoConferirFalhaDoMapa')) {
 
 if (! function_exists('publicacaoSlugsDoMapa')) {
     /**
-     * Os nomes dos diagramas do mapa: a pasta de diagramas e os links da página do mapa.
+     * Os nomes dos diagramas do mapa: a pasta de diagramas (`diagramasDoMapa()`, de `tests/Pest.php`) e os
+     * links da página do mapa.
      *
      * @return list<string>
      */
     function publicacaoSlugsDoMapa(): array
     {
-        $slugs = array_map(fn (string $arquivo): string => basename($arquivo, '.json'), glob(base_path('site/mapa/diagramas/*.json')) ?: []);
+        $slugs = array_keys(diagramasDoMapa());
 
         foreach (['pt', 'en'] as $idioma) {
             preg_match_all("~mapa/{$idioma}/([A-Za-z0-9_-]+)\\.html~", (string) file_get_contents(base_path("docs/{$idioma}/referencia/mapa-interativo.md")), $links);
@@ -648,24 +638,10 @@ if (! function_exists('publicacaoPacotesSemFeaturePropria')) {
     }
 }
 
-if (! function_exists('publicacaoMotivoValido')) {
-    /** Motivo de enfeite (Setup Global, ADV-22): vazio, só de travessão ou pontuação, ou "não se aplica" sem dizer por quê. */
-    function publicacaoMotivoValido(string $motivo): bool
-    {
-        if (preg_match('/[\p{L}\p{N}]/u', $motivo) !== 1) {
-            return false;
-        }
-
-        $nucleo = trim((string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', mb_strtolower($motivo)));
-
-        return ! in_array($nucleo, ['não se aplica', 'nao se aplica', 'not applicable', 'n a'], true);
-    }
-}
-
 if (! function_exists('publicacaoPacotesComPecaRegistrada')) {
     /**
      * Os pacotes de `vendor/` cuja classe um painel registra — plugin, recurso, página ou widget —,
-     * lidos do registro vivo.
+     * lidos do registro vivo (`registroVivoDoPainel()`, de `tests/Pest.php`).
      *
      * @return array<string, list<string>> pacote => "painel: classe"
      */
@@ -675,12 +651,8 @@ if (! function_exists('publicacaoPacotesComPecaRegistrada')) {
         $porPacote = [];
 
         foreach (Filament::getPanels() as $painel) {
-            $classes = array_map(fn (object $plugin): string => $plugin::class, array_values($painel->getPlugins()));
-            $classes = [...$classes, ...array_values($painel->getResources()), ...array_values($painel->getPages())];
-
-            foreach ($painel->getWidgets() as $widget) {
-                $classes[] = $widget instanceof WidgetConfiguration ? $widget->widget : $widget;
-            }
+            $registro = registroVivoDoPainel($painel);
+            $classes  = [...$registro['plugin'], ...$registro['recurso'], ...$registro['pagina'], ...$registro['widget']];
 
             foreach (array_unique($classes) as $classe) {
                 $arquivo = strtolower(str_replace('\\', '/', (string) (new ReflectionClass($classe))->getFileName()));
@@ -716,7 +688,7 @@ if (! function_exists('publicacaoConferirPacotes')) {
         $reprovas = [];
 
         foreach ($semFeature as $pacote => $motivo) {
-            if (! publicacaoMotivoValido($motivo)) {
+            if (motivoDeEnfeite($motivo)) {
                 $reprovas[] = "{$pacote}: na lista dos sem feature própria sem motivo, ou com motivo de enfeite";
             }
 
@@ -784,7 +756,7 @@ it('[CT-07] a rule do catálogo está no índice das rules, alcança o catálogo
     expect($globs)->not->toBeNull('o índice das rules não tem a linha da rule do catálogo')
         ->and($globs)->not->toBeEmpty();
 
-    $arquivos = publicacaoArquivosVersionados();
+    $arquivos = arquivosVersionados();
 
     expect($arquivos)->not->toBeEmpty();
 
@@ -875,11 +847,11 @@ it('[CT-25] o mapa nasce no build do workflow, e o conferidor do mapa roda depoi
     $slugs = publicacaoSlugsDoMapa();
 
     expect($slugs)->not->toBeEmpty()
-        ->and(publicacaoHtmlsDoMapaVersionados(publicacaoArquivosVersionados(), $slugs))->toBe([]);
+        ->and(publicacaoHtmlsDoMapaVersionados(arquivosVersionados(), $slugs))->toBe([]);
 })->with([
     '.github/workflows/pages.yml'            => ['.github/workflows/pages.yml', 'build', true],
     'o job site de .github/workflows/ci.yml' => ['.github/workflows/ci.yml', 'site', false],
-])->skip(fn (): bool => ! naArvoreDoKit(), 'Lê .github/, site/ e docs/ e invoca o git, que não viajam no pacote.');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'Lê .github/, site/ e o diretório das páginas do site e invoca o git, que não viajam no pacote.');
 
 it('[CT-42] a falha do conferidor do mapa reprova o job, e o build do Pages só roda na main', function (string $arquivo, string $job, string $mundo): void {
     $workflow  = publicacaoWorkflow($arquivo);
@@ -976,7 +948,7 @@ it('[CT-27] todo bloco Mermaid da base continua no arquivo em que estava, nos do
             expect(in_array($item, $atuais, true))->toBeTrue("[{$idioma}] o {$item['id']} saiu de {$item['arquivo']}, ou foi para dentro de comentário HTML");
         }
     }
-})->skip(fn (): bool => ! naArvoreDoKit(), 'Lê docs/ e os READMEs e invoca o git, que não viajam no pacote.');
+})->skip(fn (): bool => ! naArvoreDoKit(), 'Lê o diretório das páginas do site e os READMEs e invoca o git, que não viajam no pacote.');
 
 it('[CT-28] todo pacote instalado está na referência e chega ao catálogo, ou à lista dos sem feature própria; e a referência só lista pacote instalado', function (string $idioma, string $mundo, ?string $nomeado): void {
     $referencia = (string) file_get_contents(base_path("docs/{$idioma}/referencia/pacotes-instalados.md"));
@@ -1035,7 +1007,7 @@ it('[CT-28] todo pacote instalado está na referência e chega ao catálogo, ou 
     'pt, cópia da lista com laravel/tinker e o motivo —'             => ['pt', 'tinker com travessão', 'laravel/tinker'],
     'pt, cópia da lista com laravel/tinker e "não se aplica"'        => ['pt', 'tinker com não se aplica', 'laravel/tinker'],
     'pt, cópia da lista com o Health, cujo plugin o /infra registra' => ['pt', 'Health na lista', 'shuvroroy/filament-spatie-laravel-health'],
-])->skip(fn (): bool => ! naArvoreDoKit(), 'Lê docs/, que não viaja no pacote.');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'Lê o diretório das páginas do site, que não viaja no pacote.');
 
 it('[CT-34] a página do mapa de cada idioma declara a casca do comparativo em inglês, os dois defeitos tolerados do archify e o limite da varredura', function (string $idioma): void {
     $pagina = (string) preg_replace('/\s+/u', ' ', publicacaoSemComentarioHtml((string) file_get_contents(base_path("docs/{$idioma}/referencia/mapa-interativo.md"))));
@@ -1053,4 +1025,4 @@ it('[CT-34] a página do mapa de cada idioma declara a casca do comparativo em i
     ));
 
     expect($ausentes)->toBe([], "[{$idioma}] a página não nomeia: ".implode(', ', $ausentes));
-})->with(['pt', 'en'])->skip(fn (): bool => ! naArvoreDoKit(), 'Lê docs/, que não viaja no pacote.');
+})->with(['pt', 'en'])->skip(fn (): bool => ! naArvoreDoKit(), 'Lê o diretório das páginas do site, que não viaja no pacote.');

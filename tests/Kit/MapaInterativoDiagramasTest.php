@@ -14,12 +14,12 @@
  * Toda guarda é uma função aplicada ao modelo publicado e a cópias adulteradas EM MEMÓRIA, nunca
  * ao arquivo real: a linha "publicados" e as linhas de controle chamam a MESMA função.
  *
- * Helpers: usados só por este arquivo, com o prefixo `mapaDiagramas`.
+ * Helpers: os usados só por este arquivo ficam aqui, com o prefixo `mapaDiagramas`. Os que as outras guardas
+ * do mapa também usam (o modelo, os diagramas, o catálogo, o registro vivo, o arquivo da classe e o motivo de
+ * enfeite) moram em `tests/Pest.php` (`.ai/rules/testes.md`).
  */
 
 use Filament\Facades\Filament;
-use Filament\Panel;
-use Filament\Widgets\WidgetConfiguration;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -36,7 +36,7 @@ beforeEach(function (): void {
 |--------------------------------------------------------------------------
 */
 
-if (! function_exists('mapaDiagramasModelo')) {
+if (! function_exists('mapaDiagramasConstruir')) {
     /** @return list<string> os tipos de visualização, na ordem das linhas da matriz tipo × painel × modo */
     function mapaDiagramasTiposDaMatriz(): array
     {
@@ -47,49 +47,6 @@ if (! function_exists('mapaDiagramasModelo')) {
     function mapaDiagramasColunas(): array
     {
         return ['admin|sem', 'admin|com', 'app|sem', 'app|com', 'infra|sem', 'infra|com'];
-    }
-
-    /** @return array<string, mixed> */
-    function mapaDiagramasLerJson(string $relativo): array
-    {
-        return json_decode((string) file_get_contents(base_path($relativo)), true, 512, JSON_THROW_ON_ERROR);
-    }
-
-    /**
-     * O modelo publicado: peças por id e ligações.
-     *
-     * @return array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}
-     */
-    function mapaDiagramasModelo(): array
-    {
-        static $modelo = null;
-
-        return $modelo ??= (function (): array {
-            $pecas = [];
-            foreach (mapaDiagramasLerJson('site/mapa/pecas.json') as $peca) {
-                $pecas[$peca['id']] = $peca;
-            }
-
-            return ['pecas' => $pecas, 'ligacoes' => mapaDiagramasLerJson('site/mapa/ligacoes.json')];
-        })();
-    }
-
-    /** @return array<string, array<string, mixed>> os arquivos de `site/mapa/diagramas/`, por slug */
-    function mapaDiagramasDecls(): array
-    {
-        static $decls = null;
-
-        return $decls ??= (function (): array {
-            $saida    = [];
-            $arquivos = glob(base_path('site/mapa/diagramas/*.json')) ?: [];
-            sort($arquivos);
-            foreach ($arquivos as $arquivo) {
-                $decl                 = json_decode((string) file_get_contents($arquivo), true, 512, JSON_THROW_ON_ERROR);
-                $saida[$decl['slug']] = $decl;
-            }
-
-            return $saida;
-        })();
     }
 
     function mapaDiagramasPt(mixed $valor): string
@@ -342,7 +299,7 @@ if (! function_exists('mapaDiagramasModelo')) {
      */
     function mapaDiagramasMundoCom(array $modelo): array
     {
-        $decls = mapaDiagramasDecls();
+        $decls = diagramasDoMapa();
         $irs   = [];
         foreach ($decls as $slug => $decl) {
             $irs[$slug] = mapaDiagramasConstruir($decl, $modelo);
@@ -355,7 +312,7 @@ if (! function_exists('mapaDiagramasModelo')) {
     {
         static $mundo = null;
 
-        return $mundo ??= mapaDiagramasMundoCom(mapaDiagramasModelo());
+        return $mundo ??= mapaDiagramasMundoCom(modeloDoMapaPorId());
     }
 
     function mapaDiagramasPagina(string $idioma): string
@@ -471,15 +428,6 @@ if (! function_exists('mapaDiagramasModelo')) {
     function mapaDiagramasNumeroDePalavras(string $texto): int
     {
         return count(preg_split('/\s+/u', trim($texto), -1, PREG_SPLIT_NO_EMPTY) ?: []);
-    }
-
-    /** Motivo de enfeite (Setup Global): vazio, só de travessão ou pontuação, ou "não se aplica" sem porquê. */
-    function mapaDiagramasMotivoDeEnfeite(string $motivo): bool
-    {
-        $limpo = trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $motivo));
-        $limpo = mb_strtolower((string) preg_replace('/\s+/u', ' ', $limpo));
-
-        return $limpo === '' || in_array($limpo, ['não se aplica', 'nao se aplica', 'not applicable', 'does not apply', 'n a'], true);
     }
 
     /** @return array<string, string> termo pt (minúsculo) => termo en (minúsculo) */
@@ -859,7 +807,7 @@ if (! function_exists('mapaDiagramasModelo')) {
                     continue;
                 }
                 $motivo = $celula['motivo'];
-                if (mapaDiagramasMotivoDeEnfeite($motivo)) {
+                if (motivoDeEnfeite($motivo)) {
                     $falhas[] = "{$nome} não tem diagrama e o motivo é vazio ou de enfeite (\"{$motivo}\")";
 
                     continue;
@@ -1104,23 +1052,21 @@ if (! function_exists('mapaDiagramasModelo')) {
     /* ---------- R6: origem e entrega ---------- */
 
     /**
-     * O catálogo de um idioma (ou de um texto): uma linha por F-nn.
+     * As linhas do catálogo (`linhasDoCatalogo()`, de `tests/Pest.php`) por F-nn, como a guarda da R6 as lê:
+     * a feature, a origem, os pacotes, o "onde fica" e a marca de removida, com o motivo.
      *
+     * @param  list<list<string>>  $linhas
      * @return array<string, array{feature: string, origem: string, pacotes: list<string>, onde: string, removida: bool, motivo: string}>
      */
-    function mapaDiagramasLinhasDoCatalogo(string $markdown): array
+    function mapaDiagramasCatalogoPorFnn(array $linhas): array
     {
         $saida = [];
-        foreach (preg_split('/\R/', $markdown) as $linha) {
-            if (preg_match('/^\|\s*(F-\d+[a-z]?)\s*\|/u', $linha, $m) !== 1) {
-                continue;
-            }
-            $celulas = mapaDiagramasCelulasDaLinha($linha);
-            $origem  = mb_strtolower($celulas[2] ?? '');
-            $tipo    = str_contains($origem, 'customiza') ? 'custom' : ((str_starts_with($origem, 'pacote') || str_starts_with($origem, 'package')) ? 'pacote' : 'proprio');
+        foreach ($linhas as $celulas) {
+            $origem = mb_strtolower($celulas[2] ?? '');
+            $tipo   = str_contains($origem, 'customiza') ? 'custom' : ((str_starts_with($origem, 'pacote') || str_starts_with($origem, 'package')) ? 'pacote' : 'proprio');
             preg_match_all('/`([^`]+)`/u', $celulas[2] ?? '', $pacotes);
-            $removida     = preg_match('/removid[ao]|\bremoved\b/iu', $celulas[1] ?? '') === 1;
-            $saida[$m[1]] = [
+            $removida            = preg_match('/removid[ao]|\bremoved\b/iu', $celulas[1] ?? '') === 1;
+            $saida[$celulas[0]]  = [
                 'feature'  => $celulas[1] ?? '',
                 'origem'   => $tipo,
                 'pacotes'  => $pacotes[1],
@@ -1131,14 +1077,6 @@ if (! function_exists('mapaDiagramasModelo')) {
         }
 
         return $saida;
-    }
-
-    /** @return array<string, array{feature: string, origem: string, pacotes: list<string>, onde: string, removida: bool, motivo: string}> */
-    function mapaDiagramasCatalogo(string $idioma): array
-    {
-        static $cache = [];
-
-        return $cache[$idioma] ??= mapaDiagramasLinhasDoCatalogo((string) file_get_contents(base_path("docs/{$idioma}/operacao/roteiro-de-features.md")));
     }
 
     /** O caminho de rota da célula "onde fica": entre crases, começa por `/`, e a célula não traz "→". */
@@ -1199,35 +1137,17 @@ if (! function_exists('mapaDiagramasModelo')) {
         return $candidatas;
     }
 
-    function mapaDiagramasArquivoDaClasse(string $id): ?string
-    {
-        static $cache = [];
-        if (array_key_exists($id, $cache)) {
-            return $cache[$id];
-        }
-        $arquivo = null;
-        if (! str_contains($id, ':')) {
-            try {
-                if (class_exists($id) || interface_exists($id) || trait_exists($id) || enum_exists($id)) {
-                    $arquivo = str_replace('\\', '/', (string) (new ReflectionClass($id))->getFileName());
-                }
-            } catch (Throwable) {
-            }
-        }
-
-        return $cache[$id] = $arquivo;
-    }
-
+    /** O arquivo da peça é do pacote: `arquivoDaClasse()` (relativo à raiz) dentro de `vendor/{pacote}/`. */
     function mapaDiagramasPecaEhDoPacote(string $id, string $pacote): bool
     {
-        $arquivo = mapaDiagramasArquivoDaClasse($id);
+        $arquivo = arquivoDaClasse($id);
 
-        return $arquivo !== null && str_contains($arquivo, '/vendor/'.$pacote.'/');
+        return $arquivo !== null && str_contains('/'.$arquivo, '/vendor/'.$pacote.'/');
     }
 
     function mapaDiagramasPecaEhDoKit(array $modelo, string $id): bool
     {
-        $arquivo = mapaDiagramasArquivoDaClasse($id);
+        $arquivo = arquivoDaClasse($id);
         if ($arquivo === null) {
             // painel:{id} e o alias `panel:{id}` não são classe: valem pelo arquivo da evidência, que é do kit.
             $evidencia = $modelo['pecas'][$id]['evidencia'][0]['arquivo'] ?? '';
@@ -1235,7 +1155,7 @@ if (! function_exists('mapaDiagramasModelo')) {
             return $evidencia !== '' && ! str_starts_with($evidencia, 'vendor/');
         }
 
-        return ! str_contains($arquivo, '/vendor/') && ! str_contains($arquivo, '/node_modules/');
+        return ! str_contains('/'.$arquivo, '/vendor/') && ! str_contains('/'.$arquivo, '/node_modules/');
     }
 
     /**
@@ -1377,57 +1297,7 @@ if (! function_exists('mapaDiagramasModelo')) {
         throw new RuntimeException("não há peça {$sufixo} no modelo");
     }
 
-    /* ---------- R34: o registro do painel ---------- */
-
-    /** @return list<string> o que o painel registra, lido do registro vivo do Filament */
-    function mapaDiagramasRegistroVivo(Panel $painel): array
-    {
-        $ids    = [];
-        $classe = static function (mixed $valor) use (&$ids): void {
-            if ($valor instanceof WidgetConfiguration) {
-                $valor = $valor->widget;
-            }
-            if (is_string($valor) && $valor !== '') {
-                $ids[] = $valor;
-            }
-        };
-        foreach ($painel->getResources() as $recurso) {
-            $classe($recurso);
-        }
-        foreach ($painel->getPages() as $pagina) {
-            $classe($pagina);
-        }
-        foreach ($painel->getWidgets() as $widget) {
-            $classe($widget);
-        }
-        foreach ([
-            $painel->getLoginRouteAction(), $painel->getRegistrationRouteAction(), $painel->getRequestPasswordResetRouteAction(),
-            $painel->getResetPasswordRouteAction(), $painel->getEmailVerificationPromptRouteAction(), $painel->getProfilePage(),
-        ] as $pagina) {
-            if (is_string($pagina) && class_exists($pagina)) {
-                $classe($pagina);
-            }
-        }
-        if ($painel->hasTenancy()) {
-            foreach ([$painel->getTenantRegistrationPage(), $painel->getTenantProfilePage()] as $pagina) {
-                $classe($pagina);
-            }
-        }
-        foreach ($painel->getPlugins() as $plugin) {
-            $ids[] = $plugin::class;
-        }
-        $middlewares = [...$painel->getMiddleware(), ...$painel->getAuthMiddleware()];
-        if ($painel->hasTenancy()) {
-            $middlewares = [...$middlewares, ...$painel->getTenantMiddleware()];
-        }
-        foreach ($middlewares as $middleware) {
-            if (is_string($middleware)) {
-                $ids[] = str_starts_with($middleware, 'panel:') ? $middleware : explode(':', $middleware)[0];
-            }
-        }
-
-        return array_values(array_unique($ids));
-    }
+    /* ---------- R34: o registro do painel (o registro vivo vem de `registroVivoDoPainel()`) ---------- */
 
     /**
      * R34: os diagramas `architecture` e a árvore de registro do painel que valem no modo desenham, juntos, o
@@ -1488,7 +1358,7 @@ it('[CT-06] toda F-nn é entregue por peça desenhada, e ao menos uma delas é d
         $desenhadas += mapaDiagramasPecasDesenhadas($mundo['irs'][$slug]);
     }
     $paineis  = array_keys(Filament::getPanels());
-    $catalogo = mapaDiagramasCatalogo('pt');
+    $catalogo = mapaDiagramasCatalogoPorFnn(linhasDoCatalogo('pt'));
     $daOrigem = array_filter($catalogo, static fn (array $linha): bool => $linha['origem'] === $origem && ! $linha['removida']);
     $excecoes = mapaDiagramasExcecoesDeOrigem();
 
@@ -1511,7 +1381,7 @@ it('[CT-36] a guarda da origem reprova a F-nn entregue pela peça errada, a remo
     $mundo      = mapaDiagramasMundo();
     $paineis    = array_keys(Filament::getPanels());
     $modelo     = $mundo['modelo'];
-    $catalogo   = mapaDiagramasCatalogo('pt');
+    $catalogo   = mapaDiagramasCatalogoPorFnn(linhasDoCatalogo('pt'));
     $desenhadas = [];
     foreach (mapaDiagramasPublicados('pt') as $slug) {
         $desenhadas += mapaDiagramasPecasDesenhadas($mundo['irs'][$slug]);
@@ -1546,7 +1416,7 @@ it('[CT-36] a guarda da origem reprova a F-nn entregue pela peça errada, a remo
             $desenhadas                   = $todas;
             break;
         case 'F-07 en com caminho que não resolve':
-            $catalogo                 = mapaDiagramasCatalogo('en');
+            $catalogo                 = mapaDiagramasCatalogoPorFnn(linhasDoCatalogo('en'));
             $catalogo['F-07']['onde'] = '`/{panel}/my-profile`';
             $desenhadas               = $todas;
             break;
@@ -1672,7 +1542,7 @@ it('[CT-14] toda ligação do modelo aparece desenhada em diagrama publicado, e 
 */
 
 it('[CT-15] a página de cada idioma leva, por <a href> relativo, a todo diagrama do seu idioma, e só a diagrama que existe', function (string $idioma): void {
-    $slugsDosArquivos = array_keys(mapaDiagramasDecls());
+    $slugsDosArquivos = array_keys(diagramasDoMapa());
     $hrefs            = mapaDiagramasHrefsDoMapa(mapaDiagramasPagina($idioma));
 
     $foraDoPadrao  = array_values(array_filter($hrefs, static fn (string $href): bool => preg_match('#^(?:\.\./)+mapa/'.$idioma.'/[a-z0-9-]+\.html$#', $href) !== 1));
@@ -1700,9 +1570,9 @@ it('[CT-15] a página de cada idioma leva, por <a href> relativo, a todo diagram
 */
 
 it('[CT-16] todo diagrama tem os seus textos em pt e em en, e o texto en é traduzido, salvo o título que é nome de peça ou de comando, marcado', function (string $mundoDeControle, bool $aceita, array $nomeia): void {
-    $modelo    = mapaDiagramasModelo();
+    $modelo    = modeloDoMapaPorId();
     $glossario = mapaDiagramasGlossario();
-    $decls     = mapaDiagramasDecls();
+    $decls     = diagramasDoMapa();
 
     expect(count($glossario))->toBeGreaterThanOrEqual(39);
 
@@ -1786,7 +1656,7 @@ it('[CT-17] cada painel do registro tem diagrama próprio em cada modo, e o comp
     expect(array_keys(Filament::getPanels()))->toContain($painel);
     $grade  = mapaDiagramasGrade($idioma);
     $falhas = array_filter(
-        mapaDiagramasFalhasDaGrade($grade, array_keys(Filament::getPanels()), mapaDiagramasDecls()),
+        mapaDiagramasFalhasDaGrade($grade, array_keys(Filament::getPanels()), diagramasDoMapa()),
         static fn (array $falha): bool => $falha['painel'] === $painel && $falha['modo'] === $modo,
     );
 
@@ -1811,7 +1681,7 @@ it('[CT-18] um painel novo no registro, sem diagrama, deixa a grade incompleta',
     $paineis = array_keys(Filament::getPanels());
     expect($paineis)->toContain('financeiro');
 
-    $falhas       = mapaDiagramasFalhasDaGrade(mapaDiagramasGrade('pt'), $paineis, mapaDiagramasDecls());
+    $falhas       = mapaDiagramasFalhasDaGrade(mapaDiagramasGrade('pt'), $paineis, diagramasDoMapa());
     $doFinanceiro = array_values(array_filter($falhas, static fn (array $falha): bool => $falha['painel'] === 'financeiro'));
     $dosOutros    = array_values(array_filter($falhas, static fn (array $falha): bool => $falha['painel'] !== 'financeiro'));
 
@@ -1821,7 +1691,7 @@ it('[CT-18] um painel novo no registro, sem diagrama, deixa a grade incompleta',
 });
 
 it('[CT-43] a guarda da grade reprova a célula que leva a diagrama do outro modo ou de outro painel', function (string $mundoDeControle): void {
-    $decls   = mapaDiagramasDecls();
+    $decls   = diagramasDoMapa();
     $paineis = ['admin', 'app', 'infra'];
 
     if ($mundoDeControle === 'publicada, pt e en') {
@@ -1911,7 +1781,7 @@ it('[CT-19] compartilha-se só o que é igual nos dois modos, e o igual não se 
                 }
             }
             // O diagrama construído sai do modelo: refeito com a cópia, ele desenha a ligação, como o gerador faria.
-            $irs['app-resumo-sem'] = mapaDiagramasConstruir(mapaDiagramasDecls()['app-resumo-sem'], $modelo);
+            $irs['app-resumo-sem'] = mapaDiagramasConstruir(diagramasDoMapa()['app-resumo-sem'], $modelo);
             $nomeia                = ['app-resumo-sem', 'painel:app', $tenant];
             break;
     }
@@ -1933,7 +1803,7 @@ it('[CT-19] compartilha-se só o que é igual nos dois modos, e o igual não se 
 */
 
 it('[CT-20] cada um dos dez tipos nativos e o comparativo de arquitetura têm diagrama publicado ou o motivo escrito', function (string $tipo): void {
-    $decls      = mapaDiagramasDecls();
+    $decls      = diagramasDoMapa();
     $publicados = array_values(array_intersect(mapaDiagramasPublicados('pt'), mapaDiagramasPublicados('en')));
     $doTipo     = array_filter($publicados, static fn (string $slug): bool => ($decls[$slug]['tipo'] ?? null) === $tipo);
 
@@ -1946,7 +1816,7 @@ it('[CT-20] cada um dos dez tipos nativos e o comparativo de arquitetura têm di
         $linha = collect(mapaDiagramasMatriz($idioma))->firstWhere('tipo', $tipo);
         expect($linha)->not->toBeNull();
         foreach ($linha['celulas'] as $coluna => $celula) {
-            expect(mapaDiagramasMotivoDeEnfeite($celula['motivo']))->toBeFalse("{$idioma}: o motivo da célula {$tipo} × {$coluna} é de enfeite");
+            expect(motivoDeEnfeite($celula['motivo']))->toBeFalse("{$idioma}: o motivo da célula {$tipo} × {$coluna} é de enfeite");
         }
     }
 })->with(['architecture', 'workflow', 'sequence', 'dataflow', 'lifecycle', 'erd', 'class', 'tree', 'timeline', 'waterfall', 'compare']);
@@ -2039,7 +1909,7 @@ it('[CT-21] toda combinação tipo × painel × modo tem diagrama ou motivo ao l
 */
 
 it('[CT-22] todo comparativo publicado vai do modo sem tenant para o com tenant do mesmo painel', function (string $mundoDeControle, bool $aceita): void {
-    $decls       = mapaDiagramasDecls();
+    $decls       = diagramasDoMapa();
     $publicados  = array_values(array_intersect(mapaDiagramasPublicados('pt'), mapaDiagramasPublicados('en')));
     $comparativo = 'app-resumo-sem-com';
 
@@ -2078,8 +1948,8 @@ it('[CT-22] todo comparativo publicado vai do modo sem tenant para o com tenant 
 */
 
 it('[CT-24] o mapa publica fluxos, e todo passo deles percorre peça do modelo', function (string $mundoDeControle): void {
-    $modelo = mapaDiagramasModelo();
-    $decls  = mapaDiagramasDecls();
+    $modelo = modeloDoMapaPorId();
+    $decls  = diagramasDoMapa();
 
     if ($mundoDeControle === 'publicados') {
         expect(mapaDiagramasConferirFluxos($decls, $modelo)['motivo'])->toBe('aceita');
@@ -2137,7 +2007,7 @@ it('[CT-24] o mapa publica fluxos, e todo passo deles percorre peça do modelo',
 */
 
 it('[CT-31] cada marco da linha do tempo cita versão do CHANGELOG com a data dela e um termo da seção dela, e cada tempo medido traz data e fonte', function (string $mundoDeControle, array $nomeia): void {
-    $decls        = mapaDiagramasDecls();
+    $decls        = diagramasDoMapa();
     $secoes       = mapaDiagramasSecoesDoChangelog();
     $marcos       = 'marcos-do-changelog';
     $primeiro     = array_key_first($decls[$marcos]['events']);
@@ -2160,7 +2030,7 @@ it('[CT-31] cada marco da linha do tempo cita versão do CHANGELOG com a data de
         return;
     }
 
-    $decls   = [$marcos => $decls[$marcos], 'tempos-ci' => mapaDiagramasDecls()['tempos-ci']];
+    $decls   = [$marcos => $decls[$marcos], 'tempos-ci' => diagramasDoMapa()['tempos-ci']];
     $eventos = &$decls[$marcos]['events'];
     switch ($mundoDeControle) {
         case 'versão inexistente':
@@ -2211,7 +2081,7 @@ it('[CT-37] sem tenant, os diagramas de arquitetura e a árvore de registro de c
     expect($viva->hasTenancy())->toBeFalse();
 
     $mundo        = mapaDiagramasMundo();
-    $vivo         = mapaDiagramasRegistroVivo($viva);
+    $vivo         = array_merge(...array_values(registroVivoDoPainel($viva)));
     $condicionais = ['App\\Filament\\Admin\\Resources\\Tenants\\TenantResource'];
 
     if ($mundoDeControle === 'publicados') {

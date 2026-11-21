@@ -7,46 +7,11 @@
  * Toda guarda é uma função aplicada ao publicado e a cópias adulteradas EM MEMÓRIA, nunca ao arquivo
  * real, e devolve aceita ou reprova com motivos que nomeiam o item. As linhas de controle chamam a
  * MESMA função de decisão que a linha "publicado".
+ *
+ * A leitura do catálogo (`linhasDoCatalogo()`) e do modelo (`modeloDoMapa()`) e o motivo de enfeite
+ * (`motivoDeEnfeite()`) moram em `tests/Pest.php`, porque as outras guardas do mapa também os usam
+ * (`.ai/rules/testes.md`).
  */
-if (! function_exists('catalogoLinhasDoTexto')) {
-    /**
-     * As linhas das tabelas de features do catálogo: cada linha é a lista das células, e a primeira
-     * célula é a F-nn.
-     *
-     * @return list<list<string>>
-     */
-    function catalogoLinhasDoTexto(string $texto): array
-    {
-        $linhas = [];
-
-        foreach (preg_split('/\R/u', $texto) as $linha) {
-            $linha = trim($linha);
-
-            if (! str_starts_with($linha, '|')) {
-                continue;
-            }
-
-            $celulas = array_map('trim', array_slice(explode('|', $linha), 1, -1));
-
-            if (count($celulas) >= 7 && preg_match('/^F-\d+[a-z]?$/', $celulas[0]) === 1) {
-                $linhas[] = $celulas;
-            }
-        }
-
-        return $linhas;
-    }
-}
-
-if (! function_exists('catalogoLerCatalogo')) {
-    /**
-     * @return list<list<string>>
-     */
-    function catalogoLerCatalogo(string $idioma): array
-    {
-        return catalogoLinhasDoTexto((string) file_get_contents(base_path("docs/{$idioma}/operacao/roteiro-de-features.md")));
-    }
-}
-
 if (! function_exists('catalogoTextoDaLinha')) {
     /**
      * @param  list<string>  $celulas
@@ -207,20 +172,6 @@ if (! function_exists('catalogoRemocao')) {
         $motivo = str_starts_with($resto, ':') ? trim(mb_substr($resto, 1)) : '';
 
         return ['removida' => true, 'motivo' => trim($motivo, " \t)*")];
-    }
-}
-
-if (! function_exists('catalogoMotivoDeEnfeite')) {
-    /**
-     * Motivo de enfeite (Setup Global, ADV-22): vazio, só de travessão ou pontuação, ou "não se
-     * aplica" sem dizer por quê.
-     */
-    function catalogoMotivoDeEnfeite(?string $motivo): bool
-    {
-        $texto    = trim((string) $motivo);
-        $semFrase = (string) preg_replace('/^(não se aplica|nao se aplica|n\/a|not applicable|does not apply)/iu', '', $texto);
-
-        return trim((string) preg_replace('/[\p{P}\p{S}\s]+/u', ' ', $semFrase)) === '';
     }
 }
 
@@ -652,7 +603,7 @@ if (! function_exists('catalogoConferirContraBase')) {
             $remocao = catalogoRemocao($celulas);
 
             if ($remocao['removida']) {
-                if (catalogoMotivoDeEnfeite($remocao['motivo'])) {
+                if (motivoDeEnfeite($remocao['motivo'])) {
                     $motivos[] = "{$numero} está marcada como removida sem motivo, ou com motivo de enfeite";
                 }
 
@@ -1046,7 +997,7 @@ if (! function_exists('catalogoConferirFonte')) {
             if (array_key_exists($item, $lista)) {
                 if (preg_match('#^(recursos|autenticacao)/#', $item) === 1 && ! str_ends_with($item, '/index.md')) {
                     $motivos[] = "a página {$item} descreve feature e está na lista das que não descrevem";
-                } elseif (catalogoMotivoDeEnfeite($lista[$item])) {
+                } elseif (motivoDeEnfeite($lista[$item])) {
                     $motivos[] = "a página {$item} está na lista das que não descrevem feature sem motivo, ou com motivo de enfeite";
                 } else {
                     $casados[$item] = ['lista'];
@@ -1095,8 +1046,8 @@ if (! function_exists('catalogoMundoDoCt01')) {
      */
     function catalogoMundoDoCt01(string $mundo): array
     {
-        $pt         = catalogoLerCatalogo('pt');
-        $en         = catalogoLerCatalogo('en');
+        $pt         = linhasDoCatalogo('pt');
+        $en         = linhasDoCatalogo('en');
         $trocarLink = fn (string $alvo): Closure => function (array $celulas) use ($alvo): array {
             $celulas[1] = preg_match('/\]\([^)]*\)/u', $celulas[1]) === 1
                 ? (string) preg_replace('/\]\([^)]*\)/u', ']('.$alvo.')', $celulas[1])
@@ -1151,7 +1102,7 @@ it('[CT-01] o catálogo tem as mesmas F-nn nos dois idiomas, a mesma feature em 
     'número repetido'                       => ['F-30 em duas linhas do pt', 'reprova', [['F-30', 'mais de uma linha']]],
     'número novo com outra feature'         => ['F-118 e F-121 com as descrições trocadas no en', 'reprova', [['F-118'], ['F-121']]],
     'estado diferente entre os idiomas'     => ['F-05 removida no pt e vigente no en', 'reprova', [['F-05', 'vigente no idioma en']]],
-])->skip(fn (): bool => ! naArvoreDoKit(), 'docs/ não viaja no pacote: a guarda do catálogo só roda na árvore do kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório das páginas do site não viaja no pacote: a guarda do catálogo só roda na árvore do kit');
 
 if (! function_exists('catalogoMundoDoCt02')) {
     /**
@@ -1160,7 +1111,7 @@ if (! function_exists('catalogoMundoDoCt02')) {
     function catalogoMundoDoCt02(string $mundo): array
     {
         $fontes     = catalogoFontesPublicadas();
-        $catalogo   = ['pt' => catalogoLerCatalogo('pt'), 'en' => catalogoLerCatalogo('en')];
+        $catalogo   = ['pt' => linhasDoCatalogo('pt'), 'en' => linhasDoCatalogo('en')];
         $mudarFonte = fn (string $nome, Closure $mudar): array => array_map(
             fn (array $fonte): array => $fonte['nome'] === $nome ? array_replace($fonte, ['texto' => $mudar($fonte['texto'])]) : $fonte,
             $fontes,
@@ -1186,7 +1137,7 @@ if (! function_exists('catalogoMundoDoCt02')) {
         }
 
         if ($mundo === 'peça que cita a feature pelo nome') {
-            $pecas  = json_decode((string) file_get_contents(base_path('site/mapa/pecas.json')), true);
+            $pecas  = modeloDoMapa()['pecas'];
             $indice = array_key_first(array_filter($pecas, fn (array $peca): bool => ($peca['features'] ?? []) !== []));
             $nome   = catalogoNormalizar(catalogoLinhaDe($catalogo['pt'], $pecas[$indice]['features'][0])[1]);
 
@@ -1265,7 +1216,7 @@ it('[CT-02] o README, as páginas do site e o mapa só citam F-nn que o catálog
     if ($mundo === 'publicados') {
         $doMapa = [];
 
-        foreach (json_decode((string) file_get_contents(base_path('site/mapa/pecas.json')), true) as $peca) {
+        foreach (modeloDoMapa()['pecas'] as $peca) {
             array_push($doMapa, ...($peca['features'] ?? []));
         }
 
@@ -1284,7 +1235,7 @@ it('[CT-02] o README, as páginas do site e o mapa só citam F-nn que o catálog
     'lista de features num arquivo do mapa'              => ['arquivo do mapa com uma lista de features, com a F-nn e o nome', 'reprova'],
     'lista só de nomes na página do mapa'                => ['página do mapa com uma lista só de nomes', 'reprova'],
     'card de três nomes num arquivo do mapa'             => ['arquivo do mapa com um card de três itens que são nomes de F-nn', 'reprova'],
-])->skip(fn (): bool => ! naArvoreDoKit(), 'docs/, README e site/ não viajam no pacote: a guarda só roda na árvore do kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório das páginas do site, o README e site/ não viajam no pacote: a guarda só roda na árvore do kit');
 
 if (! function_exists('catalogoMundoDoCt03')) {
     /**
@@ -1297,12 +1248,12 @@ if (! function_exists('catalogoMundoDoCt03')) {
             fn (string $termo): array => ['termo' => $termo, 'removida' => false],
             catalogoBase()[$idioma],
         );
-        $pt         = catalogoLerCatalogo('pt');
+        $pt         = linhasDoCatalogo('pt');
         $removerF05 = fn (?string $motivo): array => catalogoMudarLinha($pt, 'F-05', fn (array $celulas): array => catalogoMarcarRemovida($celulas, 'pt', $motivo));
         $motivoReal = 'o kit deixou de oferecer passkeys, que nenhum painel ligava';
 
         $idiomas = match ($mundo) {
-            'publicado, pt e en'                            => ['pt' => $pt, 'en' => catalogoLerCatalogo('en')],
+            'publicado, pt e en'                            => ['pt' => $pt, 'en' => linhasDoCatalogo('en')],
             'cópia com a F-10 e a F-11 trocadas de feature' => ['pt' => catalogoTrocarConteudo($pt, 'F-10', 'F-11')],
             'cópia sem a linha da F-05'                     => ['pt' => catalogoSemLinha($pt, 'F-05')],
             'cópia com a F-05 marcada como removida, com o motivo',
@@ -1352,14 +1303,14 @@ it('[CT-03] o número da base fica com a sua feature, ou fica marcado como remov
     'removida × manter'                              => ['d9608c5a com a F-05 removida', 'cópia que mantém a F-05 marcada como removida, com o motivo', 'aceita', []],
     'removida × dar o número a outra feature'        => ['d9608c5a com a F-05 removida', 'cópia em que a F-05 descreve outra feature', 'reprova', [['F-05']]],
     'removida × remover sem registro'                => ['d9608c5a com a F-05 removida', 'cópia sem a linha da F-05', 'reprova', [['F-05']]],
-])->skip(fn (): bool => ! naArvoreDoKit(), 'docs/ não viaja no pacote: a guarda do catálogo só roda na árvore do kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório das páginas do site não viaja no pacote: a guarda do catálogo só roda na árvore do kit');
 
 it('[CT-04] os números que a base não tem começam na F-72, seguem em sequência e não têm sufixo', function (string $mundo, string $resultado, array $nomeados): void {
     $numerosDaBase = array_keys(catalogoBase()['pt']);
     $mundos        = [];
 
     foreach (['pt', 'en'] as $idioma) {
-        $publicado = catalogoLerCatalogo($idioma);
+        $publicado = linhasDoCatalogo($idioma);
         $daBase    = array_values(array_filter($publicado, fn (array $celulas): bool => in_array($celulas[0], $numerosDaBase, true)));
         $novaComo  = fn (string $numero, string $de): array => array_replace(catalogoLinhaDe($publicado, $de), [0 => $numero]);
 
@@ -1400,10 +1351,10 @@ it('[CT-04] os números que a base não tem começam na F-72, seguem em sequênc
     'borda+1'        => ['cópia com um único número novo, a F-73', 'reprova', [['F-73', 'pula a F-72']]],
     'buraco'         => ['cópia com os números novos F-72 e F-74', 'reprova', [['F-74', 'pula a F-73']]],
     'sufixo novo'    => ['cópia com um único número novo, a F-03d', 'reprova', [['F-03d']]],
-])->skip(fn (): bool => ! naArvoreDoKit(), 'docs/ não viaja no pacote: a guarda do catálogo só roda na árvore do kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório das páginas do site não viaja no pacote: a guarda do catálogo só roda na árvore do kit');
 
 it('[CT-05] todo item de feature do README da base e toda página do site chegam ao catálogo, ou a página está na lista das que não descrevem feature', function (string $fonte, string $idioma): void {
-    $linhas  = catalogoLerCatalogo($idioma);
+    $linhas  = linhasDoCatalogo($idioma);
     $tabela  = catalogoTabelaDoReadme($idioma);
     $lista   = catalogoPaginasSemFeature();
     $paginas = paginasDoSite($idioma);
@@ -1470,10 +1421,10 @@ it('[CT-05] todo item de feature do README da base e toda página do site chegam
     'páginas de docs/en/' => ['todas as páginas de docs/', 'en'],
     'README publicado pt' => ['lista de features do README publicado', 'pt'],
     'README publicado en' => ['lista de features do README publicado', 'en'],
-])->skip(fn (): bool => ! naArvoreDoKit(), 'docs/ e README não viajam no pacote: a guarda das fontes só roda na árvore do kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório das páginas do site e o README não viajam no pacote: a guarda das fontes só roda na árvore do kit');
 
 it('[CT-35] a guarda das fontes reprova o item casado com a feature errada, a página escondida na lista e o motivo de enfeite', function (string $mundo, array $nomeados): void {
-    $linhas = catalogoLerCatalogo('pt');
+    $linhas = linhasDoCatalogo('pt');
     $tabela = catalogoTabelaDoReadme('pt');
     $lista  = catalogoPaginasSemFeature();
     $tipo   = 'readme';
@@ -1526,4 +1477,4 @@ it('[CT-35] a guarda das fontes reprova o item casado com a feature errada, a p�
     'motivo de enfeite (—)'             => ['cópia da lista com a página comecar/index.md, com o motivo "—"', [['comecar/index.md']]],
     'motivo de enfeite (não se aplica)' => ['cópia da lista com a página comecar/index.md, com o motivo "não se aplica", sem porquê', [['comecar/index.md']]],
     'item novo sem F-nn'                => ['cópia do README pt com o item "Mapa interativo" fora da tabela', [['Mapa interativo']]],
-])->skip(fn (): bool => ! naArvoreDoKit(), 'docs/ e README não viajam no pacote: a guarda das fontes só roda na árvore do kit');
+])->skip(fn (): bool => ! naArvoreDoKit(), 'o diretório das páginas do site e o README não viajam no pacote: a guarda das fontes só roda na árvore do kit');

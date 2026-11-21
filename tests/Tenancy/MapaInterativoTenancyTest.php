@@ -11,6 +11,10 @@
  *
  * Cada guarda é uma função aplicada ao modelo publicado e a cópias adulteradas em memória: o controle
  * chama a mesma função da linha "publicado".
+ *
+ * O modelo, os diagramas, o registro vivo, o que o modelo dá ao painel no modo, o catálogo, a F-nn da peça e
+ * o motivo de enfeite moram em `tests/Pest.php`, porque as guardas sem tenant também os usam
+ * (`.ai/rules/testes.md`).
  */
 
 use Filament\Facades\Filament;
@@ -29,131 +33,26 @@ beforeEach(function (): void {
 /** Os cinco tipos de registro que o `registra` do modelo leva, na ordem do `04`. */
 const MAPA_TENANCY_TIPOS_DE_REGISTRO = ['recurso', 'pagina', 'widget', 'plugin', 'middleware'];
 
-if (! function_exists('mapaTenancyLerJson')) {
-    /**
-     * @return array<mixed>
-     */
-    function mapaTenancyLerJson(string $caminho): array
-    {
-        return json_decode((string) file_get_contents(base_path($caminho)), true, 512, JSON_THROW_ON_ERROR);
-    }
-}
-
-if (! function_exists('mapaTenancyModelo')) {
-    /**
-     * O modelo publicado: peças indexadas pelo id, ligações e os arquivos de diagrama (a pasta é o manifesto).
-     *
-     * @return array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>, diagramas: list<array<string, mixed>>}
-     */
-    function mapaTenancyModelo(): array
-    {
-        $pecas = [];
-        foreach (mapaTenancyLerJson('site/mapa/pecas.json') as $peca) {
-            $pecas[$peca['id']] = $peca;
-        }
-
-        $diagramas = [];
-        foreach (glob(base_path('site/mapa/diagramas/*.json')) ?: [] as $arquivo) {
-            $diagramas[] = mapaTenancyLerJson('site/mapa/diagramas/'.basename($arquivo));
-        }
-
-        return ['pecas' => $pecas, 'ligacoes' => mapaTenancyLerJson('site/mapa/ligacoes.json'), 'diagramas' => $diagramas];
-    }
-}
-
-if (! function_exists('mapaTenancyNormalizarMiddleware')) {
-    /**
-     * `Classe:parametro` vira `Classe`; o alias `panel:{id}` fica inteiro.
-     */
-    function mapaTenancyNormalizarMiddleware(string $middleware): string
-    {
-        if (str_starts_with($middleware, 'panel:')) {
-            return $middleware;
-        }
-
-        return explode(':', $middleware)[0];
-    }
-}
-
-if (! function_exists('mapaTenancyRegistroVivo')) {
-    /**
-     * O que o painel registra, lido dos getters do Filament (Setup Global do `04`), por tipo de registro.
-     * Inclui as páginas que o painel liga pela configuração e as que o plugin registra.
-     *
-     * @return array<string, list<string>>
-     */
-    function mapaTenancyRegistroVivo(Panel $painel): array
-    {
-        $paginas = array_values($painel->getPages());
-        foreach ([
-            $painel->getLoginRouteAction(),
-            $painel->getRegistrationRouteAction(),
-            $painel->getRequestPasswordResetRouteAction(),
-            $painel->getResetPasswordRouteAction(),
-            $painel->getEmailVerificationPromptRouteAction(),
-            $painel->getProfilePage(),
-            $painel->getTenantRegistrationPage(),
-            $painel->getTenantProfilePage(),
-        ] as $pagina) {
-            if (is_string($pagina) && class_exists($pagina)) {
-                $paginas[] = $pagina;
-            }
-        }
-
-        $middlewares = [...$painel->getMiddleware(), ...$painel->getAuthMiddleware()];
-        if ($painel->hasTenancy()) {
-            $middlewares = [...$middlewares, ...$painel->getTenantMiddleware()];
-        }
-
-        $registro = [
-            'recurso'    => array_values($painel->getResources()),
-            'pagina'     => $paginas,
-            'widget'     => array_values(array_filter($painel->getWidgets(), 'is_string')),
-            'plugin'     => array_values(array_map(fn (object $plugin): string => $plugin::class, $painel->getPlugins())),
-            'middleware' => array_map(mapaTenancyNormalizarMiddleware(...), array_filter($middlewares, 'is_string')),
-        ];
-
-        return array_map(fn (array $ids): array => array_values(array_unique($ids)), $registro);
-    }
-}
-
-if (! function_exists('mapaTenancyRegistroDoModelo')) {
-    /**
-     * O que o modelo dá ao painel no modo, pelas ligações `registra` que saem de `painel:{id}`, por tipo.
-     *
-     * @param  array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
-     * @return array<string, list<string>>
-     */
-    function mapaTenancyRegistroDoModelo(array $modelo, string $painel, string $modo): array
-    {
-        $registro = array_fill_keys(MAPA_TENANCY_TIPOS_DE_REGISTRO, []);
-
-        foreach ($modelo['ligacoes'] as $ligacao) {
-            if ($ligacao['de'] !== "painel:{$painel}" || $ligacao['verbo'] !== 'registra' || ! in_array($modo, $ligacao['modos'], true)) {
-                continue;
-            }
-            $tipo = $modelo['pecas'][$ligacao['para']]['tipo'] ?? null;
-            if (in_array($tipo, MAPA_TENANCY_TIPOS_DE_REGISTRO, true)) {
-                $registro[$tipo][] = $ligacao['para'];
-            }
-        }
-
-        return array_map(fn (array $ids): array => array_values(array_unique($ids)), $registro);
-    }
-}
-
 if (! function_exists('mapaTenancyConferirRegistro')) {
     /**
-     * A guarda do registro (R11): o painel está inteiro no modelo e o modelo não dá ao modo nada além.
-     * Devolve os motivos da reprovação; vazio é "aceita".
+     * A guarda do registro (R11): o painel está inteiro no modelo e o modelo não dá ao modo nada além,
+     * tipo a tipo (o tipo do lado do modelo é o da peça). Devolve os motivos da reprovação; vazio é "aceita".
      *
      * @param  array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
      * @return list<string>
      */
     function mapaTenancyConferirRegistro(array $modelo, Panel $painel, string $modo): array
     {
-        $vivo    = mapaTenancyRegistroVivo($painel);
-        $dado    = mapaTenancyRegistroDoModelo($modelo, $painel->getId(), $modo);
+        $vivo = registroVivoDoPainel($painel);
+        $dado = array_fill_keys(MAPA_TENANCY_TIPOS_DE_REGISTRO, []);
+
+        foreach (registradasNoModelo($modelo, $painel->getId(), $modo) as $id) {
+            $tipo = $modelo['pecas'][$id]['tipo'] ?? null;
+            if (in_array($tipo, MAPA_TENANCY_TIPOS_DE_REGISTRO, true)) {
+                $dado[$tipo][] = $id;
+            }
+        }
+
         $motivos = [];
 
         foreach (MAPA_TENANCY_TIPOS_DE_REGISTRO as $tipo) {
@@ -169,57 +68,22 @@ if (! function_exists('mapaTenancyConferirRegistro')) {
     }
 }
 
-if (! function_exists('mapaTenancyCatalogo')) {
-    /**
-     * As linhas do catálogo de um idioma: F-nn, "onde fica" (coluna achada pelo cabeçalho) e se está removida.
-     *
-     * @return list<array{fnn: string, onde: string, removida: bool}>
-     */
-    function mapaTenancyCatalogo(string $idioma): array
-    {
-        $linhas     = [];
-        $colunaOnde = null;
-
-        foreach (file(base_path("docs/{$idioma}/operacao/roteiro-de-features.md"), FILE_IGNORE_NEW_LINES) ?: [] as $linha) {
-            if (! str_starts_with($linha, '|')) {
-                continue;
-            }
-            $celulas = array_map(trim(...), preg_split('/(?<!\\\\)\|/', trim($linha, '| ')) ?: []);
-
-            if (($celulas[0] ?? '') === '#') {
-                $colunaOnde = array_search($idioma === 'pt' ? 'Onde' : 'Where', $celulas, true);
-
-                continue;
-            }
-            if ($colunaOnde === null || ! preg_match('/^F-\d+[a-z]?$/', $celulas[0] ?? '')) {
-                continue;
-            }
-            $linhas[] = [
-                'fnn'      => $celulas[0],
-                'onde'     => $celulas[$colunaOnde] ?? '',
-                'removida' => (bool) preg_match('/remov(ida|ed)/i', $linha),
-            ];
-        }
-
-        return $linhas;
-    }
-}
-
 if (! function_exists('mapaTenancyCaminhosComOrganizacao')) {
     /**
-     * Os caminhos entre crases que começam por `/` e trazem `{org}` ou `{/org}`, por F-nn.
+     * Os caminhos entre crases que começam por `/` e trazem `{org}` ou `{/org}`, por F-nn, lidos da célula
+     * "onde fica" (a quarta) de cada linha do catálogo.
      *
-     * @param  list<array{fnn: string, onde: string, removida: bool}>  $catalogo
+     * @param  list<list<string>>  $catalogo  as linhas de `linhasDoCatalogo()`
      * @return list<array{fnn: string, caminho: string}>
      */
     function mapaTenancyCaminhosComOrganizacao(array $catalogo): array
     {
         $caminhos = [];
-        foreach ($catalogo as $linha) {
-            preg_match_all('/`(\/[^`]*)`/', $linha['onde'], $achados);
+        foreach ($catalogo as $celulas) {
+            preg_match_all('/`(\/[^`]*)`/', $celulas[3], $achados);
             foreach ($achados[1] as $caminho) {
                 if (str_contains($caminho, '{org}') || str_contains($caminho, '{/org}')) {
-                    $caminhos[] = ['fnn' => $linha['fnn'], 'caminho' => $caminho];
+                    $caminhos[] = ['fnn' => $celulas[0], 'caminho' => $caminho];
                 }
             }
         }
@@ -264,7 +128,7 @@ if (! function_exists('mapaTenancyConferirCaminhos')) {
      * A guarda da rota (R6): todo caminho com organização do catálogo resolve. Devolve os motivos e os
      * caminhos conferidos por F-nn.
      *
-     * @param  list<array{fnn: string, onde: string, removida: bool}>  $catalogo
+     * @param  list<list<string>>  $catalogo  as linhas de `linhasDoCatalogo()`
      * @return array{motivos: list<string>, conferidos: array<string, list<string>>}
      */
     function mapaTenancyConferirCaminhos(array $catalogo): array
@@ -285,20 +149,6 @@ if (! function_exists('mapaTenancyConferirCaminhos')) {
     }
 }
 
-if (! function_exists('mapaTenancyMotivoDeEnfeite')) {
-    /**
-     * O motivo vazio, só de travessão ou pontuação, ou "não se aplica" sem dizer por quê.
-     */
-    function mapaTenancyMotivoDeEnfeite(?string $motivo): bool
-    {
-        $limpo = trim((string) $motivo);
-
-        return $limpo === ''
-            || ! preg_match('/[\p{L}\p{N}]/u', $limpo)
-            || preg_match('/^n(ão|ao) se aplica\.?$/iu', $limpo) === 1;
-    }
-}
-
 if (! function_exists('mapaTenancyConferirFeatures')) {
     /**
      * A guarda das F-nn (R28): toda peça registrada (recurso, página, widget, plugin) entrega ao menos uma
@@ -311,20 +161,19 @@ if (! function_exists('mapaTenancyConferirFeatures')) {
      */
     function mapaTenancyConferirFeatures(array $modelo, array $catalogo, Panel $painel, array $lista): array
     {
-        $vivo       = mapaTenancyRegistroVivo($painel);
+        $vivo       = registroVivoDoPainel($painel);
         $motivos    = [];
         $conferidas = [];
 
         foreach (['recurso', 'pagina', 'widget', 'plugin'] as $tipo) {
             foreach ($vivo[$tipo] as $id) {
                 $conferidas[] = $id;
-                $features     = array_intersect($modelo['pecas'][$id]['features'] ?? [], $catalogo);
 
-                if ($features !== []) {
+                if (fnnDaPeca($modelo['pecas'], $id, $catalogo) !== []) {
                     continue;
                 }
                 if (array_key_exists($id, $lista)) {
-                    if (mapaTenancyMotivoDeEnfeite($lista[$id])) {
+                    if (motivoDeEnfeite($lista[$id])) {
                         $motivos[] = "{$id} está na lista sem motivo";
                     }
 
@@ -394,7 +243,7 @@ if (! function_exists('mapaTenancyConferirDesenhoDoRegistro')) {
      */
     function mapaTenancyConferirDesenhoDoRegistro(array $modelo, array $diagramas, Panel $painel, string $modo): array
     {
-        $vivo      = array_merge(...array_values(mapaTenancyRegistroVivo($painel)));
+        $vivo      = array_merge(...array_values(registroVivoDoPainel($painel)));
         $desenhado = [];
 
         foreach ($diagramas as $diagrama) {
@@ -432,13 +281,13 @@ it('[CT-12] com tenant, tudo que o painel registra está no modelo, e o modelo n
     $painel = Filament::getPanel($id);
     expect($painel->hasTenancy())->toBe($tenancy);
 
-    $modelo = mapaTenancyModelo();
+    $modelo = modeloDoMapaPorId();
 
     // Então 1 e 2: todo registro do painel é destino de ligação dele no modelo, e o modelo não dá nada além
     expect(mapaTenancyConferirRegistro($modelo, $painel, 'com'))->toBe([]);
 
-    $vivo = array_merge(...array_values(mapaTenancyRegistroVivo($painel)));
-    $dado = array_merge(...array_values(mapaTenancyRegistroDoModelo($modelo, $id, 'com')));
+    $vivo = array_merge(...array_values(registroVivoDoPainel($painel)));
+    $dado = registradasNoModelo($modelo, $id, 'com');
     expect($vivo)->not->toBeEmpty();
 
     // E <registrado> está nos dois lados
@@ -470,10 +319,10 @@ it('[CT-12] com tenant, tudo que o painel registra está no modelo, e o modelo n
 it('[CT-30] com tenant, toda peça que o painel registra entrega ao menos uma F-nn do catálogo, ou está na lista com o motivo', function (string $id, string $ancora): void {
     mapaTenancyDadoModoComTenant();
     $painel   = Filament::getPanel($id);
-    $catalogo = array_column(array_filter(mapaTenancyCatalogo('pt'), fn (array $l): bool => ! $l['removida']), 'fnn');
+    $catalogo = array_column(array_filter(linhasDoCatalogo('pt'), fn (array $celulas): bool => preg_match('/remov(ida|ed)/i', implode(' | ', $celulas)) !== 1), 0);
     expect($catalogo)->not->toBeEmpty();
 
-    $resultado = mapaTenancyConferirFeatures(mapaTenancyModelo(), $catalogo, $painel, []);
+    $resultado = mapaTenancyConferirFeatures(modeloDoMapaPorId(), $catalogo, $painel, []);
 
     expect($resultado['motivos'])->toBe([])
         ->and($resultado['conferidas'])->toContain($ancora);
@@ -486,8 +335,8 @@ it('[CT-30] com tenant, toda peça que o painel registra entrega ao menos uma F-
 it('[CT-38] com tenant, os diagramas de arquitetura e a árvore de registro de cada painel que valem nesse modo desenham o registro dele nesse modo, e nada além', function (string $id, string $mundo, array $nomeados): void {
     mapaTenancyDadoModoComTenant();
     $painel    = Filament::getPanel($id);
-    $modelo    = mapaTenancyModelo();
-    $diagramas = $modelo['diagramas'];
+    $modelo    = modeloDoMapaPorId();
+    $diagramas = array_values(diagramasDoMapa());
 
     if ($mundo === 'só compartilhados') {
         // o `/app` só com os diagramas que valem nos dois modos
@@ -529,7 +378,7 @@ it('[CT-38] com tenant, os diagramas de arquitetura e a árvore de registro de c
 
 it('[CT-44] com tenant, todo caminho do "onde fica" que leva a organização resolve no roteador', function (string $idioma): void {
     mapaTenancyDadoModoComTenant();
-    $catalogo = mapaTenancyCatalogo($idioma);
+    $catalogo = linhasDoCatalogo($idioma);
     expect($catalogo)->not->toBeEmpty();
 
     $resultado = mapaTenancyConferirCaminhos($catalogo);
