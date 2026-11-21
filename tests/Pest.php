@@ -4231,3 +4231,123 @@ function motivoDeEnfeite(mixed $motivo): bool
 
     return $nucleo === '' || in_array($nucleo, ['não se aplica', 'nao se aplica', 'not applicable', 'does not apply', 'n a'], true);
 }
+
+/**
+ * O `node` do ambiente, lido pela versão: o `Dado` da costura G5 do `04`. Sem ele o caso reprova, e não pula
+ * (Q21). Devolve a versão, e o caso confere o formato dela.
+ */
+function versaoDoNode(): string
+{
+    $processo = Process::path(base_path())->timeout(60)->run(['node', '--version']);
+
+    expect($processo->successful())->toBeTrue('o node do ambiente não respondeu ao --version: '.$processo->errorOutput());
+
+    return trim($processo->output());
+}
+
+/**
+ * A entrada que o gerador do mapa entrega ao archify, na forma de leitura da costura G5 do `04`: um `node` filho
+ * importa `site/mapa/gerar.mjs` e chama as funções que ele exporta (`carregarModelo`, `entradaDoArchify` e
+ * `idArchify`), sem baixar o archify nem renderizar. O script e o pedido moram numa pasta temporária do sistema,
+ * apagada no fim; nada é escrito em `site/`. O gerador é importado, e não executado: o caminho dele vai no
+ * `argv[2]`, porque ele roda o build inteiro quando o `argv[1]` é ele mesmo.
+ *
+ * O pedido, todo opcional, diz o mundo que o filho monta:
+ * - `extras`: diagramas em memória, montados depois dos publicados; `soExtras`: só eles;
+ * - `construtor`: só os diagramas com esse construtor; `slugs`: só esses (vazio, todos). O comparativo nunca
+ *   entra: ele é a soma de dois mapas;
+ * - `ligacoes`: acrescentadas à cópia em memória do modelo; `agrupamentos`: acrescentados, por slug, à cópia
+ *   em memória do diagrama;
+ * - `idiomas`: os da montagem (sem ele, `pt` e `en`);
+ * - `marcarAncoras`: cada âncora, da peça e do diagrama, leva o próprio trecho no `label` — a única chave
+ *   opcional da âncora —, para que a guarda ache, na linha que o gerador calculou, o trecho que a projetou;
+ * - `soCaixasESetas`: da entrada, só as caixas (`components`, com o rótulo secundário) e as setas
+ *   (`connections`, com o traço).
+ *
+ * Devolve o id do archify de cada peça do modelo e, por slug e por idioma, a entrada sem o `meta`, ou o erro com
+ * que o gerador recusou o diagrama. Um mundo por processo, porque o modelo de `carregarModelo()` é cache mutável;
+ * o mesmo pedido monta uma vez por execução da suíte. Sem `node`, ou com o filho quebrado, o caso reprova (Q21):
+ * por exceção ou, com `$falhaComoExpectativa`, por expectativa — que conta uma asserção na primeira montagem do
+ * pedido, e só nela.
+ *
+ * @param  array{extras?: list<array<string, mixed>>, soExtras?: bool, construtor?: string, slugs?: list<string>, ligacoes?: list<array<string, mixed>>, agrupamentos?: array<string, list<array<string, mixed>>>, idiomas?: list<string>, marcarAncoras?: bool, soCaixasESetas?: bool}  $pedido
+ * @return array{ids: array<string, string>, diagramas: array<string, array<string, array<string, mixed>>>}
+ */
+function entradasDoGeradorDoMapa(array $pedido = [], bool $falhaComoExpectativa = false): array
+{
+    static $montadas = [];
+
+    $json = json_encode((object) $pedido, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    if (isset($montadas[$json])) {
+        return $montadas[$json];
+    }
+
+    $script = <<<'JS'
+        import { readFileSync, readdirSync } from 'node:fs';
+        import { join } from 'node:path';
+        import { pathToFileURL } from 'node:url';
+
+        const [gerador, pasta, arquivoDoPedido] = process.argv.slice(2);
+        const pedido = JSON.parse(readFileSync(arquivoDoPedido, 'utf8'));
+        const { carregarModelo, entradaDoArchify, idArchify } = await import(pathToFileURL(gerador).href);
+
+        const marcar = (valor) => {
+          if (Array.isArray(valor)) return valor.forEach(marcar);
+          if (valor === null || typeof valor !== 'object') return;
+          if (typeof valor.arquivo === 'string' && typeof valor.trecho === 'string') valor.label = valor.trecho;
+          Object.values(valor).forEach(marcar);
+        };
+
+        const modelo = carregarModelo();
+        modelo.ligacoes.push(...(pedido.ligacoes ?? []));
+        if (pedido.marcarAncoras) marcar([...modelo.pecas.values()]);
+        const saida = { ids: {}, diagramas: {} };
+        for (const id of modelo.pecas.keys()) saida.ids[id] = idArchify(id);
+        const publicados = pedido.soExtras ? [] : readdirSync(pasta).filter((nome) => nome.endsWith('.json')).sort()
+          .map((nome) => JSON.parse(readFileSync(join(pasta, nome), 'utf8')));
+        for (let diagrama of [...publicados, ...(pedido.extras ?? [])]) {
+          if (diagrama.tipo === 'compare') continue;
+          if (pedido.construtor && diagrama.construtor !== pedido.construtor) continue;
+          if (pedido.slugs?.length && !pedido.slugs.includes(diagrama.slug)) continue;
+          const agrupamentos = pedido.agrupamentos?.[diagrama.slug] ?? [];
+          if (agrupamentos.length) diagrama = { ...diagrama, agrupamentos: [...(diagrama.agrupamentos ?? []), ...agrupamentos] };
+          if (pedido.marcarAncoras) marcar(diagrama);
+          saida.diagramas[diagrama.slug] = {};
+          for (const idioma of pedido.idiomas ?? ['pt', 'en']) {
+            try {
+              const ir = entradaDoArchify(diagrama, idioma, {});
+              delete ir.meta;
+              saida.diagramas[diagrama.slug][idioma] = pedido.soCaixasESetas ? {
+                components: (ir.components ?? []).map(({ id, sublabel }) => ({ id, sublabel: sublabel ?? null })),
+                connections: (ir.connections ?? []).map(({ id, from, to, variant }) => ({ id, from, to, variant: variant ?? null })),
+              } : ir;
+            } catch (erro) {
+              saida.diagramas[diagrama.slug][idioma] = { erro: String(erro?.message ?? erro) };
+            }
+          }
+        }
+        process.stdout.write(JSON.stringify(saida));
+        JS;
+
+    $pasta = sys_get_temp_dir().DIRECTORY_SEPARATOR.'mapa-gerador-'.bin2hex(random_bytes(6));
+    File::ensureDirectoryExists($pasta);
+
+    try {
+        file_put_contents($pasta.DIRECTORY_SEPARATOR.'entrada.mjs', $script);
+        file_put_contents($pasta.DIRECTORY_SEPARATOR.'pedido.json', $json);
+        $processo = Process::path(base_path())->timeout(300)->run([
+            'node', $pasta.DIRECTORY_SEPARATOR.'entrada.mjs', base_path('site/mapa/gerar.mjs'), base_path('site/mapa/diagramas'), $pasta.DIRECTORY_SEPARATOR.'pedido.json',
+        ]);
+    } finally {
+        File::deleteDirectory($pasta);
+    }
+
+    if ($falhaComoExpectativa) {
+        expect($processo->successful())->toBeTrue('o node não montou a entrada do archify: '.$processo->errorOutput());
+    } elseif (! $processo->successful()) {
+        throw new RuntimeException('o node não montou a entrada do archify: '.trim($processo->errorOutput().$processo->output()));
+    }
+
+    return $montadas[$json] = json_decode($processo->output(), true, 512, JSON_THROW_ON_ERROR);
+}

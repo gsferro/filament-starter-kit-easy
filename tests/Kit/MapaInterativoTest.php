@@ -16,8 +16,8 @@
  * Cada guarda devolve `aceita`, o `motivo` (todas as violações, nomeando o item) e o que conferiu.
  *
  * Os helpers só deste arquivo moram aqui, com o prefixo `mapaModelo`. Os que as outras guardas do mapa também
- * usam (o modelo, os diagramas, o registro vivo, o catálogo, o índice do git, a F-nn da peça e o motivo de
- * enfeite) moram em `tests/Pest.php` (`.ai/rules/testes.md`).
+ * usam (o modelo, os diagramas, o registro vivo, o catálogo, o índice do git, a F-nn da peça, o motivo de
+ * enfeite e a entrada que o gerador dá ao archify) moram em `tests/Pest.php` (`.ai/rules/testes.md`).
  */
 
 use Filament\Contracts\Plugin;
@@ -2488,89 +2488,9 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
 |--------------------------------------------------------------------------
 | Helpers do step 9: a linha que o build dá (CT-52), as âncoras sem guarda (CT-53) e os ids dos construídos (CT-54)
 |--------------------------------------------------------------------------
+| A entrada que o gerador dá ao archify (costura G5, forma de leitura) vem de `entradasDoGeradorDoMapa()`, de
+| `tests/Pest.php`, que as guardas da R38 também usam.
 */
-
-if (! defined('MAPA_MODELO_LEITURA_DO_GERADOR')) {
-    /**
-     * A forma de leitura da costura G5 (`04`, Costuras de Teste): um `node` que importa `site/mapa/gerar.mjs` e
-     * devolve, por diagrama, a entrada que o gerador entrega ao archify (`entradaDoArchify`, a função exportada),
-     * sem baixar o archify nem renderizar. Cada âncora leva o próprio trecho no `label` — a única chave opcional da
-     * âncora —, para a guarda achar, na linha que o gerador calculou, o trecho que a projetou. O caminho do gerador
-     * vem por `MAPA_GERAR`, e não pelo `argv`: o gerador roda o build inteiro quando o `argv[1]` é ele mesmo.
-     */
-    define('MAPA_MODELO_LEITURA_DO_GERADOR', <<<'JS'
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { pathToFileURL } from 'node:url';
-
-const gerador = process.env.MAPA_GERAR;
-const { carregarModelo, entradaDoArchify } = await import(pathToFileURL(gerador).href);
-
-let bruto = '';
-for await (const pedaco of process.stdin) bruto += pedaco;
-const { extras = [], soExtras = false } = JSON.parse(bruto || '{}');
-
-const marcar = (valor) => {
-  if (Array.isArray(valor)) return valor.forEach(marcar);
-  if (valor === null || typeof valor !== 'object') return;
-  if (typeof valor.arquivo === 'string' && typeof valor.trecho === 'string') valor.label = valor.trecho;
-  Object.values(valor).forEach(marcar);
-};
-
-marcar([...carregarModelo().pecas.values()]);
-const pasta = join(dirname(gerador), 'diagramas');
-const publicados = soExtras ? [] : readdirSync(pasta).filter((nome) => nome.endsWith('.json')).sort()
-  .map((nome) => JSON.parse(readFileSync(join(pasta, nome), 'utf8')));
-const saida = {};
-for (const diagrama of [...publicados, ...extras]) {
-  if (diagrama.tipo === 'compare') continue;
-  marcar(diagrama);
-  try {
-    const ir = entradaDoArchify(diagrama, 'pt', {});
-    delete ir.meta;
-    saida[diagrama.slug] = { tipo: diagrama.tipo, ir };
-  } catch (erro) {
-    saida[diagrama.slug] = { tipo: diagrama.tipo, erro: String(erro?.message ?? erro) };
-  }
-}
-process.stdout.write(JSON.stringify(saida));
-JS);
-}
-
-if (! function_exists('mapaModeloEntradasDoArchify')) {
-    /**
-     * A entrada que o gerador monta para o archify, por slug (`{tipo, ir}` ou `{tipo, erro}`), rodada num `node`
-     * filho. O script vai para um arquivo temporário fora do repositório e sai no `finally`; nada é escrito em
-     * `site/`. Os controles passam diagramas em memória (`$extras`); `$soExtras` deixa os publicados de fora.
-     *
-     * @param  list<array<string, mixed>>  $extras
-     * @return array<string, array<string, mixed>>
-     */
-    function mapaModeloEntradasDoArchify(array $extras = [], bool $soExtras = false): array
-    {
-        $script = sys_get_temp_dir().DIRECTORY_SEPARATOR.'mapa-modelo-leitura-'.bin2hex(random_bytes(6)).'.mjs';
-
-        try {
-            file_put_contents($script, MAPA_MODELO_LEITURA_DO_GERADOR);
-
-            $processo = Process::path(base_path())
-                ->env(['MAPA_GERAR' => base_path('site/mapa/gerar.mjs')])
-                ->input(json_encode(['extras' => $extras, 'soExtras' => $soExtras], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))
-                ->timeout(300)
-                ->run(['node', $script]);
-
-            if (! $processo->successful()) {
-                throw new RuntimeException('o node não montou a entrada do archify: '.trim($processo->errorOutput().$processo->output()));
-            }
-
-            return json_decode($processo->output(), true, 512, JSON_THROW_ON_ERROR);
-        } finally {
-            if (is_file($script)) {
-                unlink($script);
-            }
-        }
-    }
-}
 
 if (! function_exists('mapaModeloTextosNaRevisao')) {
     /**
@@ -2628,7 +2548,7 @@ if (! function_exists('mapaModeloConferirLinhasDoBuild')) {
      * peça — tem o trecho da âncora fora de comentário, pela sintaxe do tipo do arquivo, no texto da revisão que o
      * gerador lê. Diagrama que o gerador recusou reprova, com a mensagem dele.
      *
-     * @param  array<string, array<string, mixed>>  $entradas  a saída de `mapaModeloEntradasDoArchify()`
+     * @param  array<string, array<string, mixed>>  $entradas  os `diagramas` de `entradasDoGeradorDoMapa()`, montados em `pt` e com as âncoras marcadas
      * @return array<string, mixed>
      */
     function mapaModeloConferirLinhasDoBuild(array $entradas): array
@@ -2637,8 +2557,8 @@ if (! function_exists('mapaModeloConferirLinhasDoBuild')) {
         $ancoras   = [];
 
         foreach ($entradas as $slug => $saida) {
-            if (isset($saida['erro'])) {
-                $violacoes[] = "o gerador recusou o diagrama {$slug}: {$saida['erro']}";
+            if (isset($saida['pt']['erro'])) {
+                $violacoes[] = "o gerador recusou o diagrama {$slug}: {$saida['pt']['erro']}";
 
                 continue;
             }
@@ -2669,9 +2589,9 @@ if (! function_exists('mapaModeloConferirLinhasDoBuild')) {
                 }
             };
 
-            $coletar(array_diff_key($saida['ir'], ['cards' => 1]), $slug);
+            $coletar(array_diff_key($saida['pt'], ['cards' => 1]), $slug);
 
-            foreach ($saida['ir']['cards'] ?? [] as $card) {
+            foreach ($saida['pt']['cards'] ?? [] as $card) {
                 if (! str_starts_with((string) ($card['title'] ?? ''), 'Prova das ligações')) {
                     continue;
                 }
@@ -2889,7 +2809,7 @@ it('[CT-52] a linha que o build dá a cada prova é a do código: o trecho está
 
     if ($mundo === 'publicados') {
         $diagramas = array_filter(diagramasDoMapa(), static fn (array $diagrama): bool => ($diagrama['tipo'] ?? null) !== 'compare');
-        $entradas  = mapaModeloEntradasDoArchify();
+        $entradas  = entradasDoGeradorDoMapa(['idiomas' => ['pt'], 'marcarAncoras' => true])['diagramas'];
 
         // o gerador montou a entrada de cada diagrama publicado (o comparativo é a soma de dois deles)
         expect(array_keys($entradas))->toEqualCanonicalizing(array_keys($diagramas));
@@ -2902,9 +2822,9 @@ it('[CT-52] a linha que o build dá a cada prova é a do código: o trecho está
         $projetadas = 0;
 
         foreach ($entradas as $saida) {
-            $projetadas += substr_count(json_encode(array_diff_key($saida['ir'] ?? [], ['cards' => 1]), JSON_THROW_ON_ERROR), '"line":');
+            $projetadas += substr_count(json_encode(array_diff_key($saida['pt'] ?? [], ['cards' => 1]), JSON_THROW_ON_ERROR), '"line":');
 
-            foreach ($saida['ir']['cards'] ?? [] as $card) {
+            foreach ($saida['pt']['cards'] ?? [] as $card) {
                 if (str_starts_with((string) ($card['title'] ?? ''), 'Prova das ligações')) {
                     $projetadas += count($card['items'] ?? []);
                 }
@@ -2948,14 +2868,14 @@ it('[CT-52] a linha que o build dá a cada prova é a do código: o trecho está
         ]],
     ];
 
-    $saida = mapaModeloEntradasDoArchify([$controle], true)['controle-ct52-locker'] ?? null;
+    $saida = entradasDoGeradorDoMapa(['extras' => [$controle], 'soExtras' => true, 'idiomas' => ['pt'], 'marcarAncoras' => true])['diagramas']['controle-ct52-locker'] ?? null;
 
     expect($saida)->not->toBeNull('o gerador não devolveu o diagrama de controle');
 
-    if (isset($saida['erro'])) {
+    if (isset($saida['pt']['erro'])) {
         // o gerador recusou a âncora ambígua: aceita, se a mensagem nomeia a ligação
-        expect(str_contains($saida['erro'], 'app-service-provider → locker') || str_contains($saida['erro'], 'AppServiceProvider → Locker'))
-            ->toBeTrue('o gerador recusou a prova sem nomear a ligação: '.$saida['erro']);
+        expect(str_contains($saida['pt']['erro'], 'app-service-provider → locker') || str_contains($saida['pt']['erro'], 'AppServiceProvider → Locker'))
+            ->toBeTrue('o gerador recusou a prova sem nomear a ligação: '.$saida['pt']['erro']);
 
         return;
     }

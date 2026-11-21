@@ -17,14 +17,13 @@
  * ao arquivo real: a linha "publicados" e as linhas de controle chamam a MESMA função.
  *
  * Helpers: os usados só por este arquivo ficam aqui, com o prefixo `mapaDiagramas`. Os que as outras guardas
- * do mapa também usam (o modelo, os diagramas, o catálogo, o registro vivo, o arquivo da classe e o motivo de
- * enfeite) moram em `tests/Pest.php` (`.ai/rules/testes.md`).
+ * do mapa também usam (o modelo, os diagramas, o catálogo, o registro vivo, o arquivo da classe, o motivo de
+ * enfeite, o `node` do ambiente e a entrada que o gerador dá ao archify) moram em `tests/Pest.php`
+ * (`.ai/rules/testes.md`).
  */
 
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Process;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -2128,25 +2127,16 @@ it('[CT-37] sem tenant, os diagramas de arquitetura e a árvore de registro de c
 | R38 — o traço da seta e a caixa de agrupamento do mapa de arquitetura (CT-46, CT-47)
 |--------------------------------------------------------------------------
 |
-| Costura G5, forma de leitura: um `node` filho importa `site/mapa/gerar.mjs` e devolve, mapa a mapa e idioma
-| a idioma, a entrada que `entradaDoArchify()` entrega ao archify, sem baixar o archify nem renderizar. A cópia
-| em memória do modelo é a que `carregarModelo()` devolve, alterada no filho antes da montagem; a do arquivo do
-| diagrama é um agrupamento a mais na cópia que o filho lê. Nada é escrito em `site/`: o script e o pedido
-| moram numa pasta temporária do sistema, apagada no fim. A guarda acha as ligações de cada par pela regra de
-| desenho da R12 (`mapaDiagramasConstruir()`), e o traço de cada verbo vem da legenda do `04`.
+| Costura G5, forma de leitura: `entradasDoGeradorDoMapa()`, de `tests/Pest.php`, roda um `node` filho que
+| importa `site/mapa/gerar.mjs` e devolve, mapa a mapa e idioma a idioma, as caixas e as setas da entrada que
+| `entradaDoArchify()` entrega ao archify, sem baixar o archify nem renderizar. A cópia em memória do modelo é a
+| que `carregarModelo()` devolve, alterada no filho antes da montagem; a do arquivo do diagrama é um agrupamento
+| a mais na cópia que o filho lê. A falha do filho reprova por expectativa, uma vez por pedido. A guarda acha as
+| ligações de cada par pela regra de desenho da R12 (`mapaDiagramasConstruir()`), e o traço de cada verbo vem da
+| legenda do `04`.
 */
 
-if (! function_exists('mapaDiagramasEntradasDoGerador')) {
-    /** O `node` do ambiente, lido pela versão. Sem ele o caso reprova, e não pula (Q21). */
-    function mapaDiagramasVersaoDoNode(): string
-    {
-        $processo = Process::path(base_path())->timeout(60)->run(['node', '--version']);
-
-        expect($processo->successful())->toBeTrue('o ambiente não tem node: '.$processo->errorOutput());
-
-        return trim($processo->output());
-    }
-
+if (! function_exists('mapaDiagramasConferirSetas')) {
     /**
      * O traço de cada verbo, como a legenda "Como ler as setas" o dá no `04` (R38): o oráculo, e não a tabela do gerador.
      *
@@ -2166,82 +2156,6 @@ if (! function_exists('mapaDiagramasEntradasDoGerador')) {
     function mapaDiagramasMapasConstruidos(): array
     {
         return array_filter(diagramasDoMapa(), static fn (array $decl): bool => ($decl['construtor'] ?? null) === 'mapa');
-    }
-
-    /** O script do processo filho: lê o pedido, altera em memória o modelo e os diagramas, e monta a entrada do archify. */
-    function mapaDiagramasScriptDaEntrada(): string
-    {
-        return <<<'JS'
-            import { readFileSync, readdirSync } from 'node:fs';
-            import { join } from 'node:path';
-            import { pathToFileURL } from 'node:url';
-
-            const [gerador, pasta, arquivoDoPedido] = process.argv.slice(2);
-            const pedido = JSON.parse(readFileSync(arquivoDoPedido, 'utf8'));
-            const { carregarModelo, entradaDoArchify, idArchify } = await import(pathToFileURL(gerador).href);
-            const modelo = carregarModelo();
-            modelo.ligacoes.push(...(pedido.ligacoes ?? []));
-            const saida = { ids: {}, diagramas: {} };
-            for (const id of modelo.pecas.keys()) saida.ids[id] = idArchify(id);
-            for (const nome of readdirSync(pasta).filter((arquivo) => arquivo.endsWith('.json')).sort()) {
-              let diagrama = JSON.parse(readFileSync(join(pasta, nome), 'utf8'));
-              if (diagrama.construtor !== 'mapa') continue;
-              if (pedido.slugs?.length && !pedido.slugs.includes(diagrama.slug)) continue;
-              const extras = pedido.agrupamentos?.[diagrama.slug] ?? [];
-              if (extras.length) diagrama = { ...diagrama, agrupamentos: [...(diagrama.agrupamentos ?? []), ...extras] };
-              saida.diagramas[diagrama.slug] = {};
-              for (const idioma of ['pt', 'en']) {
-                try {
-                  const ir = entradaDoArchify(diagrama, idioma, {});
-                  saida.diagramas[diagrama.slug][idioma] = {
-                    components: (ir.components ?? []).map(({ id, sublabel }) => ({ id, sublabel: sublabel ?? null })),
-                    connections: (ir.connections ?? []).map(({ id, from, to, variant }) => ({ id, from, to, variant: variant ?? null })),
-                  };
-                } catch (erro) {
-                  saida.diagramas[diagrama.slug][idioma] = { erro: String(erro?.message ?? erro) };
-                }
-              }
-            }
-            process.stdout.write(JSON.stringify(saida));
-            JS;
-    }
-
-    /**
-     * A entrada que o gerador entrega ao archify, por mapa construído e por idioma: as caixas (`components`, com o
-     * rótulo secundário) e as setas (`connections`), ou o erro com que o gerador recusou o diagrama; e o id do
-     * archify de cada peça do modelo. Um mundo por processo, porque o modelo de `carregarModelo()` é cache mutável.
-     *
-     * @param  list<array<string, mixed>>  $ligacoes  acrescentadas à cópia em memória do modelo
-     * @param  array<string, list<array<string, mixed>>>  $agrupamentos  acrescentados, por slug, à cópia em memória do diagrama
-     * @param  list<string>  $slugs  só estes mapas; vazio, todos
-     * @return array{ids: array<string, string>, diagramas: array<string, array<string, array<string, mixed>>>}
-     */
-    function mapaDiagramasEntradasDoGerador(array $ligacoes = [], array $agrupamentos = [], array $slugs = []): array
-    {
-        static $cache = [];
-
-        $pedido = json_encode(['ligacoes' => $ligacoes, 'agrupamentos' => (object) $agrupamentos, 'slugs' => $slugs], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-
-        if (isset($cache[$pedido])) {
-            return $cache[$pedido];
-        }
-
-        $pasta = sys_get_temp_dir().DIRECTORY_SEPARATOR.'mapa-diagramas-'.bin2hex(random_bytes(6));
-        File::ensureDirectoryExists($pasta);
-
-        try {
-            file_put_contents($pasta.DIRECTORY_SEPARATOR.'entrada.mjs', mapaDiagramasScriptDaEntrada());
-            file_put_contents($pasta.DIRECTORY_SEPARATOR.'pedido.json', $pedido);
-            $processo = Process::path(base_path())->timeout(300)->run([
-                'node', $pasta.DIRECTORY_SEPARATOR.'entrada.mjs', base_path('site/mapa/gerar.mjs'), base_path('site/mapa/diagramas'), $pasta.DIRECTORY_SEPARATOR.'pedido.json',
-            ]);
-        } finally {
-            File::deleteDirectory($pasta);
-        }
-
-        expect($processo->successful())->toBeTrue('o node não montou a entrada do archify: '.$processo->errorOutput());
-
-        return $cache[$pedido] = json_decode($processo->output(), true, 512, JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -2406,7 +2320,7 @@ if (! function_exists('mapaDiagramasEntradasDoGerador')) {
 }
 
 it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, com o traço desse verbo, e cada par de pontas tem uma seta por verbo', function (string $mundo): void {
-    expect(mapaDiagramasVersaoDoNode())->toMatch('/^v\d+\.\d+\.\d+/');
+    expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+/');
 
     $modelo  = modeloDoMapaPorId();
     $decls   = mapaDiagramasMapasConstruidos();
@@ -2417,7 +2331,7 @@ it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, co
         ->and(array_key_exists($slug, $decls))->toBeTrue("{$slug} é mapa construído");
 
     if ($mundo === 'publicados') {
-        $gerado    = mapaDiagramasEntradasDoGerador();
+        $gerado    = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true], falhaComoExpectativa: true);
         $resultado = mapaDiagramasConferirSetas($decls, $modelo, $gerado);
 
         expect(count($decls))->toBeGreaterThan(0)
@@ -2433,7 +2347,7 @@ it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, co
         $grava               = [...mapaDiagramasLigacaoDe($modelo, $recurso, $user, 'lê'), 'verbo' => 'grava'];
         $copia               = $modelo;
         $copia['ligacoes'][] = $grava;
-        $gerado              = mapaDiagramasEntradasDoGerador([$grava]);
+        $gerado              = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true, 'ligacoes' => [$grava]], falhaComoExpectativa: true);
         $par                 = $gerado['ids'][$recurso].' → '.$gerado['ids'][$user];
         $verbos              = array_keys(mapaDiagramasVerbosPorPar(mapaDiagramasConstruir($decls[$slug], $copia), $gerado['ids'])[$par] ?? []);
 
@@ -2452,7 +2366,7 @@ it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, co
     }
 
     // As duas linhas que adulteram a entrada do mapa: todas as setas do par saem, achadas pelas pontas, e entra o estado-alvo.
-    $gerado = mapaDiagramasEntradasDoGerador();
+    $gerado = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true], falhaComoExpectativa: true);
     $de     = $gerado['ids'][$recurso];
     $para   = $gerado['ids'][$user];
     $par    = "{$de} → {$para}";
@@ -2496,13 +2410,13 @@ it('[CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, co
 })->with(['publicados', 'par sem a seta de um dos verbos', 'seta com o traço de outro verbo', 'três verbos num par']);
 
 it('[CT-47] a caixa de agrupamento diz quantas peças nomeia no modo do diagrama, no número certo, e a caixa vazia não é desenhada', function (string $mundo): void {
-    expect(mapaDiagramasVersaoDoNode())->toMatch('/^v\d+\.\d+\.\d+/');
+    expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+/');
 
     $modelo = modeloDoMapaPorId();
     $decls  = mapaDiagramasMapasConstruidos();
 
     if ($mundo === 'publicados') {
-        $gerado       = mapaDiagramasEntradasDoGerador();
+        $gerado       = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true], falhaComoExpectativa: true);
         $resultado    = mapaDiagramasConferirCaixas($decls, $modelo, $gerado);
         $agrupamentos = array_sum(array_map(static fn (array $decl): int => count($decl['agrupamentos'] ?? []), $decls));
 
@@ -2534,7 +2448,7 @@ it('[CT-47] a caixa de agrupamento diz quantas peças nomeia no modo do diagrama
         'col'     => 0,
     ];
     $copia     = [$slug => [...$decls[$slug], 'agrupamentos' => [...($decls[$slug]['agrupamentos'] ?? []), $grupo]]];
-    $gerado    = mapaDiagramasEntradasDoGerador([], [$slug => [$grupo]], [$slug]);
+    $gerado    = entradasDoGeradorDoMapa(['construtor' => 'mapa', 'soCaixasESetas' => true, 'agrupamentos' => [$slug => [$grupo]], 'slugs' => [$slug]], falhaComoExpectativa: true);
     $resultado = mapaDiagramasConferirCaixas($copia, $modelo, $gerado);
     $daCaixa   = array_values(array_filter($resultado['falhas'], static fn (array $falha): bool => in_array($falha['caixa'], [$id, ''], true)));
 

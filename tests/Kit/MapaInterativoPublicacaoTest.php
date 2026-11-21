@@ -20,8 +20,9 @@ use Symfony\Component\Yaml\Yaml;
 | `beforeEach` (molde de `tests/Kit/GuardasDosDiagramasTest.php`) e no `->skip()` de cada caso.
 |
 | O índice do git (`arquivosVersionados()`), os diagramas (`diagramasDoMapa()`), o registro vivo do
-| painel (`registroVivoDoPainel()`) e o motivo de enfeite (`motivoDeEnfeite()`) moram em
-| `tests/Pest.php`, porque as outras guardas do mapa também os usam (`.ai/rules/testes.md`).
+| painel (`registroVivoDoPainel()`), o motivo de enfeite (`motivoDeEnfeite()`) e o `node` do ambiente
+| (`versaoDoNode()`) moram em `tests/Pest.php`, porque as outras guardas do mapa também os usam
+| (`.ai/rules/testes.md`).
 |
 | [CT-48] e [CT-51] (R39), [CT-49] e [CT-50] (R40) são da costura G5, forma de efeito: o gerador e o
 | posicionador rodam como processo filho do `node`, SEMPRE num clone descartável do kit no commit do
@@ -1122,19 +1123,6 @@ if (! function_exists('publicacaoDesligarPasta')) {
     }
 }
 
-if (! function_exists('publicacaoNodeDoAmbiente')) {
-    /** O `node` do ambiente, lido pela versão: sem ele o caso da G5 reprova, e não pula (Q21). */
-    function publicacaoNodeDoAmbiente(): string
-    {
-        $versao = Process::timeout(30)->run(['node', '--version']);
-
-        expect($versao->successful())->toBeTrue('o node do ambiente não respondeu ao --version: '.$versao->errorOutput())
-            ->and(trim($versao->output()))->toMatch('/^v\d+\.\d+\.\d+$/');
-
-        return trim($versao->output());
-    }
-}
-
 if (! function_exists('publicacaoCloneDescartavel')) {
     /**
      * O clone descartável da G5, dentro da pasta temporária: `git clone --shared` esparso do kit, com a
@@ -1311,7 +1299,7 @@ it('[CT-48] com --saida e sem slug, o gerador recusa, antes de qualquer efeito, 
 
     try {
         // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
-        publicacaoNodeDoAmbiente();
+        expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+$/');
         $clone  = publicacaoCloneDescartavel($raiz);
         $status = fn (): string => trim(Process::path($clone['kit'])->run(['git', 'status', '--porcelain', '--untracked-files=all', '--', 'site'])->throw()->output());
 
@@ -1356,7 +1344,7 @@ it('[CT-49] o argumento sem valor válido é recusado antes de qualquer efeito, 
 
     try {
         // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
-        publicacaoNodeDoAmbiente();
+        expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+$/');
         $clone    = publicacaoCloneDescartavel($raiz);
         $diagrama = $clone['site'].DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.'diagramas'.DIRECTORY_SEPARATOR.'app-resumo-sem.json';
         $bytes    = publicacaoBytes($diagrama);
@@ -1391,7 +1379,7 @@ it('[CT-50] o arquivo de entrada com JSON quebrado é recusado antes de qualquer
 
     try {
         // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
-        publicacaoNodeDoAmbiente();
+        expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+$/');
         $clone = publicacaoCloneDescartavel($raiz);
         $saida = $raiz.DIRECTORY_SEPARATOR.'saida';
         mkdir($saida);
@@ -1433,7 +1421,7 @@ it('[CT-51] o gerador chamado por um caminho que passa por um link faz o mesmo q
 
     try {
         // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
-        publicacaoNodeDoAmbiente();
+        expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+$/');
         $clone = publicacaoCloneDescartavel($raiz);
 
         // E um link para site/ do clone: uma junção no Windows (mklink /J, sem privilégio), ou um link simbólico no Linux
