@@ -907,6 +907,16 @@ async function conferirTipoNoPassaporte(pagina, rotulo, d) {
       const cru = caixa(passaporte.tipo) === caixa(kind) ? ` (o kind cru "${kind}")` : '';
       reprovar('CT-B04', `${rotulo} — ${nome} (${kind}): o passaporte mostra o tipo ${JSON.stringify(passaporte.tipo)}${cru}, e o desenho dá ao nó o nome pt ${JSON.stringify(contexto)}`);
     }
+    // O nome esperado vem da fonte, e não do HTML: sem ele, o desenho e o passaporte caindo juntos no kind cru passavam.
+    const nomePt =
+      INTERFACE_DO_KIT.foraDoCatalogo?.pt?.[`viewer.kind.${kind}`] ??
+      CATALOGO_PT_DO_ARCHIFY[`viewer.kind.${kind}`] ??
+      CATALOGO_PT_DO_ARCHIFY[`node.context.class.${kind}`];
+    if (!nomePt) {
+      reprovar('CT-B04', `${rotulo} — ${nome} (${kind}): o catálogo pt do kit não tem nome para o tipo ${kind}`);
+    } else if (caixa(passaporte.tipo) !== caixa(nomePt)) {
+      reprovar('CT-B04', `${rotulo} — ${nome} (${kind}): o passaporte mostra o tipo ${JSON.stringify(passaporte.tipo)}, e o nome pt dele no catálogo do kit é ${JSON.stringify(nomePt)}`);
+    }
     contar('CT-B04:tipo');
   }
 }

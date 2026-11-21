@@ -1,6 +1,7 @@
 # Casos de Teste de Browser — mapa-interativo-do-kit: Mapa interativo do kit com a skill archify
 
-> Derivado do `00-requisito.md` (RQ-03, RQ-04, RQ-05, RQ-07, RQ-08, RQ-17, RQ-25, P-02, P-03, P-04, P-07, P-10, P-11), como o `04`. Costura: `browser`, a linha "G4 — site construído" de `## Costuras de Teste` do `04` (regras R6, R12, R13, R14, R21, R23, R24, R31 e R32).
+> Derivado do `00-requisito.md` (RQ-03, RQ-04, RQ-05, RQ-07, RQ-08, RQ-17, RQ-25, P-02, P-03, P-04, P-07, P-10, P-11 e, desde o step 9, P-14), como o `04`. Costura: `browser`, a linha "G4 — site construído" de `## Costuras de Teste` do `04` (regras R6, R12, R13, R14, R21, R23, R24, R31, R32 e R40).
+> *(alterado em 2026-11-21: step 9 — achados da revisão do diff. CT-B08 novo (A11, R40); linhas novas no CT-B01 e no CT-B02 (A14: o rótulo da raiz da árvore vem do modelo, não do HTML), no CT-B04 (A16: o tipo do nó no passaporte pt), no CT-B06 (A12: o controle de caminho) e no CT-B07 (A13: a tabela do motivo de enfeite). Os oráculos novos foram conferidos no commit `168d1827`; onde o dado de hoje os reprova, a nota diz)*
 > *(alterado em 2026-11-20: rodada de revisão do step 7 — os CT-B saem de `site/verifica-acessibilidade.mjs` para um conferidor próprio; CT-B04, CT-B05 e CT-B06 novos, da P-11; CT-B01 ganha a condição das peças condicionais e o M5)*
 > *(alterado em 2026-11-20: quarta rodada — fechamento da revisão adversarial e fatos de plataforma medidos pela sessão:*
 > - *CT-B07 novo (ADV-06);*
@@ -45,7 +46,7 @@
 
 ## Teto e estouro justificado
 
-O perfil `padrão` dá 1 CT-B de caminho feliz, e aqui há 7. O gate vence o teto, porque cada CT-B mata um conjunto de mutantes que nenhum outro mata:
+O perfil `padrão` dá 1 CT-B de caminho feliz, e aqui há 8 *(7 até o step 9)*. O gate vence o teto, porque cada CT-B mata um conjunto de mutantes que nenhum outro mata:
 
 - o **CT-B01** é o caminho feliz, e mata também os rótulos trocados entre peças, o visualizador que não monta a interface, a exceção não capturada, a biblioteca carregada de fora e a F-nn que não chega ao desenho;
 - o **CT-B02** mata o que só o artefato construído revela: o gerador perde a prova da ligação desenhada por agrupamento ou por porta, ou perde as arestas; o card sai sem o trecho, ou com o trecho cortado; o item não fica amarrado à ligação; o card fica fora do painel lateral;
@@ -53,7 +54,8 @@ O perfil `padrão` dá 1 CT-B de caminho feliz, e aqui há 7. O gate vence o tet
 - o **CT-B04** mata a interface que cai no inglês, inclusive na busca e no passaporte, o en com o texto pt, a legenda sem os nomes dos tipos e o `lang` errado (P-11);
 - o **CT-B05** mata a amostra vazia, o tipo fora da amostra e o comparativo não auditado (P-11);
 - o **CT-B06** mata a tolerância larga demais — pelo texto do seletor, pela regra sem o elemento, de uma terceira violação ou da violação de alvos mistos (P-11) — e o conferidor que reprova sem mudar o código de saída;
-- o **CT-B07** mata o catálogo pt com o texto en copiado e a lista de textos iguais sem o motivo ou fora do teto (P-11). Ele não precisa do navegador para comparar, mas precisa do build, e por isso mora no conferidor.
+- o **CT-B07** mata o catálogo pt com o texto en copiado e a lista de textos iguais sem o motivo ou fora do teto (P-11). Ele não precisa do navegador para comparar, mas precisa do build, e por isso mora no conferidor;
+- o **CT-B08** *(step 9, achado A11)* mata o conferidor que reprova um JSON quebrado sem nomear o arquivo (P-14). Ele também não precisa do navegador, mas o conferidor importa o Playwright e lê o `axe-core` de `site/node_modules` antes de ler os diagramas, e por isso só roda no job `site`; o gerador e o posicionador têm o mesmo caso na suíte do kit (CT-50).
 
 Os mutantes que vieram das revisões adversariais não contam para o teto de mutantes da regra.
 
@@ -83,7 +85,7 @@ Os mutantes que vieram das revisões adversariais não contam para o teto de mut
 - [ ] O esperado vem da fonte, nunca do `dist/`, para o oráculo não sair do mesmo artefato que ele confere:
   - **no diagrama escrito à mão,** o próprio arquivo de `site/mapa/diagramas/`: as peças da coleção do tipo, com o rótulo no campo do esquema (`label`; `title` na `timeline`; `name` no `waterfall`), e as ligações, com a prova de cada uma;
   - **a coleção de ligações de cada tipo,** no diagrama escrito à mão: `connections` no `architecture`, `edges` no `workflow`, `messages` no `sequence`, `flows` no `dataflow`, `transitions` no `lifecycle`, e `relationships` no `erd` e no `class`. A `timeline` e o `waterfall` não têm ligação. A árvore não tem coleção: na árvore de registro construída, cada registro do painel no modo dela — a relação do painel com a peça, que a hierarquia desenha — é uma ligação desenhada, com o item de prova. O `/app` tem uma árvore por modo; o `/admin` e o `/infra`, uma só cada, compartilhada pelos dois modos;
-  - **no diagrama construído** (o arquivo com o campo `construtor`), o arquivo diz só o recorte e o layout, e o resto vem do modelo (`site/mapa/pecas.json` e `site/mapa/ligacoes.json`). No mapa de arquitetura, as peças são as do recorte que o modelo dá ao modo do diagrama, com o nome do modelo; as caixas de agrupamento e de porta têm o rótulo do arquivo; e cada ligação do modelo no painel e no modo do diagrama vira o par das pontas desenhadas — a peça, ou o agrupamento que a nomeia —, e não vira aresta quando uma ponta não está desenhada ou quando as duas caem na mesma caixa. Na árvore de registro, as peças são as que o painel registra no modo, e cada registro é uma ligação.
+  - **no diagrama construído** (o arquivo com o campo `construtor`), o arquivo diz só o recorte e o layout, e o resto vem do modelo (`site/mapa/pecas.json` e `site/mapa/ligacoes.json`). No mapa de arquitetura, as peças são as do recorte que o modelo dá ao modo do diagrama, com o nome do modelo; as caixas de agrupamento e de porta têm o rótulo do arquivo; e cada ligação do modelo no painel e no modo do diagrama vira o par das pontas desenhadas — a peça, ou o agrupamento que a nomeia —, e não vira aresta quando uma ponta não está desenhada ou quando as duas caem na mesma caixa. Na árvore de registro, as peças são as que o painel registra no modo, e cada registro é uma ligação. *(alterado em 2026-11-21 — step 9, achado A14)* A raiz da árvore é a peça painel do arquivo (`painel:{painel}`), e o rótulo esperado dela vem do modelo, como o de toda peça construída — o nome dela no modelo (`/app`) —, nunca do `data-node-label` lido no HTML. Decidido pela sessão (Q23 do `04`): a raiz leva exatamente o nome da peça no modelo, como toda peça construída.
 - [ ] O catálogo de interface en do archify do commit fixado, que o build baixa (`locales/en.json`, 486 chaves). O texto pt de cada chave vem de duas partes: as 390 chaves de interface que o archify embute em cada HTML (`<script id="archify-i18n-data">`), e as 96 que ele aplica no render e não embute, lidas na fonte do kit (o `examples/locales/pt.json` do archify e o `site/mapa/interface.json`, que o build junta).
 - [ ] As rotas do mapa vêm dos arquivos de diagrama, e não de uma varredura do `dist/` por `index.html`, como a do conferidor herdado (`site/verifica-acessibilidade.mjs:'index.html':78`, `site/verifica-acessibilidade.mjs:todas:82`).
 - [ ] As escutas ficam ligadas antes do `goto`: o `console` do tipo error, o `pageerror` (exceção não capturada) e o `request` (toda requisição da página).
@@ -105,7 +107,7 @@ Os mutantes que vieram das revisões adversariais não contam para o teto de mut
 | nível de leitura | `.diagram-container[data-detail-level]` ("map", "read" ou "full"); o botão `[data-view="in"]` aproxima 25 % por clique, e o nível "full" começa em 175 % de zoom | sim, medido |
 | campo de busca | o atalho `/` foca `input.node-finder-input` | sim, medido: o texto de exemplo é "Pesquisar rótulos ou IDs" em pt e "Search labels or IDs" em en |
 | resultado da busca | `.node-finder-result`, com `data-node-id`, um por peça desenhada | sim, medido; sem JavaScript, nenhum |
-| passaporte da peça em foco | `.semantic-passport-detail`, dentro de `.relationship-lens-copy` | sim, medido: o rótulo, o tipo, o `tag`, "origem verificada {dono}/{repo} @ {commit}" e os links |
+| passaporte da peça em foco | `.semantic-passport-detail` (o sublabel, `#focus-detail`), dentro de `.relationship-lens-copy`; o tipo, em `#focus-kind` (`[data-passport="kind"]`), dentro de `.semantic-passport-meta` | sim, medido: o rótulo, o `tag`, "origem verificada {dono}/{repo} @ {commit}" e os links; o tipo, em `#focus-kind` *(alterado em 2026-11-21 — step 9, correção devolvida pelo executor de browser: o tipo fica em `#focus-kind`)* |
 | link de evidência do passaporte | `a[href*="/blob/"]` dentro do passaporte, no formato `https://github.com/{dono}/{repo}/blob/{commit}/{arquivo}#L{linha}` | sim, medido |
 | título do diagrama | o `<h1>`; o `document.title` é a moldura do archify | sim, medido |
 | subtítulo do comparativo | `p.subtitle`, "base → cabeça" | sim, medido |
@@ -115,6 +117,8 @@ Os mutantes que vieram das revisões adversariais não contam para o teto de mut
 | aviso de idioma reserva | o aviso que o archify mostra quando falta a tradução de uma chave | medido: não existe no DOM; é do build do archify (código `i18n/locale-fallback`). A conferência é a ausência de elemento de aviso e de texto de fallback, mais o CT-B07 sobre o catálogo *(alterado em 2026-11-20 — guardas do passo 8, correção devolvida pelo executor de browser)* |
 | alvo tolerado 1 | o `<svg>` raiz do diagrama, resolvido como **elemento** no DOM, nunca pelo texto do seletor do axe | lido no `site/verifica-mapa.mjs`: o `closest('svg')` de `#archify-diagram-title` |
 | alvo tolerado 2 | `.node-outline-heading > small`, a contagem de grupo do índice de nós, resolvido como **elemento** | lido no `site/verifica-mapa.mjs` (`elemento.matches`); no DOM, a descobrir |
+| tipo do nó de diagrama de classes *(step 9, achado A16)* | `svg [data-node-id]`, com o `kind` do arquivo em `data-class-kind` e o nome do tipo, traduzido no render, em `data-node-context`; no passaporte aberto, o tipo em `#focus-kind` *(alterado em 2026-11-21 — step 9, correção devolvida pelo executor de browser: o tipo fica em `#focus-kind`)* | sim, medido no commit `168d1827`, no `classes-heranca-e-contratos`: em pt, "Interface", "Classe" e "Classe abstrata" nos dois lugares |
+| traço da aresta *(step 9, achado A1)* | a classe `a-{variante}` do `<path>` de `svg [data-edge-from][data-edge-to]` (`a-emphasis`, `a-default`, `a-dashed`, `a-security`) | sim, medido no commit `168d1827`, no `app-acesso-e-autenticacao`; o CT-46 do `04` confere a variante na entrada do gerador, e não aqui |
 
 ---
 
@@ -135,8 +139,11 @@ Os mutantes que vieram das revisões adversariais não contam para o teto de mut
     E, em todo diagrama, inclusive o comparativo, nenhum erro de console e nenhuma exceção não capturada são registrados
     E, em todo diagrama, inclusive o comparativo, nenhuma requisição da página sai da origem da prévia, fora `data:` e `blob:`, e o documento não tem `<script src>` nem `<link rel="stylesheet">`
     E, em cada diagrama fora o comparativo, o `<h1>` é o título do arquivo no idioma da página, com os acentos intactos
+    E, em cada árvore de registro, a raiz é a peça painel do arquivo e tem, pelo id, o rótulo que a fonte dá a ela: o nome da peça painel no modelo
     E o total de diagramas abertos é o número de arquivos de diagrama vezes dois
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A14)* **A raiz da árvore.** O conferidor dava à raiz o esperado `null`, e o CT-B01 não conferia o rótulo dela; o CT-B02 montava o prefixo dos itens de prova com o rótulo lido da raiz no próprio HTML. Uma raiz com o rótulo de outro painel ficava verde nos dois. O passo novo traz a raiz para a regra do rótulo de cada peça construída (R24): o nome da peça no modelo. **Hoje o dado reprova o passo novo:** medido no commit `168d1827`, a raiz desenha "Painel /app" em pt e "Panel /app" em en, e o nome da peça `painel:app` no modelo é `/app`; o gerador monta assim a raiz das quatro árvores (`site/mapa/gerar.mjs`, `arvoreDeRegistro`, no commit `168d1827`), e as 8 raízes (4 árvores × 2 idiomas) reprovam. *(alterado em 2026-11-21 — step 9: Q23 decidida pela sessão)* A raiz leva o nome do modelo (`/app`): as 8 raízes de hoje são vermelho de implementação, e o esperado sai do modelo, nunca do HTML.
 
 *(alterado em 2026-11-20: ADV-31, ADV-28, ADV-29 e ADV-14)*
 - **Saiu a condição.** A metade de condição (o passo 4) e o M5 estão estacionados na Q11, com os IDs reservados.
@@ -165,6 +172,7 @@ Os mutantes que vieram das revisões adversariais não contam para o teto de mut
 | 6 | conferir a F-nn | no mapa de arquitetura construído: clicar em `[data-view="in"]` até `.diagram-container[data-detail-level="full"]` e ler a opacidade computada do `[data-detail="fine"]` com as F-nn, dentro do nó de cada peça com nó próprio; na árvore construída, no carregamento, o sublabel do nó de cada peça; nos dois, os itens `.reader-rail .card li` | cada peça mostra as F-nn dela (todas, até três; as três primeiras e "+N", acima disso), com opacidade 1; o card "F-nn de cada peça" tem a linha inteira de cada uma, à vista e sem corte; o total conferido é maior que zero |
 | 7 | conferir os recursos | as requisições escutadas e `document.querySelectorAll('script[src], link[rel="stylesheet"]')`, inclusive no comparativo | nenhuma requisição fora da origem da prévia (fora `data:` e `blob:`); nenhum dos dois elementos |
 | 8 | ler o título | o texto do `<h1>`, fora o comparativo | o título do arquivo naquele idioma, com acento |
+| 8a | conferir a raiz da árvore *(step 9, achado A14)* | na árvore de registro, o `data-node-label` de `svg [data-node-id="{id da peça painel:{painel do arquivo}}"]`, contra o nome dessa peça no modelo de peças | o rótulo que a fonte dá à raiz; o esperado nunca sai do HTML |
 | 9 | totalizar | contador por idioma | N em pt e N em en |
 
 **Assertions**: o oráculo é o par id e rótulo de cada peça, a busca montada, a F-nn no desenho, os recursos da página e o título. O console e a exceção são asserção de apoio.
@@ -178,6 +186,7 @@ Os mutantes que vieram das revisões adversariais não contam para o teto de mut
 | M3 | o HTML en sai com os textos pt | CT-B01 | idioma en, "o `<h1>` é o título do arquivo no idioma da página": reprova; o mutante aceita |
 | M4 | o script do visualizador não entra no HTML, ou quebra antes de montar a interface: o SVG estático aparece, sem busca nem nível de leitura *(reescrito em 2026-11-20: medido no commit `4adaf9a`, o SVG vem pronto no HTML, e "dá zero peça" não matava o mutante)* | CT-B01 | "a busca tem um resultado por peça desenhada, pelo id": dá zero resultado e reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV-28) | o desenho tem o mesmo número de peças, com os rótulos trocados entre elas | CT-B01 | "toda peça que a fonte dá a ele está desenhada e tem, pelo id, o rótulo que a fonte dá a ela no idioma da página": reprova; o mutante aceita |
+| M8 — step 9 (A14) | a raiz da árvore de registro sai com o rótulo de outro painel, ou sem o nome do painel, e o conferidor, que dá à raiz o esperado `null`, não a confere | CT-B01 | "em cada árvore de registro, a raiz … tem, pelo id, o rótulo que a fonte dá a ela": reprova; o mutante aceita |
 
 (Numeração da R24 do `04`. O M5, a marca de condição, está estacionado na Q11; o M7 morre no CT-B03 e no CT-B04.)
 
@@ -213,7 +222,10 @@ Mutante da R6 que este CT-B também mata:
     E cada item de prova mostra o trecho inteiro do modelo, sem reticências que o modelo não tenha, e não é cortado (`scrollWidth <= clientWidth + 1`)
     E o total de itens de prova lidos no DOM é o de ligações desenhadas, maior que zero em todo diagrama que desenha ligação
     E, em cada `architecture`, o conjunto de pares origem → destino das arestas desenhadas é o da fonte
+    E, na árvore de registro, a origem de cada item de prova é o rótulo que a fonte dá à peça painel do arquivo, e não o que o HTML dá à raiz
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A14)* O passo novo tira do HTML o último esperado que saía dele: a origem dos itens de prova da árvore. Ela é o rótulo da raiz que o CT-B01 confere contra o modelo. Hoje o dado o reprova junto com o do CT-B01: os itens começam por "Painel /app" e "Panel /app", e o nome da peça no modelo é `/app`. Pela Q23 do `04`, decidida pela sessão, é vermelho de implementação: os itens passam a começar por `/app`.
 
 *(reescrito em 2026-11-20: fatos de plataforma medidos pela sessão e ADV-25)*
 - **Onde fica o card.** Os cards ficam no painel lateral, sempre presentes, sem depender de foco. A prova de cada ligação fica num card do próprio diagrama, agrupado pela peça de origem; o agrupamento é desenho, e o oráculo é "num card do painel lateral, à vista".
@@ -235,7 +247,7 @@ Mutante da R6 que este CT-B também mata:
 | 1 | montar o esperado pela fonte | de cada arquivo de diagrama e do modelo, as ligações que ele desenha, pela definição da R12 do `04` (as de agrupamento e as de porta que nomeiam os membros, expandidas em uma por ligação; a porta que só nomeia o mapa não desenha a ligação), com o arquivo e o trecho de cada uma; e, em cada `architecture`, os pares de pontas desenhadas | lista de (diagrama, origem, destino, arquivo, trecho) e conjunto de pares |
 | 2 | abrir cada diagrama, fora o comparativo | `pagina.goto(…)` e esperar o desenho, sem clicar em peça | o diagrama aparece |
 | 3 | ler os itens de prova | `pagina.evaluate(...)` sobre `.reader-rail .card li`: o `textContent` de cada item com a forma de prova, se ele está à vista (caixa com altura, sem `display: none` nem `visibility: hidden`) e se `scrollWidth <= clientWidth + 1` | itens de prova, à vista e inteiros |
-| 4 | conferir as provas | cada ligação esperada tem um item que começa por "origem → destino", traz o arquivo e termina com o trecho inteiro do modelo; na árvore de registro, a origem é o rótulo da raiz ("Painel /app"), que não está em fonte nenhuma do diagrama: o conferidor o lê do `data-node-label` do nó da raiz *(alterado em 2026-11-20 — guardas do passo 8, correção devolvida pelo executor de browser)* | nenhuma faltando, nenhuma trocada, nenhuma cortada |
+| 4 | conferir as provas | cada ligação esperada tem um item que começa por "origem → destino", traz o arquivo e termina com o trecho inteiro do modelo; na árvore de registro, a origem é o rótulo da raiz ("Painel /app"), que não está em fonte nenhuma do diagrama: o conferidor o lê do `data-node-label` do nó da raiz *(alterado em 2026-11-20 — guardas do passo 8, correção devolvida pelo executor de browser)*. *(alterado em 2026-11-21 — step 9, achado A14: a raiz é a peça painel do arquivo, que está no modelo; a origem esperada é o rótulo que a fonte dá a ela — o nome da peça no modelo, decidido na Q23 do `04` —, e o `data-node-label` lido do HTML deixa de ser o esperado)* | nenhuma faltando, nenhuma trocada, nenhuma cortada |
 | 5 | totalizar | itens de prova lidos no DOM, por diagrama | igual às ligações desenhadas, maior que zero |
 | 6 | conferir as arestas | em cada `architecture`, o conjunto de pares `data-edge-from` → `data-edge-to` de `svg [data-edge-from][data-edge-to]` | igual ao conjunto de pares da fonte |
 
@@ -252,6 +264,7 @@ Mutante da R6 que este CT-B também mata:
 | M6 — revisão adversarial (ADV-25) | o card da prova fica fora do painel lateral: oculto, ou só aparece quando o leitor foca a peça | CT-B02 | "num card do painel lateral, à vista", com o diagrama aberto sem focar peça nenhuma: reprova; o mutante aceita |
 | M7 — revisão adversarial (ADV2-22) | o conferidor conta as provas do lado esperado, e a ligação de membro sem item próprio passa, porque outra ligação desenhada tem a mesma prova | CT-B02 | "o total de itens de prova lidos no DOM é o de ligações desenhadas": reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV2-32) | o item de card corta o trecho longo, com reticências que o modelo não tem | CT-B02 | "o item mostra o trecho inteiro do modelo, e não é cortado (`scrollWidth <= clientWidth + 1`)": reprova; o mutante aceita |
+| M9 — step 9 (A14) | o item de prova da árvore de registro nomeia a origem com um rótulo que não é o da peça painel no modelo, e o conferidor, que monta o prefixo esperado com o rótulo que lê da raiz no próprio HTML, aceita | CT-B02 | "na árvore de registro, a origem de cada item de prova é o rótulo que a fonte dá à peça painel do arquivo": reprova; o mutante aceita |
 
 (Numeração da R13 do `04`. O M3 morre no CT-09 do `04`.)
 
@@ -351,7 +364,10 @@ Mutante da R24 que este CT-B também mata:
     E, na versão pt de todo mapa de arquitetura, a legenda traz o nome pt de cada tipo de peça desenhado, como pedaço do rótulo
     E, na versão pt do comparativo, o subtítulo da casca traz os títulos pt da base e da cabeça, e só a casca do archify fica em inglês
     E, na versão en, nenhum texto de interface é igual ao pt de uma chave cujo texto en é outro, a legenda de todo mapa de arquitetura traz o nome en de cada tipo de peça desenhado, e o `lang` do documento começa por `en`
+    E, na versão pt de todo diagrama de classes, com o passaporte aberto num nó de cada tipo que o arquivo desenha (`class`, `abstract`, `interface`), o tipo que o passaporte mostra é o nome pt que o desenho dá ao nó, e nunca o identificador cru do tipo
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A16)* **O tipo do nó no passaporte pt.** O archify do commit fixado não tem `viewer.kind.class` nem `viewer.kind.abstract`, e o kit as acrescenta ao catálogo pt embutido depois do render ("Classe" e "Classe abstrata"). O critério acima — nenhum texto igual ao en de uma chave cujo pt é outro — só pegava `Class` por coincidência, e `Abstract` não é texto de chave nenhuma do en: sem as duas chaves, o passaporte pt mostraria o tipo cru, e o caso ficava verde. O passo novo compara o tipo do passaporte com o contexto que o desenho dá ao mesmo nó (`data-node-context`, que o archify traduz no render, pelo catálogo pt que o kit entrega). Medido no commit `168d1827`, no `classes-heranca-e-contratos` gerado numa pasta de rascunho: o desenho dá "Interface", "Classe" e "Classe abstrata" em pt, e o passaporte mostra os mesmos três; o passo passa hoje. A amostra é o primeiro nó de cada `kind` dos `types` do arquivo, porque o `abstract` aparece uma vez só; o `interface` não discrimina — é a mesma palavra nos dois idiomas. Em en, o passaporte mostra `class` e `abstract` crus, que são inglês: o passo vale só para o pt.
 
 O `lang` do comparativo pt não é afirmado. A P-11 isenta a casca dele e não decide o idioma do documento (medido: `en` nos dois idiomas).
 
@@ -376,6 +392,7 @@ O `lang` do comparativo pt não é afirmado. A P-11 isenta a casca dele e não d
 | 5 | abrir a busca e o passaporte | `/` e o foco da primeira peça, como no CT-B03 | os textos visíveis da busca e do passaporte: nenhum igual ao en de uma chave cujo texto pt é outro; nenhum aviso; nenhum erro nem exceção |
 | 6 | repetir em en | `pagina.goto(\`…/mapa/en/${slug}.html\`)` | `lang` começa por `en`; nenhum texto igual ao pt de uma chave cujo texto en é outro; a legenda com os nomes en |
 | 7 | separar a exceção | o comparativo pt | o subtítulo `p.subtitle` com os títulos pt da base e da cabeça; a casca isenta, inclusive o `lang` |
+| 8 | conferir o tipo do nó no passaporte pt *(step 9, achado A16)* | em cada diagrama de classes pt, o primeiro nó de cada `kind` dos `types` do arquivo: o `data-node-context` do nó no desenho e, com o passaporte dele aberto, o tipo que `#focus-kind` mostra *(alterado em 2026-11-21 — step 9, correção devolvida pelo executor de browser: o tipo fica em `#focus-kind`)* | os dois iguais, sem diferença de caixa, e nenhum igual ao `kind` cru quando o nome pt é outro; e o tipo do passaporte é o nome pt do tipo no catálogo do kit — a chave `viewer.kind.{kind}` de `foraDoCatalogo` do `site/mapa/interface.json`, ou a do catálogo pt do archify, ou `node.context.class.{kind}` —, tirado da fonte e não do HTML *(alterado em 2026-11-21 — step 9, lacuna devolvida pelo executor de browser: comparar só o desenho com o passaporte deixava passar os dois caindo juntos no kind cru)* |
 
 **Assertions**: o oráculo é o texto da interface, a legenda e o `lang` lidos no documento desenhado, no carregamento e com a busca e o passaporte abertos.
 
@@ -389,8 +406,9 @@ O `lang` do comparativo pt não é afirmado. A P-11 isenta a casca dele e não d
 | M4 | a exceção do comparativo vale para todo diagrama, e a interface inteira fica em inglês sem reprovar | CT-B04 | "na versão pt de todo diagrama fora o comparativo, nenhum texto de interface é igual ao en de uma chave cujo texto pt é outro": reprova; o mutante aceita |
 | M5 | a versão en recebe a tradução pt (catálogo de tradução trocado de idioma) *(alterado em 2026-11-20: ADV2-27, a asserção antiga não tinha critério)* | CT-B04 | versão en, "nenhum texto de interface igual ao pt de uma chave cujo en é outro, e a legenda com os nomes en dos tipos": reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV-30) | a busca e o passaporte montam os textos na interação, e uma chave deles cai no inglês | CT-B04 | "com a busca aberta e o passaporte de uma peça aberto, nenhum texto visível é igual ao en de uma chave cujo texto pt é outro": reprova; o mutante aceita |
+| M11 — step 9 (A16) | o catálogo pt perde as chaves que o kit acrescenta fora do catálogo do archify (`viewer.kind.class`, `viewer.kind.abstract`), e o passaporte pt mostra o tipo do nó cru, em inglês | CT-B04 | "na versão pt de todo diagrama de classes, o tipo que o passaporte mostra é o nome pt que o desenho dá ao nó": o passaporte diz `class` e o desenho, "Classe", e reprova; o mutante aceita |
 
-(Numeração da R31 do `04`. O M7, o M8 e o M9 estão no CT-B07.)
+(Numeração da R31 do `04`. O M7, o M8, o M9 e o M10 estão no CT-B07.)
 
 Mutante da R24 que este CT-B também mata:
 
@@ -466,7 +484,10 @@ Mutante da R24 que este CT-B também mata:
       | página com `button-name` (serious) num botão sem nome                                               | reprova                                          | terceira violação            |
       | página com um `color-contrast` de dois alvos: `.node-outline-heading > small` e um parágrafo do corpo | reprova pelo parágrafo                         | alvos mistos                 |
       | o conferidor rodado como processo sobre uma prévia em que o HTML de um diagrama não desenha nada    | reprova, e o processo termina com código diferente de zero | controle de processo |
+      | o caminho com que o conferidor se relançaria, derivado de uma URL de módulo dele numa pasta "meus projetos/João" (`file:///…/meus%20projetos/Jo%C3%A3o/verifica-mapa.mjs`), pela mesma função que o controle de processo usa | o caminho do arquivo no disco, `…/meus projetos/João/verifica-mapa.mjs`, sem escape de URL | controle de caminho |
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A12)* **O controle de caminho.** O controle de processo relança o conferidor por `new URL(import.meta.url).pathname` (`site/verifica-mapa.mjs`, `conferirControleDeProcesso`, no commit `168d1827`), que guarda o escape da URL: num clone com espaço ou acento no caminho, o filho não acha o arquivo, morre, e o pai reprova o CT-B06 porque o log não nomeia o diagrama — vermelho falso. Medido no commit `168d1827`: um módulo em `…/meus projetos/João/`, com a mesma expressão, deriva `…/meus%20projetos/Jo%C3%A3o/…`, que não existe no disco; o `fileURLToPath` deriva o certo. A linha nova confere a derivação pela mesma função que relança, sem precisar que o CI rode num caminho com espaço e acento; uma junção não serve, porque o Node resolve o link na URL do módulo. *(alterado em 2026-11-21 — step 9: Q25 decidida pela sessão)* Fica o controle sobre a derivação do caminho, pela mesma função; sem prova de ponta a ponta, que rodaria o conferidor duas vezes no job `site`.
 
 *(alterado em 2026-11-20: quinta rodada — ADV2-16, ADV2-19 e medição no commit `4adaf9a`)*
 - **Alvo por alvo.** A tolerância decide por alvo, e não pela violação inteira: a violação com alvos mistos reprova pelo alvo que não é tolerado. O `site/verifica-mapa.mjs` de hoje já filtra os alvos da violação (`v.nodes.filter`).
@@ -480,6 +501,7 @@ Mutante da R24 que este CT-B também mata:
 | 2 | rodar o axe | o mesmo `axe.run` da amostra | a violação da linha |
 | 3 | decidir | a função de decisão do CT-B05, que resolve cada alvo do axe para o **elemento** e compara com o `<svg>` raiz e com `.node-outline-heading > small` | tolera ou reprova, como na linha |
 | 4 | rodar o controle de processo | o conferidor como processo filho (`node verifica-mapa.mjs {porta}`), com uma pasta de diagramas de um arquivo e uma prévia de controle em que o HTML dele não desenha nada, passadas por ambiente: `VERIFICA_MAPA_DIAGRAMAS`, `VERIFICA_MAPA_DIST`, `VERIFICA_MAPA_TIMEOUT_MS` e `VERIFICA_MAPA_CONTROLE` *(alterado em 2026-11-20 — guardas do passo 8, correção devolvida pelo executor de browser)* | código de saída diferente de zero, e o log nomeia o diagrama |
+| 5 | rodar o controle de caminho *(step 9, achado A12)* | a função com que o controle de processo deriva o caminho de relançamento, aplicada à URL `file:///…/meus%20projetos/Jo%C3%A3o/verifica-mapa.mjs` | `…/meus projetos/João/verifica-mapa.mjs`, sem escape de URL |
 
 **Assertions**: o oráculo é a decisão de cada linha. A amostra real só vale se todos os controles decidirem certo.
 
@@ -499,6 +521,7 @@ Mutante da R23 que este CT-B também mata:
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
 |---|---|---|---|
 | M6 — revisão adversarial (ADV2-16) | o conferidor registra a reprovação no log e termina com código 0, e o job passa | CT-B06 | linha do controle de processo: o conferidor, sobre um HTML do mapa que não desenha peça nenhuma, termina com código diferente de zero; o mutante termina com 0 |
+| M8 — step 9 (A12) | o conferidor se relança pelo caminho da URL do módulo com o escape dela, e, num clone com espaço ou acento no caminho, o controle de processo reprova porque o filho não acha o arquivo — vermelho falso | CT-B06 | linha do controle de caminho: o caminho derivado é o do disco, sem escape; o mutante devolve `meus%20projetos/Jo%C3%A3o` e reprova |
 
 (Numeração da R23 do `04`. Os M1 a M4 morrem no CT-25; o M5 e o M7, no CT-42.)
 
@@ -524,7 +547,13 @@ Mutante da R23 que este CT-B também mata:
       | cópia da lista com `viewer.guide.facts`, só de marcadores, sem o motivo            | reprova, nomeando a chave                                                                                                                                                                                 | motivo ausente                 |
       | cópia da lista com `viewer.guide.facts`, com o motivo "—"                          | reprova, nomeando a chave                                                                                                                                                                                 | motivo de enfeite              |
       | cópia com o texto en em `viewer.finder.placeholder` e a chave na lista, com motivo | reprova, nomeando a chave                                                                                                                                                                                 | fora das 14 e com palavras     |
+      | cópia da lista com `viewer.guide.facts`, com o motivo "N/A"                        | reprova, nomeando a chave                                                                                                                                                                                 | motivo de enfeite (tabela do Setup Global do `04`) |
+      | cópia da lista com `viewer.guide.facts`, com o motivo "not applicable"             | reprova, nomeando a chave                                                                                                                                                                                 | motivo de enfeite (tabela do Setup Global do `04`) |
+      | cópia da lista com `viewer.guide.facts`, com o motivo "Does not apply"             | reprova, nomeando a chave                                                                                                                                                                                 | motivo de enfeite (tabela do Setup Global do `04`) |
+      | cópia da lista com `viewer.guide.facts`, com o motivo 0, que não é texto           | reprova, nomeando a chave                                                                                                                                                                                 | motivo de enfeite (tabela do Setup Global do `04`) |
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A13)* As quatro linhas novas são o lado do conferidor da tabela do motivo de enfeite (Setup Global do `04`), a mesma que o CT-35 cita do lado da guarda do kit: "a definição é uma só" quer dizer que os dois lados decidem igual a mesma tabela. **Hoje o dado reprova as quatro:** medido no commit `168d1827`, a definição do conferidor (`site/verifica-mapa.mjs`, `motivoDeEnfeite`, no commit `168d1827`) aceita como motivo "N/A", "n/a", "not applicable", "Not applicable.", "does not apply", "Does not apply" e o número 0 — 7 das 17 entradas da tabela —, que a guarda do kit (`tests/Pest.php:motivoDeEnfeite:4224`) trata como enfeite.
 
 *(cenário novo em 2026-11-20: ADV-06)* O catálogo pt é o que o leitor recebe, e não o arquivo do kit. O comparativo fica fora, porque a P-11 isenta a casca dele, que o archify só tem em inglês. "Motivo de enfeite" tem a definição do Setup Global do `04`.
 
@@ -558,8 +587,47 @@ Isso é fato, e não a lista fechada. As sobrescritas dos tipos de peça trocam 
 | M7 — revisão adversarial (ADV-06) | para calar o aviso de idioma reserva, o catálogo pt do kit recebe o texto en nas chaves não traduzidas | CT-B07 | linha "a chave da busca traz o texto en": reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV-06) | a lista fechada de textos iguais aceita a chave sem o motivo | CT-B07 | linha "na lista, sem o motivo": reprova; o mutante aceita |
 | M9 — revisão adversarial (ADV2-26) | quem copia o texto en para calar o aviso acrescenta a chave à lista fechada, com um motivo que não é de enfeite | CT-B07 | linha `viewer.finder.placeholder` na lista, com motivo: reprova; o mutante aceita |
+| M10 — step 9 (A13) | o conferidor do mapa tem a própria definição de motivo de enfeite, e aceita como motivo "N/A", "not applicable", "Does not apply" ou um número, que a guarda do kit trata como enfeite | CT-B07 | linhas da lista com `viewer.guide.facts` e o motivo "N/A", "not applicable", "Does not apply" e 0: reprova; o mutante aceita |
 
-(Numeração da R31 do `04`. Os M1 a M6 estão no CT-B04.)
+(Numeração da R31 do `04`. Os M1 a M6 e o M11 estão no CT-B04.)
+
+---
+
+## CT-B08: o conferidor, rodado sobre uma pasta de diagramas com um JSON quebrado, reprova com a mensagem `[mapa]` que nomeia o arquivo, e termina com código diferente de zero
+
+*(cenário novo em 2026-11-21: step 9, achado A11 — R40, P-14)*
+
+**Por que no conferidor**: a asserção não depende do navegador, mas o conferidor importa o Playwright e lê o `axe-core` de `site/node_modules` antes de ler os arquivos de diagrama, e só o job `site` tem essa pasta; a suíte do kit não o consegue rodar. O gerador e o posicionador têm o mesmo caso no CT-50 do `04`. A pasta de diagramas de controle entra pelo mesmo caminho do controle de processo do CT-B06: a variável de ambiente `VERIFICA_MAPA_DIAGRAMAS`.
+
+```gherkin
+# language: pt
+  Cenário: [CT-B08] o conferidor, rodado como processo sobre uma pasta de diagramas com um JSON quebrado, reprova antes de abrir qualquer diagrama, com a mensagem `[mapa]` que nomeia o arquivo, e termina com código diferente de zero
+    Dado uma pasta de diagramas de controle com o `tempos-ci.json` publicado e um `zz-quebrado.json` com JSON quebrado
+    Quando o conferidor roda como processo sobre ela, com a pasta passada por ambiente, como no controle de processo do CT-B06
+    Então o processo termina com código diferente de zero
+    E a saída traz a mensagem `[mapa]` que nomeia o arquivo `zz-quebrado.json`, e não só a mensagem do `JSON.parse`
+```
+
+- **Medido no commit `168d1827`:** `VERIFICA_MAPA_DIAGRAMAS` apontando para uma pasta com um `zz-quebrado.json` quebrado, o conferidor, rodado de `site/`, terminou com o stack do `SyntaxError` do `JSON.parse` ("Expected double-quoted property name in JSON at position 45 (line 1 column 46)"), que aponta o `lerJson` do próprio conferidor, e não o arquivo do diagrama, nem o prefixo `[mapa]`. O caso reprova hoje.
+- **O código de saída** já é diferente de zero hoje (a exceção derruba o processo); o que o caso acrescenta é a mensagem que diz qual arquivo quebrou.
+
+**Roteiro executável**
+
+| # | Ação | Código (no conferidor) | Resultado visível |
+|---|---|---|---|
+| 1 | montar a pasta de controle | numa pasta temporária, copiar `tempos-ci.json` de `mapa/diagramas/` e gravar `zz-quebrado.json` com `{ "slug": "zz-quebrado", "tipo": "workflow", }` | a pasta de controle, com um arquivo quebrado |
+| 2 | rodar o conferidor como processo | `spawn(process.execPath, [caminho do conferidor, porta])`, com `VERIFICA_MAPA_DIAGRAMAS` apontando para a pasta e `VERIFICA_MAPA_CONTROLE=1`, como no controle de processo do CT-B06 | o processo termina |
+| 3 | conferir | o código de saída e a saída do processo | código diferente de zero; a saída traz `[mapa]` e `zz-quebrado.json` |
+
+**Assertions**: o oráculo é a mensagem que nomeia o arquivo. O código de saída é asserção de apoio.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M3 — step 9 (A11) | o JSON quebrado reprova com a mensagem do `JSON.parse`, sem o arquivo nem o `[mapa]` | CT-50, CT-B08 | CT-B08: a saída não nomeia `zz-quebrado.json`, e reprova; o mutante aceita |
+
+(Numeração da R40 do `04`. Os M1, M2, M4 e M5 morrem no CT-49 e no CT-50, na suíte do kit.)
 
 ---
 

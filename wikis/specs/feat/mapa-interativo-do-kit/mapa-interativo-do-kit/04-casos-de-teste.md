@@ -9,6 +9,8 @@
 > *(alterado em 2026-11-20: quarta rodada — fechamento da revisão adversarial e P-12; regras R34 a R36, CT-35 a CT-43 e CT-B07 novos; R30, CT-32, CT-33 e R24-M5 estacionados na Q11; CT-B02 e CT-B03 reescritos pelos fatos de plataforma medidos pela sessão)*
 > *(alterado em 2026-11-20: ajuste da quarta rodada — as duas perguntas novas da rodada viraram Q18 e Q19, decididas pela sessão no `01` (D25 e D26); a R10 ganha a quinta forma; a R5 casa o termo por palavra inteira; a R6 troca a regra da rota (40 linhas nos dois idiomas); a leitura da porta fica fechada pela P-10)*
 > *(alterado em 2026-11-20: quinta rodada — fechamento da segunda revisão adversarial, a última; regra R37 e CT-44 e CT-45 novos; oráculos conferidos por comando contra o código, o catálogo, o README e o esqueleto do mapa já construído; os do site construído, conferidos de novo no commit `4adaf9a`, que a sessão publicou durante a rodada com os construtores do mapa)*
+> *(alterado em 2026-11-21: step 9 — os 16 achados da revisão do diff, como Adendo. Premissas P-13 (A1, A5) e P-14 (A2, A4, A6, A11) no `00`; regras R38 a R40, CT-46 a CT-55 e a costura G5 novos; linhas novas no CT-09, CT-10, CT-35 e CT-38; no `05`, o CT-B08 novo e linhas novas nos CT-B01, CT-B02, CT-B04, CT-B06 e CT-B07. Todo oráculo novo foi conferido contra o commit `168d1827`, e a nota de cada um diz o que o dado real dá hoje; onde o dado reprova o oráculo, a lista está na nota e a decisão é da sessão. Sem revisão adversarial nesta rodada: o teto de duas já foi atingido, e o perfil não a exige)*
+> *(alterado em 2026-11-21: step 9 — fechamento com as decisões da sessão. As perguntas Q20 a Q26 decididas; a costura G5 confirmada; o CT-46 por uma seta por verbo (Q22); a raiz da árvore com o nome do modelo (Q23); o CT-49 com o `--tentativas 0` (Q24); a R10 com duas formas novas — o invólucro do kit e a configuração global do pacote — e a leitura do middleware na forma do plugin, cada uma com a sua linha de controle no CT-10. Os vermelhos medidos que a sessão classificou como implementação ficam nas notas, e a linha "publicados" de cada CT diz o que deve dar depois dela)*
 
 ## Perfil de Derivação
 
@@ -38,7 +40,7 @@
   - Estado × operação no número do catálogo: 15 células.
   - Controle negativo em cópia adulterada em memória, no molde de `conferirDg10()` de `tests/Kit/GuardasDosDiagramasTest.php`.
   - Controle sintético no conferidor do site, decidido pela mesma função que decide o real (o molde dos controles de `site/verifica-acessibilidade.mjs`).
-- Cenários: 43 · Regras: 36 · Mutantes previstos: 219 · Sem matador: 7 (mais 7 CT-B no `05`, nas regras R6, R12, R13, R14, R21, R23, R24, R31 e R32; os mutantes delas estão contados aqui)
+- Cenários: 53 · Regras: 39 · Mutantes previstos: 251 · Sem matador: 7 (mais 8 CT-B no `05`, nas regras R6, R12, R13, R14, R21, R23, R24, R31, R32 e R40; os mutantes delas estão contados aqui) *(recalculado em 2026-11-21 pelos quatro `grep -c`, no step 9: eram 43 · 36 · 219 · 7, e 7 CT-B. Os 32 mutantes do step 9 — 27 dos achados e 5 das decisões da sessão sobre as perguntas e as 16 ligações do A9 — levam a marca `step 9 (A{n})`: são achados medidos da revisão do diff e, como os da revisão adversarial, não contam para o teto da regra)*
 <!-- derivado por grep -c (template-04.md §Contagem do cabeçalho) -->
 
 **Divergências declaradas.**
@@ -55,8 +57,8 @@
 | S | <ul><li>Em `site/mapa/`: o modelo de peças, o modelo de ligações e um arquivo por diagrama; a tradução da interface do visualizador; o gerador e o download do archify.</li><li>A página "Mapa interativo" em pt e en, com navegação, redirecionamento e stub.</li><li>O catálogo (a página Roteiro de features em pt e en), a referência de pacotes instalados e o README em pt e en.</li><li>A rule do catálogo e a linha dela no índice.</li><li>`site/package.json`, o conferidor novo `site/verifica-mapa.mjs` e o conferidor de acessibilidade.</li><li>`pages.yml` e o job `site` do `ci.yml`.</li><li>Nenhum arquivo de `app/` muda (RQ-15 e a Superfície Livewire do `02`).</li></ul> | CT-01 a CT-31, CT-34 a CT-45 (CT-32 e CT-33 estacionados na Q11) |
 | F | <ul><li>Desenhar peças e ligações por painel e por modo.</li><li>Provar cada ligação com o arquivo e o trecho.</li><li>Cobrir toda feature do catálogo e toda peça registrada.</li><li>Mostrar a grade painel × modo e os tipos. A condição de disponibilidade está estacionada na Q11.</li><li>Ancorar no código cada transição de fluxo.</li><li>Unificar e numerar o catálogo.</li><li>Falhar quando o código diverge (P-03).</li><li>Publicar no build do commit.</li><li>Deixar o leitor buscar a peça e ler a prova, na língua da página.</li><li>Passar pela conferência de acessibilidade por amostra.</li></ul> | CT-03, CT-06, CT-08 a CT-14, CT-17, CT-20, CT-25, CT-29 a CT-31, CT-36 a CT-41, CT-44, CT-45, CT-B01 a CT-B07 |
 | D | <ul><li>Peças e ligações: 243 e 496 só no `/admin`.</li><li>Os diagramas.</li><li>Na base: 74 F-nn por idioma (F-01 a F-71, mais F-03a, F-03b e F-03c), 46 itens de feature do README por idioma, 39 páginas do site por idioma, 91 pacotes nos manifestos e 87 na referência por idioma (os quatro que faltam a entrega acrescenta, Q16), 141 versões com data no CHANGELOG, mais o `[Unreleased]`, sem data, e 135 classes de `app/` fora de `app/Filament` (P-12). Das 74 linhas do catálogo, 40 trazem no "onde fica" um caminho de rota sem "→", nos dois idiomas.</li><li>Provas: arquivo do kit versionado (válida), e as inválidas — ausente, vazia, só de espaços, só em comentário, fora do commit (`vendor/` ou fora do git).</li><li>Peças de disponibilidade condicional: pelo modo (`TenantResource`) e pela chave (`AgenteIaResource`). A marca delas está estacionada na Q11.</li><li>Os modos (sem e com tenant), os 10 tipos e o comparativo, os idiomas pt e en, os temas claro e escuro.</li><li>Cardinalidade 0/1/N: painel sem diagrama, feature sem peça, peça registrada ou classe de `app/` sem F-nn, ligação sem diagrama, transição sem âncora, célula sem diagrama nem motivo, amostra vazia.</li><li>Dado de outro tenant não se aplica: o modo é configuração, não dado.</li></ul> | CT-01, CT-05, CT-06, CT-09, CT-14, CT-17, CT-21, CT-28, CT-29, CT-31, CT-35, CT-39, CT-41, CT-B05 |
-| I | <ul><li>A página estática `/{pt,en}/referencia/mapa-interativo/` e os HTML `/mapa/{pt,en}/{slug}.html`.</li><li>O README no GitHub, o catálogo, a referência de pacotes e a rule, que os agentes leem pelo índice.</li><li>O registro vivo dos painéis: `Filament::getPanels()` e os getters de cada painel; o roteador da aplicação, para o "onde fica" do catálogo.</li><li>Os arquivos citados pelas provas e pelas âncoras de fluxo, e os links de evidência para o repositório do `support.source` do `composer.json`.</li><li>O `CHANGELOG.md`.</li><li>`npm run build` e os dois workflows.</li></ul> | CT-07, CT-11, CT-12, CT-15, CT-25, CT-26, CT-28, CT-31, CT-36, CT-39, CT-42, CT-B03 |
-| P | <ul><li>PHP 8.4, Laravel 13.42, Filament 5.10.2 (getters conferidos no vendor) e Pest 5.3.7.</li><li>Node 24, Astro 7.3.3 + Starlight 0.42.2, Playwright 1.63 e axe-core 4.13.</li><li>archify 3.2.0 no commit `4478129`, segundo o README e o `schemas/README.md` do archify nesse commit: não tem catálogo pt (tem en, zh-CN, zh-TW, es, ko e ar); o `meta.locale` escolhe a interface e o `lang`, mas não traduz o texto escrito; a prova é por nó (`sources`, de 1 a 3), sem prova por aresta; a casca do comparativo existe só em inglês (P-11); e há dois defeitos de acessibilidade tolerados (P-11).</li><li>Medido pela sessão num HTML do archify, no commit fixado, no Chromium:<ul><li>o passaporte de uma peça em foco mostra o rótulo, o tipo, "origem verificada {repositório} @ {commit}", as provas da própria peça (até três) como links para o GitHub no commit, e só as contagens das ligações;</li><li>os cards ficam no painel lateral (`.reader-rail .card`), sempre presentes;</li><li>o DOM traz `data-node-id`, `data-node-label`, `data-edge-from`, `data-edge-to` e `data-edge-id`, e o `lang` do documento segue o `meta.locale`;</li><li>nenhuma requisição externa e nenhum erro.</li></ul></li><li>O `examples/locales/pt.json` do archify (461 chaves) fica fora do manifesto dos catálogos embutidos. O kit entrega o pt pelas traduções do diagrama, e o en é o `locales/en.json` (486 chaves).</li><li>Nos mapas de arquitetura, a aresta é direta, de agrupamento ou de porta.</li><li>GitHub Pages sob a base `/filament-starter-kit-easy`.</li><li>Desenvolvimento no Windows (caminho com `\`, fim de linha CRLF) e CI no Linux.</li></ul> | CT-09, CT-14, CT-16, CT-40, CT-B01 a CT-B07 |
+| I | <ul><li>A página estática `/{pt,en}/referencia/mapa-interativo/` e os HTML `/mapa/{pt,en}/{slug}.html`.</li><li>O README no GitHub, o catálogo, a referência de pacotes e a rule, que os agentes leem pelo índice.</li><li>O registro vivo dos painéis: `Filament::getPanels()` e os getters de cada painel; o roteador da aplicação, para o "onde fica" do catálogo.</li><li>Os arquivos citados pelas provas e pelas âncoras de fluxo, e os links de evidência para o repositório do `support.source` do `composer.json`.</li><li>O `CHANGELOG.md`.</li><li>`npm run build` e os dois workflows.</li><li>*(alterado em 2026-11-21 — step 9, achados A2, A4, A6 e A11)* As ferramentas de autor pela linha de comando: `node mapa/gerar.mjs --saida <pasta> [slug …]` e `node mapa/posicionar.mjs <slug> [--tentativas N]`, com os argumentos, a pasta de saída e os arquivos de entrada que elas leem.</li></ul> | CT-07, CT-11, CT-12, CT-15, CT-25, CT-26, CT-28, CT-31, CT-36, CT-39, CT-42, CT-B03; CT-48 a CT-51, CT-B08 |
+| P | <ul><li>PHP 8.4, Laravel 13.42, Filament 5.10.2 (getters conferidos no vendor) e Pest 5.3.7.</li><li>Node 24, Astro 7.3.3 + Starlight 0.42.2, Playwright 1.63 e axe-core 4.13.</li><li>archify 3.2.0 no commit `4478129`, segundo o README e o `schemas/README.md` do archify nesse commit: não tem catálogo pt (tem en, zh-CN, zh-TW, es, ko e ar); o `meta.locale` escolhe a interface e o `lang`, mas não traduz o texto escrito; a prova é por nó (`sources`, de 1 a 3), sem prova por aresta; a casca do comparativo existe só em inglês (P-11); e há dois defeitos de acessibilidade tolerados (P-11).</li><li>Medido pela sessão num HTML do archify, no commit fixado, no Chromium:<ul><li>o passaporte de uma peça em foco mostra o rótulo, o tipo, "origem verificada {repositório} @ {commit}", as provas da própria peça (até três) como links para o GitHub no commit, e só as contagens das ligações;</li><li>os cards ficam no painel lateral (`.reader-rail .card`), sempre presentes;</li><li>o DOM traz `data-node-id`, `data-node-label`, `data-edge-from`, `data-edge-to` e `data-edge-id`, e o `lang` do documento segue o `meta.locale`;</li><li>nenhuma requisição externa e nenhum erro.</li></ul></li><li>O `examples/locales/pt.json` do archify (461 chaves) fica fora do manifesto dos catálogos embutidos. O kit entrega o pt pelas traduções do diagrama, e o en é o `locales/en.json` (486 chaves).</li><li>Nos mapas de arquitetura, a aresta é direta, de agrupamento ou de porta.</li><li>GitHub Pages sob a base `/filament-starter-kit-easy`.</li><li>Desenvolvimento no Windows (caminho com `\`, fim de linha CRLF) e CI no Linux.</li><li>*(alterado em 2026-11-21 — step 9, achados A4, A12 e G5)* O caminho pelo qual a ferramenta é chamada: por um link (junção no Windows, que não pede privilégio; link simbólico no Linux), ou numa pasta com espaço e acento. E o `node` na suíte do kit, que os jobs `qualidade` e `cobertura` do `ci.yml` não instalam com `actions/setup-node` — decidido (Q21): passam a instalar.</li></ul> | CT-09, CT-14, CT-16, CT-40, CT-B01 a CT-B07; CT-46 a CT-52, CT-B06, CT-B08 |
 | O | <ul><li>O leitor do site avalia o kit.</li><li>O mantenedor cria feature: número e rule.</li><li>O agente de IA lê a rule pelo índice.</li><li>O CI roda em todo PR e publica no Pages.</li><li>Volume: nenhum painel cabe num desenho só (P-10).</li><li>Uso indevido: prova copiada de outra ligação ou tirada de outro arquivo, prova que só casa em comentário, número reaproveitado, aresta inventada ou invertida, catálogo pt com o texto en, conferidor que não reprova o job, tolerância de acessibilidade larga demais.</li></ul> | CT-03, CT-07, CT-10, CT-14, CT-40, CT-42, CT-B06, CT-B07 |
 | T | <ul><li>O mapa reflete o commit que publica (P-07), e a linha do link de prova é a desse commit.</li><li>A suíte do kit roda em todo PR, e o job `site` só roda quando o PR toca `docs/` ou `site/`. Por isso as guardas de prova, de registro e de catálogo moram na suíte do kit.</li><li>A numeração só cresce (P-08), e o número removido continua removido nas entregas seguintes.</li><li>Envelhecem: o trecho que some do código, a âncora de fluxo, o recurso novo no painel, a classe nova em `app/` (P-12), o pacote atualizado, a versão nova do CHANGELOG e o tempo medido.</li></ul> | CT-03, CT-04, CT-09, CT-11, CT-25, CT-29, CT-31, CT-39, CT-41, CT-B02 |
 
@@ -74,9 +76,9 @@
 | R6 — Toda F-nn vigente é entregue por peça desenhada da origem que ela declara — do pacote que a linha nomeia, ou, no código próprio, da rota do "onde fica" —, com a F-nn no desenho da peça; todo caminho do "onde fica" resolve; e nenhuma peça entrega F-nn removida | A/B (padrão) | RQ-04, RQ-05, RQ-21, P-03, P-10, P-08 | EP por origem + tabela de decisão + controles | CT-06, CT-36, CT-44, CT-B01 (no `05`) |
 | R7 — Manter o catálogo único é uma rule indexada, que alcança os lugares onde a feature nasce e manda o número só crescer | F (mínimo) | RQ-23, P-08 | EP | CT-07 |
 | R8 — Toda peça do modelo é peça com nome que existe, do tipo que a classe dela é, dentro do conjunto fechado, e aparece uma vez | B (padrão) | RQ-24, P-03 | EP + tabela de decisão (classe × tipo) + controles | CT-08 |
-| R9 — Toda prova resolve no commit que publica: o arquivo é versionado no kit, o trecho está nele, fora de comentário pela sintaxe do tipo de arquivo, e a prova não guarda número de linha, nem no modelo nem nos arquivos de diagrama | B (padrão) | RQ-24, P-03, P-04, P-07 | EP (uma partição inválida por linha) + controles | CT-09 |
-| R10 — A prova é a da ligação: está no arquivo da origem, num trait ou concern que a origem usa, no provider do painel (descoberta, plugin ou configuração), no método de contrato do alvo ou, quando a origem é peça de pacote, num arquivo do kit que nomeia a origem; o trecho é o dessa ligação; e as duas pontas são peças | B (padrão) | RQ-24, P-03, P-07 | EP (forma da prova × arquivo) + controles | CT-10 |
-| R11 — Tudo que o painel registra tem ligação de registro no modelo, e o modelo não dá a um modo o que o painel não registra nele | B (padrão) | P-05, RQ-08, RQ-10, RQ-11, P-03 | tabela de decisão (3 × 2 × 5, nas duas direções) + controles | CT-11, CT-12, CT-13 |
+| R9 — Toda prova resolve no commit que publica: o arquivo é versionado no kit, o trecho está nele, fora de comentário pela sintaxe do tipo de arquivo, e a prova não guarda número de linha, nem no modelo nem nos arquivos de diagrama | B (padrão) | RQ-24, P-03, P-04, P-07 | EP (uma partição inválida por linha) + controles | CT-09, CT-52, CT-53 *(step 9: A3, A7, A10)* |
+| R10 — A prova é a da ligação: está no arquivo da origem, num trait ou concern que a origem usa, no provider do painel (descoberta, plugin — direto ou pelo invólucro do kit — ou configuração), na configuração global que o kit faz do pacote que registra a peça sozinho, no método de contrato do alvo ou, quando a origem é peça de pacote, num arquivo do kit que nomeia a origem; o trecho é o dessa ligação; e as duas pontas são peças | B (padrão) | RQ-24, P-03, P-07 | EP (forma da prova × arquivo) + controles | CT-10 |
+| R11 — Tudo que o painel registra tem ligação de registro no modelo, e o modelo não dá a um modo o que o painel não registra nele | B (padrão) | P-05, RQ-08, RQ-10, RQ-11, P-03 | tabela de decisão (3 × 2 × 5, nas duas direções) + controles | CT-11, CT-12, CT-13, CT-55 *(step 9: A15)* |
 | R12 — Toda ligação do modelo está desenhada em diagrama publicado, direto ou por agrupamento que nomeia os membros num card do diagrama ou no rótulo dele; menção em texto não conta | B (padrão) | P-10, RQ-08 | EP (forma da aresta) + controles | CT-14, CT-B02 (no `05`) |
 | R13 — Toda ligação que o diagrama desenha — direta, ou por agrupamento ou porta que nomeia os membros — traz a prova, com o arquivo e o trecho, num item próprio de card do painel lateral do próprio diagrama, inteiro e à vista sem foco; o comparativo fica fora | B (padrão) | P-04, P-07, RQ-08 | rastreio exaustivo no site construído | CT-B02 (no `05`) |
 | R14 — O leitor acha a peça pela busca, e o passaporte dela mostra as provas da própria peça, com o link para o repositório do kit no commit do build | B (padrão) | RQ-07, P-04, P-07 | EP (idioma) + amostra por `architecture` | CT-B03 (no `05`) |
@@ -101,8 +103,11 @@
 | R33 — A página do mapa declara, nos dois idiomas, as duas exceções da P-11, a do comparativo na P-04 e o limite da varredura da P-12 | D (padrão) | P-11, P-12, P-04, P-02 | EP (idioma) | CT-34 |
 | R34 — Os diagramas de arquitetura e a árvore de registro de um painel que valem num modo desenham, juntos, todo o registro do painel nesse modo, e nada que ele não registra nesse modo | C (padrão) | P-09, RQ-11, RQ-10, P-05 | tabela de decisão (3 × 2) + controles | CT-37, CT-38 |
 | R35 — Toda transição de fluxo publicado tem âncora que resolve; no `lifecycle`, todo estado também; e duas transições seguidas ancoradas no mesmo método estão na ordem do código | C (padrão) | P-03, RQ-09 | EP + controles | CT-39 |
-| R36 — O que o mapa desenha está no modelo: no mapa de arquitetura e na árvore de registro, toda aresta é ligação do modelo no mesmo sentido — direta, de agrupamento ou de porta —, e todo diagrama de painel só desenha, como peça, peça do painel ou do kit inteiro, além da caixa de porta | B (padrão) | P-03, RQ-24, P-10, RQ-10 | EP (forma da aresta) + controles | CT-40 |
+| R36 — O que o mapa desenha está no modelo: no mapa de arquitetura e na árvore de registro, toda aresta é ligação do modelo no mesmo sentido — direta, de agrupamento ou de porta —, e todo diagrama de painel só desenha, como peça, peça do painel ou do kit inteiro, além da caixa de porta | B (padrão) | P-03, RQ-24, P-10, RQ-10 | EP (forma da aresta) + controles | CT-40, CT-54 *(step 9: A8)* |
 | R37 — Toda marca de disponibilidade que o mapa publica é a do código: a chave que decide o acesso da peça, com o valor de fábrica dela, ou o modo | B (padrão) | P-03, RQ-04, RQ-05, RQ-11 | EP + controles | CT-45 |
+| R38 — O traço da seta e a caixa de agrupamento do mapa de arquitetura só dizem do que representam o que o modelo dá ao diagrama, no modo dele *(regra nova em 2026-11-21: step 9, achados A1 e A5)* | C (padrão) | P-13, RQ-08, P-10, P-02 | EP (verbos do par de pontas: um, dois, três; uma seta por verbo, Q22) + BVA na contagem da caixa (0, 1, 2) + controles | CT-46, CT-47 |
+| R39 — As ferramentas do mapa não apagam o que não geraram e não terminam com código 0 sem ter feito o que se pediu, por qualquer caminho que sejam chamadas *(regra nova em 2026-11-21: step 9, achados A2 e A4)* | D (padrão) | P-14, P-07 | EP (pasta de saída; caminho da chamada) + controles | CT-48, CT-51 |
+| R40 — Argumento sem valor válido e arquivo de entrada quebrado são recusados antes de qualquer efeito, com a mensagem `[mapa]` que nomeia o culpado *(regra nova em 2026-11-21: step 9, achados A6 e A11)* | D (padrão) | P-14, P-03 | EP (uma partição inválida por linha) | CT-49, CT-50, CT-B08 (no `05`) |
 
 ### Cláusulas sem regra
 
@@ -167,7 +172,8 @@ Fechadas ou decididas nas rodadas de revisão, e com cenário:
 | G1 — arquivos versionados do catálogo, do README, da referência de pacotes, da rule, da página do mapa e dos workflows (Kit) | R1, R2, R3, R4, R5, R7, R21 (CT-23), R23, R25, R26, R27, R33 | Pest feature HTTP | **nova**: `tests/Kit/MapaInterativoTest.php`. Moldes: a base congelada e a leitura de `docs/` de `tests/Kit/SiteDeDocumentacaoTest.php` (`[CT-24]`, `[CT-40]`, `[CT-42]`); a rule e a linha do índice de `tests/Kit/OnboardingGuiadoInstalacaoTest.php`; o inventário Mermaid de `blocosMermaidDaArvore()` | o `Então` afirma o conteúdo de arquivos versionados — catálogo, README, páginas, referência de pacotes, `composer.json`, `package.json`, rule, índice, `site/package.json` e workflows — contra a base congelada e contra a árvore. A aplicação fica de pé pelo arnês do kit, e por isso a linha do CT-28 que lê o registro dos painéis (ADV-04) cabe aqui | sessão, 2026-11-20 — convenção do projeto: guarda de documentação em `tests/Kit`, no molde do `SiteDeDocumentacaoTest` e do `GuardasDosDiagramasTest` |
 | G2 — modelo e diagramas do mapa × aplicação de pé, sem tenant (Kit) | R6, R8, R9, R10, R11 (CT-11, CT-13), R12, R15, R16, R17, R18, R19, R20, R22, R28 (CT-29, CT-41), R29, R34 (CT-37), R35, R36, R37 | Pest feature HTTP | **nova**: `tests/Kit/MapaInterativoTest.php`. Moldes: o `[CT-25]` de `tests/Kit/SiteDeDocumentacaoTest.php`, que confronta o README com `Filament::getPanel()`; o `conferirDg10()` de `tests/Kit/GuardasDosDiagramasTest.php`, para o controle em cópia | o `Então` afirma o modelo e os arquivos de diagrama contra o que os painéis registram, contra o roteador da aplicação, contra os arquivos de código citados e as classes de `app/`, contra o CHANGELOG e contra a página. Roda em todo PR, e o job `site` não (T) | sessão, 2026-11-20 — convenção do projeto: guarda que confronta documentação com o painel vivo em `tests/Kit` (molde do `[CT-25]` do `SiteDeDocumentacaoTest`) |
 | G3 — registro dos painéis com tenant (Tenancy) | R6 (CT-44), R11 (CT-12), R28 (CT-30), R34 (CT-38) | Pest feature HTTP | **nova**: `tests/Tenancy/MapaInterativoTenancyTest.php`. Molde: `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php` | o modo com tenant só existe com o `Tests\TenancyTestCase`, que fixa `kit.tenancy.enabled` antes do boot | sessão, 2026-11-20 — convenção do projeto: o modo com tenant só existe na suíte `Tenancy` (molde do `DiagramasDaArquiteturaTenancyTest`) |
-| G4 — site construído (conferidor do mapa, Node + Playwright) | R6 (CT-B01), R12 (CT-B02), R13, R14, R21 (CT-B01), R23 (CT-B06), R24, R31, R32 | browser | **nova** *(alterado em 2026-11-20: era "existente — `site/verifica-acessibilidade.mjs`")*: `site/verifica-mapa.mjs`, sobre o `astro preview`. Os dois workflows o rodam logo depois do conferidor de acessibilidade, com a mesma prévia de pé; no `pages.yml`, antes do envio do artefato. Molde: `site/verifica-acessibilidade.mjs`, inclusive os controles sintéticos | o HTML do mapa só existe depois do build (o `site/dist` é ignorado pelo git), o visualizador desenha no navegador, e acessibilidade e idioma da interface só o navegador mede. O catálogo en do archify só existe depois do build, que baixa o archify, e por isso o CT-B07 também mora aqui. O `pest-plugin-browser` não serve site estático (`site/verifica-acessibilidade.mjs:'pest-plugin-browser':6`). O arquivo é próprio porque o conferidor de acessibilidade já tem `[CT-B01]` e `[CT-B02]` de outra wiki. O `ids-ct.sh` acusa estes CT-B como sem teste, por desenho: ele só lê `it()` e `test()` | sessão, 2026-11-20 — convenção do projeto: o site construído é conferido por Node + Playwright no CI (molde do `site/verifica-acessibilidade.mjs`); arquivo próprio pela D17 do `01` |
+| G4 — site construído (conferidor do mapa, Node + Playwright) | R6 (CT-B01), R12 (CT-B02), R13, R14, R21 (CT-B01), R23 (CT-B06), R24, R31, R32, R40 (CT-B08) *(R40 em 2026-11-21: step 9, achado A11 — o conferidor importa o Playwright e lê o `axe-core` de `site/node_modules` antes de ler os diagramas, e por isso só roda no job `site`)* | browser | **nova** *(alterado em 2026-11-20: era "existente — `site/verifica-acessibilidade.mjs`")*: `site/verifica-mapa.mjs`, sobre o `astro preview`. Os dois workflows o rodam logo depois do conferidor de acessibilidade, com a mesma prévia de pé; no `pages.yml`, antes do envio do artefato. Molde: `site/verifica-acessibilidade.mjs`, inclusive os controles sintéticos | o HTML do mapa só existe depois do build (o `site/dist` é ignorado pelo git), o visualizador desenha no navegador, e acessibilidade e idioma da interface só o navegador mede. O catálogo en do archify só existe depois do build, que baixa o archify, e por isso o CT-B07 também mora aqui. O `pest-plugin-browser` não serve site estático (`site/verifica-acessibilidade.mjs:'pest-plugin-browser':6`). O arquivo é próprio porque o conferidor de acessibilidade já tem `[CT-B01]` e `[CT-B02]` de outra wiki. O `ids-ct.sh` acusa estes CT-B como sem teste, por desenho: ele só lê `it()` e `test()` | sessão, 2026-11-20 — convenção do projeto: o site construído é conferido por Node + Playwright no CI (molde do `site/verifica-acessibilidade.mjs`); arquivo próprio pela D17 do `01` |
+| G5 — o gerador e as ferramentas de autor do mapa, rodados pelo Pest como processo filho do `node` (Kit) *(grupo novo em 2026-11-21: step 9)* | R9 (CT-52), R38, R39, R40 (CT-49, CT-50) | Pest feature HTTP | **nova**: nenhum teste do kit roda o Node. Moldes: o `Process` do Laravel, que `tests/Kit/MapaInterativoPublicacaoTest.php` já usa para o `git`, e o controle de processo do conferidor (`site/verifica-mapa.mjs:conferirControleDeProcesso:1241`). Duas formas. **Leitura**: um `node` que importa `site/mapa/gerar.mjs` e devolve a entrada que o gerador entrega ao archify, diagrama a diagrama — a função exportada `entradaDoArchify`, a mesma que o posicionador usa —, sem baixar o archify nem renderizar; os controles adulteram em memória o diagrama passado ou o modelo que `carregarModelo()` devolve. **Efeito**: um clone descartável do repositório no commit do teste (`git clone --shared`, com `site/mapa` e a raiz), numa pasta temporária, com o download do archify bloqueado (`GIT_ALLOW_PROTOCOL=file`, que deixa o `git show` local e recusa o `fetch` por https); as ferramentas rodam nele, e a árvore do kit nunca é tocada | o `Então` afirma o que só existe com o Node rodando: o traço, a caixa e a linha da prova que o gerador entrega ao archify, e o código de saída, a mensagem, a pasta e os arquivos depois de uma ferramenta de autor. Nada disso está nos arquivos versionados. O clone existe porque, sob o defeito, o posicionador regrava o arquivo do diagrama e o gerador apaga a pasta; e o gerador não tem como ler outra pasta de diagramas. Roda em todo PR, como a suíte do kit (T). O `Dado` afirma o `node` lido (`node --version`); sem ele o caso reprova, e não pula (Q21) | sessão, 2026-11-21 (Q21) — confirmada; os jobs do CI que rodam a suíte do kit ganham `actions/setup-node`, o que é implementação |
 
 ## Fronteira com o Plano
 
@@ -177,7 +183,8 @@ Fechadas ou decididas nas rodadas de revisão, e com cenário:
 | `site/mapa/archify.mjs` baixa o archify no commit fixo e o confere | o `00` não fixa versão nem integridade do download | sem CT. A integridade do download fica para a dimensão de segurança do quality gate |
 | `site/mapa/pt-BR.json`: as chaves que faltam no catálogo pt do archify e as sobrescritas dos rótulos de tipo de peça | mecanismo do idioma | o oráculo é a P-11 (a interface pt, CT-B04; o catálogo pt sem o texto en, CT-B07) e a P-02 (o texto do kit, CT-16 e CT-B01) |
 | `site/mapa/gerar.mjs` grava em `site/dist/mapa/{pt,en}/{slug}.html` depois do `astro build`; `"build": "astro build && node mapa/gerar.mjs"` | mecanismo. Quem dá o oráculo é a P-07: o mapa nasce no build do commit que publica | o CT-25 afirma que o build dos dois workflows gera o mapa e que nenhum HTML do mapa é versionado. O caminho do HTML é detalhe dos CT-B |
-| `site/mapa/posicionar.mjs`, script de desenvolvimento que nunca roda no build | o `00` não fala de posição | sem CT (ver Cogitado e cortado) |
+| `site/mapa/posicionar.mjs`, script de desenvolvimento que nunca roda no build | o `00` não fala de posição | sem CT para a posição (ver Cogitado e cortado). *(alterado em 2026-11-21 — step 9, achados A6 e A11)* O argumento e o arquivo de entrada do posicionador têm CT pela P-14: CT-49 e CT-50 (R40), no clone descartável da G5. O nome do script e a função `entradaDoArchify` são detalhe do cenário, não oráculo |
+| `node mapa/gerar.mjs --saida <pasta> [slug …]`, a forma do gerador para quem escreve diagramas, e a guarda do fim do arquivo que só roda o gerador quando ele é chamado direto *(linha nova em 2026-11-21 — step 9, achados A2, A4 e A11)* | o mecanismo é do plano; o comportamento — não apagar o que não gerou, não terminar com 0 sem gerar, recusar e nomear o culpado antes de qualquer efeito — vem da P-14 | CT-48 a CT-51 (R39, R40). O docblock do gerador ("sem um apagar o do outro") não é oráculo: a P-14 é |
 | página em `docs/{pt,en}/referencia/mapa-interativo.md`, na seção Referência, em Markdown sem JS | superfície. O `00` pede "um lugar escolhido" no site | detalhe: CT-15 a CT-21 e CT-34 leem a página nesse caminho. A seção não é oráculo |
 | o catálogo é a página Roteiro de features (`docs/{pt,en}/operacao/roteiro-de-features.md`) | o glossário também o determina (Catálogo de features, decidido nesta feature) | **aceito como oráculo**, pelo glossário e pela RQ-22 |
 | rota `{base}/mapa/{pt,en}/{slug}.html` | superfície | detalhe dos CT-B |
@@ -236,6 +243,45 @@ A sessão mediu que parte das ligações tem a prova em `vendor/`, e que o model
 - `vendor/` e saída de comando (`artisan route:list`) nunca valem.
 
 A sessão mediu as 288 ligações da varredura cuja origem não é classe do kit nem painel. Só `config/` e provider deixariam vermelhas as ligações de `routes/` e de `app/Support` (a distribuição está na R10).
+
+### Perguntas do step 9 (decididas pela sessão em 2026-11-21; os números `Q?n` são provisórios, e a sessão os renumera ao gravar)
+
+*(seção nova em 2026-11-21: step 9 — derivação dos achados da revisão do diff)* Cinco de raia desenho — como o cenário se prende ao código — e duas de raia requisito: a Q23, porque o rótulo da raiz é texto que o leitor vê, e a Q24, porque decide se um valor é aceito ou recusado, e por isso a recomendação dela segue o falha fechado. O recorte de cada uma está marcado no cenário, e o resto do cenário não espera a resposta.
+
+❓ Q20 · raia: desenho · afeta: P-03, R9 (CT-53) · depende de: —
+O "fora de comentário" da R9 tem regra para PHP, Blade, JS e stub. O CT-53 passa a conferir, na suíte do kit, 55 âncoras distintas em tipos sem regra: 30 no `CHANGELOG.md`, 22 em YAML de `.github/`, 2 no `composer.json` e 1 no `.env.example`. YAML e `.env` comentam com `#`, e Markdown com `<!-- -->`: a regra se estende a eles?
+➡️ Recomendação: sim — `#` até o fim da linha em YAML e `.env`, `<!-- -->` em Markdown; JSON não tem comentário. Falha fechado, e medido no commit `168d1827`: nenhuma das 55 tem a primeira ocorrência numa linha de comentário, e a extensão não reprova dado de hoje. Até a decisão, a linha de controle do YAML no CT-53 vai marcada `@premissa`.
+**decidida pela sessão (2026-11-21):** sim. "Fora de comentário" vale também para YAML e `.env` (`#` até o fim da linha) e para Markdown (`<!-- -->`); JSON não tem comentário. A linha do YAML no CT-53 deixa de ser `@premissa`.
+
+❓ Q21 · raia: desenho · afeta: P-14, R38, R39, R40, R9 (CT-52) · depende de: —
+A costura G5 roda o `node` na suíte do kit. Os jobs `qualidade` e `cobertura` do `ci.yml` não têm `actions/setup-node`: o runner `ubuntu-latest` traz um Node sem versão fixada, e o job `site` fixa o 24. O caso usa o Node do runner, ou os dois jobs ganham `actions/setup-node` com a versão do job `site`?
+➡️ Recomendação: os dois jobs ganham `actions/setup-node` com a versão do job `site` — o gerador é o mesmo do build, e outro Node pode aceitar o que o build recusa. Sem `node`, o caso reprova, e não pula.
+**decidida pela sessão (2026-11-21):** os jobs do CI que rodam a suíte do kit ganham `actions/setup-node` — é implementação —, e a costura G5 fica confirmada. Sem `node`, o caso reprova, e não pula.
+
+❓ Q22 · raia: desenho · afeta: P-13, R38 (CT-46) · depende de: —
+A seta que junta ligações de verbos diferentes: divide-se em uma seta por verbo, ou leva um traço próprio de "vários verbos", explicado na legenda "Como ler as setas"? O CT-46 aceita as duas formas e reprova só o traço de um verbo só.
+➡️ Recomendação: uma seta por verbo — a legenda fica como está, e nenhum traço novo precisa de explicação; o custo são mais setas nos resumos (51 pares de pontas hoje).
+**decidida pela sessão (2026-11-21):** uma seta por verbo. A seta junta só ligações do mesmo verbo; dois verbos no mesmo par de pontas viram duas setas, cada uma com o traço do seu verbo. O archify só tem os quatro traços, todos já de verbo; a sessão conferiu que duas conexões no mesmo par renderizam, e que a validação de layout pede reposicionar os mapas afetados, o que é implementação. O CT-46 passa a conferir isso, e as 51 setas de hoje são vermelho de implementação.
+
+❓ Q23 · raia: requisito · afeta: R24 (CT-B01), R13 (CT-B02) · depende de: —
+A raiz da árvore de registro é a peça painel (`painel:app`), e a R24 diz que, no diagrama construído, o rótulo da peça é o nome dela no modelo: `/app`. O gerador desenha "Painel /app" em pt e "Panel /app" em en, e os itens de prova da árvore começam por esse rótulo. Medido no commit `168d1827`: as 4 árvores, nos 2 idiomas, reprovam o oráculo da R24 — 8 raízes, e todo item de prova delas. Muda a implementação (a raiz leva o nome do modelo) ou a regra (a raiz da árvore leva "Painel {nome}" em pt e "Panel {nome}" em en, com o nome da peça painel no modelo)?
+➡️ Recomendação: a regra, com o formato escrito no `05` — "Painel /app" lê melhor que "/app" sozinho, e o esperado continua vindo do modelo, e não do HTML.
+**decidida pela sessão (2026-11-21):** a implementação. A raiz da árvore leva o nome da peça no modelo (`/app`), como toda peça (R24). As 8 raízes de hoje são vermelho de implementação, e o CT-B01 e o CT-B02 tiram o rótulo esperado da raiz do modelo, nunca do HTML.
+
+❓ Q24 · raia: requisito · afeta: P-14, R40 (CT-49) · depende de: —
+`--tentativas 0` é recusado, ou quer dizer "só a grade inicial, sem busca"? O CT-49 recusa o `--tentativas` sem número e o não numérico; o zero fica fora até a resposta.
+➡️ Recomendação: recusado — falha fechado: zero tentativas não é busca, e gravar a grade inicial sem busca é o efeito que o achado A6 descreve.
+**decidida pela sessão (2026-11-21):** recusado. O valor válido de `--tentativas` é um inteiro positivo; o CT-49 ganha a linha do zero.
+
+❓ Q25 · raia: desenho · afeta: R23 (CT-B06) · depende de: —
+O controle de caminho do CT-B06 confere, a partir de uma URL de módulo sintética numa pasta com espaço e acento, o caminho com que o conferidor se relançaria. Isso pede que essa derivação seja a mesma função que o controle de processo usa. Ou a sessão prefere a prova de ponta a ponta: o conferidor rodado de uma cópia dele numa pasta de `site/` com espaço e acento no nome, o que roda o conferidor duas vezes no job `site`? (Uma junção não serve: o Node resolve o link na URL do módulo, como o achado A4 mostra.)
+➡️ Recomendação: o controle sobre a derivação, pela mesma função — custa milissegundos e roda em toda execução; a prova de ponta a ponta dobra o tempo do job.
+**decidida pela sessão (2026-11-21):** o controle sobre a derivação do caminho, pela mesma função; sem prova de ponta a ponta.
+
+❓ Q26 · raia: desenho · afeta: R28 (CT-30), R6 (CT-44) · depende de: —
+O docblock de `tests/Tenancy/MapaInterativoTenancyTest.php` promete cópias de controle nos CT-12, CT-30 e CT-44, e os datasets não as têm (achado A15). O CT-55 dá os controles à guarda do registro (R11). O CT-30 e o CT-44 ganham uma linha de controle cada, ou o docblock muda?
+➡️ Recomendação: ganham — as guardas da suíte Tenancy são funções próprias (o achado A15 é exatamente uma delas divergindo da da Kit), e o controle da Kit (CT-29, CT-36) não as exercita.
+**decidida pela sessão (2026-11-21):** o docblock da suíte `Tenancy` muda para dizer o que os datasets têm. O CT-30 e o CT-44 não ganham controle: o CT-55 e a linha nova do CT-38 cobrem o achado A15.
 
 ## Perguntas para o 00-requisito.md
 
@@ -368,7 +414,7 @@ Placar: 32 aceitos. Os achados estruturais — ADV2-14, ADV2-20, ADV2-29 e ADV2-
   - O nome do pacote vem do endereço do link: o texto `pest-plugin-laravel` leva a `pestphp/pest-plugin-laravel`.
   - Todos os 87 estão instalados.
   - **Fato da base que a entrega corrige (Q16):** quatro pacotes instalados ficam fora da referência nos dois idiomas: `hoceineel/filament-quick-action-dock` (o do dock de atalhos), `brianium/paratest`, `icanhazstring/composer-unused` e `maglnet/composer-require-checker`. Por isso o CT-28 reprova a base. Ele passa quando a referência listar os quatro, cada um numa F-nn de origem pacote ou na lista dos sem feature própria, com o motivo.
-- **Inventário Mermaid:** DG-01 a DG-20 por idioma nos arquivos de `docs/`, mais o DG-01 no README de cada idioma, com o arquivo de cada bloco congelado. A lista vem de `blocosMermaidDaArvore()` (`tests/Pest.php:blocosMermaidDaArvore:1478`) rodado na base.
+- **Inventário Mermaid:** DG-01 a DG-20 por idioma nos arquivos de `docs/`, mais o DG-01 no README de cada idioma, com o arquivo de cada bloco congelado. A lista vem de `blocosMermaidDaArvore()` (`tests/Pest.php:blocosMermaidDaArvore:1479`) rodado na base.
 - **`site/package.json`:** as `dependencies` são `@astrojs/starlight`, `astro`, `astro-mermaid`, `mermaid` e `sharp`; as `devDependencies` são `axe-core`, `playwright` e `wait-on`.
 - **CHANGELOG:** 141 cabeçalhos `## [x.y.z] - AAAA-MM-DD` e o `## [Unreleased]`, sem data. Exemplo: `## [0.56.0] - 2026-11-19`. Só cinco versões citam F-nn, e por isso o marco da linha do tempo casa por termo, e não por F-nn (R29).
 - **Lido da árvore atual, não congelado:** as páginas do site (39 por idioma na base), os diagramas e o modelo.
@@ -384,16 +430,40 @@ Placar: 32 aceitos. Os achados estruturais — ADV2-14, ADV2-20, ADV2-29 e ADV2-
 - Toda guarda é uma função aplicada ao modelo publicado e a cópias adulteradas **em memória**, nunca ao arquivo real. Ela devolve "aceita" ou "reprova", com um motivo que nomeia o item. O molde é `conferirDg10()` (`tests/Kit/GuardasDosDiagramasTest.php:conferirDg10:117`).
 - A guarda do catálogo recebe a base como parâmetro. Assim o controle monta uma base em que um número já está removido, sem tocar na base congelada.
 - O piso de não vácuo vem de uma fonte que o modelo não controla: o registro do painel, a árvore de `docs/`, os manifestos de pacotes ou o catálogo da base. Assim um modelo vazio não passa em "toda peça…".
-- Trecho fora de comentário, por tipo de arquivo *(alterado em 2026-11-20: ADV2-06)*: em PHP, `codigoSemComentario()` (`tests/Pest.php:codigoSemComentario:2188`); em Blade, fora de `{{-- --}}` e de `<!-- -->`; em JS e stub, fora de `//` e de `/* */`.
+- Trecho fora de comentário, por tipo de arquivo *(alterado em 2026-11-20: ADV2-06)*: em PHP, `codigoSemComentario()` (`tests/Pest.php:codigoSemComentario:2189`); em Blade, fora de `{{-- --}}` e de `<!-- -->`; em JS e stub, fora de `//` e de `/* */`. *(alterado em 2026-11-21 — step 9, achado A7)* Em YAML e `.env`, fora de `#` até o fim da linha, e em Markdown, fora de `<!-- -->`, decidido pela sessão (Q20); JSON não tem comentário.
 - "No commit que publica" quer dizer que o arquivo está no índice do git. Invocar o `git` exige a sentinela (`[CT-26]` de `tests/Kit/RedeDeDocumentacaoTest.php`).
 - Arquivos que existem no disco e estão fora do commit:
   - `bootstrap/cache/packages.php`, que o Composer gera e o `bootstrap/cache/.gitignore` ignora;
   - todo arquivo de `vendor/`.
-- Quarto painel: `painelRegistradoEmTeste('financeiro')` (`tests/Pest.php:painelRegistradoEmTeste:812`). O registro morre com o container do caso.
+- Quarto painel: `painelRegistradoEmTeste('financeiro')` (`tests/Pest.php:painelRegistradoEmTeste:813`). O registro morre com o container do caso.
 - A guarda das classes de `app/` recebe a lista de classes como parâmetro. Assim o CT-41 acrescenta uma classe que não existe, sem tocar na árvore.
 - *(alterado em 2026-11-20: segunda revisão adversarial)* Listas fechadas e critérios que as guardas compartilham, cada um conferido na regra dele: os métodos de contrato do alvo (R10, ADV2-08); os comandos `kit:*`, que nunca entram na lista das sem feature (R28, ADV2-18); os 39 termos do glossário e as palavras funcionais do pt na tradução (R16, ADV2-11 e ADV2-28); o título do item do README (R5, ADV2-03); a normalização dos caminhos do "onde fica" (R6, ADV2-04); os arquivos de `site/mapa/` (R21, D32).
 - **Motivo de enfeite** *(alterado em 2026-11-20: ADV-22)*: o motivo vazio, só de travessão ou pontuação, ou "não se aplica" sem dizer por quê. A definição é uma só, nos CT-03, CT-21, CT-28, CT-29, CT-35 e CT-41, e no CT-B07 do `05`.
+  - *(alterado em 2026-11-21 — step 9, achado A13)* **Uma tabela só, nos dois lados.** "Uma só" quer dizer que a guarda do kit (`tests/Pest.php:motivoDeEnfeite:4224`) e o conferidor do mapa (`site/verifica-mapa.mjs:motivoDeEnfeite:382`) decidem igual esta tabela, e o CT-35 (o lado PHP) e o CT-B07 (o lado JS) a citam linha a linha. É enfeite: vazio; ausente ou nulo; só travessão, pontuação ou símbolo ("—", "- ", "..."); "não se aplica", "nao se aplica", "not applicable", "does not apply" ou "N/A", em qualquer caixa, com ou sem pontuação, sem dizer por quê; e o valor que não é texto (o número 0). É motivo: o texto que diz por quê, mesmo começando por "não se aplica:" ("não se aplica: a classe é abstrata e vazia").
+  - *(alterado em 2026-11-21 — step 9, correção devolvida pelos executores do CT-35 e do CT-B07: o texto dizia 17 entradas e citava 16)* A tabela, entrada a entrada:
+
+    | Entrada | Decisão |
+    |---|---|
+    | `""` (vazio) | enfeite |
+    | ausente (sem a chave; no PHP, o mesmo que nulo) | enfeite |
+    | `null` | enfeite |
+    | `"—"` | enfeite |
+    | `"- "` | enfeite |
+    | `"..."` | enfeite |
+    | `"não se aplica"` | enfeite |
+    | `"nao se aplica"` | enfeite |
+    | `"not applicable"` | enfeite |
+    | `"Not applicable."` | enfeite |
+    | `"does not apply"` | enfeite |
+    | `"Does not apply"` | enfeite |
+    | `"N/A"` | enfeite |
+    | `"n/a"` | enfeite |
+    | `0` (não é texto) | enfeite |
+    | `"não se aplica: a classe é abstrata e vazia"` | motivo |
+
+  - Medido no commit `168d1827`, com as 16 entradas da tabela: a guarda do kit decide todas como acima; o conferidor do mapa diverge em 7 — "N/A", "n/a", "not applicable", "Not applicable.", "does not apply", "Does not apply" e o número 0, que ele aceita como motivo. As linhas novas do CT-B07 ficam vermelhas até o conferidor seguir a tabela.
 - A detecção da peça condicional (o `master_global`, o `canAccess()` e o `canView()`) saiu com a R30, estacionada na Q11 *(alterado em 2026-11-20: ADV-31)*.
+- *(alterado em 2026-11-21 — step 9)* **As guardas da G5** (o gerador e as ferramentas de autor como processo filho) seguem a mesma regra: a guarda é uma função sobre o que o processo devolve, e o controle a chama sobre uma entrada adulterada em memória (leitura) ou num clone descartável (efeito). A forma de cada uma está na linha G5 de `## Costuras de Teste`. Nenhum caso da G5 escreve em `site/` da árvore do kit, e todo caso de efeito afirma o não-efeito pelos bytes: o arquivo do autor, o arquivo do diagrama e a ausência de `site/.archify` no clone, que o download criaria. Conferido no commit `168d1827`: a forma de leitura monta a entrada dos 87 diagramas em 4 s, sem baixar nem renderizar; no clone `--shared` com `GIT_ALLOW_PROTOCOL=file`, o `git show` funciona, o `fetch` do archify por https sai com "fatal: transport 'https' not allowed", e a tentativa deixa o `site/.archify` criado.
 
 ### Helpers
 - O helper usado pelos dois arquivos mora em `tests/Pest.php` (`.ai/rules/testes.md`, com a prova em `tests/Kit/HelpersDeTesteTest.php`). É o caso de ler o modelo, de montar o conjunto de registro de um painel num modo e de achar a F-nn de uma peça.
@@ -664,7 +734,13 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
         | cópia da lista com a página `comecar/index.md`, com o motivo "—"                                                 | reprova, nomeando a página                | motivo de enfeite                 |
         | cópia da lista com a página `comecar/index.md`, com o motivo "não se aplica", sem porquê                         | reprova, nomeando a página                | motivo de enfeite                 |
         | cópia do README pt com um item a mais na lista, "**Mapa interativo**: …", fora da tabela da guarda | reprova, nomeando o item | item novo sem F-nn |
+        | cópia da lista com a página `comecar/index.md`, com o motivo "N/A"                                              | reprova, nomeando a página                | motivo de enfeite (tabela do Setup Global) |
+        | cópia da lista com a página `comecar/index.md`, com o motivo "not applicable"                                   | reprova, nomeando a página                | motivo de enfeite (tabela do Setup Global) |
+        | cópia da lista com a página `comecar/index.md`, com o motivo "Does not apply"                                   | reprova, nomeando a página                | motivo de enfeite (tabela do Setup Global) |
+        | cópia da lista com a página `comecar/index.md`, com o motivo 0, que não é texto                                  | reprova, nomeando a página                | motivo de enfeite (tabela do Setup Global) |
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A13)* As quatro linhas novas são o lado PHP da tabela do motivo de enfeite (Setup Global); o CT-B07 do `05` tem as mesmas quatro do lado do conferidor. Medido no commit `168d1827`: a guarda do kit decide as quatro como enfeite, e elas passam hoje.
 
 `@premissa` de mecanismo, decidida pela sessão (Q14b e Q14c):
 - a linha da F-nn leva por link à página que a descreve;
@@ -712,6 +788,7 @@ A Q7 foi fechada pelo `00`: a RQ-19 diz "páginas do site" sem recorte. Então t
 | M7 — revisão adversarial (ADV-22) | página na lista com motivo de enfeite | CT-35 | linhas do motivo "—" e do "não se aplica" sem porquê: reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV-01; conferido pela sessão) | o termo casa como pedaço de palavra, e `dock` acha "docker" na linha da F-56 | CT-35 | linha do dock casado com a F-56: reprova; o mutante aceita |
 | M9 — revisão adversarial (ADV2-03) | a entrega acrescenta à lista do README um item sem F-nn, como o próprio mapa, e a guarda só lê o README da base | CT-05, CT-35 | CT-35, linha do item "Mapa interativo": reprova; e, no publicado, o CT-05 lê a lista publicada; o mutante aceita |
+| M10 — step 9 (A13) | a guarda do kit e o conferidor do mapa têm duas definições de motivo de enfeite, e a do kit, alinhada à do conferidor, aceita "N/A", "not applicable", "Does not apply" ou um valor que não é texto | CT-35 | linhas "N/A", "not applicable", "Does not apply" e 0: reprova; o mutante aceita |
 
 ---
 
@@ -925,6 +1002,9 @@ A Q9 foi fechada pelo `00`. Pela P-07, o link de prova aponta para o commit que 
         | a mesma ligação, em `resources/views/filament/pages/convites-recebidos.blade.php`, trecho `ConvitesRecebidos::table()`, que só existe dentro do `{{-- --}}` da linha 1 | reprova, nomeando a ligação | trecho só em comentário Blade |
         | cópia do modelo com a prova de uma ligação num campo `linha: 240`, ao lado do arquivo e do trecho | reprova, nomeando a ligação | linha num campo do modelo |
         | cópia de um arquivo de diagrama em que a prova de uma peça, no `sources`, traz `line: 240` | reprova, nomeando o diagrama e a peça | linha nas provas do diagrama |
+        | cópia do modelo de peças em que a evidência do `UserResource` do `/admin` traz `line: 240` ao lado do arquivo e do trecho | reprova, nomeando a peça | linha na evidência de peça |
+        | cópia do modelo de peças em que a evidência do `UserResource` do `/admin` traz `end_line: 241` | reprova, nomeando a peça | fim de intervalo na evidência de peça |
+        | cópia do modelo de peças em que a evidência do `UserResource` do `/admin` traz `path: app/Models/User.php` ao lado do arquivo dela | reprova, nomeando a peça | outro caminho na evidência de peça |
 ```
 
 *(alterado em 2026-11-20: ADV-19 e ADV-23)*
@@ -935,6 +1015,52 @@ A Q9 foi fechada pelo `00`. Pela P-07, o link de prova aponta para o commit que 
 - **Fora de comentário, por tipo de arquivo.** PHP: `codigoSemComentario()`. Blade (`.blade.php`): fora de `{{-- --}}` e de `<!-- -->`. JS e stub: fora de `//` e de `/* */`. Medido: a linha 1 de `resources/views/filament/pages/convites-recebidos.blade.php` é um `{{-- --}}` com `ConvitesRecebidos::table()`, e o arquivo, de 4 linhas, não traz o trecho fora dele.
 - **A linha nunca é guardada.** O modelo não tem campo `linha` nem `line`, e a prova de peça nos arquivos de diagrama (`sources`) é sempre âncora `{arquivo, trecho}`, com `label` opcional. Medido nos 13 arquivos de diagrama do esqueleto: 405 provas, 3 com `arquivo` e `trecho`, 402 também com `label`, e nenhuma com linha nem com `:N` ou `#LN` no caminho. O gerador projeta a âncora e acha a linha na revisão publicada (`site/mapa/gerar.mjs`, função `linhaDaAncora`), e não aceita outra forma como prova.
 - O piso conta todas as ligações do modelo, e não só as de registro.
+
+*(alterado em 2026-11-21 — step 9, achado A10)*
+- **A âncora tem chaves fechadas: `arquivo`, `trecho` e, opcional, `label`.** O gerador projeta a âncora com `{ ...linhaDaAncora(...), ...projetar(resto) }` (`site/mapa/gerar.mjs`, `linhaDaAncora`, no commit `168d1827`): qualquer chave a mais que venha do arquivo vence a que ele calcula — `line` e `end_line` trocam a linha, e `path` troca o arquivo do link. A guarda reprova a chave a mais em toda âncora: a das ligações, a evidência de cada peça do modelo de peças, e as dos arquivos de diagrama. Antes, a guarda olhava só `linha` e `line`, e só nas ligações e nos diagramas.
+- Medido no commit `168d1827`: nenhuma âncora com chave fora de `arquivo`, `trecho` e `label` — nem as 413 das ligações, nem as 284 evidências de peça, nem as 863 dos diagramas escritos à mão. As três linhas novas passam hoje no publicado, e reprovam as cópias.
+
+*(alterado em 2026-11-21 — step 9, achados A3 e A7)* Dois cenários novos nesta regra, nos Exemplos abaixo: o CT-52, sobre a linha que o build dá à prova, e o CT-53, sobre as âncoras que nenhuma guarda Pest conferia.
+
+```gherkin
+    Esquema do Cenário: [CT-52] a linha que o build dá a cada prova é a do código: o trecho está fora de comentário nela
+      Dado o `node` do ambiente, lido pela versão
+      E os arquivos de diagrama do mapa "<mundo>"
+      Quando o gerador monta, para o archify, a entrada de cada diagrama, sem baixar o archify nem renderizar
+      Então o resultado é "<resultado>"
+      E, nos publicados, a guarda conferiu a linha de tantas provas quantas o gerador projeta — o item de prova de cada ligação desenhada e cada fonte de peça —, e ao menos uma âncora cujo trecho aparece mais de uma vez no arquivo (22 no commit `168d1827`)
+
+      Exemplos:
+        | mundo                                                                                                                                                                                          | resultado                                                                                                     | # partição                              |
+        | publicados                                                                                                                                                                                     | aceita: em todo diagrama, a linha de cada item de prova e de cada fonte de peça tem o trecho da âncora fora de comentário, pela sintaxe do tipo do arquivo | válida                                  |
+        | um diagrama escrito à mão, em memória, com uma ligação provada por `app/Providers/AppServiceProvider.php`, trecho `Locker::class`, que aparece primeiro num comentário `//` e depois no código | aceita (idem): a linha do item de prova é a do código, ou o gerador recusa a prova, nomeando a ligação         | trecho que aparece antes num comentário |
+```
+
+- **Por que o oráculo é a linha que o build dá, e não a âncora.** O link de evidência e o item de card levam a linha que o gerador acha na revisão publicada (P-07), e é ela que o leitor abre. A guarda do CT-09 exige o trecho fora de comentário em algum lugar do arquivo; o gerador usa a primeira ocorrência no texto cru (`site/mapa/gerar.mjs`, `linhaDaAncora`, no commit `168d1827`), que pode ser um comentário. O oráculo aceita as duas correções — o gerador pular o comentário, ou recusar a âncora ambígua — e reprova só a linha de comentário.
+- **O controle.** Medido no commit `168d1827`: em `app/Providers/AppServiceProvider.php`, o trecho `Locker::class` aparece primeiro num comentário (`app/Providers/AppServiceProvider.php:Locker:25`) e depois no código (`app/Providers/AppServiceProvider.php:Locker:28`). Executado pela forma de leitura da G5, com o diagrama de controle em memória: o item de prova que o gerador monta aponta a linha 25 do `AppServiceProvider.php`, a do comentário. A linha de controle reprova hoje.
+- **Hoje.** Das 1.127 âncoras distintas do modelo e dos diagramas, 22 têm o trecho mais de uma vez no arquivo, e em nenhuma a primeira ocorrência está num comentário: a linha "publicados" passa hoje. 55 âncoras estão em YAML, `.env`, Markdown e JSON, que ganharam regra de comentário com a Q20; a primeira ocorrência de nenhuma delas fica numa linha de comentário `#` ou `<!--`.
+- **Costura G5, forma de leitura.** O caso roda num `node` a função que o gerador exporta para montar a entrada do archify; o controle passa o diagrama em memória. Sem `node`, o caso reprova (Q21).
+
+```gherkin
+    Esquema do Cenário: [CT-53] toda âncora do mapa resolve na suíte do kit: a evidência de cada peça do modelo e toda âncora dos diagramas escritos à mão
+      Dado o modelo de peças e os arquivos de diagrama "<mundo>"
+      Quando a guarda do mapa confere, como prova, cada evidência de peça e cada âncora dos diagramas escritos à mão — a fonte de participante, nó, entidade, tipo, evento e span, e a prova de relação
+      Então o resultado é "<resultado>"
+      E, nos publicados, a guarda conferiu tantas âncoras quantas o modelo de peças e os diagramas escritos à mão têm, e ao menos uma de cada coleção: `participants`, `nodes`, `entities`, `types`, `events`, `spans` e `relationships`
+
+      Exemplos:
+        | mundo                                                                                                                                       | resultado                                     | # partição                         |
+        | publicados                                                                                                                                  | aceita                                        | válida                             |
+        | cópia do modelo de peças em que a evidência do `UserResource` do `/admin` tem um trecho que não está em `app/Filament/Admin/Resources/Users/UserResource.php` | reprova, nomeando a peça | evidência de peça que saiu do código |
+        | cópia do `erd-identidade-e-permissoes` em que a fonte de uma entidade cita uma migração de `database/migrations/` que não existe              | reprova, nomeando o diagrama e o arquivo      | arquivo inexistente                |
+        | cópia do `marcos-do-changelog` em que a fonte de um evento cita `CHANGELOG.md` com um trecho que não está nele                               | reprova, nomeando o diagrama                  | trecho que não está no arquivo     |
+        | cópia do `classes-heranca-e-contratos` em que a prova de uma relação é um trecho que só existe num comentário do arquivo                     | reprova, nomeando o diagrama e a relação      | prova de relação só em comentário  |
+        | cópia do `tempos-ci` em que a fonte de um span cita `.github/workflows/ci.yml` com um trecho que só está numa linha de comentário `#` (Q20, decidida) | reprova, nomeando o diagrama | trecho só em comentário de YAML |
+```
+
+- **O que ficava sem guarda.** A guarda do CT-09 resolve a prova das ligações; a do CT-39, a âncora das transições e dos estados de `lifecycle`. Ficavam para o build do site — que o job `site` só roda quando o PR toca `docs/` ou `site/` — a evidência de cada peça do modelo de peças e as âncoras dos diagramas escritos à mão que não são transição nem estado. Um PR só de `app/`, `database/`, `config/`, do CHANGELOG ou de `.github/` quebrava uma delas sem vermelho, e o próximo PR de `docs/`, de outra pessoa, reprovava no build. A página do mapa promete que as guardas confrontam o mapa com o código em todo PR.
+- **A guarda é a da R9.** Arquivo versionado, trecho presente fora de comentário pela sintaxe do tipo, sem número de linha e com as chaves fechadas da âncora.
+- **Medido no commit `168d1827`:** 878 âncoras sem guarda Pest — 284 evidências de peça (208 não coincidem com a âncora de nenhuma ligação) e 594 dos diagramas escritos à mão: 181 fontes de `nodes`, 129 de `participants`, 75 de `entities`, 61 de `types`, 47 de `spans`, 30 de `events` e 71 provas de `relationships`. Por pasta: 696 em `app/`, 115 em `database/`, 30 no `CHANGELOG.md`, 23 em `.github/`, 8 em `config/`, 3 em `routes/`, 2 no `composer.json` e 1 no `.env.example`. A guarda da R9 aceita as 878: a linha "publicados" passa hoje.
 
 #### Mutantes previstos
 
@@ -948,10 +1074,14 @@ A Q9 foi fechada pelo `00`. Pela P-07, o link de prova aponta para o commit que 
 | M6 — revisão adversarial (ADV-23) | a guarda confere a prova só das ligações de registro, e a prova velha de uma ligação de uso (`UserResource` → `User`) passa | CT-09 | "conferiu a prova de tantas ligações quantas o modelo tem": a conta fica abaixo do total e reprova; o mutante aceita |
 | M7 — revisão adversarial (ADV2-06) | a prova cita uma view Blade, um stub ou um JS, e o trecho só existe dentro de `{{-- --}}`, `<!-- -->` ou `//`, que a guarda de PHP não reconhece | CT-09 | linha do `convites-recebidos.blade.php`: reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV2-07) | o número de linha fica guardado fora do caminho: num campo do modelo, ou no `sources` do arquivo de diagrama | CT-09 | linhas do campo `linha` e do `sources` com `line`: reprova; o mutante aceita |
+| M9 — step 9 (A7) | a guarda da R9 confere só a prova das ligações, e a evidência de peça e a âncora de diagrama escrito à mão envelhecem sem vermelho no PR que só toca `app/`, `database/`, `config/`, o CHANGELOG ou `.github/` | CT-53 | linhas da evidência do `UserResource`, da migração que não existe, do trecho fora do CHANGELOG e da relação só em comentário: reprova; e, nos publicados, "conferiu tantas âncoras quantas o modelo de peças e os diagramas escritos à mão têm"; o mutante aceita |
+| M10 — step 9 (A3) | o build dá à prova a linha da primeira ocorrência do trecho no texto cru, e ela está num comentário | CT-52 | linha do `Locker::class`: o item de prova sai com a linha 25, de comentário, e reprova; o mutante aceita |
+| M11 — step 9 (A10) | a evidência de peça traz uma chave a mais (`line`, `end_line`, `path`) que vence a que o build calcula, e a guarda não olha o modelo de peças | CT-09 | linhas do `line`, do `end_line` e do `path` na evidência do `UserResource`: reprova; o mutante aceita |
+| M12 — step 9 (A7; Q20) | o trecho de uma âncora em YAML, `.env` ou Markdown só existe num comentário, e a guarda, sem regra para esses tipos, o acha no arquivo inteiro | CT-53 | linha do `tempos-ci` com o trecho só numa linha `#` do `ci.yml`: reprova; o mutante aceita |
 
 ---
 
-## Regra R10 — A prova é a da ligação: está no arquivo da origem, num trait ou concern que a origem usa, no provider do painel (descoberta, plugin ou configuração), no método de contrato do alvo ou, quando a origem é peça de pacote, num arquivo do kit que nomeia a origem; o trecho é o dessa ligação; e as duas pontas são peças
+## Regra R10 — A prova é a da ligação: está no arquivo da origem, num trait ou concern que a origem usa, no provider do painel (descoberta, plugin — direto ou pelo invólucro do kit — ou configuração), na configuração global que o kit faz do pacote que registra a peça sozinho, no método de contrato do alvo ou, quando a origem é peça de pacote, num arquivo do kit que nomeia a origem; o trecho é o dessa ligação; e as duas pontas são peças
 
 > `RQ-24`, `P-03`, `P-07` · perfil **padrão** · técnica: **EP** (forma da prova × arquivo) + controles em cópia
 
@@ -963,10 +1093,13 @@ A Q9 foi fechada pelo `00`. Pela P-07, o link de prova aponta para o commit que 
 As formas válidas de a prova ser a da ligação são estas. Qualquer outro arquivo reprova, mesmo com um trecho que nomeia a peça usada.
 - **Arquivo da origem, com o nome da peça usada.** O trecho nomeia a peça (a primeira linha dos Exemplos).
 - **Trait ou concern que a origem usa.** O `Projeto` usa o `BelongsToTenant` (`app/Models/Projeto.php:BelongsToTenant:38`), e o trait liga ao `Tenant` (`app/Traits/BelongsToTenant.php:belongsTo:84`).
-- **Provider do painel, nas ligações do painel.** São três formas.
+- **Provider do painel, nas ligações do painel.** São quatro formas *(três até o step 9)*.
   - *Descoberta por pasta.* É a regra nos três painéis (`app/Providers/Filament/AdminPanelProvider.php:discoverResources:147`). A prova de "o painel admin registra `UserResource`" não nomeia o recurso: é a linha de descoberta cuja pasta o contém.
   - *Registro do plugin que traz a peça* (Q9). A peça que um plugin traz só aparece no código versionado como o registro do plugin no provider. A prova de "o painel infra registra `HealthCheckResults`" é o `FilamentSpatieLaravelHealthPlugin::make()` (`app/Providers/Filament/InfraPanelProvider.php:FilamentSpatieLaravelHealthPlugin:345`), porque o `register()` desse plugin registra a página (`vendor/shuvroroy/filament-spatie-laravel-health/src/FilamentSpatieLaravelHealthPlugin.php:pages:36`).
+    - *(alterado em 2026-11-21 — step 9, achado A9: leitura da forma, decidida pela sessão)* Vale também para o middleware que o plugin traz no `authMiddleware` do painel: o `Locker`, pelo `Lockscreen` (`vendor/marjose123/filament-lockscreen/src/Lockscreen.php:authMiddleware:42`), e o `MustTwoFactor`, pelo `BreezyCore` (`vendor/jeffgreco13/filament-breezy/src/BreezyCore.php:authMiddleware:62`). A forma é avaliada sobre o plugin como o painel vivo o configura: o `BreezyCore` só põe o `MustTwoFactor` com o 2FA ligado. É leitura da forma, e não forma nova.
+  - *Invólucro do kit que registra o plugin* *(forma nova em 2026-11-21 — step 9, achado A9, decidida pela sessão)*. O provider do painel registra o plugin por uma classe de `app/`: o trecho chama `X::make()` ou `X::plugin()`, `X` resolve, pelos `use` do provider, para uma classe de `app/`, e o arquivo de `X` nomeia a classe da peça. No código de hoje: `PluginDoDock::make()` (`app/Providers/Filament/AdminPanelProvider.php:PluginDoDock:324`), cujo arquivo nomeia o `QuickActionDockPlugin` (`app/Filament/Dock/PluginDoDock.php:QuickActionDockPlugin:24`); e `TutorialGuiado::plugin()` (`app/Providers/Filament/AdminPanelProvider.php:TutorialGuiado:313`), cujo arquivo nomeia o `FilamentOnboardingPlugin` (`app/Support/TutorialGuiado.php:FilamentOnboardingPlugin:15`). O mesmo nos três painéis.
   - *Configuração do painel* (ADV-08). O framework acrescenta peças a partir da configuração do painel: o alias `panel:{id}` sai do `->id()` (`app/Providers/Filament/AdminPanelProvider.php:id:77`), e o `IdentifyTenant` sai do `->tenant()` (`app/Providers/Filament/AppPanelProvider.php:tenant:660`). A prova é o trecho que configura, no provider desse painel.
+- **Configuração global do pacote que registra a peça sozinho** *(forma nova em 2026-11-21 — step 9, achado A9, decidida pela sessão)*. O pacote registra a peça em todo painel por conta própria — o service provider do `bezhansalleh/filament-language-switch` põe o `SwitchLanguageLocale` no middleware de cada painel (`vendor/bezhansalleh/filament-language-switch/src/LanguageSwitchServiceProvider.php:SwitchLanguageLocale:67`) —, e a prova é a configuração global que o kit faz dele: `Y::configureUsing(` num arquivo de `app/Providers` ou num trait dele, com `Y` classe do mesmo pacote da peça. No código de hoje: `LanguageSwitch::configureUsing(` (`app/Providers/Concerns/ConfiguraFilamentGlobal.php:configureUsing:210`), no trait que o `KitServiceProvider` usa (`app/Providers/KitServiceProvider.php:ConfiguraFilamentGlobal:79`).
 - **Método de contrato do alvo.** Quando o framework chama um método no alvo, o trecho é esse método, no arquivo do alvo: o `canAccessPanel()` do `User` (`app/Models/User.php:canAccessPanel:174`). O método é um da lista fechada, abaixo dos Exemplos.
 - **Arquivo do kit que liga a peça de pacote** (Q19, decidida — D26). Quando a origem é peça de pacote, a prova é o trecho do kit que liga a origem ao destino, num arquivo versionado fora de `vendor/`, em qualquer pasta.
   - O trecho nomeia a peça de destino, pela classe, pelo alias ou pela chave.
@@ -975,7 +1108,7 @@ As formas válidas de a prova ser a da ligação são estas. Qualquer outro arqu
   - Exemplos do código de hoje: o `bind` do `LockerScreen` do pacote para a `TelaBloqueio` (`app/Providers/AppServiceProvider.php:bind:23`); o mapa das policies dos models de pacote (`app/Support/PoliciesDeVendor.php:ExceptionPolicy:67`); e o `Event::listen` dos eventos do `laravel/ai` para o `RegistrarAiRun` (`app/Providers/KitServiceProvider.php:listen:529`). O terceiro fica fora dos Exemplos do CT-10: as pontas dele são eventos, e evento não está na tabela de tipos da R8.
   - Medido pela sessão nas 288 ligações da varredura cuja origem não é classe do kit nem painel: provider de painel 116, sem prova 63, `vendor/` 57, outro provider 11, `database/` 11, `config/` 9, `routes/` 6, `app/Filament` 4, saída de `artisan` 4, `app/Support` 3, model 2, view 1 e stub 1. Aceitar só `config/` e provider deixaria vermelhas as ligações de `routes/` e de `app/Support`.
 
-Sem a partição do plugin e a da configuração, toda ligação de registro que a R11 exige para peça de plugin, para `panel:{id}` e para `IdentifyTenant` ficaria vermelha. Sem a quinta forma, ficariam vermelhas as ligações cuja origem é peça de pacote.
+Sem a partição do plugin e a da configuração, toda ligação de registro que a R11 exige para peça de plugin, para `panel:{id}` e para `IdentifyTenant` ficaria vermelha. Sem a quinta forma, ficariam vermelhas as ligações cuja origem é peça de pacote. *(alterado em 2026-11-21 — step 9, achado A9)* Sem a leitura do middleware, ficariam vermelhas as 6 ligações de registro do `Locker` e do `MustTwoFactor`; sem o invólucro do kit, as 6 do dock e do tutorial; e sem a configuração global do pacote, as 3 do `SwitchLanguageLocale`.
 
 ```gherkin
   Regra: O trecho de cada prova é o da ligação que ela prova
@@ -1010,7 +1143,31 @@ Sem a partição do plugin e a da configuração, toda ligação de registro que
         | a página `LockerScreen` do pacote do lockscreen resolve para a `TelaBloqueio` | a saída de `php artisan route:list` | a linha da rota da tela de bloqueio | reprova, nomeando a ligação | saída de comando |
         | `UserResource` usa o model `User`                        | `app/Filament/Admin/Resources/Users/UserResource.php`  | `class UserResource`                                           | reprova, nomeando a ligação  | nome só dentro de outro nome            |
         | `UserResource` usa `User`, numa cópia do modelo sem a peça `User` | `app/Filament/Admin/Resources/Users/UserResource.php` | `protected static ?string $model = User::class;`      | reprova, nomeando `User`     | ponta que não é peça                    |
+        | o painel admin registra o middleware `Locker`               | `app/Providers/Filament/AdminPanelProvider.php`        | `Lockscreen::make()`                                           | aceita                       | plugin que traz o middleware *(step 9)* |
+        | o painel admin registra `QuickActionDockPlugin`             | `app/Providers/Filament/AdminPanelProvider.php`        | `PluginDoDock::make(),`                                        | aceita                       | invólucro do kit *(step 9)*             |
+        | o painel admin registra `FilamentOnboardingPlugin`          | `app/Providers/Filament/AdminPanelProvider.php`        | `TutorialGuiado::plugin(),`                                    | aceita                       | invólucro do kit *(step 9)*             |
+        | o painel admin registra o middleware `SwitchLanguageLocale` | `app/Providers/Concerns/ConfiguraFilamentGlobal.php`   | `LanguageSwitch::configureUsing(`                              | aceita                       | configuração global do pacote *(step 9)* |
+        | o painel admin registra o middleware `MustTwoFactor`        | `app/Providers/Filament/AdminPanelProvider.php`        | `Lockscreen::make()`                                           | reprova, nomeando a ligação  | plugin que não traz o middleware *(step 9)* |
+        | o painel admin registra `QuickActionDockPlugin`             | `app/Providers/Filament/AdminPanelProvider.php`        | `TutorialGuiado::plugin(),`                                    | reprova, nomeando a ligação  | invólucro cujo arquivo não nomeia a peça *(step 9)* |
+        | o painel admin registra o middleware `SwitchLanguageLocale` | `app/Providers/Concerns/ConfiguraFilamentGlobal.php`   | `Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));` | reprova, nomeando a ligação | configuração global de classe de outro pacote *(step 9)* |
+        | cada ligação do modelo publicado, uma por uma                | o arquivo da prova dela                                 | o trecho da prova dela                                         | aceita, em todas, e a guarda conferiu tantas ligações quantas o modelo tem | publicado |
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A9)* **A linha "publicado".** Até aqui o CT-10 só tinha os Exemplos acima, e nenhuma linha passava as ligações publicadas pela guarda; toda outra guarda do mapa tem a linha "publicado". A linha nova passa cada ligação do modelo pela mesma função das linhas de controle.
+
+**Hoje o dado reprova o oráculo.** Medido no commit `168d1827`, com a mesma função das linhas de controle sobre as 413 ligações: 16 reprovam pela forma, todas ligações de registro de painel provadas no provider por uma linha que não nomeia a peça, nem é a descoberta que alcança a pasta dela, nem o registro do plugin que a traz:
+- `painel:admin`, `painel:app` e `painel:infra` → `Locker`, com o trecho `Lockscreen::make()` (o plugin que traz o middleware) — 3;
+- os três painéis → `MustTwoFactor`, com `BreezyCore::make()` (o plugin que traz o middleware) — 3;
+- os três painéis → `QuickActionDockPlugin`, com `PluginDoDock::make(),` (um invólucro do kit) — 3;
+- os três painéis → `FilamentOnboardingPlugin`, com `TutorialGuiado::plugin(),` (um invólucro do kit) — 3;
+- os três painéis → `SwitchLanguageLocale`, com um `Toggle::configureUsing(…)` de `app/Providers/Concerns/ConfiguraFilamentGlobal.php` (o `configureUsing` global, fora do provider do painel) — 3;
+- `painel:app` → `Tenant`, com `$tenant = Filament::getTenant();` no `AppPanelProvider` — 1.
+
+*(alterado em 2026-11-21 — step 9: decisão da sessão sobre as 16, por grupo)*
+- **Âncora errada do modelo — vermelho de implementação (4).** `painel:app` → `Tenant` passa à linha do `AppPanelProvider` que nomeia a classe, a do `instanceof Tenant` (`app/Providers/Filament/AppPanelProvider.php:instanceof:211`); os três painéis → `SwitchLanguageLocale` passam à linha `LanguageSwitch::configureUsing(` (`app/Providers/Concerns/ConfiguraFilamentGlobal.php:configureUsing:210`). A âncora de hoje, `Toggle::configureUsing`, nada tem a ver com a peça. Medido no commit `168d1827`: o trecho `instanceof Tenant` sozinho aparece antes num comentário do mesmo arquivo (`app/Providers/Filament/AppPanelProvider.php:instanceof:209`), e a linha que o build daria a ele seria a do comentário, que o CT-52 reprova; a âncora nova precisa de um trecho cuja primeira ocorrência seja a do código, como a linha inteira do `if`.
+- **Formas novas da R10 — correção do `04` (6 + 3).** O invólucro do kit que registra o plugin aceita as 6 do dock e do tutorial; a configuração global do pacote aceita as 3 do `SwitchLanguageLocale`, com a âncora corrigida acima. Cada forma tem a sua linha de controle, que reprova: o invólucro cujo arquivo não nomeia a peça, e o `configureUsing` de classe de outro pacote — a âncora de hoje do `SwitchLanguageLocale`.
+- **Leitura da forma do plugin no middleware (6).** O `Locker` e o `MustTwoFactor` dos três painéis passam pelo registro do plugin que os traz no `authMiddleware`, avaliado como o painel vivo configura o plugin. A linha de controle: o plugin que não traz o middleware reprova.
+- **Depois da implementação** — as âncoras do modelo e as duas formas e a leitura na guarda —, a linha "publicado" aceita as 413. O oráculo não foi ajustado para o dado passar: as 16 reprovam hoje.
 
 Cada linha inválida tem um único defeito. Os trechos dela estão no arquivo, e a R9 os aceitaria, fora as linhas de `vendor/` e da saída de comando, que a R9 também reprova; a quinta forma as reprova por conta própria (D26). O `UserExporter` traz o mesmo trecho do `UserResource` (`app/Filament/Exports/UserExporter.php:$model:24`), e por isso a única diferença da linha dele é o arquivo.
 
@@ -1035,6 +1192,10 @@ Cada linha inválida tem um único defeito. Os trechos dela estão no arquivo, e
 | M10 — revisão adversarial (ADV2-08) | a guarda aceita qualquer trait como prova, sem conferir se a origem o usa | CT-10 | linha "`UserResource` usa o model `Tenant`", com o `BelongsToTenant`: reprova; o mutante aceita |
 | M11 — revisão adversarial (ADV2-08) | a guarda aceita qualquer método no arquivo do alvo, sem conferir se é de contrato | CT-10 | linha do `situacao()` do `Convite`: reprova; o mutante aceita |
 | M12 — revisão adversarial (ADV2-09) | num arquivo de mapeamento, o trecho nomeia só o destino, e toda origem que o arquivo mapeia passa com qualquer policy dele | CT-10 | linha do `MailLog` com a linha do `Exception`: reprova; o mutante aceita |
+| M13 — step 9 (A9) | a guarda da R10 só roda sobre os Exemplos, e a prova de uma ligação publicada que não é a dela — um registro de painel provado por uma linha do provider que não nomeia a peça — passa | CT-10 | linha "cada ligação do modelo publicado": as 16 de hoje reprovam; o mutante, que nunca as confere, aceita |
+| M14 — step 9 (A9; forma nova) | o invólucro do kit vale como prova de qualquer peça de plugin, sem conferir que o arquivo dele nomeia a peça | CT-10 | linha do `QuickActionDockPlugin` com `TutorialGuiado::plugin(),`: reprova; o mutante aceita |
+| M15 — step 9 (A9; forma nova) | qualquer `configureUsing` global vale como prova da peça que um pacote registra sozinho, mesmo de classe de outro pacote | CT-10 | linha do `SwitchLanguageLocale` com `Toggle::configureUsing(…)`: reprova; o mutante aceita |
+| M16 — step 9 (A9; leitura da forma) | o registro de um plugin vale como prova de qualquer middleware do painel, sem conferir que o plugin, como o painel o configura, traz aquele middleware | CT-10 | linha do `MustTwoFactor` com `Lockscreen::make()`: reprova; o mutante aceita |
 
 ---
 
@@ -1105,6 +1266,28 @@ Elas provam que cada suíte roda no seu modo e que cada guarda leu o registro, e
 
 *(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* O diagrama vale no modo quando o campo `modos` dele contém o modo; o compartilhado (`sem` e `com`) vale nos dois. A ligação conta como desenhada quando as duas pontas estão desenhadas, como peça ou como membro de agrupamento — a mesma regra do construtor.
 
+*(alterado em 2026-11-21 — step 9, achado A15)* O CT-13 controla a guarda do registro só no modo sem tenant, e a guarda da suíte `Tenancy` é outra função: ela filtra o lado do modelo pelos cinco tipos de registro antes de comparar, e a sobra de outro tipo passa. O CT-55 dá a ela os controles, no modo com tenant.
+
+```gherkin
+    Esquema do Cenário: [CT-55] com tenant, a guarda do registro reprova o modelo que sobra peça de qualquer tipo, que esquece peça ou que troca o painel
+      Dado o modo multi-tenant ligado, com `kit.tenancy.enabled` lido como verdadeiro
+      E o modelo "<mundo>"
+      Quando a guarda do mapa compara o registro dos três painéis com o modelo, no modo com tenant
+      Então o resultado é "<resultado>"
+
+      Exemplos:
+        | mundo                                                                                                                                       | resultado                                                  | # direção                  |
+        | publicado                                                                                                                                   | aceita                                                     | —                          |
+        | cópia com a ligação "o painel app registra `App\Livewire\InformacoesPessoais`", só no modo com tenant — uma peça do tipo Livewire, que o painel não registra | reprova, nomeando `InformacoesPessoais` e o painel app | modelo ⊄ painel, fora dos cinco tipos |
+        | cópia sem a ligação "o painel app registra `IdentifyTenant`" no modo com tenant                                                            | reprova, nomeando `IdentifyTenant` e o painel app          | painel ⊄ modelo            |
+        | cópia que dá `DefinirTenantDePermissoes` ao painel admin no modo com tenant                                                                 | reprova, nomeando `DefinirTenantDePermissoes` e o painel admin | modelo ⊄ painel, painel trocado |
+```
+
+- **Por que na suíte `Tenancy`.** A ligação só do modo com tenant é invisível à guarda da suíte do kit, que roda sem tenant; e o modo com tenant só existe com o `Tests\TenancyTestCase` (G3).
+- **Medido no commit `168d1827`:** `App\Livewire\InformacoesPessoais` é peça do tipo Livewire no modelo, e nenhum painel tem ligação de registro para peça desse tipo: os registros de painel do modelo são 37 páginas, 20 recursos, 29 widgets, 47 middlewares e 56 plugins. A linha "publicado" é a do CT-12, e passa hoje; a linha do Livewire reprova a guarda de hoje, que a aceita.
+- **O docblock da suíte `Tenancy`** muda para dizer o que os datasets têm (Q26, decidida pela sessão em 2026-11-21): o CT-30 e o CT-44 não ganham controle, e o achado A15 fica coberto pelo CT-55 e pela linha nova do CT-38.
+- **Estouro do teto.** A R11 passa a ter quatro cenários, um acima do teto do perfil padrão. O gate vence o teto: o CT-55 é o único matador do M7, e a guarda da suíte `Tenancy` é uma função própria, que os controles do CT-13 não exercitam.
+
 #### Mutantes previstos
 
 | # | Implementação errada plausível | Cenário que mata | Asserção que mata |
@@ -1115,6 +1298,7 @@ Elas provam que cada suíte roda no seu modo e que cada guarda leu o registro, e
 | M4 | o middleware de organização é contado pela chave da instalação, ou sem `hasTenancy()`, e `IdentifyTenant` entra no registro de painel sem tenancy | CT-11, CT-12 | CT-11, linhas admin, app e infra, e CT-12, linhas admin e infra: `IdentifyTenant` fora dos dois lados. O mutante o põe no modelo, e a guarda mutante o conta no painel |
 | M5 | a guarda filtra o lado do painel: deixa fora o alias `panel:{id}`, que não é classe, ou a peça que só abre com tenant (compara a disponibilidade, não o registro) | CT-11 | linha "admin": `panel:admin` e `TenantResource` nos dois lados; o modelo do mutante pode omiti-los, e a guarda mutante não reclama |
 | M6 — revisão adversarial (ADV2-10) | o registro vivo usa só o `getPages()`, e as páginas que o painel liga pela configuração (login, cadastro, recuperação de senha, verificação de e-mail) ficam fora do modelo | CT-13, CT-11 | CT-13, linha "sem a ligação do `TelaLogin`": reprova; e, no publicado, o CT-11, linha "app", exige a `TelaLogin`; o mutante aceita |
+| M7 — step 9 (A15) | na suíte `Tenancy`, a guarda do registro filtra o lado do modelo pelos cinco tipos de registro, e o modelo que dá ao painel, só com tenant, o registro de uma peça de outro tipo passa | CT-55 | linha do `InformacoesPessoais` registrado no painel app só com tenant: reprova; o mutante aceita |
 
 ---
 
@@ -1197,6 +1381,7 @@ O archify só tem prova por nó (`sources`, de 1 a 3) e nenhuma por aresta. Por 
 | M6 — revisão adversarial (ADV-25) | o card da prova fica fora do painel lateral: oculto, ou só aparece quando o leitor foca a peça | CT-B02 | "num card do painel lateral, à vista", com o diagrama aberto sem focar peça nenhuma: reprova; o mutante aceita |
 | M7 — revisão adversarial (ADV2-22) | o conferidor conta as provas do lado esperado, e a ligação de membro sem item próprio passa, porque outra ligação desenhada tem a mesma prova | CT-B02 | "o total de itens de prova lidos no DOM é o de ligações desenhadas": reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV2-32) | o item de card corta o trecho longo, com reticências que o modelo não tem | CT-B02 | "o item mostra o trecho inteiro do modelo, e não é cortado (`scrollWidth <= clientWidth + 1`)": reprova; o mutante aceita |
+| M9 — step 9 (A14) | o item de prova da árvore de registro nomeia a origem com um rótulo que não é o da peça painel no modelo, e o conferidor, que monta o prefixo esperado com o rótulo que lê da raiz no próprio HTML, aceita | CT-B02 | "na árvore de registro, a origem de cada item de prova é o rótulo que a fonte dá à peça painel do arquivo": reprova; o mutante aceita |
 
 ---
 
@@ -1669,6 +1854,9 @@ Molde: `[CT-40]` e `[CT-42]` de `tests/Kit/SiteDeDocumentacaoTest.php` (passos d
 | M5 — revisão adversarial (ADV-13) | o passo do conferidor do mapa entra sem poder reprovar (`continue-on-error: true`, ou `\|\| true`) | CT-42 | linhas do `continue-on-error` e do `\|\| true`: reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV2-16) | o conferidor registra a reprovação no log e termina com código 0, e o job passa | CT-B06 | linha do controle de processo: o conferidor, sobre um HTML do mapa que não desenha peça nenhuma, termina com código diferente de zero; o mutante termina com 0 |
 | M7 — revisão adversarial (ADV2-31) | o build do Pages roda a partir de outro ramo, por dispatch, e os links de prova apontam para um commit que some com o ramo | CT-42 | linha "o job `build` sem a condição da `main`": reprova; o mutante aceita |
+| M8 — step 9 (A12) | o conferidor se relança pelo caminho da URL do módulo com o escape dela (`new URL(import.meta.url).pathname`, com `%20` e `%C3%A3`), e, num clone com espaço ou acento no caminho, o controle de processo reprova porque o filho não acha o arquivo — vermelho falso | CT-B06 | linha do controle de caminho: o caminho derivado da URL de módulo numa pasta "meus projetos/João" é o do disco, sem escape; o mutante devolve `meus%20projetos/Jo%C3%A3o` e reprova |
+
+*(alterado em 2026-11-21 — step 9, achado A12)* Medido no commit `168d1827`: um módulo em `…/meus projetos/João/`, com a mesma expressão do conferidor (`site/verifica-mapa.mjs`, `conferirControleDeProcesso`, no commit `168d1827`), deriva `…/meus%20projetos/Jo%C3%A3o/…`, que não existe no disco; o `fileURLToPath` deriva o caminho certo. O CI de hoje roda num caminho sem espaço nem acento, e por isso o defeito só aparece na máquina de quem tem um.
 
 ---
 
@@ -1701,6 +1889,9 @@ A tabela abaixo é a mesma do CT-B01.
 | M4 | o script do visualizador não entra no HTML, ou quebra antes de montar a interface: o SVG estático aparece, sem busca nem nível de leitura *(reescrito em 2026-11-20: medido no commit `4adaf9a`, o SVG vem pronto no HTML, e "dá zero peça" não matava o mutante)* | CT-B01 | "a busca tem um resultado por peça desenhada, pelo id": dá zero resultado e reprova; o mutante aceita |
 | M6 — revisão adversarial (ADV-28) | o desenho tem o mesmo número de peças, com os rótulos trocados entre elas | CT-B01 | "toda peça que a fonte dá a ele está desenhada e tem, pelo id, o rótulo que a fonte dá a ela no idioma da página": reprova; o mutante aceita |
 | M7 — revisão adversarial (ADV-29) | o script do visualizador lança exceção não capturada na busca ou no detalhe, e o conferidor só escuta o console *(alterado em 2026-11-20: ADV2-24, o matador passou do CT-B01, que não abre a busca, ao CT-B03 e ao CT-B04)* | CT-B03, CT-B04 | "com a busca aberta e o passaporte aberto, nenhuma exceção não capturada e nenhum erro de console": reprova; o mutante aceita |
+| M8 — step 9 (A14) | a raiz da árvore de registro sai com o rótulo de outro painel, ou sem o nome do painel, e o conferidor, que dá à raiz o esperado `null`, não a confere | CT-B01 | "na árvore de registro, a raiz é a peça painel do arquivo e tem o rótulo que a fonte dá a ela": reprova; o mutante aceita |
+
+*(alterado em 2026-11-21 — step 9, achado A14)* A raiz da árvore de registro é uma peça do modelo (`painel:app`), e por isso cai na regra do rótulo de cada peça: no construído, é o nome dela no modelo (`/app`). O conferidor dava à raiz o esperado `null` e tirava o rótulo dela do próprio HTML, para o CT-B02; o cabeçalho dele promete o esperado da fonte, nunca do `dist/`. Medido no commit `168d1827`, com a árvore do `/app` sem tenant gerada pelo `site/mapa/gerar.mjs --saida` numa pasta de rascunho, nos dois idiomas: a raiz desenha "Painel /app" em pt e "Panel /app" em en, e os itens de prova começam por esse rótulo; o gerador monta a raiz das quatro árvores do mesmo jeito (`site/mapa/gerar.mjs`, `arvoreDeRegistro`, no commit `168d1827`). O nome da peça no modelo é `/app` (o do `/admin`, `/admin`; o do `/infra`, `/infra`). O oráculo da R24, sem ajuste, reprova as 8 raízes de hoje (4 árvores × 2 idiomas) e todo item de prova delas no CT-B02. *(alterado em 2026-11-21 — step 9: Q23 decidida pela sessão)* A raiz leva o nome da peça no modelo (`/app`), como toda peça: as 8 raízes, e os itens de prova que começam por elas, são vermelho de implementação, e o CT-B01 e o CT-B02 tiram o rótulo esperado da raiz do modelo, nunca do HTML.
 
 ---
 
@@ -1974,6 +2165,12 @@ A tabela abaixo é a mesma do CT-B04 e do CT-B07.
 | M7 — revisão adversarial (ADV-06) | para calar o aviso de idioma reserva, o catálogo pt do kit recebe o texto en nas chaves não traduzidas | CT-B07 | linha "a chave da busca traz o texto en": reprova; o mutante aceita |
 | M8 — revisão adversarial (ADV-06) | a lista fechada de textos iguais aceita a chave sem o motivo | CT-B07 | linha "na lista, sem o motivo": reprova; o mutante aceita |
 | M9 — revisão adversarial (ADV2-26) | quem copia o texto en para calar o aviso acrescenta a chave à lista fechada, com um motivo que não é de enfeite | CT-B07 | linha `viewer.finder.placeholder` na lista, com motivo: reprova; o mutante aceita |
+| M10 — step 9 (A13) | o conferidor do mapa tem a própria definição de motivo de enfeite, e aceita como motivo "N/A", "not applicable", "Does not apply" ou um número, que a guarda do kit trata como enfeite | CT-B07 | linhas da lista com `viewer.guide.facts` e o motivo "N/A", "not applicable", "Does not apply" e 0: reprova; o mutante aceita |
+| M11 — step 9 (A16) | o catálogo pt perde as chaves que o kit acrescenta fora do catálogo do archify (`viewer.kind.class`, `viewer.kind.abstract`), e o passaporte pt mostra o tipo do nó cru, em inglês | CT-B04 | "na versão pt de todo diagrama de classes, o tipo que o passaporte mostra é o nome pt que o desenho dá ao nó": o passaporte diz `class` e o desenho, "Classe", e reprova; o mutante aceita |
+
+*(alterado em 2026-11-21 — step 9, achados A13 e A16)*
+- **A13.** A tabela do motivo de enfeite é a do Setup Global, a mesma do CT-35. Medido no commit `168d1827`: o conferidor aceita como motivo 7 das 17 entradas da tabela que a guarda do kit trata como enfeite; as quatro linhas novas do CT-B07 ficam vermelhas até ele seguir a tabela.
+- **A16.** O archify do commit fixado não tem `viewer.kind.class` nem `viewer.kind.abstract` no catálogo, e o kit as acrescenta ao catálogo pt embutido depois do render (`site/mapa/gerar.mjs:completarCatalogoEmbutido:495`). O critério do CT-B04 — nenhum texto igual ao en de uma chave cujo pt é outro — só pegava `Class` por coincidência (é o en de `node.context.class.class`), e `Abstract` não é texto de chave nenhuma do en. Medido no commit `168d1827`, no `classes-heranca-e-contratos` gerado numa pasta de rascunho: o desenho dá ao nó o contexto "Interface", "Classe" e "Classe abstrata" em pt, e o passaporte mostra os mesmos três; em en, o desenho dá "Class" e "Abstract class", e o passaporte, `class` e `abstract`, crus, que são inglês e ficam fora do oráculo. O tipo `interface` não discrimina — é a mesma palavra nos dois idiomas —, e por isso a amostra é um nó de cada tipo, e quem mata o mutante são o `class` e o `abstract`.
 
 ---
 
@@ -2081,7 +2278,10 @@ O modo com tenant só existe na suíte `Tenancy`. Sem tenant, o `/app` não regi
         | infra  | publicados                                                                                                               | aceita (idem)                                                                               |
         | app    | cópia em que o painel app só tem diagramas compartilhados — a arquitetura e a árvore —, sem `IdentifyTenant` nem `DefinirTenantDePermissoes` | reprova, nomeando o painel app e as duas peças                     |
         | app    | cópia em que o `IdentifyTenant` só aparece no `sequence` `requisicao-autenticada-com`, e nem a árvore nem a arquitetura do `/app` com tenant o desenham | reprova, nomeando o painel app e `IdentifyTenant` |
+        | app    | cópia do modelo com a ligação "o painel app registra `App\Livewire\InformacoesPessoais`", só no modo com tenant, que a árvore de registro do `/app` com tenant desenha e o painel não registra | reprova, nomeando o painel app e `InformacoesPessoais` |
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A15)* A linha nova é a do "nada além" com tenant, que o CT-38 não tinha: as duas linhas de controle anteriores provam o "nada a menos". Medido no commit `168d1827`: a guarda do desenho da suíte `Tenancy` junta tudo o que o painel registra, sem filtro de tipo, e reprova a cópia; a linha passa hoje e guarda contra a guarda passar a filtrar pelos cinco tipos, como a do registro (CT-55).
 
 *(alterado em 2026-11-20 — guardas do passo 8, correção de causa a devolvida pelo executor)* Vale a mesma leitura da R11 para o diagrama que vale no modo (`modos` contém o modo) e para a ponta desenhada (peça ou membro de agrupamento).
 
@@ -2092,6 +2292,7 @@ O modo com tenant só existe na suíte `Tenancy`. Sem tenant, o `/app` não regi
 | M1 — revisão adversarial (ADV-05) | o `/app` sai só com diagramas compartilhados — a arquitetura e a árvore —, que omitem as peças do modo com tenant | CT-38 | linha "só diagramas compartilhados": reprova; o mutante aceita, porque o compartilhado não desenha peça de um modo só (CT-19) |
 | M2 — revisão adversarial (ADV-05) | as ligações de registro do modo com tenant ficam num diagrama de outro tipo, marcado "com tenant" | CT-38 | linha "só no `requisicao-autenticada-com`": reprova; o mutante aceita, porque o CT-14 acha a ligação desenhada *(alterado em 2026-11-20: a linha de controle era um `workflow` hipotético; todo `workflow` do commit `4cc9517` é do kit inteiro, e o caso real é a pilha da requisição com tenant, que desenha o `IdentifyTenant`)* |
 | M3 | a árvore de registro de um painel esquece uma peça registrada, como a de plugin, e nenhum diagrama de arquitetura dele a desenha | CT-37 | linha "nem a árvore nem a arquitetura desenham o `FilamentShieldPlugin`": reprova; o mutante aceita, se a ligação estiver noutro tipo de diagrama |
+| M4 — step 9 (A15) | na suíte `Tenancy`, a guarda do desenho do registro só compara os cinco tipos de registro, e o diagrama com tenant que desenha o registro de uma peça de outro tipo, que o painel não registra, passa | CT-38 | linha do `InformacoesPessoais` na árvore do `/app` com tenant: reprova; o mutante aceita |
 
 ---
 
@@ -2172,7 +2373,24 @@ O diagrama de um painel só desenha três coisas:
         | cópia com uma aresta de agrupamento que representa a ligação de uma peça que o agrupamento não nomeia          | reprova, nomeando o agrupamento e a peça      | membro não nomeado            |
         | cópia com uma aresta de porta para o mapa do `/infra`, cuja outra ponta o mapa do `/infra` não desenha          | reprova, nomeando a porta                     | porta para o mapa errado      |
         | cópia de um diagrama declarado do `/infra`, copiado do `/admin`, que desenha o `UserResource`                   | reprova, nomeando o diagrama e a peça         | peça de outro painel          |
+
+    Esquema do Cenário: [CT-54] todo id que um arquivo de diagrama construído nomeia — peça desenhada ou membro de agrupamento — é peça do modelo, em diagrama de painel e do kit inteiro, de um modo ou dos dois
+      Dado o modelo de peças e os arquivos de diagrama construídos "<mundo>"
+      Quando a guarda do mapa confere cada id das peças e dos membros de agrupamento de cada arquivo construído contra o modelo de peças
+      Então o resultado é "<resultado>"
+      E, nos publicados, a guarda conferiu os ids de todos os arquivos construídos, os de painel e os do kit inteiro
+
+      Exemplos:
+        | mundo                                                                                                                      | resultado                                   | # partição                                   |
+        | publicados                                                                                                                 | aceita                                      | válida                                       |
+        | cópia do `kit-resumo-sem` (kit inteiro, um modo) com `App\Support\PecaQueNaoExiste` como membro de um agrupamento           | reprova, nomeando o diagrama e o id         | membro desconhecido que o filtro de modo some |
+        | cópia do `admin-resumo` (painel, dois modos) com `App\Support\PecaQueNaoExiste` como membro de um agrupamento               | reprova, nomeando o diagrama e o id         | membro desconhecido que entra cru no card    |
+        | cópia do `app-resumo-sem` (painel, um modo) com a peça `App\Support\PecaQueNaoExiste` entre as peças desenhadas              | reprova, nomeando o diagrama e o id         | peça desconhecida que o filtro de modo some  |
 ```
+
+*(alterado em 2026-11-21 — step 9, achado A8)*
+- **Por que a guarda lê o arquivo, e não o desenho.** O gerador trata o id desconhecido como "não registrado no modo" e o tira do desenho antes de conferir se ele é peça; o erro "a peça … não está no modelo" só é alcançável em diagrama de dois modos, e lá o membro desconhecido entra no "N peças" e no card "Quem está em …" como nome de classe cru. A guarda do CT-40 lê as peças desenhadas e pula o diagrama do kit inteiro, e a do CT-19 aceita id desconhecido nos dois modos. O CT-54 confere o próprio arquivo.
+- **Medido no commit `168d1827`:** nos 50 arquivos construídos (46 mapas e 4 árvores), nenhum id de peça nem de membro fora do modelo de peças: a linha "publicados" passa hoje. A reprodução do revisor, em memória: o `App\Support\PecaQueNaoExiste` como membro some calado no `kit-resumo-sem`, e no `admin-resumo` aparece cru no card e faz "24 peças" de 23.
 
 #### Mutantes previstos
 
@@ -2183,6 +2401,7 @@ O diagrama de um painel só desenha três coisas:
 | M3 — revisão adversarial (ADV-24) | a aresta de agrupamento representa a ligação de uma peça que não é membro nomeado | CT-40 | linha "membro não nomeado": reprova; o mutante aceita |
 | M4 — revisão adversarial (ADV-24) | a porta aponta para um mapa que não desenha o outro lado da ligação | CT-40 | linha "porta para o mapa errado": reprova; o mutante aceita |
 | M5 — revisão adversarial (ADV-27) | o diagrama de um painel é copiado de outro e declarado com o painel novo | CT-40 | linha do `UserResource` no `/infra`: reprova; o mutante aceita, porque o CT-17 decide pelo painel que o arquivo declara |
+| M6 — step 9 (A8) | a peça ou o membro de agrupamento de um arquivo construído que não é peça do modelo some calado do desenho (diagrama de um modo) ou entra cru no card e na contagem (diagrama de dois modos), e nenhuma guarda compara os ids do arquivo com o modelo | CT-54 | linhas do `PecaQueNaoExiste` no `kit-resumo-sem`, no `admin-resumo` e no `app-resumo-sem`: reprova; o mutante aceita |
 
 ---
 
@@ -2225,6 +2444,192 @@ Medido no código:
 
 ---
 
+## Regra R38 — O traço da seta e a caixa de agrupamento do mapa de arquitetura só dizem do que representam o que o modelo dá ao diagrama, no modo dele
+
+> `P-13`, `RQ-08`, `P-10`, `P-02` · perfil **padrão** · técnica: **EP** (os verbos das ligações de um par de pontas: um, dois, três) + **BVA** na contagem da caixa (0, 1 e N membros no modo do diagrama) + controles em memória · costura **G5**, forma de leitura *(regra nova em 2026-11-21: step 9, achados A1 e A5)*
+
+- **A seta.** No mapa de arquitetura construído, as ligações do modelo que caem no mesmo par de pontas desenhadas — a peça, ou o agrupamento que a nomeia, no painel e no modo do diagrama, como na R12 — viram uma seta só, e o traço dela é a variante que o gerador entrega ao archify (`site/mapa/gerar.mjs`, `mapaDeArquitetura`, no commit `168d1827`), que o desenho leva como a classe `a-{variante}` da aresta. A legenda "Como ler as setas" diz o verbo de cada traço: `registra`, traço forte (`emphasis`); `usa`, comum (`default`); `lê`, tracejado (`dashed`); `grava`, alerta (`security`). O gerador dá à seta o traço da primeira ligação do modelo que cai nela.
+- **Uma seta por verbo** *(alterado em 2026-11-21 — step 9: Q22 decidida pela sessão)*. A seta junta só ligações do mesmo verbo; dois verbos no mesmo par de pontas viram duas setas, cada uma com o traço do seu verbo. O archify só tem os quatro traços, todos já de verbo, e duas conexões no mesmo par renderizam (conferido pela sessão).
+- **O oráculo.** Em cada mapa construído, toda seta desenhada leva ligações de um verbo só, com o traço desse verbo, e cada par (pontas, verbo) das ligações do modelo que o mapa desenha tem a sua seta, uma só. Lido na entrada do gerador: para cada par de pontas desenhadas, os traços das setas do par são os dos verbos das ligações do modelo que caem nele — nenhum a mais, nenhum a menos, nenhum repetido.
+- **A caixa.** O rótulo secundário da caixa de agrupamento diz quantas peças ela nomeia no modo do diagrama — depois do filtro de modo, que tira o membro que o painel não registra naquele modo —, com a palavra no número certo: "1 peça" / "1 piece", "2 peças" / "2 pieces". O gerador escreve sempre o plural (`site/mapa/gerar.mjs`, `mapaDeArquitetura`, no commit `168d1827`). A caixa que o filtro de modo esvazia não é desenhada, ou o gerador recusa o diagrama, nomeando o agrupamento.
+
+```gherkin
+  Regra: O desenho do mapa de arquitetura não diz da ligação nem do agrupamento o que o modelo não diz
+
+    Esquema do Cenário: [CT-46] cada seta do mapa de arquitetura leva ligações de um verbo só, com o traço desse verbo, e cada par de pontas tem uma seta por verbo
+      Dado o `node` do ambiente, lido pela versão
+      E o modelo e os arquivos de diagrama "<mundo>"
+      Quando o gerador monta, para o archify, cada mapa de arquitetura construído, sem baixar o archify nem renderizar
+      Então o resultado é "<resultado>"
+      E, nos publicados, a guarda conferiu as setas de todos os mapas construídos, e ao menos um par de pontas com ligações de dois verbos
+
+      Exemplos:
+        | mundo                                                                                                                                          | resultado                                                                                                                                         | # partição                                  |
+        | publicados                                                                                                                                     | aceita: em cada mapa, os traços das setas de cada par de pontas desenhadas são os dos verbos das ligações do modelo que caem nele, um por verbo, sem faltar nem repetir | válida (hoje reprova: nota abaixo)          |
+        | a entrada do `app-acesso-e-autenticacao`, adulterada em memória: o par `UserResource` → `User` do `/app`, com a ligação "lê" e a "usa", desenhado por uma seta só, a de "lê" | reprova, nomeando o diagrama, o par e o verbo "usa", que ficou sem seta                                        | par sem a seta de um dos verbos             |
+        | a entrada do mesmo mapa, adulterada em memória: o mesmo par com as duas setas, a de "usa" com o traço de "lê"                                   | reprova, nomeando o diagrama e o par                                                                                                              | seta com o traço de outro verbo             |
+        | cópia em memória do modelo com a ligação "o `UserResource` do `/app` grava `User`" ao lado da que "lê" e da que "usa"                          | aceita (idem): três setas no par, uma por verbo, com três traços                                                                                  | três verbos num par, que o publicado pode deixar de ter |
+
+    Esquema do Cenário: [CT-47] a caixa de agrupamento diz quantas peças nomeia no modo do diagrama, no número certo, e a caixa vazia não é desenhada
+      Dado o `node` do ambiente, lido pela versão
+      E o modelo e os arquivos de diagrama "<mundo>"
+      Quando o gerador monta, para o archify, cada mapa de arquitetura construído, sem baixar o archify nem renderizar
+      Então o resultado é "<resultado>"
+      E, nos publicados, a guarda conferiu as caixas de agrupamento de todos os mapas construídos
+
+      Exemplos:
+        | mundo                                                                                                                                                    | resultado                                                                                                                                         | # borda                                |
+        | publicados                                                                                                                                               | aceita: o rótulo secundário de cada caixa diz o número de membros dela no modo do diagrama — "N peças" / "N pieces" com N maior que 1, "1 peça" / "1 piece" com um —, e nenhuma caixa desenhada tem zero membro | válida (hoje reprova: nota abaixo)     |
+        | cópia em memória do `app-resumo-sem` com um agrupamento de três membros: o `UserResource` do `/app`, e `IdentifyTenant` e `DefinirTenantDePermissoes`, que o painel app só registra com tenant | a caixa diz "1 peça" / "1 piece"                                                                                      | 1, depois do filtro de modo            |
+        | cópia em memória do `app-resumo-sem` com um agrupamento só de `IdentifyTenant` e `DefinirTenantDePermissoes`                                              | a caixa não é desenhada, ou o gerador recusa o diagrama, nomeando o agrupamento                                                                    | 0, depois do filtro de modo            |
+```
+
+**Hoje o dado reprova o CT-46.** Medido no commit `168d1827`, com o filtro e a junção do gerador replicados sobre o modelo e os 46 mapas construídos: 268 setas, das quais 51, em 13 mapas, juntam ligações de verbos diferentes e levam o traço da primeira ligação. O revisor contou 36, e a contagem não se reproduz por diagrama (51), por par de pontas único (23) nem fora dos mapas do kit inteiro (44): a lista abaixo é a medida. Por mapa — "origem → destino {verbos}, traço de …", com "agrupamento …" para a caixa:
+- `admin-acesso-e-autenticacao` (2): `BreezyCore` → `DefinirSenhaPorEmail` e `BreezyCore` → `InformacoesPessoais` {registra, usa}, traço de registra.
+- `admin-administracao` (1): `TutorialGuiado` → `FilamentOnboardingPlugin` {registra, usa}, registra.
+- `admin-resumo` (11): painel admin → agrupamentos acesso-e-autenticacao, produtividade-e-ui, administracao e multi-tenancy-opt-in {registra, usa}, registra; acesso-e-autenticacao → produtividade-e-ui {usa, registra}, usa; acesso-e-autenticacao → multi-tenancy-opt-in {usa, lê}, usa; administracao → acesso-e-autenticacao {usa, lê}, usa; administracao → autorizacao {lê, usa}, lê; administracao → produtividade-e-ui {usa, lê}, usa; convites → acesso-e-autenticacao {grava, usa}, grava; produtividade-e-ui → multi-tenancy-opt-in {lê, usa}, lê.
+- `app-acesso-e-autenticacao` (3): `UserResource` → `User` {lê, usa}, lê; `BreezyCore` → `DefinirSenhaPorEmail` e `BreezyCore` → `InformacoesPessoais` {registra, usa}, registra.
+- `app-administracao` (1): `TutorialGuiado` → `FilamentOnboardingPlugin` {registra, usa}, registra.
+- `app-resumo-sem` e `app-resumo-com` (9 cada, os mesmos pares): painel app → agrupamentos convites, produtividade-e-ui e administracao {registra, usa}, registra; painel app → multi-tenancy-opt-in {lê, usa}, lê; acesso-e-autenticacao → produtividade-e-ui {registra, usa}, registra; acesso-e-autenticacao → multi-tenancy-opt-in {lê, usa}, lê; convites → acesso-e-autenticacao {usa, grava}, usa; produtividade-e-ui → multi-tenancy-opt-in {usa, lê}, usa; administracao → produtividade-e-ui {usa, lê}, usa.
+- `infra-acesso-e-autenticacao` (2): `BreezyCore` → `DefinirSenhaPorEmail` e `BreezyCore` → `InformacoesPessoais` {registra, usa}, registra.
+- `infra-administracao` (1): `TutorialGuiado` → `FilamentOnboardingPlugin` {registra, usa}, registra.
+- `infra-resumo` (5): acesso-e-autenticacao → multi-tenancy-opt-in {lê, usa}, lê; acesso-e-autenticacao → produtividade-e-ui {registra, usa}, registra; administracao → produtividade-e-ui {usa, lê}, usa; convites → acesso-e-autenticacao {grava, usa}, grava; produtividade-e-ui → multi-tenancy-opt-in {lê, usa}, lê.
+- `kit-acesso-e-autenticacao` (1): `AppServiceProvider` → `BloquearSessaoComRetorno` {registra, usa}, registra.
+- `kit-resumo-sem` e `kit-resumo-com` (3 cada, os mesmos pares): ia → administracao {usa, lê}, usa; autorizacao → produtividade-e-ui {registra, usa}, registra; autorizacao → administracao {lê, usa, registra}, lê.
+
+O desenho confirma o traço: no `app-acesso-e-autenticacao` gerado numa pasta de rascunho, a aresta `UserResource` → `User` sai com a classe `a-dashed`, o traço de "lê", embora junte também a ligação "usa". O item de prova de cada ligação traz o verbo certo, em texto; é o traço que mente. *(alterado em 2026-11-21 — step 9: Q22 decidida)* As 51 setas são vermelho de implementação: pela decisão, cada um desses pares vira uma seta por verbo — 104 setas no lugar das 51 (49 pares de dois verbos e os 2 pares de três, nos dois resumos do kit), e os 46 mapas passam de 268 a 321 setas —, e a validação de layout do archify pede reposicionar os mapas afetados, o que também é implementação.
+
+**Hoje o dado reprova o CT-47.** Medido no commit `168d1827`: das caixas de agrupamento dos 46 mapas construídos, uma tem um membro no modo do diagrama — o agrupamento `grupo-ia` ("IA") do `admin-resumo`, só com o `TelaDeAutenticacao` —, e sai com "1 peças" / "1 pieces". Nenhuma caixa fica vazia no modo do diagrama hoje; a linha da caixa vazia é controle, e o gerador de hoje a desenharia com "0 peças" e sem fonte.
+
+- **Costura G5, forma de leitura.** Os dois casos rodam num `node` a função que o gerador exporta para montar a entrada do archify, mapa a mapa; a cópia em memória do modelo é a que `carregarModelo()` devolve, alterada antes da montagem, e a entrada adulterada controla a própria guarda. A guarda acha as ligações de cada par pela regra de desenho da R12.
+- **Executado no commit `168d1827`, pela forma de leitura:** a função montou a entrada dos 87 diagramas, o comparativo inclusive, em 4 s, sem erro, sem baixar o archify nem renderizar. Pela entrada: as mesmas 51 setas, em 13 mapas, com o traço de um verbo só. Os controles em memória: a seta `UserResource` → `User` do `/app` sai `dashed` antes e depois da ligação "grava" a mais; a caixa de três membros sai "1 peças" / "1 pieces" — a contagem do modo está certa, o número não —; e a caixa só de `IdentifyTenant` e `DefinirTenantDePermissoes` sai desenhada no `app-resumo-sem`, com "0 peças" e nenhuma fonte. As três linhas de controle reprovam hoje, como a "publicados".
+- **Por que não no navegador.** O traço que o gerador entrega é o que o desenho leva (a classe `a-{variante}`, medida), e a caixa é texto da entrada; conferir no HTML construído provaria o mesmo, mais caro, e só no job `site`.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 — step 9 (A1) | uma seta só por par de pontas, com o traço da primeira ligação do modelo que cai nele | CT-46 | publicados: nos 51 pares de hoje falta a seta de um verbo, e reprova; linha da cópia com "grava": o par tem uma seta, e não três; o mutante aceita |
+| M2 — step 9 (A1; Q22) | o par é dividido por verbo, mas as setas dele saem todas com o traço do primeiro verbo | CT-46 | linha da cópia com "grava": três setas com um traço só, e não três traços; reprova; o mutante aceita |
+| M6 — step 9 (A1; Q22) | a divisão por verbo mantém o id da seta pelo par de pontas (`{de}--{para}`), e a coleção de setas, indexada pelo id, guarda uma só por par | CT-46 | publicados e linha da cópia com "grava": o par fica com uma seta, e falta a dos outros verbos; reprova; o mutante aceita |
+| M3 — step 9 (A5) | o rótulo secundário da caixa é sempre plural, e a de um membro sai "1 peças" / "1 pieces" | CT-47 | publicados: o `grupo-ia` do `admin-resumo`; e a linha de três membros: "1 peças" reprova; o mutante aceita |
+| M4 — step 9 (A5) | o filtro de modo esvazia o agrupamento, e a caixa sai desenhada com "0 peças" e sem fonte | CT-47 | linha do agrupamento só de `IdentifyTenant` e `DefinirTenantDePermissoes`: a caixa desenhada reprova; o mutante aceita |
+| M5 — step 9 (A5) | a caixa conta os membros do arquivo, antes do filtro de modo | CT-47 | linha de três membros: "3 peças" no lugar de "1 peça" reprova; o mutante aceita |
+
+---
+
+## Regra R39 — As ferramentas do mapa não apagam o que não geraram e não terminam com código 0 sem ter feito o que se pediu, por qualquer caminho que sejam chamadas
+
+> `P-14`, `P-07` · perfil **padrão** · técnica: **EP** (a pasta de saída: com arquivo do autor, a própria `site/`; o caminho da chamada: o real, por link) + controle · costura **G5**, forma de efeito *(regra nova em 2026-11-21: step 9, achados A2 e A4)*
+
+- **A pasta de saída.** Com `--saida` e sem slug, o gerador apaga a pasta que o autor passou antes de gerar (`site/mapa/gerar.mjs`, `gerar`, no commit `168d1827`): `--saida .` dentro de `site/` apagaria `site/`, e `--saida /tmp/mapa`, o que outro autor gerou ali. Pela P-14, ele confere a pasta antes de qualquer efeito e recusa a que já tem arquivo que ele não gerou — arquivo que não é HTML do mapa em `pt/` e `en/` —, antes de baixar o archify e de renderizar, e é isso que deixa o caso rápido e sem rede. A pasta vazia, a que não existe e a que só tem HTML do mapa continuam aceitas, e não entram aqui: aceitá-las baixa o archify e renderiza.
+- **O caminho da chamada.** A guarda do fim do gerador só o roda quando `process.argv[1]` é o caminho do módulo (`site/mapa/gerar.mjs`, `process.argv`, no commit `168d1827`), e o Node resolve o link na URL do módulo e não no argumento: chamado por um caminho que passa por um link, o gerador não roda e termina com código 0.
+- **Medido no commit `168d1827`, na árvore do kit, com o archify já em `site/.archify`** (fora da G5, só para expor o defeito): o gerador, com `--saida` numa pasta de rascunho com um `leia-me.txt`, imprimiu "[mapa] archify … pronto" e apagou o `leia-me.txt` em 567 ms, antes do primeiro render. No Windows, uma junção (`mklink /J`, sem privilégio) para `site/`: `node <junção>/mapa/gerar.mjs --saida` terminou com código 0 e não imprimiu nada; pelo caminho real, terminou com 1 e um erro. O achado A4 é falsificável nesta pilha, ao contrário do que o despacho supunha: a junção faz no Windows o que o link simbólico faz no Linux. A forma do `npm run build` — o diretório corrente dentro da junção e o caminho relativo — rodou normal no Git Bash, que resolve o diretório; o oráculo é a chamada direta pelo caminho do link.
+- **Medido no commit `168d1827`, na G5** — um clone `--shared` com `site/mapa` e a raiz, sem `site/.archify`, com `GIT_ALLOW_PROTOCOL=file`; o arnês conferido: o `git show` do clone funciona, e o `fetch` do archify por https sai com "fatal: transport 'https' not allowed":
+  - CT-48, as duas linhas: código 1 e "[mapa] ERRO archify — fatal: transport 'https' not allowed …", que não nomeia a pasta; o `site/.archify` do clone criado pela tentativa; o `leia-me.txt` e o `site/` do clone intactos, porque o download falha antes de o gerador apagar. No clone, o defeito do achado A2 aparece pela mensagem e pela pasta do archify, e não pela remoção, que o download bloqueado mascara;
+  - CT-51: pelo caminho real, código 1 e o mesmo erro do archify, com o `site/.archify` criado; pela junção, código 0, nenhuma saída, e nada criado.
+
+```gherkin
+  Regra: A ferramenta do mapa não apaga o que não gerou, e não sai com 0 sem fazer o que se pediu
+
+    Esquema do Cenário: [CT-48] com `--saida` e sem slug, o gerador recusa, antes de qualquer efeito, a pasta que tem o que ele não gerou, e não apaga nada
+      Dado o `node` do ambiente, lido pela versão, e um clone descartável do repositório no commit, sem `site/.archify` e com o download do archify bloqueado
+      E a pasta de saída "<pasta>"
+      Quando o autor roda, de `site/` do clone, `node mapa/gerar.mjs --saida` com essa pasta e sem slug
+      Então o gerador termina com código diferente de zero, com a mensagem `[mapa]` que nomeia a pasta e diz por que a recusa
+      E <intacto> continua, com os mesmos bytes
+      E nada foi baixado nem gerado: o clone continua sem `site/.archify`, e nenhum HTML do mapa foi escrito
+
+      Exemplos:
+        | pasta                                                                                  | intacto                                                             | # partição                 |
+        | uma pasta temporária com o arquivo `leia-me.txt`, do autor, e nenhum HTML do mapa      | o `leia-me.txt`                                                     | pasta com arquivo do autor |
+        | `.`, a própria `site/` do clone                                                        | todo arquivo versionado de `site/` do clone (o `git status` limpo)  | a pasta do site            |
+
+    Cenário: [CT-51] o gerador chamado por um caminho que passa por um link faz o mesmo que pelo caminho real, e não termina com 0 calado
+      Dado o `node` do ambiente, lido pela versão, e um clone descartável do repositório no commit, sem `site/.archify` e com o download do archify bloqueado
+      E um link para `site/` do clone: uma junção no Windows (`mklink /J`, sem privilégio), ou um link simbólico no Linux
+      Quando o autor pede `mapa/gerar.mjs --saida` com uma pasta temporária vazia e o slug `diagrama-que-nao-existe`, uma vez pelo caminho real de `site/` do clone e outra pelo link, com o `site/.archify` apagado entre as duas
+      Então as duas chamadas terminam com o mesmo código e a mesma saída, fora o caminho
+      E o código das duas é diferente de zero
+```
+
+- **Hoje.** As duas linhas do CT-48 reprovam pela mensagem e pela pasta do archify criada (acima). O CT-51 reprova: pelo caminho real, código 1 e o erro do archify; pelo link, código 0 e nada. O oráculo do CT-51 é relativo de propósito: ele isola o achado A4 da ordem da recusa, que é do CT-49 e do CT-50, e vale qualquer que seja a mensagem do caminho real, desde que diferente de zero.
+- **Costura G5, forma de efeito.** O clone descartável protege a árvore do kit, que o gerador, sob o defeito e com o archify à mão, apagaria; o download bloqueado faz a implementação que baixa antes de recusar reprovar sem rede, pela mensagem e pelo `site/.archify` criado.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 — step 9 (A2) | com `--saida` e sem slug, o gerador apaga a pasta inteira antes de gerar, sem recusá-la | CT-48 | no clone: "a mensagem `[mapa]` que nomeia a pasta" — o gerador de hoje sai com o erro do archify — e "o clone continua sem `site/.archify`" — a tentativa cria a pasta; reprova; o mutante aceita. O download bloqueado mascara a remoção; com o archify à mão, o `leia-me.txt` some (medido: 567 ms) |
+| M2 — step 9 (A2) | o gerador confere a pasta só depois de baixar o archify, ou recusa depois de ter apagado | CT-48 | "o clone continua sem `site/.archify`" (o primeiro) e "o `leia-me.txt` continua, com os mesmos bytes" (o segundo, que apaga antes do download e da recusa): reprova; o mutante aceita |
+| M3 — step 9 (A4) | o gerador só roda quando `process.argv[1]` é o caminho real do módulo, e, chamado por um link, termina com 0 sem fazer nada | CT-51 | "as duas chamadas terminam com o mesmo código": pelo link, 0 e nenhuma saída; pelo caminho real, 1; reprova; o mutante aceita |
+
+---
+
+## Regra R40 — Argumento sem valor válido e arquivo de entrada quebrado são recusados antes de qualquer efeito, com a mensagem `[mapa]` que nomeia o culpado
+
+> `P-14`, `P-03` · perfil **padrão** · técnica: **EP** (uma partição inválida por linha: argumento ausente, argumento não numérico, JSON quebrado por arquivo) · costura **G5**, forma de efeito; e **G4** para o conferidor (CT-B08, no `05`) *(regra nova em 2026-11-21: step 9, achados A6 e A11)*
+
+- **O argumento.** O posicionador lê `--tentativas` com `Number()` (`site/mapa/posicionar.mjs`, `TENTATIVAS`, no commit `168d1827`): sem número, dá NaN, a busca não roda, e a ferramenta baixa o archify, avalia a grade inicial e sai com "nenhuma grade aceita em NaN tentativas" — ou grava a grade inicial sem busca, se o archify a aceitar. O `--saida` sem pasta, no gerador, cai num erro do Node. O valor válido de `--tentativas` é um número inteiro positivo; o zero é recusado (Q24, decidida pela sessão em 2026-11-21).
+- **A entrada.** O gerador lê o modelo e os arquivos de diagrama com `JSON.parse` sem o nome do arquivo; o posicionador, o arquivo do diagrama pedido; o conferidor, os arquivos de diagrama (CT-B08, no `05`, porque ele importa o Playwright e lê o `axe-core` de `site/node_modules` antes de ler os diagramas).
+- **Medido no commit `168d1827`, com o archify à mão** (um clone com `site/.archify` ligado ao da árvore, fora da G5, só para expor o defeito):
+  - `node mapa/posicionar.mjs app-resumo-sem --tentativas`, sem número: "[mapa] archify … pronto", a grade inicial avaliada e "nenhuma grade aceita em NaN tentativas", código 1;
+  - um diagrama a mais com JSON quebrado: depois de "[mapa] archify … pronto", "Expected double-quoted property name in JSON at position 45 (line 1 column 46)", código 1, sem o arquivo;
+  - o `pecas.json` quebrado: "[mapa] ERRO app-resumo-sem pt — Expected double-quoted property name …", que culpa o diagrama, e não o arquivo do modelo.
+- **Medido no commit `168d1827`, na G5** (o clone sem `site/.archify`, com o `fetch` por https recusado), linha a linha:
+  - CT-49, gerador, `--saida` sem pasta: código 1 e "The "paths[0]" argument must be of type string. Received undefined", sem `[mapa]` nem o argumento; nada criado;
+  - CT-49, posicionador, `--tentativas` sem número, `--tentativas muitas` e `--tentativas 0`: código 1 e a exceção do download do archify, sem tratamento (o stack do `archify.mjs`), com o `site/.archify` criado; o arquivo do diagrama com os mesmos bytes. O argumento nunca chega a ser lido: o posicionador obtém o archify antes;
+  - CT-50, gerador, as três linhas: código 1 e "[mapa] ERRO archify — fatal: transport 'https' not allowed …", com o `site/.archify` criado; o arquivo quebrado nunca chega a ser lido;
+  - CT-50, posicionador: código 1 e o `SyntaxError` do `JSON.parse`, sem o arquivo; nada criado, porque o posicionador lê o diagrama antes do archify;
+  - nenhum HTML escrito em linha nenhuma.
+
+```gherkin
+  Regra: A ferramenta do mapa recusa o que não pode usar antes de qualquer efeito, e diz qual é o culpado
+
+    Esquema do Cenário: [CT-49] o argumento sem valor válido é recusado antes de qualquer efeito, com a mensagem `[mapa]` que nomeia o argumento
+      Dado o `node` do ambiente, lido pela versão, e um clone descartável do repositório no commit, sem `site/.archify` e com o download do archify bloqueado
+      Quando o autor roda, de `site/` do clone, "<comando>"
+      Então a ferramenta termina com código diferente de zero, com a mensagem `[mapa]` que nomeia "<argumento>" e diz o valor que ele espera
+      E nada foi baixado nem gravado: o clone continua sem `site/.archify`, e o arquivo `site/mapa/diagramas/app-resumo-sem.json` do clone tem os mesmos bytes
+
+      Exemplos:
+        | comando                                                         | argumento      | # partição                        |
+        | `node mapa/gerar.mjs --saida`                                   | `--saida`      | gerador: pasta ausente            |
+        | `node mapa/posicionar.mjs app-resumo-sem --tentativas`          | `--tentativas` | posicionador: número ausente      |
+        | `node mapa/posicionar.mjs app-resumo-sem --tentativas muitas`   | `--tentativas` | posicionador: valor não numérico  |
+        | `node mapa/posicionar.mjs app-resumo-sem --tentativas 0`        | `--tentativas` | posicionador: zero, abaixo do inteiro positivo (Q24) |
+
+    Esquema do Cenário: [CT-50] o arquivo de entrada com JSON quebrado é recusado antes de qualquer efeito, com a mensagem `[mapa]` que nomeia o arquivo
+      Dado o `node` do ambiente, lido pela versão, e um clone descartável do repositório no commit, sem `site/.archify` e com o download do archify bloqueado
+      E, no clone, o arquivo "<arquivo>" com JSON quebrado
+      Quando o autor roda, de `site/` do clone, "<comando>"
+      Então a ferramenta termina com código diferente de zero, com a mensagem `[mapa]` que nomeia "<arquivo>"
+      E nada foi baixado nem gerado: o clone continua sem `site/.archify`, e nenhum HTML do mapa foi escrito
+
+      Exemplos:
+        | arquivo                                                         | comando                                                                        | # partição                                    |
+        | `site/mapa/diagramas/zz-quebrado.json`, um diagrama a mais      | `node mapa/gerar.mjs --saida` com uma pasta temporária vazia e `app-resumo-sem` | gerador: diagrama quebrado, mesmo fora do pedido |
+        | `site/mapa/pecas.json`                                          | `node mapa/gerar.mjs --saida` com uma pasta temporária vazia e `app-resumo-sem` | gerador: modelo de peças quebrado             |
+        | `site/mapa/ligacoes.json`                                       | `node mapa/gerar.mjs --saida` com uma pasta temporária vazia e `app-resumo-sem` | gerador: modelo de ligações quebrado          |
+        | `site/mapa/diagramas/app-resumo-sem.json`                       | `node mapa/posicionar.mjs app-resumo-sem`                                      | posicionador: diagrama quebrado               |
+```
+
+- **Hoje** todas as linhas do CT-49 e do CT-50 reprovam pela mensagem — nenhuma nomeia o culpado com `[mapa]` —, e as do posicionador com `--tentativas` e as três do gerador no CT-50 também pela pasta do archify criada.
+- **Fora do teste rápido.** O lado válido de `--tentativas` (um inteiro positivo) e as entradas corretas fazem a ferramenta baixar o archify e renderizar ou validar, e ficam fora da G5; a recusa de um valor válido não é mutante plausível desta regra, e o uso normal do autor a exibiria.
+
+#### Mutantes previstos
+
+| # | Implementação errada plausível | Cenário que mata | Asserção que mata |
+|---|---|---|---|
+| M1 — step 9 (A6) | `--tentativas` sem número vira `Number(undefined)`, NaN; a busca roda zero vezes, e a ferramenta sai com "nenhuma grade aceita em NaN tentativas" ou grava a grade inicial sem busca | CT-49 | linhas do posicionador: a mensagem não nomeia `--tentativas` (no clone, a de hoje é a exceção do download) e, com o archify à mão, o arquivo do diagrama pode mudar de bytes; reprova; o mutante aceita |
+| M2 — step 9 (A6) | o `--saida` sem pasta cai num erro do Node, sem o prefixo `[mapa]` nem o argumento | CT-49 | linha do gerador: a mensagem é "The "paths[0]" argument must be of type string…", e não nomeia `--saida`; reprova; o mutante aceita |
+| M3 — step 9 (A11) | o JSON quebrado reprova com a mensagem do `JSON.parse`, sem o arquivo nem o `[mapa]` | CT-50, CT-B08 | CT-50, linha do posicionador (o `SyntaxError` sem o arquivo) e linha do diagrama a mais; CT-B08, a do conferidor: a mensagem não nomeia o arquivo; reprova; o mutante aceita |
+| M4 — step 9 (A11) | com o modelo quebrado, a mensagem culpa o diagrama que estava sendo gerado, e não o arquivo do modelo | CT-50 | linhas do `pecas.json` e do `ligacoes.json`: "a mensagem `[mapa]` que nomeia o arquivo" — o mutante nomeia `app-resumo-sem` (medido com o archify à mão); reprova; o mutante aceita |
+| M5 — step 9 (P-14) | a ferramenta confere o argumento e lê os arquivos de entrada só depois de baixar o archify, e o erro dela custa a rede e o tempo do download | CT-49, CT-50 | "o clone continua sem `site/.archify`": a tentativa cria a pasta (medido nas linhas do posicionador com `--tentativas` e nas três do gerador no CT-50), e reprova; o mutante aceita |
+| M6 — step 9 (A6; Q24) | `--tentativas 0` é aceito: a busca roda zero vezes, e a ferramenta sai com "nenhuma grade aceita em 0 tentativas" ou grava a grade inicial sem busca | CT-49 | linha do zero: a mensagem não nomeia `--tentativas` e o valor que ele espera; reprova; o mutante aceita |
+
+---
+
 ## Checklist de Taxonomia
 
 | Item | Cenário que mata | Grupo |
@@ -2233,13 +2638,13 @@ Medido no código:
 | Autorização exercida na ação | não se aplica: nenhuma ação, policy ou permissão nova. A Superfície Livewire do `02` não cria nada em `app/`, e o gate confere o diff (RQ-15) | — |
 | Idempotência (ancorada no agregado) | não se aplica: o build regenera o mapa do zero a partir do commit (P-07), e nada acumula entre uma execução e outra | — |
 | Concorrência | não se aplica: não há contador nem limite | — |
-| **Fronteira no ponto de entrada** (o modelo, o catálogo e as referências, conferidos a cada PR) | CT-01, CT-03, CT-04, CT-08, CT-09, CT-10, CT-21, CT-28, CT-29, CT-31, CT-35, CT-36, CT-39, CT-40, CT-41, CT-44, CT-45 | G1, G2, G3 |
+| **Fronteira no ponto de entrada** (o modelo, o catálogo e as referências, conferidos a cada PR) | CT-01, CT-03, CT-04, CT-08, CT-09, CT-10, CT-21, CT-28, CT-29, CT-31, CT-35, CT-36, CT-39, CT-40, CT-41, CT-44, CT-45; *(step 9)* CT-53 e CT-54 (as âncoras e os ids dos arquivos de diagrama), CT-49 e CT-50 (os argumentos e os arquivos de entrada das ferramentas de autor), CT-B08 (os do conferidor) | G1, G2, G3, G5, G4 |
 | **Domínio condicionado** | CT-06, CT-36 e CT-44 (origem × peça; F-nn × pacote nomeado × pacote da peça; rota do "onde fica" × peça; caminho × modo), CT-08 (classe × tipo), CT-10 (forma da prova × arquivo; trait × origem que o usa; método × lista de contrato; par de mapeamento × pontas), CT-21 (tipo × painel × modo; escopo do diagrama × peça registrada), CT-37 e CT-38 (registro × modo × arquitetura), CT-45 (marca × chave × valor de fábrica × modo) | G2, G3 |
 | **Estado × operação de escrita** (número removido × reaproveitar; removido × ainda entregue; removido × idioma) | CT-03, CT-04 (matriz da R3, 15 células), CT-36 (a removida que uma peça ainda entrega), CT-01 (removida num idioma só) | G1, G2 |
-| Ausente ≠ null ≠ vazio | CT-09 (trecho ausente, vazio, só de espaços), CT-03, CT-21, CT-28, CT-29, CT-35 e CT-41 (motivo ausente; motivo "—"; "não se aplica" sem porquê), CT-31 (tempo sem fonte; sem data), CT-39 (transição e estado sem âncora) | G1, G2 |
+| Ausente ≠ null ≠ vazio | CT-09 (trecho ausente, vazio, só de espaços), CT-03, CT-21, CT-28, CT-29, CT-35 e CT-41 (motivo ausente; motivo "—"; "não se aplica" sem porquê), CT-31 (tempo sem fonte; sem data), CT-39 (transição e estado sem âncora); *(step 9)* CT-35 e CT-B07 (motivo "N/A", "not applicable" e o valor 0, que não é texto), CT-49 (argumento sem valor) | G1, G2, G4, G5 |
 | Paginação / ordenação | não se aplica: não há listagem paginada, e a ordem das linhas do catálogo não é cláusula. A ordem dos números é, e o CT-04 a cobre | — |
 | Timezone / DST | não se aplica: nenhuma data é calculada. As datas da linha do tempo são comparadas como texto com o cabeçalho do CHANGELOG (CT-31) | — |
-| Unicode / texto livre | CT-B01 (acentos intactos no `<h1>`; rótulo igual ao da fonte), CT-B02 (item de card inteiro), CT-B04 (interface pt e en, inclusive com a busca e o passaporte abertos), CT-B07 (catálogo pt sem o texto en), CT-16 e CT-21 (termo do glossário; palavra funcional do pt em frase en) | G4, G2 |
+| Unicode / texto livre | CT-B01 (acentos intactos no `<h1>`; rótulo igual ao da fonte), CT-B02 (item de card inteiro), CT-B04 (interface pt e en, inclusive com a busca e o passaporte abertos), CT-B07 (catálogo pt sem o texto en), CT-16 e CT-21 (termo do glossário; palavra funcional do pt em frase en); *(step 9)* CT-B06 (caminho do conferidor com espaço e acento), CT-47 (singular e plural na caixa, nos dois idiomas) | G4, G2, G5 |
 | Unicidade (+ soft delete) | CT-01 (F-nn em duas linhas), CT-08 (classe em duas peças). Soft delete não se aplica: não há banco | G1, G2 |
 | CRUD combinado | não se aplica: não há CRUD | — |
 | Mass assignment | não se aplica: não há formulário nem payload | — |
@@ -2250,8 +2655,9 @@ Medido no código:
 | **IDOR e mass assignment por entidade** | não se aplica: a entrega não persiste entidade | — |
 | **Escopo com discriminante nulo** (o modo da peça, da ligação e do diagrama) | CT-11, CT-12, CT-19, CT-37, CT-38, CT-43 e CT-44: o modelo não dá a um modo o que o painel não registra nele, a ligação desenhada vale no modo do diagrama, os diagramas de arquitetura de cada modo desenham o registro desse modo, a célula não leva a diagrama do outro modo, e o caminho com organização resolve com tenant. A condição da peça está estacionada na Q11 (ADV-31); a marca publicada é conferida pela R37. Nas ligações de uso, o modo vem da varredura: lacuna declarada, vinculada à P-05 ("sem promessa de que a varredura achou todas") | G2, G3 |
 | **Saída do estado de erro** | não se aplica: nenhum cenário termina em 4xx nem em redirect. Os links da página ficam com `site/verifica-links.mjs` e com o CT-15 | — |
-| Cardinalidade 0/1/N | CT-06 (feature sem peça), CT-14 (ligação sem diagrama), CT-17 (célula sem diagrama), CT-29 (peça registrada sem F-nn), CT-39 (transição sem âncora), CT-41 (classe de `app/` sem F-nn), CT-B02 (diagrama de ligações sem prova), CT-B05 (amostra vazia) | G2, G4 |
+| Cardinalidade 0/1/N | CT-06 (feature sem peça), CT-14 (ligação sem diagrama), CT-17 (célula sem diagrama), CT-29 (peça registrada sem F-nn), CT-39 (transição sem âncora), CT-41 (classe de `app/` sem F-nn), CT-B02 (diagrama de ligações sem prova), CT-B05 (amostra vazia); *(step 9)* CT-46 (seta de um verbo e de vários), CT-47 (caixa de 0, 1 e N membros no modo do diagrama) | G2, G4, G5 |
 | Leitura de `docs/`, README, `CHANGELOG.md` ou `site/` fora da árvore do kit (item vivo do projeto, `.ai/rules/testes.md`) | sentinela `naArvoreDoKit()` no `beforeEach` dos dois arquivos (Setup Global), vigiada pelo `[CT-10]`/`[CT-11]` herdados de `RedeDeDocumentacaoTest` | G1, G2, G3 |
+| *(linha nova em 2026-11-21 — step 9)* Ferramenta de linha de comando que apaga, sobrescreve ou sai com 0 calada (item vivo do projeto: os achados A2, A4 e A6) | CT-48 (a pasta do autor não some), CT-49 (o arquivo do diagrama não muda de bytes), CT-51 (pelo link, o mesmo código do caminho real) | G5 |
 
 ## Cogitado e cortado
 
@@ -2261,7 +2667,7 @@ Medido no código:
 | troca de tema com o diagrama já aberto | a P-11 pede a amostra por tema, e o CT-B05 abre cada tema pelo mecanismo do visualizador. A troca com o diagrama aberto não tem cláusula |
 | o comparativo no tema claro, na amostra de acessibilidade | a P-11 pede o comparativo só no tema escuro |
 | volta do diagrama para a página do mapa | o `00` não pede, e nenhum mutante de requisito morre aí |
-| "o build não roda o script de posicionamento" | posição não é oráculo, e nenhum mutante de requisito morre aí |
+| "o build não roda o script de posicionamento" | posição não é oráculo, e nenhum mutante de requisito morre aí. *(alterado em 2026-11-21 — step 9)* O argumento e a entrada do posicionador têm CT pela P-14 (CT-49, CT-50); a posição continua sem |
 | guarda de F-nn em `tests/` e `app/` | ali "F-nn" é nome sobrecarregado (`.ai/rules/kit.md`: "F-01 da conformidade Blueprint"), e o falso positivo é certo |
 | "`app/` não mudou" (RQ-15) | não sobrevive ao merge; o gate confere o diff |
 | o delta do comparativo no HTML (o `/app` mostra `DefinirTenantDePermissoes` como acrescentado) | seria mais um CT-B. O par certo de antes e depois (CT-22) já mata a inversão e a mistura, e o delta é cálculo do archify |
@@ -2283,6 +2689,11 @@ Medido no código:
 | o título no `document.title` | é a moldura do archify ("Diagrama {título}", "{title} Diagram"); o título que o leitor vê é o `<h1>`, e é ele que o CT-B01 confere |
 | a forma do desenho sem JavaScript | o archify grava o SVG pronto no HTML; o que depende do script é a interface do visualizador, e o CT-B01 confere que ela montou |
 | token obrigatório na linha nova do catálogo | medido no commit `0f38e2f`: a F-118 ("Voltar ao topo") não tem token e está certa; a troca entre linhas novas sem token é a lacuna R1-M8 |
+| *(step 9)* a linha do `#L` "fora de comentário" no CT-B03, para o achado A3 | o CT-52 mata o mesmo mutante na suíte do kit, que roda em todo PR, sobre toda prova que o gerador projeta, e não sobre a amostra do CT-B03 |
+| *(step 9)* o traço da seta e a caixa de agrupamento conferidos no HTML construído (achados A1 e A5) | o desenho leva a variante que o gerador entrega como a classe `a-{variante}` (medido), e a caixa é texto da entrada: o CT-46 e o CT-47 provam o mesmo na suíte do kit, mais barato e em todo PR |
+| *(step 9)* o conferidor rodado de ponta a ponta de uma cópia numa pasta com espaço e acento (achado A12) | dobra o tempo do job `site`; o controle de caminho do CT-B06 mata o mesmo mutante pela mesma função. Decidido pela sessão (Q25) |
+| *(step 9)* os achados A2, A6 e A11 rodados na árvore do kit, sem clone | sob o defeito, o gerador apaga a pasta e o posicionador regrava o arquivo do diagrama; e um JSON quebrado plantado em `site/mapa/diagramas/` derrubaria as outras guardas da suíte, que leem a pasta em paralelo. O clone descartável da G5 isola os três |
+| *(step 9)* controles para o CT-30 e o CT-44 da suíte `Tenancy`, que o docblock do arquivo promete | decidido pela sessão (Q26): o docblock muda para dizer o que os datasets têm; o CT-55 e a linha nova do CT-38 cobrem o achado A15 |
 
 ## Índice de Cenários
 
@@ -2298,8 +2709,8 @@ Medido no código:
 | CT-06 | toda F-nn é entregue por peça desenhada da sua origem, e todo caminho do "onde fica" resolve sem tenant | R6 | EP por origem | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R6-M1, M2 |
 | CT-07 | a rule está no índice, alcança onde a feature nasce e manda o número só crescer | R7 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R7-M1 a M4 |
 | CT-08 | toda peça existe, tem o tipo da sua classe e aparece uma vez | R8 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R8-M1 a M6 |
-| CT-09 | toda prova resolve no commit que publica, fora de comentário pelo tipo de arquivo, sem número de linha; todas as ligações conferidas | R9 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R9-M1 a M8, R13-M3 |
-| CT-10 | a prova é a da ligação: arquivo da origem, trait que ela usa, provider, método da lista de contrato, par de mapeamento ou arquivo do kit que liga a peça de pacote | R10 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R10-M1 a M12 |
+| CT-09 | toda prova resolve no commit que publica, fora de comentário pelo tipo de arquivo, sem número de linha; todas as ligações conferidas | R9 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R9-M1 a M8, R9-M11 *(step 9: A10)*, R13-M3 |
+| CT-10 | a prova é a da ligação: arquivo da origem, trait que ela usa, provider, método da lista de contrato, par de mapeamento ou arquivo do kit que liga a peça de pacote | R10 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R10-M1 a M12, R10-M13 a M16 *(step 9: A9)* |
 | CT-11 | sem tenant: registro (com as páginas da configuração) → modelo, e o modo do modelo → registro | R11 | tabela de decisão | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R11-M1, M4, M5, M6 |
 | CT-12 | com tenant: registro → modelo, e o modo do modelo → registro | R11 | tabela de decisão | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R11-M3, M4 |
 | CT-13 | a guarda do registro reprova esquecer (inclusive a página da configuração), sobrar e trocar de modo | R11 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R11-M1, M2, M6 |
@@ -2324,10 +2735,10 @@ Medido no código:
 | ~~CT-32~~ | ~~o modelo guarda a condição e a âncora de toda peça que não abre nesta configuração~~ — estacionado — Q11 (ADV-17, ADV-31) | ~~R30~~ | — | — | — | — | — |
 | ~~CT-33~~ | ~~todo diagrama mostra a condição da peça condicional e não a dá como disponível no modo errado~~ — estacionado — Q11 (ADV-31) | ~~R30~~ | — | — | — | — | — |
 | CT-34 | a página do mapa declara as duas exceções da P-11, a do comparativo e o limite da varredura, nos dois idiomas | R33 | EP | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R33-M1 a M5 |
-| CT-35 | a guarda das fontes reprova o item casado com a feature errada, o item novo sem F-nn, a página escondida na lista e o motivo de enfeite | R5 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoCatalogoTest.php` | R5-M3 a M9 |
+| CT-35 | a guarda das fontes reprova o item casado com a feature errada, o item novo sem F-nn, a página escondida na lista e o motivo de enfeite | R5 | controles | G1 | Pest feature HTTP | `tests/Kit/MapaInterativoCatalogoTest.php` | R5-M3 a M10 *(M10, step 9: A13)* |
 | CT-36 | a guarda da origem reprova a F-nn entregue pela peça errada, a removida que ainda é entregue e o caminho que não resolve | R6 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R6-M3 a M7, M9 |
 | CT-37 | sem tenant, os diagramas de arquitetura e a árvore de registro de cada painel desenham o registro dele nesse modo, fora a peça condicional | R34 | tabela de decisão + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R34-M3 |
-| CT-38 | com tenant, os diagramas de arquitetura e a árvore de registro de cada painel desenham o registro dele nesse modo | R34 | tabela de decisão + controles | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R34-M1, M2 |
+| CT-38 | com tenant, os diagramas de arquitetura e a árvore de registro de cada painel desenham o registro dele nesse modo | R34 | tabela de decisão + controles | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R34-M1, M2, M4 *(M4, step 9: A15)* |
 | CT-39 | toda transição de fluxo tem âncora que resolve, todo estado de `lifecycle` também, e a ordem no mesmo método é a do código | R35 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R35-M1, M2, M3, R22-M3 |
 | CT-40 | toda aresta de mapa é ligação do modelo no mesmo sentido, e o diagrama de painel só desenha, como peça, o que é dele, do kit inteiro ou porta | R36 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R36-M1 a M5 |
 | CT-41 | toda classe de `app/` fora de `app/Filament` entrega F-nn ou está na lista com o motivo, e comando `kit:*` nunca está na lista | R28 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R28-M4 a M7 |
@@ -2335,10 +2746,21 @@ Medido no código:
 | CT-43 | a guarda da grade reprova a célula com diagrama do outro modo ou de outro painel, e a marca de compartilhado num diagrama de um modo só | R17 | controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R17-M3, M6, M7 |
 | CT-44 | com tenant, todo caminho do "onde fica" com organização resolve no roteador | R6 | EP (idioma) | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R6-M9 |
 | CT-45 | toda marca de disponibilidade publicada é a do código: chave, valor de fábrica ou modo | R37 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R37-M1, M2, M3 |
-| CT-B01 | cada diagrama, inclusive o comparativo, abre com as peças e os rótulos da fonte, a interface do visualizador montada e a F-nn no desenho da peça, sem erro nem exceção, sem recurso de fora (no `05`) | R24, R21, R6 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R24-M1 a M4, M6, R21-M5, R6-M10 |
-| CT-B02 | cada ligação desenhada tem o seu item de prova inteiro num card do painel lateral, contado no DOM, e as arestas do DOM são as da fonte; fora o comparativo (no `05`) | R13, R12 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R13-M1, M2, M4 a M8, R12-M7 |
+| CT-46 | cada seta do mapa de arquitetura leva ligações de um verbo só, com o traço desse verbo, e cada par de pontas tem uma seta por verbo *(step 9: A1; Q22)* | R38 | EP + controles | G5 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R38-M1, M2, M6 |
+| CT-47 | a caixa de agrupamento diz quantas peças nomeia no modo do diagrama, no número certo, e a caixa vazia não é desenhada *(step 9: A5)* | R38 | BVA (0, 1, N) + controles | G5 | Pest feature HTTP | `tests/Kit/MapaInterativoDiagramasTest.php` | R38-M3, M4, M5 |
+| CT-48 | com `--saida` e sem slug, o gerador recusa, antes de qualquer efeito, a pasta que tem o que ele não gerou, e não apaga nada *(step 9: A2)* | R39 | EP (pasta de saída) | G5 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R39-M1, M2 |
+| CT-49 | o argumento sem valor válido é recusado antes de qualquer efeito, com a mensagem `[mapa]` que nomeia o argumento *(step 9: A6; Q24)* | R40 | EP | G5 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R40-M1, M2, M5, M6 |
+| CT-50 | o arquivo de entrada com JSON quebrado é recusado antes de qualquer efeito, com a mensagem `[mapa]` que nomeia o arquivo *(step 9: A11)* | R40 | EP | G5 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R40-M3, M4, M5 |
+| CT-51 | o gerador chamado por um caminho que passa por um link faz o mesmo que pelo caminho real, e não termina com 0 calado *(step 9: A4)* | R39 | EP (caminho da chamada), relativo ao caminho real | G5 | Pest feature HTTP | `tests/Kit/MapaInterativoPublicacaoTest.php` | R39-M3 |
+| CT-52 | a linha que o build dá a cada prova é a do código: o trecho está fora de comentário nela *(step 9: A3)* | R9 | EP + controle | G5 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R9-M10 |
+| CT-53 | toda âncora do mapa resolve na suíte do kit: a evidência de cada peça e toda âncora dos diagramas escritos à mão *(step 9: A7)* | R9 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R9-M9, M12 |
+| CT-54 | todo id que um arquivo de diagrama construído nomeia — peça ou membro de agrupamento — é peça do modelo *(step 9: A8)* | R36 | EP + controles | G2 | Pest feature HTTP | `tests/Kit/MapaInterativoTest.php` | R36-M6 |
+| CT-55 | com tenant, a guarda do registro reprova a sobra de qualquer tipo, a falta e o painel trocado *(step 9: A15)* | R11 | controles | G3 | Pest feature HTTP | `tests/Tenancy/MapaInterativoTenancyTest.php` | R11-M7 |
+| CT-B01 | cada diagrama, inclusive o comparativo, abre com as peças e os rótulos da fonte, a interface do visualizador montada e a F-nn no desenho da peça, sem erro nem exceção, sem recurso de fora (no `05`) | R24, R21, R6 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R24-M1 a M4, M6, M8 *(M8, step 9: A14)*, R21-M5, R6-M10 |
+| CT-B02 | cada ligação desenhada tem o seu item de prova inteiro num card do painel lateral, contado no DOM, e as arestas do DOM são as da fonte; fora o comparativo (no `05`) | R13, R12 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R13-M1, M2, M4 a M9 *(M9, step 9: A14)*, R12-M7 |
 | CT-B03 | o leitor busca a peça, e o passaporte mostra as provas dela, com a linha do trecho no commit do build, numa amostra por `architecture`; sem erro na interação (no `05`) | R14, R24 | EP + amostra | G4 | browser | `site/verifica-mapa.mjs` | R14-M1 a M6, R24-M7 |
-| CT-B04 | a interface do visualizador fala o idioma da página, com critério no pt e no en, também com a busca e o passaporte abertos e sem erro; só a casca do comparativo fica em inglês (no `05`) | R31, R24 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R31-M1 a M6, R24-M7 |
+| CT-B04 | a interface do visualizador fala o idioma da página, com critério no pt e no en, também com a busca e o passaporte abertos e sem erro; só a casca do comparativo fica em inglês (no `05`) | R31, R24 | rastreio exaustivo | G4 | browser | `site/verifica-mapa.mjs` | R31-M1 a M6, M11 *(M11, step 9: A16)*, R24-M7 |
 | CT-B05 | a amostra de acessibilidade cobre cada tipo, idioma e tema, e o comparativo no escuro (no `05`) | R32 | amostra estratificada | G4 | browser | `site/verifica-mapa.mjs` | R32-M4, M5, M6 |
-| CT-B06 | a tolerância reconhece os dois defeitos pelo alvo, reprova o resto e a violação de alvos mistos, e a reprovação vira código de saída (no `05`) | R32, R23 | controle sintético | G4 | browser | `site/verifica-mapa.mjs` | R32-M1, M2, M3, M7, R23-M6 |
-| CT-B07 | o catálogo pt que o kit entrega — as 390 chaves embutidas em cada HTML pt e as 96 de render, na fonte — não copia o texto en, fora a lista fechada das 14 chaves medidas e das só de marcadores (no `05`) | R31 | controles | G4 | browser | `site/verifica-mapa.mjs` | R31-M7, M8, M9 |
+| CT-B06 | a tolerância reconhece os dois defeitos pelo alvo, reprova o resto e a violação de alvos mistos, e a reprovação vira código de saída (no `05`) | R32, R23 | controle sintético | G4 | browser | `site/verifica-mapa.mjs` | R32-M1, M2, M3, M7, R23-M6, M8 *(M8, step 9: A12)* |
+| CT-B07 | o catálogo pt que o kit entrega — as 390 chaves embutidas em cada HTML pt e as 96 de render, na fonte — não copia o texto en, fora a lista fechada das 14 chaves medidas e das só de marcadores (no `05`) | R31 | controles | G4 | browser | `site/verifica-mapa.mjs` | R31-M7 a M10 *(M10, step 9: A13)* |
+| CT-B08 | o conferidor, rodado como processo sobre uma pasta de diagramas com um JSON quebrado, reprova com a mensagem `[mapa]` que nomeia o arquivo e termina com código diferente de zero (no `05`) *(step 9: A11)* | R40 | EP | G4 | browser | `site/verifica-mapa.mjs` | R40-M3 |
