@@ -95,7 +95,7 @@ Everything below comes installed, published and registered on the panels — the
 | [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | the media layer (uploads, collections, conversions) in the form, table and infolist components |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | automatic caching of Eloquent queries |
 | [predis/predis](https://packagist.org/packages/predis/predis) | pure-PHP Redis client (no extension needed) |
-| [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket for real-time notifications |
+| [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket that Docker brings up in the `app` and `realtime` profiles; Filament's Echo ships unconfigured, so notifications still arrive by polling |
 
 > **Engines under the plugins**, installed as dependencies (you don't declare them, but they're what actually runs): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (the checks), `spatie/laravel-activitylog` (the activity log), `spatie/laravel-medialibrary` (the attachments) and `livewire/livewire` (all of Filament).
 

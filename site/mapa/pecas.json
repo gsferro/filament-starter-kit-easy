@@ -886,6 +886,27 @@
     ]
   },
   {
+    "id": "App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel",
+    "nome": "AcessosPorPainel",
+    "tipo": "widget",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-90"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/Widgets/AcessosPorPainel.php",
+        "trecho": "class AcessosPorPainel extends BreakdownWidget"
+      }
+    ]
+  },
+  {
     "id": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
     "nome": "UserResource",
     "tipo": "recurso",
@@ -1818,6 +1839,27 @@
     ]
   },
   {
+    "id": "App\\Filament\\Pages\\Auth\\TelaLoginUnificada",
+    "nome": "TelaLoginUnificada",
+    "tipo": "pagina",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-73"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/KitServiceProvider.php",
+        "trecho": "Route::get('/login', TelaLoginUnificada::class)->name('login');"
+      }
+    ]
+  },
+  {
     "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
     "nome": "TelaRecuperarSenha",
     "tipo": "pagina",
@@ -1888,6 +1930,28 @@
       {
         "arquivo": "app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php",
         "trecho": "class TelaVerificacaoDeEmail extends EmailVerification"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\BoasVindas",
+    "nome": "BoasVindas",
+    "tipo": "pagina",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "harvirsidhu/filament-cards",
+    "features": [
+      "F-65",
+      "F-66"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "routes/web.php",
+        "trecho": "Route::get('/', BoasVindas::class)"
       }
     ]
   },
@@ -4359,6 +4423,27 @@
     ]
   },
   {
+    "id": "Asignua\\FilamentInfiniteScroll\\FilamentInfiniteScrollServiceProvider",
+    "nome": "FilamentInfiniteScrollServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "asignua/filament-infinite-scroll",
+    "features": [
+      "F-96"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+        "trecho": ": $table->infiniteScroll(perPage: (int) config('kit.tabelas.paginacao', 10), mode: $modo);"
+      }
+    ]
+  },
+  {
     "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
     "nome": "ResizedColumnPlugin",
     "tipo": "plugin",
@@ -4481,6 +4566,27 @@
       {
         "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
         "trecho": "Toggle::configureUsing(fn (Toggle $toggle): Toggle => $this->configuraToggle($toggle));"
+      }
+    ]
+  },
+  {
+    "id": "BezhanSalleh\\PanelSwitch\\PanelSwitchServiceProvider",
+    "nome": "PanelSwitchServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "bezhansalleh/filament-panel-switch",
+    "features": [
+      "F-48"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+        "trecho": "PanelSwitch::configureUsing(function (PanelSwitch $panelSwitch): void {"
       }
     ]
   },
@@ -4701,6 +4807,27 @@
     ]
   },
   {
+    "id": "Dotswan\\FilamentLaravelPulse\\Widgets\\PulseServers",
+    "nome": "PulseServers",
+    "tipo": "widget",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "dotswan/filament-laravel-pulse",
+    "features": [
+      "F-40"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Pages/Pulse.php",
+        "trecho": "PulseServers::class,"
+      }
+    ]
+  },
+  {
     "id": "Filament\\Http\\Middleware\\Authenticate",
     "nome": "Authenticate",
     "tipo": "middleware",
@@ -4817,6 +4944,28 @@
     ]
   },
   {
+    "id": "Filament\\Sentinel\\SentinelServiceProvider",
+    "nome": "SentinelServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "anselmokossa/filament-sentinel",
+    "features": [
+      "F-10",
+      "F-52"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "config/sentinel.php",
+        "trecho": "'codes' => [500, 403, 404, 419, 503],"
+      }
+    ]
+  },
+  {
     "id": "Filament\\Widgets\\AccountWidget",
     "nome": "AccountWidget",
     "tipo": "widget",
@@ -4864,6 +5013,49 @@
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
         "trecho": "FilamentInfoWidget::class,"
+      }
+    ]
+  },
+  {
+    "id": "Fomvasss\\AiTasks\\Models\\AiRun",
+    "nome": "AiRun",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "fomvasss/laravel-ai-tasks",
+    "features": [
+      "F-43",
+      "F-55"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+        "trecho": "protected static ?string $model = AiRun::class;"
+      }
+    ]
+  },
+  {
+    "id": "GeneaLabs\\LaravelModelCaching\\Providers\\Service",
+    "nome": "Service",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "mike-bronner/laravel-model-caching",
+    "features": [
+      "F-110"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "config/laravel-model-caching.php",
+        "trecho": "'enabled' => env('MODEL_CACHE_ENABLED', false),"
       }
     ]
   },
@@ -5252,6 +5444,72 @@
     ]
   },
   {
+    "id": "Laravel\\Ai\\AiServiceProvider",
+    "nome": "AiServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/ai",
+    "features": [
+      "F-30",
+      "F-53",
+      "F-54",
+      "F-56"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "config/ai.php",
+        "trecho": "'default'                   => env('AI_PROVIDER', 'llamacpp'),"
+      }
+    ]
+  },
+  {
+    "id": "Laravel\\Boost\\BoostServiceProvider",
+    "nome": "BoostServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/boost",
+    "features": [
+      "F-114"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "composer.json",
+        "trecho": "\"laravel/boost\": \"^2.5\","
+      }
+    ]
+  },
+  {
+    "id": "Laravel\\Socialite\\SocialiteServiceProvider",
+    "nome": "SocialiteServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/socialite",
+    "features": [
+      "F-72"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "return Socialite::driver($provedor->value)->redirect();"
+      }
+    ]
+  },
+  {
     "id": "Leandrocfe\\FilamentApexCharts\\FilamentApexChartsPlugin",
     "nome": "FilamentApexChartsPlugin",
     "tipo": "plugin",
@@ -5516,6 +5774,27 @@
     ]
   },
   {
+    "id": "Pest\\Laravel\\PestServiceProvider",
+    "nome": "PestServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "pestphp/pest-plugin-laravel",
+    "features": [
+      "F-112"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "composer.json",
+        "trecho": "\"pestphp/pest-plugin-laravel\": \"^5.0\","
+      }
+    ]
+  },
+  {
     "id": "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
     "nome": "FilamentNotificationCenterPlugin",
     "tipo": "plugin",
@@ -5614,6 +5893,27 @@
     ]
   },
   {
+    "id": "Sehsah\\FilamentRememberTable\\Models\\TableView",
+    "nome": "TableView",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "sehsah/filament-remember-table",
+    "features": [
+      "F-95"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Concerns/VisoesDeTabela.php",
+        "trecho": "use Sehsah\\FilamentRememberTable\\Models\\TableView;"
+      }
+    ]
+  },
+  {
     "id": "ShuvroRoy\\FilamentSpatieLaravelHealth\\FilamentSpatieLaravelHealthPlugin",
     "nome": "FilamentSpatieLaravelHealthPlugin",
     "tipo": "plugin",
@@ -5681,6 +5981,27 @@
       {
         "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
         "trecho": "SimpleLightBoxPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "STS\\FilamentImpersonate\\FilamentImpersonateServiceProvider",
+    "nome": "FilamentImpersonateServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "stechstudio/filament-impersonate",
+    "features": [
+      "F-08"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+        "trecho": "Impersonate::make(),"
       }
     ]
   },

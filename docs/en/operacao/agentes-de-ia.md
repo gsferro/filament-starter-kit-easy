@@ -140,7 +140,7 @@ The numbering is that of the `feature-wiki` 4.0.0 steps.
 **What this changes in practice:**
 
 - **The agent reads before writing.** `wikis/` and `.ai/rules` answer what already exists, and the
-  [feature roadmap](../roteiro-de-features/) below lists the 68 ready features. A feature
+  [feature roadmap](../roteiro-de-features/) below lists the 124 ready features. A feature
   reimplemented from scratch because the agent didn't know it existed is the most expensive and most invisible cost.
 - **Context becomes a file, not chat history.** Switching agent, machine or person does not
   lose the why of the decision — it is in the ADR, versioned in the same commit as the code.

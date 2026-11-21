@@ -190,6 +190,10 @@ const VERBO = {
   grava: { pt: 'grava', en: 'writes', variante: 'security', traco: { pt: 'traço de alerta', en: 'alert stroke' } },
 };
 
+/** O tag de F-nn do componente: até três, e "+N" no resto, que o card "F-nn de cada peça" lista inteiro (D29). */
+const tagDasFeatures = (features) =>
+  features.length > 3 ? `${features.slice(0, 3).join(' · ')} +${features.length - 3}` : features.join(' · ');
+
 /** "recurso · F-29 · F-30" ou "plugin · filament-auth-designer": o tipo, o pacote e as F-nn da peça (D29). */
 function sublabelDaPeca(peca) {
   const pacote = peca.origem === 'pacote' && peca.pacote ? ` · ${peca.pacote.split('/').pop()}` : '';
@@ -224,7 +228,7 @@ function arvoreDeRegistro(diagrama) {
     if (!membros.length) continue;
     nodes.push({ id: `grupo-${tipo}`, label: { pt: `${rotulo.pt} (${membros.length})`, en: `${rotulo.en} (${membros.length})` }, parent: idArchify(raiz) });
     for (const peca of membros) {
-      const features = peca.features.length ? ` · ${peca.features.join(' ')}` : '';
+      const features = peca.features.length ? ` · ${tagDasFeatures(peca.features)}` : '';
       const sub = sublabelDaPeca(peca);
       nodes.push({
         id: idArchify(peca.id),
@@ -236,8 +240,12 @@ function arvoreDeRegistro(diagrama) {
     }
   }
   const provas = registradas.map((l) => ({ de: idArchify(raiz), para: idArchify(l.para), rotulo: { pt: VERBO.registra.pt, en: VERBO.registra.en }, prova: l.evidencia }));
+  const comFeatures = registradas.map((l) => pecas.get(l.para)).filter((peca) => peca.features.length);
+  const cards = comFeatures.length
+    ? [{ dot: 'emerald', title: { pt: 'F-nn de cada peça', en: 'F-nn of each piece' }, items: comFeatures.map((peca) => `${peca.nome}: ${peca.features.join(', ')}`) }]
+    : [];
   return {
-    entrada: { schema_version: 1, diagram_type: 'tree', meta: { quality_profile: diagrama.qualidade ?? 'standard' }, layout: { direction: 'right' }, nodes },
+    entrada: { schema_version: 1, diagram_type: 'tree', meta: { quality_profile: diagrama.qualidade ?? 'standard' }, layout: { direction: 'right' }, nodes, cards },
     provas,
   };
 }
@@ -271,7 +279,7 @@ function mapaDeArquitetura(diagrama) {
         type: TIPO_ARCHIFY[peca.tipo],
         label: peca.nome,
         sublabel: sublabelDaPeca(peca),
-        ...(peca.features.length ? { tag: peca.features.join(' · ') } : {}),
+        ...(peca.features.length ? { tag: tagDasFeatures(peca.features) } : {}),
         sources: peca.evidencia.slice(0, 3),
         row,
         col,
@@ -326,6 +334,15 @@ function mapaDeArquitetura(diagrama) {
       dot: 'cyan',
       title: { pt: 'Como ler as setas', en: 'How to read the arrows' },
       items: [...verbos].map((v) => ({ pt: `${VERBO[v].traco.pt}: ${VERBO[v].pt}`, en: `${VERBO[v].traco.en}: ${VERBO[v].en}` })),
+    });
+  }
+  // A F-nn de cada peça desenhada, inteira e à vista sem zoom: o archify esconde o tag no carregamento (D29).
+  const comFeatures = diagrama.pecas.map(({ id }) => pecas.get(id)).filter((peca) => peca.features.length);
+  if (comFeatures.length) {
+    cards.push({
+      dot: 'emerald',
+      title: { pt: 'F-nn de cada peça', en: 'F-nn of each piece' },
+      items: comFeatures.map((peca) => `${peca.nome}: ${peca.features.join(', ')}`),
     });
   }
   for (const g of diagrama.agrupamentos ?? []) {
