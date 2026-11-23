@@ -9,6 +9,7 @@ use App\Filament\App\Resources\Projetos\ProjetoResource;
 use App\Filament\Pages\Auth\RegistroPorConvite;
 use App\Filament\Pages\Auth\TelaBloqueio;
 use App\Filament\Pages\DashboardClassico;
+use App\Livewire\AssistenteChatWidget;
 use App\Livewire\ChecklistDoOnboarding;
 use App\Livewire\PreferenciasDeAparencia;
 use App\Models\Convite;
@@ -17,8 +18,10 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\KitServiceProvider;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\AgentesDeIa;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\ProvedorSocial;
+use App\Support\TutorialGuiado;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -4353,4 +4356,357 @@ function entradasDoGeradorDoMapa(array $pedido = []): array
     expect($processo->successful())->toBeTrue('o node não montou a entrada do archify: '.trim($processo->errorOutput().$processo->output()));
 
     return $montadas[$json] = json_decode($processo->output(), true, 512, JSON_THROW_ON_ERROR);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mapa interativo — o discriminante da peça condicional
+|--------------------------------------------------------------------------
+| A definição única do Setup Global do `04` (`### A peça condicional e o
+| discriminante`, com a guarda da R30 e a população da R43), chamada do mesmo
+| jeito pelo tests/Kit/MapaInterativoTest.php (CT-32), pelo
+| MapaInterativoDiagramasTest.php (CT-33, CT-37) e pelo
+| tests/Tenancy/MapaInterativoTenancyTest.php (CT-56, CT-38).
+|
+| Entra o painel, o modo da suíte, a peça e a condição que o modelo dá a ela;
+| saem as duas respostas do contrato, a da guarda da condição e a do lugar
+| (`discriminanteDaPeca()`). A população vem de `populacaoDoDiscriminante()`.
+| O modo nunca é ligado: `kit.tenancy.enabled` é decidido no boot da suíte.
+*/
+
+/**
+ * O arnês do discriminante (Setup Global do `04`, "O arnês, medido"): o `PapeisSeeder` e o super_admin
+ * do kit autenticado. O super_admin vem de `usuarioDoKit()` com o papel que `filament-shield.super_admin.name`
+ * nomeia (`master_global`), e o `Gate::before` o põe acima de toda permissão. Com tenant, o arnês cria a
+ * organização que o `/app` abre, de `organizacaoComRegistro()`, e boota o `/app` por um GET real: o
+ * `noPainelBootado('app')` morre no boot do Breezy sem rota (`.ai/rules/testes.md`).
+ *
+ * Idempotente no caso: o banco volta a cada caso (`RefreshDatabase`), e a chamada seguinte acha o que a
+ * primeira criou e só autentica de novo. O e-mail e o slug são próprios, para não colidir com a persona
+ * nem com a organização do caso que chama. Antes do GET, a sessão é zerada: o `AuthenticateSession`
+ * desloga a segunda pessoa de um caso que já fez request com outra (`.ai/rules/testes.md`).
+ *
+ * @return array{superAdmin: User, organizacao: Tenant|null}
+ */
+function arnesDoDiscriminante(): array
+{
+    $email      = 'super-admin.discriminante@example.com';
+    $slug       = 'organizacao-do-discriminante';
+    $comTenant  = (bool) config('kit.tenancy.enabled');
+    $superAdmin = User::query()->where('email', $email)->first();
+
+    if ($superAdmin === null) {
+        test()->seed(PapeisSeeder::class);
+        $superAdmin = usuarioDoKit((string) config('filament-shield.super_admin.name'), $email);
+
+        expect($superAdmin->isMasterGlobal())->toBeTrue('o super_admin do arnês do discriminante não ficou master_global no contexto global');
+    }
+
+    $organizacao = $comTenant ? Tenant::query()->where('slug', $slug)->first() : null;
+
+    if ($comTenant && $organizacao === null) {
+        $organizacao = organizacaoComRegistro($slug);
+
+        test()->flushSession();
+        test()->actingAs($superAdmin)->get("/app/{$organizacao->slug}");
+    }
+
+    test()->actingAs($superAdmin);
+
+    return ['superAdmin' => $superAdmin, 'organizacao' => $organizacao];
+}
+
+/**
+ * O método estático com que a peça decide o próprio acesso: `canAccess()` (recurso e página) ou
+ * `canView()` (widget, e o componente do perfil do Breezy); `null` quando a classe não tem nenhum dos dois.
+ */
+function metodoDeAcessoDaPeca(string $classe): ?string
+{
+    foreach (['canAccess', 'canView'] as $metodo) {
+        if (! method_exists($classe, $metodo)) {
+            continue;
+        }
+
+        $reflexao = new ReflectionMethod($classe, $metodo);
+
+        if ($reflexao->isStatic() && $reflexao->isPublic()) {
+            return $metodo;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * A população do discriminante num painel (Setup Global do `04`, "A população"; R43), por tipo e nunca
+ * por nome:
+ * - `registrada`: os recursos, as páginas e os widgets do registro vivo do painel (`registroVivoDoPainel()`);
+ * - `foraDoRegistro`: a peça do modelo que painel nenhum registra e tem `canAccess()` ou `canView()`
+ *   estático (RQ-31). É a mesma lista em todo painel, porque ela é avaliada em cada um;
+ * - `flutuante`: a peça Livewire do modelo que painel nenhum registra e não tem nenhum dos dois, o
+ *   componente flutuante ligado a chave (RQ-33). O predicado de `pecaDisponivelNoPainel()` decide se
+ *   ele aparece.
+ *
+ * Plugin e middleware ficam fora (RQ-32). "Painel nenhum registra" se mede pelo registro vivo de todos
+ * os painéis, no modo da suíte. O modelo é parâmetro, para o controle passar a cópia em memória.
+ *
+ * @param  array{pecas: array<array-key, array<string, mixed>>, ligacoes?: list<array<string, mixed>>}  $modelo
+ * @return array{registrada: list<string>, foraDoRegistro: list<string>, flutuante: list<string>}
+ */
+function populacaoDoDiscriminante(string $painel, array $modelo): array
+{
+    $registradas   = [];
+    $todoORegistro = [];
+
+    foreach (Filament::getPanels() as $outro) {
+        $registro = registroVivoDoPainel($outro);
+
+        $registradas[$outro->getId()] = array_values(array_unique(array_merge($registro['recurso'], $registro['pagina'], $registro['widget'])));
+        $todoORegistro                = array_merge($todoORegistro, ...array_values($registro));
+    }
+
+    $foraDoRegistro = [];
+    $flutuantes     = [];
+
+    foreach ($modelo['pecas'] as $peca) {
+        $classe = (string) $peca['id'];
+
+        if (in_array($classe, $todoORegistro, true) || ! class_exists($classe)) {
+            continue;
+        }
+
+        if (metodoDeAcessoDaPeca($classe) !== null) {
+            $foraDoRegistro[] = $classe;
+        } elseif (($peca['tipo'] ?? null) === 'livewire') {
+            $flutuantes[] = $classe;
+        }
+    }
+
+    return [
+        'registrada'     => $registradas[$painel] ?? throw new InvalidArgumentException("o painel {$painel} não está no registro de painéis"),
+        'foraDoRegistro' => array_values(array_unique($foraDoRegistro)),
+        'flutuante'      => array_values(array_unique($flutuantes)),
+    ];
+}
+
+/**
+ * A peça está disponível agora, no painel corrente? Decide o `canAccess()` ou o `canView()` vivo dela.
+ *
+ * A peça que o painel registra sem nenhum dos dois fica disponível, porque nada a fecha. São as telas de
+ * autenticação que o painel liga pela configuração, como a `TelaLogin`. Medido: as 86 registradas da
+ * tabela do `04` contam com elas, e nenhuma está entre as indisponíveis.
+ *
+ * O componente flutuante, que painel nenhum registra e não tem nenhum dos dois, é avaliado pelo predicado
+ * que decide a renderização dele, num mapa fechado (Setup Global do `04`, RQ-33):
+ * - o chat do assistente, pelo `AgentesDeIa::assistenteNoPainel()` do painel, o mesmo que o `chatNaTela()` chama;
+ * - o checklist do tutorial, pelo `TutorialGuiado::visivel()`, o mesmo que o `->launcher()` do plugin usa.
+ *
+ * Um terceiro componente fora do mapa lança a exceção com o nome dele, até ganhar o predicado: falha fechado.
+ *
+ * @throws UnexpectedValueException
+ */
+function pecaDisponivelNoPainel(string $classe, Panel $painel): bool
+{
+    $metodo = metodoDeAcessoDaPeca($classe);
+
+    if ($metodo !== null) {
+        return (bool) $classe::$metodo();
+    }
+
+    $registro = registroVivoDoPainel($painel);
+
+    if (in_array($classe, array_merge($registro['recurso'], $registro['pagina'], $registro['widget']), true)) {
+        return true;
+    }
+
+    return match ($classe) {
+        AssistenteChatWidget::class  => AgentesDeIa::assistenteNoPainel($painel),
+        ChecklistDoOnboarding::class => TutorialGuiado::visivel(),
+        default                      => throw new UnexpectedValueException("a peça {$classe} não tem canAccess() nem canView() estático, e o mapa fechado de predicados dos componentes flutuantes do discriminante não a conhece: dê a ela o predicado que decide a renderização"),
+    };
+}
+
+/**
+ * O caminho de config que a variável do `config/kit.php` alimenta (`KIT_DEMO` → `kit.demo`). O caminho é
+ * medido, e não lido do texto: o arquivo é relido com a variável `true` e com `false` (`kitConfigCom()`), e
+ * o caminho é a folha que muda. A lista conta como folha. A variável que não alimenta chave nenhuma, ou
+ * alimenta mais de uma, lança a exceção com o nome dela.
+ *
+ * @throws UnexpectedValueException
+ */
+function caminhoDaVariavelDoKit(string $variavel): string
+{
+    static $caminhos = [];
+
+    if (isset($caminhos[$variavel])) {
+        return $caminhos[$variavel];
+    }
+
+    $folhasQueMudam = static function (array $ligada, array $desligada, string $prefixo) use (&$folhasQueMudam): array {
+        $folhas = [];
+
+        foreach (array_keys($ligada + $desligada) as $chave) {
+            $comTrue  = $ligada[$chave] ?? null;
+            $comFalse = $desligada[$chave] ?? null;
+
+            if (is_array($comTrue) && is_array($comFalse) && ! array_is_list($comTrue) && ! array_is_list($comFalse)) {
+                $folhas = array_merge($folhas, $folhasQueMudam($comTrue, $comFalse, "{$prefixo}{$chave}."));
+            } elseif ($comTrue !== $comFalse) {
+                $folhas[] = "{$prefixo}{$chave}";
+            }
+        }
+
+        return $folhas;
+    };
+
+    $folhas = $folhasQueMudam(kitConfigCom($variavel, 'true'), kitConfigCom($variavel, 'false'), 'kit.');
+
+    if (count($folhas) !== 1) {
+        throw new UnexpectedValueException("a variável {$variavel} alimenta ".count($folhas).' chaves do config/kit.php ('.implode(', ', $folhas).'), e o discriminante só liga a que ela decide sozinha');
+    }
+
+    return $caminhos[$variavel] = $folhas[0];
+}
+
+/**
+ * As chaves que a condição do modelo nomeia e que o discriminante liga juntas, no formato caminho de config
+ * => valor ligado. `kit.tenancy.enabled` nunca entra, mesmo nomeado, porque é o modo.
+ *
+ * A condição é o campo `disponibilidade` da peça no modelo (`site/mapa/pecas.json`), numa forma só:
+ * `{modo?: 'sem'|'com', chaves?: list<{chave, padrao, ligada?}>, evidencia: {arquivo, trecho}}`. `chave` é a
+ * variável `KIT_*` do `config/kit.php` (`KIT_DEMO`), resolvida para o caminho, ou o caminho da configuração de
+ * pacote (`command-center.sources`); `padrao` é o valor de fábrica, que a marca escreve; `ligada` é o valor que
+ * a liga, que o modelo propõe e o discriminante põe como está. Sem ele, a booleana liga no oposto do valor lido,
+ * que o `Dado` afirma ser o de fábrica, e a lista ganha o painel avaliado: "ligada", na
+ * `KIT_AGENTES_IA_PAINEIS`, é a lista com o painel. A chave que a configuração não tem, e a que não é booleana
+ * nem lista e vem sem o `ligada` (a configuração de pacote), lançam a exceção com o nome da chave.
+ *
+ * @param  array{modo?: 'sem'|'com', chaves?: list<array{chave: string, padrao?: mixed, ligada?: mixed}>, evidencia?: array{arquivo: string, trecho: string}}|null  $condicao
+ * @return array<string, mixed>
+ *
+ * @throws UnexpectedValueException
+ */
+function chavesLigadasDaCondicao(?array $condicao, string $painel): array
+{
+    $ligadas = [];
+
+    foreach ($condicao['chaves'] ?? [] as $chave) {
+        $nome    = (string) $chave['chave'];
+        $caminho = preg_match('/^[A-Z][A-Z0-9_]*$/', $nome) === 1 ? caminhoDaVariavelDoKit($nome) : $nome;
+
+        if ($caminho === 'kit.tenancy.enabled') {
+            continue;
+        }
+
+        if (! config()->has($caminho)) {
+            throw new UnexpectedValueException("a condição nomeia {$nome}, e a configuração não tem a chave {$caminho}");
+        }
+
+        $lido = config($caminho);
+
+        $ligadas[$caminho] = match (true) {
+            array_key_exists('ligada', $chave)                      => $chave['ligada'],
+            is_bool($lido)                                          => ! $lido,
+            is_array($lido) && array_is_list($lido)                 => array_values(array_unique([...$lido, $painel])),
+            default                                                 => throw new UnexpectedValueException("a condição nomeia {$nome}, que não é booleana nem lista, sem o valor que a liga"),
+        };
+    }
+
+    return $ligadas;
+}
+
+/**
+ * O discriminante da peça (Setup Global do `04`, "Contrato do helper único"). Entram o painel, o modo da
+ * suíte, a peça e a condição que o modelo dá a ela, se houver. Saem as duas respostas:
+ * - `guarda` (R30: CT-32, CT-56): `deFabrica` diz se a peça abre com a configuração de fábrica.
+ *   `comAsChavesDaCondicao` diz se abre com só as chaves e a configuração que a condição nomeia, ligadas
+ *   juntas; sem chave nomeada, repete o `deFabrica`. É a resposta que põe a condição do modelo à prova:
+ *   chave errada não abre a peça;
+ * - `lugar` (a subtração e a metade viva: CT-33 sem tenant, CT-37, CT-38): a peça abre de fábrica, ou
+ *   com alguma chave booleana de `kit.*` desligada ligada, uma de cada vez, ou com as chaves da condição
+ *   ligadas juntas. O modelo só propõe: a chave errada nele não tira do diagrama a peça que a certa abre,
+ *   e a peça que nada abre sai.
+ *
+ * O arnês é o de `arnesDoDiscriminante()`. Antes de avaliar, `noPainelDoShield()` descarta o Shield (sem o
+ * descarte, o mapa fica no do primeiro painel e o `PermissaoDaTela::permite()` falha fechado nas páginas
+ * de pacote dos outros). Depois vêm o `noPainelBootado()` e, no painel com tenant, o `noPainelDa()` com a
+ * organização do arnês. Cada chave é ligada por `config()->set()` e volta ao valor lido antes, no mesmo
+ * caso. O formato da condição é o de `chavesLigadasDaCondicao()`; o resto dela, o modo e a âncora, é da
+ * guarda. O `FilamentManager` boota um painel só por processo (`isCurrentPanelBooted` não volta a falso no
+ * `setCurrentPanel()`), e por isso só o primeiro painel avaliado num caso é bootado de fato; medido, as três
+ * ordens dos painéis dão a mesma resposta em cada peça, nas duas suítes.
+ *
+ * O modo nunca é ligado: `kit.tenancy.enabled` fica fora de toda chave ligada, e o `$modo` tem de ser o
+ * da suíte. Ligá-lo em tempo de execução "abriria" o `TenantResource` sem tenant.
+ *
+ * @param  'sem'|'com'  $modo
+ * @param  array{modo?: 'sem'|'com', chaves?: list<array{chave: string, padrao?: mixed, ligada?: mixed}>, evidencia?: array{arquivo: string, trecho: string}}|null  $condicao
+ * @return array{guarda: array{deFabrica: bool, comAsChavesDaCondicao: bool}, lugar: bool}
+ *
+ * @throws UnexpectedValueException
+ */
+function discriminanteDaPeca(string $painel, string $modo, string $peca, ?array $condicao = null): array
+{
+    $modoDaSuite = config('kit.tenancy.enabled') ? 'com' : 'sem';
+
+    if ($modo !== $modoDaSuite) {
+        throw new InvalidArgumentException("o discriminante mede o modo da suíte, que roda {$modoDaSuite} tenant, e recebeu o modo {$modo}");
+    }
+
+    ['organizacao' => $organizacao] = arnesDoDiscriminante();
+
+    noPainelDoShield($painel);
+    noPainelBootado($painel);
+
+    $doPainel = Filament::getPanel($painel);
+
+    if ($doPainel->hasTenancy() && $organizacao !== null) {
+        noPainelDa($organizacao);
+    }
+
+    $avaliar = static fn (): bool => pecaDisponivelNoPainel($peca, $doPainel);
+
+    $comLigadas = static function (array $ligadas) use ($avaliar): bool {
+        $antes = [];
+
+        foreach ($ligadas as $caminho => $valor) {
+            $antes[$caminho] = config($caminho);
+            config()->set($caminho, $valor);
+        }
+
+        try {
+            return $avaliar();
+        } finally {
+            foreach ($antes as $caminho => $valor) {
+                config()->set($caminho, $valor);
+            }
+        }
+    };
+
+    $desligadas = [];
+    $varrer     = static function (array $ramo, string $prefixo) use (&$varrer, &$desligadas): void {
+        foreach ($ramo as $chave => $valor) {
+            if (is_array($valor) && ! array_is_list($valor)) {
+                $varrer($valor, "{$prefixo}{$chave}.");
+            } elseif ($valor === false && "{$prefixo}{$chave}" !== 'kit.tenancy.enabled') {
+                $desligadas[] = "{$prefixo}{$chave}";
+            }
+        }
+    };
+    $varrer((array) config('kit'), 'kit.');
+
+    $daCondicao   = chavesLigadasDaCondicao($condicao, $painel);
+    $deFabrica    = $avaliar();
+    $comACondicao = $daCondicao === [] ? $deFabrica : $comLigadas($daCondicao);
+    $lugar        = $deFabrica || $comACondicao;
+
+    foreach ($desligadas as $chave) {
+        if ($lugar) {
+            break;
+        }
+
+        $lugar = $comLigadas([$chave => true]);
+    }
+
+    return ['guarda' => ['deFabrica' => $deFabrica, 'comAsChavesDaCondicao' => $comACondicao], 'lugar' => $lugar];
 }

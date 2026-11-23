@@ -46,6 +46,13 @@
 | RQ-23 | Manter o catálogo vira rule | 9 | — |
 | RQ-24 | Módulo = peça com nome; ligação = uso com o trecho que prova | 2, 4 | P-04 (prova à vista) |
 | RQ-25 | Só archify (10 tipos + compare) e os Mermaid existentes | 1, 4 | nenhuma dependência nova além do archify |
+| RQ-27 | A peça condicional leva a marca da condição em todo diagrama que a desenha | 2, 4, 6, 8 | Adendo 2; a condição no modelo (D18) e a marca no gerador |
+| RQ-28 | A peça condicional só entra no diagrama do modo em que está disponível | 2, 4, 6, 8 | Adendo 2; P-15 lê a chave ligada |
+| RQ-29 | O /admin com diagramas separados sem e com tenant, e o `TenantResource` só nos de com | 4, 6 | Adendo 2; a matriz de visualizações do /admin volta a ser a do plano |
+| RQ-30 | A configuração de pacote que deixa a peça indisponível de fábrica conta como chave | 2, 4, 8 | Adendo 3 (Q27): o `CommandRecordResource` do /infra |
+| RQ-31 | A peça que só aparece dentro de uma tela condicional herda a condição dela | 2, 4, 8 | Adendo 3 (Q28): o `AcessosPorPainel` |
+| RQ-32 | Plugin e middleware não levam a marca | 4, 8 | Adendo 3 (Q29) |
+| RQ-33 | O componente flutuante ligado a chave (o chat do assistente e o checklist do tutorial) leva a marca | 2, 4, 8 | Adendo 4 (Q30) |
 | RQ-26 | Fim = PR com CI verde; merge e release só com OK | — | ⚠️ fora de passo — processo: o passo 11 abre o PR e deixa o CI verde; merge e release esperam o OK do mantenedor, conferido no PR *(alterado em 2026-11-20 — step 7: restrição de processo, sem regra nem CT no `04` — `## Cláusulas sem regra`; o `rastreabilidade.sh` só aceita passo "—" com justificativa)* |
 | P-01 | Mermaid existentes ficam | 6, 7 | nenhum bloco Mermaid novo nem removido |
 | P-02 | README e site em pt e en | 1, 3, 4, 5, 6, 7 | — |
@@ -226,6 +233,8 @@ conferida por script contra o código da tag `v0.56.0`.
 | D37 | O controle do CT-B06 sobre o caminho do conferidor é de derivação (a URL do módulo vira caminho de arquivo sem escape), sem prova de ponta a ponta num clone com espaço ou acento no caminho (Q25) | step 9, achado A12 | — | sessão, 2026-11-21 (step 9) |
 | D38 | A suíte Tenancy não ganha controle no CT-30 nem no CT-44: o docblock dela passa a dizer o que os datasets têm, e o CT-55 e a linha nova do CT-38 cobrem a assimetria do registro (Q26) | step 9, achado A15 | — | sessão, 2026-11-21 (step 9) |
 | D39 | A raiz da árvore de registro de um painel leva o nome que o modelo dá à peça painel (`/app`), como toda peça desenhada, e não um formato próprio ("Painel /app") (R24 do `04`) | Q23 (step 9, achado A14) *(alterado em 2026-11-21 — step 11, QA-06: a Q23 saiu da raia de requisito do `00`)* | — | sessão, 2026-11-21 (step 9) |
+| D41 | A marca da peça condicional mora no rótulo secundário da caixa — à vista no carregamento, ao contrário do `tag`, que o archify esconde (P-10) — e no item do agrupamento que a nomeia: o modo pelo termo da grade ("só com tenant ativo" / "tenancy on only") e a chave pela variável e pelo valor de fábrica ("KIT_HUB=false de fábrica" / "KIT_HUB=false by default"; a configuração de pacote pelo caminho dela). A caixa cresce com o rótulo secundário, como cresce com o nome. Um card "Condições de disponibilidade" lista cada peça condicional desenhada com a prova da condição | Q?3 do analista do Adendo 2 (desenho) | — | sessão, 2026-11-23 (step 11) |
+| D42 | As duas colisões do Adendo 2: a completude da P-05 vale para o **modelo** (a peça condicional segue registrada nos dois modos nele, e o `modos` da ligação segue o do código), e a RQ-28 vale para todo **diagrama**, inclusive a árvore de registro — o /admin e o /app ganham árvore, resumo e mapas de domínio por modo onde o conjunto desenhado muda; a ligação só conta como desenhada onde as duas pontas entram. O CT-45 fica: ele confere a marca escrita à mão nos diagramas curados | as duas propostas do analista do Adendo 2 | — | sessão, 2026-11-23 (step 11) |
 | D40 | `--tentativas` do posicionador aceita só um inteiro positivo: `0` é recusado, porque zero tentativas não é busca (P-14) | Q24 (step 9, achado A6) *(alterado em 2026-11-21 — step 11, QA-06: a Q24 saiu da raia de requisito do `00`)* | — | sessão, 2026-11-21 (step 9) |
 
 ## Autorização
@@ -397,10 +406,10 @@ Nenhuma chave nova no `.env` do kit.
   `site/mapa/posicionar.mjs` *(corte do ponytail, step 6)*
 - Normaliza num formato só as varreduras do step 3 (os três grafos de painel, as transversais, a IA e o
   esquema), com ids estáveis entre os modos (o `compare` depende disso):
-  - **peça**: `{id, nome, tipo, paineis[], registrada: ["sem"|"com"], condicao?: {modo?: "sem"|"com",
-    chave?, fabrica?, evidencia: {arquivo, trecho}}, origem: "pacote"|"proprio"|"pacote+proprio", pacote?,
+  - **peça**: `{id, nome, tipo, paineis[], registrada: ["sem"|"com"], disponibilidade?: {modo?: "sem"|"com",
+    chaves?: [{chave, padrao, ligada?}], evidencia: {arquivo, trecho}}, origem: "pacote"|"proprio"|"pacote+proprio", pacote?,
     features: ["F-nn"], evidencia: [{arquivo, trecho}]}` — `registrada` são os modos em que o painel a registra, e
-    `condicao` é o que a deixa indisponível apesar de registrada (D18);
+    `disponibilidade` é o que a deixa indisponível apesar de registrada (D18) *(alterado em 2026-11-23 — Adendo 2: o campo se chama `disponibilidade`, o nome que a guarda da R37 já lia, e as chaves são uma lista ligada junta — o chat do assistente pede duas; `chave` é a variável `KIT_*` do `config/kit.php` ou o caminho da configuração de pacote, `padrao` o valor de fábrica que a marca escreve, e `ligada` o valor que a liga, obrigatório na configuração de pacote e na lista)*;
     `tipo` ∈ painel, recurso, pagina, widget, plugin, provider, middleware, servico, model, policy, setting,
     comando, livewire *(alterado em 2026-11-20 — step 7: `pacote` e `rota` saíram da lista; pelo glossário o pacote
     é a origem da peça, não a peça, e rota não é peça com nome da RQ-24; a classe de pacote usada pelo kit entra com

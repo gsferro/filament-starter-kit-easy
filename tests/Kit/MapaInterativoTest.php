@@ -4,8 +4,9 @@
  * As guardas da costura G2 do `04-casos-de-teste.md` da wiki `feat/mapa-interativo-do-kit`: o modelo do mapa
  * (`site/mapa/pecas.json`, `ligacoes.json` e `diagramas/`) contra a aplicação de pé, sem tenant.
  *
- * Lote deste arquivo: R8, R9 (CT-09, CT-52 e CT-53), R10, R11 (CT-11 e CT-13), R28 (CT-29 e CT-41), R35,
- * R36 (CT-40 e CT-54) e R37. O CT-52 é da costura G5: roda o gerador do mapa num `node`, na forma de leitura.
+ * Lote deste arquivo: R8, R9 (CT-09, CT-52 e CT-53), R10, R11 (CT-11 e CT-13), R28 (CT-29 e CT-41), R30 e R43
+ * (CT-32, a guarda da condição no modo sem tenant, pelo discriminante vivo de `tests/Pest.php`), R35, R36 (CT-40 e
+ * CT-54) e R37 (CT-45). O CT-52 é da costura G5: roda o gerador do mapa num `node`, na forma de leitura.
  * Os demais lotes de G2 (R6, R12, R15 a R20, R22, R29, R34) são de outros arquivos de lote.
  *
  * Escrito a partir do `04`: `app/`, `config/` e `site/mapa/` só foram lidos para achar NOMES (classe, caminho,
@@ -49,6 +50,16 @@ define('MAPA_MODELO_TIPOS', ['painel', 'recurso', 'pagina', 'widget', 'plugin', 
 
 /** Os métodos de contrato do alvo, das interfaces de `vendor/filament/filament/src/Models/Contracts` (R10, ADV2-08). */
 define('MAPA_MODELO_METODOS_DE_CONTRATO', ['canAccessPanel', 'canAccessTenant', 'getTenants', 'getDefaultTenant', 'getCurrentTenantLabel', 'getFilamentName', 'getFilamentAvatarUrl']);
+
+/**
+ * O mapa fechado de predicados de renderização dos componentes flutuantes (Setup Global do `04`, RQ-33): o mesmo
+ * que o discriminante vivo avalia (`pecaDisponivelNoPainel()`), aqui como o método que a leitura estática da R37
+ * segue (`mapaModeloChavesQueDecidemOAcesso()`).
+ */
+define('MAPA_MODELO_PREDICADOS_DOS_FLUTUANTES', [
+    'App\\Livewire\\AssistenteChatWidget'  => ['App\\Support\\AgentesDeIa', 'assistenteNoPainel'],
+    'App\\Livewire\\ChecklistDoOnboarding' => ['App\\Support\\TutorialGuiado', 'visivel'],
+]);
 
 /**
  * A lista da guarda das peças e classes sem feature própria (P-12), com o motivo. Copiada de
@@ -1461,82 +1472,172 @@ function mapaModeloCorpoDoMetodo(string $codigo, string $metodo): ?string
 }
 
 /**
- * As chaves de config que o `canAccess()` da peça lê, direto ou pelo apoio estático que ele chama.
+ * As chaves de config que decidem se a peça abre, pela leitura estática do código (R37): o `canAccess()`
+ * (recurso e página) ou o `canView()` (widget) dela, onde estiver declarado — na classe, num pai ou num trait,
+ * pelo arquivo e pelas linhas que a reflexão dá —, e, no componente flutuante, que não tem nenhum dos dois, o
+ * predicado que decide a renderização (`MAPA_MODELO_PREDICADOS_DOS_FLUTUANTES`, RQ-33). Segue o apoio que o
+ * método chama — `Classe::metodo()`, `static::`, `self::` e `parent::` —, de apoio em apoio, até a
+ * profundidade 5: o `canView()` do `AcessosPorPainel` chega a `kit.tenancy.enabled` pelo `canAccess()` do
+ * `TenantResource` (RQ-31), e o `TutorialGuiado::visivel()` chega a `kit.onboarding.habilitado` pelo
+ * `canAccess()` da página Primeiros passos. A configuração de pacote conta como chave (RQ-30): o `canAccess()`
+ * do `CommandRecordResource`, em `vendor/`, lê `command-center.sources`.
  *
  * @return list<string>
  */
 function mapaModeloChavesQueDecidemOAcesso(string $classe): array
 {
-    $arquivo = arquivoDaClasse($classe);
-    $codigo  = $arquivo === null ? null : mapaModeloCodigo($arquivo);
-    $corpo   = $codigo === null ? null : mapaModeloCorpoDoMetodo($codigo, 'canAccess');
+    $metodo  = class_exists($classe) ? metodoDeAcessoDaPeca($classe) : null;
+    $entrada = $metodo !== null ? [$classe, $metodo] : (MAPA_MODELO_PREDICADOS_DOS_FLUTUANTES[$classe] ?? null);
 
-    if ($corpo === null) {
+    if ($entrada === null) {
         return [];
     }
 
-    preg_match_all('/config\(\s*\'([^\']+)\'/', $corpo, $diretas);
-    $chaves = $diretas[1];
-
-    preg_match_all('/\b([A-Z]\w*)::(\w+)\(/', $corpo, $apoios, PREG_SET_ORDER);
-    $usos = mapaModeloUsosDoArquivo((string) $codigo);
-
-    foreach ($apoios as [, $curto, $metodo]) {
-        $apoio          = $usos[$curto] ?? null;
-        $arquivoDoApoio = $apoio === null ? null : arquivoDaClasse($apoio);
-        $codigoDoApoio  = $arquivoDoApoio === null ? null : mapaModeloCodigo($arquivoDoApoio);
-        $corpoDoApoio   = $codigoDoApoio === null ? null : mapaModeloCorpoDoMetodo($codigoDoApoio, $metodo);
-
-        if ($corpoDoApoio !== null) {
-            preg_match_all('/config\(\s*\'([^\']+)\'/', $corpoDoApoio, $doApoio);
-            $chaves = array_merge($chaves, $doApoio[1]);
+    $chaves = [];
+    $lidos  = [];
+    $ler    = static function (string $dono, string $nome, int $profundidade) use (&$ler, &$chaves, &$lidos): void {
+        if ($profundidade > 5 || isset($lidos["{$dono}::{$nome}"]) || ! method_exists($dono, $nome)) {
+            return;
         }
-    }
+
+        $lidos["{$dono}::{$nome}"] = true;
+        $reflexao                  = new ReflectionMethod($dono, $nome);
+        $arquivo                   = $reflexao->getFileName();
+
+        if ($arquivo === false || $reflexao->getStartLine() === false || $reflexao->getEndLine() === false) {
+            return;
+        }
+
+        $texto = mapaModeloMascararComentarios($arquivo, mapaModeloNorm((string) file_get_contents($arquivo)));
+        $corpo = implode("\n", array_slice(explode("\n", $texto), $reflexao->getStartLine() - 1, $reflexao->getEndLine() - $reflexao->getStartLine() + 1));
+
+        preg_match_all('/\bconfig\(\s*[\'"]([^\'"]+)[\'"]/', $corpo, $diretas);
+        array_push($chaves, ...$diretas[1]);
+
+        preg_match_all('/\b(static|self|parent|[A-Z]\w*)::(\w+)\s*\(/', $corpo, $chamadas, PREG_SET_ORDER);
+        $declarante = $reflexao->getDeclaringClass()->getName();
+
+        foreach ($chamadas as [, $quem, $chamado]) {
+            $alvo = match ($quem) {
+                'static' => $dono,
+                'self'   => $declarante,
+                'parent' => get_parent_class($declarante) ?: null,
+                default  => mapaModeloResolverNomeCurto($texto, $quem),
+            };
+
+            if (is_string($alvo)) {
+                $ler($alvo, $chamado, $profundidade + 1);
+            }
+        }
+    };
+
+    $ler($entrada[0], $entrada[1], 0);
 
     return array_values(array_unique($chaves));
 }
 
 /**
- * A variável do `.env` e o valor de fábrica de uma chave de `config/kit.php` (`kit.a.b`), pelo texto do
- * arquivo — nunca pelo `config()`, que mede o ambiente de quem roda.
+ * O caminho de config e o valor de fábrica da chave que a condição nomeia, na forma fixada do campo
+ * `disponibilidade`: a variável `KIT_*`, pelo caminho que ela alimenta (`caminhoDaVariavelDoKit()`) e pelo
+ * `config/kit.php` relido sem ela (`kitConfigCom()`), o que dá o valor já coagido — `false` nas booleanas, `[]`
+ * na `KIT_AGENTES_IA_PAINEIS`; a configuração de pacote (`command-center.sources`), pelo arquivo de config do
+ * kit em que ela mora.
  *
- * @return array{variavel: string, padrao: mixed}|null
+ * @return array{0: string, 1: mixed}
+ *
+ * @throws UnexpectedValueException
  */
-function mapaModeloVariavelEPadraoDaChave(string $chave): ?array
+function mapaModeloValorDeFabrica(string $nome): array
 {
-    $caminho = explode('.', $chave);
+    if (preg_match('/^[A-Z][A-Z0-9_]*$/', $nome) === 1) {
+        $caminho = caminhoDaVariavelDoKit($nome);
 
-    if (array_shift($caminho) !== 'kit' || $caminho === []) {
-        return null;
+        return [$caminho, data_get(kitConfigCom($nome, null), substr($caminho, strlen('kit.')))];
     }
 
-    $fonte        = (string) mapaModeloCodigo('config/kit.php');
-    $deslocamento = 0;
+    $arquivo = 'config/'.strstr($nome, '.', true).'.php';
 
-    foreach ($caminho as $i => $segmento) {
-        $ultimo = $i === array_key_last($caminho);
-        $padrao = $ultimo ? '/\''.preg_quote($segmento, '/').'\'\s*=>\s*([^\n]*)/' : '/\''.preg_quote($segmento, '/').'\'\s*=>\s*\[/';
+    if (! str_contains($nome, '.') || ! is_file(base_path($arquivo))) {
+        throw new UnexpectedValueException("a chave \"{$nome}\" não é variável KIT_* nem caminho de um arquivo de config do kit");
+    }
 
-        if (preg_match($padrao, $fonte, $m, PREG_OFFSET_CAPTURE, $deslocamento) !== 1) {
-            return null;
-        }
+    return [$nome, data_get(require base_path($arquivo), substr($nome, strpos($nome, '.') + 1))];
+}
 
-        if ($ultimo) {
-            if (preg_match('/env\(\s*\'([A-Z0-9_]+)\'\s*(?:,\s*([^)]*?))?\s*\)/', $m[1][0], $env) !== 1) {
-                return null;
+/**
+ * O valor de fábrica de uma chave da condição (R30 e R37): o `padrao` é o que o arquivo de config dá sem
+ * ambiente; a chave ligada de fábrica não marca (P-16); o valor que a condição dá como ligado não é o de
+ * fábrica; e, com `$comOLido`, o valor lido no caso é o de fábrica (o `Dado` da guarda viva).
+ *
+ * @return list<string>
+ */
+function mapaModeloConferirValorDeFabrica(string $quem, mixed $chave, bool $comOLido): array
+{
+    $nome = is_array($chave) && is_string($chave['chave'] ?? null) ? $chave['chave'] : '';
+
+    try {
+        [$caminho, $deFabrica] = mapaModeloValorDeFabrica($nome);
+    } catch (UnexpectedValueException $erro) {
+        return ["{$quem}: {$erro->getMessage()}"];
+    }
+
+    $json    = static fn (mixed $valor): string => (string) json_encode($valor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $motivos = [];
+
+    if (! array_key_exists('padrao', $chave) || $chave['padrao'] !== $deFabrica) {
+        $motivos[] = "{$quem}: a condição dá a {$nome} o valor de fábrica ".$json($chave['padrao'] ?? null).', e o arquivo de config dá '.$json($deFabrica);
+    }
+
+    if ($comOLido && config($caminho) !== $deFabrica) {
+        $motivos[] = "{$quem}: {$nome} ({$caminho}) está lida no caso como ".$json(config($caminho)).', fora do valor de fábrica '.$json($deFabrica);
+    }
+
+    if ($deFabrica === true) {
+        $motivos[] = "{$quem}: {$nome} vem ligada de fábrica, e a chave ligada de fábrica não marca (P-16)";
+    }
+
+    if (array_key_exists('ligada', $chave) && $chave['ligada'] === $deFabrica) {
+        $motivos[] = "{$quem}: o valor que a condição dá como ligado em {$nome} é o de fábrica, e ligada de fábrica não abre a peça";
+    }
+
+    return $motivos;
+}
+
+/**
+ * A peça que um nó marcado de diagrama designa. No diagrama construído, o id do nó. No escrito à mão (o sem
+ * `construtor`), a peça cuja classe a prova do nó declara — o arquivo da evidência da peça no modelo e o trecho
+ * da declaração da classe — ou, sem ela, a do nome exato do rótulo (Setup Global do `04`, "Entrar no diagrama de
+ * um modo"): o participante "AssistenteChat" do `app-chat-de-ia` é o chat pela prova
+ * `class AssistenteChatWidget extends Component`. `null` quando o nó não é peça.
+ *
+ * @param  array<string, mixed>  $no
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ */
+function mapaModeloPecaDoNo(array $no, bool $escritoAMao, array $modelo): ?string
+{
+    if (! $escritoAMao) {
+        return is_string($no['id'] ?? null) ? $no['id'] : null;
+    }
+
+    foreach ($modelo['pecas'] as $peca) {
+        $declaracao = '/\b(?:class|trait|interface|enum)\s+'.preg_quote(class_basename((string) $peca['id']), '/').'\b/';
+        $evidencias = isset($peca['evidencia']['arquivo']) ? [$peca['evidencia']] : (array) ($peca['evidencia'] ?? []);
+
+        foreach ((array) ($no['sources'] ?? []) as $fonte) {
+            foreach ($evidencias as $evidencia) {
+                if (is_array($fonte) && is_array($evidencia) && ($fonte['arquivo'] ?? null) === ($evidencia['arquivo'] ?? null) && preg_match($declaracao, (string) ($fonte['trecho'] ?? '')) === 1) {
+                    return (string) $peca['id'];
+                }
             }
-
-            $bruto = trim($env[2] ?? 'null');
-
-            return ['variavel' => $env[1], 'padrao' => match (true) {
-                $bruto === 'true'  => true,
-                $bruto === 'false' => false,
-                is_numeric($bruto) => $bruto + 0,
-                default            => trim($bruto, '\'"'),
-            }];
         }
+    }
 
-        $deslocamento = $m[0][1] + strlen($m[0][0]);
+    $rotulos = array_filter((array) ($no['label'] ?? []), 'is_string');
+
+    foreach ($modelo['pecas'] as $peca) {
+        if (in_array($peca['nome'] ?? null, $rotulos, true)) {
+            return (string) $peca['id'];
+        }
     }
 
     return null;
@@ -1544,46 +1645,56 @@ function mapaModeloVariavelEPadraoDaChave(string $chave): ?array
 
 /**
  * As marcas de disponibilidade publicadas: o campo `disponibilidade` de uma peça do modelo ou de um nó de
- * diagrama.
+ * diagrama, com a peça que o nó designa (`mapaModeloPecaDoNo()`).
  *
  * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
  * @param  array<string, array<string, mixed>>  $diagramas
- * @return list<array{peca: string, onde: string, marca: array<string, mixed>}>
+ * @return list<array{peca: ?string, no: string, onde: string, marca: mixed}>
  */
 function mapaModeloMarcasDeDisponibilidade(array $modelo, array $diagramas): array
 {
     $marcas = [];
 
     foreach ($modelo['pecas'] as $peca) {
-        if (isset($peca['disponibilidade'])) {
-            $marcas[] = ['peca' => $peca['id'], 'onde' => 'o modelo', 'marca' => $peca['disponibilidade']];
+        if (array_key_exists('disponibilidade', $peca)) {
+            $marcas[] = ['peca' => (string) $peca['id'], 'no' => (string) $peca['id'], 'onde' => 'o modelo', 'marca' => $peca['disponibilidade']];
         }
     }
 
-    $varrer = static function (mixed $no, string $slug) use (&$varrer, &$marcas): void {
+    $varrer = static function (mixed $no, string $slug, bool $escritoAMao) use (&$varrer, &$marcas, $modelo): void {
         if (! is_array($no)) {
             return;
         }
 
-        if (isset($no['disponibilidade'], $no['id'])) {
-            $marcas[] = ['peca' => (string) $no['id'], 'onde' => "o diagrama {$slug}", 'marca' => $no['disponibilidade']];
+        if (array_key_exists('disponibilidade', $no)) {
+            $marcas[] = [
+                'peca'  => mapaModeloPecaDoNo($no, $escritoAMao, $modelo),
+                'no'    => (string) json_encode($no['id'] ?? $no['label'] ?? null, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                'onde'  => "o diagrama {$slug}",
+                'marca' => $no['disponibilidade'],
+            ];
         }
 
-        foreach ($no as $filho) {
-            $varrer($filho, $slug);
+        foreach ($no as $chave => $filho) {
+            if ($chave !== 'disponibilidade') {
+                $varrer($filho, $slug, $escritoAMao);
+            }
         }
     };
 
     foreach ($diagramas as $slug => $diagrama) {
-        $varrer($diagrama, $slug);
+        $varrer($diagrama, (string) $slug, ! isset($diagrama['construtor']));
     }
 
     return $marcas;
 }
 
 /**
- * R37: toda marca de disponibilidade publicada é a do código — a chave que o `canAccess()` lê, com o valor de
- * fábrica dela, ou o modo. Sem marca nenhuma, aceita por vácuo.
+ * R37: toda marca de disponibilidade publicada é a do código, na forma fixada do campo `disponibilidade`
+ * (`{modo?, chaves?: list<{chave, padrao, ligada?}>, evidencia}`): o modo, se a marca o diz, é o que o código
+ * lê em `kit.tenancy.enabled`, e a peça abre só com tenant; cada chave da lista é uma que o código lê
+ * (`mapaModeloChavesQueDecidemOAcesso()`), com o valor de fábrica do arquivo de config, e nunca ligada de
+ * fábrica. A marca dupla é conferida nas duas partes. Sem marca nenhuma, aceita por vácuo.
  *
  * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
  * @param  array<string, array<string, mixed>>  $diagramas
@@ -1594,46 +1705,263 @@ function mapaModeloConferirDisponibilidade(array $modelo, array $diagramas): arr
     $violacoes = [];
     $marcas    = mapaModeloMarcasDeDisponibilidade($modelo, $diagramas);
 
-    foreach ($marcas as ['peca' => $peca, 'onde' => $onde, 'marca' => $marca]) {
-        $nome   = class_basename($peca);
-        $chaves = mapaModeloChavesQueDecidemOAcesso($peca);
-
-        if (isset($marca['modo'])) {
-            $decideOModo = in_array('kit.tenancy.enabled', $chaves, true);
-
-            if (! $decideOModo || $marca['modo'] !== 'com') {
-                $violacoes[] = "{$onde} marca a peça {$nome} como disponível no modo \"{$marca['modo']}\", e o canAccess() dela lê [".implode(', ', $chaves).']';
-            }
+    foreach ($marcas as ['peca' => $peca, 'no' => $no, 'onde' => $onde, 'marca' => $marca]) {
+        if ($peca === null) {
+            $violacoes[] = "{$onde} marca o nó {$no}, que não é peça do modelo: nem a prova dele declara a classe de uma peça, nem o rótulo tem o nome exato de uma";
 
             continue;
         }
 
-        $decisoras = [];
+        $chavesDaMarca = is_array($marca) ? (array) ($marca['chaves'] ?? []) : [];
 
-        foreach ($chaves as $chave) {
-            $dados = mapaModeloVariavelEPadraoDaChave($chave);
-
-            if ($dados !== null) {
-                $decisoras[$dados['variavel']] = $dados['padrao'];
-                $decisoras[$chave]             = $dados['padrao'];
-                $decisoras[substr($chave, 4)]  = $dados['padrao'];
-            }
-        }
-
-        $chaveDaMarca = (string) ($marca['chave'] ?? '');
-
-        if (! array_key_exists($chaveDaMarca, $decisoras)) {
-            $violacoes[] = "{$onde} marca a peça {$nome} com a chave {$chaveDaMarca}, que não decide o acesso dela (decidem: ".implode(', ', array_keys($decisoras)).')';
+        if (! is_array($marca) || (! array_key_exists('modo', $marca) && $chavesDaMarca === [])) {
+            $violacoes[] = "{$onde} marca a peça {$peca} sem modo nem chave";
 
             continue;
         }
 
-        if (array_key_exists('padrao', $marca) && $marca['padrao'] !== $decisoras[$chaveDaMarca]) {
-            $violacoes[] = "{$onde} marca a peça {$nome} com {$chaveDaMarca} de fábrica ".var_export($marca['padrao'], true).', e o config/kit.php diz '.var_export($decisoras[$chaveDaMarca], true);
+        $decidem = mapaModeloChavesQueDecidemOAcesso($peca);
+        $lidas   = '['.implode(', ', $decidem).']';
+
+        if (array_key_exists('modo', $marca) && (! in_array('kit.tenancy.enabled', $decidem, true) || $marca['modo'] !== 'com')) {
+            $violacoes[] = "{$onde} marca a peça {$peca} como disponível só no modo ".json_encode($marca['modo']).", e o que decide o acesso dela lê {$lidas}";
+        }
+
+        foreach ($chavesDaMarca as $chave) {
+            $nome = is_array($chave) && is_string($chave['chave'] ?? null) ? $chave['chave'] : '';
+
+            try {
+                [$caminho] = mapaModeloValorDeFabrica($nome);
+            } catch (UnexpectedValueException $erro) {
+                $violacoes[] = "{$onde} marca a peça {$peca}: {$erro->getMessage()}";
+
+                continue;
+            }
+
+            if (! in_array($caminho, $decidem, true)) {
+                $violacoes[] = "{$onde} marca a peça {$peca} com a chave {$nome} ({$caminho}), que não decide o acesso dela (o que decide lê {$lidas})";
+
+                continue;
+            }
+
+            array_push($violacoes, ...mapaModeloConferirValorDeFabrica("{$onde} marca a peça {$peca}", $chave, false));
         }
     }
 
     return mapaModeloResultado($violacoes, ['marcas' => count($marcas)]);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Helpers: a condição do modelo é a que o discriminante vivo mede, sem tenant (R30 e R43)
+|--------------------------------------------------------------------------
+| O discriminante, a população e o arnês vêm de `tests/Pest.php` (`discriminanteDaPeca()`,
+| `populacaoDoDiscriminante()` e `arnesDoDiscriminante()`).
+*/
+
+/**
+ * O `Dado` da guarda viva sem tenant: as chaves booleanas de `kit.*` — fora `kit.tenancy.enabled`, que é o
+ * modo — cujo valor lido difere do de fábrica (`mapaModeloValorDeFabrica()`, o `config/kit.php` relido sem a
+ * variável). Conta toda variável `KIT_*` que o arquivo lê e que alimenta sozinha uma chave booleana.
+ *
+ * @return list<string>
+ */
+function mapaModeloBooleanasDoKitForaDaFabrica(): array
+{
+    preg_match_all('/env\(\s*\'(KIT_[A-Z0-9_]+)\'/', (string) mapaModeloCodigo('config/kit.php'), $variaveis);
+
+    $fora = [];
+
+    foreach (array_unique($variaveis[1]) as $variavel) {
+        try {
+            [$caminho, $deFabrica] = mapaModeloValorDeFabrica($variavel);
+        } catch (UnexpectedValueException) {
+            continue;
+        }
+
+        $lido = config($caminho);
+
+        if (is_bool($lido) && $caminho !== 'kit.tenancy.enabled' && $lido !== $deFabrica) {
+            $fora[] = "{$caminho} ({$variavel}): lido ".var_export($lido, true).', de fábrica '.var_export($deFabrica, true);
+        }
+    }
+
+    return $fora;
+}
+
+/**
+ * A condição de uma peça contra o que o discriminante mediu no modo sem tenant (R30): com a configuração de
+ * fábrica, a peça está disponível se, e só se, a condição deixa o modo sem tenant e não tem chave; com as chaves
+ * da condição ligadas juntas, se, e só se, a condição deixa o modo sem tenant. O valor de fábrica de cada chave
+ * (`mapaModeloConferirValorDeFabrica()`) e a âncora, que resolve como uma prova (R9), valem em todo caso.
+ *
+ * @param  array{deFabrica: bool, comAsChavesDaCondicao: bool}  $medido
+ * @return list<string>
+ */
+function mapaModeloConferirCondicaoSemTenant(string $quem, mixed $condicao, array $medido): array
+{
+    if ($condicao === null) {
+        return $medido['deFabrica'] ? [] : ["{$quem}: fica indisponível sem tenant e de fábrica, e o modelo não guarda a condição que a explica"];
+    }
+
+    if (! is_array($condicao)) {
+        return ["{$quem}: a condição do modelo não é um objeto"];
+    }
+
+    $json    = static fn (mixed $valor): string => (string) json_encode($valor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $modo    = $condicao['modo'] ?? null;
+    $chaves  = (array) ($condicao['chaves'] ?? []);
+    $nomes   = implode(' e ', array_map(static fn (mixed $chave): string => is_array($chave) ? (string) ($chave['chave'] ?? '?') : '?', $chaves));
+    $texto   = $json(array_diff_key($condicao, ['evidencia' => true]));
+    $motivos = [];
+
+    if ($modo !== null && ! in_array($modo, ['sem', 'com'], true)) {
+        $motivos[] = "{$quem}: a condição {$texto} dá um modo que não é sem nem com";
+    }
+
+    if ($modo === null && $chaves === []) {
+        $motivos[] = "{$quem}: a condição {$texto} não diz modo nem chave";
+    }
+
+    $abreSemTenant = $modo === null || $modo === 'sem';
+
+    if ($medido['deFabrica'] !== ($abreSemTenant && $chaves === [])) {
+        $motivos[] = $medido['deFabrica']
+            ? "{$quem}: está disponível sem tenant e de fábrica, e a condição {$texto} a dá como fechada"
+            : "{$quem}: a condição {$texto} a dá como disponível sem tenant e de fábrica, e ela está indisponível";
+    }
+
+    if ($chaves !== [] && $medido['comAsChavesDaCondicao'] !== $abreSemTenant) {
+        $motivos[] = $medido['comAsChavesDaCondicao']
+            ? "{$quem}: com {$nomes} ligadas juntas, abre sem tenant, e a condição {$texto} só a deixa no modo com tenant"
+            : "{$quem}: com {$nomes} ligadas juntas, continua indisponível sem tenant, e a condição {$texto} a dá como disponível";
+    }
+
+    foreach ($chaves as $chave) {
+        array_push($motivos, ...mapaModeloConferirValorDeFabrica($quem, $chave, true));
+    }
+
+    $ancora = $condicao['evidencia'] ?? null;
+    $prova  = is_array($ancora)
+        ? mapaModeloConferirProva($quem, $ancora['arquivo'] ?? null, $ancora['trecho'] ?? null, array_diff_key($ancora, ['arquivo' => true, 'trecho' => true]))
+        : ['aceita' => false, 'motivo' => "{$quem}: a condição não traz a âncora (evidencia) do código que decide"];
+
+    if (! $prova['aceita']) {
+        $motivos[] = "{$prova['motivo']} (âncora da condição: {$json($ancora)})";
+    }
+
+    return $motivos;
+}
+
+/**
+ * R30 e R43, no modo sem tenant da suíte: para cada painel, toda peça da população do discriminante — a
+ * registrada, a do modelo fora do registro com `canAccess()` ou `canView()` estático, e o componente flutuante
+ * — é medida ao vivo (`discriminanteDaPeca()`, saída `guarda`) e conferida contra a condição que o modelo dá a
+ * ela. A peça fora do registro e o componente flutuante têm uma condição só, e os painéis que discordam sobre
+ * eles reprovam, nomeando a peça e os painéis. Plugin e middleware nunca guardam condição (RQ-32). A exceção
+ * do discriminante (chave que a configuração não tem, componente flutuante fora do mapa de predicados) vira
+ * violação com o nome da peça: falha fechado.
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return array<string, mixed> o resultado da guarda, com `medido`: "{painel}|{classe}" => a saída `guarda`
+ */
+function mapaModeloConferirCondicoes(array $modelo): array
+{
+    $violacoes = [];
+    $medido    = [];
+    $porPainel = [];
+    $pecas     = pecasPorId($modelo['pecas']);
+
+    foreach ($pecas as $id => $peca) {
+        if (in_array($peca['tipo'] ?? null, ['plugin', 'middleware'], true) && array_key_exists('disponibilidade', $peca)) {
+            $violacoes[] = "{$id}: é {$peca['tipo']}, e plugin e middleware nunca guardam condição (RQ-32)";
+        }
+    }
+
+    foreach (Filament::getPanels() as $doPainel) {
+        $painel = $doPainel->getId();
+
+        foreach (populacaoDoDiscriminante($painel, $modelo) as $tipo => $classes) {
+            foreach ($classes as $classe) {
+                $quem     = "{$classe} no /{$painel}";
+                $condicao = $pecas[$classe]['disponibilidade'] ?? null;
+
+                try {
+                    $guarda = discriminanteDaPeca($painel, 'sem', $classe, is_array($condicao) ? $condicao : null)['guarda'];
+                } catch (UnexpectedValueException $erro) {
+                    $violacoes[] = "{$quem}: {$erro->getMessage()}";
+
+                    continue;
+                }
+
+                $medido["{$painel}|{$classe}"] = $guarda;
+
+                if ($tipo !== 'registrada') {
+                    $porPainel[$classe][$painel] = $guarda['deFabrica'];
+                }
+
+                array_push($violacoes, ...mapaModeloConferirCondicaoSemTenant($quem, $condicao, $guarda));
+            }
+        }
+    }
+
+    foreach ($porPainel as $classe => $disponivel) {
+        if (count(array_unique($disponivel)) > 1) {
+            $violacoes[] = "{$classe}: os painéis discordam — disponível de fábrica em /".implode(', /', array_keys(array_filter($disponivel)))
+                .' e indisponível em /'.implode(', /', array_keys(array_filter($disponivel, static fn (bool $aberta): bool => ! $aberta)))
+                .' —, e a condição é uma só por peça';
+        }
+    }
+
+    return mapaModeloResultado($violacoes, ['medido' => $medido]);
+}
+
+/**
+ * O modelo com a condição certa de cada uma das 18 peças que o Setup Global do `04` mede indisponíveis sem
+ * tenant — a tabela da população, as âncoras do código que decide e os dois componentes flutuantes —, na forma
+ * fixada do campo `disponibilidade`. É o controle de aceitação da guarda viva (CT-32) e da leitura estática
+ * (CT-45): a condição certa não reprova.
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}
+ */
+function mapaModeloComAsCondicoesCertas(array $modelo): array
+{
+    $chave  = static fn (string $variavel): array => ['chave' => $variavel, 'padrao' => false];
+    $ancora = static fn (string $arquivo, string $trecho): array => ['arquivo' => $arquivo, 'trecho' => $trecho];
+    $fonte  = 'Bityukov\\CommandCenter\\Sources\\';
+    $certas = [
+        'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource'             => ['modo' => 'com', 'evidencia' => $ancora('app/Filament/Admin/Resources/Tenants/TenantResource.php', 'public static function canAccess(): bool')],
+        'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource'         => ['chaves' => [$chave('KIT_AGENTES_IA')], 'evidencia' => $ancora('app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php', 'public static function canAccess(): bool')],
+        'App\\Filament\\Admin\\Widgets\\AgentesIaStats'                        => ['chaves' => [$chave('KIT_AGENTES_IA')], 'evidencia' => $ancora('app/Filament/Admin/Widgets/AgentesIaStats.php', 'fonteDeDadosDisponivel')],
+        'App\\Filament\\Admin\\Widgets\\AgentesIaPorProvider'                  => ['chaves' => [$chave('KIT_AGENTES_IA')], 'evidencia' => $ancora('app/Filament/Admin/Widgets/AgentesIaPorProvider.php', 'fonteDeDadosDisponivel')],
+        'App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource'        => ['chaves' => [$chave('KIT_ONBOARDING')], 'evidencia' => $ancora('app/Filament/Admin/Resources/Onboarding/CondicaoResource.php', 'canAccess')],
+        'App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource'         => ['chaves' => [$chave('KIT_ONBOARDING')], 'evidencia' => $ancora('app/Filament/Admin/Resources/Onboarding/JornadaResource.php', 'canAccess')],
+        'App\\Filament\\Pages\\PrimeirosPassos'                                => ['chaves' => [$chave('KIT_ONBOARDING')], 'evidencia' => $ancora('app/Filament/Pages/PrimeirosPassos.php', 'regraLocalDeAcesso')],
+        'App\\Filament\\Admin\\Widgets\\ProgressoOnboarding'                   => ['chaves' => [$chave('KIT_ONBOARDING')], 'evidencia' => $ancora('app/Filament/Admin/Widgets/ProgressoOnboarding.php', 'fonteDeDadosDisponivel')],
+        'App\\Filament\\Admin\\Pages\\HubDeAdministracao'                      => ['chaves' => [$chave('KIT_HUB')], 'evidencia' => $ancora('app/Filament/Admin/Pages/HubDeAdministracao.php', 'regraLocalDeAcesso')],
+        'App\\Filament\\App\\Resources\\Users\\UserResource'                   => ['modo' => 'com', 'evidencia' => $ancora('app/Filament/App/Resources/Users/UserResource.php', 'canAccess')],
+        'App\\Filament\\App\\Resources\\Convites\\ConviteResource'             => ['modo' => 'com', 'evidencia' => $ancora('app/Filament/App/Resources/Convites/ConviteResource.php', 'canAccess')],
+        'App\\Filament\\App\\Pages\\ConvitesRecebidos'                         => ['modo' => 'com', 'evidencia' => $ancora('app/Filament/App/Pages/ConvitesRecebidos.php', 'regraLocalDeAcesso')],
+        'App\\Filament\\App\\Resources\\Projetos\\ProjetoResource'             => ['modo' => 'com', 'chaves' => [$chave('KIT_DEMO')], 'evidencia' => $ancora('app/Filament/App/Resources/Projetos/ProjetoResource.php', 'public static function canAccess(): bool')],
+        'App\\Filament\\App\\Pages\\HubDoNegocio'                              => ['chaves' => [$chave('KIT_HUB')], 'evidencia' => $ancora('app/Filament/App/Pages/HubDoNegocio.php', 'regraLocalDeAcesso')],
+        'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource'  => [
+            'chaves'    => [['chave' => 'command-center.sources', 'padrao' => [$fonte.'ConfigSource'], 'ligada' => [$fonte.'ConfigSource', $fonte.'DatabaseSource']]],
+            'evidencia' => $ancora('config/command-center.php', "'sources' => ["),
+        ],
+        'App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel' => ['modo' => 'com', 'evidencia' => $ancora('app/Filament/Admin/Resources/Tenants/Widgets/AcessosPorPainel.php', 'public static function canView(): bool')],
+        'App\\Livewire\\AssistenteChatWidget'                                 => [
+            'chaves'    => [$chave('KIT_AGENTES_IA'), ['chave' => 'KIT_AGENTES_IA_PAINEIS', 'padrao' => []]],
+            'evidencia' => $ancora('app/Livewire/AssistenteChatWidget.php', 'if (AgentesDeIa::assistenteNoPainel($painel)) {'),
+        ],
+        'App\\Livewire\\ChecklistDoOnboarding' => ['chaves' => [$chave('KIT_ONBOARDING')], 'evidencia' => $ancora('app/Support/TutorialGuiado.php', 'function visivel(')],
+    ];
+
+    foreach ($certas as $id => $condicao) {
+        $modelo = mapaModeloComPeca($modelo, $id, static fn (array $p): array => ['disponibilidade' => $condicao] + $p);
+    }
+
+    return $modelo;
 }
 
 /*
@@ -2344,16 +2672,26 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
     $diagramas    = diagramasDoMapa();
     $agente       = 'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource';
     $organizacoes = 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource';
+    $marcar       = static fn (array $modelo, string $id, array $marca): array => mapaModeloComPeca($modelo, $id, static fn (array $p): array => ['disponibilidade' => $marca] + $p);
+    $doChat       = ['chaves' => [['chave' => 'KIT_AGENTES_IA', 'padrao' => false], ['chave' => 'KIT_AGENTES_IA_PAINEIS', 'padrao' => []]]];
 
     switch ($mundo) {
         case 'chave que não decide':
-            $modelo = mapaModeloComPeca($modelo, $agente, static fn (array $p): array => $p + ['disponibilidade' => ['chave' => 'KIT_REGISTRO', 'padrao' => false]]);
+            $modelo = $marcar($modelo, $agente, ['chaves' => [['chave' => 'KIT_REGISTRO', 'padrao' => false]]]);
             break;
         case 'valor de fábrica trocado':
-            $modelo = mapaModeloComPeca($modelo, $agente, static fn (array $p): array => $p + ['disponibilidade' => ['chave' => 'KIT_AGENTES_IA', 'padrao' => true]]);
+            $modelo = $marcar($modelo, $agente, ['chaves' => [['chave' => 'KIT_AGENTES_IA', 'padrao' => true]]]);
             break;
         case 'modo invertido':
-            $modelo = mapaModeloComPeca($modelo, $organizacoes, static fn (array $p): array => $p + ['disponibilidade' => ['modo' => 'sem']]);
+            $modelo = $marcar($modelo, $organizacoes, ['modo' => 'sem']);
+            break;
+        case 'marcas certas':
+            $modelo = mapaModeloComAsCondicoesCertas($modelo);
+
+            $diagramas['app-chat-de-ia']['participants'] = array_map(
+                static fn (array $no): array => ($no['id'] ?? null) === 'widget' ? ['disponibilidade' => $doChat] + $no : $no,
+                $diagramas['app-chat-de-ia']['participants'],
+            );
             break;
     }
 
@@ -2363,17 +2701,133 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
         // sem marca nenhuma a regra é vácua; com marca, cada uma tem de ser a do código
         expect($guarda['aceita'])->toBeTrue((string) $guarda['motivo']);
 
+        if ($mundo === 'marcas certas') {
+            // as 18 peças do modelo e o participante do chat no app-chat-de-ia, escrito à mão
+            expect($guarda['marcas'])->toBe(19);
+        }
+
         return;
     }
 
     expect($guarda['marcas'])->toBeGreaterThan(0)
         ->and($guarda['aceita'])->toBeFalse('a guarda aceitou a marca adulterada: '.$mundo)
-        ->and($guarda['motivo'])->toContain($nomeando);
+        ->and(implode(' | ', $guarda['violacoes']))->toContain($nomeando);
 })->with([
     'publicados'                                            => ['publicados', 'aceita', ''],
     'AgenteIaResource com a chave KIT_REGISTRO'             => ['chave que não decide', 'reprova', 'AgenteIaResource'],
     'AgenteIaResource com KIT_AGENTES_IA ligada de fábrica' => ['valor de fábrica trocado', 'reprova', 'AgenteIaResource'],
     'TenantResource disponível só sem tenant'               => ['modo invertido', 'reprova', 'TenantResource'],
+    'controle: as marcas certas das peças condicionais'     => ['marcas certas', 'aceita', ''],
+])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
+
+/*
+|--------------------------------------------------------------------------
+| [CT-32] R30 e R43 — sem tenant, a condição do modelo é a que o código decide
+|--------------------------------------------------------------------------
+*/
+
+it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no modelo a condição que a explica, e a peça disponível não guarda condição', function (string $resultado, string $peca, ?array $condicao, array $nomeando): void {
+    expect(config('kit.tenancy.enabled'))->toBeFalse()
+        ->and(mapaModeloBooleanasDoKitForaDaFabrica())->toBe([]);
+
+    foreach (Filament::getPanels() as $painel) {
+        expect($painel->hasTenancy())->toBeFalse("o painel {$painel->getId()} tem organização no modo sem tenant");
+    }
+
+    $arnes = arnesDoDiscriminante();
+
+    expect(auth()->id())->toBe($arnes['superAdmin']->getKey())
+        ->and($arnes['superAdmin']->isMasterGlobal())->toBeTrue();
+
+    $modelo = match ($peca) {
+        ''                       => modeloDoMapa(),
+        'as 18 condições certas' => mapaModeloComAsCondicoesCertas(modeloDoMapa()),
+        default                  => mapaModeloComPeca(modeloDoMapa(), $peca, static function (array $p) use ($condicao): array {
+            unset($p['disponibilidade']);
+
+            return $condicao === null ? $p : $p + ['disponibilidade' => $condicao];
+        }),
+    };
+
+    $guarda = mapaModeloConferirCondicoes($modelo);
+
+    if ($resultado === 'aceita') {
+        $medido   = $guarda['medido'];
+        $fechadas = [
+            'admin|App\\Filament\\Admin\\Resources\\Tenants\\TenantResource',
+            'admin|App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource',
+            'infra|Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource',
+        ];
+
+        foreach (array_keys(Filament::getPanels()) as $painel) {
+            $fechadas[] = "{$painel}|App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel";
+            $fechadas[] = "{$painel}|App\\Livewire\\AssistenteChatWidget";
+        }
+
+        foreach ($fechadas as $onde) {
+            expect($medido[$onde]['deFabrica'] ?? null)->toBeFalse("a guarda não achou indisponível, de fábrica, {$onde}");
+        }
+
+        foreach (['infra|App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource', 'admin|App\\Filament\\Admin\\Pages\\Dashboard'] as $onde) {
+            expect($medido[$onde]['deFabrica'] ?? null)->toBeTrue("a guarda não achou disponível, de fábrica, {$onde}");
+        }
+
+        expect($guarda['aceita'])->toBeTrue(count($guarda['violacoes']).' violações: '.$guarda['motivo']);
+
+        return;
+    }
+
+    $nomeiam = array_filter($guarda['violacoes'], static fn (string $violacao): bool => array_filter($nomeando, static fn (string $nome): bool => ! str_contains($violacao, $nome)) === []);
+
+    expect($guarda['aceita'])->toBeFalse('a guarda aceitou a cópia de '.$peca)
+        ->and($nomeiam)->not->toBeEmpty('nenhuma violação nomeia ['.implode(' + ', $nomeando).']: '.implode(' | ', $guarda['violacoes']));
+})->with([
+    'publicado'                                                                           => ['aceita', '', null, []],
+    'cópia sem a condição do TenantResource'                                              => ['reprova', 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource', null, ['App\\Filament\\Admin\\Resources\\Tenants\\TenantResource no /admin', 'não guarda a condição']],
+    'cópia que dá ao AgenteIaResource a chave KIT_REGISTRO, que não decide o acesso dele' => ['reprova', 'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource', [
+        'chaves'    => [['chave' => 'KIT_REGISTRO', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php', 'trecho' => 'public static function canAccess(): bool'],
+    ], ['App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource', 'KIT_REGISTRO', 'continua indisponível sem tenant']],
+    'cópia que dá ao AgenteIaResource a chave KIT_AGENTES_IA ligada de fábrica' => ['reprova', 'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource', [
+        'chaves'    => [['chave' => 'KIT_AGENTES_IA', 'padrao' => true]],
+        'evidencia' => ['arquivo' => 'app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php', 'trecho' => 'public static function canAccess(): bool'],
+    ], ['App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource', 'KIT_AGENTES_IA', 'valor de fábrica true']],
+    'cópia que dá ao TenantResource a condição "só sem tenant"' => ['reprova', 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource', [
+        'modo'      => 'sem',
+        'evidencia' => ['arquivo' => 'app/Filament/Admin/Resources/Tenants/TenantResource.php', 'trecho' => 'public static function canAccess(): bool'],
+    ], ['App\\Filament\\Admin\\Resources\\Tenants\\TenantResource', 'a dá como disponível sem tenant e de fábrica']],
+    'cópia que dá ao ProjetoResource do /app só a chave KIT_DEMO, sem o modo' => ['reprova', 'App\\Filament\\App\\Resources\\Projetos\\ProjetoResource', [
+        'chaves'    => [['chave' => 'KIT_DEMO', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/Filament/App/Resources/Projetos/ProjetoResource.php', 'trecho' => 'public static function canAccess(): bool'],
+    ], ['App\\Filament\\App\\Resources\\Projetos\\ProjetoResource', 'KIT_DEMO', 'continua indisponível sem tenant']],
+    'cópia que dá ao Dashboard do /admin a chave KIT_DASHBOARD_DINAMICO, que só esconde o item de menu dele' => ['reprova', 'App\\Filament\\Admin\\Pages\\Dashboard', [
+        'chaves'    => [['chave' => 'KIT_DASHBOARD_DINAMICO', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/Filament/Admin/Pages/Dashboard.php', 'trecho' => 'public static function shouldRegisterNavigation(): bool'],
+    ], ['App\\Filament\\Admin\\Pages\\Dashboard no /admin', 'está disponível sem tenant e de fábrica']],
+    'cópia que dá ao AiRunResource a chave KIT_AGENTES_IA' => ['reprova', 'App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource', [
+        'chaves'    => [['chave' => 'KIT_AGENTES_IA', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/Filament/Infra/Resources/AiRuns/AiRunResource.php', 'trecho' => 'public static function canAccess(): bool'],
+    ], ['App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource', 'está disponível sem tenant e de fábrica']],
+    'cópia com a âncora da condição do TenantResource num trecho que não está no arquivo' => ['reprova', 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource', [
+        'modo'      => 'com',
+        'evidencia' => ['arquivo' => 'app/Filament/Admin/Resources/Tenants/TenantResource.php', 'trecho' => 'return o trecho que não está no TenantResource;'],
+    ], ['App\\Filament\\Admin\\Resources\\Tenants\\TenantResource', 'o trecho não está em app/Filament/Admin/Resources/Tenants/TenantResource.php', 'return o trecho que não está no TenantResource;']],
+    'cópia sem a condição do CommandRecordResource'                               => ['reprova', 'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource', null, ['Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource no /infra', 'não guarda a condição']],
+    'cópia que dá ao CommandRecordResource a configuração command-center.enabled' => ['reprova', 'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource', [
+        'chaves'    => [['chave' => 'command-center.enabled', 'padrao' => true, 'ligada' => true]],
+        'evidencia' => ['arquivo' => 'config/command-center.php', 'trecho' => "'enabled' => env('COMMAND_CENTER_ENABLED', true),"],
+    ], ['Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource', 'command-center.enabled', 'continua indisponível sem tenant']],
+    'controle: o modelo com as 18 condições certas'       => ['aceita', 'as 18 condições certas', null, []],
+    'cópia sem a condição do AcessosPorPainel'            => ['reprova', 'App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel', null, ['App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel', 'não guarda a condição']],
+    'cópia que dá ao FilamentCardsPlugin a chave KIT_HUB' => ['reprova', 'Harvirsidhu\\FilamentCards\\FilamentCardsPlugin', [
+        'chaves'    => [['chave' => 'KIT_HUB', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/Providers/Filament/AdminPanelProvider.php', 'trecho' => 'FilamentCardsPlugin'],
+    ], ['Harvirsidhu\\FilamentCards\\FilamentCardsPlugin', 'plugin e middleware nunca guardam condição']],
+    'cópia sem a condição do ChecklistDoOnboarding'                  => ['reprova', 'App\\Livewire\\ChecklistDoOnboarding', null, ['App\\Livewire\\ChecklistDoOnboarding', 'não guarda a condição']],
+    'cópia que dá ao AssistenteChatWidget só a chave KIT_AGENTES_IA' => ['reprova', 'App\\Livewire\\AssistenteChatWidget', [
+        'chaves'    => [['chave' => 'KIT_AGENTES_IA', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/Livewire/AssistenteChatWidget.php', 'trecho' => 'if (AgentesDeIa::assistenteNoPainel($painel)) {'],
+    ], ['App\\Livewire\\AssistenteChatWidget', 'KIT_AGENTES_IA', 'continua indisponível sem tenant']],
 ])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
 
 /*

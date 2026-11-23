@@ -4,7 +4,8 @@
  * Guardas dos diagramas e da página do mapa interativo — costura G2, metade dos diagramas.
  *
  * Fonte: `wikis/specs/feat/mapa-interativo-do-kit/mapa-interativo-do-kit/04-casos-de-teste.md`
- * (Setup Global e as regras R6, R12, R15 a R20, R22, R29, da R34 só o CT-37, e a R38, do step 9). Escrito a
+ * (Setup Global e as regras R6, R12, R15 a R20, R22, R29, da R34 só o CT-37, a R38, do step 9, e, dos Adendos 2
+ * a 4, a R41, a R42 e a R44). Escrito a
  * partir do Gherkin do `04`, nunca do plano: `site/mapa/`, `docs/` e `app/` só foram lidos para achar NOMES
  * (arquivo, campo, classe, função exportada), nunca para decidir o que é esperado.
  *
@@ -12,6 +13,10 @@
  * CT-37 e CT-43. O CT-44 é da suíte Tenancy e o CT-38 também: ficam fora deste arquivo.
  * Do step 9 (revisão do diff): CT-46 e CT-47 (R38), pela costura G5 na forma de leitura — um `node` filho
  * importa `site/mapa/gerar.mjs` e devolve a entrada que o gerador entrega ao archify, sem baixar nem renderizar.
+ * Dos Adendos 2 a 4: CT-33 (R41), pelo discriminante de `tests/Pest.php` na metade sem tenant e pela condição do
+ * modelo na com; CT-57 (R42 e R44), pela forma de leitura da G5; e a definição nova de "entrar no diagrama de um
+ * modo" — registrada nele e disponível nele, com a chave ligada — no desenho que os CT-14, CT-19, CT-46 e CT-47
+ * contam como o construtor, e na subtração viva do CT-37.
  *
  * Toda guarda é uma função aplicada ao modelo publicado e a cópias adulteradas EM MEMÓRIA, nunca
  * ao arquivo real: a linha "publicados" e as linhas de controle chamam a MESMA função.
@@ -100,6 +105,9 @@ function mapaDiagramasNo(string $tipo, string $rotulo, array $pecas = [], array 
  * O desenho de um diagrama: nós (peça, agrupamento que nomeia os membros, porta) e arestas entre nós.
  * O mapa de arquitetura e a árvore de registro saem do modelo (o arquivo diz só o recorte); os demais
  * tipos são desenhados à mão, e a peça de um nó é a que ele nomeia, pelo id ou pelo nome exato.
+ * No construído, a peça entra no diagrama de um modo só quando o painel a registra nele e a condição do modelo a
+ * deixa disponível nele (Setup Global do `04`, "Entrar no diagrama de um modo"): o compartilhado não desenha a peça
+ * que a condição prende a um modo (`mapaDiagramasAbreNosModos()`).
  *
  * @return array<string, mixed>
  */
@@ -125,7 +133,8 @@ function mapaDiagramasConstruir(array $decl, array $modelo): array
         $modo             = $ir['modos'][0];
         $ir['nos'][$raiz] = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $raiz), [$raiz]);
         foreach ($modelo['ligacoes'] as $ligacao) {
-            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'], true)) {
+            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'], true)
+                && mapaDiagramasAbreNosModos($modelo, $ligacao['para'], $ir['modos'])) {
                 $ir['nos'][$ligacao['para']] = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $ligacao['para']), [$ligacao['para']]);
                 $ir['arestas'][]             = [$raiz, $ligacao['para']];
                 $ir['representadas'][]       = $ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo'];
@@ -137,7 +146,8 @@ function mapaDiagramasConstruir(array $decl, array $modelo): array
 
     if ($ir['construtor'] === 'mapa') {
         $modo       = count($ir['modos']) === 1 ? $ir['modos'][0] : null;
-        $existe     = static fn (string $id): bool => $modo === null || in_array($modo, $pecas[$id]['registrada'] ?? [], true);
+        $existe     = static fn (string $id): bool => ($modo === null || in_array($modo, $pecas[$id]['registrada'] ?? [], true))
+            && mapaDiagramasAbreNosModos($modelo, $id, $ir['modos']);
         $desenhadas = [];
         foreach ($decl['pecas'] ?? [] as $peca) {
             if ($existe($peca['id'])) {
@@ -185,14 +195,8 @@ function mapaDiagramasConstruir(array $decl, array $modelo): array
         return $ir;
     }
 
-    $porNome  = mapaDiagramasIdsPorNome($modelo);
-    $colecoes = [
-        'workflow'  => ['nodes', 'edges'], 'sequence' => ['participants', 'messages'], 'dataflow' => ['nodes', 'flows'],
-        'lifecycle' => ['states', 'transitions'], 'erd' => ['entities', 'relationships'], 'class' => ['types', 'relationships'],
-        'timeline'  => ['events', null], 'waterfall' => ['spans', null], 'architecture' => ['components', 'connections'],
-        'tree'      => ['nodes', null],
-    ];
-    [$chaveDosNos, $chaveDasArestas] = $colecoes[$decl['tipo']] ?? [null, null];
+    $porNome                         = mapaDiagramasIdsPorNome($modelo);
+    [$chaveDosNos, $chaveDasArestas] = mapaDiagramasColecoes()[$decl['tipo']] ?? [null, null];
     $ir['estrutura']                 = md5((string) json_encode([$decl[$chaveDosNos] ?? [], $chaveDasArestas !== null ? ($decl[$chaveDasArestas] ?? []) : []]));
     foreach ($decl[$chaveDosNos] ?? [] as $no) {
         $rotuloPt = mapaDiagramasPt($no['label'] ?? $no['name'] ?? '');
@@ -1303,14 +1307,16 @@ function mapaDiagramasIdTerminadoEm(array $modelo, string $sufixo): string
 
 /**
  * R34: os diagramas `architecture` e a árvore de registro do painel que valem no modo desenham, juntos, o
- * registro dele nesse modo, nem mais nem menos (fora a peça de disponibilidade condicional).
+ * registro dele nesse modo menos a peça que fica indisponível nele mesmo com a chave ligada — nem mais nem menos.
+ * A subtração vem do discriminante vivo (`mapaDiagramasSubtracaoSemTenant()`), e não da condição do modelo nem de
+ * lista escrita à mão: a peça subtraída que o desenho ainda tem sobra (Adendo 2, colisão a).
  *
  * @param  array<string, array>  $irs
  * @param  list<string>  $vivo
- * @param  list<string>  $condicionais
+ * @param  list<string>  $subtraidas
  * @return array{aceita: bool, motivo: string, registro: int}
  */
-function mapaDiagramasConferirRegistro(array $modelo, array $irs, string $painel, string $modo, array $vivo, array $condicionais): array
+function mapaDiagramasConferirRegistro(array $modelo, array $irs, string $painel, string $modo, array $vivo, array $subtraidas): array
 {
     $raiz  = 'painel:'.$painel;
     $pares = [];
@@ -1327,8 +1333,8 @@ function mapaDiagramasConferirRegistro(array $modelo, array $irs, string $painel
             $desenhado[$ligacao['para']] = true;
         }
     }
-    $esperado  = array_values(array_diff($vivo, $condicionais));
-    $desenhado = array_values(array_diff(array_keys($desenhado), $condicionais));
+    $esperado  = array_values(array_diff($vivo, $subtraidas));
+    $desenhado = array_keys($desenhado);
     $faltam    = array_diff($esperado, $desenhado);
     $sobram    = array_diff($desenhado, $esperado);
     $falhas    = [];
@@ -1336,7 +1342,7 @@ function mapaDiagramasConferirRegistro(array $modelo, array $irs, string $painel
         $falhas[] = 'falta no desenho do painel '.$painel.': '.mapaDiagramasNomeDaPeca($modelo, $id)." ({$id})";
     }
     foreach ($sobram as $id) {
-        $falhas[] = 'sobra no desenho do painel '.$painel.', que não o registra no modo '.$modo.': '.mapaDiagramasNomeDaPeca($modelo, $id)." ({$id})";
+        $falhas[] = 'sobra no desenho do painel '.$painel.', que não o registra no modo '.$modo.' ou em que ele não abre nem com a chave ligada: '.mapaDiagramasNomeDaPeca($modelo, $id)." ({$id})";
     }
 
     return [
@@ -1526,6 +1532,24 @@ it('[CT-14] toda ligação do modelo aparece desenhada em diagrama publicado, e 
             $resultado = mapaDiagramasConferirLigacoes($modelo, $irs, array_values(array_diff($publicados, $quemDesenha)));
             $nomeia    = ['FilamentShieldPlugin', 'painel:admin'];
             break;
+        case 'ponta indisponível no modo do diagrama':
+            // A cópia do modelo dá ao TenantResource a condição "só com tenant"; o mundo é a árvore do /admin que vale
+            // só sem tenant, e a ligação do registro dele não está em nenhum outro diagrama.
+            $tenant      = 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource';
+            $daPonta     = mapaDiagramasLigacaoDe($modelo, 'painel:admin', $tenant, 'registra');
+            $semCondicao = $modelo;
+            unset($semCondicao['pecas'][$tenant]['disponibilidade']);
+            $soAArvore = static function (array $doModelo) use ($daPonta): array {
+                $isolado = ['pecas' => $doModelo['pecas'], 'ligacoes' => [$daPonta]];
+                $arvore  = ['slug' => 'admin-registro-sem', 'tipo' => 'tree', 'construtor' => 'registro', 'paineis' => ['admin'], 'modos' => ['sem']];
+
+                return mapaDiagramasConferirLigacoes($isolado, ['admin-registro-sem' => mapaDiagramasConstruir($arvore, $isolado)], ['admin-registro-sem']);
+            };
+            // Controle (R12-M8): sem a condição, a árvore sem tenant desenha a ponta, e a ligação conta como desenhada.
+            expect($soAArvore($semCondicao)['motivo'])->toBe('aceita');
+            $resultado = $soAArvore(mapaDiagramasModeloComCondicoes($modelo, [$tenant]));
+            $nomeia    = ['TenantResource', 'painel:admin'];
+            break;
     }
 
     expect($resultado['aceita'])->toBeFalse();
@@ -1534,6 +1558,7 @@ it('[CT-14] toda ligação do modelo aparece desenhada em diagrama publicado, e 
     }
 })->with([
     'publicados', 'só no texto da peça', 'agrupamento sem membros', 'membros só no texto secundário', 'porta sem os membros', 'ausente', 'diagrama órfão',
+    'ponta indisponível no modo do diagrama',
 ]);
 
 /*
@@ -1755,6 +1780,32 @@ it('[CT-19] compartilha-se só o que é igual nos dois modos, e o igual não se 
         return;
     }
 
+    if ($mundoDeControle === 'disponibilidade é diferença') {
+        // A cópia do modelo dá ao TenantResource a condição "só com tenant", e o /admin troca a árvore compartilhada
+        // por duas, uma por modo, que só diferem nele: a de sem tenant não o desenha.
+        $tenant      = 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource';
+        $semCondicao = $modelo;
+        unset($semCondicao['pecas'][$tenant]['disponibilidade']);
+        $comDuasArvores = static function (array $doModelo): array {
+            $irs = array_filter(mapaDiagramasMundoCom($doModelo)['irs'], static fn (array $ir): bool => ! ($ir['construtor'] === 'registro' && $ir['paineis'] === ['admin']));
+            foreach (['sem', 'com'] as $modo) {
+                $irs["admin-registro-{$modo}"] = mapaDiagramasConstruir(['slug' => "admin-registro-{$modo}", 'tipo' => 'tree', 'construtor' => 'registro', 'paineis' => ['admin'], 'modos' => [$modo]], $doModelo);
+            }
+
+            return $irs;
+        };
+        $copia = mapaDiagramasModeloComCondicoes($modelo, [$tenant]);
+        $irs   = $comDuasArvores($copia);
+
+        expect(array_key_exists($tenant, mapaDiagramasPecasDesenhadas($irs['admin-registro-com'])))->toBeTrue('a árvore com tenant desenha o TenantResource')
+            ->and(array_key_exists($tenant, mapaDiagramasPecasDesenhadas($irs['admin-registro-sem'])))->toBeFalse('a árvore sem tenant não desenha o TenantResource')
+            ->and(mapaDiagramasConferirModos($copia, $irs)['motivo'])->toBe('aceita');
+        // Controle (R18-M7): sem a condição, as duas árvores saem iguais, e a guarda do igual duplicado as nomeia.
+        expect(mapaDiagramasConferirModos($semCondicao, $comDuasArvores($semCondicao))['motivo'])->toContain('admin-registro-sem', 'admin-registro-com');
+
+        return;
+    }
+
     $nomeia = [];
     switch ($mundoDeControle) {
         case 'compartilhado desenha DefinirTenantDePermissoes':
@@ -1794,7 +1845,7 @@ it('[CT-19] compartilha-se só o que é igual nos dois modos, e o igual não se 
     }
 })->with([
     'publicados', 'compartilhado desenha DefinirTenantDePermissoes', 'dois diagramas iguais, um por modo',
-    'sem tenant desenha DefinirTenantDePermissoes', 'sem tenant desenha o painel app usa o model Tenant',
+    'sem tenant desenha DefinirTenantDePermissoes', 'sem tenant desenha o painel app usa o model Tenant', 'disponibilidade é diferença',
 ]);
 
 /*
@@ -2081,43 +2132,73 @@ it('[CT-37] sem tenant, os diagramas de arquitetura e a árvore de registro de c
     $viva = Filament::getPanel($painel);
     expect($viva->hasTenancy())->toBeFalse();
 
-    $mundo        = mapaDiagramasMundo();
-    $vivo         = array_merge(...array_values(registroVivoDoPainel($viva)));
-    $condicionais = ['App\\Filament\\Admin\\Resources\\Tenants\\TenantResource'];
+    $mundo      = mapaDiagramasMundo();
+    $modelo     = $mundo['modelo'];
+    $vivo       = array_merge(...array_values(registroVivoDoPainel($viva)));
+    $subtraidas = mapaDiagramasSubtracaoSemTenant($painel, $modelo);
+    $tenant     = 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource';
+    $agente     = 'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource';
+    $command    = 'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource';
 
     if ($mundoDeControle === 'publicados') {
-        $resultado = mapaDiagramasConferirRegistro($mundo['modelo'], $mundo['irs'], $painel, 'sem', $vivo, $condicionais);
-        expect($resultado['registro'])->toBeGreaterThan(0)
-            ->and($resultado['motivo'])->toBe('aceita');
-        if ($painel === 'infra') {
-            expect($vivo)->toContain('ShuvroRoy\\FilamentSpatieLaravelHealth\\Pages\\HealthCheckResults');
+        $resultado = mapaDiagramasConferirRegistro($modelo, $mundo['irs'], $painel, 'sem', $vivo, $subtraidas);
+        expect($resultado['registro'])->toBeGreaterThan(0);
+        if ($painel === 'admin') {
+            expect($subtraidas)->toContain($tenant)
+                ->and($subtraidas)->not->toContain($agente);
         }
         if ($painel === 'app') {
             expect($vivo)->not->toContain('App\\Http\\Middleware\\DefinirTenantDePermissoes')
-                ->and($vivo)->not->toContain('Filament\\Http\\Middleware\\IdentifyTenant');
+                ->and($vivo)->not->toContain('Filament\\Http\\Middleware\\IdentifyTenant')
+                ->and($subtraidas)->toContain('App\\Filament\\App\\Resources\\Users\\UserResource', 'App\\Filament\\App\\Resources\\Convites\\ConviteResource', 'App\\Filament\\App\\Resources\\Projetos\\ProjetoResource', 'App\\Filament\\App\\Pages\\ConvitesRecebidos')
+                ->and($subtraidas)->not->toContain('App\\Filament\\App\\Pages\\HubDoNegocio');
+        }
+        if ($painel === 'infra') {
+            expect($vivo)->toContain('ShuvroRoy\\FilamentSpatieLaravelHealth\\Pages\\HealthCheckResults', $command);
+        }
+        expect($resultado['motivo'])->toBe('aceita');
+        if ($painel === 'infra') {
+            expect($subtraidas)->not->toContain($command);
         }
 
         return;
     }
 
-    $modelo             = $mundo['modelo'];
-    $shield             = mapaDiagramasIdTerminadoEm($modelo, 'FilamentShieldPlugin');
-    $modelo['ligacoes'] = array_values(array_filter(
-        $modelo['ligacoes'],
-        static fn (array $ligacao): bool => ! ($ligacao['de'] === 'painel:admin' && $ligacao['para'] === $shield),
-    ));
-    $copia     = mapaDiagramasMundoCom($modelo);
-    $resultado = mapaDiagramasConferirRegistro($modelo, $copia['irs'], $painel, 'sem', $vivo, $condicionais);
+    switch ($mundoDeControle) {
+        case 'cópia em que a árvore sem tenant desenha o TenantResource':
+            // Um mundo de uma árvore só: a do /admin que vale sem tenant, com todo o registro do modelo.
+            $copia  = $modelo;
+            $arvore = mapaDiagramasConstruir(['slug' => 'admin-registro-sem', 'tipo' => 'tree', 'construtor' => 'registro', 'paineis' => ['admin'], 'modos' => ['sem']], $modelo);
+            unset($arvore['nos'][$tenant]);
+            $arvore['arestas'] = array_values(array_filter($arvore['arestas'], static fn (array $aresta): bool => $aresta[1] !== $tenant));
+            // Controle positivo: sem o TenantResource, a árvore desenha o registro sem tenant, nem mais nem menos.
+            expect(mapaDiagramasConferirRegistro($copia, [$arvore], $painel, 'sem', $vivo, $subtraidas)['motivo'])->toBe('aceita');
+            $irs  = [mapaDiagramasComoNo([...$arvore, 'arestas' => [...$arvore['arestas'], ['painel:admin', $tenant]]], $modelo, $tenant)];
+            $alvo = $tenant;
+            break;
+        case 'cópia sem o AgenteIaResource':
+            expect($subtraidas)->not->toContain($agente);
+            $copia = mapaDiagramasSemALigacao($modelo, 'painel:admin', $agente);
+            $irs   = mapaDiagramasMundoCom($copia)['irs'];
+            $alvo  = $agente;
+            break;
+        default:
+            $alvo  = mapaDiagramasIdTerminadoEm($modelo, 'FilamentShieldPlugin');
+            $copia = mapaDiagramasSemALigacao($modelo, 'painel:admin', $alvo);
+            $irs   = mapaDiagramasMundoCom($copia)['irs'];
+    }
+    $resultado = mapaDiagramasConferirRegistro($copia, $irs, $painel, 'sem', $vivo, $subtraidas);
 
-    expect($vivo)->toContain($shield)
+    expect($vivo)->toContain($alvo)
         ->and($resultado['aceita'])->toBeFalse()
-        ->and($resultado['motivo'])->toContain('admin')
-        ->and($resultado['motivo'])->toContain('FilamentShieldPlugin');
+        ->and($resultado['motivo'])->toContain('admin', mapaDiagramasNomeDaPeca($modelo, $alvo));
 })->with([
-    'admin publicados'                     => ['admin', 'publicados'],
-    'app publicados'                       => ['app', 'publicados'],
-    'infra publicados'                     => ['infra', 'publicados'],
-    'admin sem o Shield em nenhum desenho' => ['admin', 'cópia sem o FilamentShieldPlugin'],
+    'admin publicados'                                => ['admin', 'publicados'],
+    'app publicados'                                  => ['app', 'publicados'],
+    'infra publicados'                                => ['infra', 'publicados'],
+    'admin sem o Shield em nenhum desenho'            => ['admin', 'cópia sem o FilamentShieldPlugin'],
+    'admin com o TenantResource na árvore sem tenant' => ['admin', 'cópia em que a árvore sem tenant desenha o TenantResource'],
+    'admin sem o AgenteIaResource em nenhum desenho'  => ['admin', 'cópia sem o AgenteIaResource'],
 ]);
 
 /*
@@ -2471,3 +2552,852 @@ it('[CT-47] a caixa de agrupamento diz quantas peças nomeia no modo do diagrama
     }
     expect($daCaixa)->toBe([]);
 })->with(['publicados', 'três membros, um no modo', 'nenhum membro no modo']);
+
+/*
+|--------------------------------------------------------------------------
+| Adendos 2 a 4 — a peça condicional: o lugar (R41, CT-33)
+|--------------------------------------------------------------------------
+|
+| A metade sem tenant lê o discriminante vivo da suíte do kit — a saída "lugar" de `discriminanteDaPeca()`, de
+| `tests/Pest.php` —, sobre a população de `populacaoDoDiscriminante()`; a metade com tenant lê a condição do
+| modelo (o campo `disponibilidade` da peça em `site/mapa/pecas.json`), que o CT-56 confere contra o código na
+| suíte Tenancy. O desenho de cada diagrama é o de `mapaDiagramasConstruir()`, e o nó escrito à mão é também a peça
+| cuja classe a prova dele declara (Adendo 4).
+*/
+
+/**
+ * A coleção de nós e a de arestas de cada tipo do archify, no arquivo escrito à mão e na entrada que o gerador monta.
+ *
+ * @return array<string, array{0: string, 1: ?string}>
+ */
+function mapaDiagramasColecoes(): array
+{
+    return [
+        'workflow'  => ['nodes', 'edges'], 'sequence' => ['participants', 'messages'], 'dataflow' => ['nodes', 'flows'],
+        'lifecycle' => ['states', 'transitions'], 'erd' => ['entities', 'relationships'], 'class' => ['types', 'relationships'],
+        'timeline'  => ['events', null], 'waterfall' => ['spans', null], 'architecture' => ['components', 'connections'],
+        'tree'      => ['nodes', null],
+    ];
+}
+
+/**
+ * A condição de disponibilidade que o modelo dá à peça — o campo `disponibilidade`, `{modo?, chaves?, evidencia}` —,
+ * ou nula.
+ *
+ * @return array<string, mixed>|null
+ */
+function mapaDiagramasCondicao(array $modelo, string $id): ?array
+{
+    $condicao = $modelo['pecas'][$id]['disponibilidade'] ?? null;
+
+    return is_array($condicao) ? $condicao : null;
+}
+
+/**
+ * Pela condição do modelo, a peça fica disponível em todo modo em que o diagrama vale: a condição de modo a prende a
+ * ele, e a de chave, não (P-15).
+ *
+ * @param  list<string>  $modos
+ */
+function mapaDiagramasAbreNosModos(array $modelo, string $id, array $modos): bool
+{
+    $modo = mapaDiagramasCondicao($modelo, $id)['modo'] ?? null;
+
+    return $modo === null || array_diff($modos, [$modo]) === [];
+}
+
+/**
+ * A condição que o `04` dá a cada peça das linhas de controle — a tabela da população e as âncoras do Setup Global
+ * (Adendos 2 a 4) —, no formato do campo `disponibilidade` do modelo. A âncora é o arquivo e o símbolo do código que
+ * decide; ela só vale na cópia em memória.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function mapaDiagramasCondicoesDoCaso(): array
+{
+    $fontes = array_values((array) config('command-center.sources'));
+    $ancora = static fn (string $arquivo, string $trecho): array => ['arquivo' => $arquivo, 'trecho' => $trecho];
+
+    return [
+        'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource'            => ['modo' => 'com', 'evidencia' => $ancora('app/Filament/Admin/Resources/Tenants/TenantResource.php', 'canAccess')],
+        'App\\Filament\\App\\Resources\\Users\\UserResource'                  => ['modo' => 'com', 'evidencia' => $ancora('app/Filament/App/Resources/Users/UserResource.php', 'canAccess')],
+        'App\\Filament\\App\\Resources\\Projetos\\ProjetoResource'            => ['modo' => 'com', 'chaves' => [['chave' => 'KIT_DEMO', 'padrao' => false]], 'evidencia' => $ancora('app/Filament/App/Resources/Projetos/ProjetoResource.php', 'canAccess')],
+        'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource'        => ['chaves' => [['chave' => 'KIT_AGENTES_IA', 'padrao' => false]], 'evidencia' => $ancora('app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php', 'canAccess')],
+        'App\\Filament\\Admin\\Pages\\HubDeAdministracao'                     => ['chaves' => [['chave' => 'KIT_HUB', 'padrao' => false]], 'evidencia' => $ancora('app/Filament/Admin/Pages/HubDeAdministracao.php', 'regraLocalDeAcesso')],
+        'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource' => ['chaves' => [['chave' => 'command-center.sources', 'padrao' => $fontes, 'ligada' => [...$fontes, 'Bityukov\\CommandCenter\\Sources\\DatabaseSource']]], 'evidencia' => $ancora('config/command-center.php', "'sources'")],
+        'App\\Livewire\\AssistenteChatWidget'                                 => ['chaves' => [['chave' => 'KIT_AGENTES_IA', 'padrao' => false], ['chave' => 'KIT_AGENTES_IA_PAINEIS', 'padrao' => []]], 'evidencia' => $ancora('app/Support/AgentesDeIa.php', 'assistenteNoPainel')],
+    ];
+}
+
+/**
+ * A cópia em memória do modelo com a condição de `mapaDiagramasCondicoesDoCaso()` nas peças pedidas, só na que o
+ * modelo deixa sem condição: com a condição publicada, vale a do modelo.
+ *
+ * @param  list<string>  $pecas
+ */
+function mapaDiagramasModeloComCondicoes(array $modelo, array $pecas): array
+{
+    $doCaso = mapaDiagramasCondicoesDoCaso();
+    foreach ($pecas as $peca) {
+        $modelo['pecas'][$peca]['disponibilidade'] ??= $doCaso[$peca];
+    }
+
+    return $modelo;
+}
+
+/** A cópia do modelo sem as ligações de `$de` a `$para`. */
+function mapaDiagramasSemALigacao(array $modelo, string $de, string $para): array
+{
+    $modelo['ligacoes'] = array_values(array_filter(
+        $modelo['ligacoes'],
+        static fn (array $ligacao): bool => ! ($ligacao['de'] === $de && $ligacao['para'] === $para),
+    ));
+
+    return $modelo;
+}
+
+/**
+ * A saída "lugar" de `discriminanteDaPeca()` no modo da suíte do kit, sem tenant, medida uma vez por painel, peça e
+ * condição no processo: o modo é decidido no boot, e a resposta não muda de um caso para outro.
+ */
+function mapaDiagramasAbreSemTenant(string $painel, string $peca, ?array $condicao): bool
+{
+    static $medidas = [];
+
+    return $medidas[$painel.'|'.$peca.'|'.json_encode($condicao)] ??= discriminanteDaPeca($painel, 'sem', $peca, $condicao)['lugar'];
+}
+
+/**
+ * A subtração da R34 sem tenant: a peça da população registrada do painel que não abre de fábrica, nem com uma chave
+ * booleana de `kit.*` desligada ligada, nem com as chaves da condição do modelo ligadas juntas.
+ *
+ * @return list<string>
+ */
+function mapaDiagramasSubtracaoSemTenant(string $painel, array $modelo): array
+{
+    return array_values(array_filter(
+        populacaoDoDiscriminante($painel, $modelo)['registrada'],
+        static fn (string $peca): bool => ! mapaDiagramasAbreSemTenant($painel, $peca, mapaDiagramasCondicao($modelo, $peca)),
+    ));
+}
+
+/**
+ * Os painéis em que o discriminante avalia a peça desenhada: o do diagrama, se ele a registra, ou os que a registram;
+ * e a peça que painel nenhum registra — a que herda pelo método próprio e o componente flutuante —, em cada painel do
+ * registro (Setup Global do `04`, "A população"). Fora da população, nenhum.
+ *
+ * @param  list<string>  $doDiagrama
+ * @param  array<string, array{registrada: list<string>, foraDoRegistro: list<string>, flutuante: list<string>}>  $populacao
+ * @return list<string>
+ */
+function mapaDiagramasPaineisDoLugar(string $peca, array $doDiagrama, array $populacao): array
+{
+    $registram = array_keys(array_filter($populacao, static fn (array $doPainel): bool => in_array($peca, $doPainel['registrada'], true)));
+    if ($registram !== []) {
+        return array_values(array_intersect($registram, $doDiagrama)) ?: $registram;
+    }
+    $foraDoRegistro = array_filter($populacao, static fn (array $doPainel): bool => in_array($peca, [...$doPainel['foraDoRegistro'], ...$doPainel['flutuante']], true));
+
+    return $foraDoRegistro === [] ? [] : array_keys($populacao);
+}
+
+/**
+ * As peças que cada nó do diagrama escrito à mão declara pela prova: a fonte do nó com o arquivo da evidência da peça
+ * no modelo e o trecho da declaração da classe dela (Setup Global do `04`, "Entrar no diagrama de um modo", Adendo 4).
+ * O construído não tem prova por nó, e devolve vazio.
+ *
+ * @return array<string, list<string>> id do nó => ids das peças
+ */
+function mapaDiagramasPecasPelaProva(array $decl, array $modelo): array
+{
+    $chaveDosNos = ($decl['construtor'] ?? null) === null ? (mapaDiagramasColecoes()[$decl['tipo'] ?? ''][0] ?? null) : null;
+    if ($chaveDosNos === null) {
+        return [];
+    }
+    $declaradas = [];
+    foreach ($modelo['pecas'] as $id => $peca) {
+        foreach ($peca['evidencia'] ?? [] as $evidencia) {
+            $trecho = (string) ($evidencia['trecho'] ?? '');
+            if (preg_match('/\b(?:class|interface|trait|enum)\s+'.preg_quote((string) $peca['nome'], '/').'\b/', $trecho) === 1) {
+                $declaradas[($evidencia['arquivo'] ?? '').'|'.$trecho][] = (string) $id;
+            }
+        }
+    }
+    $saida = [];
+    foreach ($decl[$chaveDosNos] ?? [] as $no) {
+        foreach ($no['sources'] ?? [] as $fonte) {
+            if (! is_array($fonte)) {
+                continue;
+            }
+            foreach ($declaradas[($fonte['arquivo'] ?? '').'|'.($fonte['trecho'] ?? '')] ?? [] as $id) {
+                $saida[(string) $no['id']][] = $id;
+            }
+        }
+    }
+
+    return array_map(static fn (array $ids): array => array_values(array_unique($ids)), $saida);
+}
+
+/** O desenho com a peça como nó próprio: a cópia que a desenha, mesmo que o construtor a tirasse. */
+function mapaDiagramasComoNo(array $ir, array $modelo, string $peca): array
+{
+    $ir['nos'][$peca] ??= mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $peca), [$peca]);
+
+    return $ir;
+}
+
+/** O desenho com a peça como membro nomeado do agrupamento. */
+function mapaDiagramasComoMembro(array $ir, string $grupo, string $peca): array
+{
+    foreach (['membros', 'nomeados'] as $lista) {
+        $ir['nos'][$grupo][$lista] = array_values(array_unique([...($ir['nos'][$grupo][$lista] ?? []), $peca]));
+    }
+
+    return $ir;
+}
+
+/** O id do primeiro agrupamento do diagrama cujo id tem o trecho. */
+function mapaDiagramasAgrupamentoQue(array $decl, string $trecho): string
+{
+    foreach ($decl['agrupamentos'] ?? [] as $grupo) {
+        if (str_contains((string) $grupo['id'], $trecho)) {
+            return (string) $grupo['id'];
+        }
+    }
+
+    throw new RuntimeException("o diagrama {$decl['slug']} não tem agrupamento com \"{$trecho}\"");
+}
+
+/**
+ * A guarda do lugar (R41, CT-33): em cada diagrama, a peça que ele desenha — nó, membro nomeado de agrupamento, nó
+ * da árvore de registro, nó escrito à mão pelo nome ou pela prova — fica disponível em todo modo em que o diagrama
+ * vale. Sem tenant, pela saída "lugar" do discriminante vivo, nos painéis de `mapaDiagramasPaineisDoLugar()`: painéis
+ * que discordam reprovam, falha fechado. Com tenant, pela condição do modelo. O comparativo fica fora: é a soma de
+ * dois mapas, conferidos cada um.
+ *
+ * @param  array<string, array<string, mixed>>  $decls
+ * @param  array<string, array>  $irs
+ * @return array{aceita: bool, motivo: string, falhas: list<array{diagrama: string, peca: string, texto: string}>, diagramas: list<string>, pecas: list<string>}
+ */
+function mapaDiagramasConferirLugar(array $modelo, array $decls, array $irs): array
+{
+    $populacao = [];
+    foreach (collect(Filament::getPanels())->map->getId()->values()->all() as $painel) {
+        $populacao[$painel] = populacaoDoDiscriminante($painel, $modelo);
+    }
+    $falhas     = [];
+    $diagramas  = [];
+    $conferidas = [];
+    foreach ($irs as $slug => $ir) {
+        if ($ir['tipo'] === 'compare' || $ir['modos'] === []) {
+            continue;
+        }
+        $slug        = (string) $slug;
+        $diagramas[] = $slug;
+        $pelaProva   = mapaDiagramasPecasPelaProva($decls[$slug] ?? ['tipo' => $ir['tipo'], 'construtor' => $ir['construtor']], $modelo);
+        foreach ($ir['nos'] as $no => $dado) {
+            $membro = $dado['tipo'] === 'grupo';
+            $onde   = $membro ? "como membro do agrupamento {$no} ({$dado['rotulo']})" : "como o nó {$no}";
+            foreach (array_unique($membro ? $dado['nomeados'] : [...$dado['pecas'], ...($pelaProva[$no] ?? [])]) as $peca) {
+                $conferidas[$peca] = true;
+                $quem              = mapaDiagramasNomeDaPeca($modelo, $peca)." ({$peca})";
+                $condicao          = mapaDiagramasCondicao($modelo, $peca);
+                $paineis           = in_array('sem', $ir['modos'], true) ? mapaDiagramasPaineisDoLugar($peca, $ir['paineis'], $populacao) : [];
+                $abre              = array_map(static fn (string $painel): bool => mapaDiagramasAbreSemTenant($painel, $peca, $condicao), array_combine($paineis, $paineis));
+                if (count(array_unique($abre)) > 1) {
+                    $falhas[] = ['diagrama' => $slug, 'peca' => $peca, 'texto' => "o diagrama {$slug} desenha {$quem} {$onde}, e os painéis discordam sem tenant: abre em ".implode(', ', array_keys(array_filter($abre))).' e não em '.implode(', ', array_keys(array_filter($abre, static fn (bool $abreNele): bool => ! $abreNele)))];
+                } elseif ($abre !== [] && ! reset($abre)) {
+                    $falhas[] = ['diagrama' => $slug, 'peca' => $peca, 'texto' => "o diagrama {$slug}, que vale sem tenant, desenha {$quem} {$onde}, e ela não abre sem tenant nem com a chave ligada (".implode(', ', $paineis).')'];
+                }
+                if (in_array('com', $ir['modos'], true) && ($condicao['modo'] ?? 'com') !== 'com') {
+                    $falhas[] = ['diagrama' => $slug, 'peca' => $peca, 'texto' => "o diagrama {$slug}, que vale com tenant, desenha {$quem} {$onde}, e o modelo a dá só sem tenant"];
+                }
+            }
+        }
+    }
+
+    return [
+        'aceita'    => $falhas === [],
+        'motivo'    => $falhas === [] ? 'aceita' : 'reprova, '.count($falhas).' lugar(es): '.implode(' | ', array_column($falhas, 'texto')),
+        'falhas'    => $falhas,
+        'diagramas' => $diagramas,
+        'pecas'     => array_keys($conferidas),
+    ];
+}
+
+/**
+ * A RQ-29 (CT-33): o /admin tem ao menos um diagrama que vale só sem tenant e um que vale só com tenant, e o
+ * diagrama do /admin que desenha o TenantResource vale só com tenant.
+ *
+ * @param  array<string, array>  $irs
+ * @return array{aceita: bool, motivo: string}
+ */
+function mapaDiagramasConferirAdminPorModo(array $irs, string $tenantResource): array
+{
+    $soSem  = [];
+    $soCom  = [];
+    $falhas = [];
+    foreach ($irs as $slug => $ir) {
+        if ($ir['tipo'] === 'compare' || ! in_array('admin', $ir['paineis'], true)) {
+            continue;
+        }
+        if ($ir['modos'] === ['sem']) {
+            $soSem[] = $slug;
+        }
+        if ($ir['modos'] === ['com']) {
+            $soCom[] = $slug;
+        }
+        if ($ir['modos'] !== ['com'] && array_key_exists($tenantResource, mapaDiagramasPecasDesenhadas($ir))) {
+            $falhas[] = "o diagrama {$slug} do /admin desenha o TenantResource e vale ".($ir['modos'] === ['sem'] ? 'só sem tenant' : 'nos dois modos');
+        }
+    }
+    if ($soSem === []) {
+        $falhas[] = 'o /admin não tem diagrama que valha só sem tenant';
+    }
+    if ($soCom === []) {
+        $falhas[] = 'o /admin não tem diagrama que valha só com tenant';
+    }
+
+    return ['aceita' => $falhas === [], 'motivo' => $falhas === [] ? 'aceita' : 'reprova: '.implode(' | ', $falhas)];
+}
+
+it('[CT-33] nenhum diagrama desenha a peça condicional num modo em que ela fica indisponível, e o /admin tem diagramas separados sem e com tenant, com o TenantResource só nos de com', function (string $mundo): void {
+    expect(config('kit.tenancy.enabled'))->toBeFalse();
+    foreach (Filament::getPanels() as $doRegistro) {
+        expect($doRegistro->hasTenancy())->toBeFalse("o painel {$doRegistro->getId()} tem organização na suíte sem tenant");
+    }
+
+    $modelo  = modeloDoMapaPorId();
+    $decls   = diagramasDoMapa();
+    $tenant  = 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource';
+    $userApp = 'App\\Filament\\App\\Resources\\Users\\UserResource';
+    $agente  = 'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource';
+    $arvore  = static fn (string $slug, string $painel, array $modos): array => ['slug' => $slug, 'tipo' => 'tree', 'construtor' => 'registro', 'paineis' => [$painel], 'modos' => $modos];
+
+    if ($mundo === 'publicados') {
+        $irs     = mapaDiagramasMundo()['irs'];
+        $lugar   = mapaDiagramasConferirLugar($modelo, $decls, $irs);
+        $porModo = mapaDiagramasConferirAdminPorModo($irs, $tenant);
+
+        expect($lugar['diagramas'])->toEqualCanonicalizing(array_keys(array_filter($decls, static fn (array $decl): bool => $decl['tipo'] !== 'compare')))
+            ->and($lugar['pecas'])->toContain($tenant, $userApp, $agente)
+            ->and(['lugar' => $lugar['motivo'], 'RQ-29' => $porModo['motivo']])->toBe(['lugar' => 'aceita', 'RQ-29' => 'aceita']);
+
+        return;
+    }
+
+    if ($mundo === 'todo diagrama do /admin compartilhado e nenhum com o TenantResource') {
+        $doAdmin = [];
+        foreach (mapaDiagramasMundo()['irs'] as $slug => $ir) {
+            if ($ir['tipo'] === 'compare' || ! in_array('admin', $ir['paineis'], true)) {
+                continue;
+            }
+            unset($ir['nos'][$tenant]);
+            foreach ($ir['nos'] as $no => $dado) {
+                $ir['nos'][$no]['membros']  = array_values(array_diff($dado['membros'], [$tenant]));
+                $ir['nos'][$no]['nomeados'] = array_values(array_diff($dado['nomeados'], [$tenant]));
+            }
+            $doAdmin[$slug] = [...$ir, 'modos' => ['sem', 'com']];
+        }
+        $resultado = mapaDiagramasConferirAdminPorModo($doAdmin, $tenant);
+
+        expect($doAdmin)->not->toBeEmpty()
+            ->and($resultado['aceita'])->toBeFalse()
+            ->and($resultado['motivo'])->toContain('/admin', 'só com tenant');
+
+        return;
+    }
+
+    $copia  = $modelo;
+    $aceita = false;
+    $nomeia = [];
+    switch ($mundo) {
+        case 'cópia do admin-registro, compartilhado, que desenha o TenantResource':
+            [$slug, $peca] = ['admin-registro', $tenant];
+            $ir            = mapaDiagramasComoNo(mapaDiagramasConstruir($arvore($slug, 'admin', ['sem', 'com']), $modelo), $modelo, $peca);
+            $nomeia        = [$slug, 'TenantResource'];
+            break;
+        case 'cópia do app-registro-sem que desenha o UserResource do /app':
+            [$slug, $peca] = ['app-registro-sem', $userApp];
+            $ir            = mapaDiagramasComoNo(mapaDiagramasConstruir($arvore($slug, 'app', ['sem']), $modelo), $modelo, $peca);
+            $nomeia        = [$slug, $userApp];
+            break;
+        case 'cópia do app-resumo-sem com o ConviteResource do /app membro do agrupamento de convites':
+            [$slug, $peca] = ['app-resumo-sem', 'App\\Filament\\App\\Resources\\Convites\\ConviteResource'];
+            $grupo         = mapaDiagramasAgrupamentoQue($decls[$slug], 'convites');
+            $ir            = mapaDiagramasComoMembro(mapaDiagramasConstruir([...$decls[$slug], 'modos' => ['sem']], $modelo), $grupo, $peca);
+            $nomeia        = [$slug, $grupo, $peca];
+            break;
+        case 'cópia do app-produtividade-e-ui, compartilhado, que desenha o ProjetoResource do /app':
+            [$slug, $peca] = ['app-produtividade-e-ui', 'App\\Filament\\App\\Resources\\Projetos\\ProjetoResource'];
+            $ir            = mapaDiagramasComoNo(mapaDiagramasConstruir([...$decls[$slug], 'modos' => ['sem', 'com']], $modelo), $modelo, $peca);
+            $nomeia        = [$slug, $peca];
+            break;
+        case 'cópia em que o admin-administracao, compartilhado, desenha o AgenteIaResource':
+            [$slug, $peca, $aceita] = ['admin-administracao', $agente, true];
+            $ir                     = mapaDiagramasComoNo(mapaDiagramasConstruir([...$decls[$slug], 'modos' => ['sem', 'com']], $modelo), $modelo, $peca);
+            break;
+        case 'cópia do kit-resumo-sem com o AcessosPorPainel membro do agrupamento de multi-tenancy':
+            [$slug, $peca] = ['kit-resumo-sem', 'App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel'];
+            $grupo         = mapaDiagramasAgrupamentoQue($decls[$slug], 'multi-tenancy');
+            $ir            = mapaDiagramasComoMembro(mapaDiagramasConstruir([...$decls[$slug], 'modos' => ['sem']], $modelo), $grupo, $peca);
+            $nomeia        = [$slug, $grupo, $peca];
+            break;
+        case 'cópia do modelo com a condição do CommandRecordResource, que o infra-infraestrutura-2, compartilhado, desenha':
+            [$slug, $peca, $aceita] = ['infra-infraestrutura-2', 'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource', true];
+            $copia                  = mapaDiagramasModeloComCondicoes($modelo, [$peca]);
+            $ir                     = mapaDiagramasConstruir([...$decls[$slug], 'modos' => ['sem', 'com']], $copia);
+            break;
+        default:
+            [$slug, $peca, $aceita] = ['kit-resumo-sem', 'App\\Livewire\\AssistenteChatWidget', true];
+            $copia                  = mapaDiagramasModeloComCondicoes($modelo, [$peca]);
+            $grupo                  = collect($decls[$slug]['agrupamentos'] ?? [])->first(static fn (array $agrupamento): bool => in_array($peca, $agrupamento['membros'], true));
+            expect($grupo)->not->toBeNull("o chat do assistente é membro de um agrupamento do {$slug}");
+            $ir = mapaDiagramasConstruir([...$decls[$slug], 'modos' => ['sem'], 'pecas' => [], 'portas' => [], 'agrupamentos' => [$grupo]], $copia);
+    }
+    $resultado = mapaDiagramasConferirLugar($copia, $decls, [$slug => $ir]);
+
+    expect($resultado['pecas'])->toContain($peca);
+    if ($aceita) {
+        expect($resultado['motivo'])->toBe('aceita');
+
+        return;
+    }
+    $daPeca = array_column(array_filter($resultado['falhas'], static fn (array $falha): bool => $falha['diagrama'] === $slug && $falha['peca'] === $peca), 'texto');
+    expect($resultado['aceita'])->toBeFalse()
+        ->and($daPeca)->not->toBeEmpty()
+        ->and(implode("\n", $daPeca))->toContain(...$nomeia);
+})->with([
+    'publicados',
+    'cópia do admin-registro, compartilhado, que desenha o TenantResource',
+    'cópia do app-registro-sem que desenha o UserResource do /app',
+    'cópia do app-resumo-sem com o ConviteResource do /app membro do agrupamento de convites',
+    'cópia do app-produtividade-e-ui, compartilhado, que desenha o ProjetoResource do /app',
+    'cópia em que o admin-administracao, compartilhado, desenha o AgenteIaResource',
+    'todo diagrama do /admin compartilhado e nenhum com o TenantResource',
+    'cópia do kit-resumo-sem com o AcessosPorPainel membro do agrupamento de multi-tenancy',
+    'cópia do modelo com a condição do CommandRecordResource, que o infra-infraestrutura-2, compartilhado, desenha',
+    'cópia do modelo com a condição do chat do assistente, que o kit-resumo-sem desenha como membro',
+]);
+
+/*
+|--------------------------------------------------------------------------
+| Adendos 2 a 4 — a marca da peça condicional e o card das condições (R42, R44; CT-57)
+|--------------------------------------------------------------------------
+|
+| Costura G5, forma de leitura: `entradasDoGeradorDoMapa()` monta a entrada de cada diagrama em pt e em en, sem
+| baixar o archify nem renderizar. A condição vem do modelo, de onde o gerador a lê. As linhas de controle partem da
+| entrada publicada, com a condição que o `04` dá à peça na cópia em memória do modelo: o filho do helper não recebe
+| a cópia, e por isso a adulteração é na entrada, como no CT-46. A redação da marca é a decisão de desenho da sessão
+| (Adendos 3 e 4).
+*/
+
+/**
+ * As partes que a marca da condição traz, no idioma (R42, redação decidida): o modo como "só com tenant ativo" /
+ * "tenancy on only"; a chave booleana única como "KIT_HUB=false de fábrica" / "by default"; com várias chaves, cada
+ * uma — a booleana "VAR=valor", a lista pelo nome — e o "de fábrica" depois delas; a configuração de pacote pelo
+ * caminho e pela fonte que falta de fábrica, com o "de fábrica" depois. O modo "sem" não tem redação decidida: a
+ * parte dele é uma que nenhuma marca traz, e a guarda reprova, falha fechado.
+ *
+ * @return array{partes: list<string>, fim: ?string}
+ */
+function mapaDiagramasPartesDaMarca(array $condicao, string $idioma): array
+{
+    $deFabrica = $idioma === 'pt' ? 'de fábrica' : 'by default';
+    $partes    = [];
+    $modo      = $condicao['modo'] ?? null;
+    if ($modo !== null) {
+        $partes[] = $modo === 'com' ? ($idioma === 'pt' ? 'só com tenant ativo' : 'tenancy on only') : "(a redação da marca do modo {$modo} não foi decidida)";
+    }
+    $chaves   = $condicao['chaves'] ?? [];
+    $variavel = static fn (string $chave): bool => preg_match('/^[A-Z][A-Z0-9_]*$/', $chave) === 1;
+    $valor    = static fn (mixed $padrao): string => is_bool($padrao) ? ($padrao ? 'true' : 'false') : (is_scalar($padrao) ? (string) $padrao : '');
+    if (count($chaves) === 1 && $variavel((string) $chaves[0]['chave']) && is_bool($chaves[0]['padrao'] ?? null)) {
+        $partes[] = $chaves[0]['chave'].'='.$valor($chaves[0]['padrao'])." {$deFabrica}";
+
+        return ['partes' => $partes, 'fim' => null];
+    }
+    foreach ($chaves as $chave) {
+        $nome = (string) $chave['chave'];
+        if ($variavel($nome)) {
+            $partes[] = is_bool($chave['padrao'] ?? null) ? $nome.'='.$valor($chave['padrao']) : $nome;
+
+            continue;
+        }
+        $partes[] = $nome;
+        foreach (array_diff((array) ($chave['ligada'] ?? []), (array) ($chave['padrao'] ?? [])) as $falta) {
+            $partes[] = class_basename((string) $falta);
+        }
+    }
+
+    return ['partes' => $partes, 'fim' => $chaves === [] ? null : $deFabrica];
+}
+
+/**
+ * O que falta no texto para ser a marca da condição no idioma: as partes ausentes, e o "de fábrica" fora do fim.
+ *
+ * @return list<string>
+ */
+function mapaDiagramasFaltaNaMarca(string $texto, array $condicao, string $idioma): array
+{
+    ['partes' => $partes, 'fim' => $fim] = mapaDiagramasPartesDaMarca($condicao, $idioma);
+    $faltam                              = array_map(static fn (string $parte): string => "\"{$parte}\"", array_values(array_filter($partes, static fn (string $parte): bool => ! str_contains($texto, $parte))));
+    if ($fim !== null) {
+        $depois = max(array_map(static fn (string $parte): int => (int) strrpos($texto, $parte) + strlen($parte), $partes));
+        if (strpos($texto, $fim, min($depois, strlen($texto))) === false) {
+            $faltam[] = "\"{$fim}\" depois das chaves";
+        }
+    }
+
+    return $faltam;
+}
+
+/** A marca inteira da condição no idioma, na redação decidida: o que as linhas de controle escrevem na entrada. */
+function mapaDiagramasMarca(array $condicao, string $idioma): string
+{
+    ['partes' => $partes, 'fim' => $fim] = mapaDiagramasPartesDaMarca($condicao, $idioma);
+
+    return implode(' · ', $partes).($fim === null ? '' : " {$fim}");
+}
+
+/** O texto traz alguma marca na redação decidida: o modo, a chave com o valor ou a configuração de pacote. */
+function mapaDiagramasTemMarca(string $texto): bool
+{
+    return preg_match('/só com tenant ativo|tenancy on only|\b[A-Z][A-Z0-9_]*=(?:false|true)\b|command-center\.sources/u', $texto) === 1;
+}
+
+/**
+ * As peças que cada nó da entrada é: no construído, a do id do archify; no escrito à mão, a do id ou do nome exato
+ * do rótulo (`mapaDiagramasConstruir()`) e a da prova (`mapaDiagramasPecasPelaProva()`).
+ *
+ * @param  array<string, string>  $ids  id do modelo => id do archify
+ * @return array<string, list<string>> id do nó => ids das peças
+ */
+function mapaDiagramasPecasDosNos(array $entrada, array $decl, array $modelo, array $ids): array
+{
+    $colecao    = mapaDiagramasColecoes()[$entrada['diagram_type'] ?? ''][0] ?? null;
+    $escrito    = ($decl['construtor'] ?? null) === null;
+    $porArchify = array_flip($ids);
+    $ir         = $escrito ? mapaDiagramasConstruir($decl, $modelo) : null;
+    $pelaProva  = $escrito ? mapaDiagramasPecasPelaProva($decl, $modelo) : [];
+    $saida      = [];
+    foreach ($colecao === null ? [] : ($entrada[$colecao] ?? []) as $no) {
+        $id    = (string) ($no['id'] ?? '');
+        $pecas = $escrito ? [...($ir['nos'][$id]['pecas'] ?? []), ...($pelaProva[$id] ?? [])] : (isset($porArchify[$id]) ? [(string) $porArchify[$id]] : []);
+        if ($pecas !== []) {
+            $saida[$id] = array_values(array_unique($pecas));
+        }
+    }
+
+    return $saida;
+}
+
+/**
+ * Os agrupamentos que nomeiam a peça no mapa construído, no modo do diagrama, como o construtor
+ * (`mapaDiagramasConstruir()`): o card "Quem está em …" de cada um tem a linha dela.
+ *
+ * @return list<array<string, mixed>>
+ */
+function mapaDiagramasGruposDaPeca(array $decl, array $modelo, string $peca): array
+{
+    if (($decl['construtor'] ?? null) !== 'mapa') {
+        return [];
+    }
+    $ir = mapaDiagramasConstruir($decl, $modelo);
+
+    return array_values(array_filter($decl['agrupamentos'] ?? [], static fn (array $grupo): bool => in_array($peca, $ir['nos'][$grupo['id']]['nomeados'] ?? [], true)));
+}
+
+/** O título do card que nomeia os membros do agrupamento, no idioma. */
+function mapaDiagramasTituloDoGrupo(array $grupo, string $idioma): string
+{
+    return $idioma === 'pt' ? 'Quem está em '.mapaDiagramasPt($grupo['rotulo'] ?? '') : 'Who is in '.mapaDiagramasEn($grupo['rotulo'] ?? '');
+}
+
+/** O nome da peça no começo da linha de um card: o que vem antes do primeiro separador. */
+function mapaDiagramasNomeDaLinha(string $linha): string
+{
+    return (string) preg_replace('/^\s*([^\s—·:(,]+).*$/us', '$1', $linha);
+}
+
+/**
+ * A guarda da marca (R42, R44; CT-57), na entrada que o gerador monta, em cada idioma: o nó de toda peça com condição
+ * no modelo traz a marca dela no rótulo secundário — e não só no `tag`, que o carregamento esconde —; a linha dela no
+ * card "Quem está em …" do agrupamento que a nomeia, também; o card "Condições de disponibilidade" tem uma linha por
+ * peça condicional desenhada, começando pelo nome dela, com a marca e a âncora da condição — o arquivo e o trecho —,
+ * e nenhuma de peça que o diagrama não desenha; e nenhum nó nem linha de peça sem condição — plugin e middleware
+ * inclusive — traz marca. O nó é a peça de `mapaDiagramasPecasDosNos()`, e o membro, o de `mapaDiagramasConstruir()`.
+ *
+ * @param  array<string, array<string, mixed>>  $decls  os diagramas conferidos, por slug
+ * @param  array{ids: array<string, string>, diagramas: array<string, array<string, array<string, mixed>>>}  $gerado
+ * @return array{aceita: bool, motivo: string, falhas: list<array{diagrama: string, peca: string, texto: string}>, marcadas: list<string>, comoNo: int, comoMembro: int, semCondicao: list<string>, entradas: int}
+ */
+function mapaDiagramasConferirMarcas(array $modelo, array $decls, array $gerado): array
+{
+    $falhas      = [];
+    $marcadas    = [];
+    $semCondicao = [];
+    $comoNo      = 0;
+    $comoMembro  = 0;
+    $entradas    = 0;
+    $idsPorNome  = mapaDiagramasIdsPorNome($modelo);
+    foreach ($decls as $slug => $decl) {
+        $slug = (string) $slug;
+        $ir   = ($decl['construtor'] ?? null) === 'mapa' ? mapaDiagramasConstruir($decl, $modelo) : null;
+        foreach ($gerado['diagramas'][$slug] ?? [] as $idioma => $entrada) {
+            $falha = static function (string $peca, string $texto) use (&$falhas, $slug, $idioma): void {
+                $falhas[] = ['diagrama' => $slug, 'peca' => $peca, 'texto' => "{$slug} ({$idioma}): {$texto}"];
+            };
+            if (isset($entrada['erro'])) {
+                $falha('', "o gerador recusou o diagrama — {$entrada['erro']}");
+
+                continue;
+            }
+            $entradas++;
+            $desenhadas = [];
+            $colecao    = mapaDiagramasColecoes()[$entrada['diagram_type'] ?? ''][0] ?? '';
+            $nos        = collect($entrada[$colecao] ?? [])->keyBy('id')->all();
+            foreach (mapaDiagramasPecasDosNos($entrada, $decl, $modelo, $gerado['ids']) as $no => $pecas) {
+                $sublabel = (string) ($nos[$no]['sublabel'] ?? '');
+                $tag      = (string) ($nos[$no]['tag'] ?? '');
+                foreach ($pecas as $peca) {
+                    $quem     = mapaDiagramasNomeDaPeca($modelo, $peca)." ({$peca})";
+                    $condicao = mapaDiagramasCondicao($modelo, $peca);
+                    if ($condicao === null) {
+                        $semCondicao[$peca] = true;
+                        if (mapaDiagramasTemMarca($sublabel.' '.$tag)) {
+                            $falha($peca, "o nó {$no} de {$quem}, peça sem condição no modelo, traz marca: \"{$sublabel}\"".($tag === '' ? '' : " / tag \"{$tag}\""));
+                        }
+
+                        continue;
+                    }
+                    $comoNo++;
+                    $marcadas[$peca]   = true;
+                    $desenhadas[$peca] = true;
+                    $faltam            = mapaDiagramasFaltaNaMarca($sublabel, $condicao, $idioma);
+                    if ($faltam !== []) {
+                        $soNoTag = mapaDiagramasFaltaNaMarca($tag, $condicao, $idioma) === [] ? '; a marca está só no tag, que o carregamento esconde' : '';
+                        $falha($peca, "o nó {$no} de {$quem} não traz a marca no rótulo secundário \"{$sublabel}\": falta ".implode(', ', $faltam).$soNoTag);
+                    }
+                }
+            }
+            $cards = collect($entrada['cards'] ?? []);
+            foreach ($ir === null ? [] : ($decl['agrupamentos'] ?? []) as $grupo) {
+                $titulo  = mapaDiagramasTituloDoGrupo($grupo, $idioma);
+                $linhas  = array_map('strval', $cards->firstWhere('title', $titulo)['items'] ?? []);
+                $membros = $ir['nos'][$grupo['id']]['nomeados'] ?? [];
+                foreach ($membros as $peca) {
+                    $nome     = mapaDiagramasNomeDaPeca($modelo, $peca);
+                    $quem     = "{$nome} ({$peca})";
+                    $daPeca   = array_values(array_filter($linhas, static fn (string $linha): bool => mapaDiagramasNomeDaLinha($linha) === $nome));
+                    $condicao = mapaDiagramasCondicao($modelo, $peca);
+                    if ($condicao === null) {
+                        $semCondicao[$peca] = true;
+                        $homonimas          = count(array_filter($membros, static fn (string $outra): bool => $outra !== $peca && mapaDiagramasNomeDaPeca($modelo, $outra) === $nome && mapaDiagramasCondicao($modelo, $outra) !== null));
+                        if (count(array_filter($daPeca, 'mapaDiagramasTemMarca')) > $homonimas) {
+                            $falha($peca, "a linha de {$quem} no card \"{$titulo}\" do agrupamento {$grupo['id']}, peça sem condição no modelo, traz marca: \"".implode('", "', $daPeca).'"');
+                        }
+
+                        continue;
+                    }
+                    $comoMembro++;
+                    $marcadas[$peca]   = true;
+                    $desenhadas[$peca] = true;
+                    if (array_filter($daPeca, static fn (string $linha): bool => mapaDiagramasFaltaNaMarca($linha, $condicao, $idioma) === []) === []) {
+                        $falha($peca, "a linha de {$quem} no card \"{$titulo}\" do agrupamento {$grupo['id']} não traz a marca: ".($daPeca === [] ? 'a linha não está no card' : "\"{$daPeca[0]}\", falta ".implode(', ', mapaDiagramasFaltaNaMarca($daPeca[0], $condicao, $idioma))));
+                    }
+                }
+            }
+            $tituloDasCondicoes = $idioma === 'pt' ? 'Condições de disponibilidade' : 'Availability conditions';
+            $card               = $cards->firstWhere('title', $tituloDasCondicoes);
+            $linhas             = array_map('strval', $card['items'] ?? []);
+            foreach (array_keys($desenhadas) as $peca) {
+                $condicao = (array) mapaDiagramasCondicao($modelo, $peca);
+                $nome     = mapaDiagramasNomeDaPeca($modelo, $peca);
+                $ancora   = [(string) ($condicao['evidencia']['arquivo'] ?? ''), (string) ($condicao['evidencia']['trecho'] ?? '')];
+                $faltaNa  = static fn (string $linha): array => [
+                    ...mapaDiagramasFaltaNaMarca($linha, $condicao, $idioma),
+                    ...array_map(static fn (string $parte): string => "a âncora \"{$parte}\"", array_values(array_filter($ancora, static fn (string $parte): bool => $parte === '' || ! str_contains($linha, $parte)))),
+                ];
+                $daPeca = array_values(array_filter($linhas, static fn (string $linha): bool => mapaDiagramasNomeDaLinha($linha) === $nome));
+                if ($card === null) {
+                    $falha((string) $peca, "desenha {$nome} ({$peca}), peça condicional, e não tem o card \"{$tituloDasCondicoes}\"");
+                } elseif (array_filter($daPeca, static fn (string $linha): bool => $faltaNa($linha) === []) === []) {
+                    $falha((string) $peca, "a linha de {$nome} ({$peca}) no card \"{$tituloDasCondicoes}\" ".($daPeca === [] ? 'não está no card' : "\"{$daPeca[0]}\" não traz a marca e a âncora da condição dela: falta ".implode(', ', $faltaNa($daPeca[0]))));
+                }
+            }
+            $nomesDesenhados = array_map(static fn (string $peca): string => mapaDiagramasNomeDaPeca($modelo, $peca), array_keys($desenhadas));
+            foreach ($linhas as $linha) {
+                $nome = mapaDiagramasNomeDaLinha($linha);
+                if (! in_array($nome, $nomesDesenhados, true)) {
+                    foreach ($idsPorNome[$nome] ?? [''] as $peca) {
+                        $falha((string) $peca, "o card \"{$tituloDasCondicoes}\" lista {$nome} (\"{$linha}\"), que o diagrama não desenha como peça condicional");
+                    }
+                }
+            }
+        }
+    }
+    $porDiagrama = count(array_unique(array_column($falhas, 'diagrama')));
+
+    return [
+        'aceita'      => $falhas === [],
+        'motivo'      => $falhas === [] ? 'aceita' : 'reprova: '.count($falhas)." falha(s) em {$porDiagrama} diagrama(s) — ".implode(' | ', array_slice(array_column($falhas, 'texto'), 0, 12)),
+        'falhas'      => $falhas,
+        'marcadas'    => array_keys($marcadas),
+        'comoNo'      => $comoNo,
+        'comoMembro'  => $comoMembro,
+        'semCondicao' => array_keys($semCondicao),
+        'entradas'    => $entradas,
+    ];
+}
+
+/**
+ * A entrada com a marca da peça onde o `04` a quer: no rótulo secundário do nó, na linha dela no card "Quem está em …"
+ * de cada agrupamento que a nomeia, e no card "Condições de disponibilidade", com a âncora da condição. As opções
+ * tiram um lugar (`no`, `membro` e `condicoes` falsos — o card fica, sem a linha), põem a marca no `tag`, trocam o
+ * texto da marca ou a âncora: a linha de controle adultera um aspecto só.
+ *
+ * @param  array{no?: bool, tag?: bool, membro?: bool, condicoes?: bool, texto?: string, ancora?: array{arquivo: string, trecho: string}}  $opcoes
+ * @param  array<string, string>  $ids
+ */
+function mapaDiagramasMarcada(array $entrada, string $idioma, array $modelo, array $decl, array $ids, string $peca, array $opcoes = []): array
+{
+    $condicao    = mapaDiagramasCondicao($modelo, $peca) ?? throw new InvalidArgumentException("a cópia do modelo não dá condição a {$peca}");
+    $marca       = $opcoes['texto'] ?? mapaDiagramasMarca($condicao, $idioma);
+    $nome        = mapaDiagramasNomeDaPeca($modelo, $peca);
+    $ancora      = $opcoes['ancora'] ?? $condicao['evidencia'];
+    $acrescentar = static fn (?string $texto): string => ($texto ?? '') === '' ? $marca : "{$texto} · {$marca}";
+    $colecao     = mapaDiagramasColecoes()[$entrada['diagram_type']][0];
+    $nos         = array_keys(array_filter(mapaDiagramasPecasDosNos($entrada, $decl, $modelo, $ids), static fn (array $pecas): bool => in_array($peca, $pecas, true)));
+    foreach ($entrada[$colecao] ?? [] as $i => $no) {
+        if (in_array((string) $no['id'], $nos, true)) {
+            if ($opcoes['no'] ?? true) {
+                $entrada[$colecao][$i]['sublabel'] = $acrescentar($no['sublabel'] ?? null);
+            }
+            if ($opcoes['tag'] ?? false) {
+                $entrada[$colecao][$i]['tag'] = $acrescentar($no['tag'] ?? null);
+            }
+        }
+    }
+    $titulos            = ($opcoes['membro'] ?? true) ? array_map(static fn (array $grupo): string => mapaDiagramasTituloDoGrupo($grupo, $idioma), mapaDiagramasGruposDaPeca($decl, $modelo, $peca)) : [];
+    $tituloDasCondicoes = $idioma === 'pt' ? 'Condições de disponibilidade' : 'Availability conditions';
+    if (collect($entrada['cards'] ?? [])->firstWhere('title', $tituloDasCondicoes) === null) {
+        $entrada['cards'][] = ['dot' => 'amber', 'title' => $tituloDasCondicoes, 'items' => []];
+    }
+    foreach ($entrada['cards'] as $i => $card) {
+        if (in_array($card['title'], $titulos, true)) {
+            $entrada['cards'][$i]['items'] = array_map(static fn (string $linha): string => mapaDiagramasNomeDaLinha($linha) === $nome ? "{$linha} — {$marca}" : $linha, $card['items']);
+        }
+        if ($card['title'] === $tituloDasCondicoes && ($opcoes['condicoes'] ?? true)) {
+            $entrada['cards'][$i]['items'][] = "{$nome} — {$marca} — {$ancora['arquivo']} — {$ancora['trecho']}";
+        }
+    }
+
+    return $entrada;
+}
+
+it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da condição, no idioma do diagrama e à vista no carregamento, e a peça sem condição não leva marca', function (string $mundo): void {
+    expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+/');
+
+    $modelo  = modeloDoMapaPorId();
+    $decls   = array_filter(diagramasDoMapa(), static fn (array $decl): bool => $decl['tipo'] !== 'compare');
+    $gerado  = entradasDoGeradorDoMapa();
+    $ids     = $gerado['ids'];
+    $agente  = 'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource';
+    $hub     = 'App\\Filament\\Admin\\Pages\\HubDeAdministracao';
+    $projeto = 'App\\Filament\\App\\Resources\\Projetos\\ProjetoResource';
+    $userApp = 'App\\Filament\\App\\Resources\\Users\\UserResource';
+    $command = 'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource';
+    $chat    = 'App\\Livewire\\AssistenteChatWidget';
+    $plugin  = 'Harvirsidhu\\FilamentCards\\FilamentCardsPlugin';
+
+    if ($mundo === 'publicados') {
+        $resultado = mapaDiagramasConferirMarcas($modelo, $decls, $gerado);
+
+        expect(array_keys($gerado['diagramas']))->toEqualCanonicalizing(array_keys($decls))
+            ->and($resultado['semCondicao'])->toContain($plugin)
+            ->and($resultado['motivo'])->toBe('aceita')
+            ->and($resultado['entradas'])->toBe(2 * count($decls))
+            ->and($resultado['marcadas'])->toContain($command, 'App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel', $chat, 'App\\Livewire\\ChecklistDoOnboarding')
+            ->and($resultado['comoNo'])->toBeGreaterThan(0)
+            ->and($resultado['comoMembro'])->toBeGreaterThan(0);
+
+        return;
+    }
+
+    $arvoreDoAdmin                        = (string) (collect($decls)->first(static fn (array $decl): bool => ($decl['construtor'] ?? null) === 'registro' && ($decl['paineis'] ?? []) === ['admin'])['slug'] ?? '');
+    [$slug, $idioma, $peca, $comCondicao] = match ($mundo) {
+        'a entrada do admin-administracao, com o nó do AgenteIaResource sem a marca',
+        'a mesma entrada, com a marca do AgenteIaResource só no tag'                                                         => ['admin-administracao', 'pt', $agente, [$agente]],
+        'a entrada do admin-resumo, com a linha do AgenteIaResource no card do agrupamento de administração sem a marca',
+        'a entrada do admin-resumo, com o card Condições de disponibilidade sem a linha do AgenteIaResource'                    => ['admin-resumo', 'pt', $agente, [$agente]],
+        'a entrada en do app-registro-com, com a marca do ProjetoResource só com o modo'                                        => ['app-registro-com', 'en', $projeto, [$projeto]],
+        'a entrada en do app-registro-com, com a marca de modo do UserResource do /app em pt'                                   => ['app-registro-com', 'en', $userApp, [$userApp]],
+        'a entrada do admin-acesso-e-autenticacao, com a marca de modo do UserResource do /app no nó do UserResource do /admin' => ['admin-acesso-e-autenticacao', 'pt', 'App\\Filament\\Admin\\Resources\\Users\\UserResource', [$userApp]],
+        'a entrada do admin-registro, com a marca KIT_HUB=false de fábrica no nó do FilamentCardsPlugin'                        => [$arvoreDoAdmin, 'pt', $plugin, [$hub]],
+        'a entrada do infra-infraestrutura-2, com a marca do CommandRecordResource sem o caminho command-center.sources'        => ['infra-infraestrutura-2', 'pt', $command, [$command]],
+        'a entrada do app-registro-sem, com o card listando o UserResource do /app, que o diagrama não desenha'                 => ['app-registro-sem', 'pt', $userApp, [$userApp]],
+        'a entrada do admin-administracao, com a linha do AgenteIaResource no card trazendo a âncora do HubDeAdministracao'     => ['admin-administracao', 'pt', $agente, [$agente, $hub]],
+        'a entrada do app-chat-de-ia, com o participante do chat sem a marca'                                                   => ['app-chat-de-ia', 'pt', $chat, [$chat]],
+        default                                                                                                                 => ['kit-ia', 'pt', $chat, [$chat]],
+    };
+    $copia     = mapaDiagramasModeloComCondicoes($modelo, $comCondicao);
+    $publicada = $gerado['diagramas'][$slug][$idioma];
+    $marcada   = static fn (array $opcoes = [], ?array $entrada = null): array => mapaDiagramasMarcada($entrada ?? $publicada, $idioma, $copia, $decls[$slug], $ids, $peca, $opcoes);
+    $comMarca  = static function (string $marca) use ($publicada, $ids, $peca): array {
+        $colecao = mapaDiagramasColecoes()[$publicada['diagram_type']][0];
+        expect(collect($publicada[$colecao] ?? [])->pluck('id')->all())->toContain($ids[$peca]);
+        foreach ($publicada[$colecao] as $i => $no) {
+            if ($no['id'] === $ids[$peca]) {
+                $publicada[$colecao][$i]['sublabel'] = trim(($no['sublabel'] ?? '').' · '.$marca);
+            }
+        }
+
+        return $publicada;
+    };
+    $semOUserApp = $publicada;
+    if (isset($semOUserApp['nodes'])) {
+        $semOUserApp['nodes'] = array_values(array_filter($semOUserApp['nodes'], static fn (array $no): bool => $no['id'] !== $ids[$userApp]));
+    }
+
+    [$certo, $adulterado, $nomeia] = match ($mundo) {
+        'a entrada do admin-administracao, com o nó do AgenteIaResource sem a marca'                                            => [$marcada(), $marcada(['no' => false]), [$slug, 'AgenteIaResource']],
+        'a mesma entrada, com a marca do AgenteIaResource só no tag'                                                            => [$marcada(), $marcada(['no' => false, 'tag' => true]), [$slug, 'AgenteIaResource', 'tag']],
+        'a entrada do admin-resumo, com a linha do AgenteIaResource no card do agrupamento de administração sem a marca'        => [$marcada(), $marcada(['membro' => false]), [$slug, 'AgenteIaResource', ...array_column(mapaDiagramasGruposDaPeca($decls[$slug], $copia, $peca), 'id')]],
+        'a entrada do admin-resumo, com o card Condições de disponibilidade sem a linha do AgenteIaResource'                    => [$marcada(), $marcada(['condicoes' => false]), [$slug, 'AgenteIaResource']],
+        'a entrada en do app-registro-com, com a marca do ProjetoResource só com o modo'                                        => [$marcada(), $marcada(['texto' => 'tenancy on only']), ['ProjetoResource', 'KIT_DEMO=false by default']],
+        'a entrada en do app-registro-com, com a marca de modo do UserResource do /app em pt'                                   => [$marcada(), $marcada(['texto' => 'só com tenant ativo']), [$slug, $userApp]],
+        'a entrada do admin-acesso-e-autenticacao, com a marca de modo do UserResource do /app no nó do UserResource do /admin' => [$publicada, $comMarca('só com tenant ativo'), [$peca]],
+        'a entrada do admin-registro, com a marca KIT_HUB=false de fábrica no nó do FilamentCardsPlugin'                        => [$publicada, $comMarca('KIT_HUB=false de fábrica'), ['FilamentCardsPlugin']],
+        'a entrada do infra-infraestrutura-2, com a marca do CommandRecordResource sem o caminho command-center.sources'        => [$marcada(), $marcada(['texto' => 'DatabaseSource de fábrica']), ['CommandRecordResource', 'command-center.sources']],
+        'a entrada do app-registro-sem, com o card listando o UserResource do /app, que o diagrama não desenha'                 => [$semOUserApp, $marcada([], $semOUserApp), [$slug, 'UserResource']],
+        'a entrada do admin-administracao, com a linha do AgenteIaResource no card trazendo a âncora do HubDeAdministracao'     => [$marcada(), $marcada(['ancora' => $copia['pecas'][$hub]['disponibilidade']['evidencia']]), ['AgenteIaResource']],
+        'a entrada do app-chat-de-ia, com o participante do chat sem a marca'                                                   => [$marcada(), $marcada(['no' => false]), [$slug, 'AssistenteChatWidget']],
+        default                                                                                                                 => [$marcada(), $marcada(['texto' => 'KIT_AGENTES_IA=false de fábrica']), ['AssistenteChatWidget', 'KIT_AGENTES_IA_PAINEIS']],
+    };
+    $conferir = static fn (array $entrada): array => mapaDiagramasConferirMarcas($copia, [$slug => $decls[$slug]], ['ids' => $ids, 'diagramas' => [$slug => [$idioma => $entrada]]]);
+    $daPeca   = static fn (array $resultado): array => array_column(array_filter($resultado['falhas'], static fn (array $falha): bool => $falha['peca'] === $peca), 'texto');
+
+    // Controle positivo: com a marca onde o 04 a quer, a guarda não acusa a peça — o veredito abaixo vem da adulteração.
+    expect($daPeca($conferir($certo)))->toBe([]);
+    $resultado = $conferir($adulterado);
+
+    expect($resultado['aceita'])->toBeFalse()
+        ->and($daPeca($resultado))->not->toBeEmpty()
+        ->and(implode("\n", $daPeca($resultado)))->toContain(...$nomeia);
+})->with([
+    'publicados',
+    'a entrada do admin-administracao, com o nó do AgenteIaResource sem a marca',
+    'a mesma entrada, com a marca do AgenteIaResource só no tag',
+    'a entrada do admin-resumo, com a linha do AgenteIaResource no card do agrupamento de administração sem a marca',
+    'a entrada en do app-registro-com, com a marca do ProjetoResource só com o modo',
+    'a entrada en do app-registro-com, com a marca de modo do UserResource do /app em pt',
+    'a entrada do admin-acesso-e-autenticacao, com a marca de modo do UserResource do /app no nó do UserResource do /admin',
+    'a entrada do admin-registro, com a marca KIT_HUB=false de fábrica no nó do FilamentCardsPlugin',
+    'a entrada do infra-infraestrutura-2, com a marca do CommandRecordResource sem o caminho command-center.sources',
+    'a entrada do admin-resumo, com o card Condições de disponibilidade sem a linha do AgenteIaResource',
+    'a entrada do app-registro-sem, com o card listando o UserResource do /app, que o diagrama não desenha',
+    'a entrada do admin-administracao, com a linha do AgenteIaResource no card trazendo a âncora do HubDeAdministracao',
+    'a entrada do app-chat-de-ia, com o participante do chat sem a marca',
+    'a entrada do kit-ia, com a marca do chat só com KIT_AGENTES_IA=false de fábrica',
+]);

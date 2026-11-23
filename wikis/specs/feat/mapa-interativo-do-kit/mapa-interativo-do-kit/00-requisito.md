@@ -63,11 +63,15 @@
 | Q7 | Quais "páginas do site" e quais "pacotes instalados" contam como fonte do catálogo? *(step 7, derivação)* | RQ-19, RQ-04, RQ-05 | todas as páginas, cada uma com uma F-nn ou com o motivo de não descrever feature; todos os pacotes que a referência de pacotes instalados lista (produção, desenvolvimento e front), cada um numa F-nn ou numa lista de pacotes sem feature própria, com o motivo — falha fechado | fechada pelo próprio `00`: a RQ-19 diz "páginas do site" e "pacotes instalados" sem recorte — todas as páginas, e todo pacote que os manifestos declaram (`composer.json`: `require` e `require-dev`; `package.json` da aplicação: `dependencies`, `devDependencies` e `optionalDependencies`); a referência de pacotes instalados, a fonte que a Q1 nomeou, lista produção, desenvolvimento e front (`docs/pt/referencia/pacotes-instalados.md`), fora os "avaliados e não adotados" *(alterado em 2026-11-20: a primeira redação limitava a conta ao que a referência lista; a Q16 mostrou que é mais estreito que o texto)* |
 | Q16 | O pacote instalado que a referência de pacotes não lista entra na conta da RQ-19? Na base, quatro estão nos manifestos e fora da referência: `hoceineel/filament-quick-action-dock`, `brianium/paratest`, `icanhazstring/composer-unused` e `maglnet/composer-require-checker` *(step 7, derivação, 2ª rodada)* | RQ-19, RQ-04, P-03 | sim: a guarda reprova o pacote instalado que a referência não lista, e a referência passa a listar os quatro, cada um numa F-nn de origem pacote ou na lista dos sem feature própria, com o motivo — falha fechado | fechada pelo próprio `00`: a RQ-19 diz "pacotes instalados", e instalado é o que os manifestos declaram; a referência é o meio, e está defasada em quatro |
 | Q9 | Como aparece a prova de uma ligação que só existe dentro de um pacote (`vendor/`), como o recurso que um plugin registra? *(step 7, derivação)* | RQ-24, P-04, P-05, P-07 | a prova cita o código do kit; nunca um link que dê 404 — falha fechado | fechada pelo próprio `00`: pela P-07, o link de prova aponta para o commit que publica, e o `vendor/` não está nele; pela RQ-24, o trecho que prova a ligação de uma peça trazida por plugin é, no código versionado do kit, o registro do plugin no painel |
-| Q11 | Peça que o painel registra sempre, mas que só fica disponível com uma chave (as features desligadas por padrão) ou só num modo (a tela de organizações do `/admin`, registrada nos dois modos e aberta só com tenant): o mapa a marca com a condição? Em que diagrama de modo ela entra? *(step 7, derivação)* | RQ-04, RQ-05, RQ-11, P-03, P-09 | marcada com a condição (a chave e o valor de fábrica, ou o modo) em todo diagrama que a desenha, desenhada só nos diagramas do modo em que está disponível, e nunca como sempre disponível — falha fechado | aberta |
+| Q11 | Peça que o painel registra sempre, mas que só fica disponível com uma chave (as features desligadas por padrão) ou só num modo (a tela de organizações do `/admin`, registrada nos dois modos e aberta só com tenant): o mapa a marca com a condição? Em que diagrama de modo ela entra? *(step 7, derivação)* | RQ-04, RQ-05, RQ-11, P-03, P-09 | marcada com a condição (a chave e o valor de fábrica, ou o modo) em todo diagrama que a desenha, desenhada só nos diagramas do modo em que está disponível, e nunca como sempre disponível — falha fechado | respondida no Adendo 2 (a recomendação) |
 | Q12 | Na versão pt, a interface do visualizador fica em português? Os diagramas passam pela conferência de acessibilidade das páginas do site? *(step 7, derivação)* | P-02, RQ-03, RQ-07 | sim às duas — falha fechado | aberta *(alterado em 2026-11-21 — step 11, QA-06: era "assumida como P-11"; a P-11 vale como premissa até a resposta, e vai ao mantenedor no PR, com a tolerância a dois defeitos do archify e a casca em inglês do comparativo)* |
 | Q13 | Feature nova que é variante de outra pode receber sufixo de letra (F-03d), ou recebe o próximo inteiro? *(step 7, derivação)* | P-08, RQ-23 | o próximo inteiro; os sufixos ficam só nos que a base já tem — falha fechado | fechada pelo próprio `00`: a P-08 dá à feature nova "o próximo número livre", e depois da F-71 o próximo é a F-72; um sufixo não é o próximo número |
 | Q23 | A raiz da árvore de registro de um painel leva o nome que o modelo dá à peça painel (`/app`), como toda peça desenhada, ou um formato próprio ("Painel /app" em pt, "Panel /app" em en)? *(step 9, achado A14)* | RQ-24, P-02 | o formato próprio, com o nome tirado do modelo — lê melhor que o nome sozinho | retirada — é de desenho, e não de requisito: virou a D39 do `01` *(alterado em 2026-11-21 — step 11, QA-06; era "decidida pela sessão")* |
 | Q24 | `--tentativas 0`, no posicionador do mapa, é recusado, ou quer dizer "só a grade inicial, sem busca"? *(step 9, achado A6)* | P-14 | recusado — falha fechado: zero tentativas não é busca | retirada — é de desenho, e não de requisito: virou a D40 do `01` *(alterado em 2026-11-21 — step 11, QA-06; era "decidida pela sessão")* |
+| Q27 | O `CommandRecordResource` do /infra só abre com a fonte de banco em `command-center.sources`, que não vem de fábrica: é peça condicional? *(Adendo 2, derivação — Q?1 do analista)* | RQ-27, P-16 | sim, com a marca — falha fechado | respondida no Adendo 3 |
+| Q28 | O widget `AcessosPorPainel`, que nenhum painel registra e que só aparece nas telas de organizações do /admin, herda a condição delas? *(Adendo 2, derivação — Q?2 do analista)* | RQ-27, RQ-28 | sim, herda | respondida no Adendo 3 |
+| Q29 | Plugin ou middleware cujo efeito depende de uma chave leva a marca de peça condicional? *(Adendo 2, derivação — Q?4 do analista)* | RQ-27, P-16 | não: a condição fica na tela que eles servem | respondida no Adendo 3 |
+| Q30 | O chat do assistente de IA (`KIT_AGENTES_IA` e `KIT_AGENTES_IA_PAINEIS`) e o checklist do tutorial guiado (`KIT_ONBOARDING`), componentes flutuantes ligados a chave e desligados de fábrica, levam a marca da condição? *(Adendo 3, fechamento — Q?5 do analista)* | RQ-27, RQ-32 | sim, com a marca — falha fechado | respondida no Adendo 4 |
 
 ## Premissas
 
@@ -89,6 +93,8 @@
 | P-12 | A varredura do código inteiro (RQ-20) tem um piso mecânico: toda peça que um painel registra — recurso, página, widget e plugin —, nos dois modos, e toda classe de `app/` fora de `app/Filament` entrega ao menos uma F-nn do catálogo, ou está numa lista de peças e classes sem feature própria, com o motivo de cada uma. Além desse piso, a completude da varredura não tem garantia, e a página do mapa diz isso | step 7 — revisão adversarial (ADV-33): o piso só no registro dos painéis, decidido como oráculo na Q8, deixava de fora comandos, serviços próprios e middlewares; medido no step 7, 103 das 135 classes de `app/` fora de `app/Filament` já eram peça na varredura do step 3. É uma obrigação permanente do CI sobre toda classe nova, sinalizada no PR | 2026-11-20 | RQ-20, RQ-04, RQ-05 | vigente |
 | P-13 | O que o mapa de arquitetura diz de uma seta ou de uma caixa de agrupamento é o que o modelo dá ao diagrama, no modo dele: o traço da seta nunca anuncia um verbo que nem todas as ligações que ela junta têm; a caixa de agrupamento diz quantas peças nomeia no modo do diagrama, com a palavra no número certo, nos dois idiomas; e caixa de agrupamento sem membro no modo do diagrama não é desenhada | step 9 — achados A1 e A5 da revisão do diff: a seta que junta ligações de verbos diferentes leva o traço da primeira ligação do modelo (medido no commit `168d1827`: 51 setas em 13 mapas), a caixa de um membro diz "1 peças" / "1 pieces", e o filtro de modo pode esvaziar uma caixa, que sairia com "0 peças". A legenda e os itens de prova dizem o verbo certo, mas o traço diz outro, e o leitor lê o traço | 2026-11-21 | RQ-08, RQ-24, P-10, P-02 | vigente |
 | P-14 | As ferramentas do mapa — o gerador, no build e na mão do autor, o posicionador e o conferidor — falham fechado e dizem por quê: conferem os argumentos, a pasta de saída e os arquivos de entrada antes de qualquer efeito (apagar, baixar o archify, renderizar ou gravar); não apagam nem sobrescrevem o que não geraram, e recusam a pasta de saída que já tem arquivo que elas não geraram; recusam o argumento sem valor válido, em vez de assumir um; não terminam com código 0 sem ter feito o que o comando pediu, qualquer que seja o caminho pelo qual são chamadas; e todo erro nomeia, com o prefixo `[mapa]`, o arquivo, a pasta ou o argumento que o causou. *(alterado em 2026-11-21 — step 10)* "Os arquivos de entrada" inclui o que eles citam: a prova de cada ligação e de cada peça resolve no código antes de qualquer efeito. Uma exceção: o layout, que só o archify confere, e só ao renderizar — a recusa dele para a ferramenta, com o diagrama nomeado | step 9 — achados A2, A4, A6 e A11 da revisão do diff: `--saida` sem slug apaga a pasta inteira que o autor passou; chamado por um caminho que passa por um link, o gerador termina com código 0 sem gerar nada (medido no Windows por junção, sem privilégio); `--tentativas` sem número vira zero tentativas; e o JSON quebrado de um diagrama ou do modelo reprova com a mensagem do `JSON.parse`, sem o arquivo. Uma ferramenta que apaga, cala ou culpa o arquivo errado custa retrabalho a quem escreve diagramas e deixa o build publicar sem o mapa | 2026-11-21 | P-07, P-03, RQ-17 | vigente |
+| P-15 | A peça condicionada por chave entra nos diagramas dos modos em que fica disponível com a chave ligada, marcada com a chave e o valor de fábrica: "disponível", na RQ-28, se lê com a chave ligada, e a marca diz que de fábrica ela não está | Adendo 2 — a resposta pede a marca da chave e do valor de fábrica, e uma peça desligada de fábrica não está disponível em modo nenhum; sem esta leitura, a feature desligada sumiria do mapa | 2026-11-23 | RQ-27, RQ-28 | vigente — sinalizada no PR |
+| P-16 | Condição é o modo ou a chave de configuração do kit: a peça que só pede permissão ou papel não é condicional, nem a que só esconde o item de navegação; e a chave ligada de fábrica não marca a peça *(alterado em 2026-11-23 — Adendo 3: a configuração de pacote também conta como chave, RQ-30)* | Adendo 2 — a Q11 fala da feature desligada por padrão e da tela aberta só num modo; a permissão é de quem usa, e não do kit | 2026-11-23 | RQ-27 | vigente — sinalizada no PR |
 
 ## Adendo 1 — 2026-11-20
 
@@ -122,6 +128,72 @@
 | RQ-24 | Módulo é toda peça com nome — painel, recurso, página, widget, plugin de pacote, provider, middleware, serviço próprio e model —, e ligação é o uso de uma pela outra, com o trecho de código que a prova | "Painel, recurso, página, widget, plugin de pacote, provider, middleware, serviço próprio e model; ligação = uso de um pelo outro, com o trecho de código que prova." | funcional | RQ-08 (parcial) |
 | RQ-25 | Os tipos de visualização são os dez nativos do archify e o comparativo de arquitetura sem/com tenant, somados aos Mermaid existentes; nenhuma dependência nova de visualização além do archify | "Os dez tipos nativos do archify e o comparativo de arquitetura (sem/com tenant), somados aos Mermaid que o site já tem. Nenhuma dependência nova além do archify." | restrição | RQ-06 (parcial), RQ-07 (parcial) |
 | RQ-26 | O fim da implementação é o PR aberto com o CI verde; merge e release só acontecem com um OK explícito do mantenedor | "Eu abro o PR e deixo o CI verde; merge e release só com o seu OK" | restrição | RQ-14 (parcial) |
+
+## Adendo 2 — 2026-11-23
+
+- **Fonte**: resposta do mantenedor à Q11, no diálogo de perguntas do Claude Code, pela opção escolhida, depois do QA ciclo 1 (achado QA-01)
+- **Fidelidade**: alta (opção escolhida; a pergunta e as opções abaixo são as que o mantenedor viu)
+- **Responde a**: Q11
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> **A pergunta, como o mantenedor a viu** — "Mapa interativo, Q11 (bloqueia o PR): o `TenantResource` do /admin é registrado nos dois modos, mas só abre com tenant (o `canAccess` exige `kit.tenancy.enabled`); o `HubDeAdministracao` é registrado, mas vem desligado (`KIT_HUB=false`). Hoje o mapa desenha os dois sem marca, nos diagramas do /admin compartilhados entre os modos. O QA independente reprovou, porque isso escolhe uma resposta para a Q11, que está aberta. Como o mapa deve tratar a peça registrada, mas indisponível?"
+>
+> **Q11** — "Marca e só no modo (Recomendado)" — opção: "A recomendação da Q11, que falha fechado. A peça leva a marca da condição (o modo, ou a chave e o valor de fábrica) e só entra no diagrama do modo em que está disponível: o /admin ganha diagramas separados sem e com tenant, e o TenantResource fica só no com. É o maior trabalho: a condição no modelo, a marca no gerador, mapas reposicionados e CTs novos."
+>
+> As opções não escolhidas foram "Onde registra, com marca" e "Onde registra, sem marca".
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-27 | A peça que o painel registra, mas que só fica disponível num modo ou com uma chave, leva a marca da condição — o modo, ou a chave e o valor de fábrica — em todo diagrama que a desenha | "A peça leva a marca da condição (o modo, ou a chave e o valor de fábrica)" | funcional | — |
+| RQ-28 | Essa peça só entra no diagrama do modo em que está disponível; nenhum diagrama a mostra como sempre disponível | "e só entra no diagrama do modo em que está disponível" | funcional | — |
+| RQ-29 | O /admin ganha diagramas separados sem e com tenant, e o `TenantResource` fica só nos de com | "o /admin ganha diagramas separados sem e com tenant, e o TenantResource fica só no com" | funcional | RQ-11 (parcial), P-09 (parcial) |
+
+## Adendo 3 — 2026-11-23
+
+- **Fonte**: respostas do mantenedor às perguntas Q27, Q28 e Q29, no diálogo de perguntas do Claude Code, pela opção escolhida; as três nasceram da derivação dos casos de teste do Adendo 2
+- **Fidelidade**: alta (opções escolhidas; as perguntas e as opções abaixo são as que o mantenedor viu)
+- **Responde a**: Q27, Q28, Q29
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> **Q27, como o mantenedor a viu** — "Mapa interativo, peça condicional (continua a Q11): o `CommandRecordResource` do /infra, do pacote command-center, é registrado nos dois modos, mas só abre quando a configuração `command-center.sources` inclui a fonte de banco, o que não vem de fábrica. Ele conta como peça condicional, com a marca e a mesma regra das chaves do kit?" — opção: "Sim, com a marca (Recomendado)": "Tratado como chave: a marca diz a configuração e o valor de fábrica, e ele entra nos diagramas como as peças de chave do kit. Falha fechado: nunca aparece como sempre disponível."
+>
+> **Q28, como o mantenedor a viu** — "Mapa interativo: o widget `AcessosPorPainel` não é registrado por painel. Ele aparece dentro das telas de organizações do /admin, que só abrem com tenant. Ele herda a condição dessas telas, isto é, leva a marca e só entra nos diagramas com tenant?" — opção: "Sim, herda (Recomendado)": "A peça que só aparece dentro de uma tela condicional herda a condição dela: marca e só nos diagramas com tenant."
+>
+> **Q29, como o mantenedor a viu** — "Mapa interativo: plugin ou middleware cujo efeito depende de uma chave também leva a marca de peça condicional? Exemplos: o `FilamentCardsPlugin` dos hubs (KIT_HUB) e o middleware `ExigeTutorialGuiadoLigado` (KIT_ONBOARDING)." — opção: "Não, só telas e widgets (Recomendado)": "A condição fica na tela que eles servem, que já leva a marca. Plugin e middleware são desenhados sem marca."
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-30 | A configuração de pacote que deixa a peça indisponível de fábrica conta como chave: a peça leva a marca com a configuração e o valor de fábrica, e nunca aparece como sempre disponível | "Tratado como chave: a marca diz a configuração e o valor de fábrica" | funcional | P-16 (parcial) |
+| RQ-31 | A peça que só aparece dentro de uma tela condicional herda a condição dela: leva a marca e só entra nos diagramas do modo em que a tela está disponível | "A peça que só aparece dentro de uma tela condicional herda a condição dela" | funcional | — |
+| RQ-32 | Plugin e middleware não levam a marca de peça condicional: a condição fica na tela que eles servem | "Plugin e middleware são desenhados sem marca." | restrição | — |
+
+## Adendo 4 — 2026-11-23
+
+- **Fonte**: resposta do mantenedor à Q30, no diálogo de perguntas do Claude Code, pela opção escolhida; a pergunta nasceu do fechamento dos casos de teste do Adendo 3
+- **Fidelidade**: alta (opção escolhida; a pergunta e as opções abaixo são as que o mantenedor viu)
+- **Responde a**: Q30
+
+### Texto Original
+
+<!-- IMUTÁVEL, mesmo regime do Texto Original acima. -->
+
+> **Q30, como o mantenedor a viu** — "Mapa interativo, peça condicional: dois componentes flutuantes ligados a chave não são tela nem widget de painel. O chat do assistente de IA depende de `KIT_AGENTES_IA` e do painel listado em `KIT_AGENTES_IA_PAINEIS`; o checklist do tutorial guiado, de `KIT_ONBOARDING`. Os dois vêm desligados de fábrica e hoje aparecem sem marca nos diagramas do kit inteiro. Eles também levam a marca da condição?" — opção: "Sim, com a marca (Recomendado)": "Falha fechado: os dois levam a marca da chave e do valor de fábrica (o chat, as duas chaves), como as telas condicionais, e nunca aparecem como sempre disponíveis."
+
+### Decomposição
+
+| ID | Cláusula | Trecho literal | Tipo | Substitui |
+|----|----------|----------------|------|-----------|
+| RQ-33 | O componente flutuante ligado a chave (o chat do assistente de IA e o checklist do tutorial guiado) leva a marca da chave e do valor de fábrica, como as telas condicionais — o chat, as duas chaves —, e nunca aparece como sempre disponível | "os dois levam a marca da chave e do valor de fábrica (o chat, as duas chaves), como as telas condicionais, e nunca aparecem como sempre disponíveis" | funcional | RQ-32 (parcial) |
 
 ## Fora de Escopo (declarado)
 

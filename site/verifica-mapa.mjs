@@ -8,8 +8,11 @@
  *
  * O que ele prova (`05-casos-de-teste-browser.md`), com o ID na mensagem de cada reprovação:
  *  - CT-B01  cada diagrama abre com as peças e os rótulos da fonte, a busca montada, a F-nn no desenho,
- *            sem erro, sem exceção e sem recurso de fora;
- *  - CT-B02  cada ligação desenhada tem o item de prova, inteiro e à vista, e as arestas são as da fonte;
+ *            sem erro, sem exceção e sem recurso de fora; e (passo 4, Adendos 2 a 4) cada peça condicional
+ *            desenhada mostra no carregamento a marca da condição do modelo, e o card "Condições de
+ *            disponibilidade" tem uma linha por peça condicional desenhada;
+ *  - CT-B02  cada ligação desenhada tem o item de prova, inteiro e à vista, e as arestas são as da fonte —
+ *            a peça entra no diagrama do modo pela condição do modelo, e a ligação dela também;
  *  - CT-B03  a busca acha a peça da amostra, e o passaporte tem o link para a linha, no commit do build;
  *  - CT-B04  a interface do visualizador fala o idioma da página;
  *  - CT-B05  AMOSTRA de acessibilidade (axe): um HTML do mapa por tipo, idioma e tema, mais o
@@ -101,6 +104,118 @@ const amostra = [...representantes].flatMap(([tipo, slug]) =>
 /** Id do modelo (FQCN, `painel:app`) no id do desenho: o que o `data-node-id` leva. */
 const idNoDesenho = (id) => id.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^[^a-zA-Z]+/, 'x-');
 
+// ---------------------------------------------------------------------------------------------------
+// A peça condicional (Adendos 2, 3 e 4): a condição do modelo, o lugar e a marca
+// ---------------------------------------------------------------------------------------------------
+/**
+ * A redação decidida da marca (Q?3 do `04`, decidida pela sessão no Adendo 3 e confirmada no Adendo 4): o modo pelo
+ * termo da grade, a chave pela variável e pelo valor de fábrica, a configuração de pacote pelo caminho e pela fonte
+ * que falta de fábrica, e a composta, as duas. O separador entre as partes não foi fixado, e por isso a marca se
+ * confere pelas partes.
+ */
+const MARCA_DO_MODO = { com: { pt: 'só com tenant ativo', en: 'tenancy on only' } };
+const DE_FABRICA = { pt: 'de fábrica', en: 'by default' };
+const CARD_DE_CONDICOES = { pt: 'Condições de disponibilidade', en: 'Availability conditions' };
+const CARD_DO_AGRUPAMENTO = { pt: 'Quem está em', en: 'Who is in' };
+
+const eVariavelDoKit = (chave) => /^[A-Z][A-Z0-9_]*$/.test(chave);
+const eCaminhoDeConfiguracao = (chave) => /^[a-z][\w-]*(?:\.[\w-]+)+$/.test(chave);
+const nomeCurto = (valor) => String(valor).replace(/::class$/, '').split('\\').pop();
+
+/**
+ * A condição que o modelo dá à peça (R30): o campo `disponibilidade`, o que a guarda da R37 lê
+ * (`tests/Kit/MapaInterativoTest.php`, `mapaModeloMarcasDeDisponibilidade`), numa forma só: `modo` (`com`), `chaves` —
+ * uma por chave, ligadas juntas, cada uma com `chave`, o valor de fábrica `padrao` e, na configuração de pacote, o valor
+ * que a liga (`ligada`) — e a âncora do código que decide (`evidencia`, com `arquivo` e `trecho`). Sem o campo, `null`; na forma que o conferidor não sabe
+ * ler, `{ erro }` — falha fechado: o esperado da marca sai daqui, e nunca do HTML.
+ */
+function condicaoDaPeca(peca) {
+  const bruta = peca?.disponibilidade;
+  if (bruta === undefined || bruta === null) {
+    return null;
+  }
+  const campos = typeof bruta === 'object' ? Object.keys(bruta).join(', ') : typeof bruta;
+  const { modo = null, evidencia = null } = bruta;
+  const chaves = bruta.chaves ?? [];
+  const problemas = [];
+  if (modo !== null && (typeof modo !== 'string' || !Object.hasOwn(MARCA_DO_MODO, modo))) {
+    problemas.push(`o modo ${JSON.stringify(modo)} não tem redação decidida`);
+  }
+  if (!Array.isArray(chaves)) {
+    problemas.push('chaves não é lista');
+  } else {
+    for (const item of chaves) {
+      if (eVariavelDoKit(item?.chave ?? '') && !Object.hasOwn(item, 'padrao')) {
+        problemas.push(`a chave ${item.chave} sem o valor de fábrica (padrao)`);
+      } else if (eCaminhoDeConfiguracao(item?.chave ?? '') && [item.ligada ?? []].flat().length === 0) {
+        problemas.push(`a configuração ${item.chave} sem o valor que a liga (ligada)`);
+      } else if (!eVariavelDoKit(item?.chave ?? '') && !eCaminhoDeConfiguracao(item?.chave ?? '')) {
+        problemas.push(`a chave ${JSON.stringify(item?.chave)} não é variável KIT_* nem caminho de configuração`);
+      }
+    }
+  }
+  if (modo === null && Array.isArray(chaves) && chaves.length === 0) {
+    problemas.push('nem modo nem chave');
+  }
+  if (typeof evidencia?.arquivo !== 'string' || typeof evidencia?.trecho !== 'string') {
+    problemas.push('sem a âncora (evidencia.arquivo e evidencia.trecho)');
+  }
+  if (problemas.length > 0) {
+    return { erro: `a condição de ${peca.nome} (${peca.id}) no modelo não se lê — disponibilidade: {${campos}}: ${problemas.join('; ')}` };
+  }
+  return { modo, chaves, evidencia };
+}
+
+/** As partes que a marca da condição tem de trazer, no idioma da página: a redação decidida. */
+function partesDaMarca(condicao, idioma) {
+  const partes = condicao.modo ? [MARCA_DO_MODO[condicao.modo][idioma]] : [];
+  const [unica] = condicao.chaves;
+  if (condicao.chaves.length === 1 && eVariavelDoKit(unica.chave) && typeof unica.padrao === 'boolean') {
+    return [...partes, `${unica.chave}=${unica.padrao} ${DE_FABRICA[idioma]}`];
+  }
+  for (const { chave, padrao, ligada } of condicao.chaves) {
+    if (eVariavelDoKit(chave)) {
+      partes.push(typeof padrao === 'boolean' ? `${chave}=${padrao}` : chave);
+    } else {
+      // a configuração de pacote: o caminho e a fonte que falta de fábrica (o que a ligada tem e o padrão não)
+      const deFabrica = [padrao ?? []].flat().map(nomeCurto);
+      partes.push(chave, ...[ligada].flat().map(nomeCurto).filter((nome) => !deFabrica.includes(nome)));
+    }
+  }
+  return condicao.chaves.length ? [...partes, DE_FABRICA[idioma]] : partes;
+}
+
+/** As partes que faltam no texto, sem contar espaço: o rótulo secundário quebra a linha (tspan) onde quiser. */
+const semEspaco = (valor) => String(valor ?? '').replace(/\s+/g, '');
+const partesQueFaltam = (texto_, partes) => partes.filter((parte) => !semEspaco(texto_).includes(semEspaco(parte)));
+/** A linha que começa pelo nome da peça, sem pegar o nome mais comprido que começa igual. */
+const comecaPeloNome = (linha, nome) => linha.startsWith(nome) && !/^[\p{L}\p{N}_]/u.test(linha.slice(nome.length));
+
+/**
+ * Entrar no diagrama de um modo (Setup Global do `04`, Adendos 2 e 3): a peça entra no diagrama só quando é registrada
+ * em cada modo dele e fica disponível em cada um, com a chave ligada (P-15) — pela condição do MODELO, nunca pelo
+ * código vivo. A condição só de chave não tira a peça de modo nenhum; a de modo a tira do outro. O diagrama
+ * compartilhado vale nos dois modos.
+ */
+const disponivelNoModo = (peca, modo) => {
+  const condicao = condicaoDaPeca(peca);
+  return condicao === null || condicao.erro !== undefined || condicao.modo === null || condicao.modo === modo;
+};
+const entraNosModos = (peca, modos) => Boolean(peca) && modos.every((modo) => (peca.registrada ?? []).includes(modo) && disponivelNoModo(peca, modo));
+
+/** A peça condicional desenhada, como o passo 4 do CT-B01 a espera: o nó (pelo id do desenho) ou a linha do membro. */
+const condicional = (peca, id, onde, extra = {}) => {
+  const condicao = condicaoDaPeca(peca);
+  return condicao === null || condicao.erro !== undefined ? [] : [{ peca: peca.id, id, nomes: [peca.nome], condicao, onde, ...extra }];
+};
+
+/** No diagrama escrito à mão, as peças do modelo que o nó é: a do nome exato do rótulo, ou a cuja classe a prova do nó declara (Adendo 4). */
+const declaraAClasse = (trecho, id) => new RegExp(`\\b(?:class|interface|trait|enum)\\s+${nomeCurto(id)}\\b`).test(trecho ?? '');
+const pecasDoNo = (no, rotulo) =>
+  [...pecasDoModelo.values()].filter(
+    (p) => p.nome === rotulo || (no.sources ?? []).some((s) => p.evidencia.some((e) => e.arquivo === s.arquivo) && declaraAClasse(s.trecho, p.id)),
+  );
+
 /** A coleção de peças de cada tipo, e o campo do rótulo nela. */
 const COLECAO_DE_PECAS = {
   architecture: 'components',
@@ -151,7 +266,8 @@ const NOME_DO_TIPO_NA_LEGENDA = {
  *  ligacoes   — [{ origem, destino, arquivo, trecho }] uma por ligação desenhada;
  *  pares      — Set de "de→para" das arestas (só `architecture`), ou null;
  *  comFeature — [{ id, nome, features }] as peças com nó próprio que entregam feature (só os construídos);
- *  tipos      — os tipos de peça do modelo que o mapa de arquitetura desenha.
+ *  tipos      — os tipos de peça do modelo que o mapa de arquitetura desenha;
+ *  condicionais — [{ peca, id, nomes, condicao, onde, grupo? }] as peças condicionais desenhadas, como nó ou como membro.
  */
 function esperadoDoDiagrama(d, idioma) {
   if (d.construtor === 'registro') {
@@ -164,6 +280,11 @@ function esperadoDoDiagrama(d, idioma) {
   const colecao = d[COLECAO_DE_PECAS[d.tipo]] ?? [];
   const campo = CAMPO_DO_ROTULO[d.tipo] ?? 'label';
   const pecas = colecao.map((peca) => ({ id: peca.id, rotulo: texto(peca[campo], idioma) }));
+  // no escrito à mão, a marca é escrita no arquivo, e o esperado dela sai da condição do modelo
+  const condicionais = colecao.flatMap((no) => {
+    const rotulo = texto(no[campo], idioma);
+    return pecasDoNo(no, rotulo).flatMap((peca) => condicional(peca, no.id, 'no').map((c) => ({ ...c, nomes: [...new Set([peca.nome, rotulo])] })));
+  });
   const rotuloDe = new Map(pecas.map(({ id, rotulo }) => [id, rotulo]));
   const lista = COLECAO_DE_LIGACOES[d.tipo] ? (d[COLECAO_DE_LIGACOES[d.tipo]] ?? []) : [];
   const ligacoes = lista.map((ligacao) => ({
@@ -180,13 +301,15 @@ function esperadoDoDiagrama(d, idioma) {
     pares: d.tipo === 'architecture' ? new Set(lista.map((l) => `${l.from}→${l.to}`)) : null,
     comFeature: [],
     tipos: new Set(),
+    condicionais,
   };
 }
 
 /** O mapa de arquitetura construído: o recorte do arquivo, as ligações do modelo no painel e no modo. */
 function esperadoDoMapa(d, idioma) {
   const modos = d.modos;
-  const existe = (id) => (pecasDoModelo.get(id)?.registrada ?? []).some((modo) => modos.includes(modo));
+  // a peça que a condição do modelo deixa fora de um modo do diagrama não é esperada, nem as ligações dela (Adendo 2)
+  const existe = (id) => entraNosModos(pecasDoModelo.get(id), modos);
   const desenhadas = d.pecas.filter(({ id }) => existe(id)).map(({ id }) => pecasDoModelo.get(id));
   // A caixa que o filtro de modo esvazia não é desenhada (P-13), e o esperado também não a pede.
   const agrupamentos = (d.agrupamentos ?? []).map((g) => ({ ...g, membros: g.membros.filter(existe) })).filter((g) => g.membros.length);
@@ -225,6 +348,10 @@ function esperadoDoMapa(d, idioma) {
     pares,
     comFeature: desenhadas.filter((p) => p.features.length).map((p) => ({ id: idNoDesenho(p.id), nome: p.nome, features: p.features })),
     tipos: new Set(desenhadas.map((p) => p.tipo)),
+    condicionais: [
+      ...desenhadas.flatMap((p) => condicional(p, idNoDesenho(p.id), 'no')),
+      ...agrupamentos.flatMap((g) => g.membros.flatMap((membro) => condicional(pecasDoModelo.get(membro), membro, 'membro', { grupo: texto(g.rotulo, idioma) }))),
+    ],
   };
 }
 /**
@@ -235,10 +362,12 @@ function esperadoDoMapa(d, idioma) {
  */
 function esperadoDaArvore(d) {
   const [painel] = d.paineis;
-  const [modo] = d.modos;
   const raiz = `painel:${painel}`;
   const nomeDaRaiz = pecasDoModelo.get(raiz)?.nome;
-  const registros = ligacoesDoModelo.filter((l) => l.de === raiz && l.verbo === 'registra' && l.modos.includes(modo));
+  // o registro do painel em cada modo da árvore, menos a peça que a condição do modelo deixa fora de um deles (Adendo 2)
+  const registros = ligacoesDoModelo.filter(
+    (l) => l.de === raiz && l.verbo === 'registra' && d.modos.every((modo) => l.modos.includes(modo) && disponivelNoModo(pecasDoModelo.get(l.para), modo)),
+  );
   const registradas = [...new Map(registros.map((l) => [l.para, pecasDoModelo.get(l.para)])).values()];
 
   return {
@@ -255,6 +384,7 @@ function esperadoDaArvore(d) {
     pares: null,
     comFeature: registradas.filter((p) => p.features.length).map((p) => ({ id: idNoDesenho(p.id), nome: p.nome, features: p.features })),
     tipos: new Set(),
+    condicionais: registradas.flatMap((p) => condicional(p, idNoDesenho(p.id), 'no')),
   };
 }
 
@@ -472,6 +602,7 @@ function lerPagina() {
 
   const itens = [...document.querySelectorAll('.reader-rail .card li')].map((li) => ({
     t: li.textContent.replace(/\s+/g, ' ').trim(),
+    card: li.closest('.card')?.querySelector('.card-header h3')?.textContent.replace(/\s+/g, ' ').trim() ?? null,
     aVista: visivel(li),
     cortado: li.scrollWidth > li.clientWidth + 1,
   }));
@@ -646,6 +777,96 @@ function conferirLegenda(rotulo, idioma, esperado, leitura) {
       reprovar('CT-B04', `${rotulo} — a legenda (${idioma}) não traz o nome ${JSON.stringify(nome)} do tipo ${tipo}: ${JSON.stringify(leitura.legenda)}`);
     }
   }
+}
+
+/**
+ * CT-B01, passo 4 (Adendos 2, 3 e 4): no carregamento — sem clicar em `[data-view="in"]`, sem busca e sem foco —, cada
+ * peça condicional desenhada mostra a marca da condição do modelo, no idioma da página: no nó, no rótulo secundário
+ * (`[data-detail="context"]`), com opacidade efetiva 1; no membro de agrupamento, na linha dele no card "Quem está em …",
+ * à vista e inteira. E o card "Condições de disponibilidade" tem uma linha por peça condicional desenhada, com a marca
+ * e a âncora do modelo, à vista e inteira, e nenhuma a mais (R44).
+ */
+async function conferirCondicoes(pagina, rotulo, idioma, esperado, leitura) {
+  const nos = esperado.condicionais.filter((c) => c.onde === 'no');
+  const ler = () =>
+    pagina.evaluate((ids) => {
+      const efetiva = (el) => {
+        let o = 1;
+        for (let e = el; e && e.nodeType === 1; e = e.parentElement) {
+          o *= parseFloat(getComputedStyle(e).opacity);
+        }
+        return o;
+      };
+      return ids.map((id) => {
+        const no = [...document.querySelectorAll('svg [data-node-id]')].find((n) => n.dataset.nodeId === id);
+        const secundarios = no ? [...no.querySelectorAll('[data-detail="context"]')] : [];
+        return {
+          id,
+          achado: Boolean(no),
+          secundarios: secundarios.map((el) => ({ texto: el.textContent, opacidade: efetiva(el), visivel: el.checkVisibility({ checkVisibilityCSS: true }) })),
+        };
+      });
+    }, [...new Set(nos.map((c) => c.id))]);
+
+  // a espera é por estado: a entrada do desenho anima a opacidade, e o rótulo secundário com a marca chega a 1
+  const comMarca = (medidas) =>
+    nos.map((c) => ({ c, medida: medidas.find((m) => m.id === c.id), partes: partesDaMarca(c.condicao, idioma) })).map((x) => ({
+      ...x,
+      alvo: x.medida?.secundarios.find((s) => partesQueFaltam(s.texto, x.partes).length === 0) ?? null,
+    }));
+  let medidas = nos.length ? await ler() : [];
+  for (let i = 0; i < 20 && comMarca(medidas).some(({ alvo }) => alvo && alvo.opacidade !== 1); i++) {
+    await duasPinturas(pagina);
+    medidas = await ler();
+  }
+  for (const { c, medida, partes, alvo } of comMarca(medidas)) {
+    const nome = `${c.nomes[0]} (${c.id})`;
+    if (!medida?.achado) {
+      continue; // a falta do nó já reprovou em conferirPecas
+    }
+    if (!alvo) {
+      const lido = medida.secundarios.map((s) => `${JSON.stringify(norm(s.texto))} (opacidade ${s.opacidade})`).join(', ') || 'nenhum';
+      const faltam = partesQueFaltam(medida.secundarios.map((s) => s.texto).join(' '), partes);
+      reprovar('CT-B01', `${rotulo} — passo 4: o nó da peça condicional ${nome} não mostra no rótulo secundário a marca da condição do modelo; falta ${JSON.stringify(faltam.length ? faltam : partes)}; o rótulo secundário lido: ${lido}`);
+    } else if (alvo.opacidade !== 1 || !alvo.visivel) {
+      reprovar('CT-B01', `${rotulo} — passo 4: a marca da peça condicional ${nome} está no rótulo secundário com opacidade ${alvo.opacidade}${alvo.visivel ? '' : ', oculto'} no carregamento, e devia estar à vista (1)`);
+    }
+  }
+  contar('CT-B01:condição', nos.length);
+
+  for (const c of esperado.condicionais.filter((x) => x.onde === 'membro')) {
+    const titulo = `${CARD_DO_AGRUPAMENTO[idioma]} ${c.grupo}`;
+    const linha = leitura.itens.find((item) => item.card === titulo && comecaPeloNome(item.t, c.nomes[0]));
+    const partes = partesDaMarca(c.condicao, idioma);
+    if (!linha) {
+      reprovar('CT-B01', `${rotulo} — passo 4: o card ${JSON.stringify(titulo)} não tem a linha do membro condicional ${c.nomes[0]}`);
+    } else if (partesQueFaltam(linha.t, partes).length > 0) {
+      reprovar('CT-B01', `${rotulo} — passo 4: a linha ${JSON.stringify(linha.t)} do card ${JSON.stringify(titulo)} não traz a marca da condição do modelo; falta ${JSON.stringify(partesQueFaltam(linha.t, partes))}`);
+    } else if (!linha.aVista || linha.cortado) {
+      reprovar('CT-B01', `${rotulo} — passo 4: a linha ${JSON.stringify(linha.t)} do card ${JSON.stringify(titulo)} não está à vista e inteira sem foco`);
+    }
+    contar('CT-B01:condição');
+  }
+
+  // o card "Condições de disponibilidade": uma linha por peça condicional desenhada, e nenhuma a mais
+  const titulo = CARD_DE_CONDICOES[idioma];
+  const linhas = leitura.itens.filter((item) => item.card === titulo);
+  const pecas = [...new Map(esperado.condicionais.map((c) => [c.peca, c])).values()];
+  for (const c of pecas) {
+    const partes = [...partesDaMarca(c.condicao, idioma), c.condicao.evidencia.arquivo, norm(c.condicao.evidencia.trecho)];
+    const linha = linhas.find((item) => c.nomes.some((nome) => comecaPeloNome(item.t, nome)) && item.t.includes(c.condicao.evidencia.arquivo));
+    if (!linha) {
+      reprovar('CT-B01', `${rotulo} — passo 4: o card ${JSON.stringify(titulo)} não tem a linha da peça condicional ${c.nomes[0]}, com a âncora ${c.condicao.evidencia.arquivo}`);
+    } else if (partesQueFaltam(linha.t, partes).length > 0) {
+      reprovar('CT-B01', `${rotulo} — passo 4: a linha ${JSON.stringify(linha.t)} do card ${JSON.stringify(titulo)} não traz a condição e a âncora do modelo; falta ${JSON.stringify(partesQueFaltam(linha.t, partes))}`);
+    } else if (!linha.aVista || linha.cortado) {
+      reprovar('CT-B01', `${rotulo} — passo 4: a linha ${JSON.stringify(linha.t)} do card ${JSON.stringify(titulo)} não está à vista e inteira sem foco`);
+    }
+  }
+  if (linhas.length !== pecas.length) {
+    reprovar('CT-B01', `${rotulo} — passo 4: o card ${JSON.stringify(titulo)} tem ${linhas.length} linhas, e o diagrama desenha ${pecas.length} peças condicionais`);
+  }
+  contar('CT-B01:card', pecas.length);
 }
 
 /**
@@ -826,7 +1047,8 @@ function conferirPassaporte(rotulo, peca, passaporte) {
 
 /** A amostra do CT-B03 num diagrama `architecture`: a primeira peça de pacote e a primeira do kit, pelo modelo. */
 function amostraDePassaporte(d) {
-  const pecas = d.pecas.map(({ id }) => pecasDoModelo.get(id)).filter((p) => p && (p.registrada ?? []).some((modo) => d.modos.includes(modo)));
+  // a mesma regra de entrar no diagrama do modo: a amostra não pode cair numa peça que o desenho certo não tem
+  const pecas = d.pecas.map(({ id }) => pecasDoModelo.get(id)).filter((p) => entraNosModos(p, d.modos));
   const pacote = pecas.find((p) => p.origem === 'pacote');
   const kit = pecas.find((p) => p.origem.includes('proprio'));
   return { pacote, kit };
@@ -946,6 +1168,9 @@ async function conferirDiagrama(navegador, d, idioma, resumo) {
       conferirLegenda(rotulo, idioma, esperado, leitura);
     }
     contar('CT-B04');
+
+    // a marca da peça condicional no carregamento, antes de qualquer zoom, busca ou foco (passo 4)
+    await conferirCondicoes(pagina, rotulo, idioma, esperado, leitura);
 
     // a F-nn no desenho, antes de focar peça: o foco esmaece as outras peças, e o zoom não atrapalha a busca
     await conferirFeatures(pagina, rotulo, d, esperado, leitura);
@@ -1343,6 +1568,15 @@ function conferirCatalogoPt() {
 // Execução
 // ---------------------------------------------------------------------------------------------------
 const resumo = { abertos: { pt: 0, en: 0 }, pacote: { pt: 0, en: 0 }, kit: { pt: 0, en: 0 } };
+
+// a condição do modelo que o conferidor não sabe ler reprova uma vez, nomeando a peça (falha fechado)
+for (const peca of pecasDoModelo.values()) {
+  const condicao = condicaoDaPeca(peca);
+  if (condicao?.erro) {
+    reprovar('CT-B01', `passo 4: ${condicao.erro}`);
+  }
+}
+
 const navegador = await chromium.launch();
 
 for (const idioma of IDIOMAS) {
@@ -1379,6 +1613,16 @@ for (const idioma of IDIOMAS) {
 if (conferencias['CT-B01:F-nn'] === undefined && diagramas.some((x) => x.construtor)) {
   reprovar('CT-B01', 'nenhuma peça com F-nn foi conferida no desenho (o total devia ser maior que zero)');
 }
+if ((conferencias['CT-B01:condição'] ?? 0) === 0 && diagramas.some((x) => x.construtor)) {
+  const comCondicao = [...pecasDoModelo.values()].filter((p) => p.disponibilidade !== undefined).length;
+  reprovar(
+    'CT-B01',
+    `passo 4: nenhuma peça condicional desenhada teve a marca conferida, e o total devia ser maior que zero — o modelo (mapa/pecas.json) dá condição (disponibilidade) a ${comCondicao} de ${pecasDoModelo.size} peças`,
+  );
+}
+if ((conferencias['CT-B01:card'] ?? 0) === 0 && diagramas.some((x) => x.construtor)) {
+  reprovar('CT-B01', `passo 4: nenhuma linha do card ${JSON.stringify(CARD_DE_CONDICOES.pt)} / ${JSON.stringify(CARD_DE_CONDICOES.en)} foi conferida, e o total devia ser maior que zero`);
+}
 if ((conferencias['CT-B02'] ?? 0) === 0) {
   reprovar('CT-B02', 'nenhuma ligação desenhada foi conferida (o total devia ser maior que zero)');
 }
@@ -1392,7 +1636,7 @@ console.log(
   `tolerados (ADR-06): nested-interactive no <svg> raiz ${toleradas['nested-interactive']}×, ` +
     `color-contrast na contagem do índice ${toleradas['color-contrast']}×`,
 );
-for (const ct of ['CT-B01', 'CT-B01:F-nn', 'CT-B02', 'CT-B03', 'CT-B04', 'CT-B04:tipo', 'CT-B05', 'CT-B06', 'CT-B07', 'CT-B08']) {
+for (const ct of ['CT-B01', 'CT-B01:F-nn', 'CT-B01:condição', 'CT-B01:card', 'CT-B02', 'CT-B03', 'CT-B04', 'CT-B04:tipo', 'CT-B05', 'CT-B06', 'CT-B07', 'CT-B08']) {
   const base = ct.split(':')[0];
   const reprovacoes = violacoes.filter((v) => v.startsWith(`[${base}]`)).length;
   console.log(`  ${ct}: ${conferencias[ct] ?? 0} conferências, ${ct.includes(':') ? `incluído no ${base}` : `${reprovacoes} reprovação(ões)`}`);
