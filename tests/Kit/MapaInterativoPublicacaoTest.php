@@ -1447,9 +1447,9 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
                         $umSo($json, fn (object $peca): bool => $peca->id === 'App\\Filament\\Admin\\Resources\\Users\\UserResource', 'a peça UserResource do /admin')->evidencia[0],
                         'app/Filament/Admin/Resources/Users/UserResource.php', 'class UserResource extends Model', false,
                     ],
-                    'com a evidência de painel:app registra ConvitesRecebidos trocada por ConvitesRecebidos::make(), que não está no arquivo' => [
-                        $umSo($json, fn (object $ligacao): bool => $ligacao->de === 'painel:app' && $ligacao->para === 'App\\Filament\\App\\Pages\\ConvitesRecebidos' && $ligacao->verbo === 'registra', 'a ligação painel:app registra ConvitesRecebidos')->evidencia,
-                        'app/Providers/Filament/AppPanelProvider.php', 'ConvitesRecebidos::make(),', false,
+                    'com a evidência de painel:app registra Dashboard trocada por Dashboard::make(), que não está no arquivo' => [
+                        $umSo($json, fn (object $ligacao): bool => $ligacao->de === 'painel:app' && $ligacao->para === 'App\\Filament\\App\\Pages\\Dashboard' && $ligacao->verbo === 'registra', 'a ligação painel:app registra Dashboard')->evidencia,
+                        'app/Providers/Filament/AppPanelProvider.php', 'Dashboard::make(),', false,
                     ],
                 };
                 $texto = $naRevisao($citado);
@@ -1465,7 +1465,7 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
         }
 
         // O diagrama que desenha a ligação: qualquer um dos que têm as duas pontas dela, entre eles o kit-acesso-e-autenticacao, que o 04 nomeia;
-        // e o app-resumo-sem, que o posicionador projeta, tem o ConvitesRecebidos
+        // e o app-resumo-sem, que o posicionador projeta, tem o Dashboard do /app
         if (str_contains($defeito, 'BloquearSessaoComRetorno')) {
             $desenham = array_values(array_map(
                 fn (string $diagrama): string => basename($diagrama, '.json'),
@@ -1477,8 +1477,10 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
             $culpado = array_map(fn (string $nome): string => $nome === '{o diagrama que desenha a ligação}' ? '~(?:'.implode('|', array_map(fn (string $slug): string => preg_quote($slug, '~'), $desenham)).')(?![a-z0-9-])~' : $nome, $culpado);
         }
 
-        if (str_contains($defeito, 'ConvitesRecebidos')) {
-            expect((string) file_get_contents($mapa.DIRECTORY_SEPARATOR.'diagramas'.DIRECTORY_SEPARATOR.'app-resumo-sem.json'))->toContain('ConvitesRecebidos');
+        if (str_contains($defeito, 'painel:app registra Dashboard')) {
+            $projetado = json_decode((string) file_get_contents($mapa.DIRECTORY_SEPARATOR.'diagramas'.DIRECTORY_SEPARATOR.'app-resumo-sem.json'), true);
+
+            expect(collect($projetado['agrupamentos'] ?? [])->pluck('membros')->flatten()->all())->toContain('App\\Filament\\App\\Pages\\Dashboard');
         }
 
         $htmlsAntes    = publicacaoHtmlsDoMapa([$saida, $dist]);
@@ -1512,7 +1514,7 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
     'gerador: modelo de ligações quebrado'                            => ['site/mapa/ligacoes.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['ligacoes.json']],
     'posicionador: diagrama quebrado'                                 => ['site/mapa/diagramas/app-resumo-sem.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['app-resumo-sem.json']],
     'gerador: peça fora do modelo (re-revisão)'                       => ['site/mapa/diagramas/admin-acesso-e-autenticacao.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'admin-acesso-e-autenticacao']],
-    'gerador: membro de agrupamento fora do modelo (re-revisão)'      => ['site/mapa/diagramas/admin-resumo.json', 'com a peça fora do modelo como membro de um agrupamento', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'admin-resumo']],
+    'gerador: membro de agrupamento fora do modelo (re-revisão)'      => ['site/mapa/diagramas/admin-resumo-com.json', 'com a peça fora do modelo como membro de um agrupamento', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', '~admin-resumo-com(?![a-z0-9-])~']],
     'posicionador: diagrama irmão quebrado (re-revisão)'              => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['zz-quebrado.json']],
     'gerador: prova de ligação que não está no arquivo (step 10)'     => ['site/mapa/diagramas/requisicao-autenticada.json', "com a prova da primeira mensagem trocada por ->id('financeiro'), que não está no arquivo", ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ["->id('financeiro')", 'AdminPanelProvider.php', '~requisicao-autenticada(?![a-z0-9-])~']],
     'gerador: evidência de ligação só em comentário (step 10)'        => ['site/mapa/ligacoes.json', 'com a evidência de AppServiceProvider registra BloquearSessaoComRetorno trocada por um trecho só de comentário', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AppServiceProvider.php', '{o diagrama que desenha a ligação}']],
@@ -1520,7 +1522,7 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
     'gerador: evidência de peça que não está no arquivo (step 10)'    => ['site/mapa/pecas.json', 'com a evidência do UserResource do /admin trocada por class UserResource extends Model, que não está no arquivo', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['~App(?:\\\\{1,2}|-)Filament(?:\\\\{1,2}|-)Admin(?:\\\\{1,2}|-)Resources(?:\\\\{1,2}|-)Users(?:\\\\{1,2}|-)UserResource~', 'UserResource.php']],
     'posicionador: peça fora do modelo (step 10)'                     => ['site/mapa/diagramas/app-resumo-sem.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['PecaQueNaoExiste', '~app-resumo-sem(?![a-z0-9-])~']],
     'posicionador: modelo quebrado (step 10)'                         => ['site/mapa/pecas.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['pecas.json']],
-    'posicionador: prova que não resolve (step 10)'                   => ['site/mapa/ligacoes.json', 'com a evidência de painel:app registra ConvitesRecebidos trocada por ConvitesRecebidos::make(), que não está no arquivo', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['AppPanelProvider.php', '~app-resumo-sem(?![a-z0-9-])~']],
+    'posicionador: prova que não resolve (step 10)'                   => ['site/mapa/ligacoes.json', 'com a evidência de painel:app registra Dashboard trocada por Dashboard::make(), que não está no arquivo', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['AppPanelProvider.php', '~app-resumo-sem(?![a-z0-9-])~']],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
 
 it('[CT-51] o gerador chamado por um caminho que passa por um link faz o mesmo que pelo caminho real, e não termina com 0 calado', function (): void {

@@ -1,0 +1,135 @@
+{
+  "slug": "app-acesso-e-autenticacao-sem",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Acesso e autenticação, sem tenant",
+    "en": "/app — Access and authentication, tenancy off"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Livewire\\DefinirSenhaPorEmail",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Livewire\\InformacoesPessoais",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "Filament\\Http\\Middleware\\Authenticate",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Models\\User",
+      "row": 6,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Pages\\MyProfilePage",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaLogin",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "lockscreen\\FilamentLockscreen\\Lockscreen",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\ConfiguracaoDoLogin",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\DestinoAposLogin",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\EmailComMais",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\RegistroAberto",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\RequestPasswordReset",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\EmailVerification",
+      "row": 7,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44,
+    "teto": 3
+  }
+}

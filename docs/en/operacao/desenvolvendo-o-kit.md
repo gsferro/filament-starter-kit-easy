@@ -97,7 +97,13 @@ build from a versioned model — the decisions are in the ADRs of the `mapa-inte
 
 - **The model** — `site/mapa/pecas.json` and `site/mapa/ligacoes.json`: every piece (resource, page, widget,
   plugin, middleware, service, model, policy, command…) and every link between them, with the proof as a **snippet
-  anchor** `{arquivo, trecho}`, never as a line number. The build finds the snippet's line in the file at the
+  anchor** `{arquivo, trecho}`, never as a line number. A piece that only opens with tenancy on or with a key
+  that is off by default — registered by the panel, used inside another screen or floating, like the assistant chat —
+  keeps the condition in its `disponibilidade` field
+  (`{modo?, chaves?: [{chave, padrao, ligada?}], evidencia}`): the map marks it and only draws it in the diagram of
+  the mode where it opens, and the guards require that field on every such piece, evaluating its
+  `canAccess()`/`canView()` (or, for a floating component, the predicate that decides whether it shows) as
+  super_admin, in both modes. The build finds the snippet's line in the file at the
   published revision.
 - **The diagrams** — one file per diagram in `site/mapa/diagramas/{slug}.json`. The registration tree and the
   architecture maps only state the cut and the grid: pieces and links come from the model. The flows (sequence,

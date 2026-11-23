@@ -1645,7 +1645,8 @@ function mapaModeloPecaDoNo(array $no, bool $escritoAMao, array $modelo): ?strin
 
 /**
  * As marcas de disponibilidade publicadas: o campo `disponibilidade` de uma peça do modelo ou de um nó de
- * diagrama, com a peça que o nó designa (`mapaModeloPecaDoNo()`).
+ * diagrama, com a peça que o nó designa (`mapaModeloPecaDoNo()`), e cada linha do card "Condições de
+ * disponibilidade" de um diagrama escrito à mão (`mapaModeloMarcaDoCard()`).
  *
  * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
  * @param  array<string, array<string, mixed>>  $diagramas
@@ -1684,9 +1685,79 @@ function mapaModeloMarcasDeDisponibilidade(array $modelo, array $diagramas): arr
 
     foreach ($diagramas as $slug => $diagrama) {
         $varrer($diagrama, (string) $slug, ! isset($diagrama['construtor']));
+
+        if (isset($diagrama['construtor'])) {
+            continue;
+        }
+
+        foreach ($diagrama['cards'] ?? [] as $card) {
+            if (! is_array($card) || ($card['title']['pt'] ?? null) !== 'Condições de disponibilidade') {
+                continue;
+            }
+
+            foreach ($card['items'] ?? [] as $item) {
+                $marcas[] = mapaModeloMarcaDoCard(is_array($item) ? (string) ($item['pt'] ?? '') : (string) $item, (string) $slug, $diagrama, $modelo);
+            }
+        }
     }
 
     return $marcas;
+}
+
+/**
+ * A marca de uma linha do card "Condições de disponibilidade" de um diagrama escrito à mão. Nele a marca mora
+ * só no card, e não no rótulo secundário do nó, que não cabe na caixa (decisão da sessão de 2026-11-23). A linha
+ * é "{rótulo}: {marca} — {arquivo} — {trecho}". O rótulo designa a peça como o nó do diagrama: o nó de rótulo
+ * exato, pela prova da classe dele, ou a peça de nome exato (`mapaModeloPecaDoNo()`). Cada termo da marca,
+ * separado por " · ", é lido na redação que a sessão decidiu: "só com tenant ativo" (o modo), "KIT_HUB=false de
+ * fábrica" (a variável com o valor de fábrica), "KIT_AGENTES_IA_PAINEIS vazia de fábrica" (a lista vazia) e o
+ * caminho da configuração de pacote (`command-center.sources`), que o texto dá sem valor. O termo que nenhuma
+ * dessas formas lê vira uma chave que nenhum código lê, e reprova com o texto dele: falha fechado.
+ *
+ * @param  array<string, mixed>  $diagrama
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return array{peca: ?string, no: string, onde: string, marca: array<string, mixed>}
+ */
+function mapaModeloMarcaDoCard(string $linha, string $slug, array $diagrama, array $modelo): array
+{
+    [$rotulo, $resto] = array_pad(explode(': ', $linha, 2), 2, '');
+    $peca             = null;
+
+    foreach (['participants', 'nodes', 'states', 'entities', 'types', 'events', 'spans', 'components'] as $colecao) {
+        foreach ($diagrama[$colecao] ?? [] as $no) {
+            if (is_array($no) && in_array($rotulo, array_filter((array) ($no['label'] ?? []), 'is_string'), true)) {
+                $peca ??= mapaModeloPecaDoNo($no, true, $modelo);
+            }
+        }
+    }
+
+    $peca ??= mapaModeloPecaDoNo(['label' => $rotulo], true, $modelo);
+    $marca = [];
+
+    foreach (preg_split('/\s+·\s+/u', trim(explode(' — ', $resto)[0])) ?: [] as $termo) {
+        if (str_contains($termo, 'só com tenant ativo')) {
+            $marca['modo'] = 'com';
+        } elseif (preg_match('/^([A-Z][A-Z0-9_]*)=(\S+)/', $termo, $partes) === 1) {
+            $marca['chaves'][] = ['chave' => $partes[1], 'padrao' => match ($partes[2]) {
+                'true'  => true,
+                'false' => false,
+                default => $partes[2],
+            }];
+        } elseif (preg_match('/^([A-Z][A-Z0-9_]*) vazia de fábrica/u', $termo, $partes) === 1) {
+            $marca['chaves'][] = ['chave' => $partes[1], 'padrao' => []];
+        } elseif (preg_match('/^[a-z][\w-]*(?:\.[\w-]+)+$/', $termo) === 1) {
+            $marca['chaves'][] = ['chave' => $termo, 'padrao' => rescue(static fn (): mixed => mapaModeloValorDeFabrica($termo)[1], null, false)];
+        } else {
+            $marca['chaves'][] = ['chave' => "termo que a guarda não lê: {$termo}", 'padrao' => null];
+        }
+    }
+
+    return [
+        'peca'  => $peca,
+        'no'    => (string) json_encode($rotulo, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        'onde'  => "o card \"Condições de disponibilidade\" do diagrama {$slug}",
+        'marca' => $marca,
+    ];
 }
 
 /**
@@ -1748,7 +1819,13 @@ function mapaModeloConferirDisponibilidade(array $modelo, array $diagramas): arr
         }
     }
 
-    return mapaModeloResultado($violacoes, ['marcas' => count($marcas)]);
+    $doCard = array_values(array_filter($marcas, static fn (array $marca): bool => str_starts_with($marca['onde'], 'o card')));
+
+    return mapaModeloResultado($violacoes, [
+        'marcas'       => count($marcas),
+        'linhasDeCard' => count($doCard),
+        'cards'        => array_values(array_unique(array_map(static fn (array $marca): string => (string) preg_replace('/^.* do diagrama /', '', $marca['onde']), $doCard))),
+    ]);
 }
 
 /*
@@ -2605,7 +2682,7 @@ it('[CT-40] toda aresta de mapa é ligação do modelo no mesmo sentido, e todo 
             $nomeando         = $par[0].' → '.$par[1];
             break;
         case 'membro não nomeado':
-            $slug   = 'admin-resumo';
+            $slug   = 'admin-resumo-com';
             $copia  = $diagramas[$slug];
             $grupo  = $copia['agrupamentos'][0];
             $achada = null;
@@ -2622,7 +2699,7 @@ it('[CT-40] toda aresta de mapa é ligação do modelo no mesmo sentido, e todo 
             $nomeando         = $grupo['id'];
             break;
         case 'porta para o mapa errado':
-            $slug              = 'admin-resumo';
+            $slug              = 'admin-resumo-com';
             $copia             = $diagramas[$slug];
             $desenhadasNoInfra = array_column($diagramas['infra-resumo']['pecas'], 'id');
             $achada            = null;
@@ -2673,7 +2750,6 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
     $agente       = 'App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource';
     $organizacoes = 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource';
     $marcar       = static fn (array $modelo, string $id, array $marca): array => mapaModeloComPeca($modelo, $id, static fn (array $p): array => ['disponibilidade' => $marca] + $p);
-    $doChat       = ['chaves' => [['chave' => 'KIT_AGENTES_IA', 'padrao' => false], ['chave' => 'KIT_AGENTES_IA_PAINEIS', 'padrao' => []]]];
 
     switch ($mundo) {
         case 'chave que não decide':
@@ -2687,11 +2763,13 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
             break;
         case 'marcas certas':
             $modelo = mapaModeloComAsCondicoesCertas($modelo);
-
-            $diagramas['app-chat-de-ia']['participants'] = array_map(
-                static fn (array $no): array => ($no['id'] ?? null) === 'widget' ? ['disponibilidade' => $doChat] + $no : $no,
-                $diagramas['app-chat-de-ia']['participants'],
-            );
+            break;
+        case 'card com chave que não decide':
+            foreach ($diagramas['app-chat-de-ia']['cards'] as $i => $card) {
+                if (($card['title']['pt'] ?? null) === 'Condições de disponibilidade') {
+                    $diagramas['app-chat-de-ia']['cards'][$i]['items'][0]['pt'] = str_replace('KIT_AGENTES_IA=false', 'KIT_REGISTRO=false', (string) $card['items'][0]['pt']);
+                }
+            }
             break;
     }
 
@@ -2701,9 +2779,12 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
         // sem marca nenhuma a regra é vácua; com marca, cada uma tem de ser a do código
         expect($guarda['aceita'])->toBeTrue((string) $guarda['motivo']);
 
+        // a marca do chat nos dois diagramas escritos à mão mora no card "Condições de disponibilidade", e é lida
+        expect($guarda['cards'])->toContain('app-chat-de-ia', 'ia-do-prompt-ao-ledger');
+
         if ($mundo === 'marcas certas') {
-            // as 18 peças do modelo e o participante do chat no app-chat-de-ia, escrito à mão
-            expect($guarda['marcas'])->toBe(19);
+            // as 18 peças do modelo e as linhas dos cards dos diagramas escritos à mão
+            expect($guarda['marcas'])->toBe(18 + $guarda['linhasDeCard']);
         }
 
         return;
@@ -2713,11 +2794,12 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
         ->and($guarda['aceita'])->toBeFalse('a guarda aceitou a marca adulterada: '.$mundo)
         ->and(implode(' | ', $guarda['violacoes']))->toContain($nomeando);
 })->with([
-    'publicados'                                            => ['publicados', 'aceita', ''],
-    'AgenteIaResource com a chave KIT_REGISTRO'             => ['chave que não decide', 'reprova', 'AgenteIaResource'],
-    'AgenteIaResource com KIT_AGENTES_IA ligada de fábrica' => ['valor de fábrica trocado', 'reprova', 'AgenteIaResource'],
-    'TenantResource disponível só sem tenant'               => ['modo invertido', 'reprova', 'TenantResource'],
-    'controle: as marcas certas das peças condicionais'     => ['marcas certas', 'aceita', ''],
+    'publicados'                                                                  => ['publicados', 'aceita', ''],
+    'AgenteIaResource com a chave KIT_REGISTRO'                                   => ['chave que não decide', 'reprova', 'AgenteIaResource'],
+    'AgenteIaResource com KIT_AGENTES_IA ligada de fábrica'                       => ['valor de fábrica trocado', 'reprova', 'AgenteIaResource'],
+    'TenantResource disponível só sem tenant'                                     => ['modo invertido', 'reprova', 'TenantResource'],
+    'controle: as marcas certas das peças condicionais'                           => ['marcas certas', 'aceita', ''],
+    'cópia do card do app-chat-de-ia com KIT_REGISTRO no lugar de KIT_AGENTES_IA' => ['card com chave que não decide', 'reprova', 'AssistenteChatWidget com a chave KIT_REGISTRO'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
 
 /*
@@ -3458,6 +3540,6 @@ it('[CT-54] todo id que um arquivo de diagrama construído nomeia — peça dese
 })->with([
     'publicados'                                                        => ['publicados', '', '', 0, 0],
     'cópia do kit-resumo-sem com um membro desconhecido no agrupamento' => ['copia', 'kit-resumo-sem', 'membro', 0, 1],
-    'cópia do admin-resumo com um membro desconhecido no agrupamento'   => ['copia', 'admin-resumo', 'membro', 1, 2],
+    'cópia do infra-resumo com um membro desconhecido no agrupamento'   => ['copia', 'infra-resumo', 'membro', 1, 2],
     'cópia do app-resumo-sem com uma peça desconhecida desenhada'       => ['copia', 'app-resumo-sem', 'peca', 1, 1],
 ])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);

@@ -707,6 +707,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_HUB",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Pages/HubDeAdministracao.php",
+        "trecho": "return (bool) config('kit.hub');"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "harvirsidhu/filament-cards",
     "features": [
@@ -730,6 +742,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_AGENTES_IA",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php",
+        "trecho": "return AgentesDeIa::habilitado() && parent::canAccess();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
     "features": [
@@ -830,6 +854,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/Onboarding/CondicaoResource.php",
+        "trecho": "return TutorialGuiado::habilitado() && parent::canAccess();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
     "features": [
@@ -856,6 +892,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/Onboarding/JornadaResource.php",
+        "trecho": "return TutorialGuiado::habilitado() && parent::canAccess();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
     "features": [
@@ -907,6 +955,13 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/TenantResource.php",
+        "trecho": "return config('kit.tenancy.enabled') && parent::canAccess();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
     "features": [
@@ -939,6 +994,13 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/Widgets/AcessosPorPainel.php",
+        "trecho": "return TenantResource::canAccess() && rescue("
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
     "features": [
@@ -992,6 +1054,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_AGENTES_IA",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Widgets/AgentesIaPorProvider.php",
+        "trecho": "return AgentesDeIa::habilitado();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
     "features": [
@@ -1015,6 +1089,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_AGENTES_IA",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Widgets/AgentesIaStats.php",
+        "trecho": "return AgentesDeIa::habilitado();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "filament/widgets",
     "features": [
@@ -1061,6 +1147,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Widgets/ProgressoOnboarding.php",
+        "trecho": "return TutorialGuiado::habilitado() && (bool) rescue("
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "laboiteacode/filament-dashboard-widgets",
     "features": [
@@ -1153,6 +1251,13 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
+        "trecho": "return (bool) config('kit.tenancy.enabled') && Auth::check();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
     "features": [
@@ -1199,6 +1304,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_HUB",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/App/Pages/HubDoNegocio.php",
+        "trecho": "return (bool) config('kit.hub');"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "harvirsidhu/filament-cards",
     "features": [
@@ -1222,6 +1339,13 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/App/Resources/Convites/ConviteResource.php",
+        "trecho": "return (bool) config('kit.tenancy.enabled') && parent::canAccess();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
     "features": [
@@ -1249,6 +1373,19 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "modo": "com",
+      "chaves": [
+        {
+          "chave": "KIT_DEMO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/App/Resources/Projetos/ProjetoResource.php",
+        "trecho": "return (bool) config('kit.tenancy.enabled') && (bool) config('kit.demo');"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
     "features": [
@@ -1276,6 +1413,13 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/App/Resources/Users/UserResource.php",
+        "trecho": "return (bool) config('kit.tenancy.enabled') && parent::canAccess();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "filament/filament",
     "features": [
@@ -2117,6 +2261,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Pages/PrimeirosPassos.php",
+        "trecho": "return TutorialGuiado::habilitado();"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
     "features": [
@@ -2394,6 +2550,22 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_AGENTES_IA",
+          "padrao": false
+        },
+        {
+          "chave": "KIT_AGENTES_IA_PAINEIS",
+          "padrao": []
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Support/AgentesDeIa.php",
+        "trecho": "&& in_array($painel->getId(), (array) config('kit.agentes_ia.paineis', []), true);"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "livewire/livewire",
     "features": [
@@ -2415,6 +2587,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Support/TutorialGuiado.php",
+        "trecho": "return (bool) config('kit.onboarding.habilitado', false);"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "wallacemartinss/filament-onboarding",
     "features": [
@@ -4813,6 +4997,24 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "command-center.sources",
+          "padrao": [
+            "Bityukov\\CommandCenter\\Sources\\ConfigSource"
+          ],
+          "ligada": [
+            "Bityukov\\CommandCenter\\Sources\\ConfigSource",
+            "Bityukov\\CommandCenter\\Sources\\DatabaseSource"
+          ]
+        }
+      ],
+      "evidencia": {
+        "arquivo": "config/command-center.php",
+        "trecho": "'sources' => ["
+      }
+    },
     "origem": "pacote",
     "pacote": "ssbityukov/filament-command-center",
     "features": [

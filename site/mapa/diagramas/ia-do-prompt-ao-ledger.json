@@ -692,6 +692,19 @@
           "en": "Chat only shows in kit.agentes_ia.paineis panels with kit.agentes_ia.habilitado on; default is none. Both come from Application settings"
         }
       ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Condições de disponibilidade",
+        "en": "Availability conditions"
+      },
+      "items": [
+        {
+          "pt": "AssistenteChatWidget: KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia de fábrica — app/Support/AgentesDeIa.php — && in_array($painel->getId(), (array) config('kit.agentes_ia.paineis', []), true);",
+          "en": "AssistenteChatWidget: KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS empty by default — app/Support/AgentesDeIa.php — && in_array($painel->getId(), (array) config('kit.agentes_ia.paineis', []), true);"
+        }
+      ]
     }
   ]
 }

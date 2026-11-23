@@ -1,17 +1,16 @@
 {
-  "slug": "app-produtividade-e-ui",
+  "slug": "app-produtividade-e-ui-sem",
   "tipo": "architecture",
   "construtor": "mapa",
   "titulo": {
-    "pt": "/app — Produtividade e UI",
-    "en": "/app — Productivity and UI"
+    "pt": "/app — Produtividade e UI, sem tenant",
+    "en": "/app — Productivity and UI, tenancy off"
   },
   "paineis": [
     "app"
   ],
   "modos": [
-    "sem",
-    "com"
+    "sem"
   ],
   "pecas": [
     {
@@ -77,11 +76,6 @@
     {
       "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
       "row": 5,
-      "col": 1
-    },
-    {
-      "id": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
-      "row": 6,
       "col": 1
     },
     {

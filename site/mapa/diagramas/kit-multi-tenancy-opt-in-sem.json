@@ -1,15 +1,14 @@
 {
-  "slug": "kit-multi-tenancy-opt-in",
+  "slug": "kit-multi-tenancy-opt-in-sem",
   "tipo": "architecture",
   "construtor": "mapa",
   "titulo": {
-    "pt": "Kit — Multi-tenancy (opcional)",
-    "en": "Kit — Multi-tenancy (opt-in)"
+    "pt": "Kit — Multi-tenancy (opcional), sem tenant",
+    "en": "Kit — Multi-tenancy (opt-in), tenancy off"
   },
   "paineis": [],
   "modos": [
-    "sem",
-    "com"
+    "sem"
   ],
   "pecas": [
     {
@@ -25,11 +24,6 @@
     {
       "id": "App\\Support\\AtivadorDeTenancy",
       "row": 1,
-      "col": 1
-    },
-    {
-      "id": "App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel",
-      "row": 0,
       "col": 1
     },
     {

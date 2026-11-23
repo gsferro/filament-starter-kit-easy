@@ -280,10 +280,12 @@ function esperadoDoDiagrama(d, idioma) {
   const colecao = d[COLECAO_DE_PECAS[d.tipo]] ?? [];
   const campo = CAMPO_DO_ROTULO[d.tipo] ?? 'label';
   const pecas = colecao.map((peca) => ({ id: peca.id, rotulo: texto(peca[campo], idioma) }));
-  // no escrito à mão, a marca é escrita no arquivo, e o esperado dela sai da condição do modelo
+  // no escrito à mão, a marca é escrita no arquivo, e o esperado dela sai da condição do modelo; ela fica só no card
+  // "Condições de disponibilidade" (`onde: 'escrito'`): a caixa do participante de sequência tem 96 px fixos e o nó do
+  // fluxo de dados, a largura do estágio, e o archify recusa o rótulo secundário com a marca (medido no step 11)
   const condicionais = colecao.flatMap((no) => {
     const rotulo = texto(no[campo], idioma);
-    return pecasDoNo(no, rotulo).flatMap((peca) => condicional(peca, no.id, 'no').map((c) => ({ ...c, nomes: [...new Set([peca.nome, rotulo])] })));
+    return pecasDoNo(no, rotulo).flatMap((peca) => condicional(peca, no.id, 'escrito').map((c) => ({ ...c, nomes: [...new Set([peca.nome, rotulo])] })));
   });
   const rotuloDe = new Map(pecas.map(({ id, rotulo }) => [id, rotulo]));
   const lista = COLECAO_DE_LIGACOES[d.tipo] ? (d[COLECAO_DE_LIGACOES[d.tipo]] ?? []) : [];

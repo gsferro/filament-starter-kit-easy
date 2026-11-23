@@ -284,7 +284,64 @@ function cardDeFeatures(desenhadas) {
 /** "recurso · F-29 · F-30" ou "plugin · filament-auth-designer": o tipo, o pacote e as F-nn da peça (D29). */
 function sublabelDaPeca(peca) {
   const pacote = peca.origem === 'pacote' && peca.pacote ? ` · ${peca.pacote.split('/').pop()}` : '';
-  return { pt: `${ROTULO_DO_TIPO[peca.tipo].pt}${pacote}`, en: `${ROTULO_DO_TIPO[peca.tipo].en}${pacote}` };
+  const base = { pt: `${ROTULO_DO_TIPO[peca.tipo].pt}${pacote}`, en: `${ROTULO_DO_TIPO[peca.tipo].en}${pacote}` };
+  const marca = marcaDaCondicao(peca);
+  return marca ? { pt: `${base.pt} · ${marca.pt}`, en: `${base.en} · ${marca.en}` } : base;
+}
+
+// ---------------------------------------------------------------------------------------------------
+// A peça condicional (Adendos 2 a 4): a que o painel registra, mas que só abre num modo ou com uma chave.
+// A condição é o campo `disponibilidade` do modelo — {modo?, chaves?: [{chave, padrao, ligada?}], evidencia}.
+// ---------------------------------------------------------------------------------------------------
+const MARCA_DO_MODO = { com: { pt: 'só com tenant ativo', en: 'tenancy on only' }, sem: { pt: 'só sem tenant', en: 'tenancy off only' } };
+
+/**
+ * A marca da condição (RQ-27, D41), ou `null` na peça sem condição: o modo pelo termo da grade; a chave booleana pela
+ * variável e pelo valor de fábrica; a lista vazia de fábrica pelo nome; a configuração de pacote pelo caminho e pela
+ * fonte que falta de fábrica; e "de fábrica" depois da última chave.
+ */
+function marcaDaCondicao(peca) {
+  const condicao = peca?.disponibilidade;
+  if (!condicao) return null;
+  const nomeCurto = (valor) => String(valor).split('\\').pop();
+  const texto = (idioma) => {
+    const partes = condicao.modo ? [MARCA_DO_MODO[condicao.modo][idioma]] : [];
+    const chaves = (condicao.chaves ?? []).map(({ chave, padrao, ligada }) => {
+      if (/^[A-Z][A-Z0-9_]*$/.test(chave)) {
+        if (typeof padrao === 'boolean') return `${chave}=${padrao}`;
+        return [padrao ?? []].flat().length ? chave : `${chave} ${idioma === 'pt' ? 'vazia' : 'empty'}`;
+      }
+      const deFabrica = [padrao ?? []].flat().map(nomeCurto);
+      const falta = [ligada ?? []].flat().map(nomeCurto).filter((nome) => !deFabrica.includes(nome));
+      return `${chave} ${idioma === 'pt' ? 'sem' : 'without'} ${falta.join(', ')}`;
+    });
+    if (chaves.length) partes.push(`${chaves.join(' · ')} ${idioma === 'pt' ? 'de fábrica' : 'by default'}`);
+    return partes.join(' · ');
+  };
+  return { pt: texto('pt'), en: texto('en') };
+}
+
+/**
+ * A peça entra no diagrama só se, em cada modo dele, o painel a registra e ela fica disponível — com a chave ligada
+ * (P-15): a condição só de chave não tira a peça de modo nenhum, e a de modo a tira do outro (Setup Global do `04`).
+ */
+const entraNosModos = (peca, modos) =>
+  Boolean(peca) && modos.every((modo) => (peca.registrada ?? []).includes(modo) && (!peca.disponibilidade?.modo || peca.disponibilidade.modo === modo));
+
+/** O card "Condições de disponibilidade" (R44): uma linha por peça condicional desenhada, com a marca e a prova. */
+function cardDeCondicoes(desenhadas) {
+  const condicionais = [...new Map(desenhadas.filter((peca) => peca?.disponibilidade).map((peca) => [peca.id, peca])).values()];
+  if (!condicionais.length) return [];
+  return [{
+    dot: 'amber',
+    title: { pt: 'Condições de disponibilidade', en: 'Availability conditions' },
+    items: condicionais.map((peca) => {
+      const { arquivo, trecho } = peca.disponibilidade.evidencia;
+      const { line } = linhaDaAncora(arquivo, trecho);
+      const marca = marcaDaCondicao(peca);
+      return { pt: `${peca.nome}: ${marca.pt} — ${arquivo}:${line} — ${trecho}`, en: `${peca.nome}: ${marca.en} — ${arquivo}:${line} — ${trecho}` };
+    }),
+  }];
 }
 
 /** Árvore de registro (tree, para a direita): tudo o que o painel registra no modo do diagrama. */
@@ -293,7 +350,8 @@ function arvoreDeRegistro(diagrama) {
   const [painel] = diagrama.paineis;
   const [modo] = diagrama.modos;
   const raiz = `painel:${painel}`;
-  const registradas = ligacoes.filter((l) => l.de === raiz && l.verbo === 'registra' && l.modos.includes(modo));
+  // o que o painel registra no modo do diagrama e fica disponível em cada modo dele (a peça condicional, Adendo 2)
+  const registradas = ligacoes.filter((l) => l.de === raiz && l.verbo === 'registra' && l.modos.includes(modo) && entraNosModos(pecas.get(l.para), diagrama.modos));
   const GRUPOS = [
     ['recurso', { pt: 'Recursos', en: 'Resources' }],
     ['pagina', { pt: 'Páginas', en: 'Pages' }],
@@ -335,7 +393,14 @@ function arvoreDeRegistro(diagrama) {
     prova: l.evidencia,
   }));
   return {
-    entrada: { schema_version: 1, diagram_type: 'tree', meta: { quality_profile: diagrama.qualidade ?? 'standard' }, layout: { direction: 'right' }, nodes, cards: cardDeFeatures(registradas.map((l) => pecas.get(l.para))) },
+    entrada: {
+      schema_version: 1,
+      diagram_type: 'tree',
+      meta: { quality_profile: diagrama.qualidade ?? 'standard' },
+      layout: { direction: 'right' },
+      nodes,
+      cards: [...cardDeFeatures(registradas.map((l) => pecas.get(l.para))), ...cardDeCondicoes(registradas.map((l) => pecas.get(l.para)))],
+    },
     provas,
   };
 }
@@ -362,8 +427,8 @@ function mapaDeArquitetura(diagrama) {
   const { pecas, ligacoes } = carregarModelo();
   const modo = diagrama.modos.length === 1 ? diagrama.modos[0] : null;
   conferirPecasDoMapa(diagrama);
-  // Diagrama de um modo só não desenha nem agrupa peça que o painel não registra nesse modo (P-09).
-  const existe = (id) => !modo || (pecas.get(id)?.registrada ?? []).includes(modo);
+  // O diagrama só desenha e agrupa a peça que, em cada modo dele, o painel registra e fica disponível (P-09; Adendo 2).
+  const existe = (id) => entraNosModos(pecas.get(id), diagrama.modos);
   diagrama = {
     ...diagrama,
     pecas: diagrama.pecas.filter(({ id }) => existe(id)),
@@ -373,10 +438,11 @@ function mapaDeArquitetura(diagrama) {
   const grupoDe = new Map(diagrama.agrupamentos.flatMap((g) => g.membros.map((membro) => [membro, g.id])));
   const ponta = (id) => (desenhadas.has(id) ? idArchify(id) : grupoDe.get(id) ?? null);
   const TAMANHO = diagrama.layout?.tamanho ?? [210, 56];
-  // A caixa cresce com o rótulo (o archify recusa rótulo mais largo que a caixa, ~6,6 px por caractere), e a
-  // célula da grade acompanha a maior caixa.
-  const largura = (rotulo) => Math.max(TAMANHO[0], Math.ceil(String(rotulo).length * 6.8) + 24);
-  const maior = Math.max(TAMANHO[0], ...diagrama.pecas.map(({ id }) => largura(pecas.get(id)?.nome ?? id)));
+  // A caixa cresce com o rótulo (o archify recusa rótulo mais largo que a caixa, ~6,6 px por caractere) e com o rótulo
+  // secundário, que leva a marca da condição (~3,6 px por caractere a 6 px; D41), e a célula da grade acompanha a maior.
+  const largura = (peca) =>
+    Math.max(TAMANHO[0], Math.ceil(String(peca.nome).length * 6.8) + 24, ...Object.values(sublabelDaPeca(peca)).map((texto) => Math.ceil(texto.length * 3.8) + 12));
+  const maior = Math.max(TAMANHO[0], ...diagrama.pecas.map(({ id }) => largura(pecas.get(id))));
 
   const components = [
     ...diagrama.pecas.map(({ id, row, col }) => {
@@ -390,7 +456,7 @@ function mapaDeArquitetura(diagrama) {
         sources: peca.evidencia.slice(0, 3),
         row,
         col,
-        size: [largura(peca.nome), TAMANHO[1]],
+        size: [largura(peca), TAMANHO[1]],
       };
     }),
     ...diagrama.agrupamentos.map((g) => ({
@@ -452,9 +518,15 @@ function mapaDeArquitetura(diagrama) {
     cards.push({
       dot: 'violet',
       title: { pt: `Quem está em ${g.rotulo.pt}`, en: `Who is in ${g.rotulo.en}` },
-      items: g.membros.map((membro) => pecas.get(membro)?.nome ?? membro),
+      // o membro condicional leva a marca na linha dele (D41)
+      items: g.membros.map((membro) => {
+        const marca = marcaDaCondicao(pecas.get(membro));
+        const nome = pecas.get(membro)?.nome ?? membro;
+        return marca ? { pt: `${nome} — ${marca.pt}`, en: `${nome} — ${marca.en}` } : nome;
+      }),
     });
   }
+  cards.push(...cardDeCondicoes([...diagrama.pecas.map(({ id }) => pecas.get(id)), ...diagrama.agrupamentos.flatMap((g) => g.membros.map((membro) => pecas.get(membro)))]));
 
   return {
     entrada: {

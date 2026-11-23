@@ -85,7 +85,6 @@
       },
       "membros": [
         "App\\Console\\Commands\\KitTenancy",
-        "App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel",
         "App\\Policies\\TenantPolicy",
         "App\\Support\\AtivadorDeTenancy"
       ],

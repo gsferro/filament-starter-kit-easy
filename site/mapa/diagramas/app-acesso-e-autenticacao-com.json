@@ -1,16 +1,15 @@
 {
-  "slug": "app-acesso-e-autenticacao",
+  "slug": "app-acesso-e-autenticacao-com",
   "tipo": "architecture",
   "construtor": "mapa",
   "titulo": {
-    "pt": "/app — Acesso e autenticação",
-    "en": "/app — Access and authentication"
+    "pt": "/app — Acesso e autenticação, com tenant ativo",
+    "en": "/app — Access and authentication, tenancy on"
   },
   "paineis": [
     "app"
   ],
   "modos": [
-    "sem",
     "com"
   ],
   "pecas": [

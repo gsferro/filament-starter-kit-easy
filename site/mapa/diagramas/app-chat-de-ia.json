@@ -593,6 +593,19 @@
           "en": "pii_redactor redacts current prompt; laravel/ai SDK handling of conversation (title and history) is outside this diagram"
         }
       ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Condições de disponibilidade",
+        "en": "Availability conditions"
+      },
+      "items": [
+        {
+          "pt": "AssistenteChat: KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia de fábrica — app/Support/AgentesDeIa.php — && in_array($painel->getId(), (array) config('kit.agentes_ia.paineis', []), true);",
+          "en": "AssistenteChat: KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS empty by default — app/Support/AgentesDeIa.php — && in_array($painel->getId(), (array) config('kit.agentes_ia.paineis', []), true);"
+        }
+      ]
     }
   ]
 }

@@ -37,7 +37,6 @@
         "en": "Access and authentication"
       },
       "membros": [
-        "App\\Filament\\App\\Resources\\Users\\UserResource",
         "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
         "App\\Filament\\Pages\\Auth\\TelaLogin",
         "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
@@ -85,8 +84,6 @@
         "en": "Invitations"
       },
       "membros": [
-        "App\\Filament\\App\\Pages\\ConvitesRecebidos",
-        "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
         "App\\Models\\Convite",
         "App\\Notifications\\ConviteDeAcesso"
       ],
@@ -153,7 +150,6 @@
       },
       "membros": [
         "App\\Filament\\App\\Pages\\Dashboard",
-        "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
         "App\\Filament\\Pages\\PrimeirosPassos",
         "App\\Livewire\\PreferenciasDeAparencia",
         "App\\Support\\AparenciaDoUsuario",
