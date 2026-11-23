@@ -1429,6 +1429,49 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
                 } else {
                     $json->agrupamentos[0]->membros[] = $intrusa;
                 }
+            } elseif (str_starts_with($defeito, 'com a condição') || str_starts_with($defeito, 'com a chave') || str_starts_with($defeito, 'com a configuração') || str_starts_with($defeito, 'com a ligação')) {
+                // A condição de disponibilidade do modelo (ou a ligação de registro) com um campo só trocado, numa peça que o modelo de hoje já marca
+                $pecaDe = function (string $id) use ($json, $umSo): object {
+                    return $umSo($json, fn (object $peca): bool => $peca->id === $id, "a peça {$id}");
+                };
+                $tenant  = 'App\Filament\Admin\Resources\Tenants\TenantResource';
+                $agente  = 'App\Filament\Admin\Resources\AgentesIa\AgenteIaResource';
+                $command = 'Bityukov\CommandCenter\Filament\Resources\CommandRecordResource';
+
+                match (true) {
+                    str_contains($defeito, 'no modo `Com`') => (function () use ($pecaDe, $tenant): void {
+                        expect($pecaDe($tenant)->disponibilidade->modo)->toBe('com', 'o TenantResource de hoje não está no modo com');
+                        $pecaDe($tenant)->disponibilidade->modo = 'Com';
+                    })(),
+                    str_contains($defeito, 'no modo `sem`') => (function () use ($pecaDe, $tenant): void {
+                        expect($pecaDe($tenant)->disponibilidade->modo)->toBe('com', 'o TenantResource de hoje não está no modo com');
+                        $pecaDe($tenant)->disponibilidade->modo = 'sem';
+                    })(),
+                    str_contains($defeito, 'pelo número `123`') => (function () use ($pecaDe, $agente): void {
+                        expect($pecaDe($agente)->disponibilidade->chaves[0]->chave)->toBe('KIT_AGENTES_IA', 'a chave do AgenteIaResource de hoje não é KIT_AGENTES_IA');
+                        $pecaDe($agente)->disponibilidade->chaves[0]->chave = 123;
+                    })(),
+                    str_contains($defeito, '`command-center.sources`') => (function () use ($pecaDe, $command): void {
+                        $chave = $pecaDe($command)->disponibilidade->chaves[0];
+
+                        expect($chave->chave)->toBe('command-center.sources')
+                            ->and($chave->ligada)->not->toBe($chave->padrao, 'a ligada de hoje já é igual ao padrao');
+                        $chave->ligada = $chave->padrao;
+                    })(),
+                    str_contains($defeito, 'sem a âncora') => (function () use ($pecaDe, $agente): void {
+                        expect($pecaDe($agente)->disponibilidade->evidencia ?? null)->not->toBeNull('a condição do AgenteIaResource de hoje não tem âncora');
+                        unset($pecaDe($agente)->disponibilidade->evidencia);
+                    })(),
+                    str_contains($defeito, 'com a ligação "o painel admin registra `App') => (function () use (&$json, $intrusa): void {
+                        $prova = array_values(array_filter($json, fn (object $ligacao): bool => $ligacao->de === 'painel:admin' && $ligacao->verbo === 'registra' && str_ends_with($ligacao->para, 'FilamentShieldPlugin')));
+
+                        expect($prova)->toHaveCount(1, 'a ligação "o painel admin registra FilamentShieldPlugin" não está no modelo');
+
+                        $nova         = clone $prova[0];
+                        $nova->para   = $intrusa;
+                        $json[]       = $nova;
+                    })(),
+                };
             } elseif ($defeito === 'com a primeira mensagem sem prova') {
                 expect($json->messages[0]->prova ?? null)->not->toBeNull('a primeira mensagem do diagrama escrito à mão não tem prova');
 
@@ -1509,20 +1552,26 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
         publicacaoApagarPasta($raiz);
     }
 })->with([
-    'gerador: diagrama quebrado, mesmo fora do pedido'                => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['zz-quebrado.json']],
-    'gerador: modelo de peças quebrado'                               => ['site/mapa/pecas.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['pecas.json']],
-    'gerador: modelo de ligações quebrado'                            => ['site/mapa/ligacoes.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['ligacoes.json']],
-    'posicionador: diagrama quebrado'                                 => ['site/mapa/diagramas/app-resumo-sem.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['app-resumo-sem.json']],
-    'gerador: peça fora do modelo (re-revisão)'                       => ['site/mapa/diagramas/admin-acesso-e-autenticacao.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'admin-acesso-e-autenticacao']],
-    'gerador: membro de agrupamento fora do modelo (re-revisão)'      => ['site/mapa/diagramas/admin-resumo-com.json', 'com a peça fora do modelo como membro de um agrupamento', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', '~admin-resumo-com(?![a-z0-9-])~']],
-    'posicionador: diagrama irmão quebrado (re-revisão)'              => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['zz-quebrado.json']],
-    'gerador: prova de ligação que não está no arquivo (step 10)'     => ['site/mapa/diagramas/requisicao-autenticada.json', "com a prova da primeira mensagem trocada por ->id('financeiro'), que não está no arquivo", ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ["->id('financeiro')", 'AdminPanelProvider.php', '~requisicao-autenticada(?![a-z0-9-])~']],
-    'gerador: evidência de ligação só em comentário (step 10)'        => ['site/mapa/ligacoes.json', 'com a evidência de AppServiceProvider registra BloquearSessaoComRetorno trocada por um trecho só de comentário', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AppServiceProvider.php', '{o diagrama que desenha a ligação}']],
-    'gerador: ligação sem prova (step 10)'                            => ['site/mapa/diagramas/requisicao-autenticada.json', 'com a primeira mensagem sem prova', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['navegador', 'setuppanel', '~requisicao-autenticada(?![a-z0-9-])~']],
-    'gerador: evidência de peça que não está no arquivo (step 10)'    => ['site/mapa/pecas.json', 'com a evidência do UserResource do /admin trocada por class UserResource extends Model, que não está no arquivo', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['~App(?:\\\\{1,2}|-)Filament(?:\\\\{1,2}|-)Admin(?:\\\\{1,2}|-)Resources(?:\\\\{1,2}|-)Users(?:\\\\{1,2}|-)UserResource~', 'UserResource.php']],
-    'posicionador: peça fora do modelo (step 10)'                     => ['site/mapa/diagramas/app-resumo-sem.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['PecaQueNaoExiste', '~app-resumo-sem(?![a-z0-9-])~']],
-    'posicionador: modelo quebrado (step 10)'                         => ['site/mapa/pecas.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['pecas.json']],
-    'posicionador: prova que não resolve (step 10)'                   => ['site/mapa/ligacoes.json', 'com a evidência de painel:app registra Dashboard trocada por Dashboard::make(), que não está no arquivo', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['AppPanelProvider.php', '~app-resumo-sem(?![a-z0-9-])~']],
+    'gerador: diagrama quebrado, mesmo fora do pedido'                     => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['zz-quebrado.json']],
+    'gerador: modelo de peças quebrado'                                    => ['site/mapa/pecas.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['pecas.json']],
+    'gerador: modelo de ligações quebrado'                                 => ['site/mapa/ligacoes.json', 'com JSON quebrado', ['node', 'mapa/gerar.mjs', '--saida', '{saida}', 'app-resumo-sem'], ['ligacoes.json']],
+    'posicionador: diagrama quebrado'                                      => ['site/mapa/diagramas/app-resumo-sem.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['app-resumo-sem.json']],
+    'gerador: peça fora do modelo (re-revisão)'                            => ['site/mapa/diagramas/admin-acesso-e-autenticacao.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'admin-acesso-e-autenticacao']],
+    'gerador: membro de agrupamento fora do modelo (re-revisão)'           => ['site/mapa/diagramas/admin-resumo-com.json', 'com a peça fora do modelo como membro de um agrupamento', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', '~admin-resumo-com(?![a-z0-9-])~']],
+    'posicionador: diagrama irmão quebrado (re-revisão)'                   => ['site/mapa/diagramas/zz-quebrado.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['zz-quebrado.json']],
+    'gerador: prova de ligação que não está no arquivo (step 10)'          => ['site/mapa/diagramas/requisicao-autenticada.json', "com a prova da primeira mensagem trocada por ->id('financeiro'), que não está no arquivo", ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ["->id('financeiro')", 'AdminPanelProvider.php', '~requisicao-autenticada(?![a-z0-9-])~']],
+    'gerador: evidência de ligação só em comentário (step 10)'             => ['site/mapa/ligacoes.json', 'com a evidência de AppServiceProvider registra BloquearSessaoComRetorno trocada por um trecho só de comentário', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AppServiceProvider.php', '{o diagrama que desenha a ligação}']],
+    'gerador: ligação sem prova (step 10)'                                 => ['site/mapa/diagramas/requisicao-autenticada.json', 'com a primeira mensagem sem prova', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['navegador', 'setuppanel', '~requisicao-autenticada(?![a-z0-9-])~']],
+    'gerador: evidência de peça que não está no arquivo (step 10)'         => ['site/mapa/pecas.json', 'com a evidência do UserResource do /admin trocada por class UserResource extends Model, que não está no arquivo', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['~App(?:\\\\{1,2}|-)Filament(?:\\\\{1,2}|-)Admin(?:\\\\{1,2}|-)Resources(?:\\\\{1,2}|-)Users(?:\\\\{1,2}|-)UserResource~', 'UserResource.php']],
+    'posicionador: peça fora do modelo (step 10)'                          => ['site/mapa/diagramas/app-resumo-sem.json', 'com a peça fora do modelo entre as peças desenhadas', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['PecaQueNaoExiste', '~app-resumo-sem(?![a-z0-9-])~']],
+    'posicionador: modelo quebrado (step 10)'                              => ['site/mapa/pecas.json', 'com JSON quebrado', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['pecas.json']],
+    'posicionador: prova que não resolve (step 10)'                        => ['site/mapa/ligacoes.json', 'com a evidência de painel:app registra Dashboard trocada por Dashboard::make(), que não está no arquivo', ['node', 'mapa/posicionar.mjs', 'app-resumo-sem'], ['AppPanelProvider.php', '~app-resumo-sem(?![a-z0-9-])~']],
+    'gerador: condição com o modo fora do domínio (Adendo, A1)'            => ['site/mapa/pecas.json', 'com a condição do TenantResource do /admin no modo `Com`', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['TenantResource', '~modo\W{1,4}Com\b~']],
+    'gerador: condição no modo sem tenant, sem redação (Adendo, A1)'       => ['site/mapa/pecas.json', 'com a condição do TenantResource do /admin no modo `sem`', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['TenantResource', '~modo\W{1,4}sem\b~']],
+    'gerador: chave que não é KIT_* nem configuração (Adendo, A1)'         => ['site/mapa/pecas.json', 'com a chave da condição do AgenteIaResource trocada pelo número `123`', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AgenteIaResource', '123']],
+    'gerador: configuração de pacote sem fonte nova (Adendo, A1)'          => ['site/mapa/pecas.json', 'com a configuração `command-center.sources` da condição do CommandRecordResource com a `ligada` igual ao `padrao`', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['CommandRecordResource', 'command-center.sources']],
+    'gerador: condição sem âncora (Adendo, A1)'                            => ['site/mapa/pecas.json', 'com a condição do AgenteIaResource sem a âncora', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AgenteIaResource', '~(?i)(?:evid[eê]ncia|[aâ]ncora)~']],
+    'gerador: ligação de registro com a ponta fora do modelo (Adendo, A1)' => ['site/mapa/ligacoes.json', 'com a ligação "o painel admin registra `App\Support\PecaQueNaoExiste`", com a prova da ligação do FilamentShieldPlugin', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'registra', '~(?i)painel[: ]admin~']],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
 
 it('[CT-51] o gerador chamado por um caminho que passa por um link faz o mesmo que pelo caminho real, e não termina com 0 calado', function (): void {

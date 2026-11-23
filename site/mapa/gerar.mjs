@@ -227,11 +227,28 @@ function provasDasLigacoes(tipo, entrada) {
 // ligacoes.json); o arquivo do diagrama diz só o recorte e o layout (ADR-07).
 // ---------------------------------------------------------------------------------------------------
 let modelo;
-const carregarModelo = () =>
-  (modelo ??= {
-    pecas: new Map(lerJson(fileURLToPath(new URL('./pecas.json', import.meta.url))).map((peca) => [peca.id, peca])),
-    ligacoes: lerJson(fileURLToPath(new URL('./ligacoes.json', import.meta.url))),
-  });
+/**
+ * O modelo, lido uma vez. A condição de cada peça e as pontas de cada ligação são conferidas aqui, antes de qualquer
+ * efeito (P-14): o que não se lê é recusado nomeando a peça ou a ligação, e nunca some do desenho calado.
+ */
+const carregarModelo = () => {
+  if (modelo) return modelo;
+  const pecas = new Map(lerJson(fileURLToPath(new URL('./pecas.json', import.meta.url))).map((peca) => [peca.id, peca]));
+  const ligacoes = lerJson(fileURLToPath(new URL('./ligacoes.json', import.meta.url)));
+  for (const peca of pecas.values()) {
+    const problemas = problemasDaCondicao(peca.disponibilidade);
+    if (problemas.length) {
+      throw new Error(`[mapa] ERRO site/mapa/pecas.json — a peça ${peca.id}: a condição de disponibilidade não se lê: ${problemas.join('; ')}`);
+    }
+  }
+  for (const ligacao of ligacoes) {
+    const fora = [ligacao.de, ligacao.para].filter((id) => !pecas.has(id));
+    if (fora.length) {
+      throw new Error(`[mapa] ERRO site/mapa/ligacoes.json — a ligação ${ligacao.de} ${ligacao.verbo} ${ligacao.para}: ${fora.join(' e ')} não está no modelo`);
+    }
+  }
+  return (modelo = { pecas, ligacoes });
+};
 
 /** Id do modelo (FQCN, `painel:app`) no formato de id do archify. */
 const idArchify = (id) => id.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^[^a-zA-Z]+/, 'x-');
@@ -293,7 +310,47 @@ function sublabelDaPeca(peca) {
 // A peça condicional (Adendos 2 a 4): a que o painel registra, mas que só abre num modo ou com uma chave.
 // A condição é o campo `disponibilidade` do modelo — {modo?, chaves?: [{chave, padrao, ligada?}], evidencia}.
 // ---------------------------------------------------------------------------------------------------
-const MARCA_DO_MODO = { com: { pt: 'só com tenant ativo', en: 'tenancy on only' }, sem: { pt: 'só sem tenant', en: 'tenancy off only' } };
+/** A redação decidida do modo (D41): só a do modo com tenant; a condição em outro modo é recusada ao carregar o modelo. */
+const MARCA_DO_MODO = { com: { pt: 'só com tenant ativo', en: 'tenancy on only' } };
+const eVariavelDoKit = (chave) => typeof chave === 'string' && /^[A-Z][A-Z0-9_]*$/.test(chave);
+const eCaminhoDeConfiguracao = (chave) => typeof chave === 'string' && /^[a-z][\w-]*(?:\.[\w-]+)+$/.test(chave);
+
+/**
+ * O que impede ler a condição da peça, na forma que o conferidor do site também exige (`site/verifica-mapa.mjs`,
+ * `condicaoDaPeca`): o modo com redação decidida; cada chave, variável `KIT_*` com o valor de fábrica ou caminho de
+ * configuração com uma fonte que a liga além do valor de fábrica; modo ou chave; e a âncora do código que decide.
+ */
+function problemasDaCondicao(condicao) {
+  if (condicao === undefined || condicao === null) return [];
+  if (typeof condicao !== 'object' || Array.isArray(condicao)) return ['não é um objeto'];
+  const { modo = null, chaves = [], evidencia } = condicao;
+  const problemas = [];
+  if (modo !== null && !Object.hasOwn(MARCA_DO_MODO, modo)) {
+    problemas.push(`o modo ${JSON.stringify(modo)} não tem redação decidida (só "com")`);
+  }
+  if (!Array.isArray(chaves)) {
+    problemas.push('chaves não é lista');
+  } else {
+    for (const item of chaves) {
+      const chave = item?.chave;
+      if (eVariavelDoKit(chave)) {
+        if (!Object.hasOwn(item, 'padrao')) problemas.push(`a chave ${chave} sem o valor de fábrica (padrao)`);
+      } else if (eCaminhoDeConfiguracao(chave)) {
+        const deFabrica = [item.padrao ?? []].flat();
+        if (![item.ligada ?? []].flat().some((fonte) => !deFabrica.includes(fonte))) {
+          problemas.push(`a configuração ${chave} sem fonte que a ligue além do valor de fábrica (ligada)`);
+        }
+      } else {
+        problemas.push(`a chave ${JSON.stringify(chave)} não é variável KIT_* nem caminho de configuração`);
+      }
+    }
+    if (modo === null && chaves.length === 0) problemas.push('nem modo nem chave');
+  }
+  if (typeof evidencia?.arquivo !== 'string' || typeof evidencia?.trecho !== 'string') {
+    problemas.push('sem a âncora da condição (evidencia, com arquivo e trecho)');
+  }
+  return problemas;
+}
 
 /**
  * A marca da condição (RQ-27, D41), ou `null` na peça sem condição: o modo pelo termo da grade; a chave booleana pela
@@ -344,14 +401,21 @@ function cardDeCondicoes(desenhadas) {
   }];
 }
 
+/**
+ * O termo da grade da página para os modos em que o diagrama vale (P-09, D45): o de um modo, ou "os dois modos" no
+ * compartilhado, em qualquer ordem — e nunca o primeiro modo da lista.
+ */
+const termoDosModos = (modos) =>
+  modos.length === 2 ? { pt: 'os dois modos', en: 'both modes' } : modos[0] === 'com' ? { pt: 'com tenant ativo', en: 'tenancy on' } : { pt: 'sem tenant', en: 'tenancy off' };
+
 /** Árvore de registro (tree, para a direita): tudo o que o painel registra no modo do diagrama. */
 function arvoreDeRegistro(diagrama) {
   const { pecas, ligacoes } = carregarModelo();
   const [painel] = diagrama.paineis;
-  const [modo] = diagrama.modos;
   const raiz = `painel:${painel}`;
-  // o que o painel registra no modo do diagrama e fica disponível em cada modo dele (a peça condicional, Adendo 2)
-  const registradas = ligacoes.filter((l) => l.de === raiz && l.verbo === 'registra' && l.modos.includes(modo) && entraNosModos(pecas.get(l.para), diagrama.modos));
+  // o que o painel registra em cada modo do diagrama e fica disponível nele (a peça condicional, Adendo 2): a árvore
+  // compartilhada vale nos dois modos e não desenha o registro de um modo só (Setup Global do `04`)
+  const registradas = ligacoes.filter((l) => l.de === raiz && l.verbo === 'registra' && diagrama.modos.every((m) => l.modos.includes(m)) && entraNosModos(pecas.get(l.para), diagrama.modos));
   const GRUPOS = [
     ['recurso', { pt: 'Recursos', en: 'Resources' }],
     ['pagina', { pt: 'Páginas', en: 'Pages' }],
@@ -362,7 +426,7 @@ function arvoreDeRegistro(diagrama) {
   const nodes = [{
     id: idArchify(raiz),
     label: pecas.get(raiz).nome,
-    sublabel: modo === 'com' ? { pt: 'com tenant ativo', en: 'tenancy on' } : { pt: 'sem tenant', en: 'tenancy off' },
+    sublabel: termoDosModos(diagrama.modos),
     sources: pecas.get(raiz).evidencia.slice(0, 3),
   }];
   for (const [tipo, rotulo] of GRUPOS) {

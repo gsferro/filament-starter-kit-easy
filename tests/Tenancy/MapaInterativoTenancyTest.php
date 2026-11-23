@@ -208,26 +208,10 @@ function mapaTenancyConferirFeatures(array $modelo, array $catalogo, Panel $pain
 }
 
 /**
- * A peça entra no diagrama pela definição compartilhada do Setup Global (Adendo 2): o diagrama que vale num
- * modo só desenha a peça que fica disponível nele, e o compartilhado vale nos dois. Quem desenha — o gerador —
- * lê a disponibilidade da condição do modelo (`disponibilidade.modo`: o único modo em que a peça abre; sem ele,
- * os dois). A chave da condição não tira a peça de diagrama nenhum, porque entra ligada (P-15).
- *
- * @param  array{pecas: array<string, array<string, mixed>>}  $modelo
- * @param  list<string>  $modos  os modos em que o diagrama vale
- */
-function mapaTenancyEntraNoDiagrama(array $modelo, string $id, array $modos): bool
-{
-    $soNoModo = $modelo['pecas'][$id]['disponibilidade']['modo'] ?? null;
-
-    return $soNoModo === null || array_diff($modos, [$soNoModo]) === [];
-}
-
-/**
  * As ligações de registro (`painel:{id}` registra peça) que um diagrama `architecture` ou `tree` desenha,
  * no modo: a árvore, as do painel nesse modo; o mapa de arquitetura, as que têm as duas pontas
  * desenhadas, como peça ou como membro de agrupamento (mesma regra do gerador). Nos dois, só a ponta que
- * entra no diagrama pela definição compartilhada (`mapaTenancyEntraNoDiagrama()`): a guarda que conta a
+ * entra no diagrama pela definição compartilhada (`pecaAbreNosModosDoDiagrama()`): a guarda que conta a
  * ponta só pelo registro fica vermelha contra a implementação certa.
  *
  * @param  array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
@@ -238,7 +222,7 @@ function mapaTenancyLigacoesDesenhadas(array $modelo, array $diagrama, string $p
 {
     $raiz        = "painel:{$painel}";
     $modos       = $diagrama['modos'] ?? [];
-    $entra       = fn (string $id): bool => mapaTenancyEntraNoDiagrama($modelo, $id, $modos);
+    $entra       = fn (string $id): bool => pecaAbreNosModosDoDiagrama($modelo, $id, $modos);
     $registradas = array_filter(
         $modelo['ligacoes'],
         fn (array $l): bool => $l['de'] === $raiz && $l['verbo'] === 'registra' && in_array($modo, $l['modos'], true),

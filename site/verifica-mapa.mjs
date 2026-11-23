@@ -175,7 +175,9 @@ function partesDaMarca(condicao, idioma) {
   }
   for (const { chave, padrao, ligada } of condicao.chaves) {
     if (eVariavelDoKit(chave)) {
-      partes.push(typeof padrao === 'boolean' ? `${chave}=${padrao}` : chave);
+      // a chave que é lista diz o valor de fábrica dela: "vazia" / "empty" (R42)
+      const lista = [padrao ?? []].flat().length === 0 ? `${chave} ${idioma === 'pt' ? 'vazia' : 'empty'}` : chave;
+      partes.push(typeof padrao === 'boolean' ? `${chave}=${padrao}` : lista);
     } else {
       // a configuração de pacote: o caminho e a fonte que falta de fábrica (o que a ligada tem e o padrão não)
       const deFabrica = [padrao ?? []].flat().map(nomeCurto);
@@ -209,12 +211,22 @@ const condicional = (peca, id, onde, extra = {}) => {
   return condicao === null || condicao.erro !== undefined ? [] : [{ peca: peca.id, id, nomes: [peca.nome], condicao, onde, ...extra }];
 };
 
-/** No diagrama escrito à mão, as peças do modelo que o nó é: a do nome exato do rótulo, ou a cuja classe a prova do nó declara (Adendo 4). */
+/**
+ * No diagrama escrito à mão, as peças do modelo que o nó é (D43, Setup Global do `04`): a peça cuja classe uma fonte do
+ * nó declara, num arquivo de evidência dela; sem fonte assim, a do nome exato do rótulo, só se uma peça só tem o nome.
+ * Com homônimas e sem prova, o nó não designa peça.
+ */
 const declaraAClasse = (trecho, id) => new RegExp(`\\b(?:class|interface|trait|enum)\\s+${nomeCurto(id)}\\b`).test(trecho ?? '');
-const pecasDoNo = (no, rotulo) =>
-  [...pecasDoModelo.values()].filter(
-    (p) => p.nome === rotulo || (no.sources ?? []).some((s) => p.evidencia.some((e) => e.arquivo === s.arquivo) && declaraAClasse(s.trecho, p.id)),
+const pecasDoNo = (no, rotulo) => {
+  const pelaProva = [...pecasDoModelo.values()].filter((p) =>
+    (no.sources ?? []).some((s) => p.evidencia.some((e) => e.arquivo === s.arquivo) && declaraAClasse(s.trecho, p.id)),
   );
+  if (pelaProva.length > 0) {
+    return pelaProva;
+  }
+  const peloNome = [...pecasDoModelo.values()].filter((p) => p.nome === rotulo);
+  return peloNome.length === 1 ? peloNome : [];
+};
 
 /** A coleção de peças de cada tipo, e o campo do rótulo nela. */
 const COLECAO_DE_PECAS = {
@@ -281,8 +293,10 @@ function esperadoDoDiagrama(d, idioma) {
   const campo = CAMPO_DO_ROTULO[d.tipo] ?? 'label';
   const pecas = colecao.map((peca) => ({ id: peca.id, rotulo: texto(peca[campo], idioma) }));
   // no escrito à mão, a marca é escrita no arquivo, e o esperado dela sai da condição do modelo; ela fica só no card
-  // "Condições de disponibilidade" (`onde: 'escrito'`): a caixa do participante de sequência tem 96 px fixos e o nó do
-  // fluxo de dados, a largura do estágio, e o archify recusa o rótulo secundário com a marca (medido no step 11)
+  // "Condições de disponibilidade" (`onde: 'escrito'`): a caixa do participante de sequência chega no máximo a 190 px
+  // (archify, `renderers/sequence/render-sequence.mjs`, `participantSpreadGeometry`) e o nó do fluxo de dados, sem largura
+  // explícita, à do estágio, 168 px (`renderers/dataflow/dataflow-compiler.mjs`, `stageW`); a marca do chat pede cerca de
+  // 345 px e 381 px, e o archify recusa o rótulo secundário que não cabe (medido no step 11)
   const condicionais = colecao.flatMap((no) => {
     const rotulo = texto(no[campo], idioma);
     return pecasDoNo(no, rotulo).flatMap((peca) => condicional(peca, no.id, 'escrito').map((c) => ({ ...c, nomes: [...new Set([peca.nome, rotulo])] })));

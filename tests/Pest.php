@@ -4717,6 +4717,60 @@ function conferirCondicaoNoModo(string $quem, string $modo, mixed $condicao, arr
 }
 
 /**
+ * Pela condição do modelo, a peça fica disponível em todo modo em que o diagrama vale (Setup Global do `04`, "Entrar
+ * no diagrama de um modo"): a condição de modo a prende a ele, e a de chave, não, porque entra ligada (P-15). O
+ * diagrama compartilhado vale nos dois modos. É a regra do gerador (`site/mapa/gerar.mjs`, `entraNosModos`).
+ *
+ * @param  array{pecas: array<string, array<string, mixed>>}  $modelo
+ * @param  list<string>  $modos  os modos em que o diagrama vale
+ */
+function pecaAbreNosModosDoDiagrama(array $modelo, string $id, array $modos): bool
+{
+    $soNoModo = $modelo['pecas'][$id]['disponibilidade']['modo'] ?? null;
+
+    return $soNoModo === null || array_diff($modos, [$soNoModo]) === [];
+}
+
+/**
+ * D43 (Setup Global do `04`): as peças do modelo que um nó de diagrama escrito à mão designa — a peça cuja classe uma
+ * fonte (`sources`) do nó declara, num arquivo de evidência dela, sem que o trecho precise ser igual ao da evidência;
+ * sem fonte assim, a peça do nome exato do rótulo, só se uma peça só tem esse nome. Com homônimas e sem prova, nenhuma.
+ * É a mesma regra do conferidor do site (`site/verifica-mapa.mjs`, `pecasDoNo`).
+ *
+ * @param  array<string, mixed>  $no
+ * @param  list<string>  $rotulos
+ * @param  iterable<array<string, mixed>>  $pecas
+ * @return list<string>
+ */
+function pecasDoNoEscritoAMao(array $no, array $rotulos, iterable $pecas): array
+{
+    $pelaProva = [];
+    $peloNome  = [];
+
+    foreach ($pecas as $peca) {
+        $id         = (string) $peca['id'];
+        $declaracao = '/\b(?:class|interface|trait|enum)\s+'.preg_quote(class_basename($id), '/').'\b/';
+        $arquivos   = array_column(isset($peca['evidencia']['arquivo']) ? [$peca['evidencia']] : (array) ($peca['evidencia'] ?? []), 'arquivo');
+
+        foreach ((array) ($no['sources'] ?? []) as $fonte) {
+            if (is_array($fonte) && in_array($fonte['arquivo'] ?? null, $arquivos, true) && preg_match($declaracao, (string) ($fonte['trecho'] ?? '')) === 1) {
+                $pelaProva[] = $id;
+            }
+        }
+
+        if (in_array($peca['nome'] ?? null, $rotulos, true)) {
+            $peloNome[] = $id;
+        }
+    }
+
+    if ($pelaProva !== []) {
+        return array_values(array_unique($pelaProva));
+    }
+
+    return count($peloNome) === 1 ? $peloNome : [];
+}
+
+/**
  * O arnês do discriminante (Setup Global do `04`, "O arnês, medido"): o `PapeisSeeder` e o super_admin
  * do kit autenticado. O super_admin vem de `usuarioDoKit()` com o papel que `filament-shield.super_admin.name`
  * nomeia (`master_global`), e o `Gate::before` o põe acima de toda permissão. Com tenant, o arnês cria a
@@ -4750,7 +4804,7 @@ function arnesDoDiscriminante(): array
         $organizacao = organizacaoComRegistro($slug);
 
         test()->flushSession();
-        test()->actingAs($superAdmin)->get("/app/{$organizacao->slug}");
+        test()->actingAs($superAdmin)->get("/app/{$organizacao->slug}")->assertOk();
     }
 
     test()->actingAs($superAdmin);

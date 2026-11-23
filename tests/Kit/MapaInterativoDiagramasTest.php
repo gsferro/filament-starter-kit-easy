@@ -107,7 +107,7 @@ function mapaDiagramasNo(string $tipo, string $rotulo, array $pecas = [], array 
  * tipos são desenhados à mão, e a peça de um nó é a que ele nomeia, pelo id ou pelo nome exato.
  * No construído, a peça entra no diagrama de um modo só quando o painel a registra nele e a condição do modelo a
  * deixa disponível nele (Setup Global do `04`, "Entrar no diagrama de um modo"): o compartilhado não desenha a peça
- * que a condição prende a um modo (`mapaDiagramasAbreNosModos()`).
+ * que a condição prende a um modo (`pecaAbreNosModosDoDiagrama()`).
  *
  * @return array<string, mixed>
  */
@@ -130,11 +130,11 @@ function mapaDiagramasConstruir(array $decl, array $modelo): array
 
     if ($ir['construtor'] === 'registro') {
         $raiz             = 'painel:'.$ir['paineis'][0];
-        $modo             = $ir['modos'][0];
         $ir['nos'][$raiz] = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $raiz), [$raiz]);
         foreach ($modelo['ligacoes'] as $ligacao) {
-            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'], true)
-                && mapaDiagramasAbreNosModos($modelo, $ligacao['para'], $ir['modos'])) {
+            // A ligação vale em cada modo do diagrama (Setup Global do `04`, "O diagrama que vale nos dois modos e a ligação de um modo só").
+            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && array_diff($ir['modos'], $ligacao['modos']) === []
+                && pecaAbreNosModosDoDiagrama($modelo, $ligacao['para'], $ir['modos'])) {
                 $ir['nos'][$ligacao['para']] = mapaDiagramasNo('peca', mapaDiagramasNomeDaPeca($modelo, $ligacao['para']), [$ligacao['para']]);
                 $ir['arestas'][]             = [$raiz, $ligacao['para']];
                 $ir['representadas'][]       = $ligacao['de'].'|'.$ligacao['para'].'|'.$ligacao['verbo'];
@@ -147,7 +147,7 @@ function mapaDiagramasConstruir(array $decl, array $modelo): array
     if ($ir['construtor'] === 'mapa') {
         $modo       = count($ir['modos']) === 1 ? $ir['modos'][0] : null;
         $existe     = static fn (string $id): bool => ($modo === null || in_array($modo, $pecas[$id]['registrada'] ?? [], true))
-            && mapaDiagramasAbreNosModos($modelo, $id, $ir['modos']);
+            && pecaAbreNosModosDoDiagrama($modelo, $id, $ir['modos']);
         $desenhadas = [];
         foreach ($decl['pecas'] ?? [] as $peca) {
             if ($existe($peca['id'])) {
@@ -195,21 +195,13 @@ function mapaDiagramasConstruir(array $decl, array $modelo): array
         return $ir;
     }
 
-    $porNome                         = mapaDiagramasIdsPorNome($modelo);
     [$chaveDosNos, $chaveDasArestas] = mapaDiagramasColecoes()[$decl['tipo']] ?? [null, null];
     $ir['estrutura']                 = md5((string) json_encode([$decl[$chaveDosNos] ?? [], $chaveDasArestas !== null ? ($decl[$chaveDasArestas] ?? []) : []]));
     foreach ($decl[$chaveDosNos] ?? [] as $no) {
         $rotuloPt = mapaDiagramasPt($no['label'] ?? $no['name'] ?? '');
         $rotuloEn = mapaDiagramasEn($no['label'] ?? $no['name'] ?? '');
-        $ids      = [];
-        if (isset($pecas[$no['id']])) {
-            $ids[] = $no['id'];
-        }
-        foreach ([$rotuloPt, $rotuloEn] as $rotulo) {
-            foreach ($porNome[$rotulo] ?? [] as $id) {
-                $ids[] = $id;
-            }
-        }
+        // o nó da D43: a prova vem antes do nome, e o nome vale só sem homônima
+        $ids                  = [...(isset($pecas[$no['id']]) ? [$no['id']] : []), ...pecasDoNoEscritoAMao($no, [$rotuloPt, $rotuloEn], $modelo['pecas'])];
         $ir['nos'][$no['id']] = mapaDiagramasNo('peca', $rotuloPt, array_values(array_unique($ids)));
     }
     foreach ($chaveDasArestas !== null ? ($decl[$chaveDasArestas] ?? []) : [] as $aresta) {
@@ -1489,6 +1481,46 @@ it('[CT-14] toda ligação do modelo aparece desenhada em diagrama publicado, e 
         return;
     }
 
+    if (in_array($mundoDeControle, ['ligação de registro de um modo só na árvore compartilhada', 'a mesma ligação, nos dois modos'], true)) {
+        // A árvore `infra-registro` é compartilhada (modos sem e com): o mundo é só ela, montada duas vezes — pela guarda e
+        // pelo gerador (forma de leitura da G5) —, com a ligação "o painel infra registra o FilamentShieldPlugin" acrescentada
+        // à cópia em memória do modelo (Setup Global do `04`, "O diagrama que vale nos dois modos e a ligação de um modo só").
+        $nosDoisModos = $mundoDeControle === 'a mesma ligação, nos dois modos';
+        $registro     = [...$shield, 'de' => 'painel:infra', 'paineis' => ['infra'], 'modos' => $nosDoisModos ? ['sem', 'com'] : ['sem']];
+        $arvore       = diagramasDoMapa()['infra-registro'];
+        $daGuarda     = ['pecas' => $modelo['pecas'], 'ligacoes' => [$registro]];
+        $naGuarda     = mapaDiagramasConferirLigacoes($daGuarda, ['infra-registro' => mapaDiagramasConstruir($arvore, $daGuarda)], ['infra-registro']);
+        $descricao    = mapaDiagramasDescricaoDaLigacao($daGuarda, $registro);
+        $montado      = entradasDoGeradorDoMapa(['slugs' => ['infra-registro'], 'ligacoes' => [$registro]]);
+        $idDoPlugin   = $montado['ids'][$shield['para']];
+
+        if ($nosDoisModos) {
+            expect($naGuarda['motivo'])->toBe('aceita');
+        } else {
+            expect($naGuarda['aceita'])->toBeFalse()
+                ->and($naGuarda['motivo'])->toContain('FilamentShieldPlugin', 'painel:infra');
+        }
+
+        foreach (['pt', 'en'] as $idioma) {
+            $entrada = $montado['diagramas']['infra-registro'][$idioma] ?? [];
+            expect($entrada)->not->toHaveKey('erro');
+            $nos      = array_column($entrada['nodes'] ?? [], 'id');
+            $itens    = array_merge([], ...array_map(static fn (array $card): array => array_map('strval', $card['items'] ?? []), $entrada['cards'] ?? []));
+            $doPlugin = array_values(array_filter($itens, static fn (string $item): bool => str_contains($item, 'FilamentShieldPlugin')));
+            $provas   = array_values(array_filter($doPlugin, static fn (string $item): bool => str_contains($item, (string) $registro['evidencia']['trecho'])));
+
+            if ($nosDoisModos) {
+                expect(in_array($idDoPlugin, $nos, true))->toBeTrue("infra-registro ({$idioma}): o gerador não desenhou o nó do FilamentShieldPlugin");
+                expect($provas)->not->toBeEmpty("infra-registro ({$idioma}): o item de prova da ligação não está no card");
+            } else {
+                expect(in_array($idDoPlugin, $nos, true))->toBeFalse("infra-registro ({$idioma}): o gerador desenhou o nó do FilamentShieldPlugin, e a ligação ({$descricao}) vale só sem tenant");
+                expect($doPlugin)->toBe([], "infra-registro ({$idioma}): o gerador desenhou item de card do FilamentShieldPlugin, e a ligação ({$descricao}) vale só sem tenant");
+            }
+        }
+
+        return;
+    }
+
     $nomeia = [];
     switch ($mundoDeControle) {
         case 'só no texto da peça':
@@ -1558,7 +1590,7 @@ it('[CT-14] toda ligação do modelo aparece desenhada em diagrama publicado, e 
     }
 })->with([
     'publicados', 'só no texto da peça', 'agrupamento sem membros', 'membros só no texto secundário', 'porta sem os membros', 'ausente', 'diagrama órfão',
-    'ponta indisponível no modo do diagrama',
+    'ponta indisponível no modo do diagrama', 'ligação de registro de um modo só na árvore compartilhada', 'a mesma ligação, nos dois modos',
 ]);
 
 /*
@@ -1780,6 +1812,51 @@ it('[CT-19] compartilha-se só o que é igual nos dois modos, e o igual não se 
         return;
     }
 
+    if (in_array($mundoDeControle, ['raiz das árvores publicadas', 'raiz com os modos noutra ordem', 'raiz de um modo só, controle'], true)) {
+        // Forma de leitura da G5: a entrada que o gerador entrega ao archify (Setup Global do `04`, "O diagrama que vale nos
+        // dois modos e o rótulo da raiz"). O esperado sai do `modos` do arquivo e da tabela, e a comparação é por igualdade.
+        $termoDoModo = static function (array $modos): array {
+            $ordenados = $modos;
+            sort($ordenados);
+
+            return match ($ordenados) {
+                ['sem']        => ['pt' => 'sem tenant', 'en' => 'tenancy off'],
+                ['com']        => ['pt' => 'com tenant ativo', 'en' => 'tenancy on'],
+                ['com', 'sem'] => ['pt' => 'os dois modos', 'en' => 'both modes'],
+            };
+        };
+        $decls = array_filter(diagramasDoMapa(), static fn (array $decl): bool => ($decl['construtor'] ?? null) === 'registro');
+
+        if ($mundoDeControle === 'raiz das árvores publicadas') {
+            $pedido  = ['construtor' => 'registro'];
+            $arvores = $decls;
+        } else {
+            $copia          = $decls['infra-registro'];
+            $copia['modos'] = $mundoDeControle === 'raiz com os modos noutra ordem' ? ['com', 'sem'] : ['sem'];
+            $pedido         = ['extras' => [$copia], 'soExtras' => true];
+            $arvores        = ['infra-registro' => $copia];
+        }
+        $gerado = entradasDoGeradorDoMapa($pedido);
+
+        expect(array_keys($gerado['diagramas']))->toEqualCanonicalizing(array_keys($arvores))
+            ->and($arvores)->not->toBeEmpty();
+        foreach ($arvores as $slug => $decl) {
+            $raiz = $gerado['ids']['painel:'.$decl['paineis'][0]];
+            foreach (['pt', 'en'] as $idioma) {
+                $entrada = $gerado['diagramas'][$slug][$idioma] ?? [];
+                expect($entrada)->not->toHaveKey('erro');
+                $nosDaRaiz = array_values(array_filter($entrada['nodes'] ?? [], static fn (array $no): bool => $no['id'] === $raiz));
+                expect($nosDaRaiz)->toHaveCount(1, "{$slug} ({$idioma}): a raiz (peça painel) não é um nó só da entrada");
+                expect($nosDaRaiz[0]['sublabel'] ?? null)->toBe($termoDoModo($decl['modos'])[$idioma], "{$slug} ({$idioma}): o rótulo secundário da raiz não é o termo do `modos` ".json_encode($decl['modos']));
+            }
+        }
+        if ($mundoDeControle === 'raiz das árvores publicadas') {
+            expect($arvores)->toHaveCount(5);
+        }
+
+        return;
+    }
+
     if ($mundoDeControle === 'disponibilidade é diferença') {
         // A cópia do modelo dá ao TenantResource a condição "só com tenant", e o /admin troca a árvore compartilhada
         // por duas, uma por modo, que só diferem nele: a de sem tenant não o desenha.
@@ -1846,6 +1923,7 @@ it('[CT-19] compartilha-se só o que é igual nos dois modos, e o igual não se 
 })->with([
     'publicados', 'compartilhado desenha DefinirTenantDePermissoes', 'dois diagramas iguais, um por modo',
     'sem tenant desenha DefinirTenantDePermissoes', 'sem tenant desenha o painel app usa o model Tenant', 'disponibilidade é diferença',
+    'raiz das árvores publicadas', 'raiz com os modos noutra ordem', 'raiz de um modo só, controle',
 ]);
 
 /*
@@ -2603,19 +2681,6 @@ function mapaDiagramasCondicao(array $modelo, string $id): ?array
 }
 
 /**
- * Pela condição do modelo, a peça fica disponível em todo modo em que o diagrama vale: a condição de modo a prende a
- * ele, e a de chave, não (P-15).
- *
- * @param  list<string>  $modos
- */
-function mapaDiagramasAbreNosModos(array $modelo, string $id, array $modos): bool
-{
-    $modo = mapaDiagramasCondicao($modelo, $id)['modo'] ?? null;
-
-    return $modo === null || array_diff($modos, [$modo]) === [];
-}
-
-/**
  * A condição que o `04` dá a cada peça das linhas de controle — a tabela da população e as âncoras do Setup Global
  * (Adendos 2 a 4) —, no formato do campo `disponibilidade` do modelo. A âncora é o arquivo e o símbolo do código que
  * decide; ela só vale na cópia em memória.
@@ -2710,43 +2775,6 @@ function mapaDiagramasPaineisDoLugar(string $peca, array $doDiagrama, array $pop
     return $foraDoRegistro === [] ? [] : array_keys($populacao);
 }
 
-/**
- * As peças que cada nó do diagrama escrito à mão declara pela prova: a fonte do nó com o arquivo da evidência da peça
- * no modelo e o trecho da declaração da classe dela (Setup Global do `04`, "Entrar no diagrama de um modo", Adendo 4).
- * O construído não tem prova por nó, e devolve vazio.
- *
- * @return array<string, list<string>> id do nó => ids das peças
- */
-function mapaDiagramasPecasPelaProva(array $decl, array $modelo): array
-{
-    $chaveDosNos = ($decl['construtor'] ?? null) === null ? (mapaDiagramasColecoes()[$decl['tipo'] ?? ''][0] ?? null) : null;
-    if ($chaveDosNos === null) {
-        return [];
-    }
-    $declaradas = [];
-    foreach ($modelo['pecas'] as $id => $peca) {
-        foreach ($peca['evidencia'] ?? [] as $evidencia) {
-            $trecho = (string) ($evidencia['trecho'] ?? '');
-            if (preg_match('/\b(?:class|interface|trait|enum)\s+'.preg_quote((string) $peca['nome'], '/').'\b/', $trecho) === 1) {
-                $declaradas[($evidencia['arquivo'] ?? '').'|'.$trecho][] = (string) $id;
-            }
-        }
-    }
-    $saida = [];
-    foreach ($decl[$chaveDosNos] ?? [] as $no) {
-        foreach ($no['sources'] ?? [] as $fonte) {
-            if (! is_array($fonte)) {
-                continue;
-            }
-            foreach ($declaradas[($fonte['arquivo'] ?? '').'|'.($fonte['trecho'] ?? '')] ?? [] as $id) {
-                $saida[(string) $no['id']][] = $id;
-            }
-        }
-    }
-
-    return array_map(static fn (array $ids): array => array_values(array_unique($ids)), $saida);
-}
-
 /** O desenho com a peça como nó próprio: a cópia que a desenha, mesmo que o construtor a tirasse. */
 function mapaDiagramasComoNo(array $ir, array $modelo, string $peca): array
 {
@@ -2803,11 +2831,10 @@ function mapaDiagramasConferirLugar(array $modelo, array $decls, array $irs): ar
         }
         $slug        = (string) $slug;
         $diagramas[] = $slug;
-        $pelaProva   = mapaDiagramasPecasPelaProva($decls[$slug] ?? ['tipo' => $ir['tipo'], 'construtor' => $ir['construtor']], $modelo);
         foreach ($ir['nos'] as $no => $dado) {
             $membro = $dado['tipo'] === 'grupo';
             $onde   = $membro ? "como membro do agrupamento {$no} ({$dado['rotulo']})" : "como o nó {$no}";
-            foreach (array_unique($membro ? $dado['nomeados'] : [...$dado['pecas'], ...($pelaProva[$no] ?? [])]) as $peca) {
+            foreach (array_unique($membro ? $dado['nomeados'] : $dado['pecas']) as $peca) {
                 $conferidas[$peca] = true;
                 $quem              = mapaDiagramasNomeDaPeca($modelo, $peca)." ({$peca})";
                 $condicao          = mapaDiagramasCondicao($modelo, $peca);
@@ -3031,7 +3058,10 @@ function mapaDiagramasPartesDaMarca(array $condicao, string $idioma): array
     foreach ($chaves as $chave) {
         $nome = (string) $chave['chave'];
         if ($variavel($nome)) {
-            $partes[] = is_bool($chave['padrao'] ?? null) ? $nome.'='.$valor($chave['padrao']) : $nome;
+            // A chave que é lista diz o valor de fábrica dela: "vazia" / "empty" (R42, achado A3).
+            $partes[] = is_bool($chave['padrao'] ?? null)
+                ? $nome.'='.$valor($chave['padrao'])
+                : ((array) ($chave['padrao'] ?? []) === [] ? $nome.($idioma === 'pt' ? ' vazia' : ' empty') : $nome);
 
             continue;
         }
@@ -3071,15 +3101,18 @@ function mapaDiagramasMarca(array $condicao, string $idioma): string
     return implode(' · ', $partes).($fim === null ? '' : " {$fim}");
 }
 
-/** O texto traz alguma marca na redação decidida: o modo, a chave com o valor ou a configuração de pacote. */
+/**
+ * O texto traz alguma marca na redação decidida inteira (R42, achado A4): o modo; uma chave — a variável `KIT_*` com o
+ * valor, a lista com "vazia" / "empty", ou qualquer caminho de configuração com a fonte que falta.
+ */
 function mapaDiagramasTemMarca(string $texto): bool
 {
-    return preg_match('/só com tenant ativo|tenancy on only|\b[A-Z][A-Z0-9_]*=(?:false|true)\b|command-center\.sources/u', $texto) === 1;
+    return preg_match('/só com tenant ativo|tenancy on only|\b[A-Z][A-Z0-9_]*=(?:false|true)\b|\b[A-Z][A-Z0-9_]*\s+(?:vazia|empty)\b|\b[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)+\s+(?:sem|without)\s+\S/u', $texto) === 1;
 }
 
 /**
  * As peças que cada nó da entrada é: no construído, a do id do archify; no escrito à mão, a do id ou do nome exato
- * do rótulo (`mapaDiagramasConstruir()`) e a da prova (`mapaDiagramasPecasPelaProva()`).
+ * do rótulo e a da prova, pela D43 (`mapaDiagramasConstruir()`, `pecasDoNoEscritoAMao()`).
  *
  * @param  array<string, string>  $ids  id do modelo => id do archify
  * @return array<string, list<string>> id do nó => ids das peças
@@ -3090,11 +3123,10 @@ function mapaDiagramasPecasDosNos(array $entrada, array $decl, array $modelo, ar
     $escrito    = ($decl['construtor'] ?? null) === null;
     $porArchify = array_flip($ids);
     $ir         = $escrito ? mapaDiagramasConstruir($decl, $modelo) : null;
-    $pelaProva  = $escrito ? mapaDiagramasPecasPelaProva($decl, $modelo) : [];
     $saida      = [];
     foreach ($colecao === null ? [] : ($entrada[$colecao] ?? []) as $no) {
         $id    = (string) ($no['id'] ?? '');
-        $pecas = $escrito ? [...($ir['nos'][$id]['pecas'] ?? []), ...($pelaProva[$id] ?? [])] : (isset($porArchify[$id]) ? [(string) $porArchify[$id]] : []);
+        $pecas = $escrito ? ($ir['nos'][$id]['pecas'] ?? []) : (isset($porArchify[$id]) ? [(string) $porArchify[$id]] : []);
         if ($pecas !== []) {
             $saida[$id] = array_values(array_unique($pecas));
         }
@@ -3362,6 +3394,8 @@ it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da 
     $command = 'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource';
     $chat    = 'App\\Livewire\\AssistenteChatWidget';
     $plugin  = 'Harvirsidhu\\FilamentCards\\FilamentCardsPlugin';
+    expect(mapaDiagramasIdsPorNome($modelo)['AgenteIa'] ?? [])->toHaveCount(1);
+    $agenteIa = mapaDiagramasIdsPorNome($modelo)['AgenteIa'][0];
 
     if ($mundo === 'publicados') {
         $resultado = mapaDiagramasConferirMarcas($modelo, $decls, $gerado);
@@ -3377,21 +3411,70 @@ it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da 
         return;
     }
 
+    if (in_array($mundo, ['a cópia do admin-convite com o participante ConviteResource de prova do /admin, sem linha no card', 'a mesma cópia, com a linha do ConviteResource do /app no card', 'a cópia do admin-convite com o participante ConviteResource sem prova, sem linha no card', 'a cópia do admin-convite com o participante ConviteResource sem prova, com a linha do ConviteResource do /app no card'], true)) {
+        // D43 (Setup Global do `04`): a prova do participante vem antes do nome, e com homônimas e sem prova o nó não designa peça.
+        $slug         = 'admin-convite';
+        $adminConvite = 'App\\Filament\\Admin\\Resources\\Convites\\ConviteResource';
+        $appConvite   = 'App\\Filament\\App\\Resources\\Convites\\ConviteResource';
+        $comProva     = ! in_array($mundo, ['a cópia do admin-convite com o participante ConviteResource sem prova, sem linha no card', 'a cópia do admin-convite com o participante ConviteResource sem prova, com a linha do ConviteResource do /app no card'], true);
+        $copiaDecl    = $decls[$slug];
+        $participante = ['id' => 'conviteresource', 'type' => 'frontend', 'label' => 'ConviteResource', 'sublabel' => ['pt' => 'recurso', 'en' => 'resource']];
+        if ($comProva) {
+            $participante['sources'] = [['arquivo' => 'app/Filament/Admin/Resources/Convites/ConviteResource.php', 'trecho' => 'class ConviteResource extends Resource', 'label' => 'ConviteResource']];
+        }
+        $copiaDecl['participants'][] = $participante;
+        $entrada                     = entradasDoGeradorDoMapa(['extras' => [$copiaDecl], 'soExtras' => true, 'idiomas' => ['pt']])['diagramas'][$slug]['pt'] ?? [];
+        expect($entrada)->not->toHaveKey('erro')->and($entrada['participants'] ?? [])->not->toBeEmpty();
+        $conferirConvite = static fn (array $doConvite): array => mapaDiagramasConferirMarcas($modelo, [$slug => $copiaDecl], ['ids' => $ids, 'diagramas' => [$slug => ['pt' => $doConvite]]]);
+
+        expect(mapaDiagramasPecasDosNos($entrada, $copiaDecl, $modelo, $ids)['conviteresource'] ?? [])->toBe($comProva ? [$adminConvite] : []);
+        // Sem a linha do ConviteResource no card: aceita (e, no mundo com a linha, é o controle positivo dele).
+        expect($conferirConvite($entrada)['motivo'])->toBe('aceita');
+        if (! in_array($mundo, ['a mesma cópia, com a linha do ConviteResource do /app no card', 'a cópia do admin-convite com o participante ConviteResource sem prova, com a linha do ConviteResource do /app no card'], true)) {
+            return;
+        }
+
+        $entrada['cards'][] = ['dot' => 'amber', 'title' => 'Condições de disponibilidade', 'items' => ['ConviteResource: só com tenant ativo — app/Filament/App/Resources/Convites/ConviteResource.php — …']];
+        $resultado          = $conferirConvite($entrada);
+
+        expect($resultado['aceita'])->toBeFalse()
+            ->and($resultado['motivo'])->toContain($slug, 'ConviteResource');
+        // D44: com a prova, a linha é de peça que o diagrama não desenha e a falha nomeia a do /app; sem prova, o nó não designa peça e a falha nomeia a linha.
+        if ($comProva) {
+            expect(array_column($resultado['falhas'], 'peca'))->toContain($appConvite);
+        }
+
+        return;
+    }
+
     [$slug, $idioma, $peca, $comCondicao] = match ($mundo) {
         'a entrada do admin-administracao, com o nó do AgenteIaResource sem a marca',
         'a mesma entrada, com a marca do AgenteIaResource só no tag'                                                         => ['admin-administracao', 'pt', $agente, [$agente]],
         'a entrada do admin-resumo-sem, com a linha do AgenteIaResource no card do agrupamento de administração sem a marca',
-        'a entrada do admin-resumo-sem, com o card Condições de disponibilidade sem a linha do AgenteIaResource'                                                                            => ['admin-resumo-sem', 'pt', $agente, [$agente]],
-        'a entrada en do app-registro-com, com a marca do ProjetoResource só com o modo'                                                                                                    => ['app-registro-com', 'en', $projeto, [$projeto]],
-        'a entrada en do app-registro-com, com a marca de modo do UserResource do /app em pt'                                                                                               => ['app-registro-com', 'en', $userApp, [$userApp]],
-        'a entrada do admin-acesso-e-autenticacao, com a marca de modo do UserResource do /app no nó do UserResource do /admin'                                                             => ['admin-acesso-e-autenticacao', 'pt', 'App\\Filament\\Admin\\Resources\\Users\\UserResource', [$userApp]],
-        'a entrada do admin-registro-com, com a marca KIT_HUB=false de fábrica no nó do FilamentCardsPlugin'                                                                                => ['admin-registro-com', 'pt', $plugin, [$hub]],
-        'a entrada do infra-infraestrutura-2, com a marca do CommandRecordResource sem o caminho command-center.sources'                                                                    => ['infra-infraestrutura-2', 'pt', $command, [$command]],
-        'a entrada do app-registro-sem, com o card listando o UserResource do /app, que o diagrama não desenha'                                                                             => ['app-registro-sem', 'pt', $userApp, [$userApp]],
-        'a entrada do admin-administracao, com a linha do AgenteIaResource no card trazendo a âncora do HubDeAdministracao'                                                                 => ['admin-administracao', 'pt', $agente, [$agente, $hub]],
-        'a entrada do app-chat-de-ia, com o card Condições de disponibilidade sem a linha do chat, que o participante desenha pela prova'                                                   => ['app-chat-de-ia', 'pt', $chat, [$chat]],
-        default                                                                                                                                                                             => ['kit-ia', 'pt', $chat, [$chat]],
+        'a entrada do admin-resumo-sem, com o card Condições de disponibilidade sem a linha do AgenteIaResource'                                                                                                                           => ['admin-resumo-sem', 'pt', $agente, [$agente]],
+        'a entrada en do app-registro-com, com a marca do ProjetoResource só com o modo'                                                                                                                                                   => ['app-registro-com', 'en', $projeto, [$projeto]],
+        'a entrada en do app-registro-com, com a marca de modo do UserResource do /app em pt'                                                                                                                                              => ['app-registro-com', 'en', $userApp, [$userApp]],
+        'a entrada do admin-acesso-e-autenticacao, com a marca de modo do UserResource do /app no nó do UserResource do /admin'                                                                                                            => ['admin-acesso-e-autenticacao', 'pt', 'App\\Filament\\Admin\\Resources\\Users\\UserResource', [$userApp]],
+        'a entrada do admin-registro-com, com a marca KIT_HUB=false de fábrica no nó do FilamentCardsPlugin'                                                                                                                               => ['admin-registro-com', 'pt', $plugin, [$hub]],
+        'a entrada do infra-infraestrutura-2, com a marca do CommandRecordResource sem o caminho command-center.sources'                                                                                                                   => ['infra-infraestrutura-2', 'pt', $command, [$command]],
+        'a entrada do app-registro-sem, com o card listando o UserResource do /app, que o diagrama não desenha'                                                                                                                            => ['app-registro-sem', 'pt', $userApp, [$userApp]],
+        'a entrada do admin-administracao, com a linha do AgenteIaResource no card trazendo a âncora do HubDeAdministracao'                                                                                                                => ['admin-administracao', 'pt', $agente, [$agente, $hub]],
+        'a entrada do app-chat-de-ia, com o card Condições de disponibilidade sem a linha do chat, que o participante desenha pela prova'                                                                                                  => ['app-chat-de-ia', 'pt', $chat, [$chat]],
+        'a entrada de uma cópia do app-chat-de-ia com a prova do participante abreviada para class AssistenteChatWidget, e o card sem a linha do chat'                                                                                     => ['app-chat-de-ia', 'pt', $chat, [$chat]],
+        'a entrada en do kit-ia, com a marca do chat KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia by default'                                                                                                                       => ['kit-ia', 'en', $chat, [$chat]],
+        'a entrada do admin-administracao, com KIT_AGENTES_IA_PAINEIS vazia de fábrica no nó do model AgenteIa, que não tem condição', 'a mesma entrada, com command-center.enabled sem DatabaseSource de fábrica no nó do model AgenteIa' => ['admin-administracao', 'pt', $agenteIa, []],
+        default                                                                                                                                                                                                                            => ['kit-ia', 'pt', $chat, [$chat]],
     };
+    if ($mundo === 'a entrada de uma cópia do app-chat-de-ia com a prova do participante abreviada para class AssistenteChatWidget, e o card sem a linha do chat') {
+        // D43: a prova do participante do chat, abreviada, declara a classe no arquivo da evidência; o gerador monta a cópia.
+        foreach ($decls[$slug]['participants'] as $i => $participante) {
+            if ($participante['id'] === 'widget') {
+                $decls[$slug]['participants'][$i]['sources'][0]['trecho'] = 'class AssistenteChatWidget';
+            }
+        }
+        $gerado['diagramas'][$slug][$idioma] = entradasDoGeradorDoMapa(['extras' => [$decls[$slug]], 'soExtras' => true, 'idiomas' => [$idioma]])['diagramas'][$slug][$idioma] ?? [];
+        expect($gerado['diagramas'][$slug][$idioma])->not->toHaveKey('erro');
+    }
     $copia     = mapaDiagramasModeloComCondicoes($modelo, $comCondicao);
     $publicada = $gerado['diagramas'][$slug][$idioma];
     $marcada   = static fn (array $opcoes = [], ?array $entrada = null): array => mapaDiagramasMarcada($entrada ?? mapaDiagramasSemMarca($publicada, $copia, $decls[$slug], $ids), $idioma, $copia, $decls[$slug], $ids, $peca, $opcoes);
@@ -3424,6 +3507,11 @@ it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da 
         'a entrada do app-registro-sem, com o card listando o UserResource do /app, que o diagrama não desenha'                                                                             => [$semOUserApp, $marcada([], $semOUserApp), [$slug, 'UserResource']],
         'a entrada do admin-administracao, com a linha do AgenteIaResource no card trazendo a âncora do HubDeAdministracao'                                                                 => [$marcada(), $marcada(['ancora' => $copia['pecas'][$hub]['disponibilidade']['evidencia']]), ['AgenteIaResource']],
         'a entrada do app-chat-de-ia, com o card Condições de disponibilidade sem a linha do chat, que o participante desenha pela prova'                                                   => [$marcada(), $marcada(['condicoes' => false]), [$slug, 'AssistenteChatWidget']],
+        'a entrada de uma cópia do app-chat-de-ia com a prova do participante abreviada para class AssistenteChatWidget, e o card sem a linha do chat'                                      => [$marcada(), $marcada(['condicoes' => false]), [$slug, 'AssistenteChatWidget']],
+        'a entrada do kit-ia, com a marca do chat sem o vazia: KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS de fábrica'                                                                    => [$marcada(), $marcada(['texto' => 'KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS de fábrica']), ['AssistenteChatWidget', 'KIT_AGENTES_IA_PAINEIS vazia']],
+        'a entrada en do kit-ia, com a marca do chat KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia by default'                                                                        => [$marcada(), $marcada(['texto' => 'KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia by default']), ['AssistenteChatWidget', 'KIT_AGENTES_IA_PAINEIS empty']],
+        'a entrada do admin-administracao, com KIT_AGENTES_IA_PAINEIS vazia de fábrica no nó do model AgenteIa, que não tem condição'                                                       => [$publicada, $comMarca('KIT_AGENTES_IA_PAINEIS vazia de fábrica'), ['AgenteIa']],
+        'a mesma entrada, com command-center.enabled sem DatabaseSource de fábrica no nó do model AgenteIa'                                                                                 => [$publicada, $comMarca('command-center.enabled sem DatabaseSource de fábrica'), ['AgenteIa']],
         default                                                                                                                                                                             => [$marcada(), $marcada(['texto' => 'KIT_AGENTES_IA=false de fábrica']), ['AssistenteChatWidget', 'KIT_AGENTES_IA_PAINEIS']],
     };
     $conferir = static fn (array $entrada): array => mapaDiagramasConferirMarcas($copia, [$slug => $decls[$slug]], ['ids' => $ids, 'diagramas' => [$slug => [$idioma => $entrada]]]);
@@ -3451,4 +3539,13 @@ it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da 
     'a entrada do admin-administracao, com a linha do AgenteIaResource no card trazendo a âncora do HubDeAdministracao',
     'a entrada do app-chat-de-ia, com o card Condições de disponibilidade sem a linha do chat, que o participante desenha pela prova',
     'a entrada do kit-ia, com a marca do chat só com KIT_AGENTES_IA=false de fábrica',
+    'a entrada do kit-ia, com a marca do chat sem o vazia: KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS de fábrica',
+    'a entrada en do kit-ia, com a marca do chat KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia by default',
+    'a entrada do admin-administracao, com KIT_AGENTES_IA_PAINEIS vazia de fábrica no nó do model AgenteIa, que não tem condição',
+    'a mesma entrada, com command-center.enabled sem DatabaseSource de fábrica no nó do model AgenteIa',
+    'a entrada de uma cópia do app-chat-de-ia com a prova do participante abreviada para class AssistenteChatWidget, e o card sem a linha do chat',
+    'a cópia do admin-convite com o participante ConviteResource de prova do /admin, sem linha no card',
+    'a mesma cópia, com a linha do ConviteResource do /app no card',
+    'a cópia do admin-convite com o participante ConviteResource sem prova, sem linha no card',
+    'a cópia do admin-convite com o participante ConviteResource sem prova, com a linha do ConviteResource do /app no card',
 ]);
