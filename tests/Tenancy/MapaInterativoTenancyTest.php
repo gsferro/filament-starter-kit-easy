@@ -49,8 +49,6 @@ use Filament\Panel;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Exceptions\BackedEnumCaseNotFoundException;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 beforeEach(function (): void {
@@ -342,48 +340,6 @@ function mapaTenancyDadoModoComTenant(): void
 }
 
 /**
- * As chaves booleanas de `kit.*` — fora `kit.tenancy.enabled`, que é o modo — cujo valor lido difere do de
- * fábrica, o que o `config/kit.php` dá sem ambiente nenhum (o default do `env()`, Setup Global do `04`). A
- * folha que cada variável alimenta é medida por `caminhoDaVariavelDoKit()` e relida sem a variável por
- * `kitConfigCom()`; a que variável nenhuma alimenta sozinha fica com o valor do arquivo.
- *
- * @return list<string>
- */
-function mapaTenancyBooleanasForaDaFabrica(): array
-{
-    $arquivo = base_path('config/kit.php');
-    $fabrica = require $arquivo;
-
-    preg_match_all("/env\\('(KIT_[A-Z0-9_]+)'/", (string) file_get_contents($arquivo), $variaveis);
-
-    foreach (array_unique($variaveis[1]) as $variavel) {
-        try {
-            $folha = Str::after(caminhoDaVariavelDoKit($variavel), 'kit.');
-        } catch (UnexpectedValueException) {
-            continue;
-        }
-
-        data_set($fabrica, $folha, data_get(kitConfigCom($variavel, null), $folha));
-    }
-
-    $fora   = [];
-    $varrer = static function (array $ramo, string $prefixo) use (&$varrer, &$fora, $fabrica): void {
-        foreach ($ramo as $chave => $valor) {
-            $caminho = "{$prefixo}{$chave}";
-
-            if (is_array($valor) && ! array_is_list($valor)) {
-                $varrer($valor, "{$caminho}.");
-            } elseif (is_bool($valor) && $caminho !== 'tenancy.enabled' && Arr::has($fabrica, $caminho) && $valor !== data_get($fabrica, $caminho)) {
-                $fora[] = "kit.{$caminho}: lido ".var_export($valor, true).', de fábrica '.var_export(data_get($fabrica, $caminho), true);
-            }
-        }
-    };
-    $varrer((array) config('kit'), '');
-
-    return $fora;
-}
-
-/**
  * O `Dado` do CT-56 e do CT-38: o modo com tenant lido, o `/app` com organização, toda outra chave booleana
  * de `kit.*` lida com o valor de fábrica, e o arnês do discriminante — o super_admin do kit autenticado e a
  * organização que ele abre no `/app`.
@@ -394,7 +350,7 @@ function mapaTenancyDadoDoDiscriminante(): array
 {
     mapaTenancyDadoModoComTenant();
     expect(Filament::getPanel('app')->hasTenancy())->toBeTrue()
-        ->and(mapaTenancyBooleanasForaDaFabrica())->toBe([]);
+        ->and(booleanasDoKitForaDaFabrica())->toBe([]);
 
     $arnes = arnesDoDiscriminante();
 
@@ -406,148 +362,11 @@ function mapaTenancyDadoDoDiscriminante(): array
     return $arnes;
 }
 
-/** A condição do modelo em texto, para o motivo: o modo e cada chave com o valor de fábrica que ela dá. */
-function mapaTenancyCondicaoEmTexto(array $condicao): string
-{
-    $partes = isset($condicao['modo']) ? ['só '.json_encode($condicao['modo']).' tenant'] : [];
-
-    foreach ($condicao['chaves'] ?? [] as $chave) {
-        $partes[] = (is_array($chave) ? ($chave['chave'] ?? '?') : '?').'='.json_encode(is_array($chave) ? ($chave['padrao'] ?? null) : null, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).' de fábrica';
-    }
-
-    return $partes === [] ? 'sem modo nem chave' : implode(' e ', $partes);
-}
-
-/**
- * O caminho de config e o valor de fábrica da chave que a condição nomeia: a variável `KIT_*`, pelo
- * `config/kit.php` relido sem ela; a configuração de pacote (`command-center.sources`), pelo arquivo de
- * config do kit em que ela mora.
- *
- * @return array{0: string, 1: mixed}
- *
- * @throws UnexpectedValueException
- */
-function mapaTenancyValorDeFabrica(string $nome): array
-{
-    if (preg_match('/^[A-Z][A-Z0-9_]*$/', $nome) === 1) {
-        $caminho = caminhoDaVariavelDoKit($nome);
-
-        return [$caminho, data_get(kitConfigCom($nome, null), Str::after($caminho, 'kit.'))];
-    }
-
-    $arquivo = base_path('config/'.Str::before($nome, '.').'.php');
-
-    if (! str_contains($nome, '.') || ! is_file($arquivo)) {
-        throw new UnexpectedValueException("a condição nomeia {$nome}, que não é variável KIT_* nem configuração de um arquivo de config do kit");
-    }
-
-    return [$nome, data_get(require $arquivo, Str::after($nome, '.'))];
-}
-
-/**
- * R30: `v` é o default de `k` no arquivo de config, é o valor lido no caso, e é o desligado — a chave ligada de
- * fábrica não marca (P-16); e o valor que a condição dá como ligado não é o de fábrica.
- *
- * @return list<string>
- */
-function mapaTenancyConferirValorDeFabrica(string $quem, mixed $chave): array
-{
-    $nome = is_array($chave) && is_string($chave['chave'] ?? null) ? $chave['chave'] : '';
-
-    if ($nome === '') {
-        return ["{$quem}: a condição do modelo traz uma chave sem nome"];
-    }
-
-    try {
-        [$caminho, $deFabrica] = mapaTenancyValorDeFabrica($nome);
-    } catch (UnexpectedValueException $erro) {
-        return ["{$quem}: {$erro->getMessage()}"];
-    }
-
-    $lido    = config($caminho);
-    $motivos = [];
-
-    if (! array_key_exists('padrao', $chave) || $chave['padrao'] !== $deFabrica || $lido !== $deFabrica) {
-        $motivos[] = "{$quem}: a condição do modelo dá a {$nome} o valor de fábrica ".json_encode($chave['padrao'] ?? null).', e o de fábrica é '.json_encode($deFabrica).' (lido no caso: '.json_encode($lido).')';
-    }
-
-    if ($deFabrica === true) {
-        $motivos[] = "{$quem}: {$nome} vem ligada de fábrica, e a chave ligada de fábrica não marca (P-16)";
-    }
-
-    if (array_key_exists('ligada', $chave) && $chave['ligada'] === $deFabrica) {
-        $motivos[] = "{$quem}: o valor que a condição do modelo dá como ligado em {$nome} é o de fábrica";
-    }
-
-    return $motivos;
-}
-
-/**
- * A condição de uma peça contra o que o discriminante mediu com tenant (R30), no modo `com` da suíte: com a
- * configuração de fábrica, a peça está disponível se, e só se, a condição deixa o modo com tenant e não tem
- * chave; com as chaves da condição ligadas juntas, se, e só se, a condição deixa o modo com tenant.
- *
- * @param  array{deFabrica: bool, comAsChavesDaCondicao: bool}  $medido
- * @return list<string>
- */
-function mapaTenancyConferirCondicao(string $peca, string $onde, mixed $condicao, array $medido): array
-{
-    $quem = "{$peca} {$onde}";
-
-    if ($condicao === null) {
-        return $medido['deFabrica'] ? [] : ["{$quem}: fica indisponível com tenant e de fábrica, e o modelo não guarda a condição que a explica"];
-    }
-
-    if (! is_array($condicao)) {
-        return ["{$quem}: a condição do modelo não é um objeto"];
-    }
-
-    $texto   = mapaTenancyCondicaoEmTexto($condicao);
-    $modo    = $condicao['modo'] ?? null;
-    $chaves  = $condicao['chaves'] ?? [];
-    $motivos = [];
-
-    if ($modo !== null && ! in_array($modo, ['sem', 'com'], true)) {
-        $motivos[] = "{$quem}: a condição do modelo dá o modo ".json_encode($modo).', que não é sem nem com';
-    }
-
-    if ($modo === null && $chaves === []) {
-        $motivos[] = "{$quem}: a condição do modelo não diz modo nem chave";
-    }
-
-    $abreComTenant = $modo === null || $modo === 'com';
-
-    if ($medido['deFabrica'] !== ($abreComTenant && $chaves === [])) {
-        $motivos[] = $medido['deFabrica']
-            ? "{$quem}: a condição do modelo ({$texto}) diz que ela não abre com tenant e de fábrica, e com tenant e a configuração de fábrica ela está disponível"
-            : "{$quem}: a condição do modelo ({$texto}) diz que ela abre com tenant e de fábrica, e com tenant e a configuração de fábrica ela está indisponível";
-    }
-
-    if ($chaves !== [] && $medido['comAsChavesDaCondicao'] !== $abreComTenant) {
-        $motivos[] = $medido['comAsChavesDaCondicao']
-            ? "{$quem}: a condição do modelo ({$texto}) diz que ela não abre com tenant, e com as chaves dela ligadas juntas ela está disponível"
-            : "{$quem}: a condição do modelo ({$texto}) diz que ela abre com tenant com as chaves ligadas, e com elas ligadas juntas ela continua indisponível";
-    }
-
-    foreach (is_array($chaves) ? $chaves : [$chaves] as $chave) {
-        $motivos = [...$motivos, ...mapaTenancyConferirValorDeFabrica($quem, $chave)];
-    }
-
-    $evidencia = $condicao['evidencia'] ?? null;
-    $ancora    = is_array($evidencia) ? [$evidencia['arquivo'] ?? null, $evidencia['trecho'] ?? null] : [null, null];
-
-    if (! is_string($ancora[0]) || trim($ancora[0]) === '' || ! is_string($ancora[1]) || trim($ancora[1]) === '') {
-        $motivos[] = "{$quem}: a condição do modelo não traz a âncora do código que a decide (evidencia com arquivo e trecho)";
-    }
-
-    return $motivos;
-}
-
 /**
  * A guarda da R30 na suíte com tenant, sobre a população da R43 em cada painel do registro
  * (`populacaoDoDiscriminante()`): o registro vivo, a peça fora do registro com método próprio e o componente
  * flutuante. Cada uma é medida pela saída `guarda` do discriminante vivo, com a condição que o modelo dá a ela
- * (`disponibilidade`), e conferida por `mapaTenancyConferirCondicao()`. A condição é da peça: a registrada em
+ * (`disponibilidade`), e conferida por `conferirCondicaoNoModo()`. A condição é da peça: a registrada em
  * mais de um painel é conferida em cada um; a que painel nenhum registra tem de dar o mesmo em todos, ou a
  * guarda reprova nomeando a peça e os painéis (falha fechado). Plugin e middleware nunca guardam condição
  * (RQ-32). A exceção do discriminante (chave que a configuração não tem, componente flutuante fora do mapa de
@@ -586,7 +405,7 @@ function mapaTenancyConferirCondicoes(array $modelo): array
 
         if (! in_array($peca, $fora, true)) {
             foreach ($porPainel as $painel => $medido) {
-                $motivos = [...$motivos, ...mapaTenancyConferirCondicao($peca, "no painel {$painel}", $condicao, $medido)];
+                $motivos = [...$motivos, ...conferirCondicaoNoModo("{$peca} no painel {$painel}", 'com', $condicao, $medido)];
             }
 
             continue;
@@ -598,7 +417,7 @@ function mapaTenancyConferirCondicoes(array $modelo): array
             continue;
         }
 
-        $motivos = [...$motivos, ...mapaTenancyConferirCondicao($peca, 'nos painéis '.implode(', ', array_keys($porPainel)), $condicao, reset($porPainel))];
+        $motivos = [...$motivos, ...conferirCondicaoNoModo($peca.' nos painéis '.implode(', ', array_keys($porPainel)), 'com', $condicao, reset($porPainel))];
     }
 
     return ['motivos' => array_values(array_unique($motivos)), 'avaliadas' => $avaliadas];
@@ -881,7 +700,7 @@ it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no m
     expect($nomeiam)->not->toBeEmpty("nenhum motivo nomeia {$nomeando} com \"{$porque}\": ".implode(' | ', $guarda['motivos']));
 })->with([
     'publicado'                                                                 => ['publicado', 'aceita', '', ''],
-    'cópia que dá ao ProjetoResource do /app só o modo com tenant, sem a chave' => ['ProjetoResource só com o modo', 'reprova', ProjetoResource::class.' no painel app', 'com tenant e a configuração de fábrica ela está indisponível'],
-    'cópia que dá ao AccountWidget do /admin a condição só sem tenant'          => ['AccountWidget só sem tenant', 'reprova', AccountWidget::class.' no painel admin', 'com tenant e a configuração de fábrica ela está disponível'],
+    'cópia que dá ao ProjetoResource do /app só o modo com tenant, sem a chave' => ['ProjetoResource só com o modo', 'reprova', ProjetoResource::class.' no painel app', 'a dá como disponível com tenant e de fábrica, e ela está indisponível'],
+    'cópia que dá ao AccountWidget do /admin a condição só sem tenant'          => ['AccountWidget só sem tenant', 'reprova', AccountWidget::class.' no painel admin', 'está disponível com tenant e de fábrica'],
     'cópia sem a condição do HubDoNegocio'                                      => ['sem a condição do HubDoNegocio', 'reprova', HubDoNegocio::class.' no painel app', 'o modelo não guarda a condição que a explica'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'O modelo do mapa não viaja no pacote.');

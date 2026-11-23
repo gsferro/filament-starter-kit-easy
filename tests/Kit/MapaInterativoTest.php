@@ -52,16 +52,6 @@ define('MAPA_MODELO_TIPOS', ['painel', 'recurso', 'pagina', 'widget', 'plugin', 
 define('MAPA_MODELO_METODOS_DE_CONTRATO', ['canAccessPanel', 'canAccessTenant', 'getTenants', 'getDefaultTenant', 'getCurrentTenantLabel', 'getFilamentName', 'getFilamentAvatarUrl']);
 
 /**
- * O mapa fechado de predicados de renderização dos componentes flutuantes (Setup Global do `04`, RQ-33): o mesmo
- * que o discriminante vivo avalia (`pecaDisponivelNoPainel()`), aqui como o método que a leitura estática da R37
- * segue (`mapaModeloChavesQueDecidemOAcesso()`).
- */
-define('MAPA_MODELO_PREDICADOS_DOS_FLUTUANTES', [
-    'App\\Livewire\\AssistenteChatWidget'  => ['App\\Support\\AgentesDeIa', 'assistenteNoPainel'],
-    'App\\Livewire\\ChecklistDoOnboarding' => ['App\\Support\\TutorialGuiado', 'visivel'],
-]);
-
-/**
  * A lista da guarda das peças e classes sem feature própria (P-12), com o motivo. Copiada de
  * `mapa-pesquisa/modelo/sem-feature-propria.json`.
  */
@@ -78,11 +68,6 @@ define('MAPA_MODELO_SEM_FEATURE_PROPRIA', [
 | O modelo, os diagramas, o catálogo e o índice do git vêm de `tests/Pest.php`.
 */
 
-function mapaModeloNorm(string $texto): string
-{
-    return str_replace("\r\n", "\n", $texto);
-}
-
 /**
  * @param  list<string>  $violacoes
  * @param  array<string, mixed>  $extra
@@ -95,151 +80,6 @@ function mapaModeloResultado(array $violacoes, array $extra = []): array
         'motivo'    => $violacoes === [] ? null : implode('; ', array_slice($violacoes, 0, 60)),
         'violacoes' => $violacoes,
     ] + $extra;
-}
-
-/**
- * O texto do arquivo com cada byte de comentário trocado por espaço e as quebras de linha mantidas: o mesmo
- * tamanho e as mesmas linhas, pela sintaxe do tipo do arquivo (`04`, Guarda e controles, ADV2-06 e Q20). É o que
- * diz se o trecho está fora de comentário NUMA linha (CT-52), onde apagar o comentário deslocaria as linhas.
- */
-function mapaModeloMascararComentarios(string $arquivo, string $conteudo): string
-{
-    $mascarar = static fn (string $texto): string => (string) preg_replace('/[^\n]/', ' ', $texto);
-    $porRegex = static fn (string $padrao): string => (string) preg_replace_callback($padrao, static fn (array $m): string => $mascarar($m[0]), $conteudo);
-
-    if (str_ends_with($arquivo, '.blade.php')) {
-        return $porRegex('/\{\{--.*?--\}\}|<!--.*?-->/s');
-    }
-
-    if (str_ends_with($arquivo, '.php')) {
-        $saida = '';
-
-        foreach (token_get_all($conteudo) as $token) {
-            $saida .= ! is_array($token) ? $token : (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? $mascarar($token[1]) : $token[1]);
-        }
-
-        return $saida;
-    }
-
-    if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
-        return $porRegex('~/\*.*?\*/|(?<![:\w])//[^\n]*~s');
-    }
-
-    if (preg_match('/\.ya?ml$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
-        return $porRegex('/(?<=^|[ \t])#[^\n]*/m');
-    }
-
-    if (str_ends_with($arquivo, '.md')) {
-        return $porRegex('/<!--.*?-->/s');
-    }
-
-    return $conteudo;
-}
-
-/**
- * O código do arquivo sem comentário, pela sintaxe do tipo dele (`04`, Guarda e controles, ADV2-06). Em YAML e
- * `.env`, o `#` até o fim da linha; em Markdown, o `<!-- -->` (Q20, step 9, achado A7); JSON não tem comentário.
- */
-function mapaModeloSemComentario(string $arquivo, string $conteudo): string
-{
-    if (preg_match('/\.(ya?ml|md)$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
-        return mapaModeloMascararComentarios($arquivo, $conteudo);
-    }
-
-    if (str_ends_with($arquivo, '.blade.php')) {
-        return preg_replace(['/\{\{--.*?--\}\}/s', '/<!--.*?-->/s'], '', $conteudo) ?? $conteudo;
-    }
-
-    if (str_ends_with($arquivo, '.php')) {
-        return codigoSemComentario($conteudo);
-    }
-
-    if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
-        $sem = preg_replace('~/\*.*?\*/~s', '', $conteudo) ?? $conteudo;
-
-        return preg_replace('~(?<![:\w])//[^\n]*~', '', $sem) ?? $sem;
-    }
-
-    return $conteudo;
-}
-
-/**
- * O código sem comentário de um arquivo do repositório, ou `null` se não é arquivo. A sobrescrita
- * troca o conteúdo em memória (o controle "cópia do arquivo sem a linha do trecho").
- *
- * @param  array<string, string>  $sobrescritas
- */
-function mapaModeloCodigo(string $arquivo, array $sobrescritas = []): ?string
-{
-    static $cache = [];
-
-    if (isset($sobrescritas[$arquivo])) {
-        return mapaModeloSemComentario($arquivo, mapaModeloNorm($sobrescritas[$arquivo]));
-    }
-
-    if (array_key_exists($arquivo, $cache)) {
-        return $cache[$arquivo];
-    }
-
-    $caminho = base_path($arquivo);
-
-    return $cache[$arquivo] = is_file($caminho)
-        ? mapaModeloSemComentario($arquivo, mapaModeloNorm((string) file_get_contents($caminho)))
-        : null;
-}
-
-/**
- * R9: a prova resolve no commit que publica. O arquivo é versionado no kit, o trecho está nele fora de
- * comentário, e a prova não guarda número de linha (campo próprio, ou colado no caminho).
- *
- * A âncora tem chaves fechadas — `arquivo`, `trecho` e, opcional, `label` (step 9, achado A10): qualquer outra
- * (`linha`, `line`, `end_line`, `path`) reprova, porque o gerador a deixa vencer a que ele calcula.
- *
- * @param  array<string, mixed>  $campos  os campos além de `arquivo` e `trecho`
- * @param  array<string, string>  $sobrescritas
- * @return array{aceita: bool, motivo: ?string}
- */
-function mapaModeloConferirProva(string $nome, mixed $arquivo, mixed $trecho, array $campos = [], array $sobrescritas = []): array
-{
-    $reprova = static fn (string $motivo): array => ['aceita' => false, 'motivo' => "{$nome}: {$motivo}"];
-
-    foreach (array_keys($campos) as $campo) {
-        if ($campo === 'label') {
-            continue;
-        }
-
-        return $reprova(in_array($campo, ['linha', 'line', 'end_line'], true)
-            ? "a prova guarda o número da linha no campo `{$campo}`"
-            : "a prova traz a chave `{$campo}`, fora das chaves da âncora (arquivo, trecho e label)");
-    }
-
-    if (! is_string($arquivo) || trim($arquivo) === '') {
-        return $reprova('a prova não tem arquivo');
-    }
-
-    if (preg_match('/(:\d+|#L\d+)$/', $arquivo) === 1) {
-        return $reprova("a prova guarda o número da linha no caminho {$arquivo}");
-    }
-
-    if (! is_string($trecho) || trim($trecho) === '') {
-        return $reprova("a prova de {$arquivo} não tem trecho (ausente, vazio ou só de espaços)");
-    }
-
-    $codigo = mapaModeloCodigo($arquivo, $sobrescritas);
-
-    if ($codigo === null) {
-        return $reprova("o arquivo {$arquivo} não existe");
-    }
-
-    if (! in_array($arquivo, arquivosVersionados(), true)) {
-        return $reprova("o arquivo {$arquivo} está fora do commit (não é versionado no kit)");
-    }
-
-    if (! str_contains($codigo, mapaModeloNorm($trecho))) {
-        return $reprova("o trecho não está em {$arquivo} fora de comentário");
-    }
-
-    return ['aceita' => true, 'motivo' => null];
 }
 
 /**
@@ -1537,73 +1377,6 @@ function mapaModeloChavesQueDecidemOAcesso(string $classe): array
 }
 
 /**
- * O caminho de config e o valor de fábrica da chave que a condição nomeia, na forma fixada do campo
- * `disponibilidade`: a variável `KIT_*`, pelo caminho que ela alimenta (`caminhoDaVariavelDoKit()`) e pelo
- * `config/kit.php` relido sem ela (`kitConfigCom()`), o que dá o valor já coagido — `false` nas booleanas, `[]`
- * na `KIT_AGENTES_IA_PAINEIS`; a configuração de pacote (`command-center.sources`), pelo arquivo de config do
- * kit em que ela mora.
- *
- * @return array{0: string, 1: mixed}
- *
- * @throws UnexpectedValueException
- */
-function mapaModeloValorDeFabrica(string $nome): array
-{
-    if (preg_match('/^[A-Z][A-Z0-9_]*$/', $nome) === 1) {
-        $caminho = caminhoDaVariavelDoKit($nome);
-
-        return [$caminho, data_get(kitConfigCom($nome, null), substr($caminho, strlen('kit.')))];
-    }
-
-    $arquivo = 'config/'.strstr($nome, '.', true).'.php';
-
-    if (! str_contains($nome, '.') || ! is_file(base_path($arquivo))) {
-        throw new UnexpectedValueException("a chave \"{$nome}\" não é variável KIT_* nem caminho de um arquivo de config do kit");
-    }
-
-    return [$nome, data_get(require base_path($arquivo), substr($nome, strpos($nome, '.') + 1))];
-}
-
-/**
- * O valor de fábrica de uma chave da condição (R30 e R37): o `padrao` é o que o arquivo de config dá sem
- * ambiente; a chave ligada de fábrica não marca (P-16); o valor que a condição dá como ligado não é o de
- * fábrica; e, com `$comOLido`, o valor lido no caso é o de fábrica (o `Dado` da guarda viva).
- *
- * @return list<string>
- */
-function mapaModeloConferirValorDeFabrica(string $quem, mixed $chave, bool $comOLido): array
-{
-    $nome = is_array($chave) && is_string($chave['chave'] ?? null) ? $chave['chave'] : '';
-
-    try {
-        [$caminho, $deFabrica] = mapaModeloValorDeFabrica($nome);
-    } catch (UnexpectedValueException $erro) {
-        return ["{$quem}: {$erro->getMessage()}"];
-    }
-
-    $json    = static fn (mixed $valor): string => (string) json_encode($valor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    $motivos = [];
-
-    if (! array_key_exists('padrao', $chave) || $chave['padrao'] !== $deFabrica) {
-        $motivos[] = "{$quem}: a condição dá a {$nome} o valor de fábrica ".$json($chave['padrao'] ?? null).', e o arquivo de config dá '.$json($deFabrica);
-    }
-
-    if ($comOLido && config($caminho) !== $deFabrica) {
-        $motivos[] = "{$quem}: {$nome} ({$caminho}) está lida no caso como ".$json(config($caminho)).', fora do valor de fábrica '.$json($deFabrica);
-    }
-
-    if ($deFabrica === true) {
-        $motivos[] = "{$quem}: {$nome} vem ligada de fábrica, e a chave ligada de fábrica não marca (P-16)";
-    }
-
-    if (array_key_exists('ligada', $chave) && $chave['ligada'] === $deFabrica) {
-        $motivos[] = "{$quem}: o valor que a condição dá como ligado em {$nome} é o de fábrica, e ligada de fábrica não abre a peça";
-    }
-
-    return $motivos;
-}
-
-/**
  * A peça que um nó marcado de diagrama designa. No diagrama construído, o id do nó. No escrito à mão (o sem
  * `construtor`), a peça cuja classe a prova do nó declara — o arquivo da evidência da peça no modelo e o trecho
  * da declaração da classe — ou, sem ela, a do nome exato do rótulo (Setup Global do `04`, "Entrar no diagrama de
@@ -1746,7 +1519,7 @@ function mapaModeloMarcaDoCard(string $linha, string $slug, array $diagrama, arr
         } elseif (preg_match('/^([A-Z][A-Z0-9_]*) vazia de fábrica/u', $termo, $partes) === 1) {
             $marca['chaves'][] = ['chave' => $partes[1], 'padrao' => []];
         } elseif (preg_match('/^[a-z][\w-]*(?:\.[\w-]+)+$/', $termo) === 1) {
-            $marca['chaves'][] = ['chave' => $termo, 'padrao' => rescue(static fn (): mixed => mapaModeloValorDeFabrica($termo)[1], null, false)];
+            $marca['chaves'][] = ['chave' => $termo, 'padrao' => rescue(static fn (): mixed => valorDeFabricaDaChaveDaCondicao($termo)[1], null, false)];
         } else {
             $marca['chaves'][] = ['chave' => "termo que a guarda não lê: {$termo}", 'padrao' => null];
         }
@@ -1802,7 +1575,7 @@ function mapaModeloConferirDisponibilidade(array $modelo, array $diagramas): arr
             $nome = is_array($chave) && is_string($chave['chave'] ?? null) ? $chave['chave'] : '';
 
             try {
-                [$caminho] = mapaModeloValorDeFabrica($nome);
+                [$caminho] = valorDeFabricaDaChaveDaCondicao($nome);
             } catch (UnexpectedValueException $erro) {
                 $violacoes[] = "{$onde} marca a peça {$peca}: {$erro->getMessage()}";
 
@@ -1815,7 +1588,7 @@ function mapaModeloConferirDisponibilidade(array $modelo, array $diagramas): arr
                 continue;
             }
 
-            array_push($violacoes, ...mapaModeloConferirValorDeFabrica("{$onde} marca a peça {$peca}", $chave, false));
+            array_push($violacoes, ...conferirValorDeFabricaDaCondicao("{$onde} marca a peça {$peca}", $chave, false));
         }
     }
 
@@ -1835,100 +1608,6 @@ function mapaModeloConferirDisponibilidade(array $modelo, array $diagramas): arr
 | O discriminante, a população e o arnês vêm de `tests/Pest.php` (`discriminanteDaPeca()`,
 | `populacaoDoDiscriminante()` e `arnesDoDiscriminante()`).
 */
-
-/**
- * O `Dado` da guarda viva sem tenant: as chaves booleanas de `kit.*` — fora `kit.tenancy.enabled`, que é o
- * modo — cujo valor lido difere do de fábrica (`mapaModeloValorDeFabrica()`, o `config/kit.php` relido sem a
- * variável). Conta toda variável `KIT_*` que o arquivo lê e que alimenta sozinha uma chave booleana.
- *
- * @return list<string>
- */
-function mapaModeloBooleanasDoKitForaDaFabrica(): array
-{
-    preg_match_all('/env\(\s*\'(KIT_[A-Z0-9_]+)\'/', (string) mapaModeloCodigo('config/kit.php'), $variaveis);
-
-    $fora = [];
-
-    foreach (array_unique($variaveis[1]) as $variavel) {
-        try {
-            [$caminho, $deFabrica] = mapaModeloValorDeFabrica($variavel);
-        } catch (UnexpectedValueException) {
-            continue;
-        }
-
-        $lido = config($caminho);
-
-        if (is_bool($lido) && $caminho !== 'kit.tenancy.enabled' && $lido !== $deFabrica) {
-            $fora[] = "{$caminho} ({$variavel}): lido ".var_export($lido, true).', de fábrica '.var_export($deFabrica, true);
-        }
-    }
-
-    return $fora;
-}
-
-/**
- * A condição de uma peça contra o que o discriminante mediu no modo sem tenant (R30): com a configuração de
- * fábrica, a peça está disponível se, e só se, a condição deixa o modo sem tenant e não tem chave; com as chaves
- * da condição ligadas juntas, se, e só se, a condição deixa o modo sem tenant. O valor de fábrica de cada chave
- * (`mapaModeloConferirValorDeFabrica()`) e a âncora, que resolve como uma prova (R9), valem em todo caso.
- *
- * @param  array{deFabrica: bool, comAsChavesDaCondicao: bool}  $medido
- * @return list<string>
- */
-function mapaModeloConferirCondicaoSemTenant(string $quem, mixed $condicao, array $medido): array
-{
-    if ($condicao === null) {
-        return $medido['deFabrica'] ? [] : ["{$quem}: fica indisponível sem tenant e de fábrica, e o modelo não guarda a condição que a explica"];
-    }
-
-    if (! is_array($condicao)) {
-        return ["{$quem}: a condição do modelo não é um objeto"];
-    }
-
-    $json    = static fn (mixed $valor): string => (string) json_encode($valor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    $modo    = $condicao['modo'] ?? null;
-    $chaves  = (array) ($condicao['chaves'] ?? []);
-    $nomes   = implode(' e ', array_map(static fn (mixed $chave): string => is_array($chave) ? (string) ($chave['chave'] ?? '?') : '?', $chaves));
-    $texto   = $json(array_diff_key($condicao, ['evidencia' => true]));
-    $motivos = [];
-
-    if ($modo !== null && ! in_array($modo, ['sem', 'com'], true)) {
-        $motivos[] = "{$quem}: a condição {$texto} dá um modo que não é sem nem com";
-    }
-
-    if ($modo === null && $chaves === []) {
-        $motivos[] = "{$quem}: a condição {$texto} não diz modo nem chave";
-    }
-
-    $abreSemTenant = $modo === null || $modo === 'sem';
-
-    if ($medido['deFabrica'] !== ($abreSemTenant && $chaves === [])) {
-        $motivos[] = $medido['deFabrica']
-            ? "{$quem}: está disponível sem tenant e de fábrica, e a condição {$texto} a dá como fechada"
-            : "{$quem}: a condição {$texto} a dá como disponível sem tenant e de fábrica, e ela está indisponível";
-    }
-
-    if ($chaves !== [] && $medido['comAsChavesDaCondicao'] !== $abreSemTenant) {
-        $motivos[] = $medido['comAsChavesDaCondicao']
-            ? "{$quem}: com {$nomes} ligadas juntas, abre sem tenant, e a condição {$texto} só a deixa no modo com tenant"
-            : "{$quem}: com {$nomes} ligadas juntas, continua indisponível sem tenant, e a condição {$texto} a dá como disponível";
-    }
-
-    foreach ($chaves as $chave) {
-        array_push($motivos, ...mapaModeloConferirValorDeFabrica($quem, $chave, true));
-    }
-
-    $ancora = $condicao['evidencia'] ?? null;
-    $prova  = is_array($ancora)
-        ? mapaModeloConferirProva($quem, $ancora['arquivo'] ?? null, $ancora['trecho'] ?? null, array_diff_key($ancora, ['arquivo' => true, 'trecho' => true]))
-        : ['aceita' => false, 'motivo' => "{$quem}: a condição não traz a âncora (evidencia) do código que decide"];
-
-    if (! $prova['aceita']) {
-        $motivos[] = "{$prova['motivo']} (âncora da condição: {$json($ancora)})";
-    }
-
-    return $motivos;
-}
 
 /**
  * R30 e R43, no modo sem tenant da suíte: para cada painel, toda peça da população do discriminante — a
@@ -1977,7 +1656,7 @@ function mapaModeloConferirCondicoes(array $modelo): array
                     $porPainel[$classe][$painel] = $guarda['deFabrica'];
                 }
 
-                array_push($violacoes, ...mapaModeloConferirCondicaoSemTenant($quem, $condicao, $guarda));
+                array_push($violacoes, ...conferirCondicaoNoModo($quem, 'sem', $condicao, $guarda));
             }
         }
     }
@@ -2810,7 +2489,7 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
 
 it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no modelo a condição que a explica, e a peça disponível não guarda condição', function (string $resultado, string $peca, ?array $condicao, array $nomeando): void {
     expect(config('kit.tenancy.enabled'))->toBeFalse()
-        ->and(mapaModeloBooleanasDoKitForaDaFabrica())->toBe([]);
+        ->and(booleanasDoKitForaDaFabrica())->toBe([]);
 
     foreach (Filament::getPanels() as $painel) {
         expect($painel->hasTenancy())->toBeFalse("o painel {$painel->getId()} tem organização no modo sem tenant");
