@@ -1,6 +1,6 @@
 # Progresso — Mapa interativo do kit com a skill archify
 
-**Estado**: em revisão — passos 1 a 10 entregues e as guardas verdes (passo 8); a revisão do diff (step 9) roda sobre `main...168d1827`
+**Estado**: em QA (step 11) — passos 1 a 10 entregues; a revisão do diff (step 9) em duas rodadas e a reconciliação (step 10) feitas; o QA ciclo 1 reprovou → especificação, e a Q11, respondida pelo mantenedor (Adendo 2), reabre o ciclo: CT, vermelho, código, a revisão do diff do Adendo e o QA ciclo 2 *(alterado em 2026-11-23 — step 11)*
 
 > Base do PR (`{base}`): `main` · Branch: `feat/mapa-interativo-do-kit`
 
@@ -10,7 +10,7 @@
 - [x] `site/.gitignore` com `.archify/` — commit `ae5d20fa`
 - [x] `site/verifica-mapa.mjs` com a amostra e a tolerância da ADR-06 (D17), e o passo dele no `pages.yml` e no job `site` do `ci.yml`; os CT-B do `05` entram no passo 8 (`fw-executor-ctb`) — commits `ae5d20fa` e `4c2ca275`; CT-25 e CT-42 verdes
 - [x] Um diagrama de cada tipo e um comparativo, pt e en, por `npm run build`, `verifica-links`, `verifica-acessibilidade` e `verifica-mapa` — 42 HTML na amostra, 11 tipos; tolerados 40 `nested-interactive` e 4 `color-contrast`; num `git clone --depth 1` dentro de `mcr.microsoft.com/playwright:v1.63.0-noble`
-- [x] Cinco conferências inéditas — saída en (o passaporte diz "PACKAGE", e nenhum "Frontend", "Cloud", "Message bus" ou "Backend" no texto visível); `verifica-links` sobre o HTML do archify (0 quebrado); `--repo-root` num clone raso de 1 commit (o build passou com a prova conferida); download pelo commit num contêiner limpo. O piso de 6,5 px **não** foi medido pelo `visual-check` do archify (ver a nota), e fica com a medição do conferidor do mapa (CT-B do `05`)
+- [x] Cinco conferências inéditas — saída en (o passaporte diz "PACKAGE", e nenhum "Frontend", "Cloud", "Message bus" ou "Backend" no texto visível); `verifica-links` sobre o HTML do archify (0 quebrado); `--repo-root` num clone raso de 1 commit (o build passou com a prova conferida); download pelo commit num contêiner limpo. O piso de 6,5 px **não** foi medido pelo `visual-check` do archify (ver a nota); *(alterado em 2026-11-21 — step 11, QA-05: o texto dizia que o piso ficava com o conferidor do mapa, e nenhum CT-B o mede)* a medição é da sessão, no Chromium, e está na ADR-07 (86 dos 87 diagramas de cada idioma no piso ou acima; a linha do tempo abre a 6,31 px, e a página do mapa declara isso); ela não roda no CI
 - [x] Tempos — `render` ≈ 0,36 s por HTML (26 HTML em 15 s no Windows; build inteiro com o mapa em 19 s no Linux); `verifica-mapa` na amostra em 19 s; `visual-check` de 1,2 a 17 s por HTML. Decisão: amostra (ADR-06), e o `visual-check` fica fora do CI
 
 ## 2. Modelo do mapa — peças, ligações e diagramas
@@ -87,15 +87,15 @@ Não fatiado — 2026-11-20: 26 RQ vigentes, 41 CT (dois deles estacionados na Q
 ## Verificação Final
 - [x] `/ponytail:ponytail-review` no diff (validar contra over-engineering) — despacho #37, 54 achados; aplicados no `000359b2` (net -356 linhas), os outros recusados com o motivo abaixo, 2026-11-21
 - [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}` no `000359b2`, 2026-11-21
-- [x] `vendor/bin/pest tests/Kit/MapaInterativoTest.php tests/Tenancy/MapaInterativoTenancyTest.php --compact` — as cinco guardas do mapa no `000359b2`, com JUnit: 105 + 97 + 64 + 48 + 18 = 332 casos, 0 erro, 0 falha, 0 pulado, 2026-11-21
+- [x] `vendor/bin/pest tests/Kit/MapaInterativo*Test.php tests/Tenancy/MapaInterativoTenancyTest.php --compact` — as cinco guardas do mapa no `000359b2`, com JUnit: 105 + 97 + 64 + 48 + 18 = 332 casos, 0 erro, 0 falha, 0 pulado, 2026-11-21
 - [ ] Suítes `Kit` e `Tenancy`: nada quebrou além da **baseline** de `main` (falhas pré-existentes por nome)
 - [ ] `npm run build`, `verifica-links` e acessibilidade do site num clone raso, no contêiner Linux do passo 1
 - [x] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação — despachos #20 e #21 (primeira rodada) e #30 e #31 (re-revisão), todos os achados roteados na tabela do step 9, 2026-11-21
 - [x] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*` — `00` (P-14, nota do step 10), `04` (CT-50, CT-52, cabeçalho e Índice), `05` (a caixa que o modo esvazia), 2026-11-21
 - [x] `rastreabilidade.sh {wiki}` silencioso — exit 0 sem saída, 2026-11-21
 - [x] `checkbox-sem-evidencia.sh {wiki}` silencioso — exit 0 sem saída, 2026-11-21
-- [x] `citacoes.sh {wiki}` silencioso — exit 0 sem saída depois do acerto das citações que o step 9, o step 10 e o ponytail deslocaram; as 38 citações de `tests/Pest.php` que outros wikis têm quebradas já estavam quebradas na `main`, 2026-11-21
-- [x] `ids-ct.sh {wiki} 'tests/**/MapaInterativo*Test.php'` silencioso — acusa só os CT-B01 a CT-B08, do conferidor Node, por desenho (ver `## Testes`), 2026-11-21
+- [x] `citacoes.sh {wiki}` silencioso — exit 0 sem saída depois do acerto das citações que o step 9, o step 10 e o ponytail deslocaram. *(alterado em 2026-11-21 — step 11, QA-02: o "38" não saía de comando nenhum)* Nos outros wikis, as citações de `tests/Pest.php`, comparadas linha a linha com `git show main:tests/Pest.php` e com o HEAD (`git grep -hoE "tests/Pest.php:[A-Za-z_]+(())?:[0-9]+" HEAD -- wikis/ docs/ .ai/`, distintas): na forma `símbolo:linha`, 42, das quais nenhuma casava na `main`; na forma `símbolo():linha`, 27, das quais uma casava na `main` (`usuarioDoKit():490`, no `06` do `layout-compact`) e deixou de casar com a linha que a branch pôs no `tests/Pest.php`, e a `usuarioDoKit():491` passou a casar — saldo zero, 2026-11-21
+- [x] `ids-ct.sh {wiki} 'tests/**/MapaInterativo*Test.php'` sem CT de Pest faltando — *(alterado em 2026-11-21 — step 11, QA-09: o item dizia "silencioso")* exit 1 com 8 linhas, só os CT-B01 a CT-B08, que rodam no conferidor Node do site construído, por desenho (D17; ver `## Testes`), 2026-11-21
 - [x] `conformidade-rules.sh {wiki} main` silencioso — exit 0 sem saída, 2026-11-21
 - [x] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final — `desenvolvendo-o-kit.md` nos dois idiomas e o `[Unreleased]` do CHANGELOG com a recusa antes de qualquer efeito, o conferidor e o Node no CI; o README não muda (2.775 blocos e 231/271 arquivos de teste, iguais), 2026-11-21
 - [ ] `git commit`
@@ -176,12 +176,27 @@ Recusados, com o motivo:
 | `.ai/rules/catalogo-de-features.md` | `docs/pt/operacao/roteiro-de-features.md`, `docs/en/operacao/roteiro-de-features.md` | aplicada | o número só cresce: o catálogo ganhou F-72 a F-121 em sequência, e a correção do passo 8 mudou só a origem da F-97 (`filament/actions`), sem trocar, reaproveitar ou remover número; CT-01 a CT-05 e CT-07 verdes |
 | `.ai/rules/kit.md` | `tests/Kit/**` | n.a. | a regra única (o `Livewire::test` leva cabeçalho e query só na montagem) não se aplica: as guardas do mapa não montam componente Livewire |
 | `.ai/rules/specs.md` | `wikis/specs/**` | aplicada | citação de vendor por símbolo (`vendor/filament/filament/src/Panel/Concerns/HasComponents.php:getPages:442` na revisão profunda), citação de teste pelo ID do CT; `citacoes.sh` silencioso |
-| `.ai/rules/testes.md` | `tests/**` | aplicada, depois de corrigida | o contrato dos executores (helper só no próprio arquivo, sem acesso ao `tests/Pest.php`) produziu clones com outro nome nos cinco arquivos de guarda, o que a seção "Helper de teste usado por mais de um arquivo vive em `tests/Pest.php`" proíbe; o despacho #19 os juntou em 13 helpers do `tests/Pest.php` (`motivoDeEnfeite`, `modeloDoMapa`, `registroVivoDoPainel`, `linhasDoCatalogo`, `arquivoDaClasse`…), com as cópias antigas rodando à sombra das novas em toda chamada real e as contagens do JUnit iguais antes e depois; todo caso que lê `docs/`, README, `site/` ou a wiki pula fora da árvore do kit, e o motivo do pulo não escreve o caminho (CT-10 do `RedeDeDocumentacaoTest`); citação de CT antigo em docblock vai sem colchete |
+| `.ai/rules/testes.md` | `tests/**` | aplicada, depois de corrigida | o contrato dos executores (helper só no próprio arquivo, sem acesso ao `tests/Pest.php`) produziu clones com outro nome nos cinco arquivos de guarda, o que a seção "Helper de teste usado por mais de um arquivo vive em `tests/Pest.php`" proíbe; o despacho #19 os juntou em 13 helpers do `tests/Pest.php` (`motivoDeEnfeite`, `modeloDoMapa`, `registroVivoDoPainel`, `linhasDoCatalogo`, `arquivoDaClasse`…), com as cópias antigas rodando à sombra das novas em toda chamada real e as contagens do JUnit iguais antes e depois; todo caso que lê `docs/`, README, `site/` ou a wiki pula fora da árvore do kit, e o motivo do pulo não escreve o caminho do diretório das páginas (CT-10 do `RedeDeDocumentacaoTest`) *(alterado em 2026-11-21 — step 11, QA-09: o `beforeEach` do Diagramas e o do Tenancy escreviam o caminho, fora do gatilho do CT-10; corrigidos no step 11)*; citação de CT antigo em docblock vai sem colchete |
 | `.ai/rules/testes-browser.md` | `tests/Browser/**` (`RoteiroDoKitTest.php`) | n.a. | só o docblock do roteiro mudou (o roteiro saiu do README para o catálogo do site); nenhum cenário de navegador novo; os CT-B do mapa rodam no conferidor Node do site construído, fora do `pest-plugin-browser` (D17) |
 
 ## Quality Gate
 
-<!-- Preenchido no step 11. -->
+**Ciclo 1** — 2026-11-21, `fw-qa-gate` (#38), sobre o HEAD `a624bff1`: **REPROVADO → especificação** — 0 Blocker, 3 Major,
+5 Minor e 1 Cosmético; o relatório está em `06-relatorio-qa.md`. O que a sessão fez com cada achado:
+
+| Achado | Severidade · destino | O que a sessão fez |
+|---|---|---|
+| QA-01 | Major · 1 | a Q11 foi ao mantenedor em 2026-11-23, que escolheu a recomendação: a peça registrada e indisponível leva a marca da condição e só entra no diagrama do modo em que está disponível (Adendo 2); o ciclo do Adendo — CT, vermelho, código — segue |
+| QA-02 | Major · 1 | o "38" da Verificação Final trocado pelo comando e pela saída dele |
+| QA-03 | Major · 1 | o `01`, o `02` e o `04:184` corrigidos com a marca, e os números medidos de novo (o comparativo com ~2,46 MB, cinco `color-contrast` no tema claro dele, 30 eventos em 20 datas na linha do tempo); as linhas do comparativo do `/admin` e da D18 voltam a valer com o Adendo 2 |
+| QA-04 | Minor · 3 | quatro linhas novas no CT-49 (#39), vermelhas no `a624bff1` (#40) e verdes no `452e6919` |
+| QA-05 | Minor · 1 | o `03` diz de onde vem o piso (a medição da ADR-07, fora do CI); sem CT-B novo, como débito aceito: o piso é meta de leitura da ADR-07, e medir o tamanho do texto no CI dependeria da fonte do runner |
+| QA-06 | Minor · 1 | a Q12 voltou a `aberta`, com a P-11 no PR; a Q23 e a Q24 viraram a D39 e a D40 |
+| QA-07 | Minor · 1 | a página do mapa nomeia os cinco arquivos de guarda, nos dois idiomas |
+| QA-08 | Minor · 1 | o glossário ganhou o "sem vínculo" no "não confundir com" da ligação |
+| QA-09 | Cosmético · 1 | as quatro linhas do `03` corrigidas, e os dois `beforeEach` que escreviam o caminho no motivo do pulo também |
+
+**Ciclo 2**: depois do ciclo do Adendo 2, com um agente novo e sem resumo do que foi corrigido.
 
 ## Candidatos a Rule
 
@@ -270,6 +285,9 @@ Roteiro manual: não — 2026-11-20 — sem resposta a Q5 — a entrega é um si
 | 35 | 10 | analista do #22, retomado — a P-14 sobre a projeção, que a reconciliação achou: linhas do CT-50 | opus | o `01`, o `02`, o `03` e a conversa | 7 linhas novas no CT-50 (4 do gerador, 3 do posicionador), uma por classe e por ferramenta (EP), com o medido no `563cda13`; o título e o último passo do CT-50 ampliados; os mutantes R40-M9 a M14; três citações do RR-01 e do RR-02 em forma histórica | 844.166 tokens · 5 min | diff do `04` conferido: só o CT-50 e a tabela de mutantes dele; a sessão acertou o cabeçalho (260 mutantes) e a linha do Índice |
 | 36 | 10 | `fw-executor-ct` do #25, retomado — as sete linhas do CT-50 do step 10 | opus | o `01`, o `02` e a conversa | 48 casos; 7 vermelhos b, iguais ao medido no `04`; uma correção a, na pré-condição do próprio teste (a ligação só em comentário tem as duas pontas também no `kit-resumo-com` e no `kit-resumo-sem`, onde as duas caem no mesmo agrupamento e a seta não sai); o "E" novo nas 14 linhas | 356.481 tokens · 9 min | verde depois do commit da correção (48/48 no `d34bf17e`), porque o clone é do HEAD |
 | 37 | 10 | `general-purpose` com a skill `ponytail-review` — o diff de código `main...563cda13` (as ferramentas do mapa, o conferidor, o CI e os testes), lido do git | opus | a conversa, a wiki e o raciocínio da implementação | 54 achados, `net: -698 lines possible`; o maior bloco, os 129 wrappers `function_exists`/`defined` dos cinco arquivos de guarda | 294.279 tokens · 22 min | a sessão conferiu cada achado no código antes de decidir; aplicados no `000359b2` (net -356 linhas), recusados com o motivo na Verificação Final; as cinco guardas, a `HelpersDeTesteTest` e a publicação verdes depois |
+| 38 | 11 | `fw-qa-gate` — QA independente, ciclo 1, com a prévia do site do `a624bff1` | opus | a conversa e o raciocínio da sessão | REPROVADO → especificação: 3 Major (QA-01 a QA-03), 5 Minor e 1 Cosmético; G nível 3, J e K2 não verificadas | 457.465 tokens · 40 min | relatório gravado como `06-relatorio-qa.md`; cada achado conferido no código e na wiki antes da correção; `git status --porcelain` vazio antes e depois |
+| 39 | 11 | analista do #22, retomado — QA-04: partições do CT-49 | opus | o `01`, o `02`, o `03` e a conversa | 4 linhas novas no CT-49 (opção desconhecida, sem slug, slug a mais, opção repetida), com o medido no `a624bff1`; os mutantes R40-M15 a M18 | 867.787 tokens · 3 min | diff do `04` conferido; a sessão acertou o cabeçalho (264 mutantes) e a linha do Índice |
+| 40 | 11 | `fw-executor-ct` do #25, retomado — as quatro linhas do CT-49 | opus | o `01`, o `02` e a conversa | 52 casos; 4 vermelhos b, iguais ao medido no `04` | 402.539 tokens · 8 min | verde depois do commit da correção (52/52 no `452e6919`) |
 | 14 | 3 | Workflow `wf_23c4acca-a3e` — 7 autores de diagramas curados em paralelo, arquivos disjuntos (contrato em `brief-autores.md` no scratchpad): sequências transversais, sequências por painel, workflows `kit:*`, ciclos de vida, fluxos de dados, ERD e classes, linha do tempo e tempos | herdado da sessão | a conversa | 7/7 autores, 0 erro; 36 arquivos de diagrama curado (7 sequências transversais, com a pilha da requisição dividida na comum e na do `/app` com tenant; 5 sequências por painel; 3 workflows `kit:*`; 3 ciclos de vida; 2 fluxos de dados; 10 ERD; 3 de classes, a linha do tempo e 2 cascatas de tempos; o `kit-install-ci` do esqueleto apagado), todos com prova em toda ligação, textos em pt e as linhas `[mapa]` pt e en sem ERRO; o que ficou de fora por falta de prova no kit (passo feito só em `vendor/`) está listado por autor no journal do workflow. Um autor mediu um **defeito do kit**: a poda agendada da trilha de exceções não roda (`TypeError` de `getModelPruneInterval()` com `CarbonImmutable` no console, onde o painel padrão `/app` registra o plugin sem `modelPruneInterval`) — relatado ao mantenedor, não corrigido (RQ-15) | 3.131.596 tokens · 44 min | os 36 renderizados pela sessão com `gerar.mjs --saida` (todos sem ERRO); cada autor conferiu as âncoras com script próprio (primeira ocorrência na linha, fora de comentário, 12+ caracteres, fora de `vendor/`) e os limites da D5, D10 e D21; amostra da sessão: o defeito relatado conferido nos fatos citados (o `->registerNavigation(false)` do `/app` e o `->modelPruneInterval(…)` só no `/infra`) |
 
 ## Blockers
@@ -368,6 +386,11 @@ Dos passos 2 a 6, 2026-11-20:
   no build.
 
 ## Notas de Implementação
+
+- **Suítes inteiras no `a624bff1`**, antes do Adendo 2 (2026-11-21, `php -d memory_limit=2G vendor/bin/pest --testsuite=…
+  --compact --log-junit`): `Kit` com 5.789 testes, 0 erro, 0 falha e 3 pulados; `Tenancy` com 832, 0 erro e 0 falha. A
+  baseline da `main` tinha 1 falha pré-existente (a dos números do README), que a feature corrigiu. Rodam de novo no
+  HEAD final.
 
 - `search-docs` indisponível: o MCP `laravel-boost` não conectou (timeout de conexão) nesta sessão; as APIs de painel do Filament foram lidas no código instalado em `vendor/filament/filament`.
 - **Baseline antes de qualquer código** (2026-11-20, branch no commit `d9608c5a` + só a wiki nova, sem código):

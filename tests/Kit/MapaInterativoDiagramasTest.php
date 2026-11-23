@@ -29,7 +29,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 beforeEach(function (): void {
     if (! naArvoreDoKit()) {
-        test()->markTestSkipped('As guardas do mapa leem site/, docs/ e o CHANGELOG, que não viajam no projeto instalado (.gitattributes: export-ignore).');
+        test()->markTestSkipped('As guardas do mapa leem site/, o diretório das páginas do site e o CHANGELOG, que não viajam no projeto instalado (.gitattributes: export-ignore).');
     }
 });
 

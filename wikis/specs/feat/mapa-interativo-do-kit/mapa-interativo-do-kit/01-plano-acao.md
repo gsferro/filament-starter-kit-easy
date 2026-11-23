@@ -96,7 +96,7 @@ conferida por script contra o código da tag `v0.56.0`.
 - Dez tipos nativos (architecture, workflow, sequence, dataflow, lifecycle, erd, tree, class, timeline,
   waterfall), mais `compare architecture` (antes, delta e depois) e `explainer` (fora: RQ-25)
 - Cada HTML é autocontido, sem nenhuma requisição de rede ao abrir, com 0,83–0,88 MB; o `compare`, com
-  ~2,35 MB. `render` é determinístico (mesmos bytes para o mesmo JSON)
+  ~2,46 MB *(alterado em 2026-11-21 — step 11, QA-03: medido no build do `a624bff1`, 2.457.513 B em pt e 2.451.364 B em en; era ~2,35 MB no spike)*. `render` é determinístico (mesmos bytes para o mesmo JSON)
 - Um idioma por artefato: `meta.locale` muda só a interface do visualizador; não há catálogo pt embutido, e
   `meta.translations` com as 486 chaves da interface a deixa inteira em pt-BR
 - Evidência: `meta.repository {url, revision}` e `sources` com no máximo três `{path, line, end_line,
@@ -188,7 +188,7 @@ conferida por script contra o código da tag `v0.56.0`.
 | # | Decisão | Pergunta | Portão que falta | Quem decidiu, data |
 |---|---|---|---|---|
 | D1 | O README ganha uma seção curta com uma tabela painel × modo que leva à página do mapa, e nenhuma imagem nova: o GitHub não executa o visualizador, e uma imagem exportada seria um retrato sem guarda, fora do `kit:arte` | autorização existente ("veja onde podemos colocar no readme") | difícil de reverter | sessão, 2026-11-20 |
-| D2 | A interface do visualizador em pt usa as 486 chaves do catálogo do archify: as 461 do `examples/locales/pt.json` do commit fixado, lidas no build, mais as 25 que faltam, mantidas em `site/mapa/pt-BR.json` com as sobrescritas da D12 *(corte do ponytail, step 6)* | autorização existente (P-02) | difícil de reverter | sessão, 2026-11-20 |
+| D2 | A interface do visualizador em pt usa as 486 chaves do catálogo do archify: as 461 do `examples/locales/pt.json` do commit fixado, lidas no build, mais as 25 que faltam, mantidas em `site/mapa/interface.json` *(alterado em 2026-11-21 — step 11, QA-03: era `pt-BR.json`; virou `interface.json` no passo 1, porque guarda as sobrescritas da D12 nos dois idiomas)* com as sobrescritas da D12 *(corte do ponytail, step 6)* | autorização existente (P-02) | difícil de reverter | sessão, 2026-11-20 |
 | D3 | O rótulo de cada peça é o nome dela no código (neutro entre idiomas); tipo, verbo da ligação, títulos e textos dos fluxos são traduzidos | autorização existente | surpreendente | sessão, 2026-11-20 |
 | D4 | A prova das ligações vai em cards do próprio HTML, agrupados pela peça de origem: "origem → destino (verbo) — arquivo, linha" (P-04) | P-04 | difícil de reverter | sessão, 2026-11-20 |
 | D5 | Fluxos escolhidos: os de ponta a ponta de cada painel e os transversais da pesquisa — a lista está em `## Matriz de visualizações`; o critério é cobrir cada painel nos dois modos, não converter todos os 80 levantados. *(alterado em 2026-11-20 — spike)* Cada sequência é escrita à mão a partir do código, não convertida da pesquisa: no máximo 8 participantes, nome de participante de até 15 caracteres, rótulo de mensagem de até 30 e o detalhe numa nota; a conversão automática dos 27 fluxos da pesquisa gerou rótulos que diziam o contrário do código | autorização existente | trade-off | sessão, 2026-11-20 |
@@ -225,6 +225,8 @@ conferida por script contra o código da tag `v0.56.0`.
 | D36 | Uma seta por verbo: o mapa de arquitetura desenha, para cada par de pontas, uma seta por verbo das ligações que caem nele, cada uma com o traço do seu verbo (o archify só tem os quatro traços, todos já de verbo); os mapas com par de mais de um verbo são reposicionados (Q22, P-13) | step 9, achado A1 | — | sessão, 2026-11-21 (step 9, medido: duas conexões no mesmo par renderizam, e a validação de layout pede reposicionar) |
 | D37 | O controle do CT-B06 sobre o caminho do conferidor é de derivação (a URL do módulo vira caminho de arquivo sem escape), sem prova de ponta a ponta num clone com espaço ou acento no caminho (Q25) | step 9, achado A12 | — | sessão, 2026-11-21 (step 9) |
 | D38 | A suíte Tenancy não ganha controle no CT-30 nem no CT-44: o docblock dela passa a dizer o que os datasets têm, e o CT-55 e a linha nova do CT-38 cobrem a assimetria do registro (Q26) | step 9, achado A15 | — | sessão, 2026-11-21 (step 9) |
+| D39 | A raiz da árvore de registro de um painel leva o nome que o modelo dá à peça painel (`/app`), como toda peça desenhada, e não um formato próprio ("Painel /app") (R24 do `04`) | Q23 (step 9, achado A14) *(alterado em 2026-11-21 — step 11, QA-06: a Q23 saiu da raia de requisito do `00`)* | — | sessão, 2026-11-21 (step 9) |
+| D40 | `--tentativas` do posicionador aceita só um inteiro positivo: `0` é recusado, porque zero tentativas não é busca (P-14) | Q24 (step 9, achado A6) *(alterado em 2026-11-21 — step 11, QA-06: a Q24 saiu da raia de requisito do `00`)* | — | sessão, 2026-11-21 (step 9) |
 
 ## Autorização
 
@@ -361,16 +363,16 @@ Nenhuma chave nova no `.env` do kit.
 > Skills: `ponytail`
 > *(passo novo em 2026-11-20 — spike de escala; absorve o antigo passo "archify fixado e interface em pt-BR")*
 
-- **Path**: `site/mapa/archify.mjs`, `site/mapa/pt-BR.json`, `site/.gitignore`, `site/mapa/gerar.mjs` (mínimo),
+- **Path**: `site/mapa/archify.mjs`, `site/mapa/interface.json` *(alterado em 2026-11-21 — step 11, QA-03: era `pt-BR.json`)*, `site/.gitignore`, `site/mapa/gerar.mjs` (mínimo),
   `site/package.json`, `site/verifica-mapa.mjs` (ADR-06, D17), `.github/workflows/pages.yml` e o job `site` do
   `.github/workflows/ci.yml` (o passo do conferidor do mapa) e um diagrama de cada tipo já no formato do
   modelo, partindo das entradas do spike *(alterado em 2026-11-20 — step 7, D17: o conferidor do mapa é um
   arquivo próprio)*
-- `archify.mjs` exporta `obterArchify(): Promise<string>` (caminho da CLI): se `site/.archify/` não tem o
+- `archify.mjs` exporta `obterArchify(): string` *(alterado em 2026-11-21 — step 11, QA-03: síncrona: o gerador é um script de build, e o `execFileSync` basta)* (caminho da CLI): se `site/.archify/` não tem o
   commit declarado (`ARCHIFY_COMMIT`, 40 hex), faz `git init`, `git fetch --depth 1` do commit e `checkout`;
   confere `git rev-parse HEAD` igual ao declarado; falha fechado com a mensagem de como resolver; roda o archify
   com `ARCHIFY_UPDATE_CHECK_DISABLED=1`
-- `pt-BR.json`: só as 25 chaves que o `examples/locales/pt.json` do archify não tem e as sobrescritas de
+- `interface.json` *(alterado em 2026-11-21 — step 11, QA-03: era `pt-BR.json`)*: só as 25 chaves que o `examples/locales/pt.json` do archify não tem e as sobrescritas de
   `viewer.kind.*` e da legenda, que valem nos dois idiomas (D2, D12); o gerador mescla com o catálogo do archify *(corte do ponytail, step 6)*
 - `verifica-mapa.mjs`: a amostra da ADR-06 (um HTML do mapa por tipo, idioma e tema, e o comparativo no
   tema escuro) é escolhida sozinha a partir do que o build gerou, então o passo não volta a mexer no conferidor *(corte do ponytail, step 6)*; os CT-B do `05` moram nele (D17)
@@ -453,7 +455,7 @@ Nenhuma chave nova no `.env` do kit.
   projeta cada `{pt, en}` no idioma *(corte do ponytail, step 6)*, resolve as âncoras de evidência na revisão `HEAD`
   (`git show HEAD:{arquivo}`), põe `meta.repository {url, revision}`, `meta.locale` (`pt-BR` com o catálogo,
   ou `en`) e os cards de prova (D4), grava o JSON numa pasta temporária fora do `dist/` e roda
-  `archify render {tipo} … --repo-root {raiz} --quality {showcase|standard}` para `dist/mapa/{pt,en}/{slug}.html`;
+  `archify render {tipo} … --repo-root {raiz}` *(alterado em 2026-11-21 — step 11, QA-03: sem `--quality` na linha de comando: o perfil fica em cada arquivo de diagrama, `meta.quality_profile`, que o archify respeita quando a opção não vem)* para `dist/mapa/{pt,en}/{slug}.html`;
   depois roda o `compare architecture` do resumo do `/admin` e do `/app` (sem → com, D8). Nenhum sidecar do
   archify vai para o `dist/`. *(alterado em 2026-11-20 — spike)* O build só renderiza: nada de `finalize`, que
   exige navegador (ADR-01)
@@ -511,7 +513,7 @@ Nenhuma chave nova no `.env` do kit.
 
 > Skills: `pest-testing`, `testing-best-practices`
 
-- **Path**: `tests/Kit/MapaInterativoTest.php`, `tests/Tenancy/MapaInterativoTenancyTest.php` (helpers cruzados,
+- **Path**: `tests/Kit/MapaInterativo{,Catalogo,Publicacao,Diagramas}Test.php` e `tests/Tenancy/MapaInterativoTenancyTest.php` *(alterado em 2026-11-21 — step 11, QA-03: cinco arquivos, um dono por arquivo, desde o passo 8)* (helpers cruzados,
   se houver, em `tests/Pest.php`)
 - Os CT nascem do `04` (step 7). Escopo previsto: integridade do modelo; âncoras de evidência; completude da
   camada de registro contra o painel vivo nos dois modos; catálogo (unicidade, paridade pt/en, só acréscimo,

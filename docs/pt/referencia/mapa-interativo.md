@@ -125,7 +125,9 @@ as classes, as versões e os tempos.
 
 ## Como é conferido
 
-- `tests/Kit/MapaInterativoTest.php` e `tests/Tenancy/MapaInterativoTenancyTest.php` confrontam, em todo PR, o
-  modelo e os diagramas com o registro vivo dos painéis, com o código e com o catálogo.
-- `site/verifica-mapa.mjs` abre a amostra num navegador real, no CI do site, antes de publicar.
+- `tests/Kit/MapaInterativo*Test.php` (o catálogo, a publicação, o modelo e os diagramas) e
+  `tests/Tenancy/MapaInterativoTenancyTest.php` confrontam, em todo PR, o modelo e os diagramas com o registro vivo
+  dos painéis, com o código e com o catálogo, e resolvem toda âncora do mapa.
+- `site/verifica-mapa.mjs` abre os diagramas nos dois idiomas num navegador real e audita a acessibilidade de uma
+  amostra, no CI do site, antes de publicar.
 - Como manter o mapa: [Desenvolvendo o kit](../../operacao/desenvolvendo-o-kit/).

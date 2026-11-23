@@ -35,7 +35,7 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 beforeEach(function (): void {
     if (! naArvoreDoKit()) {
-        test()->markTestSkipped('O mapa e a página dele só existem na árvore do kit: /site, /docs e CHANGELOG.md têm export-ignore.');
+        test()->markTestSkipped('O mapa e a página dele só existem na árvore do kit: site/, o diretório das páginas do site e o CHANGELOG têm export-ignore.');
     }
 });
 

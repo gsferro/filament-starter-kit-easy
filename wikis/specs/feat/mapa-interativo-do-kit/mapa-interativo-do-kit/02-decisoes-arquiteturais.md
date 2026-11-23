@@ -11,7 +11,7 @@
 ### Contexto
 
 O archify entrega cada diagrama como um HTML autocontido de 0,83 a 0,97 MB (1,25 a 1,51 MB nos
-grandes, 2,56 MB no comparativo), dos quais cerca de 796 kB são o runtime do visualizador, repetido em
+grandes, ~2,46 MB no comparativo *(alterado em 2026-11-21 — step 11, QA-03: medido no build do `a624bff1`; era 2,56 MB)*), dos quais cerca de 796 kB são o runtime do visualizador, repetido em
 todo arquivo. A demonstração pedida (três painéis, dois modos de tenancy, os dez tipos nativos e o
 comparativo, em dois idiomas) passa de cem arquivos depois da decomposição da ADR-07, na casa de
 100 a 180 MB por geração. *(alterado em 2026-11-20 — números medidos no spike de escala)*
@@ -269,7 +269,7 @@ nos HTML do archify 3.2 de todos os tipos, nos dois temas:
   sempre que o diagrama tem fronteiras, raias, estágios ou grupos; o axe só acusa quando a contagem tem
   dois dígitos — com um dígito marca "incompleto", mas o contraste é o mesmo.
 - **Comparativo**: a casca abre no tema escuro, ignora `?theme` e não tem violação nesse tema; no claro,
-  alcançado pelo botão da própria página, tem seis `color-contrast`.
+  alcançado pelo botão da própria página, tem cinco `color-contrast` *(alterado em 2026-11-21 — step 11, QA-03: medido na prévia do `a624bff1`, em pt e em en, com o axe 4.13; era seis)*.
 - O axe não avalia o contraste do texto dentro do SVG (204 textos ficaram "incompletos" num ERD).
 
 Corrigir pós-processando o HTML quebra a proveniência que o archify grava e mexe em código de
@@ -369,7 +369,7 @@ O piso de leitura do projeto é 6,5 px projetados, acima dos 6 px do archify: o 
 
 *(alterado em 2026-11-20 — medido no Chromium do Linux, no enquadramento inicial de 1.440 × 900, contando só o texto
 visível no carregamento)* Com a grade equilibrada do posicionador (o desenho alto era encolhido até caber), 86 dos 87
-diagramas de cada idioma ficam no piso ou acima. A exceção é a linha do tempo, larga (26 marcos lado a lado), que
+diagramas de cada idioma ficam no piso ou acima. A exceção é a linha do tempo, larga (30 eventos em 20 datas, lado a lado *(alterado em 2026-11-21 — step 11, QA-03: eram 26 marcos quando a frase entrou)*), que
 abre a 6,31 px e se lê pelo zoom do visualizador; a página do mapa declara isso. O `tag` de F-nn, que o archify
 esconde até o nível de detalhe completo, fica fora da conta.
 

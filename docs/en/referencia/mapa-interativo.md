@@ -124,7 +124,9 @@ model, the classes, the releases and the timings.
 
 ## How it is checked
 
-- `tests/Kit/MapaInterativoTest.php` and `tests/Tenancy/MapaInterativoTenancyTest.php` confront, on every PR, the
-  model and the diagrams with the live panel registry, with the code and with the catalog.
-- `site/verifica-mapa.mjs` opens the sample in a real browser, in the site CI, before publishing.
+- `tests/Kit/MapaInterativo*Test.php` (catalog, publication, model and diagrams) and
+  `tests/Tenancy/MapaInterativoTenancyTest.php` confront, on every PR, the model and the diagrams with the live
+  panel registry, with the code and with the catalog, and resolve every map anchor.
+- `site/verifica-mapa.mjs` opens the diagrams in both languages in a real browser and audits the accessibility of a
+  sample, in the site CI, before publishing.
 - How to maintain the map: [Developing the kit](../../operacao/desenvolvendo-o-kit/).
