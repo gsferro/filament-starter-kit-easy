@@ -1261,39 +1261,74 @@ it('[CT-48] com --saida e sem slug, o gerador recusa, antes de qualquer efeito, 
     '`.`, a própria site/ do clone'                                          => ['site'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
 
-it('[CT-49] o argumento sem valor válido é recusado antes de qualquer efeito, com a mensagem [mapa] que nomeia o argumento', function (array $comando, string $argumento): void {
+/**
+ * Os nomes que a linha `[mapa]` do CT-49 tem de trazer para nomear o argumento: a opção desconhecida com borda, para
+ * que `--tentativas` não passe por `--tentativa`, e junto a opção que existe; o slug ausente pela palavra `slug`; o slug
+ * a mais com borda.
+ *
+ * @return list<string>
+ */
+function publicacaoCulpadoNoCt49(string $argumento): array
+{
+    return match ($argumento) {
+        '--tentativa'    => ['~(?<![\w-])--tentativa(?![\w-])~u', '--tentativas'],
+        'o slug'         => ['slug'],
+        'app-resumo-com' => ['~(?<![\w-])app-resumo-com(?![\w-])~u'],
+        default          => [$argumento],
+    };
+}
+
+/** O padrão do "o que falta" do CT-49, pelas palavras da coluna do `04`, na mesma linha `[mapa]` que nomeia o argumento. */
+function publicacaoOQueFaltaNoCt49(string $oQueFalta, string $argumento): string
+{
+    $positivo = '(?=.*(inteiro|integer|n[úu]mero|number))(?=.*(positiv|maior\s+que\s+(0|zero)|>\s*0|≥\s*1|>=\s*1|pelo\s+menos\s+1|at\s+least\s+1|greater\s+than\s+(0|zero)))';
+
+    return match ($oQueFalta) {
+        'o valor que ele espera'                                                                => $argumento === '--saida' ? '/pasta|diret[óo]rio|folder|directory/iu' : '/^'.$positivo.'/iu',
+        'que a opção não existe, e a que existe (`--tentativas`)'                               => '/desconhecid|n[ãa]o\s+existe|inexistente|n[ãa]o\s+reconhec|unknown|unrecognized|not\s+exist/iu',
+        'que ele falta, com o uso da ferramenta'                                                => '/falt|ausente|missing|obrigat|required|sem\s+(o\s+)?slug|n[ãa]o\s+(foi\s+)?(informad|passad|indicad)|precisa|espera|expects?|needs?/iu',
+        'que o posicionador recebe um slug só'                                                  => '/um\s+slug\s+s[óo]|um\s+s[óo]\s+slug|s[óo]\s+um\s+slug|apenas\s+um|somente\s+um|um\s+(slug|diagrama)\s+(por|de\s+cada)\s+vez|one\s+slug|only\s+one|a\s+single|a\s+mais|extra|demais|too\s+many/iu',
+        'que ele aparece mais de uma vez, ou que o segundo valor, `0`, não é inteiro positivo'  => '/mais\s+de\s+uma\s+vez|repetid|duplicad|duas\s+vezes|more\s+than\s+once|repeated|duplicate|^'.$positivo.'(?=.*(?<![\d.])0(?![\d.]))/iu',
+    };
+}
+
+it('[CT-49] o argumento sem valor válido, desconhecido, a mais ou ausente é recusado antes de qualquer efeito, com a mensagem [mapa] que nomeia o argumento', function (array $comando, string $argumento, string $oQueFalta): void {
     $raiz = publicacaoPastaTemporaria();
 
     try {
         // Dado o node do ambiente, lido pela versão, e um clone descartável no commit, sem site/.archify e com o download bloqueado
         expect(versaoDoNode())->toMatch('/^v\d+\.\d+\.\d+$/');
-        $clone    = publicacaoCloneDescartavel($raiz);
-        $diagrama = $clone['site'].DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.'diagramas'.DIRECTORY_SEPARATOR.'app-resumo-sem.json';
-        $bytes    = publicacaoBytes($diagrama);
+        $clone     = publicacaoCloneDescartavel($raiz);
+        $diagramas = $clone['site'].DIRECTORY_SEPARATOR.'mapa'.DIRECTORY_SEPARATOR.'diagramas';
+        $antes     = publicacaoFotoDaPasta($diagramas);
+
+        expect($antes)->toHaveKey('app-resumo-sem.json');
 
         // Quando o autor roda, de site/ do clone, o comando
         $rodada = publicacaoRodarNoClone($clone['site'], $comando);
+        $saida  = strtolower(str_replace('\\', '/', $rodada['stdout']."\n".$rodada['stderr']));
+        $mudou  = publicacaoDiferencaDaFoto($antes, publicacaoFotoDaPasta($diagramas));
 
-        // Então código diferente de zero, com a mensagem [mapa] que nomeia o argumento e diz o valor que ele espera:
-        // a pasta, no --saida; o número inteiro positivo, no --tentativas (Q24)
-        $valorEsperado = match ($argumento) {
-            '--saida'      => '/pasta|diret[óo]rio|folder|directory/iu',
-            '--tentativas' => '/^(?=.*(inteiro|integer|n[úu]mero|number))(?=.*(positiv|maior\s+que\s+(0|zero)|>\s*0|≥\s*1|>=\s*1|pelo\s+menos\s+1|at\s+least\s+1|greater\s+than\s+(0|zero)))/iu',
-        };
-
-        // E nada foi baixado nem gravado
-        expect(publicacaoConferirRecusa($rodada, [$argumento], $valorEsperado, [
-            'o clone ganhou site/.archify: o download do archify foi tentado antes da recusa'  => file_exists($clone['site'].DIRECTORY_SEPARATOR.'.archify'),
-            'o site/mapa/diagramas/app-resumo-sem.json do clone não tem os mesmos bytes'       => publicacaoBytes($diagrama) !== $bytes,
+        // Então código diferente de zero, com a mensagem [mapa] que nomeia o argumento e diz o que falta, na mesma linha
+        // (e, sem slug, o uso da ferramenta na saída); E nada foi baixado nem gravado: o clone continua sem site/.archify,
+        // e os arquivos de diagrama do clone têm os mesmos bytes
+        expect(publicacaoConferirRecusa($rodada, publicacaoCulpadoNoCt49($argumento), publicacaoOQueFaltaNoCt49($oQueFalta, $argumento), [
+            'a saída não traz o uso da ferramenta (mapa/posicionar.mjs <slug>)'               => $oQueFalta === 'que ele falta, com o uso da ferramenta' && ! str_contains($saida, 'posicionar.mjs <slug>'),
+            'o clone ganhou site/.archify: o download do archify foi tentado antes da recusa' => file_exists($clone['site'].DIRECTORY_SEPARATOR.'.archify'),
+            "os arquivos de diagrama do clone não têm os mesmos bytes: {$mudou}"              => $mudou !== '',
         ]))->toBe([]);
     } finally {
         publicacaoApagarPasta($raiz);
     }
 })->with([
-    'gerador: pasta ausente'                               => [['node', 'mapa/gerar.mjs', '--saida'], '--saida'],
-    'posicionador: número ausente'                         => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas'], '--tentativas'],
-    'posicionador: valor não numérico'                     => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas', 'muitas'], '--tentativas'],
-    'posicionador: zero, abaixo do inteiro positivo (Q24)' => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas', '0'], '--tentativas'],
+    'gerador: pasta ausente'                                                      => [['node', 'mapa/gerar.mjs', '--saida'], '--saida', 'o valor que ele espera'],
+    'posicionador: número ausente'                                                => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas'], '--tentativas', 'o valor que ele espera'],
+    'posicionador: valor não numérico'                                            => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas', 'muitas'], '--tentativas', 'o valor que ele espera'],
+    'posicionador: zero, abaixo do inteiro positivo (Q24)'                        => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas', '0'], '--tentativas', 'o valor que ele espera'],
+    'posicionador: opção desconhecida, com um slug real (step 11, QA-04)'         => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativa', '0'], '--tentativa', 'que a opção não existe, e a que existe (`--tentativas`)'],
+    'posicionador: sem slug (step 11, QA-04)'                                     => [['node', 'mapa/posicionar.mjs'], 'o slug', 'que ele falta, com o uso da ferramenta'],
+    'posicionador: um slug a mais (step 11, QA-04)'                               => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', 'app-resumo-com'], 'app-resumo-com', 'que o posicionador recebe um slug só'],
+    'posicionador: opção repetida, com o segundo valor inválido (step 11, QA-04)' => [['node', 'mapa/posicionar.mjs', 'app-resumo-sem', '--tentativas', '5', '--tentativas', '0'], '--tentativas', 'que ele aparece mais de uma vez, ou que o segundo valor, `0`, não é inteiro positivo'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
 
 /**
