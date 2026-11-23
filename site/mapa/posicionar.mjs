@@ -18,19 +18,33 @@ import { fileURLToPath } from 'node:url';
 import { obterArchify } from './archify.mjs';
 import { entradaDoArchify, idArchify, paraOComparativo } from './gerar.mjs';
 
-const [slug, ...opcoes] = process.argv.slice(2);
-if (!slug) {
-  console.error('uso: node mapa/posicionar.mjs <slug> [--tentativas 200]');
+// Os argumentos são conferidos antes de qualquer efeito — ler o diagrama, baixar o archify, gravar (P-14): um slug
+// só e, no máximo uma vez, `--tentativas` com um inteiro positivo; o resto é recusado, e nunca vale um padrão no lugar.
+const recusar = (motivo) => {
+  console.error(`[mapa] ERRO ${motivo} (uso: node mapa/posicionar.mjs <slug> [--tentativas 200])`);
   process.exit(2);
+};
+const argumentos = process.argv.slice(2);
+const slugs = [];
+let valor;
+for (let i = 0; i < argumentos.length; i++) {
+  if (argumentos[i] === '--tentativas') {
+    if (valor !== undefined) recusar('--tentativas: a opção aparece mais de uma vez');
+    valor = argumentos[++i] ?? null;
+    if (!/^[1-9][0-9]*$/.test(valor ?? '')) {
+      recusar(`--tentativas: espera um inteiro positivo, e recebeu ${valor === null ? 'nada' : JSON.stringify(valor)}`);
+    }
+  } else if (argumentos[i].startsWith('-')) {
+    recusar(`opção desconhecida ${argumentos[i]}: a única opção é --tentativas`);
+  } else {
+    slugs.push(argumentos[i]);
+  }
 }
-// O argumento é conferido antes de qualquer efeito — ler o diagrama, baixar o archify, gravar (P-14).
-const posicao = opcoes.indexOf('--tentativas');
-const valor = posicao >= 0 ? opcoes[posicao + 1] : '200';
-if (!/^[1-9][0-9]*$/.test(valor ?? '')) {
-  console.error(`[mapa] ERRO --tentativas: espera um inteiro positivo, e recebeu ${valor === undefined ? 'nada' : JSON.stringify(valor)}`);
-  process.exit(2);
+if (slugs.length !== 1) {
+  recusar(slugs.length ? `o posicionador recebe um slug só, e recebeu ${slugs.length}: ${slugs.join(', ')}` : 'falta o slug do diagrama');
 }
-const TENTATIVAS = Number(valor);
+const [slug] = slugs;
+const TENTATIVAS = Number(valor ?? '200');
 
 const RAIZ = fileURLToPath(new URL('../../', import.meta.url));
 const PASTA = fileURLToPath(new URL('./diagramas/', import.meta.url));
