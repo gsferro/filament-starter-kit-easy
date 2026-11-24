@@ -145,9 +145,7 @@ function mapaDiagramasConstruir(array $decl, array $modelo): array
     }
 
     if ($ir['construtor'] === 'mapa') {
-        $modo       = count($ir['modos']) === 1 ? $ir['modos'][0] : null;
-        $existe     = static fn (string $id): bool => ($modo === null || in_array($modo, $pecas[$id]['registrada'] ?? [], true))
-            && pecaAbreNosModosDoDiagrama($modelo, $id, $ir['modos']);
+        $existe     = static fn (string $id): bool => pecaAbreNosModosDoDiagrama($modelo, $id, $ir['modos']);
         $desenhadas = [];
         foreach ($decl['pecas'] ?? [] as $peca) {
             if ($existe($peca['id'])) {
@@ -170,7 +168,8 @@ function mapaDiagramasConstruir(array $decl, array $modelo): array
         $ponta  = static fn (string $id): ?string => isset($desenhadas[$id]) ? $id : ($grupoDe[$id] ?? null);
         $vistas = [];
         foreach ($modelo['ligacoes'] as $ligacao) {
-            if ($modo !== null && ! in_array($modo, $ligacao['modos'], true)) {
+            // A ligação vale em cada modo do diagrama: a de um modo só não entra no mapa compartilhado.
+            if (array_diff($ir['modos'], $ligacao['modos']) !== []) {
                 continue;
             }
             $doEscopo = $ir['paineis'] !== []
@@ -1521,6 +1520,73 @@ it('[CT-14] toda ligação do modelo aparece desenhada em diagrama publicado, e 
         return;
     }
 
+    $mundosDoMapaCompartilhado = [
+        'ligação de um modo só no mapa compartilhado',
+        'ponta registrada num modo só no mapa compartilhado',
+        'as duas ligações e as duas pontas, nos dois modos',
+    ];
+
+    if (in_array($mundoDeControle, $mundosDoMapaCompartilhado, true)) {
+        // O mapa de arquitetura `infra-convites` é compartilhado (modos sem e com): o mundo é só ele (Setup Global do `04`,
+        // "A mesma regra vale para o mapa de arquitetura e para a ponta"). A ligação nova "ConviteDeAcesso usa Convite" vai
+        // no sentido contrário ao da publicada "Convite usa ConviteDeAcesso", para a seta dela ser outra.
+        $convite      = 'App\\Models\\Convite';
+        $aviso        = 'App\\Notifications\\ConviteDeAcesso';
+        $publicada    = mapaDiagramasLigacaoDe($modelo, $convite, $aviso, 'usa');
+        $dosDoisModos = $mundoDeControle === 'as duas ligações e as duas pontas, nos dois modos';
+        $soAsLigacao  = $mundoDeControle === 'ligação de um modo só no mapa compartilhado';
+        $nova         = [...$publicada, 'de' => $aviso, 'para' => $convite, 'paineis' => ['infra'], 'modos' => $soAsLigacao ? ['sem'] : ['sem', 'com']];
+        $arvore       = diagramasDoMapa()['infra-convites'];
+        $pecas        = $modelo['pecas'];
+        if ($mundoDeControle === 'ponta registrada num modo só no mapa compartilhado') {
+            $pecas[$aviso]['registrada'] = ['sem'];
+        }
+        $daGuarda = ['pecas' => $pecas, 'ligacoes' => $soAsLigacao || $dosDoisModos ? [$nova, $publicada] : [$publicada]];
+        $naGuarda = mapaDiagramasConferirLigacoes($daGuarda, ['infra-convites' => mapaDiagramasConstruir($arvore, $daGuarda)], ['infra-convites']);
+
+        if ($dosDoisModos) {
+            expect($naGuarda['motivo'])->toBe('aceita');
+        } else {
+            $quem = $soAsLigacao ? mapaDiagramasDescricaoDaLigacao($daGuarda, $nova) : mapaDiagramasDescricaoDaLigacao($daGuarda, $publicada);
+            expect($naGuarda['aceita'])->toBeFalse()
+                ->and($naGuarda['motivo'])->toContain($quem);
+        }
+
+        if ($mundoDeControle === 'ponta registrada num modo só no mapa compartilhado') {
+            // O gerador já confere o `registrada` em cada modo (`entraNosModos`): esta linha só se monta pela guarda.
+            return;
+        }
+
+        $montado = entradasDoGeradorDoMapa(['slugs' => ['infra-convites'], 'ligacoes' => [$nova]]);
+        $idConv  = $montado['ids'][$convite];
+        $idAviso = $montado['ids'][$aviso];
+
+        foreach (['pt', 'en'] as $idioma) {
+            $entrada = $montado['diagramas']['infra-convites'][$idioma] ?? [];
+            expect($entrada)->not->toHaveKey('erro');
+            $setas = array_map(static fn (array $seta): string => $seta['from'].'|'.$seta['to'], $entrada['connections'] ?? []);
+            $itens = array_merge([], ...array_map(static fn (array $card): array => array_map('strval', $card['items'] ?? []), $entrada['cards'] ?? []));
+            $prova = static fn (string $de, string $para): array => array_values(array_filter(
+                $itens,
+                static fn (string $item): bool => str_starts_with($item, "{$de} → {$para} ("),
+            ));
+
+            // a ligação publicada, "Convite usa ConviteDeAcesso", é desenhada nos dois mundos
+            expect(in_array("{$idConv}|{$idAviso}", $setas, true))->toBeTrue("infra-convites ({$idioma}): a seta Convite → ConviteDeAcesso, publicada, não foi desenhada");
+            expect($prova('Convite', 'ConviteDeAcesso'))->not->toBeEmpty("infra-convites ({$idioma}): o item de prova Convite → ConviteDeAcesso não está no card");
+
+            if ($dosDoisModos) {
+                expect(in_array("{$idAviso}|{$idConv}", $setas, true))->toBeTrue("infra-convites ({$idioma}): o gerador não desenhou a seta ConviteDeAcesso → Convite");
+                expect($prova('ConviteDeAcesso', 'Convite'))->not->toBeEmpty("infra-convites ({$idioma}): o item de prova ConviteDeAcesso → Convite não está no card");
+            } else {
+                expect(in_array("{$idAviso}|{$idConv}", $setas, true))->toBeFalse("infra-convites ({$idioma}): o gerador desenhou a seta ConviteDeAcesso → Convite, e a ligação vale só sem tenant");
+                expect($prova('ConviteDeAcesso', 'Convite'))->toBe([], "infra-convites ({$idioma}): o gerador desenhou o item de prova ConviteDeAcesso → Convite, e a ligação vale só sem tenant");
+            }
+        }
+
+        return;
+    }
+
     $nomeia = [];
     switch ($mundoDeControle) {
         case 'só no texto da peça':
@@ -1591,6 +1657,7 @@ it('[CT-14] toda ligação do modelo aparece desenhada em diagrama publicado, e 
 })->with([
     'publicados', 'só no texto da peça', 'agrupamento sem membros', 'membros só no texto secundário', 'porta sem os membros', 'ausente', 'diagrama órfão',
     'ponta indisponível no modo do diagrama', 'ligação de registro de um modo só na árvore compartilhada', 'a mesma ligação, nos dois modos',
+    'ligação de um modo só no mapa compartilhado', 'ponta registrada num modo só no mapa compartilhado', 'as duas ligações e as duas pontas, nos dois modos',
 ]);
 
 /*
@@ -1816,10 +1883,9 @@ it('[CT-19] compartilha-se só o que é igual nos dois modos, e o igual não se 
         // Forma de leitura da G5: a entrada que o gerador entrega ao archify (Setup Global do `04`, "O diagrama que vale nos
         // dois modos e o rótulo da raiz"). O esperado sai do `modos` do arquivo e da tabela, e a comparação é por igualdade.
         $termoDoModo = static function (array $modos): array {
-            $ordenados = $modos;
-            sort($ordenados);
+            sort($modos);
 
-            return match ($ordenados) {
+            return match ($modos) {
                 ['sem']        => ['pt' => 'sem tenant', 'en' => 'tenancy off'],
                 ['com']        => ['pt' => 'com tenant ativo', 'en' => 'tenancy on'],
                 ['com', 'sem'] => ['pt' => 'os dois modos', 'en' => 'both modes'],

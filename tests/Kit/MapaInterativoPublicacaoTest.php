@@ -1429,7 +1429,7 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
                 } else {
                     $json->agrupamentos[0]->membros[] = $intrusa;
                 }
-            } elseif (str_starts_with($defeito, 'com a condição') || str_starts_with($defeito, 'com a chave') || str_starts_with($defeito, 'com a configuração') || str_starts_with($defeito, 'com a ligação')) {
+            } elseif (str_starts_with($defeito, 'com a condição') || str_starts_with($defeito, 'com a chave') || str_starts_with($defeito, 'com a configuração') || str_starts_with($defeito, 'com a ligação') || str_starts_with($defeito, 'com o modo da condição') || str_starts_with($defeito, 'com a ligada')) {
                 // A condição de disponibilidade do modelo (ou a ligação de registro) com um campo só trocado, numa peça que o modelo de hoje já marca
                 $pecaDe = function (string $id) use ($json, $umSo): object {
                     return $umSo($json, fn (object $peca): bool => $peca->id === $id, "a peça {$id}");
@@ -1438,7 +1438,27 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
                 $agente  = 'App\Filament\Admin\Resources\AgentesIa\AgenteIaResource';
                 $command = 'Bityukov\CommandCenter\Filament\Resources\CommandRecordResource';
 
+                $fabrica = 'Bityukov\CommandCenter\Sources\ConfigSource';
+                $fonteDe = function () use ($pecaDe, $command): object {
+                    $chave = $pecaDe($command)->disponibilidade->chaves[0];
+
+                    expect($chave->chave)->toBe('command-center.sources')
+                        ->and($chave->padrao)->toBe(['Bityukov\CommandCenter\Sources\ConfigSource'], 'o padrao de hoje não é só a ConfigSource de fábrica');
+
+                    return $chave;
+                };
+
                 match (true) {
+                    str_contains($defeito, 'escrito como lista') => (function () use ($pecaDe, $tenant): void {
+                        expect($pecaDe($tenant)->disponibilidade->modo)->toBe('com', 'o TenantResource de hoje não está no modo com');
+                        $pecaDe($tenant)->disponibilidade->modo = ['com'];
+                    })(),
+                    str_contains($defeito, 'outro namespace')     => $fonteDe()->ligada = [$fabrica, 'Outro\Pacote\ConfigSource'],
+                    str_contains($defeito, 'ConfigSource::class') => $fonteDe()->ligada = [$fabrica, $fabrica.'::class'],
+                    str_contains($defeito, 'APP_DEBUG')           => (function () use ($pecaDe, $agente): void {
+                        expect($pecaDe($agente)->disponibilidade->chaves[0]->chave)->toBe('KIT_AGENTES_IA', 'a chave do AgenteIaResource de hoje não é KIT_AGENTES_IA');
+                        $pecaDe($agente)->disponibilidade->chaves[0]->chave = 'APP_DEBUG';
+                    })(),
                     str_contains($defeito, 'no modo `Com`') => (function () use ($pecaDe, $tenant): void {
                         expect($pecaDe($tenant)->disponibilidade->modo)->toBe('com', 'o TenantResource de hoje não está no modo com');
                         $pecaDe($tenant)->disponibilidade->modo = 'Com';
@@ -1472,6 +1492,21 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
                         $json[]       = $nova;
                     })(),
                 };
+            } elseif (str_starts_with($defeito, 'com modos')) {
+                // O campo modos do diagrama, com um defeito só: vazio, repetido ou fora de sem/com (neste caso, num mapa de arquitetura)
+                [$antes, $depois] = match ($defeito) {
+                    'com modos vazio'           => [['sem', 'com'], []],
+                    'com modos repetido'        => [['sem', 'com'], ['sem', 'sem']],
+                    'com modos fora de sem/com' => [['com'], ['Com']],
+                };
+
+                expect($json->modos ?? null)->toBe($antes, 'os modos do diagrama de hoje não são os que o 04 supõe');
+
+                if ($defeito === 'com modos fora de sem/com') {
+                    expect($json->construtor ?? null)->toBe('mapa', 'o diagrama da linha não é um mapa de arquitetura');
+                }
+
+                $json->modos = $depois;
             } elseif ($defeito === 'com a primeira mensagem sem prova') {
                 expect($json->messages[0]->prova ?? null)->not->toBeNull('a primeira mensagem do diagrama escrito à mão não tem prova');
 
@@ -1571,6 +1606,13 @@ it('[CT-50] o arquivo de entrada que a ferramenta não pode usar — JSON quebra
     'gerador: chave que não é KIT_* nem configuração (Adendo, A1)'         => ['site/mapa/pecas.json', 'com a chave da condição do AgenteIaResource trocada pelo número `123`', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AgenteIaResource', '123']],
     'gerador: configuração de pacote sem fonte nova (Adendo, A1)'          => ['site/mapa/pecas.json', 'com a configuração `command-center.sources` da condição do CommandRecordResource com a `ligada` igual ao `padrao`', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['CommandRecordResource', 'command-center.sources']],
     'gerador: condição sem âncora (Adendo, A1)'                            => ['site/mapa/pecas.json', 'com a condição do AgenteIaResource sem a âncora', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AgenteIaResource', '~(?i)(?:evid[eê]ncia|[aâ]ncora)~']],
+    'gerador: modo da condição que não é texto (Adendo, AD2-01)'           => ['site/mapa/pecas.json', 'com o modo da condição do TenantResource do /admin escrito como lista', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['TenantResource', '~\[\s*"com"\s*\]~']],
+    'gerador: fonte "nova" que só muda o namespace (Adendo, AD2-01)'       => ['site/mapa/pecas.json', 'com a ligada da configuração do CommandRecordResource com a ConfigSource de fábrica e uma ConfigSource de outro namespace', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['CommandRecordResource', 'command-center.sources']],
+    'gerador: fonte "nova" que só ganha ::class (Adendo, AD2-01)'          => ['site/mapa/pecas.json', 'com a ligada da configuração do CommandRecordResource com a ConfigSource de fábrica e a mesma classe com ConfigSource::class', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['CommandRecordResource', 'command-center.sources']],
+    'gerador: variável em maiúsculas fora de KIT_* (Adendo, AD2-01)'       => ['site/mapa/pecas.json', 'com a chave da condição do AgenteIaResource trocada por APP_DEBUG', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['AgenteIaResource', 'APP_DEBUG']],
+    'gerador: diagrama que não vale em modo nenhum (Adendo, AD2-03)'       => ['site/mapa/diagramas/infra-registro.json', 'com modos vazio', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['~infra-registro(?![a-z0-9-])~', 'modos']],
+    'gerador: modo repetido (Adendo, AD2-03)'                              => ['site/mapa/diagramas/infra-registro.json', 'com modos repetido', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['~infra-registro(?![a-z0-9-])~', 'modos']],
+    'gerador: modo do diagrama fora do domínio, num mapa (Adendo, AD2-03)' => ['site/mapa/diagramas/admin-resumo-com.json', 'com modos fora de sem/com', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['~admin-resumo-com(?![a-z0-9-])~', '~\bCom\b~']],
     'gerador: ligação de registro com a ponta fora do modelo (Adendo, A1)' => ['site/mapa/ligacoes.json', 'com a ligação "o painel admin registra `App\Support\PecaQueNaoExiste`", com a prova da ligação do FilamentShieldPlugin', ['node', 'mapa/gerar.mjs', '--saida', '{saida-anterior}'], ['PecaQueNaoExiste', 'registra', '~(?i)painel[: ]admin~']],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Clona o kit e roda site/mapa/, que não viajam no pacote.');
 

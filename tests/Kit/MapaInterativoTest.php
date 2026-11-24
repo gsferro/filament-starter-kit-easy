@@ -1101,10 +1101,8 @@ function mapaModeloArestasDoDiagrama(array $diagrama, array $modelo): array
         }
     } elseif ($construtor === 'registro') {
         $raiz = 'painel:'.$diagrama['paineis'][0];
-        $modo = $diagrama['modos'][0];
-
         foreach ($modelo['ligacoes'] as $ligacao) {
-            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'] ?? [], true)) {
+            if ($ligacao['de'] === $raiz && $ligacao['verbo'] === 'registra' && array_diff($diagrama['modos'], $ligacao['modos'] ?? []) === []) {
                 $arestas[] = ['de' => $raiz, 'para' => $ligacao['para'], 'representa' => [['de' => $ligacao['de'], 'para' => $ligacao['para']]]];
             }
         }
@@ -2413,6 +2411,15 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
     $organizacoes = 'App\\Filament\\Admin\\Resources\\Tenants\\TenantResource';
     $marcar       = static fn (array $modelo, string $id, array $marca): array => mapaModeloComPeca($modelo, $id, static fn (array $p): array => ['disponibilidade' => $marca] + $p);
 
+    $cardConvite = [
+        'dot'   => 'amber',
+        'title' => ['pt' => 'Condições de disponibilidade', 'en' => 'Availability conditions'],
+        'items' => [[
+            'pt' => "ConviteResource: só com tenant ativo — app/Filament/App/Resources/Convites/ConviteResource.php — return (bool) config('kit.tenancy.enabled') && parent::canAccess();",
+            'en' => "ConviteResource: tenancy on only — app/Filament/App/Resources/Convites/ConviteResource.php — return (bool) config('kit.tenancy.enabled') && parent::canAccess();",
+        ]],
+    ];
+
     switch ($mundo) {
         case 'chave que não decide':
             $modelo = $marcar($modelo, $agente, ['chaves' => [['chave' => 'KIT_REGISTRO', 'padrao' => false]]]);
@@ -2456,26 +2463,12 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
                 'label'   => 'ConviteResource',
                 'sources' => [['arquivo' => 'app/Filament/Admin/Resources/Convites/ConviteResource.php', 'trecho' => 'class ConviteResource extends Resource', 'label' => 'ConviteResource']],
             ];
-            $diagramas['admin-convite']['cards'][] = [
-                'dot'   => 'amber',
-                'title' => ['pt' => 'Condições de disponibilidade', 'en' => 'Availability conditions'],
-                'items' => [[
-                    'pt' => "ConviteResource: só com tenant ativo — app/Filament/App/Resources/Convites/ConviteResource.php — return (bool) config('kit.tenancy.enabled') && parent::canAccess();",
-                    'en' => "ConviteResource: tenancy on only — app/Filament/App/Resources/Convites/ConviteResource.php — return (bool) config('kit.tenancy.enabled') && parent::canAccess();",
-                ]],
-            ];
+            $diagramas['admin-convite']['cards'][] = $cardConvite;
             break;
         case 'rótulo sem prova, com a linha do card':
             // D44: com homônimas e sem prova o nó não designa peça, e a linha do card com esse rótulo não tem peça contra a qual conferir a marca.
             $diagramas['admin-convite']['participants'][] = ['id' => 'conviteresource', 'type' => 'backend', 'label' => 'ConviteResource'];
-            $diagramas['admin-convite']['cards'][]        = [
-                'dot'   => 'amber',
-                'title' => ['pt' => 'Condições de disponibilidade', 'en' => 'Availability conditions'],
-                'items' => [[
-                    'pt' => "ConviteResource: só com tenant ativo — app/Filament/App/Resources/Convites/ConviteResource.php — return (bool) config('kit.tenancy.enabled') && parent::canAccess();",
-                    'en' => "ConviteResource: tenancy on only — app/Filament/App/Resources/Convites/ConviteResource.php — return (bool) config('kit.tenancy.enabled') && parent::canAccess();",
-                ]],
-            ];
+            $diagramas['admin-convite']['cards'][]        = $cardConvite;
             break;
     }
 

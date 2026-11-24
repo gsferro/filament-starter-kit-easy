@@ -4717,18 +4717,22 @@ function conferirCondicaoNoModo(string $quem, string $modo, mixed $condicao, arr
 }
 
 /**
- * Pela condição do modelo, a peça fica disponível em todo modo em que o diagrama vale (Setup Global do `04`, "Entrar
- * no diagrama de um modo"): a condição de modo a prende a ele, e a de chave, não, porque entra ligada (P-15). O
- * diagrama compartilhado vale nos dois modos. É a regra do gerador (`site/mapa/gerar.mjs`, `entraNosModos`).
+ * Em todo modo em que o diagrama vale, o painel registra a peça (`registrada`) e, pela condição do modelo, ela fica
+ * disponível (Setup Global do `04`, "Entrar no diagrama de um modo"): a condição de modo a prende a ele, e a de chave,
+ * não, porque entra ligada (P-15). O diagrama compartilhado vale nos dois modos, e a ponta registrada num modo só não
+ * entra nele. É a regra do gerador (`site/mapa/gerar.mjs`, `entraNosModos`).
  *
  * @param  array{pecas: array<string, array<string, mixed>>}  $modelo
  * @param  list<string>  $modos  os modos em que o diagrama vale
  */
 function pecaAbreNosModosDoDiagrama(array $modelo, string $id, array $modos): bool
 {
-    $soNoModo = $modelo['pecas'][$id]['disponibilidade']['modo'] ?? null;
+    $peca     = $modelo['pecas'][$id] ?? null;
+    $soNoModo = $peca['disponibilidade']['modo'] ?? null;
 
-    return $soNoModo === null || array_diff($modos, [$soNoModo]) === [];
+    return $peca !== null
+        && array_diff($modos, $peca['registrada'] ?? []) === []
+        && ($soNoModo === null || array_diff($modos, [$soNoModo]) === []);
 }
 
 /**

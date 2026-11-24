@@ -208,9 +208,11 @@ function mapaTenancyConferirFeatures(array $modelo, array $catalogo, Panel $pain
 }
 
 /**
- * As ligações de registro (`painel:{id}` registra peça) que um diagrama `architecture` ou `tree` desenha,
- * no modo: a árvore, as do painel nesse modo; o mapa de arquitetura, as que têm as duas pontas
- * desenhadas, como peça ou como membro de agrupamento (mesma regra do gerador). Nos dois, só a ponta que
+ * As ligações de registro (`painel:{id}` registra peça) que um diagrama `architecture` ou `tree` desenha:
+ * a árvore, as do painel; o mapa de arquitetura, as que têm as duas pontas desenhadas, como peça ou como
+ * membro de agrupamento (mesma regra do gerador). Nos dois, a ligação só entra se vale em CADA modo do
+ * diagrama (`$diagrama['modos']`): o diagrama compartilhado, de dois modos, não desenha a ligação de um
+ * modo só, e o filtro pelo modo da suíte a contaria desenhada (R34-M6, AD2-02). Só a ponta que
  * entra no diagrama pela definição compartilhada (`pecaAbreNosModosDoDiagrama()`): a guarda que conta a
  * ponta só pelo registro fica vermelha contra a implementação certa.
  *
@@ -218,14 +220,14 @@ function mapaTenancyConferirFeatures(array $modelo, array $catalogo, Panel $pain
  * @param  array<string, mixed>  $diagrama
  * @return list<string> ids das peças ligadas ao painel
  */
-function mapaTenancyLigacoesDesenhadas(array $modelo, array $diagrama, string $painel, string $modo): array
+function mapaTenancyLigacoesDesenhadas(array $modelo, array $diagrama, string $painel): array
 {
     $raiz        = "painel:{$painel}";
     $modos       = $diagrama['modos'] ?? [];
     $entra       = fn (string $id): bool => pecaAbreNosModosDoDiagrama($modelo, $id, $modos);
     $registradas = array_filter(
         $modelo['ligacoes'],
-        fn (array $l): bool => $l['de'] === $raiz && $l['verbo'] === 'registra' && in_array($modo, $l['modos'], true),
+        fn (array $l): bool => $l['de'] === $raiz && $l['verbo'] === 'registra' && array_diff($modos, $l['modos']) === [],
     );
 
     if ($diagrama['tipo'] === 'tree') {
@@ -297,7 +299,7 @@ function mapaTenancyConferirDesenhoDoRegistro(array $modelo, array $diagramas, P
             && in_array($painel->getId(), $diagrama['paineis'] ?? [], true)
             && in_array($modo, $diagrama['modos'] ?? [], true);
         if ($vale) {
-            $desenhado = [...$desenhado, ...mapaTenancyLigacoesDesenhadas($modelo, $diagrama, $painel->getId(), $modo)];
+            $desenhado = [...$desenhado, ...mapaTenancyLigacoesDesenhadas($modelo, $diagrama, $painel->getId())];
         }
     }
     $desenhado = array_values(array_unique($desenhado));
@@ -551,9 +553,26 @@ it('[CT-38] com tenant, os diagramas de arquitetura e a árvore de registro de c
             in_array($d['tipo'], ['architecture', 'tree'], true)
             && in_array($id, $d['paineis'] ?? [], true)
             && in_array('com', $d['modos'] ?? [], true)
-            && in_array(IdentifyTenant::class, mapaTenancyLigacoesDesenhadas($modelo, $d, $id, 'com'), true)
+            && in_array(IdentifyTenant::class, mapaTenancyLigacoesDesenhadas($modelo, $d, $id), true)
         )));
         expect(array_column($diagramas, 'slug'))->toContain('requisicao-autenticada-com');
+    }
+
+    if ($mundo === 'ligação só com') {
+        // a ligação publicada "o painel infra registra o HubDeInfraestrutura", que vale nos dois modos, é trocada
+        // por uma só com tenant: os diagramas do /infra são todos compartilhados e não podem desenhá-la
+        $hub      = 'App\Filament\Infra\Pages\HubDeInfraestrutura';
+        $doPainel = fn (array $l): bool => $l['de'] === "painel:{$id}" && $l['para'] === $hub && $l['verbo'] === 'registra';
+        $antes    = array_values(array_filter($modelo['ligacoes'], $doPainel));
+        expect($antes)->toHaveCount(1)
+            ->and($antes[0]['modos'])->toBe(['sem', 'com'])
+            ->and(registradasNoModelo($modelo, $id, 'com'))->toContain($hub)
+            ->and(array_merge(...array_values(registroVivoDoPainel($painel))))->toContain($hub)
+            ->and($modelo['pecas'][$hub]['disponibilidade'] ?? null)->toBeNull();
+        $modelo['ligacoes']   = array_values(array_filter($modelo['ligacoes'], fn (array $l): bool => ! $doPainel($l)));
+        $modelo['ligacoes'][] = ['modos' => ['com']] + $antes[0];
+        $compartilhados       = array_filter($diagramas, fn (array $d): bool => in_array($id, $d['paineis'] ?? [], true) && in_array($d['tipo'], ['architecture', 'tree'], true) && count($d['modos'] ?? []) === 2);
+        expect(array_column($compartilhados, 'slug'))->toContain('infra-registro', 'infra-resumo');
     }
 
     if ($mundo === 'Livewire na árvore') {
@@ -564,7 +583,7 @@ it('[CT-38] com tenant, os diagramas de arquitetura e a árvore de registro de c
             ->and(array_merge(...array_values(registroVivoDoPainel($painel))))->not->toContain($livewire)
             ->and(registradasNoModelo($modelo, $id, 'com'))->not->toContain($livewire);
         $modelo['ligacoes'][] = ['de' => "painel:{$id}", 'para' => $livewire, 'verbo' => 'registra', 'paineis' => [$id], 'modos' => ['com'], 'evidencia' => $modelo['pecas'][$livewire]['evidencia'][0]];
-        expect(mapaTenancyLigacoesDesenhadas($modelo, diagramasDoMapa()['app-registro-com'], $id, 'com'))->toContain($livewire);
+        expect(mapaTenancyLigacoesDesenhadas($modelo, diagramasDoMapa()['app-registro-com'], $id))->toContain($livewire);
     }
 
     // Quando a guarda do mapa junta as ligações de registro que os diagramas do painel que valem com tenant
@@ -597,6 +616,7 @@ it('[CT-38] com tenant, os diagramas de arquitetura e a árvore de registro de c
     'app, só diagramas compartilhados'                                   => ['app', 'só compartilhados', [IdentifyTenant::class, 'App\Http\Middleware\DefinirTenantDePermissoes']],
     'app, só no requisicao-autenticada-com'                              => ['app', 'só no sequence', [IdentifyTenant::class]],
     'app, cópia com o Livewire InformacoesPessoais na árvore com tenant' => ['app', 'Livewire na árvore', ['InformacoesPessoais']],
+    'infra, cópia com a ligação do HubDeInfraestrutura só com tenant'    => ['infra', 'ligação só com', ['HubDeInfraestrutura']],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'Os diagramas do mapa não viajam no pacote.');
 
 it('[CT-44] com tenant, todo caminho do "onde fica" que leva a organização resolve no roteador', function (string $idioma): void {
