@@ -62,7 +62,7 @@ HEAD `a624bff1`. O que a sessão fez com cada achado está no `03`, seção `## 
 - **Observado**:
   - `site/mapa/pt-BR.json` (`01:191`, `01:364`, `01:373`, e na Fronteira do `04:184`) → o arquivo é `site/mapa/interface.json`. O desvio está só no `03:9` e no `03:327`.
   - `obterArchify(): Promise<string>` (`01:369`) → a função é síncrona (`site/mapa/archify.mjs:obterArchify:41`). Desvio só no `03:329`.
-  - `--quality {showcase|standard}` (`01:456`) → o perfil vai em `site/mapa/gerar.mjs:quality_profile:465`. Desvio só no `03:331`.
+  - `--quality {showcase|standard}` (`01:456`) → o perfil vai em `site/mapa/gerar.mjs:quality_profile:466`. Desvio só no `03:331`.
   - Comparativo do `/admin`: `01:277`, `01:344`–`347` e `01:457` → ver o QA-01.
   - Passo 8 com dois arquivos de guarda (`01:514`) → são cinco. Desvio só no `03:62`–`69`.
   - D18 e o esquema da peça (`01:207`, `01:398`–`401`): "o modelo guarda a condição de disponibilidade" (`condicao?`) → nenhuma das 284 peças de `pecas.json` a tem. O desvio não está registrado em lugar nenhum.

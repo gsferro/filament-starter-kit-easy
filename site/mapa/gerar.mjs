@@ -318,10 +318,11 @@ const eCaminhoDeConfiguracao = (chave) => typeof chave === 'string' && /^[a-z][\
 const nomeCurto = (valor) => String(valor).replace(/::class$/, '').split('\\').pop();
 
 /**
- * O que impede ler a condição da peça (o conferidor do site, `site/verifica-mapa.mjs`, `condicaoDaPeca`, confere a
- * mesma forma por conta própria): o modo, texto com redação decidida; cada chave, variável `KIT_*` com o valor de
+ * O que impede ler a condição da peça: o modo, texto com redação decidida; cada chave, variável `KIT_*` com o valor de
  * fábrica ou caminho de configuração com uma fonte, pelo nome curto, que a liga além do valor de fábrica; modo ou
- * chave; e a âncora do código que decide.
+ * chave; e a âncora do código que decide. O conferidor do site (`site/verifica-mapa.mjs`, `condicaoDaPeca`) confere
+ * por conta própria quase a mesma forma; a diferença é o `chaves: null`, que este gerador recusa e o conferidor lê
+ * como lista vazia — o build para aqui antes.
  */
 function problemasDaCondicao(condicao) {
   if (condicao === undefined || condicao === null) return [];
