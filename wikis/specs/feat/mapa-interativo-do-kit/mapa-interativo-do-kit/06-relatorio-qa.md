@@ -49,7 +49,7 @@ HEAD `a624bff1`. O que a sessão fez com cada achado está no `03`, seção `## 
   - nas 36 wikis que mencionam o arquivo, 109 "não está na linha" (66 únicas) e 78 "sem símbolo";
   - 48 símbolos, 27 arquivos.
 
-  A substância se sustenta: elas já estavam quebradas na `main`, com saldo zero. A linha `tests/Pest.php:Process:45`, que o diff inseriu, deslocou tudo em 1: a citação de `usuarioDoKit():490` em `wikis/specs/feat/layout-compact/layout-compact/06-relatorio-qa.md:72`, que passava por coincidência num docblock, quebrou, e a de `:491` passou a casar.
+  A substância se sustenta: elas já estavam quebradas na `main`, com saldo zero. A linha `tests/Pest.php:Process:48`, que o diff inseriu, deslocou tudo em 1: a citação de `usuarioDoKit():490` em `wikis/specs/feat/layout-compact/layout-compact/06-relatorio-qa.md:72`, que passava por coincidência num docblock, quebrou, e a de `:491` passou a casar.
 - **Repro**: para cada wiki com `tests/Pest.php:` → `bash .ai/skills/feature-wiki/scripts/citacoes.sh {wiki} | grep tests/Pest.php`, contar; para cada citação, comparar a linha em `git show main:tests/Pest.php`
 - **Evidência**: `grep -rn "38 citações" wikis/specs/feat/mapa-interativo-do-kit/mapa-interativo-do-kit/` → só `03-progresso.md:97`
 - **Destino**: 1
@@ -62,7 +62,7 @@ HEAD `a624bff1`. O que a sessão fez com cada achado está no `03`, seção `## 
 - **Observado**:
   - `site/mapa/pt-BR.json` (`01:191`, `01:364`, `01:373`, e na Fronteira do `04:184`) → o arquivo é `site/mapa/interface.json`. O desvio está só no `03:9` e no `03:327`.
   - `obterArchify(): Promise<string>` (`01:369`) → a função é síncrona (`site/mapa/archify.mjs:obterArchify:41`). Desvio só no `03:329`.
-  - `--quality {showcase|standard}` (`01:456`) → o perfil vai em `site/mapa/gerar.mjs:quality_profile:463`. Desvio só no `03:331`.
+  - `--quality {showcase|standard}` (`01:456`) → o perfil vai em `site/mapa/gerar.mjs:quality_profile:465`. Desvio só no `03:331`.
   - Comparativo do `/admin`: `01:277`, `01:344`–`347` e `01:457` → ver o QA-01.
   - Passo 8 com dois arquivos de guarda (`01:514`) → são cinco. Desvio só no `03:62`–`69`.
   - D18 e o esquema da peça (`01:207`, `01:398`–`401`): "o modelo guarda a condição de disponibilidade" (`condicao?`) → nenhuma das 284 peças de `pecas.json` a tem. O desvio não está registrado em lugar nenhum.
@@ -128,7 +128,7 @@ HEAD `a624bff1`. O que a sessão fez com cada achado está no `03`, seção `## 
   - `03:3`: o estado ainda diz "a revisão do diff roda sobre `main...168d1827`".
   - `03:90`: o comando nomeia 2 arquivos e a evidência fala de 5.
   - `03:98`: diz "silencioso", mas o `ids-ct.sh` sai com exit 1 e 8 linhas.
-  - `03:179`: diz que "o motivo do pulo não escreve o caminho", e `tests/Kit/MapaInterativoDiagramasTest.php:markTestSkipped:32` escreve "site/, docs/". Hoje esse arquivo está fora do gatilho do `[CT-10]`.
+  - `03:179`: diz que "o motivo do pulo não escreve o caminho", e `tests/Kit/MapaInterativoDiagramasTest.php:markTestSkipped:37` escreve "site/, docs/". Hoje esse arquivo está fora do gatilho do `[CT-10]`.
 - **Ação exigida**: corrigir as quatro linhas
 
 ## Matriz de Rastreabilidade
