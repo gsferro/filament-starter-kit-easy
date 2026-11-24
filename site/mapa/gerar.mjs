@@ -312,20 +312,23 @@ function sublabelDaPeca(peca) {
 // ---------------------------------------------------------------------------------------------------
 /** A redação decidida do modo (D41): só a do modo com tenant; a condição em outro modo é recusada ao carregar o modelo. */
 const MARCA_DO_MODO = { com: { pt: 'só com tenant ativo', en: 'tenancy on only' } };
-const eVariavelDoKit = (chave) => typeof chave === 'string' && /^[A-Z][A-Z0-9_]*$/.test(chave);
+const eVariavelDoKit = (chave) => typeof chave === 'string' && /^KIT_[A-Z0-9_]+$/.test(chave);
 const eCaminhoDeConfiguracao = (chave) => typeof chave === 'string' && /^[a-z][\w-]*(?:\.[\w-]+)+$/.test(chave);
+/** O nome curto da classe da fonte, sem namespace e sem `::class`: a validação e a marca comparam por ele. */
+const nomeCurto = (valor) => String(valor).replace(/::class$/, '').split('\\').pop();
 
 /**
- * O que impede ler a condição da peça, na forma que o conferidor do site também exige (`site/verifica-mapa.mjs`,
- * `condicaoDaPeca`): o modo com redação decidida; cada chave, variável `KIT_*` com o valor de fábrica ou caminho de
- * configuração com uma fonte que a liga além do valor de fábrica; modo ou chave; e a âncora do código que decide.
+ * O que impede ler a condição da peça (o conferidor do site, `site/verifica-mapa.mjs`, `condicaoDaPeca`, confere a
+ * mesma forma por conta própria): o modo, texto com redação decidida; cada chave, variável `KIT_*` com o valor de
+ * fábrica ou caminho de configuração com uma fonte, pelo nome curto, que a liga além do valor de fábrica; modo ou
+ * chave; e a âncora do código que decide.
  */
 function problemasDaCondicao(condicao) {
   if (condicao === undefined || condicao === null) return [];
   if (typeof condicao !== 'object' || Array.isArray(condicao)) return ['não é um objeto'];
   const { modo = null, chaves = [], evidencia } = condicao;
   const problemas = [];
-  if (modo !== null && !Object.hasOwn(MARCA_DO_MODO, modo)) {
+  if (modo !== null && (typeof modo !== 'string' || !Object.hasOwn(MARCA_DO_MODO, modo))) {
     problemas.push(`o modo ${JSON.stringify(modo)} não tem redação decidida (só "com")`);
   }
   if (!Array.isArray(chaves)) {
@@ -336,8 +339,8 @@ function problemasDaCondicao(condicao) {
       if (eVariavelDoKit(chave)) {
         if (!Object.hasOwn(item, 'padrao')) problemas.push(`a chave ${chave} sem o valor de fábrica (padrao)`);
       } else if (eCaminhoDeConfiguracao(chave)) {
-        const deFabrica = [item.padrao ?? []].flat();
-        if (![item.ligada ?? []].flat().some((fonte) => !deFabrica.includes(fonte))) {
+        const deFabrica = [item.padrao ?? []].flat().map(nomeCurto);
+        if (![item.ligada ?? []].flat().map(nomeCurto).some((fonte) => !deFabrica.includes(fonte))) {
           problemas.push(`a configuração ${chave} sem fonte que a ligue além do valor de fábrica (ligada)`);
         }
       } else {
@@ -360,11 +363,10 @@ function problemasDaCondicao(condicao) {
 function marcaDaCondicao(peca) {
   const condicao = peca?.disponibilidade;
   if (!condicao) return null;
-  const nomeCurto = (valor) => String(valor).split('\\').pop();
   const texto = (idioma) => {
     const partes = condicao.modo ? [MARCA_DO_MODO[condicao.modo][idioma]] : [];
     const chaves = (condicao.chaves ?? []).map(({ chave, padrao, ligada }) => {
-      if (/^[A-Z][A-Z0-9_]*$/.test(chave)) {
+      if (eVariavelDoKit(chave)) {
         if (typeof padrao === 'boolean') return `${chave}=${padrao}`;
         return [padrao ?? []].flat().length ? chave : `${chave} ${idioma === 'pt' ? 'vazia' : 'empty'}`;
       }
@@ -489,7 +491,6 @@ function conferirPecasDoMapa(diagrama) {
  */
 function mapaDeArquitetura(diagrama) {
   const { pecas, ligacoes } = carregarModelo();
-  const modo = diagrama.modos.length === 1 ? diagrama.modos[0] : null;
   conferirPecasDoMapa(diagrama);
   // O diagrama só desenha e agrupa a peça que, em cada modo dele, o painel registra e fica disponível (P-09; Adendo 2).
   const existe = (id) => entraNosModos(pecas.get(id), diagrama.modos);
@@ -549,7 +550,8 @@ function mapaDeArquitetura(diagrama) {
   const provas = [];
   const verbos = new Set();
   for (const l of ligacoes) {
-    if (modo && !l.modos.includes(modo)) continue;
+    // o compartilhado não desenha a ligação de um modo só (P-09): ela vale em cada modo do diagrama
+    if (!diagrama.modos.every((m) => l.modos.includes(m))) continue;
     // o diagrama de painel desenha as ligações do painel; o do kit inteiro, as que não são de painel nenhum
     const doEscopo = diagrama.paineis.length ? l.paineis.some((p) => diagrama.paineis.includes(p)) : !l.paineis.length;
     if (!doEscopo) continue;
@@ -731,6 +733,12 @@ function gerar(argumentos) {
   const porSlug = new Map(diagramas.map((diagrama) => [diagrama.slug, diagrama]));
   const desconhecidos = pedidos.filter((slug) => !porSlug.has(slug));
   if (desconhecidos.length) throw new Error(`[mapa] ERRO — diagrama inexistente: ${desconhecidos.join(', ')}`);
+  // Os modos de cada diagrama, de que o termo da raiz e o filtro do desenho dependem: um ou os dois, sem repetir (P-09).
+  for (const { slug, modos } of diagramas) {
+    if (!Array.isArray(modos) || !modos.length || new Set(modos).size !== modos.length || !modos.every((m) => m === 'sem' || m === 'com')) {
+      throw new Error(`[mapa] ERRO ${slug} — modos ${JSON.stringify(modos)}: um ou os dois, sem repetir, só "sem" e "com"`);
+    }
+  }
   // A peça fora do modelo também, em todo mapa construído, como o JSON quebrado (RR-01).
   for (const diagrama of diagramas.filter((d) => d.construtor === 'mapa')) {
     try {

@@ -118,7 +118,7 @@ const DE_FABRICA = { pt: 'de fábrica', en: 'by default' };
 const CARD_DE_CONDICOES = { pt: 'Condições de disponibilidade', en: 'Availability conditions' };
 const CARD_DO_AGRUPAMENTO = { pt: 'Quem está em', en: 'Who is in' };
 
-const eVariavelDoKit = (chave) => /^[A-Z][A-Z0-9_]*$/.test(chave);
+const eVariavelDoKit = (chave) => /^KIT_[A-Z0-9_]+$/.test(chave);
 const eCaminhoDeConfiguracao = (chave) => /^[a-z][\w-]*(?:\.[\w-]+)+$/.test(chave);
 const nomeCurto = (valor) => String(valor).replace(/::class$/, '').split('\\').pop();
 
@@ -147,8 +147,11 @@ function condicaoDaPeca(peca) {
     for (const item of chaves) {
       if (eVariavelDoKit(item?.chave ?? '') && !Object.hasOwn(item, 'padrao')) {
         problemas.push(`a chave ${item.chave} sem o valor de fábrica (padrao)`);
-      } else if (eCaminhoDeConfiguracao(item?.chave ?? '') && [item.ligada ?? []].flat().length === 0) {
-        problemas.push(`a configuração ${item.chave} sem o valor que a liga (ligada)`);
+      } else if (
+        eCaminhoDeConfiguracao(item?.chave ?? '') &&
+        ![item.ligada ?? []].flat().map(nomeCurto).some((fonte) => ![item.padrao ?? []].flat().map(nomeCurto).includes(fonte))
+      ) {
+        problemas.push(`a configuração ${item.chave} sem fonte que a ligue além do valor de fábrica (ligada), pelo nome curto`);
       } else if (!eVariavelDoKit(item?.chave ?? '') && !eCaminhoDeConfiguracao(item?.chave ?? '')) {
         problemas.push(`a chave ${JSON.stringify(item?.chave)} não é variável KIT_* nem caminho de configuração`);
       }
@@ -176,8 +179,7 @@ function partesDaMarca(condicao, idioma) {
   for (const { chave, padrao, ligada } of condicao.chaves) {
     if (eVariavelDoKit(chave)) {
       // a chave que é lista diz o valor de fábrica dela: "vazia" / "empty" (R42)
-      const lista = [padrao ?? []].flat().length === 0 ? `${chave} ${idioma === 'pt' ? 'vazia' : 'empty'}` : chave;
-      partes.push(typeof padrao === 'boolean' ? `${chave}=${padrao}` : lista);
+      partes.push(typeof padrao === 'boolean' ? `${chave}=${padrao}` : [padrao ?? []].flat().length ? chave : `${chave} ${idioma === 'pt' ? 'vazia' : 'empty'}`);
     } else {
       // a configuração de pacote: o caminho e a fonte que falta de fábrica (o que a ligada tem e o padrão não)
       const deFabrica = [padrao ?? []].flat().map(nomeCurto);
@@ -221,9 +223,7 @@ const pecasDoNo = (no, rotulo) => {
   const pelaProva = [...pecasDoModelo.values()].filter((p) =>
     (no.sources ?? []).some((s) => p.evidencia.some((e) => e.arquivo === s.arquivo) && declaraAClasse(s.trecho, p.id)),
   );
-  if (pelaProva.length > 0) {
-    return pelaProva;
-  }
+  if (pelaProva.length > 0) return pelaProva;
   const peloNome = [...pecasDoModelo.values()].filter((p) => p.nome === rotulo);
   return peloNome.length === 1 ? peloNome : [];
 };
@@ -337,7 +337,7 @@ function esperadoDoMapa(d, idioma) {
   const ligacoes = [];
   const pares = new Set();
   for (const l of ligacoesDoModelo) {
-    if (!l.modos.some((modo) => modos.includes(modo)) || !doEscopo(l)) {
+    if (!modos.every((modo) => l.modos.includes(modo)) || !doEscopo(l)) {
       continue;
     }
     const de = ponta(l.de);
@@ -1513,6 +1513,53 @@ async function conferirJsonQuebrado() {
   }
 }
 
+/**
+ * CT-B08 (step 9 do Adendo, rodada 2, achado AD2-01): os controles da condição do modelo. Peças sintéticas, decididas
+ * pela mesma `condicaoDaPeca` que lê a condição de cada peça do modelo real; cada uma tem de ser recusada (`{ erro }`),
+ * com o nome da peça e o culpado. O controle que a função aceita reprova o CT-B08 (R40-M30 a M32).
+ */
+const EVIDENCIA_DE_CONTROLE = { arquivo: 'app/Controle.php', trecho: 'return true;' };
+const CONFIG_SOURCE = 'Bityukov\\CommandCenter\\Sources\\ConfigSource';
+const DATABASE_SOURCE = 'Bityukov\\CommandCenter\\Sources\\DatabaseSource';
+const CONDICAO_DO_COMMAND_CENTER = (ligada) => ({
+  chaves: [{ chave: 'command-center.sources', padrao: [CONFIG_SOURCE], ligada }],
+  evidencia: EVIDENCIA_DE_CONTROLE,
+});
+const CONTROLES_DA_CONDICAO = [
+  {
+    controle: 'o modo escrito como lista, ["com"]',
+    peca: { id: 'App\\Controle\\TenantResource', nome: 'TenantResourceControle', disponibilidade: { modo: ['com'], evidencia: EVIDENCIA_DE_CONTROLE } },
+    culpado: '["com"]',
+  },
+  {
+    controle: 'a ligada com a ConfigSource de fábrica e a Outro\\Pacote\\ConfigSource',
+    peca: { id: 'App\\Controle\\CommandRecordResource', nome: 'CommandRecordResourceControle', disponibilidade: CONDICAO_DO_COMMAND_CENTER(['ConfigSource', 'Outro\\Pacote\\ConfigSource']) },
+    culpado: 'command-center.sources',
+  },
+  {
+    controle: 'a ligada com a ConfigSource e a ConfigSource::class',
+    peca: { id: 'App\\Controle\\CommandRecordResource2', nome: 'CommandRecordResource2Controle', disponibilidade: CONDICAO_DO_COMMAND_CENTER(['ConfigSource', `${CONFIG_SOURCE}::class`]) },
+    culpado: 'command-center.sources',
+  },
+  {
+    controle: 'a chave APP_DEBUG, em maiúsculas e fora de KIT_*',
+    peca: { id: 'App\\Controle\\AgenteIaResource', nome: 'AgenteIaResourceControle', disponibilidade: { chaves: [{ chave: 'APP_DEBUG', padrao: false }], evidencia: EVIDENCIA_DE_CONTROLE } },
+    culpado: 'APP_DEBUG',
+  },
+];
+
+function conferirControlesDaCondicao() {
+  for (const { controle, peca, culpado } of CONTROLES_DA_CONDICAO) {
+    const condicao = condicaoDaPeca(peca);
+    if (condicao?.erro === undefined) {
+      reprovar('CT-B08', `controle "${controle}" — a condição devia ser recusada ({ erro }), e a função a aceitou: ${JSON.stringify(condicao)}`);
+    } else if (!condicao.erro.includes(peca.nome) || !condicao.erro.includes(culpado)) {
+      reprovar('CT-B08', `controle "${controle}" — a recusa devia nomear a peça ${peca.nome} e o culpado ${culpado}, e disse: ${JSON.stringify(condicao.erro)}`);
+    }
+    contar('CT-B08');
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------
 // CT-B07 — o catálogo pt que o kit entrega
 // ---------------------------------------------------------------------------------------------------
@@ -1612,6 +1659,7 @@ if (!MODO_CONTROLE) {
   conferirControleDeCaminho();
   await conferirControleDeProcesso();
   await conferirJsonQuebrado();
+  conferirControlesDaCondicao();
 }
 
 // totais do CT-B01 e do CT-B03
