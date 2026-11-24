@@ -28,7 +28,8 @@ roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
 - O modelo versionado do mapa (`site/mapa/pecas.json` e `ligacoes.json`, a prova como âncora de trecho, nunca
   número de linha), o gerador `site/mapa/gerar.mjs`, que roda no fim do `npm run build` do site, e o
   posicionador `site/mapa/posicionar.mjs`, só de desenvolvimento. Os dois recusam, com a mensagem `[mapa]` que
-  nomeia o culpado, o que não podem usar — JSON quebrado, peça fora do modelo, ligação sem prova, prova cujo
+  nomeia o culpado, o que não podem usar — JSON quebrado, peça fora do modelo, condição de disponibilidade ou
+  `modos` de diagrama que não se leem, ligação sem prova, prova cujo
   trecho não está no arquivo ou só aparece em comentário, pasta de saída com o que o gerador não gerou —, antes
   de baixar o archify e de apagar a saída; só o layout, que o archify confere ao renderizar, fica para depois.
 - O archify entra pelo download raso de um commit fixo (`site/mapa/archify.mjs`), conferido antes de usar;

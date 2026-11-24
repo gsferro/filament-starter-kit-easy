@@ -112,7 +112,8 @@ build from a versioned model — the decisions are in the ADRs of the `mapa-inte
 - **The generator** — `site/mapa/gerar.mjs` runs at the end of `npm run build`. It downloads archify at the commit
   pinned in `site/mapa/archify.mjs` (the build needs `git` and access to github.com), projects each language and
   writes `dist/mapa/{pt,en}/{slug}.html`. A link without proof, a snippet that is not in the file (or only appears
-  in a comment), a diagram piece that is not in the model, broken JSON and a layout that archify rejects stop the
+  in a comment), a diagram piece that is not in the model, an availability condition that cannot be read, a diagram
+  whose `modos` is empty, repeated or outside `sem`/`com`, broken JSON and a layout that archify rejects stop the
   build, with a `[mapa]` message naming the culprit — all but the layout before archify is fetched and the output
   is deleted. Each pair of pieces gets one arrow per verb (registers, uses,
   reads, writes), each with its own stroke.

@@ -112,7 +112,8 @@ a partir de um modelo versionado — as decisões estão nas ADRs da wiki `mapa-
 - **O gerador** — `site/mapa/gerar.mjs` roda no fim do `npm run build`. Baixa o archify pelo commit fixado em
   `site/mapa/archify.mjs` (o build precisa de `git` e de acesso a github.com), projeta cada idioma e grava
   `dist/mapa/{pt,en}/{slug}.html`. Ligação sem prova, trecho que não está no arquivo (ou que só aparece em
-  comentário), peça de diagrama que não está no modelo, JSON quebrado e layout que o archify recusa param o build,
+  comentário), peça de diagrama que não está no modelo, condição de disponibilidade que não se lê, diagrama com
+  `modos` vazio, repetido ou fora de `sem`/`com`, JSON quebrado e layout que o archify recusa param o build,
   com a mensagem `[mapa]` que nomeia o culpado — tudo, menos o layout, antes de baixar o archify e de apagar a
   saída. Cada par de peças ganha uma seta por verbo (registra, usa, lê,
   grava), cada uma com o traço dele.
