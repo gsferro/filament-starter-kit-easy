@@ -255,6 +255,7 @@ Recusados, com o motivo:
 ## Candidatos a Rule
 
 <!-- Step 12. -->
+apresentados 2 · gravados 2 · recusados 0 · descartados no gate 0 · poda 0 — 2026-11-26, depois do merge (o step 12 devia vir antes), no fallback manual: o `laravel-boost` não conectou, o gate 4 ficou sem `search-docs` e a rule e o índice foram escritos à mão. C1 atualiza a seção "A peça nova entra no mapa…" de `.ai/rules/catalogo-de-features.md` (a condição de disponibilidade, QA-10, enforçada pelo CT-32 e o CT-56); C2 cria `.ai/rules/mapa.md` (as cópias independentes da mesma regra, AD-02, S-AD-01 e AD2-02).
 
 ## Auditoria Pré-Implementação
 

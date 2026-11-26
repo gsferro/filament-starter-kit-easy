@@ -34,4 +34,9 @@ reaproveitado já causou colisão.
 O mapa interativo do site sai do modelo em `site/mapa/pecas.json` e `site/mapa/ligacoes.json`. A peça que um painel
 registra e a classe nova de `app/` fora de `app/Filament` entram no modelo com as F-nn que entregam, ou na lista das
 peças sem feature própria, com o motivo — a guarda do mapa reprova a que fica de fora. Ligação nova traz a prova
-como âncora de trecho (`{arquivo, trecho}`), nunca como número de linha.
+como âncora de trecho (`{arquivo, trecho}`), nunca como número de linha. A peça que de fábrica fica indisponível
+num modo ou sem uma chave do kit — pelo `canAccess()`/`canView()` ou por um `mount()` que redireciona para outra
+tela — guarda no modelo o campo `disponibilidade`, com o modo, a chave, o valor de fábrica e a âncora do código que
+decide; sem ele o mapa publica como sempre disponível uma tela que não abre. Só pedir permissão, só esconder o item
+de menu ou vir ligada de fábrica não conta como condição. Enforçado pelo CT-32 (`tests/Kit/MapaInterativoTest.php`)
+e pelo CT-56 (`tests/Tenancy/MapaInterativoTenancyTest.php`) — não contornar. Origem: QA-10 da mesma wiki.
