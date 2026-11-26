@@ -414,26 +414,33 @@ function mapaTenancyConferirCondicoes(array $modelo): array
 }
 
 /**
- * O modelo (por id) com a condição `KIT_DASHBOARD_DINAMICO` nos três `Dashboard` e, se pedido, no
+ * O modelo (por id) com a condição `KIT_DASHBOARD_DINAMICO` posta ou tirada, por grupo: os três `Dashboard` e o
  * `DynamicDashboard` do pacote, que herda deles (Q32) e cuja âncora é a do `mount()` do `Dashboard` do `/admin`.
+ * O publicado já as tem; a fixture "sem a condição" a TIRA.
  *
  * @param  array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
  * @return array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}
  */
-function mapaTenancyComAsCondicoesDosDashboards(array $modelo, bool $comODinamico): array
+function mapaTenancyComAsCondicoesDosDashboards(array $modelo, bool $comOsTres, bool $comODinamico): array
 {
-    foreach (MAPA_MODELO_OS_TRES_DASHBOARDS as $classe) {
+    $ajustar = static function (array $modelo, string $classe, bool $com, string $deQuem): array {
         expect($modelo['pecas'])->toHaveKey($classe);
-        $modelo['pecas'][$classe]['disponibilidade'] = mapaModeloCondicaoDoDashboard($classe);
+
+        if ($com) {
+            $modelo['pecas'][$classe]['disponibilidade'] = mapaModeloCondicaoDoDashboard($deQuem);
+        } else {
+            unset($modelo['pecas'][$classe]['disponibilidade']);
+            expect($modelo['pecas'][$classe])->not->toHaveKey('disponibilidade');
+        }
+
+        return $modelo;
+    };
+
+    foreach (MAPA_MODELO_OS_TRES_DASHBOARDS as $classe) {
+        $modelo = $ajustar($modelo, $classe, $comOsTres, $classe);
     }
 
-    if ($comODinamico) {
-        $dinamico = MAPA_MODELO_DYNAMIC_DASHBOARD;
-        expect($modelo['pecas'])->toHaveKey($dinamico);
-        $modelo['pecas'][$dinamico]['disponibilidade'] = mapaModeloCondicaoDoDashboard(MAPA_MODELO_OS_TRES_DASHBOARDS[0]);
-    }
-
-    return $modelo;
+    return $ajustar($modelo, MAPA_MODELO_DYNAMIC_DASHBOARD, $comODinamico, MAPA_MODELO_OS_TRES_DASHBOARDS[0]);
 }
 
 it('[CT-12] com tenant, tudo que o painel registra está no modelo, e o modelo não dá a esse modo nada além disso', function (string $id, bool $tenancy, array $registrado, array $fora): void {
@@ -689,11 +696,14 @@ it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no m
             unset($modelo['pecas'][HubDoNegocio::class]['disponibilidade']);
             expect($modelo['pecas'][HubDoNegocio::class])->not->toHaveKey('disponibilidade');
             break;
+        case 'sem os três Dashboard':
+            $modelo = mapaTenancyComAsCondicoesDosDashboards($modelo, false, true);
+            break;
         case 'três Dashboard sem o DynamicDashboard':
-            $modelo = mapaTenancyComAsCondicoesDosDashboards($modelo, false);
+            $modelo = mapaTenancyComAsCondicoesDosDashboards($modelo, true, false);
             break;
         case 'três Dashboard com o DynamicDashboard':
-            $modelo = mapaTenancyComAsCondicoesDosDashboards($modelo, true);
+            $modelo = mapaTenancyComAsCondicoesDosDashboards($modelo, true, true);
             break;
     }
 
@@ -765,7 +775,7 @@ it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no m
     'cópia que dá ao ProjetoResource do /app só o modo com tenant, sem a chave' => ['ProjetoResource só com o modo', 'reprova', ProjetoResource::class.' no painel app', 'a dá como disponível com tenant e de fábrica, e ela está indisponível'],
     'cópia que dá ao AccountWidget do /admin a condição só sem tenant'          => ['AccountWidget só sem tenant', 'reprova', AccountWidget::class.' no painel admin', 'está disponível com tenant e de fábrica'],
     'cópia sem a condição do HubDoNegocio'                                      => ['sem a condição do HubDoNegocio', 'reprova', HubDoNegocio::class.' no painel app', 'o modelo não guarda a condição que a explica'],
-    'cópia sem a condição dos três Dashboard (QA-10)'                           => ['publicado', 'reprova', [
+    'cópia sem a condição dos três Dashboard (QA-10)'                           => ['sem os três Dashboard', 'reprova', [
         'App\\Filament\\Admin\\Pages\\Dashboard no painel admin',
         'App\\Filament\\App\\Pages\\Dashboard no painel app',
         'App\\Filament\\Infra\\Pages\\Dashboard no painel infra',

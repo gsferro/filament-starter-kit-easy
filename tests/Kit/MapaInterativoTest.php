@@ -1324,10 +1324,40 @@ function mapaModeloCorpoDoMetodo(string $codigo, string $metodo): ?string
  */
 function mapaModeloChavesQueDecidemOAcesso(string $classe): array
 {
-    $metodo  = class_exists($classe) ? metodoDeAcessoDaPeca($classe) : null;
-    $entrada = $metodo !== null ? [$classe, $metodo] : (MAPA_MODELO_PREDICADOS_DOS_FLUTUANTES[$classe] ?? null);
+    $metodo     = class_exists($classe) ? metodoDeAcessoDaPeca($classe) : null;
+    $registrada = [];
 
-    if ($entrada === null) {
+    foreach (Filament::getPanels() as $painel) {
+        foreach (registroVivoDoPainel($painel) as $tipo => $classes) {
+            $registrada[$tipo] = array_values(array_unique(array_merge($registrada[$tipo] ?? [], $classes)));
+        }
+    }
+
+    $todoORegistro = array_merge($registrada['recurso'] ?? [], $registrada['pagina'] ?? [], $registrada['widget'] ?? []);
+
+    if ($metodo !== null && (new ReflectionClass($classe))->isAbstract() && ! in_array($classe, $todoORegistro, true)) {
+        $uniao = [];
+
+        foreach ($todoORegistro as $registrada1) {
+            if (is_subclass_of($registrada1, $classe) && ! (new ReflectionClass($registrada1))->isAbstract()) {
+                array_push($uniao, ...mapaModeloChavesQueDecidemOAcesso($registrada1));
+            }
+        }
+
+        return array_values(array_unique($uniao));
+    }
+
+    $entradas = $metodo !== null ? [[$classe, $metodo]] : array_filter([MAPA_MODELO_PREDICADOS_DOS_FLUTUANTES[$classe] ?? null]);
+
+    if ($metodo === 'canAccess' && in_array($classe, $registrada['pagina'] ?? [], true) && method_exists($classe, 'mount')) {
+        $mount = new ReflectionMethod($classe, 'mount');
+
+        if ($mount->getNumberOfRequiredParameters() === 0 && ! str_starts_with($mount->getDeclaringClass()->getName(), 'Filament\\')) {
+            $entradas[] = [$classe, 'mount'];
+        }
+    }
+
+    if ($entradas === []) {
         return [];
     }
 
@@ -1369,7 +1399,9 @@ function mapaModeloChavesQueDecidemOAcesso(string $classe): array
         }
     };
 
-    $ler($entrada[0], $entrada[1], 0);
+    foreach ($entradas as $entrada) {
+        $ler($entrada[0], $entrada[1], 0);
+    }
 
     return array_values(array_unique($chaves));
 }
@@ -2469,7 +2501,13 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
             $modelo = $marcar($modelo, $organizacoes, ['modo' => 'sem']);
             break;
         case 'marcas certas':
-            $modelo = mapaModeloComAsCondicoesCertas($modelo);
+            $modelo = mapaModeloComAsCondicoesDosDashboards(mapaModeloComAsCondicoesCertas($modelo));
+            break;
+        case 'Dashboard do /admin com KIT_REGISTRO':
+            $modelo = $marcar($modelo, 'App\Filament\Admin\Pages\Dashboard', ['chaves' => [['chave' => 'KIT_REGISTRO', 'padrao' => false]]]);
+            break;
+        case 'DynamicDashboard com KIT_REGISTRO':
+            $modelo = $marcar($modelo, MAPA_MODELO_DYNAMIC_DASHBOARD, ['chaves' => [['chave' => 'KIT_REGISTRO', 'padrao' => false]]]);
             break;
         case 'card com chave que não decide':
             foreach ($diagramas['app-chat-de-ia']['cards'] as $i => $card) {
@@ -2520,8 +2558,8 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
         expect($guarda['cards'])->toContain('app-chat-de-ia', 'ia-do-prompt-ao-ledger');
 
         if ($mundo === 'marcas certas') {
-            // as 18 peças do modelo e as linhas dos cards dos diagramas escritos à mão
-            expect($guarda['marcas'])->toBe(18 + $guarda['linhasDeCard']);
+            // as 22 peças do modelo (as 18 e os três Dashboard e o DynamicDashboard) e as linhas dos cards dos diagramas escritos à mão
+            expect($guarda['marcas'])->toBe(22 + $guarda['linhasDeCard']);
         }
 
         return;
@@ -2531,15 +2569,17 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
         ->and($guarda['aceita'])->toBeFalse('a guarda aceitou a marca adulterada: '.$mundo)
         ->and(implode(' | ', $guarda['violacoes']))->toContain($nomeando);
 })->with([
-    'publicados'                                                                                         => ['publicados', 'aceita', ''],
-    'AgenteIaResource com a chave KIT_REGISTRO'                                                          => ['chave que não decide', 'reprova', 'AgenteIaResource'],
-    'AgenteIaResource com KIT_AGENTES_IA ligada de fábrica'                                              => ['valor de fábrica trocado', 'reprova', 'AgenteIaResource'],
-    'TenantResource disponível só sem tenant'                                                            => ['modo invertido', 'reprova', 'TenantResource'],
-    'controle: as marcas certas das peças condicionais'                                                  => ['marcas certas', 'aceita', ''],
-    'cópia do card do app-chat-de-ia com KIT_REGISTRO no lugar de KIT_AGENTES_IA'                        => ['card com chave que não decide', 'reprova', 'AssistenteChatWidget com a chave KIT_REGISTRO'],
-    'cópia do admin-convite com o participante ConviteResource de prova do /admin e a marca do /app'     => ['homônima designada pela prova', 'reprova', 'App\Filament\Admin\Resources\Convites\ConviteResource'],
-    'cópia do admin-convite com o participante ConviteResource sem prova e a linha do card com o rótulo' => ['rótulo sem prova, com a linha do card', 'reprova', 'ConviteResource'],
-    'cópia do card do app-chat-de-ia com KIT_REGISTRO só na linha en'                                    => ['card com chave que não decide, só na coluna en', 'reprova', 'AssistenteChatWidget com a chave KIT_REGISTRO'],
+    'publicados'                                                                                          => ['publicados', 'aceita', ''],
+    'AgenteIaResource com a chave KIT_REGISTRO'                                                           => ['chave que não decide', 'reprova', 'AgenteIaResource'],
+    'AgenteIaResource com KIT_AGENTES_IA ligada de fábrica'                                               => ['valor de fábrica trocado', 'reprova', 'AgenteIaResource'],
+    'TenantResource disponível só sem tenant'                                                             => ['modo invertido', 'reprova', 'TenantResource'],
+    'controle: as marcas certas das peças condicionais'                                                   => ['marcas certas', 'aceita', ''],
+    'Dashboard do /admin marcado com KIT_REGISTRO, que nem o canAccess() nem o mount() leem (QA-10)'      => ['Dashboard do /admin com KIT_REGISTRO', 'reprova', 'App\Filament\Admin\Pages\Dashboard com a chave KIT_REGISTRO'],
+    'DynamicDashboard marcado com KIT_REGISTRO, que nenhuma subclasse registrada lê (Q32)'                => ['DynamicDashboard com KIT_REGISTRO', 'reprova', 'MDDev\DynamicDashboard\Pages\DynamicDashboard com a chave KIT_REGISTRO'],
+    'cópia do card do app-chat-de-ia com KIT_REGISTRO no lugar de KIT_AGENTES_IA'                         => ['card com chave que não decide', 'reprova', 'AssistenteChatWidget com a chave KIT_REGISTRO'],
+    'cópia do admin-convite com o participante ConviteResource de prova do /admin e a marca do /app'      => ['homônima designada pela prova', 'reprova', 'App\Filament\Admin\Resources\Convites\ConviteResource'],
+    'cópia do admin-convite com o participante ConviteResource sem prova e a linha do card com o rótulo'  => ['rótulo sem prova, com a linha do card', 'reprova', 'ConviteResource'],
+    'cópia do card do app-chat-de-ia com KIT_REGISTRO só na linha en'                                     => ['card com chave que não decide, só na coluna en', 'reprova', 'AssistenteChatWidget com a chave KIT_REGISTRO'],
 ])->skip(fn (): bool => ! naArvoreDoKit(), MAPA_MODELO_SKIP);
 
 /*
@@ -2567,7 +2607,11 @@ it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no m
         'as 22 condições certas'            => mapaModeloComAsCondicoesDosDashboards(mapaModeloComAsCondicoesCertas(modeloDoMapa())),
         'as 22, com a âncora no pacote'     => mapaModeloComAsCondicoesDosDashboards(mapaModeloComAsCondicoesCertas(modeloDoMapa()), ['arquivo' => 'vendor/mddev31/filament-dynamic-dashboard/src/Pages/DynamicDashboard.php', 'trecho' => 'abstract class DynamicDashboard extends Page']),
         'os três Dashboard com a condição'  => mapaModeloComAsCondicoesDosDashboards(modeloDoMapa(), null, false),
-        'os três Dashboard sem a condição'  => modeloDoMapa(),
+        'os três Dashboard sem a condição'  => array_reduce(MAPA_MODELO_OS_TRES_DASHBOARDS, static fn (array $modelo, string $classe): array => mapaModeloComPeca($modelo, $classe, static function (array $p): array {
+            unset($p['disponibilidade']);
+
+            return $p;
+        }), modeloDoMapa()),
         default                             => mapaModeloComPeca(modeloDoMapa(), $peca, static function (array $p) use ($condicao): array {
             unset($p['disponibilidade']);
 

@@ -2665,10 +2665,11 @@ it('[CT-47] a caixa de agrupamento diz quantas peças nomeia no modo do diagrama
         return;
     }
 
-    // O Dado: o painel app registra o Dashboard sem tenant, e o modelo não lhe dá condição; o IdentifyTenant e o
-    // DefinirTenantDePermissoes, só com tenant.
+    // O Dado: o painel app registra sem tenant uma peça que o modelo não condiciona; o IdentifyTenant e o
+    // DefinirTenantDePermissoes, só com tenant. O 04 dá o `Dashboard` do /app nesse papel, mas ele passou a ser
+    // condicional (QA-10, KIT_DASHBOARD_DINAMICO): o `DashboardClassico`, que abre de fábrica nos dois modos, cumpre o papel.
     $slug        = 'app-resumo-sem';
-    $recurso     = 'App\Filament\App\Pages\Dashboard';
+    $recurso     = 'App\Filament\Pages\DashboardClassico';
     expect($modelo['pecas'][$recurso]['disponibilidade'] ?? null)->toBeNull();
     $soComTenant = ['Filament\Http\Middleware\IdentifyTenant', 'App\Http\Middleware\DefinirTenantDePermissoes'];
     expect($decls[$slug]['modos'] ?? null)->toBe(['sem'])
