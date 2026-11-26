@@ -2333,6 +2333,13 @@ it('[CT-37] sem tenant, os diagramas de arquitetura e a árvore de registro de c
             $irs   = mapaDiagramasMundoCom($copia)['irs'];
             $alvo  = $agente;
             break;
+        case 'cópia sem o Dashboard do /admin':
+            $dashboard = 'App\\Filament\\Admin\\Pages\\Dashboard';
+            expect($subtraidas)->not->toContain($dashboard);
+            $copia = mapaDiagramasSemALigacao($modelo, 'painel:admin', $dashboard);
+            $irs   = mapaDiagramasMundoCom($copia)['irs'];
+            $alvo  = $dashboard;
+            break;
         default:
             $alvo  = mapaDiagramasIdTerminadoEm($modelo, 'FilamentShieldPlugin');
             $copia = mapaDiagramasSemALigacao($modelo, 'painel:admin', $alvo);
@@ -2350,6 +2357,7 @@ it('[CT-37] sem tenant, os diagramas de arquitetura e a árvore de registro de c
     'admin sem o Shield em nenhum desenho'            => ['admin', 'cópia sem o FilamentShieldPlugin'],
     'admin com o TenantResource na árvore sem tenant' => ['admin', 'cópia em que a árvore sem tenant desenha o TenantResource'],
     'admin sem o AgenteIaResource em nenhum desenho'  => ['admin', 'cópia sem o AgenteIaResource'],
+    'admin sem o Dashboard em nenhum desenho'         => ['admin', 'cópia sem o Dashboard do /admin'],
 ]);
 
 /*
@@ -2766,6 +2774,10 @@ function mapaDiagramasCondicoesDoCaso(): array
         'App\\Filament\\Admin\\Pages\\HubDeAdministracao'                     => ['chaves' => [['chave' => 'KIT_HUB', 'padrao' => false]], 'evidencia' => $ancora('app/Filament/Admin/Pages/HubDeAdministracao.php', 'regraLocalDeAcesso')],
         'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource' => ['chaves' => [['chave' => 'command-center.sources', 'padrao' => $fontes, 'ligada' => [...$fontes, 'Bityukov\\CommandCenter\\Sources\\DatabaseSource']]], 'evidencia' => $ancora('config/command-center.php', "'sources'")],
         'App\\Livewire\\AssistenteChatWidget'                                 => ['chaves' => [['chave' => 'KIT_AGENTES_IA', 'padrao' => false], ['chave' => 'KIT_AGENTES_IA_PAINEIS', 'padrao' => []]], 'evidencia' => $ancora('app/Support/AgentesDeIa.php', 'assistenteNoPainel')],
+        'App\\Filament\\Admin\\Pages\\Dashboard'                              => mapaModeloCondicaoDoDashboard('App\\Filament\\Admin\\Pages\\Dashboard'),
+        'App\\Filament\\App\\Pages\\Dashboard'                                => mapaModeloCondicaoDoDashboard('App\\Filament\\App\\Pages\\Dashboard'),
+        'App\\Filament\\Infra\\Pages\\Dashboard'                              => mapaModeloCondicaoDoDashboard('App\\Filament\\Infra\\Pages\\Dashboard'),
+        'MDDev\\DynamicDashboard\\Pages\\DynamicDashboard'                    => mapaModeloCondicaoDoDashboard('App\\Filament\\Admin\\Pages\\Dashboard'),
     ];
 }
 
@@ -2800,11 +2812,13 @@ function mapaDiagramasSemALigacao(array $modelo, string $de, string $para): arra
  * A saída "lugar" de `discriminanteDaPeca()` no modo da suíte do kit, sem tenant, medida uma vez por painel, peça e
  * condição no processo: o modo é decidido no boot, e a resposta não muda de um caso para outro.
  */
-function mapaDiagramasAbreSemTenant(string $painel, string $peca, ?array $condicao): bool
+function mapaDiagramasAbreSemTenant(string $painel, string $peca, ?array $condicao): ?bool
 {
     static $medidas = [];
 
-    return $medidas[$painel.'|'.$peca.'|'.json_encode($condicao)] ??= discriminanteDaPeca($painel, 'sem', $peca, $condicao)['lugar'];
+    $medida = $medidas[$painel.'|'.$peca.'|'.json_encode($condicao)] ??= discriminanteDaPeca($painel, 'sem', $peca, $condicao);
+
+    return $medida['vota'] ? $medida['lugar'] : null;
 }
 
 /**
@@ -2817,7 +2831,7 @@ function mapaDiagramasSubtracaoSemTenant(string $painel, array $modelo): array
 {
     return array_values(array_filter(
         populacaoDoDiscriminante($painel, $modelo)['registrada'],
-        static fn (string $peca): bool => ! mapaDiagramasAbreSemTenant($painel, $peca, mapaDiagramasCondicao($modelo, $peca)),
+        static fn (string $peca): bool => mapaDiagramasAbreSemTenant($painel, $peca, mapaDiagramasCondicao($modelo, $peca)) === false,
     ));
 }
 
@@ -2905,7 +2919,10 @@ function mapaDiagramasConferirLugar(array $modelo, array $decls, array $irs): ar
                 $quem              = mapaDiagramasNomeDaPeca($modelo, $peca)." ({$peca})";
                 $condicao          = mapaDiagramasCondicao($modelo, $peca);
                 $paineis           = in_array('sem', $ir['modos'], true) ? mapaDiagramasPaineisDoLugar($peca, $ir['paineis'], $populacao) : [];
-                $abre              = array_map(static fn (string $painel): bool => mapaDiagramasAbreSemTenant($painel, $peca, $condicao), array_combine($paineis, $paineis));
+                $abre              = array_filter(array_map(static fn (string $painel): ?bool => mapaDiagramasAbreSemTenant($painel, $peca, $condicao), array_combine($paineis, $paineis)), static fn (?bool $voto): bool => $voto !== null);
+                if ($paineis !== [] && $abre === []) {
+                    $falhas[] = ['diagrama' => $slug, 'peca' => $peca, 'texto' => "o diagrama {$slug} desenha {$quem} {$onde}, e nenhum painel (".implode(', ', $paineis).') registra subclasse que vote: sem voto, falha fechado'];
+                }
                 if (count(array_unique($abre)) > 1) {
                     $falhas[] = ['diagrama' => $slug, 'peca' => $peca, 'texto' => "o diagrama {$slug} desenha {$quem} {$onde}, e os painéis discordam sem tenant: abre em ".implode(', ', array_keys(array_filter($abre))).' e não em '.implode(', ', array_keys(array_filter($abre, static fn (bool $abreNele): bool => ! $abreNele)))];
                 } elseif ($abre !== [] && ! reset($abre)) {
@@ -3047,6 +3064,11 @@ it('[CT-33] nenhum diagrama desenha a peça condicional num modo em que ela fica
             $ir            = mapaDiagramasComoMembro(mapaDiagramasConstruir([...$decls[$slug], 'modos' => ['sem']], $modelo), $grupo, $peca);
             $nomeia        = [$slug, $grupo, $peca];
             break;
+        case 'cópia do modelo com a condição KIT_DASHBOARD_DINAMICO no Dashboard do /infra, que o infra-produtividade-e-ui, compartilhado, desenha':
+            [$slug, $peca, $aceita] = ['infra-produtividade-e-ui', 'App\\Filament\\Infra\\Pages\\Dashboard', true];
+            $copia                  = mapaDiagramasModeloComCondicoes($modelo, [$peca]);
+            $ir                     = mapaDiagramasConstruir([...$decls[$slug], 'modos' => ['sem', 'com']], $copia);
+            break;
         case 'cópia do modelo com a condição do CommandRecordResource, que o infra-infraestrutura-2, compartilhado, desenha':
             [$slug, $peca, $aceita] = ['infra-infraestrutura-2', 'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource', true];
             $copia                  = mapaDiagramasModeloComCondicoes($modelo, [$peca]);
@@ -3082,6 +3104,7 @@ it('[CT-33] nenhum diagrama desenha a peça condicional num modo em que ela fica
     'cópia do kit-resumo-sem com o AcessosPorPainel membro do agrupamento de multi-tenancy',
     'cópia do modelo com a condição do CommandRecordResource, que o infra-infraestrutura-2, compartilhado, desenha',
     'cópia do modelo com a condição do chat do assistente, que o kit-resumo-sem desenha como membro',
+    'cópia do modelo com a condição KIT_DASHBOARD_DINAMICO no Dashboard do /infra, que o infra-produtividade-e-ui, compartilhado, desenha',
 ]);
 
 /*
@@ -3459,6 +3482,10 @@ it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da 
     $userApp = 'App\\Filament\\App\\Resources\\Users\\UserResource';
     $command = 'Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource';
     $chat    = 'App\\Livewire\\AssistenteChatWidget';
+    $dashAdm = 'App\\Filament\\Admin\\Pages\\Dashboard';
+    $dashApp = 'App\\Filament\\App\\Pages\\Dashboard';
+    $dashInf = 'App\\Filament\\Infra\\Pages\\Dashboard';
+    $dinamic = 'MDDev\\DynamicDashboard\\Pages\\DynamicDashboard';
     $plugin  = 'Harvirsidhu\\FilamentCards\\FilamentCardsPlugin';
     expect(mapaDiagramasIdsPorNome($modelo)['AgenteIa'] ?? [])->toHaveCount(1);
     $agenteIa = mapaDiagramasIdsPorNome($modelo)['AgenteIa'][0];
@@ -3529,6 +3556,10 @@ it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da 
         'a entrada de uma cópia do app-chat-de-ia com a prova do participante abreviada para class AssistenteChatWidget, e o card sem a linha do chat'                                                                                     => ['app-chat-de-ia', 'pt', $chat, [$chat]],
         'a entrada en do kit-ia, com a marca do chat KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia by default'                                                                                                                       => ['kit-ia', 'en', $chat, [$chat]],
         'a entrada do admin-administracao, com KIT_AGENTES_IA_PAINEIS vazia de fábrica no nó do model AgenteIa, que não tem condição', 'a mesma entrada, com command-center.enabled sem DatabaseSource de fábrica no nó do model AgenteIa' => ['admin-administracao', 'pt', $agenteIa, []],
+        'a entrada do infra-produtividade-e-ui, compartilhado, com o Dashboard do /infra condicional e o nó dele sem a marca'                                                                                                              => ['infra-produtividade-e-ui', 'pt', $dashInf, [$dashInf]],
+        'a entrada do app-resumo-sem, com o Dashboard do /app condicional e a linha dele no card do agrupamento sem a marca'                                                                                                               => ['app-resumo-sem', 'pt', $dashApp, [$dashApp]],
+        'a entrada do admin-registro-sem, com o Dashboard do /admin condicional e o card Condições de disponibilidade sem a linha dele'                                                                                                    => ['admin-registro-sem', 'pt', $dashAdm, [$dashAdm]],
+        'a entrada do admin-produtividade-e-ui, com o DynamicDashboard do pacote condicional e o nó dele sem a marca'                                                                                                                      => ['admin-produtividade-e-ui', 'pt', $dinamic, [$dinamic]],
         default                                                                                                                                                                                                                            => ['kit-ia', 'pt', $chat, [$chat]],
     };
     if ($mundo === 'a entrada de uma cópia do app-chat-de-ia com a prova do participante abreviada para class AssistenteChatWidget, e o card sem a linha do chat') {
@@ -3578,6 +3609,10 @@ it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da 
         'a entrada en do kit-ia, com a marca do chat KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia by default'                                                                        => [$marcada(), $marcada(['texto' => 'KIT_AGENTES_IA=false · KIT_AGENTES_IA_PAINEIS vazia by default']), ['AssistenteChatWidget', 'KIT_AGENTES_IA_PAINEIS empty']],
         'a entrada do admin-administracao, com KIT_AGENTES_IA_PAINEIS vazia de fábrica no nó do model AgenteIa, que não tem condição'                                                       => [$publicada, $comMarca('KIT_AGENTES_IA_PAINEIS vazia de fábrica'), ['AgenteIa']],
         'a mesma entrada, com command-center.enabled sem DatabaseSource de fábrica no nó do model AgenteIa'                                                                                 => [$publicada, $comMarca('command-center.enabled sem DatabaseSource de fábrica'), ['AgenteIa']],
+        'a entrada do infra-produtividade-e-ui, compartilhado, com o Dashboard do /infra condicional e o nó dele sem a marca'                                                               => [$marcada(), $marcada(['no' => false]), [$slug, $dashInf]],
+        'a entrada do app-resumo-sem, com o Dashboard do /app condicional e a linha dele no card do agrupamento sem a marca'                                                                => [$marcada(), $marcada(['membro' => false]), [$slug, $dashApp, ...array_column(mapaDiagramasGruposDaPeca($decls[$slug], $copia, $peca), 'id')]],
+        'a entrada do admin-registro-sem, com o Dashboard do /admin condicional e o card Condições de disponibilidade sem a linha dele'                                                     => [$marcada(), $marcada(['condicoes' => false]), [$slug, $dashAdm]],
+        'a entrada do admin-produtividade-e-ui, com o DynamicDashboard do pacote condicional e o nó dele sem a marca'                                                                       => [$marcada(), $marcada(['no' => false]), [$slug, 'DynamicDashboard']],
         default                                                                                                                                                                             => [$marcada(), $marcada(['texto' => 'KIT_AGENTES_IA=false de fábrica']), ['AssistenteChatWidget', 'KIT_AGENTES_IA_PAINEIS']],
     };
     $conferir = static fn (array $entrada): array => mapaDiagramasConferirMarcas($copia, [$slug => $decls[$slug]], ['ids' => $ids, 'diagramas' => [$slug => [$idioma => $entrada]]]);
@@ -3614,4 +3649,8 @@ it('[CT-57] em todo diagrama que a desenha, a peça condicional leva a marca da 
     'a mesma cópia, com a linha do ConviteResource do /app no card',
     'a cópia do admin-convite com o participante ConviteResource sem prova, sem linha no card',
     'a cópia do admin-convite com o participante ConviteResource sem prova, com a linha do ConviteResource do /app no card',
+    'a entrada do infra-produtividade-e-ui, compartilhado, com o Dashboard do /infra condicional e o nó dele sem a marca',
+    'a entrada do app-resumo-sem, com o Dashboard do /app condicional e a linha dele no card do agrupamento sem a marca',
+    'a entrada do admin-registro-sem, com o Dashboard do /admin condicional e o card Condições de disponibilidade sem a linha dele',
+    'a entrada do admin-produtividade-e-ui, com o DynamicDashboard do pacote condicional e o nó dele sem a marca',
 ]);

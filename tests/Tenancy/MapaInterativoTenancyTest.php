@@ -379,7 +379,11 @@ function mapaTenancyConferirCondicoes(array $modelo): array
 
         foreach ([...$populacao['registrada'], ...$fora] as $peca) {
             try {
-                $avaliadas[$peca][$painel] = discriminanteDaPeca($painel, 'com', $peca, $modelo['pecas'][$peca]['disponibilidade'] ?? null)['guarda'];
+                $medida = discriminanteDaPeca($painel, 'com', $peca, $modelo['pecas'][$peca]['disponibilidade'] ?? null);
+
+                if ($medida['vota']) {
+                    $avaliadas[$peca][$painel] = $medida['guarda'];
+                }
             } catch (UnexpectedValueException $erro) {
                 $motivos[] = "{$peca} no painel {$painel}: {$erro->getMessage()}";
             }
@@ -407,6 +411,29 @@ function mapaTenancyConferirCondicoes(array $modelo): array
     }
 
     return ['motivos' => array_values(array_unique($motivos)), 'avaliadas' => $avaliadas];
+}
+
+/**
+ * O modelo (por id) com a condição `KIT_DASHBOARD_DINAMICO` nos três `Dashboard` e, se pedido, no
+ * `DynamicDashboard` do pacote, que herda deles (Q32) e cuja âncora é a do `mount()` do `Dashboard` do `/admin`.
+ *
+ * @param  array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}
+ */
+function mapaTenancyComAsCondicoesDosDashboards(array $modelo, bool $comODinamico): array
+{
+    foreach (MAPA_MODELO_OS_TRES_DASHBOARDS as $classe) {
+        expect($modelo['pecas'])->toHaveKey($classe);
+        $modelo['pecas'][$classe]['disponibilidade'] = mapaModeloCondicaoDoDashboard($classe);
+    }
+
+    if ($comODinamico) {
+        $dinamico = MAPA_MODELO_DYNAMIC_DASHBOARD;
+        expect($modelo['pecas'])->toHaveKey($dinamico);
+        $modelo['pecas'][$dinamico]['disponibilidade'] = mapaModeloCondicaoDoDashboard(MAPA_MODELO_OS_TRES_DASHBOARDS[0]);
+    }
+
+    return $modelo;
 }
 
 it('[CT-12] com tenant, tudo que o painel registra está no modelo, e o modelo não dá a esse modo nada além disso', function (string $id, bool $tenancy, array $registrado, array $fora): void {
@@ -633,7 +660,7 @@ it('[CT-44] com tenant, todo caminho do "onde fica" que leva a organização res
     expect($resultado['conferidos'])->toHaveKeys(['F-15', 'F-22', 'F-25']);
 })->with(['pt', 'en'])->skip(fn (): bool => ! naArvoreDoKit(), 'O catálogo não viaja no pacote.');
 
-it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no modelo a condição que a explica, e a peça que a condição dá ao modo com tenant está disponível nele', function (string $mundo, string $resultado, string $nomeando, string $porque): void {
+it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no modelo a condição que a explica, e a peça que a condição dá ao modo com tenant está disponível nele', function (string $mundo, string $resultado, array|string $nomeando, string $porque): void {
     // Dado o modo multi-tenant ligado, com kit.tenancy.enabled lido como verdadeiro, e toda outra chave booleana
     // de kit.* lida com o valor de fábrica; e o super_admin do kit autenticado e uma organização aberta no /app
     mapaTenancyDadoDoDiscriminante();
@@ -662,6 +689,12 @@ it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no m
             unset($modelo['pecas'][HubDoNegocio::class]['disponibilidade']);
             expect($modelo['pecas'][HubDoNegocio::class])->not->toHaveKey('disponibilidade');
             break;
+        case 'três Dashboard sem o DynamicDashboard':
+            $modelo = mapaTenancyComAsCondicoesDosDashboards($modelo, false);
+            break;
+        case 'três Dashboard com o DynamicDashboard':
+            $modelo = mapaTenancyComAsCondicoesDosDashboards($modelo, true);
+            break;
     }
 
     // Quando a guarda do mapa avalia o canAccess() ou o canView() de cada recurso, página e widget que cada painel
@@ -673,7 +706,26 @@ it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no m
     expect($guarda['avaliadas'])->toHaveKeys([
         TenantResource::class, UserResourceDoApp::class, ProjetoResource::class, HubDoNegocio::class, AccountWidget::class,
         CommandRecordResource::class, AcessosPorPainel::class, AssistenteChatWidget::class, ChecklistDoOnboarding::class,
+        ...MAPA_MODELO_OS_TRES_DASHBOARDS,
     ]);
+
+    // o Dashboard de cada painel, de fábrica, volta pelo mount(); com a chave ligada, abre (200, sem redirect)
+    $dashboardsAbremComAChave = function () use ($guarda): void {
+        foreach (MAPA_MODELO_OS_TRES_DASHBOARDS as $classe) {
+            foreach ($guarda['avaliadas'][$classe] as $painel => $medido) {
+                expect($medido['deFabrica'])->toBeFalse("o {$classe} abriu de fábrica com tenant no painel {$painel}")
+                    ->and($medido['comAsChavesDaCondicao'])->toBeTrue("com a KIT_DASHBOARD_DINAMICO ligada, o {$classe} não abriu com tenant no painel {$painel}");
+            }
+        }
+    };
+
+    if ($resultado === 'aceita os três') {
+        $dashboardsAbremComAChave();
+        $dosDashboards = array_filter($guarda['motivos'], fn (string $motivo): bool => array_reduce(MAPA_MODELO_OS_TRES_DASHBOARDS, fn (bool $achou, string $classe): bool => $achou || str_starts_with($motivo, $classe.' no painel'), false));
+        expect($dosDashboards)->toBe([], 'a guarda reprovou um dos três Dashboard com a condição: '.implode(' | ', $dosDashboards));
+
+        return;
+    }
 
     if ($resultado === 'aceita') {
         // E, no publicado, a guarda achou disponíveis o TenantResource, o UserResource do /app e o AcessosPorPainel,
@@ -692,6 +744,10 @@ it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no m
         expect($comKitDemo['guarda']['deFabrica'])->toBeFalse()
             ->and($comKitDemo['guarda']['comAsChavesDaCondicao'])->toBeTrue('com a KIT_DEMO ligada, o ProjetoResource do /app continua indisponível com tenant');
 
+        // E o Dashboard do /app, com a organização aberta, indisponível até a KIT_DASHBOARD_DINAMICO ligar
+        expect($guarda['avaliadas'][MAPA_MODELO_OS_TRES_DASHBOARDS[1]])->toHaveKey('app');
+        $dashboardsAbremComAChave();
+
         // Então o resultado é "aceita"
         expect($guarda['motivos'])->toBe([]);
 
@@ -700,11 +756,21 @@ it('[CT-56] com tenant, toda peça registrada que fica indisponível guarda no m
 
     // Então reprova, nomeando a peça, pelo motivo da linha
     expect($guarda['motivos'])->not->toBeEmpty('a guarda aceitou o modelo adulterado: '.$mundo);
-    $nomeiam = array_filter($guarda['motivos'], fn (string $motivo): bool => str_contains($motivo, $nomeando) && str_contains($motivo, $porque));
-    expect($nomeiam)->not->toBeEmpty("nenhum motivo nomeia {$nomeando} com \"{$porque}\": ".implode(' | ', $guarda['motivos']));
+    foreach ((array) $nomeando as $nome) {
+        $nomeiam = array_filter($guarda['motivos'], fn (string $motivo): bool => str_contains($motivo, $nome) && str_contains($motivo, $porque));
+        expect($nomeiam)->not->toBeEmpty("nenhum motivo nomeia {$nome} com \"{$porque}\": ".implode(' | ', $guarda['motivos']));
+    }
 })->with([
     'publicado'                                                                 => ['publicado', 'aceita', '', ''],
     'cópia que dá ao ProjetoResource do /app só o modo com tenant, sem a chave' => ['ProjetoResource só com o modo', 'reprova', ProjetoResource::class.' no painel app', 'a dá como disponível com tenant e de fábrica, e ela está indisponível'],
     'cópia que dá ao AccountWidget do /admin a condição só sem tenant'          => ['AccountWidget só sem tenant', 'reprova', AccountWidget::class.' no painel admin', 'está disponível com tenant e de fábrica'],
     'cópia sem a condição do HubDoNegocio'                                      => ['sem a condição do HubDoNegocio', 'reprova', HubDoNegocio::class.' no painel app', 'o modelo não guarda a condição que a explica'],
+    'cópia sem a condição dos três Dashboard (QA-10)'                           => ['publicado', 'reprova', [
+        'App\\Filament\\Admin\\Pages\\Dashboard no painel admin',
+        'App\\Filament\\App\\Pages\\Dashboard no painel app',
+        'App\\Filament\\Infra\\Pages\\Dashboard no painel infra',
+    ], ''],
+    'cópia com a condição dos três Dashboard e nada mais (QA-10)'               => ['três Dashboard sem o DynamicDashboard', 'aceita os três', '', ''],
+    'cópia sem a condição do DynamicDashboard (Q32)'                            => ['três Dashboard sem o DynamicDashboard', 'reprova', 'MDDev\\DynamicDashboard\\Pages\\DynamicDashboard', ''],
+    'cópia com a condição herdada no DynamicDashboard e nos três (Q32)'         => ['três Dashboard com o DynamicDashboard', 'aceita', '', ''],
 ])->skip(fn (): bool => ! naArvoreDoKit(), 'O modelo do mapa não viaja no pacote.');

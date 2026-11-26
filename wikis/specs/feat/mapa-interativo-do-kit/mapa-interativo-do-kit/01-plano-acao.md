@@ -66,6 +66,11 @@
 | P-10 | Toda ligação do modelo desenhada em algum diagrama | 2, 8 | conta feita pela guarda no JSON do modelo (ADR-07) |
 | P-11 | Diagramas como páginas do site: interface no idioma e acessibilidade por amostra | 1, 4, 6 | D2, D8, D12, ADR-06 e D17; as duas exceções vão declaradas na página e sinalizadas no PR |
 | P-12 | Piso mecânico da varredura: peça registrada e classe de `app/` fora de `app/Filament` entregam F-nn ou têm motivo | 2, 5, 8 | D13; obrigação permanente do CI sobre toda classe nova, sinalizada no PR |
+| P-13 | O que a seta e a caixa de agrupamento do mapa de arquitetura dizem é o que o modelo dá ao diagrama, no modo dele | 4, 8 | uma seta por verbo e a caixa que o modo esvazia fora (step 9, A1; CT-46, CT-47) *(alterado em 2026-11-25 — step 11, QA-12)* |
+| P-14 | As ferramentas do mapa falham fechado e dizem por quê, antes de qualquer efeito | 1, 4, 8 | o gerador, o posicionador e o conferidor (step 9, A2; rodada 2 do Adendo, AD2-01 e AD2-03; CT-48 a CT-50) *(alterado em 2026-11-25 — step 11, QA-12)* |
+| P-15 | A peça condicionada por chave entra nos diagramas dos modos em que fica disponível com a chave ligada, com a marca | 2, 4, 8 | Adendo 2; Setup Global do `04` ("Entrar no diagrama de um modo"); CT-33, CT-37 *(alterado em 2026-11-25 — step 11, QA-12)* |
+| P-16 | Condição é o modo ou a chave do kit: só permissão, só o item de menu escondido ou a chave ligada de fábrica não marcam | 2, 8 | Adendos 2 e 3; o discriminante do Setup Global do `04`, que mede também o redirect do `mount()` (QA-10); CT-32, CT-56 *(alterado em 2026-11-25 — step 11, QA-12)* |
+| P-17 | No diagrama escrito à mão, a marca fica na linha da peça no card "Condições de disponibilidade" | 4, 8 | Adendo 4, D41; confirmada pelo mantenedor na Q33; CT-57, R44 *(alterado em 2026-11-25 — step 11, QA-12)* |
 
 ## Objetivo
 

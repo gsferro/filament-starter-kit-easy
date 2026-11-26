@@ -54,6 +54,7 @@ use Laravel\Ai\Models\Conversation;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use PHPUnit\Framework\AssertionFailedError;
 use Psr\Log\LoggerInterface;
 use Sehsah\FilamentRememberTable\Models\TableView;
 use Spatie\LaravelSettings\Models\SettingsProperty;
@@ -4735,6 +4736,30 @@ function pecaAbreNosModosDoDiagrama(array $modelo, string $id, array $modos): bo
         && ($soNoModo === null || array_diff($modos, [$soNoModo]) === []);
 }
 
+/** Os três `Dashboard` do dashboard dinâmico, um por painel, cujo `mount()` os devolve ao clássico de fábrica (QA-10). */
+const MAPA_MODELO_OS_TRES_DASHBOARDS = [
+    'App\\Filament\\Admin\\Pages\\Dashboard',
+    'App\\Filament\\App\\Pages\\Dashboard',
+    'App\\Filament\\Infra\\Pages\\Dashboard',
+];
+
+/** O `DynamicDashboard` do pacote, abstrato e fora do registro, que herda dos três `Dashboard` (Q32). */
+const MAPA_MODELO_DYNAMIC_DASHBOARD = 'MDDev\\DynamicDashboard\\Pages\\DynamicDashboard';
+
+/**
+ * A condição que o `Dashboard` dado deve guardar (QA-10): a chave `KIT_DASHBOARD_DINAMICO`, com a âncora do
+ * `if (! DashboardDinamico::atende(self::class)) {` do `mount()` no arquivo dele.
+ *
+ * @return array{chaves: list<array{chave: string, padrao: bool}>, evidencia: array{arquivo: string, trecho: string}}
+ */
+function mapaModeloCondicaoDoDashboard(string $classe): array
+{
+    return [
+        'chaves'    => [['chave' => 'KIT_DASHBOARD_DINAMICO', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/'.str_replace('\\', '/', substr($classe, strlen('App\\'))).'.php', 'trecho' => 'if (! DashboardDinamico::atende(self::class)) {'],
+    ];
+}
+
 /**
  * D43 (Setup Global do `04`): as peças do modelo que um nó de diagrama escrito à mão designa — a peça cuja classe uma
  * fonte (`sources`) do nó declara, num arquivo de evidência dela, sem que o trecho precise ser igual ao da evidência;
@@ -4890,30 +4915,85 @@ function populacaoDoDiscriminante(string $painel, array $modelo): array
 }
 
 /**
- * A peça está disponível agora, no painel corrente? Decide o `canAccess()` ou o `canView()` vivo dela.
+ * A página que o painel registra com `canAccess()` abre de fato? (Setup Global do `04`, "e, na página que o
+ * painel registra com `canAccess()`, quando a página abre de fato", QA-10.) A montagem é o `Livewire::test()`
+ * da classe, no painel que o arnês já preparou, e a página abre quando termina com o status 200 **e** sem o
+ * efeito de redirect: `assertStatus(200)` e `assertNoRedirect()`. O status é o que discrimina o `mount()` que
+ * devolve a página a outra (`redirect(…, navigate: true)` sai como 302, e o efeito de redirect fica vazio); o
+ * `abort()` sai como 403.
+ *
+ * Fica fora da montagem, e o `canAccess()` decide sozinho: a classe sem `canAccess()` próprio (as telas de
+ * autenticação), a abstrata, a que não é página registrada (recurso e widget) e a página cujo `mount()` pede
+ * parâmetro obrigatório (a de detalhe, como a `RunView`).
+ */
+function paginaRegistradaAbreNaMontagem(string $classe): bool
+{
+    $reflexao = new ReflectionClass($classe);
+
+    if ($reflexao->isAbstract() || ! $reflexao->hasMethod('mount') || $reflexao->getMethod('mount')->getNumberOfRequiredParameters() > 0) {
+        return true;
+    }
+
+    try {
+        Livewire::test($classe)->assertStatus(200)->assertNoRedirect();
+    } catch (AssertionFailedError) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * A peça está disponível agora, no painel corrente? Decide o `canAccess()` ou o `canView()` vivo dela, e, na
+ * página que o painel registra com `canAccess()`, a montagem (`paginaRegistradaAbreNaMontagem()`).
  *
  * A peça que o painel registra sem nenhum dos dois fica disponível, porque nada a fecha. São as telas de
- * autenticação que o painel liga pela configuração, como a `TelaLogin`. Medido: as 86 registradas da
- * tabela do `04` contam com elas, e nenhuma está entre as indisponíveis.
+ * autenticação que o painel liga pela configuração, como a `TelaLogin`, que devolvem o usuário autenticado (302)
+ * por desenho e ficam fora da montagem. Medido: as 86 registradas da tabela do `04` contam com elas, e nenhuma
+ * está entre as indisponíveis.
  *
- * O componente flutuante, que painel nenhum registra e não tem nenhum dos dois, é avaliado pelo predicado
- * que decide a renderização dele, num mapa fechado (Setup Global do `04`, RQ-33):
+ * A peça abstrata que painel nenhum registra, com método próprio — o `DynamicDashboard` do pacote e o
+ * `BreakdownWidget` —, herda pelas subclasses concretas que o registro vivo DESTE painel tem (Q32): está
+ * disponível se alguma delas está, na mesma configuração da vez. O painel que não registra subclasse dela não
+ * vota, e a resposta é `null`; quem junta os painéis exige ao menos um voto e que os votos concordem.
+ *
+ * O componente flutuante, que painel nenhum registra e não tem nenhum dos dois, é avaliado pelo predicado que
+ * decide a renderização dele, num mapa fechado (Setup Global do `04`, RQ-33):
  * - o chat do assistente, pelo `AgentesDeIa::assistenteNoPainel()` do painel, o mesmo que o `chatNaTela()` chama;
  * - o checklist do tutorial, pelo `TutorialGuiado::visivel()`, o mesmo que o `->launcher()` do plugin usa.
  *
  * Um terceiro componente fora do mapa lança a exceção com o nome dele, até ganhar o predicado: falha fechado.
  *
+ * @return bool|null `null`: a peça abstrata sem subclasse registrada neste painel, que não vota
+ *
  * @throws UnexpectedValueException
  */
-function pecaDisponivelNoPainel(string $classe, Panel $painel): bool
+function pecaDisponivelNoPainel(string $classe, Panel $painel): ?bool
 {
-    $metodo = metodoDeAcessoDaPeca($classe);
+    $metodo   = metodoDeAcessoDaPeca($classe);
+    $registro = registroVivoDoPainel($painel);
 
-    if ($metodo !== null) {
-        return (bool) $classe::$metodo();
+    if ($metodo !== null && class_exists($classe) && (new ReflectionClass($classe))->isAbstract()) {
+        $votos = [];
+
+        foreach (array_merge($registro['recurso'], $registro['pagina'], $registro['widget']) as $registrada) {
+            if (is_subclass_of($registrada, $classe) && ! (new ReflectionClass($registrada))->isAbstract()) {
+                $votos[] = pecaDisponivelNoPainel($registrada, $painel);
+            }
+        }
+
+        return $votos === [] ? null : in_array(true, $votos, true);
     }
 
-    $registro = registroVivoDoPainel($painel);
+    if ($metodo !== null) {
+        if (! $classe::$metodo()) {
+            return false;
+        }
+
+        return $metodo === 'canAccess' && in_array($classe, $registro['pagina'], true)
+            ? paginaRegistradaAbreNaMontagem($classe)
+            : true;
+    }
 
     if (in_array($classe, array_merge($registro['recurso'], $registro['pagina'], $registro['widget']), true)) {
         return true;
@@ -5040,7 +5120,11 @@ function chavesLigadasDaCondicao(?array $condicao, string $painel): array
  *
  * @param  'sem'|'com'  $modo
  * @param  array{modo?: 'sem'|'com', chaves?: list<array{chave: string, padrao?: mixed, ligada?: mixed}>, evidencia?: array{arquivo: string, trecho: string}}|null  $condicao
- * @return array{guarda: array{deFabrica: bool, comAsChavesDaCondicao: bool}, lugar: bool}
+ *                                                                                                                                                                             A peça abstrata fora do registro herda pelas subclasses concretas do painel (Q32, `pecaDisponivelNoPainel()`),
+ *                                                                                                                                                                             na mesma configuração da vez, na página e no widget: o painel que não registra subclasse dela devolve `vota`
+ *                                                                                                                                                                             falso, com tudo falso, e quem junta os painéis o ignora — nenhum voto reprova, e os votos têm de concordar.
+ *                                                                                                                                                                             Toda outra peça devolve `vota` verdadeiro.
+ * @return array{guarda: array{deFabrica: bool, comAsChavesDaCondicao: bool}, lugar: bool, vota: bool}
  *
  * @throws UnexpectedValueException
  */
@@ -5063,9 +5147,9 @@ function discriminanteDaPeca(string $painel, string $modo, string $peca, ?array 
         noPainelDa($organizacao);
     }
 
-    $avaliar = static fn (): bool => pecaDisponivelNoPainel($peca, $doPainel);
+    $avaliar = static fn (): ?bool => pecaDisponivelNoPainel($peca, $doPainel);
 
-    $comLigadas = static function (array $ligadas) use ($avaliar): bool {
+    $comLigadas = static function (array $ligadas) use ($avaliar): ?bool {
         $antes = [];
 
         foreach ($ligadas as $caminho => $valor) {
@@ -5096,6 +5180,11 @@ function discriminanteDaPeca(string $painel, string $modo, string $peca, ?array 
 
     $daCondicao   = chavesLigadasDaCondicao($condicao, $painel);
     $deFabrica    = $avaliar();
+
+    if ($deFabrica === null) {
+        return ['guarda' => ['deFabrica' => false, 'comAsChavesDaCondicao' => false], 'lugar' => false, 'vota' => false];
+    }
+
     $comACondicao = $daCondicao === [] ? $deFabrica : $comLigadas($daCondicao);
     $lugar        = $deFabrica || $comACondicao;
 
@@ -5104,8 +5193,8 @@ function discriminanteDaPeca(string $painel, string $modo, string $peca, ?array 
             break;
         }
 
-        $lugar = $comLigadas([$chave => true]);
+        $lugar = (bool) $comLigadas([$chave => true]);
     }
 
-    return ['guarda' => ['deFabrica' => $deFabrica, 'comAsChavesDaCondicao' => $comACondicao], 'lugar' => $lugar];
+    return ['guarda' => ['deFabrica' => $deFabrica, 'comAsChavesDaCondicao' => $comACondicao], 'lugar' => $lugar, 'vota' => true];
 }

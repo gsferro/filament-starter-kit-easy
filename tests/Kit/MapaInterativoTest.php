@@ -1607,6 +1607,7 @@ function mapaModeloConferirCondicoes(array $modelo): array
     $violacoes = [];
     $medido    = [];
     $porPainel = [];
+    $semVoto   = [];
     $pecas     = pecasPorId($modelo['pecas']);
 
     foreach ($pecas as $id => $peca) {
@@ -1624,9 +1625,16 @@ function mapaModeloConferirCondicoes(array $modelo): array
                 $condicao = $pecas[$classe]['disponibilidade'] ?? null;
 
                 try {
-                    $guarda = discriminanteDaPeca($painel, 'sem', $classe, is_array($condicao) ? $condicao : null)['guarda'];
+                    $medida = discriminanteDaPeca($painel, 'sem', $classe, is_array($condicao) ? $condicao : null);
+                    $guarda = $medida['guarda'];
                 } catch (UnexpectedValueException $erro) {
                     $violacoes[] = "{$quem}: {$erro->getMessage()}";
+
+                    continue;
+                }
+
+                if (! $medida['vota']) {
+                    $semVoto[$classe][] = $painel;
 
                     continue;
                 }
@@ -1639,6 +1647,12 @@ function mapaModeloConferirCondicoes(array $modelo): array
 
                 array_push($violacoes, ...conferirCondicaoNoModo($quem, 'sem', $condicao, $guarda));
             }
+        }
+    }
+
+    foreach ($semVoto as $classe => $paineis) {
+        if (! isset($porPainel[$classe])) {
+            $violacoes[] = "{$classe}: abstrata fora do registro, nenhum painel registra subclasse dela (/".implode(', /', $paineis).') e ninguém vota — falha fechado';
         }
     }
 
@@ -1696,6 +1710,30 @@ function mapaModeloComAsCondicoesCertas(array $modelo): array
 
     foreach ($certas as $id => $condicao) {
         $modelo = mapaModeloComPeca($modelo, $id, static fn (array $p): array => ['disponibilidade' => $condicao] + $p);
+    }
+
+    return $modelo;
+}
+
+/**
+ * O modelo com a condição certa dos três `Dashboard` (QA-10), e do `DynamicDashboard` do pacote, que herda deles
+ * (Q32), por cima das 18 de `mapaModeloComAsCondicoesCertas()` — as 22. A âncora do `DynamicDashboard` é a do
+ * `mount()` do `Dashboard` do `/admin`, e `$ancoraDoDinamico` a troca (o controle da âncora no pacote).
+ *
+ * @param  array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @param  array{arquivo: string, trecho: string}|null  $ancoraDoDinamico
+ * @param  bool  $comODinamico  `false`: só os três `Dashboard`, o modelo sem a condição do `DynamicDashboard`
+ * @return array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}
+ */
+function mapaModeloComAsCondicoesDosDashboards(array $modelo, ?array $ancoraDoDinamico = null, bool $comODinamico = true): array
+{
+    foreach (MAPA_MODELO_OS_TRES_DASHBOARDS as $classe) {
+        $modelo = mapaModeloComPeca($modelo, $classe, static fn (array $p): array => ['disponibilidade' => mapaModeloCondicaoDoDashboard($classe)] + $p);
+    }
+
+    if ($comODinamico) {
+        $condicao = ['evidencia' => $ancoraDoDinamico ?? mapaModeloCondicaoDoDashboard(MAPA_MODELO_OS_TRES_DASHBOARDS[0])['evidencia']] + mapaModeloCondicaoDoDashboard(MAPA_MODELO_OS_TRES_DASHBOARDS[0]);
+        $modelo   = mapaModeloComPeca($modelo, MAPA_MODELO_DYNAMIC_DASHBOARD, static fn (array $p): array => ['disponibilidade' => $condicao] + $p);
     }
 
     return $modelo;
@@ -2512,7 +2550,8 @@ it('[CT-45] toda marca de disponibilidade publicada é a do código, com a chave
 
 it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no modelo a condição que a explica, e a peça disponível não guarda condição', function (string $resultado, string $peca, ?array $condicao, array $nomeando): void {
     expect(config('kit.tenancy.enabled'))->toBeFalse()
-        ->and(booleanasDoKitForaDaFabrica())->toBe([]);
+        ->and(booleanasDoKitForaDaFabrica())->toBe([])
+        ->and(config('kit.dashboard_dinamico.paineis'))->toBe([], 'a lista kit.dashboard_dinamico.paineis não está vazia: o ambiente decide o Dashboard (R30-M14)');
 
     foreach (Filament::getPanels() as $painel) {
         expect($painel->hasTenancy())->toBeFalse("o painel {$painel->getId()} tem organização no modo sem tenant");
@@ -2524,9 +2563,12 @@ it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no m
         ->and($arnes['superAdmin']->isMasterGlobal())->toBeTrue();
 
     $modelo = match ($peca) {
-        ''                       => modeloDoMapa(),
-        'as 18 condições certas' => mapaModeloComAsCondicoesCertas(modeloDoMapa()),
-        default                  => mapaModeloComPeca(modeloDoMapa(), $peca, static function (array $p) use ($condicao): array {
+        ''                                  => modeloDoMapa(),
+        'as 22 condições certas'            => mapaModeloComAsCondicoesDosDashboards(mapaModeloComAsCondicoesCertas(modeloDoMapa())),
+        'as 22, com a âncora no pacote'     => mapaModeloComAsCondicoesDosDashboards(mapaModeloComAsCondicoesCertas(modeloDoMapa()), ['arquivo' => 'vendor/mddev31/filament-dynamic-dashboard/src/Pages/DynamicDashboard.php', 'trecho' => 'abstract class DynamicDashboard extends Page']),
+        'os três Dashboard com a condição'  => mapaModeloComAsCondicoesDosDashboards(modeloDoMapa(), null, false),
+        'os três Dashboard sem a condição'  => modeloDoMapa(),
+        default                             => mapaModeloComPeca(modeloDoMapa(), $peca, static function (array $p) use ($condicao): array {
             unset($p['disponibilidade']);
 
             return $condicao === null ? $p : $p + ['disponibilidade' => $condicao];
@@ -2541,6 +2583,7 @@ it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no m
             'admin|App\\Filament\\Admin\\Resources\\Tenants\\TenantResource',
             'admin|App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource',
             'infra|Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource',
+            'admin|App\\Filament\\Admin\\Pages\\Dashboard',
         ];
 
         foreach (array_keys(Filament::getPanels()) as $painel) {
@@ -2552,11 +2595,40 @@ it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no m
             expect($medido[$onde]['deFabrica'] ?? null)->toBeFalse("a guarda não achou indisponível, de fábrica, {$onde}");
         }
 
-        foreach (['infra|App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource', 'admin|App\\Filament\\Admin\\Pages\\Dashboard'] as $onde) {
+        foreach (['infra|App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource', 'admin|App\\Filament\\Pages\\DashboardClassico'] as $onde) {
             expect($medido[$onde]['deFabrica'] ?? null)->toBeTrue("a guarda não achou disponível, de fábrica, {$onde}");
         }
 
         expect($guarda['aceita'])->toBeTrue(count($guarda['violacoes']).' violações: '.$guarda['motivo']);
+
+        return;
+    }
+
+    if ($resultado === 'aceita as peças') {
+        foreach ($nomeando as $classe) {
+            $violacoesDela = array_filter($guarda['violacoes'], static fn (string $violacao): bool => str_contains($violacao, $classe.' no /') || str_starts_with($violacao, $classe));
+
+            expect($violacoesDela)->toBe([], "a guarda reprovou {$classe}: ".implode(' | ', $violacoesDela));
+
+            foreach (array_keys(Filament::getPanels()) as $painel) {
+                $medida = $guarda['medido']["{$painel}|{$classe}"] ?? null;
+
+                if ($medida !== null) {
+                    expect($medida['deFabrica'])->toBeFalse("{$classe} no /{$painel} abre de fábrica")
+                        ->and($medida['comAsChavesDaCondicao'])->toBeTrue("{$classe} no /{$painel} não abre com 200 e sem redirect com a chave ligada");
+                }
+            }
+        }
+
+        return;
+    }
+
+    if ($resultado === 'reprova cada') {
+        expect($guarda['aceita'])->toBeFalse('a guarda aceitou a cópia de '.$peca);
+
+        foreach ($nomeando as $nome) {
+            expect(array_filter($guarda['violacoes'], static fn (string $violacao): bool => str_contains($violacao, $nome)))->not->toBeEmpty("nenhuma violação nomeia {$nome}: ".implode(' | ', $guarda['violacoes']));
+        }
 
         return;
     }
@@ -2584,11 +2656,26 @@ it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no m
         'chaves'    => [['chave' => 'KIT_DEMO', 'padrao' => false]],
         'evidencia' => ['arquivo' => 'app/Filament/App/Resources/Projetos/ProjetoResource.php', 'trecho' => 'public static function canAccess(): bool'],
     ], ['App\\Filament\\App\\Resources\\Projetos\\ProjetoResource', 'KIT_DEMO', 'continua indisponível sem tenant']],
-    'cópia que dá ao Dashboard do /admin a chave KIT_DASHBOARD_DINAMICO, que só esconde o item de menu dele' => ['reprova', 'App\\Filament\\Admin\\Pages\\Dashboard', [
+    'cópia sem a condição do Dashboard do /admin (QA-10)'                                                                           => ['reprova', 'App\Filament\Admin\Pages\Dashboard', null, ['App\Filament\Admin\Pages\Dashboard no /admin', 'não guarda a condição']],
+    'cópia sem a condição dos três Dashboard — o modelo de hoje (QA-10)'                                                            => ['reprova cada', 'os três Dashboard sem a condição', null, ['App\Filament\Admin\Pages\Dashboard no /admin', 'App\Filament\App\Pages\Dashboard no /app', 'App\Filament\Infra\Pages\Dashboard no /infra']],
+    'cópia em que os três Dashboard levam a condição KIT_DASHBOARD_DINAMICO, com o trecho do mount() dele (QA-10)'                  => ['aceita as peças', 'os três Dashboard com a condição', null, ['App\Filament\Admin\Pages\Dashboard', 'App\Filament\App\Pages\Dashboard', 'App\Filament\Infra\Pages\Dashboard']],
+    'cópia que dá ao Dashboard do /app a chave KIT_DASHBOARD_DINAMICO_PAINEIS, a lista, no lugar da KIT_DASHBOARD_DINAMICO (QA-10)' => ['reprova', 'App\Filament\App\Pages\Dashboard', [
+        'chaves'    => [['chave' => 'KIT_DASHBOARD_DINAMICO_PAINEIS', 'padrao' => []]],
+        'evidencia' => ['arquivo' => 'app/Filament/App/Pages/Dashboard.php', 'trecho' => 'if (! DashboardDinamico::atende(self::class)) {'],
+    ], ['App\Filament\App\Pages\Dashboard no /app', 'KIT_DASHBOARD_DINAMICO_PAINEIS', 'continua indisponível sem tenant']],
+    'cópia que dá ao Dashboard do /app o modo "só com tenant" e a chave KIT_DASHBOARD_DINAMICO (QA-10)' => ['reprova', 'App\Filament\App\Pages\Dashboard', [
+        'modo'      => 'com',
         'chaves'    => [['chave' => 'KIT_DASHBOARD_DINAMICO', 'padrao' => false]],
-        'evidencia' => ['arquivo' => 'app/Filament/Admin/Pages/Dashboard.php', 'trecho' => 'public static function shouldRegisterNavigation(): bool'],
-    ], ['App\\Filament\\Admin\\Pages\\Dashboard no /admin', 'está disponível sem tenant e de fábrica']],
-    'cópia que dá ao AiRunResource a chave KIT_AGENTES_IA' => ['reprova', 'App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource', [
+        'evidencia' => ['arquivo' => 'app/Filament/App/Pages/Dashboard.php', 'trecho' => 'if (! DashboardDinamico::atende(self::class)) {'],
+    ], ['App\Filament\App\Pages\Dashboard no /app', 'abre sem tenant']],
+    'cópia que dá ao DashboardClassico a chave KIT_DASHBOARD_DINAMICO (QA-10)' => ['reprova', 'App\Filament\Pages\DashboardClassico', [
+        'chaves'    => [['chave' => 'KIT_DASHBOARD_DINAMICO', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/Filament/Pages/DashboardClassico.php', 'trecho' => 'if ($dinamica !== null && DashboardDinamico::atende($dinamica)) {'],
+    ], ['App\Filament\Pages\DashboardClassico', 'está disponível sem tenant e de fábrica']],
+    'cópia sem a condição do DynamicDashboard do pacote — o modelo de hoje (Q32)'                                                    => ['reprova', 'MDDev\DynamicDashboard\Pages\DynamicDashboard', null, ['MDDev\DynamicDashboard\Pages\DynamicDashboard', 'não guarda a condição']],
+    'cópia em que o DynamicDashboard leva a condição herdada, e os três Dashboard a deles (Q32; o controle das 22 condições certas)' => ['aceita', 'as 22 condições certas', null, []],
+    'a mesma cópia, com a âncora do DynamicDashboard no arquivo do pacote (Q32)'                                                     => ['reprova', 'as 22, com a âncora no pacote', null, ['MDDev\DynamicDashboard\Pages\DynamicDashboard', 'vendor/mddev31/filament-dynamic-dashboard/src/Pages/DynamicDashboard.php']],
+    'cópia que dá ao AiRunResource a chave KIT_AGENTES_IA'                                                                           => ['reprova', 'App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource', [
         'chaves'    => [['chave' => 'KIT_AGENTES_IA', 'padrao' => false]],
         'evidencia' => ['arquivo' => 'app/Filament/Infra/Resources/AiRuns/AiRunResource.php', 'trecho' => 'public static function canAccess(): bool'],
     ], ['App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource', 'está disponível sem tenant e de fábrica']],
@@ -2601,7 +2688,6 @@ it('[CT-32] sem tenant, toda peça registrada que fica indisponível guarda no m
         'chaves'    => [['chave' => 'command-center.enabled', 'padrao' => true, 'ligada' => true]],
         'evidencia' => ['arquivo' => 'config/command-center.php', 'trecho' => "'enabled' => env('COMMAND_CENTER_ENABLED', true),"],
     ], ['Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource', 'command-center.enabled', 'continua indisponível sem tenant']],
-    'controle: o modelo com as 18 condições certas'       => ['aceita', 'as 18 condições certas', null, []],
     'cópia sem a condição do AcessosPorPainel'            => ['reprova', 'App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel', null, ['App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel', 'não guarda a condição']],
     'cópia que dá ao FilamentCardsPlugin a chave KIT_HUB' => ['reprova', 'Harvirsidhu\\FilamentCards\\FilamentCardsPlugin', [
         'chaves'    => [['chave' => 'KIT_HUB', 'padrao' => false]],
