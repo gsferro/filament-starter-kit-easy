@@ -155,6 +155,12 @@ na aba Registro (ver [Registro aberto](../../autenticacao/registro-aberto/#e-mai
 teste `registrarAberto()`, `conviteCom()`, `aceitarConvite()` e `conviteSocialPara()` passaram para o
 `tests/Pest.php`: quem tinha cópia própria nos testes a remove.
 
+**Na v0.57.0 não há nada a instalar nem migrar**: o mapa interativo e o catálogo de features são do site, que
+não viaja no projeto. O `kit:update` traz só a rule `.ai/rules/catalogo-de-features.md` (que não se aplica fora
+do repositório do kit), a linha dela no `.ai/rules/index.md`, cinco termos novos no `wikis/glossario.md`, os
+testes do mapa — que pulam fora da árvore do kit, então o teto de pulados da suíte `Kit,Tenancy` sobe de 1161
+para 1600 — e os helpers deles no `tests/Pest.php`: quem tem função própria com um desses nomes a renomeia.
+
 **Na v0.54.0 há três migrations** (`php artisan migrate`): as preferências de aparência por usuário (ver
 [Configurações do kit](../../recursos/configuracoes-do-kit/#aparência-de-cada-pessoa-fonte-menu-e-a-escolha-no-meu-perfil)).
 A chave da instalação nasce **ligada**, então todo mundo passa a ver a seção "Aparência" no Meu perfil —

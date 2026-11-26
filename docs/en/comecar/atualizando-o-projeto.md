@@ -156,6 +156,13 @@ turns it off in the Registro tab (see [Open sign-up](../../autenticacao/registro
 The test helpers `registrarAberto()`, `conviteCom()`, `aceitarConvite()` and `conviteSocialPara()` moved to
 `tests/Pest.php`: if you kept your own copy in your tests, remove it.
 
+**v0.57.0 has nothing to install or migrate**: the interactive map and the feature catalog belong to the site,
+which does not travel with the project. `kit:update` brings only the `.ai/rules/catalogo-de-features.md` rule
+(which does not apply outside the kit repository), its line in `.ai/rules/index.md`, five new terms in
+`wikis/glossario.md`, the map tests — which skip outside the kit tree, so the skipped ceiling of the
+`Kit,Tenancy` suite goes from 1161 to 1600 — and their helpers in `tests/Pest.php`: if you have a function of
+your own with one of those names, rename it.
+
 **v0.54.0 adds three migrations** (`php artisan migrate`): per-user appearance preferences (see
 [Kit settings](../../recursos/configuracoes-do-kit/#each-persons-appearance-font-sidebar-and-the-choice-in-my-profile)).
 The installation switch starts **on**, so everyone sees the new "Aparência" section in My profile —

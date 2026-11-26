@@ -5,6 +5,8 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-11-26
+
 **Mapa interativo do kit** e **catálogo único de features**. Cada painel, sem e com o tenant ativo, e os
 fluxos do kit viram diagramas interativos gerados do código pelo archify, com a prova de cada ligação; o
 roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
@@ -59,6 +61,26 @@ roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
   o contraste durante a transição de opacidade com que o Filament faz entrar o `.fi-main-ctn`, e o
   texto escuro saía `#d0d0d0` sobre `#fafafa`. `comTelaAssentada()` (`tests/Pest.php`) espera as
   animações finitas terminarem antes de cada `assertNoAccessibilityIssues()`.
+
+### Atualizando
+
+- Nada a instalar, migrar, publicar ou semear: nenhuma migration, settings, dependência PHP ou JS, asset nem
+  arquivo de `app/`, `config/` (fora o marcador), `resources/` ou `routes/` mudou. O site (`site/`, `docs/`) e o
+  CI ficam fora do pacote (`export-ignore`) e fora de `KitUpdate::CAMINHOS_DO_KIT`.
+- O `kit:update` traz `.ai/rules/catalogo-de-features.md` (nova; só se aplica no repositório do kit),
+  `.ai/rules/index.md`, `wikis/glossario.md`, `tests/Pest.php` (os helpers das guardas do mapa), os cinco
+  arquivos de teste do mapa (`tests/Kit/MapaInterativo*Test.php` e `tests/Tenancy/MapaInterativoTenancyTest.php`)
+  e citações de linha em `tests/Kit/KitArteTest.php`, `tests/Kit/LinkDoPainelSemTenancyTest.php` e
+  `tests/Browser/RoteiroDoKitTest.php`.
+- **Teto de pulados fora da árvore do kit: 1161 → 1600 (+439)**, medido com `--log-junit` numa extração do
+  `git archive` de `579cbc51` (os testes da release), só nos arquivos novos — todos os casos pulam pela guarda
+  `naArvoreDoKit()`: `MapaInterativoCatalogoTest` 64, `MapaInterativoDiagramasTest` 148,
+  `MapaInterativoPublicacaoTest` 65, `MapaInterativoTest` 135 e `MapaInterativoTenancyTest` 27.
+- Roteiro: `wikis/atualizacoes/v0.57.0.md`.
+
+### Defaults mudados
+
+- nenhum
 
 ## [0.56.0] - 2026-11-19
 
