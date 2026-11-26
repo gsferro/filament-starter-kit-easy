@@ -426,7 +426,7 @@ final class PluginDoDock
      * `QuickActionDock` é de vendor e herda métodos públicos tipados de `InteractsWithActions`
      * (`mountAction(string $name, array $arguments = [], array $context = [])`,
      * `callMountedAction(array $arguments = [])`…). O Livewire os chama com os parâmetros do
-     * payload desempacotados (`vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:callMethods:530`),
+     * payload desempacotados (`vendor/livewire/livewire/src/Mechanisms/HandleComponents/HandleComponents.php:callMethods:540`),
      * então um cliente adulterado que mande texto onde a assinatura pede lista derruba o update com
      * `TypeError` (500) antes de qualquer autorização. Nada seria gravado, mas a superfície do dock
      * responde sem exceção ao payload forjado: o hook `call` do Livewire devolve cedo, sem chamar o
