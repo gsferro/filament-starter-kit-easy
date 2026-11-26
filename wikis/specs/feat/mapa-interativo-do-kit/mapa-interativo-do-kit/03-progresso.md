@@ -59,8 +59,8 @@
 - [x] `CHANGELOG.md` (`[Unreleased]`) — commit `47512761`
 
 ## 11. PR com CI verde
-- [ ] PR aberto para `main`
-- [ ] CI verde
+- [x] PR aberto para `main` — #215, 2026-11-25
+- [x] CI verde — run `45745825212` no `579cbc51`: `qualidade` (15 min 24 s), `site`, `telas`, `instalacao`, `seguranca` e `snyk` verdes; `badge` e `cobertura` pulados (só na `main`), 2026-11-26
 
 ## Testes
 *(alterado em 2026-11-20: o lote G1 e o G2 do `04` foram divididos em quatro arquivos, para executores paralelos com
@@ -96,8 +96,8 @@ Não fatiado — 2026-11-20: 26 RQ vigentes, 41 CT (dois deles estacionados na Q
 - [x] `/ponytail:ponytail-review` no diff (validar contra over-engineering) — despacho #37, 54 achados; aplicados no `000359b2` (net -356 linhas), os outros recusados com o motivo abaixo, 2026-11-21
 - [x] `vendor/bin/pint --dirty` — `{"tool":"pint","result":"passed"}` no `000359b2`, 2026-11-21
 - [x] `vendor/bin/pest tests/Kit/MapaInterativo*Test.php tests/Tenancy/MapaInterativoTenancyTest.php --compact` — as cinco guardas do mapa no `000359b2`, com JUnit: 105 + 97 + 64 + 48 + 18 = 332 casos, 0 erro, 0 falha, 0 pulado, 2026-11-21
-- [ ] Suítes `Kit` e `Tenancy`: nada quebrou além da **baseline** de `main` (falhas pré-existentes por nome)
-- [ ] `npm run build`, `verifica-links` e acessibilidade do site num clone raso, no contêiner Linux do passo 1
+- [x] Suítes `Kit` e `Tenancy`: nada quebrou além da **baseline** de `main` (falhas pré-existentes por nome) — no `525b1037`, `php -d memory_limit=2G vendor/bin/pest --testsuite=Kit --compact`: 5.887 testes, 5.884 passaram, 3 pulados, 0 falha (34.266 asserções); `--testsuite=Tenancy`: 841/841 (4.876). A falha pré-existente da baseline (os números do README) foi corrigida pela feature. Uma rodada anterior, no `4234a941`, achou 2 falhas da própria feature (citações de `tests/Pest.php` deslocadas e o badge de casos de teste), corrigidas no `525b1037`, 2026-11-26
+- [x] `npm run build`, `verifica-links` e acessibilidade do site num clone raso, no Linux — *(desvio: no runner Linux do GitHub, e não no contêiner do passo 1)* o job `site` do CI (`actions/checkout` raso) passou no run `45745825212`: build com o gerador, `verifica-links`, `verifica-acessibilidade` e `verifica-mapa`, 2026-11-26
 - [x] **`/code-review high main...HEAD` + passe de eixos (step 9)**, antes da reconciliação — despachos #20 e #21 (primeira rodada) e #30 e #31 (re-revisão), todos os achados roteados na tabela do step 9, 2026-11-21
 - [x] **Re-revisão do ciclo do Adendo, rodada 2 (AD2-01 a AD2-08), 2026-11-24** — correções no `68a1f789`, testes no `b9a365c1`. Falsificabilidade: sem a correção, vermelhos b 7 de 7 do CT-50 (contra o `b130c686`), a linha do gerador do CT-14 e 3 de 4 controles do CT-B08; vermelhos a, contra a guarda de antes, a linha do CT-38 e a segunda do CT-14, com a guarda corrigida no teste; o controle `["com"]` do CT-B08 passa dos dois lados (o conferidor já recusava): guarda de regressão, não oráculo do fix. Depois: `MapaInterativoDiagramasTest` + `MapaInterativoTest` + `HelpersDeTesteTest` 269/269 (1.432 asserções), `MapaInterativoPublicacaoTest` 65/65 (611), `MapaInterativoTenancyTest` 23/23 (281); `npm run build` com o gerador e `node verifica-mapa.mjs` sobre a prévia: CT-B01 a CT-B08 sem reprovação (CT-B08 com 5 conferências), 42 HTML na amostra de acessibilidade. Nenhum dos 32 mapas compartilhados tem ligação de um modo só entre peças desenhadas (contagem sobre o modelo; o HTML anterior não foi guardado para comparação byte a byte). Outros leitores da forma da condição nos testes — `tests/Pest.php` (o nome da variável e a `ligada` contra o valor de fábrica, na guarda da R30 contra o código vivo) e `tests/Kit/MapaInterativoDiagramasTest.php` (o esperado da marca, com a fonte comparada pelo FQCN) — não foram mudados: com a forma que o gerador agora recusa, eles reprovam, e o dado de hoje não dispara. As suítes inteiras ficam para o mantenedor
 - [x] Desvios propagados ao `01`/`02`/`04`/`05` de origem, marcados `*(alterado em …)*` — `00` (P-14, nota do step 10), `04` (CT-50, CT-52, cabeçalho e Índice), `05` (a caixa que o modo esvazia), 2026-11-21
@@ -107,7 +107,7 @@ Não fatiado — 2026-11-20: 26 RQ vigentes, 41 CT (dois deles estacionados na Q
 - [x] `ids-ct.sh {wiki} 'tests/**/MapaInterativo*Test.php'` sem CT de Pest faltando — *(alterado em 2026-11-21 — step 11, QA-09: o item dizia "silencioso")* exit 1 com 8 linhas, só os CT-B01 a CT-B08, que rodam no conferidor Node do site construído, por desenho (D17; ver `## Testes`), 2026-11-21
 - [x] `conformidade-rules.sh {wiki} main` silencioso — exit 0 sem saída, 2026-11-21
 - [x] Docs pt/en, CHANGELOG e README reconciliados com o comportamento final — `desenvolvendo-o-kit.md` nos dois idiomas e o `[Unreleased]` do CHANGELOG com a recusa antes de qualquer efeito, o conferidor e o Node no CI; o README não muda (2.775 blocos e 231/271 arquivos de teste, iguais), 2026-11-21
-- [ ] `git commit`
+- [x] `git commit` — a árvore limpa no `579cbc51`, e o commit de release `5b85a58e` em cima, 2026-11-26
 
 **Ciclo dos Adendos 2 a 4** (step 11, 2026-11-23):
 - [x] `npm run build` com o `DOCS_BASE` do Pages, `verifica-links`, `verifica-acessibilidade` e `verifica-mapa` na árvore de trabalho que virou o `6e916f13` (antes do commit; os links do passaporte saíram com o `27ad169c`, o HEAD de então, e a prosa das duas páginas e do CHANGELOG ainda mudou depois) — 95 HTML por idioma, nenhum `[mapa] ERRO`; links 0 quebrado e 68 redirects; acessibilidade 108 páginas, nenhuma violação serious/critical; mapa: CT-B01 2.280 conferências (182 de condição, 186 de card), CT-B02 3.344, 0 reprovação do CT-B01 ao CT-B08, 2026-11-23
