@@ -373,6 +373,15 @@ diagramas de cada idioma ficam no piso ou acima. A exceção é a linha do tempo
 abre a 6,31 px e se lê pelo zoom do visualizador; a página do mapa declara isso. O `tag` de F-nn, que o archify
 esconde até o nível de detalhe completo, fica fora da conta.
 
+*(alterado em 2026-11-25 — step 11, QA-11: remedido no Chromium do Windows, mesmo enquadramento e mesma regra, sobre os
+95 diagramas de cada idioma depois dos Adendos 2 a 4 e do QA-10)* 91 dos 95 diagramas em pt e 92 dos 95 em en ficam
+no piso ou acima. Abaixo dele: a linha do tempo (`marcos-do-changelog`, 6,31 px nos dois idiomas) e quatro mapas em
+que o texto menor é a marca da peça condicional, que alarga a caixa (D41) e encolhe o desenho — `kit-ia` (6,42 px nos
+dois idiomas), `admin-produtividade-e-ui` (6,40 px em pt), `app-produtividade-e-ui-com` (6,40 px em pt) e
+`infra-infraestrutura-2` (6,40 px em en). Todos ficam acima dos 6 px do archify; a página do mapa declara que esses
+mapas abrem com o texto menor e se leem pelo zoom. Reposicionar os quatro para ganhar 0,1 px foi descartado: a grade já é
+a equilibrada do posicionador, e o ganho vira perda na próxima marca nova.
+
 ### Alternativas Consideradas
 
 1. **O painel inteiro num diagrama** — reprovado pelo spike (acima).

@@ -10,14 +10,14 @@
 - [x] `site/.gitignore` com `.archify/` — commit `ae5d20fa`
 - [x] `site/verifica-mapa.mjs` com a amostra e a tolerância da ADR-06 (D17), e o passo dele no `pages.yml` e no job `site` do `ci.yml`; os CT-B do `05` entram no passo 8 (`fw-executor-ctb`) — commits `ae5d20fa` e `4c2ca275`; CT-25 e CT-42 verdes
 - [x] Um diagrama de cada tipo e um comparativo, pt e en, por `npm run build`, `verifica-links`, `verifica-acessibilidade` e `verifica-mapa` — 42 HTML na amostra, 11 tipos; tolerados 40 `nested-interactive` e 4 `color-contrast`; num `git clone --depth 1` dentro de `mcr.microsoft.com/playwright:v1.63.0-noble`
-- [x] Cinco conferências inéditas — saída en (o passaporte diz "PACKAGE", e nenhum "Frontend", "Cloud", "Message bus" ou "Backend" no texto visível); `verifica-links` sobre o HTML do archify (0 quebrado); `--repo-root` num clone raso de 1 commit (o build passou com a prova conferida); download pelo commit num contêiner limpo. O piso de 6,5 px **não** foi medido pelo `visual-check` do archify (ver a nota); *(alterado em 2026-11-21 — step 11, QA-05: o texto dizia que o piso ficava com o conferidor do mapa, e nenhum CT-B o mede)* a medição é da sessão, no Chromium, e está na ADR-07 (86 dos 87 diagramas de cada idioma no piso ou acima; a linha do tempo abre a 6,31 px, e a página do mapa declara isso); ela não roda no CI
+- [x] Cinco conferências inéditas — saída en (o passaporte diz "PACKAGE", e nenhum "Frontend", "Cloud", "Message bus" ou "Backend" no texto visível); `verifica-links` sobre o HTML do archify (0 quebrado); `--repo-root` num clone raso de 1 commit (o build passou com a prova conferida); download pelo commit num contêiner limpo. O piso de 6,5 px **não** foi medido pelo `visual-check` do archify (ver a nota); *(alterado em 2026-11-21 — step 11, QA-05: o texto dizia que o piso ficava com o conferidor do mapa, e nenhum CT-B o mede)* a medição é da sessão, no Chromium, e está na ADR-07 (86 dos 87 diagramas de cada idioma no piso ou acima; a linha do tempo abre a 6,31 px, e a página do mapa declara isso; *(alterado em 2026-11-25 — step 11, QA-11)* remedido sobre os 95: 91 em pt e 92 em en no piso, a linha do tempo e quatro mapas com a marca da peça condicional abaixo, todos acima de 6 px e declarados na página — ADR-07); ela não roda no CI
 - [x] Tempos — `render` ≈ 0,36 s por HTML (26 HTML em 15 s no Windows; build inteiro com o mapa em 19 s no Linux); `verifica-mapa` na amostra em 19 s; `visual-check` de 1,2 a 17 s por HTML. Decisão: amostra (ADR-06), e o `visual-check` fica fora do CI
 
 ## 2. Modelo do mapa — peças, ligações e diagramas
 - [x] `site/mapa/pecas.json` e `ligacoes.json` normalizados das varreduras, com ids estáveis entre os modos — commits `40b4fc24`, `bfde932d` e `dc4f25ef`: 284 peças e 413 ligações, cada peça com os modos em que existe (`registrada`); CT-08 a CT-13 verdes
 - [x] `site/mapa/diagramas/{slug}.json` — architecture com layout, trees de registro e os curados (ERD, classes, tempos); a contagem fechada registrada aqui — 87 arquivos: 36 curados e 51 construídos (46 mapas, 4 árvores de registro e 1 comparativo); commits `40b4fc24`, `4cc9517c`, `bdb7e881`, `dc4f25ef` e `efe38295`
 - [x] `site/mapa/posicionar.mjs` (desenvolvimento) — commits `40b4fc24` e `6c6ef44b` (grade equilibrada para o piso de leitura)
-- [x] *(Adendos 2 a 4)* A condição de disponibilidade no modelo — o campo `disponibilidade` nas 18 peças condicionais — e a divisão por modo: os sete diagramas compartilhados que desenhavam peça de um modo só viraram o par `-sem`/`-com`, e são 95 arquivos de diagrama — commit `6e916f13`; CT-32, CT-33 e CT-56 verdes
+- [x] *(Adendos 2 a 4)* A condição de disponibilidade no modelo — o campo `disponibilidade` nas 18 peças condicionais *(alterado em 2026-11-25 — step 11, QA-10 e Q32: 22, com os três `Dashboard` do dashboard dinâmico e o `DynamicDashboard` do pacote)* — e a divisão por modo: os sete diagramas compartilhados que desenhavam peça de um modo só viraram o par `-sem`/`-com`, e são 95 arquivos de diagrama — commit `6e916f13`; CT-32, CT-33 e CT-56 verdes
 - [x] Evidência em âncora de trecho, conferida contra a revisão do branch — o gerador resolve a linha pelo `git show` do commit do build; CT-09 verde e CT-B03 (o link do passaporte no commit do build) verde
 
 ## 3. Fluxos bilíngues
@@ -480,7 +480,7 @@ Dos passos 2 a 6, 2026-11-20:
   painel): corrigido antes do commit.
 - A D33 registra as quatro F-nn sem peça possível; a página do mapa as declara sem número nem nome (R2).
 - A conversão do site rederivava a descrição de oito páginas alheias; só o que é da página nova ficou no commit.
-- Os mapas somam 174 HTML e 147 MB no `dist/` (a estimativa do passo 1 era 130 MB), e o gerador leva cerca de 60 s
+- Os mapas somam 174 HTML e 147 MB *(alterado em 2026-11-25 — step 11, QA-15: depois da divisão por modo dos Adendos 2 a 4, 190 HTML, 95 × 2)* no `dist/` (a estimativa do passo 1 era 130 MB), e o gerador leva cerca de 60 s
   no build.
 
 ## Notas de Implementação
