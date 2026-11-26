@@ -74,6 +74,7 @@
 | Q30 | O chat do assistente de IA (`KIT_AGENTES_IA` e `KIT_AGENTES_IA_PAINEIS`) e o checklist do tutorial guiado (`KIT_ONBOARDING`), componentes flutuantes ligados a chave e desligados de fábrica, levam a marca da condição? *(Adendo 3, fechamento — Q?5 do analista)* | RQ-27, RQ-32 | sim, com a marca — falha fechado | respondida no Adendo 4 |
 | Q32 | O `DynamicDashboard` do pacote (`MDDev\DynamicDashboard\Pages\DynamicDashboard`), classe abstrata que os três `Dashboard` dinâmicos estendem e que nenhum painel registra, herda a condição deles (`KIT_DASHBOARD_DINAMICO` desligada de fábrica)? *(step 11, QA ciclo 2, QA-10 — Q?7 do analista)* | RQ-27, RQ-31 | sim, herda — falha fechado | respondida em 2026-11-25 |
 | Q33 | No diagrama escrito à mão, a marca da peça condicional pode ficar só na linha dela no card "Condições de disponibilidade", e não no nó, quando a caixa do archify não a comporta (P-17)? *(step 11, QA ciclo 2, QA-13)* | RQ-33, P-17 | sim: a P-17 vale como decidida | respondida em 2026-11-25 |
+| Q34 | A página que o kit registra fora do painel e que fecha por chave no `mount()` — a página única de login (`TelaLoginUnificada`, F-73), o `CadastroUnificado` e a `TelaRecuperarSenhaUnificada`, com `KIT_LOGIN_UNIFICADO` desligada de fábrica — leva a marca da condição? *(step 11, QA ciclo 3, QA-16)* | RQ-27, RQ-28, RQ-31 | não: fica fora do recorte (a peça condicional é a registrada pelo painel, usada dentro de outra tela ou flutuante); débito declarado no PR | respondida em 2026-11-25 |
 
 ## Premissas
 
