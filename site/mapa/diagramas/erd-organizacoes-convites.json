@@ -1,0 +1,663 @@
+{
+  "slug": "erd-organizacoes-convites",
+  "tipo": "erd",
+  "titulo": {
+    "pt": "Organizações e convites",
+    "en": "Organization/invitation"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "entities": [
+    {
+      "id": "users",
+      "label": "users",
+      "sublabel": {
+        "pt": "dono: Laravel (esqueleto) + colunas do kit",
+        "en": "owner: Laravel (skeleton) + kit columns"
+      },
+      "tag": {
+        "pt": "identidade",
+        "en": "identity"
+      },
+      "row": 0,
+      "col": 0,
+      "width": 268,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "email",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "email_verified_at",
+          "type": "datetime"
+        },
+        {
+          "name": "password",
+          "type": "varchar NN"
+        },
+        {
+          "name": "avatar_url",
+          "type": "varchar"
+        },
+        {
+          "name": "remember_token",
+          "type": "varchar"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "aprovacao_pendente",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "origem",
+          "type": "varchar NN"
+        },
+        {
+          "name": "ativo",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "deleted_at",
+          "type": "datetime"
+        },
+        {
+          "name": "dock_atalhos",
+          "type": "TEXT"
+        },
+        {
+          "name": "dock_layout",
+          "type": "varchar"
+        },
+        {
+          "name": "aparencia",
+          "type": "TEXT"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000000_create_users_table.php",
+          "trecho": "Schema::create('users', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria users",
+            "en": "new users"
+          }
+        }
+      ]
+    },
+    {
+      "id": "roles",
+      "label": "roles",
+      "sublabel": {
+        "pt": "dono: spatie/laravel-permission + colunas do kit (painel, uuid)",
+        "en": "owner: spatie/laravel-permission + kit columns (painel, uuid)"
+      },
+      "tag": {
+        "pt": "permissões",
+        "en": "Permission"
+      },
+      "row": 1,
+      "col": 0,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "guard_name",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "painel",
+          "type": "varchar"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar",
+          "key": "uk"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164859_create_permission_tables.php",
+          "trecho": "Schema::create($tableNames['roles'], static function (Blueprint $table) use ($teams, $columnNames) {",
+          "label": {
+            "pt": "cria roles",
+            "en": "new roles"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tenant_user",
+      "label": "tenant_user",
+      "sublabel": {
+        "pt": "dono: kit",
+        "en": "kit owner"
+      },
+      "tag": {
+        "pt": "organizações e convites",
+        "en": "organization/invitation"
+      },
+      "row": 0,
+      "col": 1,
+      "width": 208,
+      "attributes": [
+        {
+          "name": "tenant_id",
+          "type": "INTEGER NN",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "tenants.id"
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER NN",
+          "key": [
+            "fk",
+            "uk"
+          ],
+          "references": "users.id"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000021_create_tenant_user_table.php",
+          "trecho": "Schema::create('tenant_user', function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria tenant_user",
+            "en": "new tenant_user"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tenants",
+      "label": "tenants",
+      "sublabel": {
+        "pt": "dono: kit",
+        "en": "kit owner"
+      },
+      "tag": {
+        "pt": "organizações e convites",
+        "en": "organization/invitation"
+      },
+      "row": 0,
+      "col": 2,
+      "width": 288,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "nome",
+          "type": "varchar NN"
+        },
+        {
+          "name": "slug",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "ativo",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "cor_primaria",
+          "type": "varchar"
+        },
+        {
+          "name": "logo",
+          "type": "varchar"
+        },
+        {
+          "name": "registro_habilitado",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "cor_primaria_nome",
+          "type": "varchar"
+        },
+        {
+          "name": "logo_dark",
+          "type": "varchar"
+        },
+        {
+          "name": "unifica_logo",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "aparencia_das_telas",
+          "type": "TEXT"
+        },
+        {
+          "name": "aparencia_por_usuario",
+          "type": "tinyint(1) NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000020_create_tenants_table.php",
+          "trecho": "Schema::create('tenants', function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria tenants",
+            "en": "new tenants"
+          }
+        }
+      ]
+    },
+    {
+      "id": "convites",
+      "label": "convites",
+      "sublabel": {
+        "pt": "dono: kit",
+        "en": "kit owner"
+      },
+      "tag": {
+        "pt": "organizações e convites",
+        "en": "organization/invitation"
+      },
+      "row": 1,
+      "col": 1,
+      "width": 248,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "email",
+          "type": "varchar NN"
+        },
+        {
+          "name": "token",
+          "type": "varchar",
+          "key": "uk"
+        },
+        {
+          "name": "role_id",
+          "type": "INTEGER NN",
+          "key": "fk",
+          "references": "roles.id"
+        },
+        {
+          "name": "tenant_id",
+          "type": "INTEGER",
+          "key": "fk",
+          "references": "tenants.id"
+        },
+        {
+          "name": "convidado_por_id",
+          "type": "INTEGER",
+          "key": "fk",
+          "references": "users.id"
+        },
+        {
+          "name": "expira_em",
+          "type": "datetime"
+        },
+        {
+          "name": "aceito_em",
+          "type": "datetime"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "recusado_em",
+          "type": "datetime"
+        },
+        {
+          "name": "token_lembrete",
+          "type": "varchar",
+          "key": "uk"
+        },
+        {
+          "name": "enviado_em",
+          "type": "datetime"
+        },
+        {
+          "name": "lembretes_enviados",
+          "type": "INTEGER NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_13_000002_create_convites_table.php",
+          "trecho": "Schema::create('convites', function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria convites",
+            "en": "new convites"
+          }
+        }
+      ]
+    },
+    {
+      "id": "projetos",
+      "label": "projetos",
+      "sublabel": {
+        "pt": "dono: kit (demonstração)",
+        "en": "owner: kit (demo)"
+      },
+      "tag": {
+        "pt": "organizações e convites",
+        "en": "organization/invitation"
+      },
+      "row": 1,
+      "col": 2,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "tenant_id",
+          "type": "INTEGER NN",
+          "key": "fk",
+          "references": "tenants.id"
+        },
+        {
+          "name": "nome",
+          "type": "varchar NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "deleted_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000022_create_projetos_table.php",
+          "trecho": "Schema::create('projetos', function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria projetos",
+            "en": "new projetos"
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "fk_tenant_user_user_id",
+      "from": "tenant_user",
+      "to": "users",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/0001_01_01_000021_create_tenant_user_table.php",
+        "trecho": "$table->foreignId('user_id')->constrained()->cascadeOnDelete();"
+      }
+    },
+    {
+      "id": "fk_tenant_user_tenant_id",
+      "from": "tenant_user",
+      "to": "tenants",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/0001_01_01_000021_create_tenant_user_table.php",
+        "trecho": "$table->foreignId('tenant_id')->constrained()->cascadeOnDelete();"
+      }
+    },
+    {
+      "id": "fk_convites_convidado_por_id",
+      "from": "convites",
+      "to": "users",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "identifying": false,
+      "label": "SET NULL",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_13_000002_create_convites_table.php",
+        "trecho": "$table->foreignId('convidado_por_id')->nullable()\n                ->constrained('users')->nullOnDelete();"
+      }
+    },
+    {
+      "id": "fk_convites_tenant_id",
+      "from": "convites",
+      "to": "tenants",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "identifying": false,
+      "label": "NO ACTION",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_13_000002_create_convites_table.php",
+        "trecho": "$table->foreignId('tenant_id')->nullable()->constrained();"
+      }
+    },
+    {
+      "id": "fk_convites_role_id",
+      "from": "convites",
+      "to": "roles",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "NO ACTION",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_13_000002_create_convites_table.php",
+        "trecho": "$table->foreignId('role_id')\n                ->constrained(config('permission.table_names.roles', 'roles'));"
+      }
+    },
+    {
+      "id": "fk_projetos_tenant_id",
+      "from": "projetos",
+      "to": "tenants",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/0001_01_01_000022_create_projetos_table.php",
+        "trecho": "$table->foreignId('tenant_id')->constrained()->cascadeOnDelete();"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Colunas e tipos como o SQLite os registra depois de rodar as migrations (PRAGMA table_info). Em MySQL ou PostgreSQL, a mesma migration gera os tipos nativos.",
+          "en": "Columns and types as SQLite records them after migrations (PRAGMA table_info). In MySQL or PostgreSQL, the same migration creates native types."
+        },
+        {
+          "pt": "NN = NOT NULL. Sem NN, a coluna aceita nulo.",
+          "en": "NN = NOT NULL. Without NN, null is allowed."
+        },
+        {
+          "pt": "PK, FK e UK marcam cada coluna. PK ou UK em mais de uma coluna da mesma tabela pode ser uma chave composta: veja o card \"Chaves compostas\".",
+          "en": "PK, FK and UK mark each column. PK or UK on several columns in one table may be a composite key: see the \"Composite keys\" card."
+        },
+        {
+          "pt": "O rótulo de cada ligação é a regra ON DELETE da chave estrangeira. Linha tracejada: a FK não faz parte da PK da tabela filha.",
+          "en": "Each link label is the foreign key's ON DELETE rule. Dashed line: the FK is not part of the child table's PK."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Chaves compostas",
+        "en": "Composite keys"
+      },
+      "items": [
+        {
+          "pt": "roles: único (name, guard_name)",
+          "en": "roles: unique (name, guard_name)"
+        },
+        {
+          "pt": "tenant_user: sem PK; único (tenant_id, user_id)",
+          "en": "tenant_user: no PK; unique (tenant_id, user_id)"
+        }
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": {
+        "pt": "Outras migrations",
+        "en": "Other migrations"
+      },
+      "items": [
+        {
+          "pt": "users: aprovacao_pendente (add_aprovacao_pendente_to_users_table), origem (add_origem_to_users_table), ativo e deleted_at (add_ativo_and_soft_deletes_to_users_table), dock_atalhos e dock_layout (add_dock_to_users_table) e aparencia (add_aparencia_to_users_table).",
+          "en": "users: aprovacao_pendente (add_aprovacao_pendente_to_users_table), origem (add_origem_to_users_table), ativo and deleted_at (add_ativo_and_soft_deletes_to_users_table), dock_atalhos and dock_layout (add_dock_to_users_table) and aparencia (add_aparencia_to_users_table)."
+        },
+        {
+          "pt": "roles: painel (add_painel_to_roles_table) e uuid, com índice único (add_uuid_to_roles_table).",
+          "en": "roles: painel (add_painel_to_roles_table) and uuid, with unique index (add_uuid_to_roles_table)."
+        },
+        {
+          "pt": "tenants: cor_primaria e logo (add_identidade_visual_to_tenants_table), registro_habilitado (add_registro_habilitado_to_tenants_table), cor_primaria_nome (add_cor_primaria_nome_to_tenants_table), logo_dark (add_logo_dark_to_tenants_table), unifica_logo (add_unifica_logo_to_tenants_table), aparencia_das_telas (add_aparencia_das_telas_to_tenants_table) e aparencia_por_usuario (add_aparencia_por_usuario_to_tenants_table).",
+          "en": "tenants: cor_primaria and logo (add_identidade_visual_to_tenants_table), registro_habilitado (add_registro_habilitado_to_tenants_table), cor_primaria_nome (add_cor_primaria_nome_to_tenants_table), logo_dark (add_logo_dark_to_tenants_table), unifica_logo (add_unifica_logo_to_tenants_table), aparencia_das_telas (add_aparencia_das_telas_to_tenants_table) and aparencia_por_usuario (add_aparencia_por_usuario_to_tenants_table)."
+        },
+        {
+          "pt": "convites: recusado_em (add_recusado_em_to_convites_table); token_lembrete, enviado_em e lembretes_enviados (add_lembretes_to_convites_table).",
+          "en": "convites: recusado_em (add_recusado_em_to_convites_table); token_lembrete, enviado_em and lembretes_enviados (add_lembretes_to_convites_table)."
+        },
+        "projetos: deleted_at (add_soft_deletes_to_projetos_table)."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": {
+        "pt": "Com tenant",
+        "en": "Tenant on"
+      },
+      "items": [
+        {
+          "pt": "Com tenant, roles ganha a coluna team_id, e o único dela passa a ser (team_id, name, guard_name): o diagrama \"Identidade e permissões, com tenant\" mostra essa variante. As outras tabelas deste diagrama são iguais nos dois modos.",
+          "en": "With tenant, roles gains team_id and its unique key becomes (team_id, name, guard_name): \"Identity and permissions, with tenant\" shows this variant. Other tables here are the same in both modes."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Evidência",
+        "en": "Evidence"
+      },
+      "items": [
+        {
+          "pt": "Cada tabela leva à linha da migration que a cria.",
+          "en": "Each table links to its creation migration line."
+        },
+        {
+          "pt": "As colunas que outras migrations acrescentam ou tiram estão no card \"Outras migrations\".",
+          "en": "Columns added or removed by other migrations are in the \"Other migrations\" card."
+        },
+        {
+          "pt": "Cada ligação leva à linha da chave estrangeira, nos cards \"Prova das ligações\".",
+          "en": "Each link leads to the foreign key line in the \"Link evidence\" cards."
+        }
+      ]
+    }
+  ]
+}

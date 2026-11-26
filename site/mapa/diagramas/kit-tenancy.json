@@ -1,0 +1,684 @@
+{
+  "slug": "kit-tenancy",
+  "tipo": "workflow",
+  "titulo": {
+    "pt": "kit:tenancy: como o comando liga o modo multi-tenant",
+    "en": "kit:tenancy: how command enables multi-tenant mode"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": {
+            "pt": "passo do KitTenancy",
+            "en": "KitTenancy step"
+          }
+        },
+        "database": {
+          "label": {
+            "pt": "grava arquivo ou banco",
+            "en": "write file or database"
+          }
+        },
+        "frontend": {
+          "label": {
+            "pt": "saída no terminal",
+            "en": "terminal output"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "encerra o comando",
+            "en": "ends command"
+          }
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "saida",
+      "label": {
+        "pt": "Saídas antecipadas",
+        "en": "Early exits"
+      },
+      "variant": "exception"
+    },
+    {
+      "id": "comando",
+      "label": "KitTenancy::handle()"
+    },
+    {
+      "id": "config",
+      "label": {
+        "pt": "AtivadorDeTenancy: .env e config",
+        "en": "AtivadorDeTenancy: .env and config"
+      }
+    },
+    {
+      "id": "artisan",
+      "label": {
+        "pt": "Artisan: banco de dados",
+        "en": "Artisan: database"
+      }
+    }
+  ],
+  "mainPath": [
+    "inicio",
+    "pre-voo",
+    "confirmar",
+    "flag-env",
+    "papeis",
+    "alinhar",
+    "migrate-fresh",
+    "conferir-schema",
+    "banner"
+  ],
+  "nodes": [
+    {
+      "id": "inicio",
+      "lane": "comando",
+      "col": 0,
+      "type": "backend",
+      "icon": "start",
+      "label": {
+        "pt": "Lê a flag de tenancy",
+        "en": "Read tenancy flag"
+      },
+      "sublabel": "kit:tenancy --demo --force",
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "protected $signature = 'kit:tenancy"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "if (config('kit.tenancy.enabled')) {"
+        }
+      ]
+    },
+    {
+      "id": "ja-ligado",
+      "lane": "saida",
+      "col": 0,
+      "type": "security",
+      "icon": "success",
+      "label": {
+        "pt": "Já está ligado",
+        "en": "Already on"
+      },
+      "sublabel": {
+        "pt": "SUCCESS, sugere a demo",
+        "en": "SUCCESS, suggests demo"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->info('O modo multi-tenant já está ligado.');"
+        }
+      ]
+    },
+    {
+      "id": "pre-voo",
+      "lane": "comando",
+      "col": 1,
+      "type": "backend",
+      "icon": "decision",
+      "label": {
+        "pt": "Confere o git",
+        "en": "Check git"
+      },
+      "sublabel": "preVoo()",
+      "tag": {
+        "pt": "git no PATH, árvore limpa",
+        "en": "git in PATH, clean tree"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "private function preVoo(): bool"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "if (! is_dir(base_path('.git'))) {"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$sujos = trim($this->executarGit(['status', '--porcelain']));"
+        }
+      ]
+    },
+    {
+      "id": "falha-pre-voo",
+      "lane": "saida",
+      "col": 1,
+      "type": "security",
+      "icon": "failure",
+      "label": {
+        "pt": "Pré-voo reprovado",
+        "en": "Preflight failed"
+      },
+      "sublabel": "FAILURE",
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->error('git não encontrado no PATH.');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->error('Este projeto não é um repositório git.');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->error('Há alterações não commitadas na árvore de trabalho.');"
+        }
+      ]
+    },
+    {
+      "id": "confirmar",
+      "lane": "comando",
+      "col": 2,
+      "type": "backend",
+      "icon": "decision",
+      "label": {
+        "pt": "Pede confirmação",
+        "en": "Ask to confirm"
+      },
+      "sublabel": "confirmarDestruicao()",
+      "tag": {
+        "pt": "--force não pergunta",
+        "en": "--force skips prompt"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "private function confirmarDestruicao(): bool"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->warn('Este comando APAGA os dados do banco (migrate:fresh --seed).');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "if ($this->option('force')) {"
+        }
+      ]
+    },
+    {
+      "id": "sem-confirmacao",
+      "lane": "saida",
+      "col": 2,
+      "type": "security",
+      "icon": "failure",
+      "label": {
+        "pt": "Sem confirmação",
+        "en": "Unconfirmed"
+      },
+      "sublabel": {
+        "pt": "FAILURE: recusa ou sem terminal",
+        "en": "FAILURE: denied or no terminal"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->error('Sem terminal interativo. Passe --force para confirmar a recriação do banco.');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "return $this->confirm('Recriar o banco e ligar o modo multi-tenant?', false);"
+        }
+      ]
+    },
+    {
+      "id": "flag-env",
+      "lane": "config",
+      "col": 3,
+      "yOffset": -90,
+      "type": "database",
+      "label": {
+        "pt": "KIT_TENANCY=true no .env",
+        "en": "KIT_TENANCY=true in .env"
+      },
+      "sublabel": "AtivadorDeTenancy::escreverEnv()",
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "AtivadorDeTenancy::escreverEnv(base_path('.env'));"
+        },
+        {
+          "arquivo": "app/Support/AtivadorDeTenancy.php",
+          "trecho": "SubstituicaoEmArquivo::definirLinhaNoEnv($caminhoDoEnv, 'KIT_TENANCY', 'KIT_TENANCY=true');"
+        }
+      ]
+    },
+    {
+      "id": "papeis",
+      "lane": "config",
+      "col": 3,
+      "yOffset": 0,
+      "type": "database",
+      "label": {
+        "pt": "Liga papéis por tenant",
+        "en": "Enable tenant roles"
+      },
+      "sublabel": "AtivadorDeTenancy::ligarPapeisPorTenant()",
+      "tag": {
+        "pt": "permission.php e filament-shield.php",
+        "en": "permission.php and filament-shield.php"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "AtivadorDeTenancy::ligarPapeisPorTenant();"
+        },
+        {
+          "arquivo": "app/Support/AtivadorDeTenancy.php",
+          "trecho": "$dirDeConfig.DIRECTORY_SEPARATOR.'permission.php',"
+        },
+        {
+          "arquivo": "app/Support/AtivadorDeTenancy.php",
+          "trecho": "$dirDeConfig.DIRECTORY_SEPARATOR.'filament-shield.php',"
+        }
+      ]
+    },
+    {
+      "id": "alinhar",
+      "lane": "config",
+      "col": 3,
+      "yOffset": 90,
+      "type": "backend",
+      "label": {
+        "pt": "Alinha a config em memória",
+        "en": "Align config in memory"
+      },
+      "sublabel": "AtivadorDeTenancy::alinharConfigEmMemoria()",
+      "tag": {
+        "pt": "depois de config:clear",
+        "en": "after config:clear"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->callSilently('config:clear');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "AtivadorDeTenancy::alinharConfigEmMemoria();"
+        },
+        {
+          "arquivo": "app/Support/AtivadorDeTenancy.php",
+          "trecho": "app(PermissionRegistrar::class)->setPermissionsTeamId(Tenant::CONTEXTO_GLOBAL);"
+        }
+      ]
+    },
+    {
+      "id": "migrate-fresh",
+      "lane": "artisan",
+      "col": 4,
+      "type": "database",
+      "label": {
+        "pt": "Recria o banco",
+        "en": "Redo database"
+      },
+      "sublabel": "migrate:fresh --seed --force",
+      "tag": {
+        "pt": "apaga os dados",
+        "en": "deletes data"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->info('Recriando o banco com as tabelas de permissão por tenant...');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->call('migrate:fresh', ['--seed' => true, '--force' => true]);"
+        }
+      ]
+    },
+    {
+      "id": "conferir-schema",
+      "lane": "comando",
+      "col": 4,
+      "type": "backend",
+      "icon": "decision",
+      "label": {
+        "pt": "Confere a coluna de team",
+        "en": "Check team column"
+      },
+      "sublabel": "conferirSchema()",
+      "tag": "model_has_roles.team_id",
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "private function conferirSchema(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$coluna = config('permission.column_names.team_foreign_key', 'team_id');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "if (Schema::hasColumn($tabela, $coluna)) {"
+        }
+      ]
+    },
+    {
+      "id": "falha",
+      "lane": "saida",
+      "col": 4,
+      "type": "security",
+      "icon": "failure",
+      "label": {
+        "pt": "Exceção no try",
+        "en": "Error in try"
+      },
+      "sublabel": {
+        "pt": "FAILURE e log no canal tenancy",
+        "en": "FAILURE, logs to tenancy"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->error('Falha ao ativar o modo multi-tenant: '.$e->getMessage());"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "'[KitTenancy@handle] Falha ao ativar o modo multi-tenant',"
+        }
+      ]
+    },
+    {
+      "id": "demo",
+      "lane": "artisan",
+      "col": 5,
+      "type": "database",
+      "label": {
+        "pt": "Semeia a demonstração",
+        "en": "Seed demo"
+      },
+      "sublabel": "semearDemo()",
+      "tag": {
+        "pt": "DemoTenancySeeder e KIT_DEMO=true",
+        "en": "DemoTenancySeeder and KIT_DEMO=true"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "private function semearDemo(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->call('db:seed', ["
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "SubstituicaoEmArquivo::definirLinhaNoEnv(base_path('.env'), 'KIT_DEMO', 'KIT_DEMO=true');"
+        }
+      ]
+    },
+    {
+      "id": "banner",
+      "lane": "comando",
+      "col": 5,
+      "type": "frontend",
+      "icon": "success",
+      "label": {
+        "pt": "Mostra os endereços",
+        "en": "Show addresses"
+      },
+      "sublabel": "banner()",
+      "tag": {
+        "pt": "/app/{slug} e o cadastro no /admin",
+        "en": "/app/{slug} and sign-up in /admin"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "private function banner(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "$this->components->info('Modo multi-tenant ligado.');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitTenancy.php",
+          "trecho": "'[KitTenancy@handle] Modo multi-tenant ativado | demo: '"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "inicio-ja-ligado",
+      "from": "inicio",
+      "to": "ja-ligado",
+      "role": "branch",
+      "variant": "dashed",
+      "label": {
+        "pt": "flag ligada",
+        "en": "flag on"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "if (config('kit.tenancy.enabled')) {"
+      }
+    },
+    {
+      "id": "inicio-pre-voo",
+      "from": "inicio",
+      "to": "pre-voo",
+      "role": "main",
+      "label": {
+        "pt": "flag desligada",
+        "en": "flag off"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "if (! $this->preVoo()) {"
+      }
+    },
+    {
+      "id": "pre-voo-falha",
+      "from": "pre-voo",
+      "to": "falha-pre-voo",
+      "role": "error",
+      "variant": "security",
+      "label": {
+        "pt": "reprovou",
+        "en": "failed"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "return self::FAILURE;"
+      }
+    },
+    {
+      "id": "pre-voo-confirmar",
+      "from": "pre-voo",
+      "to": "confirmar",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "if (! $this->confirmarDestruicao()) {"
+      }
+    },
+    {
+      "id": "confirmar-recusa",
+      "from": "confirmar",
+      "to": "sem-confirmacao",
+      "role": "error",
+      "variant": "security",
+      "label": {
+        "pt": "não confirmou",
+        "en": "unconfirmed"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "return $this->confirm('Recriar o banco e ligar o modo multi-tenant?', false);"
+      }
+    },
+    {
+      "id": "confirmar-flag-env",
+      "from": "confirmar",
+      "to": "flag-env",
+      "role": "main",
+      "label": {
+        "pt": "confirmou",
+        "en": "confirmed"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "$this->ligarFlagNoEnv();"
+      }
+    },
+    {
+      "id": "flag-env-papeis",
+      "from": "flag-env",
+      "to": "papeis",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "$this->ligarPapeisPorTenant();"
+      }
+    },
+    {
+      "id": "papeis-alinhar",
+      "from": "papeis",
+      "to": "alinhar",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "$this->recriarBanco();"
+      }
+    },
+    {
+      "id": "alinhar-migrate-fresh",
+      "from": "alinhar",
+      "to": "migrate-fresh",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "$this->call('migrate:fresh', ['--seed' => true, '--force' => true]);"
+      }
+    },
+    {
+      "id": "migrate-fresh-conferir",
+      "from": "migrate-fresh",
+      "to": "conferir-schema",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "$this->conferirSchema();"
+      }
+    },
+    {
+      "id": "conferir-falha",
+      "from": "conferir-schema",
+      "to": "falha",
+      "role": "error",
+      "variant": "security",
+      "label": {
+        "pt": "sem a coluna",
+        "en": "no column"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "throw new RuntimeException("
+      }
+    },
+    {
+      "id": "conferir-demo",
+      "from": "conferir-schema",
+      "to": "demo",
+      "role": "branch",
+      "variant": "dashed",
+      "label": "--demo",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "$this->semearDemo();"
+      }
+    },
+    {
+      "id": "conferir-banner",
+      "from": "conferir-schema",
+      "to": "banner",
+      "role": "main",
+      "label": {
+        "pt": "sem --demo",
+        "en": "no --demo"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "if ($this->option('demo')) {"
+      }
+    },
+    {
+      "id": "demo-banner",
+      "from": "demo",
+      "to": "banner",
+      "role": "branch",
+      "variant": "dashed",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "$this->banner();"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Por que o banco é recriado",
+        "en": "Why database is rebuilt"
+      },
+      "items": [
+        {
+          "pt": "As tabelas de permissão só nascem com a coluna de tenant se permission.teams estiver ligado antes do migrate.",
+          "en": "Permission tables only get tenant column if permission.teams is on before migrate."
+        },
+        {
+          "pt": "Por isso o comando roda migrate:fresh --seed, e não uma migração aditiva: os dados do banco são apagados.",
+          "en": "Thus command runs migrate:fresh --seed rather than an additive migration: database data is deleted."
+        },
+        {
+          "pt": "conferirSchema() cobra a coluna model_has_roles.team_id e lança RuntimeException quando ela falta.",
+          "en": "conferirSchema() requires model_has_roles.team_id and throws RuntimeException if absent."
+        }
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": {
+        "pt": "Como o comando termina",
+        "en": "How command ends"
+      },
+      "items": [
+        {
+          "pt": "Flag já ligada: SUCCESS, com a sugestão de semear a demo pelo DemoTenancySeeder.",
+          "en": "Flag already on: SUCCESS, suggesting demo seeding via DemoTenancySeeder."
+        },
+        {
+          "pt": "Pré-voo: exige git no PATH, um repositório git e a árvore de trabalho limpa.",
+          "en": "Preflight: needs git in PATH, a git repo and clean working tree."
+        },
+        {
+          "pt": "Sem --force: sem terminal interativo, ou com a pergunta recusada, sai com FAILURE.",
+          "en": "Without --force: no interactive terminal or declined prompt exits with FAILURE."
+        },
+        {
+          "pt": "Qualquer exceção entre ligarFlagNoEnv() e semearDemo() cai no catch: erro no terminal, log no canal tenancy e FAILURE.",
+          "en": "Any exception between ligarFlagNoEnv() and semearDemo() enters catch: terminal error, log to tenancy and FAILURE."
+        }
+      ]
+    }
+  ]
+}

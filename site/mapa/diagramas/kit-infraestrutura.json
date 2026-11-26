@@ -1,0 +1,104 @@
+{
+  "slug": "kit-infraestrutura",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Infraestrutura",
+    "en": "Kit — Infrastructure"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "Fomvasss\\AiTasks\\Models\\AiRun",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\AiRunPolicy",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\AuditPolicy",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\AuthenticationLogPolicy",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\CommandRecordPolicy",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\ComposerReleasePackageSnapshotPolicy",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\ExceptionPolicy",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Policies\\MailLogPolicy",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Policies\\QueueMonitorPolicy",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Listeners\\AuditarConfiguracoesDoKit",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Traits\\AuditsFillables",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Ai\\Health\\LocalAiCheck",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Ai\\Listeners\\RegistrarAiRun",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "Dotswan\\FilamentLaravelPulse\\Widgets\\PulseServers",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "BezhanSalleh\\FilamentExceptions\\Models\\Exception",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "Tapp\\FilamentMailLog\\Models\\MailLog",
+      "row": 1,
+      "col": 2
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44,
+    "teto": 3
+  }
+}

@@ -5,12 +5,82 @@ versionamento [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-11-26
+
+**Mapa interativo do kit** e **catálogo único de features**. Cada painel, sem e com o tenant ativo, e os
+fluxos do kit viram diagramas interativos gerados do código pelo archify, com a prova de cada ligação; o
+roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
+`wikis/specs/feat/mapa-interativo-do-kit/`.
+
+### Adicionado
+
+- Página **Mapa interativo do kit** no site (`/pt/referencia/mapa-interativo/` e `/en/…`), linkada pelo README:
+  - por painel e modo: a árvore do que o painel registra (conferida contra o painel vivo), o resumo por domínio
+    de feature, os mapas de cada domínio e, no `/app`, o comparativo sem → com tenant;
+  - os fluxos: sequências (login, 2FA, login social, recuperação de senha, bloqueio de sessão, convites, troca
+    de organização, chat e ledger de IA, exceções), os workflows de `kit:install`, `kit:update` e
+    `kit:tenancy`, os ciclos de vida de conta, convite e sessão, os fluxos de dados (configurações e IA), o
+    modelo de dados, as classes, a linha do tempo das versões e os tempos de instalação e de CI;
+  - cada peça mostra as F-nn que entrega, e cada ligação traz a prova — o arquivo e o trecho do código —
+    num card, com o passaporte da peça levando à linha no GitHub, no commit publicado;
+  - a peça condicional — só disponível com tenant ou com uma chave desligada de fábrica, como o `TenantResource`,
+    os hubs, o dashboard dinâmico e o chat do assistente — leva a marca da condição no desenho e no card "Condições de disponibilidade", e
+    só entra no diagrama do modo em que abre: o `/admin` e o `/app` têm diagramas sem e com tenant onde o
+    conjunto muda, e um comparativo sem → com cada.
+- O modelo versionado do mapa (`site/mapa/pecas.json` e `ligacoes.json`, a prova como âncora de trecho, nunca
+  número de linha), o gerador `site/mapa/gerar.mjs`, que roda no fim do `npm run build` do site, e o
+  posicionador `site/mapa/posicionar.mjs`, só de desenvolvimento. Os dois recusam, com a mensagem `[mapa]` que
+  nomeia o culpado, o que não podem usar — JSON quebrado, peça fora do modelo, condição de disponibilidade ou
+  `modos` de diagrama que não se leem, ligação sem prova, prova cujo
+  trecho não está no arquivo ou só aparece em comentário, pasta de saída com o que o gerador não gerou —, antes
+  de baixar o archify e de apagar a saída; só o layout, que o archify confere ao renderizar, fica para depois.
+- O archify entra pelo download raso de um commit fixo (`site/mapa/archify.mjs`), conferido antes de usar;
+  nenhuma dependência npm nova.
+- `site/verifica-mapa.mjs`: o CI do site abre os diagramas nos dois idiomas e confere, contra a fonte, as
+  peças e os rótulos, a prova de cada ligação, a busca, o passaporte e a interface no idioma da página; audita
+  um diagrama de cada tipo, idioma e tema e reprova violação `serious`/`critical` do WCAG 2.1 AA, tolerando
+  só dois defeitos do próprio archify, reconhecidos pela regra e pelo elemento; e reprova erro de console.
+- Rule `.ai/rules/catalogo-de-features.md`: feature nova entra no roteiro nos dois idiomas, o número só
+  cresce, e a peça nova entra no mapa com as F-nn que entrega.
+
+### Alterado
+
+- O **roteiro de features** vira o catálogo único: F-72 a F-121 (as features que o código, as páginas, o
+  README e os pacotes entregavam sem número), a coluna **Origem** (pacote, código próprio, ou pacote com
+  customização própria) em todas as tabelas e 16 trechos defasados corrigidos sem trocar número — entre eles
+  a rota do perfil na F-07 em inglês.
+- A referência de pacotes passa a listar os 91 pacotes dos manifestos (faltavam quatro).
+- O `pages.yml` só publica a partir da `main`: o mapa liga cada prova ao commit do build, e um dispatch de
+  outro ramo publicaria links para um commit que some com o ramo.
+- Os jobs `qualidade` e `cobertura` do CI instalam o Node 24: as guardas do mapa rodam o gerador e o
+  posicionador num clone descartável do repositório.
+
 ### Corrigido
 
 - O job `telas` falhava de forma intermitente na varredura de acessibilidade do `/app`: o axe media
   o contraste durante a transição de opacidade com que o Filament faz entrar o `.fi-main-ctn`, e o
   texto escuro saía `#d0d0d0` sobre `#fafafa`. `comTelaAssentada()` (`tests/Pest.php`) espera as
   animações finitas terminarem antes de cada `assertNoAccessibilityIssues()`.
+
+### Atualizando
+
+- Nada a instalar, migrar, publicar ou semear: nenhuma migration, settings, dependência PHP ou JS, asset nem
+  arquivo de `app/`, `config/` (fora o marcador), `resources/` ou `routes/` mudou. O site (`site/`, `docs/`) e o
+  CI ficam fora do pacote (`export-ignore`) e fora de `KitUpdate::CAMINHOS_DO_KIT`.
+- O `kit:update` traz `.ai/rules/catalogo-de-features.md` (nova; só se aplica no repositório do kit),
+  `.ai/rules/index.md`, `wikis/glossario.md`, `tests/Pest.php` (os helpers das guardas do mapa), os cinco
+  arquivos de teste do mapa (`tests/Kit/MapaInterativo*Test.php` e `tests/Tenancy/MapaInterativoTenancyTest.php`)
+  e citações de linha em `tests/Kit/KitArteTest.php`, `tests/Kit/LinkDoPainelSemTenancyTest.php` e
+  `tests/Browser/RoteiroDoKitTest.php`.
+- **Teto de pulados fora da árvore do kit: 1161 → 1600 (+439)**, medido com `--log-junit` numa extração do
+  `git archive` de `579cbc51` (os testes da release), só nos arquivos novos — todos os casos pulam pela guarda
+  `naArvoreDoKit()`: `MapaInterativoCatalogoTest` 64, `MapaInterativoDiagramasTest` 148,
+  `MapaInterativoPublicacaoTest` 65, `MapaInterativoTest` 135 e `MapaInterativoTenancyTest` 27.
+- Roteiro: `wikis/atualizacoes/v0.57.0.md`.
+
+### Defaults mudados
+
+- nenhum
 
 ## [0.56.0] - 2026-11-19
 

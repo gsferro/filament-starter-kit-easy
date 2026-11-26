@@ -1,0 +1,479 @@
+{
+  "slug": "erd-auditoria-e-logs",
+  "tipo": "erd",
+  "titulo": {
+    "pt": "Auditoria e logs",
+    "en": "Audit and logs"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "entities": [
+    {
+      "id": "audits",
+      "label": "audits",
+      "sublabel": {
+        "pt": "dono: owen-it/laravel-auditing (tapp/filament-auditing)",
+        "en": "by: owen-it/laravel-auditing (tapp/filament-auditing)"
+      },
+      "tag": {
+        "pt": "auditoria e logs",
+        "en": "audit and logs"
+      },
+      "row": 0,
+      "col": 0,
+      "width": 220,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "user_type",
+          "type": "varchar"
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER"
+        },
+        {
+          "name": "event",
+          "type": "varchar NN"
+        },
+        {
+          "name": "auditable_type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "auditable_id",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "old_values",
+          "type": "TEXT"
+        },
+        {
+          "name": "new_values",
+          "type": "TEXT"
+        },
+        {
+          "name": "url",
+          "type": "TEXT"
+        },
+        {
+          "name": "ip_address",
+          "type": "varchar"
+        },
+        {
+          "name": "user_agent",
+          "type": "varchar"
+        },
+        {
+          "name": "tags",
+          "type": "varchar"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164915_create_audits_table.php",
+          "trecho": "Schema::connection($connection)->create($table, function (Blueprint $table) {",
+          "label": {
+            "pt": "cria audits",
+            "en": "add audits"
+          }
+        }
+      ]
+    },
+    {
+      "id": "authentication_log",
+      "label": "authentication_log",
+      "sublabel": {
+        "pt": "dono: rappasoft/laravel-authentication-log (tapp/filament-authentication-log) + coluna painel do kit",
+        "en": "by: rappasoft/laravel-authentication-log (tapp/filament-authentication-log) + kit painel column"
+      },
+      "tag": {
+        "pt": "auditoria e logs",
+        "en": "audit and logs"
+      },
+      "row": 0,
+      "col": 1,
+      "width": 260,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "authenticatable_type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "authenticatable_id",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "ip_address",
+          "type": "varchar"
+        },
+        {
+          "name": "user_agent",
+          "type": "TEXT"
+        },
+        {
+          "name": "device_id",
+          "type": "varchar"
+        },
+        {
+          "name": "device_name",
+          "type": "varchar"
+        },
+        {
+          "name": "is_trusted",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "login_at",
+          "type": "datetime"
+        },
+        {
+          "name": "login_successful",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "logout_at",
+          "type": "datetime"
+        },
+        {
+          "name": "last_activity_at",
+          "type": "datetime"
+        },
+        {
+          "name": "cleared_by_user",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "location",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_suspicious",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "suspicious_reason",
+          "type": "varchar"
+        },
+        {
+          "name": "painel",
+          "type": "varchar"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164917_create_authentication_log_table.php",
+          "trecho": "Schema::create(config('authentication-log.table_name'), function (Blueprint $table) {",
+          "label": {
+            "pt": "cria authentication_log",
+            "en": "add authentication_log"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mail_logs",
+      "label": "mail_logs",
+      "sublabel": {
+        "pt": "dono: tapp/filament-maillog",
+        "en": "by: tapp/filament-maillog"
+      },
+      "tag": {
+        "pt": "auditoria e logs",
+        "en": "audit and logs"
+      },
+      "row": 0,
+      "col": 2,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "from",
+          "type": "TEXT"
+        },
+        {
+          "name": "to",
+          "type": "TEXT"
+        },
+        {
+          "name": "cc",
+          "type": "TEXT"
+        },
+        {
+          "name": "bcc",
+          "type": "TEXT"
+        },
+        {
+          "name": "subject",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "body",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "headers",
+          "type": "TEXT"
+        },
+        {
+          "name": "attachments",
+          "type": "TEXT"
+        },
+        {
+          "name": "message_id",
+          "type": "varchar"
+        },
+        {
+          "name": "status",
+          "type": "varchar"
+        },
+        {
+          "name": "data",
+          "type": "TEXT"
+        },
+        {
+          "name": "opened",
+          "type": "datetime"
+        },
+        {
+          "name": "delivered",
+          "type": "datetime"
+        },
+        {
+          "name": "complaint",
+          "type": "datetime"
+        },
+        {
+          "name": "bounced",
+          "type": "datetime"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_18_171921_create_filament_mail_log_table.php",
+          "trecho": "Schema::create('mail_logs', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria mail_logs",
+            "en": "add mail_logs"
+          }
+        }
+      ]
+    },
+    {
+      "id": "filament_exceptions_table",
+      "label": "filament_exceptions_table",
+      "sublabel": {
+        "pt": "dono: bezhansalleh/filament-exceptions",
+        "en": "by: bezhansalleh/filament-exceptions"
+      },
+      "tag": {
+        "pt": "auditoria e logs",
+        "en": "audit and logs"
+      },
+      "row": 0,
+      "col": 3,
+      "width": 240,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "code",
+          "type": "varchar NN"
+        },
+        {
+          "name": "message",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "file",
+          "type": "varchar NN"
+        },
+        {
+          "name": "line",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "trace",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "method",
+          "type": "varchar NN"
+        },
+        {
+          "name": "path",
+          "type": "varchar NN"
+        },
+        {
+          "name": "ip",
+          "type": "varchar"
+        },
+        {
+          "name": "headers",
+          "type": "TEXT"
+        },
+        {
+          "name": "cookies",
+          "type": "TEXT"
+        },
+        {
+          "name": "body",
+          "type": "TEXT"
+        },
+        {
+          "name": "query",
+          "type": "TEXT"
+        },
+        {
+          "name": "route_context",
+          "type": "TEXT"
+        },
+        {
+          "name": "route_parameters",
+          "type": "TEXT"
+        },
+        {
+          "name": "markdown",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_18_171919_create_filament_exceptions_table.php",
+          "trecho": "Schema::create('filament_exceptions_table', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria filament_exceptions_table",
+            "en": "add filament_exceptions_table"
+          }
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Colunas e tipos como o SQLite os registra depois de rodar as migrations (PRAGMA table_info). Em MySQL ou PostgreSQL, a mesma migration gera os tipos nativos.",
+          "en": "Columns and types as SQLite records them after migrations (PRAGMA table_info). In MySQL or PostgreSQL, the same migration creates native types."
+        },
+        {
+          "pt": "NN = NOT NULL. Sem NN, a coluna aceita nulo.",
+          "en": "NN = NOT NULL. Without NN, null is allowed."
+        },
+        {
+          "pt": "PK, FK e UK marcam cada coluna.",
+          "en": "PK, FK and UK mark each column."
+        },
+        {
+          "pt": "Nenhuma tabela deste domínio tem chave estrangeira, por isso o desenho não tem linhas.",
+          "en": "No table in this domain has foreign keys, so diagram has no lines."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Referências sem chave estrangeira",
+        "en": "References without foreign keys"
+      },
+      "items": [
+        {
+          "pt": "O banco não tem chave estrangeira para estas colunas, por isso elas não ganham linha. Os pares *_type/*_id são relações polimórficas.",
+          "en": "Database has no foreign keys for these columns, so they have no lines. *_type/*_id pairs are polymorphic relations."
+        },
+        {
+          "pt": "audits: user_type/user_id e auditable_type/auditable_id",
+          "en": "audits: user_type/user_id and auditable_type/auditable_id"
+        },
+        "authentication_log: authenticatable_type/authenticatable_id"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": {
+        "pt": "Outras migrations",
+        "en": "Other migrations"
+      },
+      "items": [
+        "authentication_log: painel (add_painel_to_authentication_log_table)."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Evidência",
+        "en": "Evidence"
+      },
+      "items": [
+        {
+          "pt": "Cada tabela leva à linha da migration que a cria.",
+          "en": "Each table links to its creation migration line."
+        },
+        {
+          "pt": "As colunas que outras migrations acrescentam ou tiram estão no card \"Outras migrations\".",
+          "en": "Columns added or removed by other migrations are in the \"Other migrations\" card."
+        }
+      ]
+    }
+  ]
+}

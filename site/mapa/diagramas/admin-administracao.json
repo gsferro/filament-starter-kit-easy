@@ -1,0 +1,136 @@
+{
+  "slug": "admin-administracao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/admin — Administração",
+    "en": "/admin — Administration"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Models\\AgenteIa",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Pages\\DashboardClassico",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Leandrocfe\\FilamentApexCharts\\FilamentApexChartsPlugin",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
+      "row": 7,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\AgentesDeIa",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\CabecalhoDoPainel",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\DetalheDoUsuario",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\IdentidadeDoKit",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\TutorialGuiado",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "Filament\\Widgets\\AccountWidget",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Admin\\Widgets\\AgentesIaPorProvider",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Admin\\Widgets\\AgentesIaStats",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Admin\\Widgets\\ConvitesPorSituacao",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "Filament\\Widgets\\FilamentInfoWidget",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Widgets\\ProgressoOnboarding",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Widgets\\UltimosUsuariosCadastrados",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Widgets\\UsuariosPorPapel",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Widgets\\UsuariosVisaoGeralStats",
+      "row": 5,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44,
+    "teto": 3
+  }
+}

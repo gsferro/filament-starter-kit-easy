@@ -1,0 +1,871 @@
+{
+  "slug": "kit-update",
+  "tipo": "workflow",
+  "titulo": {
+    "pt": "kit:update: comparar com uma versão nova do kit e aplicar só o aprovado",
+    "en": "kit:update: compare a new kit version, apply only approved changes"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": {
+            "pt": "passo do KitUpdate",
+            "en": "KitUpdate step"
+          }
+        },
+        "database": {
+          "label": {
+            "pt": "grava arquivo do projeto",
+            "en": "writes project file"
+          }
+        },
+        "external": {
+          "label": {
+            "pt": "comando git",
+            "en": "git command"
+          }
+        },
+        "frontend": {
+          "label": {
+            "pt": "saída no terminal",
+            "en": "terminal output"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "encerra o comando",
+            "en": "ends command"
+          }
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "topo",
+      "label": {
+        "pt": "Mostra o resumo e sai",
+        "en": "Show summary and exit"
+      },
+      "variant": "exception"
+    },
+    {
+      "id": "comando",
+      "label": "KitUpdate::handle()"
+    },
+    {
+      "id": "git",
+      "label": {
+        "pt": "git, rodado por Process",
+        "en": "git, run by Process"
+      }
+    },
+    {
+      "id": "base",
+      "label": {
+        "pt": "Saídas antecipadas",
+        "en": "Early exits"
+      },
+      "variant": "exception"
+    }
+  ],
+  "phases": [
+    {
+      "id": "vincular",
+      "label": {
+        "pt": "Vincula e escolhe",
+        "en": "Link and choose"
+      },
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "comparar",
+      "label": {
+        "pt": "Compara",
+        "en": "Compare"
+      },
+      "fromCol": 2,
+      "toCol": 3
+    },
+    {
+      "id": "aplicar",
+      "label": {
+        "pt": "Aplica",
+        "en": "Apply"
+      },
+      "fromCol": 4,
+      "toCol": 4
+    },
+    {
+      "id": "encerrar",
+      "label": {
+        "pt": "Encerra",
+        "en": "End"
+      },
+      "fromCol": 5,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "pre-voo",
+    "buscar",
+    "escolher",
+    "comparar",
+    "resumo",
+    "branch",
+    "revisar",
+    "reparar",
+    "relatar",
+    "encerrar",
+    "desvincular"
+  ],
+  "nodes": [
+    {
+      "id": "pre-voo",
+      "lane": "comando",
+      "col": 0,
+      "type": "backend",
+      "icon": "start",
+      "label": {
+        "pt": "Confere git e árvore",
+        "en": "Check git and tree"
+      },
+      "sublabel": "preVoo()",
+      "tag": {
+        "pt": "--dry-run dispensa árvore limpa",
+        "en": "--dry-run allows dirty tree"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "private function preVoo(): bool"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$sujos = trim($this->git(['status', '--porcelain']));"
+        }
+      ]
+    },
+    {
+      "id": "falha-pre-voo",
+      "lane": "base",
+      "col": 0,
+      "type": "security",
+      "icon": "failure",
+      "label": {
+        "pt": "Pré-voo reprovado",
+        "en": "Preflight failed"
+      },
+      "sublabel": {
+        "pt": "FAILURE, antes do vínculo",
+        "en": "FAILURE, before link"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->components->error('git não encontrado no PATH.');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->components->error('Este projeto não é um repositório git.');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->components->error('Há alterações não commitadas na árvore de trabalho.');"
+        }
+      ]
+    },
+    {
+      "id": "buscar",
+      "lane": "git",
+      "col": 1,
+      "type": "external",
+      "label": {
+        "pt": "Busca as tags do kit",
+        "en": "Fetch kit tags"
+      },
+      "sublabel": {
+        "pt": "vincularKit() e tagsDoKit()",
+        "en": "vincularKit() + tagsDoKit()"
+      },
+      "tag": {
+        "pt": "remote kit sem push, tags kit-*",
+        "en": "kit remote, no push, kit-* tags"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->git(['remote', 'set-url', '--push', self::REMOTE, 'no_push']);"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->git(['fetch', '--no-tags', '--quiet', self::REMOTE, 'refs/tags/*:refs/tags/kit-*']);"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$saida = trim($this->git(['tag', '-l', 'kit-*', '--sort=-v:refname']));"
+        }
+      ]
+    },
+    {
+      "id": "sem-tags",
+      "lane": "base",
+      "col": 1,
+      "type": "security",
+      "icon": "failure",
+      "label": {
+        "pt": "Nenhuma tag",
+        "en": "No tags"
+      },
+      "sublabel": {
+        "pt": "FAILURE, passa pelo finally",
+        "en": "FAILURE, via finally"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->components->error(\"Nenhuma tag encontrada em {$repo}.\");"
+        }
+      ]
+    },
+    {
+      "id": "escolher",
+      "lane": "comando",
+      "col": 1,
+      "type": "backend",
+      "icon": "decision",
+      "label": {
+        "pt": "Escolhe as versões",
+        "en": "Choose versions"
+      },
+      "sublabel": "escolherDestino(), resolverOrigem()",
+      "tag": {
+        "pt": "--tag, --from ou kit.version",
+        "en": "--tag, --from or kit.version"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "label: 'Atualizar para qual versão do kit?',"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$origem = $this->option('from') ?: config('kit.version');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->components->warn(\"A versão de origem ({$origem}) não existe como tag no kit — comparando com a árvore de trabalho.\");"
+        }
+      ]
+    },
+    {
+      "id": "comparar",
+      "lane": "git",
+      "col": 2,
+      "type": "external",
+      "label": {
+        "pt": "Compara as versões",
+        "en": "Compare versions"
+      },
+      "sublabel": "arquivosAlterados()",
+      "tag": {
+        "pt": "só os CAMINHOS_DO_KIT",
+        "en": "CAMINHOS_DO_KIT only"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "? ['diff', '--name-status', $origem, $destino, '--']"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$lista    = $this->caminhosDoKit($destino);"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "return array_values(array_unique([...self::CAMINHOS_DO_KIT, ...$doDestino]));"
+        }
+      ]
+    },
+    {
+      "id": "nada-mudou",
+      "lane": "base",
+      "col": 2,
+      "type": "security",
+      "icon": "success",
+      "label": {
+        "pt": "Nada a atualizar",
+        "en": "No updates"
+      },
+      "sublabel": {
+        "pt": "SUCCESS, passa pelo finally",
+        "en": "SUCCESS, via finally"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "? \"Nada a atualizar: seu projeto já está na versão mais atual do kit ({$versao}).\""
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": ": \"Nada a atualizar: não há mudanças do kit entre a sua versão e a {$versao}.\");"
+        }
+      ]
+    },
+    {
+      "id": "resumo",
+      "lane": "comando",
+      "col": 3,
+      "type": "frontend",
+      "label": {
+        "pt": "Mostra o que mudou",
+        "en": "Show changes"
+      },
+      "sublabel": "mostrarResumo()",
+      "tag": {
+        "pt": "tabela de arquivo e mudança",
+        "en": "file and change table"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "private function mostrarResumo(?string $origem, string $destino, array $arquivos): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "headers: ['Arquivo', 'Mudança'],"
+        }
+      ]
+    },
+    {
+      "id": "dry-run",
+      "lane": "topo",
+      "col": 3,
+      "type": "security",
+      "icon": "success",
+      "label": {
+        "pt": "Só mostra: --dry-run",
+        "en": "Show only: --dry-run"
+      },
+      "sublabel": {
+        "pt": "SUCCESS, passa pelo finally",
+        "en": "SUCCESS, via finally"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "note('Modo --dry-run: nenhum arquivo foi tocado.');"
+        }
+      ]
+    },
+    {
+      "id": "sem-terminal",
+      "lane": "topo",
+      "col": 4,
+      "type": "security",
+      "icon": "success",
+      "label": {
+        "pt": "Sem terminal: não aplica",
+        "en": "No terminal: no apply"
+      },
+      "sublabel": {
+        "pt": "SUCCESS, passa pelo finally",
+        "en": "SUCCESS, via finally"
+      },
+      "tag": {
+        "pt": "sem --all nem --only-new",
+        "en": "no --all or --only-new"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "\"Sem terminal interativo: nada foi aplicado.\\n\""
+        }
+      ]
+    },
+    {
+      "id": "branch",
+      "lane": "git",
+      "col": 4,
+      "type": "external",
+      "label": {
+        "pt": "Cria o branch temporário",
+        "en": "Create temp branch"
+      },
+      "sublabel": "prepararBranch()",
+      "tag": {
+        "pt": "kit-update/<tag>; --no-branch pula",
+        "en": "kit-update/<tag>; --no-branch skips"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "private function prepararBranch(string $destino): bool"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$branch = is_string($pedido) && $pedido !== '' ? $pedido : 'kit-update/'.str_replace('kit-', '', $destino);"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->git(['switch', '-c', $branch]);"
+        }
+      ]
+    },
+    {
+      "id": "recusou",
+      "lane": "base",
+      "col": 4,
+      "type": "security",
+      "icon": "success",
+      "label": {
+        "pt": "Desistiu de aplicar",
+        "en": "Apply canceled"
+      },
+      "sublabel": {
+        "pt": "SUCCESS, passa pelo finally",
+        "en": "SUCCESS, via finally"
+      },
+      "tag": {
+        "pt": "recusou o branch e o direto",
+        "en": "branch and direct declined"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "label: \"Aplicar direto em `{$atual}` mesmo assim?\","
+        }
+      ]
+    },
+    {
+      "id": "revisar",
+      "lane": "comando",
+      "col": 4,
+      "type": "backend",
+      "icon": "decision",
+      "label": {
+        "pt": "Revisa e aplica",
+        "en": "Review, apply"
+      },
+      "sublabel": "revisarEAplicar()",
+      "tag": {
+        "pt": "arquivo a arquivo ou em lote",
+        "en": "per file or in bulk"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "private function revisarEAplicar(string $destino, array $arquivos): array"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "label: \"{$caminho} ({$rotulo})\","
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->git(['checkout', $destino, '--', $caminho]);"
+        }
+      ]
+    },
+    {
+      "id": "reparar",
+      "lane": "comando",
+      "col": 5,
+      "yOffset": -90,
+      "type": "database",
+      "label": {
+        "pt": "Recria pastas de teste",
+        "en": "Rebuild test folders"
+      },
+      "sublabel": "repararPastasDeTeste()",
+      "tag": {
+        "pt": "as do phpunit.xml, com .gitkeep",
+        "en": "phpunit.xml folders + .gitkeep"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "private function repararPastasDeTeste(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "foreach ($xml->xpath('//testsuite/directory') ?: [] as $diretorio) {"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "file_put_contents($caminho.'/.gitkeep', '');"
+        }
+      ]
+    },
+    {
+      "id": "relatar",
+      "lane": "comando",
+      "col": 5,
+      "yOffset": 0,
+      "type": "frontend",
+      "label": {
+        "pt": "Relata o composer.json",
+        "en": "Report composer.json"
+      },
+      "sublabel": "relatarComposerJson()",
+      "tag": {
+        "pt": "nunca aplica",
+        "en": "never apply"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "private function relatarComposerJson(?string $origem, string $destino): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$diff = trim($this->git(['diff', $origem, $destino, '--', ...self::CAMINHOS_SO_RELATORIO]));"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->components->warn('O composer.json do kit mudou — este arquivo NUNCA é aplicado automaticamente.');"
+        }
+      ]
+    },
+    {
+      "id": "encerrar",
+      "lane": "comando",
+      "col": 5,
+      "yOffset": 90,
+      "type": "database",
+      "label": {
+        "pt": "Marca a versão nova",
+        "en": "Mark new version"
+      },
+      "sublabel": {
+        "pt": "encerrar() e marcarVersao()",
+        "en": "encerrar() + marcarVersao()"
+      },
+      "tag": {
+        "pt": "config/kit.php, se aplicou algo",
+        "en": "config/kit.php, if any applied"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "private function encerrar(string $destino, array $aplicados, ?string $origem): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->marcarVersao($versao);"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "file_put_contents($arquivo, $novo);"
+        }
+      ]
+    },
+    {
+      "id": "desvincular",
+      "lane": "git",
+      "col": 5,
+      "type": "external",
+      "icon": "success",
+      "label": {
+        "pt": "Desvincula o kit",
+        "en": "Unlink kit"
+      },
+      "sublabel": "finally: desvincularKit()",
+      "tag": {
+        "pt": "salvo --keep-remote",
+        "en": "but --keep-remote"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "private function desvincularKit(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->git(['tag', '-d', trim($tag)]);"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitUpdate.php",
+          "trecho": "$this->git(['remote', 'remove', self::REMOTE]);"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "pre-voo-falha",
+      "from": "pre-voo",
+      "to": "falha-pre-voo",
+      "role": "error",
+      "variant": "security",
+      "label": {
+        "pt": "reprovou",
+        "en": "failed"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "if ($this->git === '' || ! $this->preVoo()) {"
+      }
+    },
+    {
+      "id": "pre-voo-buscar",
+      "from": "pre-voo",
+      "to": "buscar",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "$this->vincularKit($repo);"
+      }
+    },
+    {
+      "id": "buscar-sem-tags",
+      "from": "buscar",
+      "to": "sem-tags",
+      "role": "error",
+      "variant": "security",
+      "label": {
+        "pt": "sem tags",
+        "en": "no tags"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "if ($tags === []) {"
+      }
+    },
+    {
+      "id": "buscar-escolher",
+      "from": "buscar",
+      "to": "escolher",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "$destino = $this->escolherDestino($tags);"
+      }
+    },
+    {
+      "id": "escolher-comparar",
+      "from": "escolher",
+      "to": "comparar",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "$arquivos = $this->arquivosAlterados($origem, $destino);"
+      }
+    },
+    {
+      "id": "comparar-nada-mudou",
+      "from": "comparar",
+      "to": "nada-mudou",
+      "role": "branch",
+      "variant": "dashed",
+      "label": {
+        "pt": "nada mudou",
+        "en": "no changes"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "if ($arquivos === []) {"
+      }
+    },
+    {
+      "id": "comparar-resumo",
+      "from": "comparar",
+      "to": "resumo",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "$this->mostrarResumo($origem, $destino, $arquivos);"
+      }
+    },
+    {
+      "id": "resumo-dry-run",
+      "from": "resumo",
+      "to": "dry-run",
+      "role": "branch",
+      "variant": "dashed",
+      "label": "--dry-run",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "if ($this->option('dry-run')) {"
+      }
+    },
+    {
+      "id": "resumo-sem-terminal",
+      "from": "resumo",
+      "to": "sem-terminal",
+      "role": "branch",
+      "variant": "dashed",
+      "label": {
+        "pt": "sem terminal",
+        "en": "no terminal"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "if (! $this->input->isInteractive() && ! $this->option('all') && ! $this->option('only-new')) {"
+      }
+    },
+    {
+      "id": "resumo-branch",
+      "from": "resumo",
+      "to": "branch",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "if (! $this->prepararBranch($destino)) {"
+      }
+    },
+    {
+      "id": "branch-recusou",
+      "from": "branch",
+      "to": "recusou",
+      "role": "branch",
+      "variant": "dashed",
+      "label": {
+        "pt": "recusou branch e direto",
+        "en": "branch, direct declined"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "label: \"Aplicar direto em `{$atual}` mesmo assim?\","
+      }
+    },
+    {
+      "id": "branch-revisar",
+      "from": "branch",
+      "to": "revisar",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "$aplicados = $this->revisarEAplicar($destino, $arquivos);"
+      }
+    },
+    {
+      "id": "revisar-reparar",
+      "from": "revisar",
+      "to": "reparar",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "$this->repararPastasDeTeste();"
+      }
+    },
+    {
+      "id": "reparar-relatar",
+      "from": "reparar",
+      "to": "relatar",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "$this->relatarComposerJson($origem, $destino);"
+      }
+    },
+    {
+      "id": "relatar-encerrar",
+      "from": "relatar",
+      "to": "encerrar",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "$this->encerrar($destino, $aplicados, $origem);"
+      }
+    },
+    {
+      "id": "encerrar-desvincular",
+      "from": "encerrar",
+      "to": "desvincular",
+      "role": "main",
+      "label": "finally",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "if (! $this->option('keep-remote')) {"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": {
+        "pt": "O finally",
+        "en": "finally"
+      },
+      "items": [
+        {
+          "pt": "Toda saída depois de vincularKit() passa pelo finally: desvincularKit() apaga as tags kit-* e o remote kit, salvo com --keep-remote.",
+          "en": "Every exit after vincularKit() goes through finally: desvincularKit() deletes kit-* tags and kit remote, unless --keep-remote."
+        },
+        {
+          "pt": "Só o pré-voo reprovado sai antes do vínculo, sem nada a desfazer.",
+          "en": "Only failed preflight exits before link, with nothing to undo."
+        },
+        {
+          "pt": "Com --dry-run o pré-voo não exige árvore limpa, mas o remote e as tags são criados do mesmo jeito, e o finally os apaga.",
+          "en": "With --dry-run, preflight allows a dirty tree, but remote and tags are still created, and finally deletes them."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Nada é aplicado sem aprovação",
+        "en": "All changes need approval"
+      },
+      "items": [
+        {
+          "pt": "Com origem conhecida, a comparação é tag contra tag; sem ela, a tag de destino contra a árvore de trabalho.",
+          "en": "With known source, comparison is tag to tag; otherwise, target tag to working tree."
+        },
+        {
+          "pt": "Só entram os CAMINHOS_DO_KIT desta versão unidos aos da versão destino.",
+          "en": "Only union of this version's and target version's CAMINHOS_DO_KIT is included."
+        },
+        {
+          "pt": "Cada arquivo pede uma escolha: ver o diff, aplicar, pular, aplicar o resto em lote ou parar.",
+          "en": "Each file asks for a choice: view diff, apply, skip, bulk apply rest or stop."
+        },
+        {
+          "pt": "--all e --only-new trocam a revisão por uma confirmação do lote, dispensada sem terminal.",
+          "en": "--all and --only-new replace review with bulk confirmation, skipped without terminal."
+        },
+        {
+          "pt": "Arquivo removido do kit nunca é apagado: o comando avisa e a decisão fica com você.",
+          "en": "Files removed from kit are never deleted: command warns and leaves decision to you."
+        },
+        {
+          "pt": "O composer.json só é relatado, com os pacotes e scripts que mudaram, para cópia à mão.",
+          "en": "composer.json is only reported, listing changed packages and scripts for manual copy."
+        },
+        {
+          "pt": "Nada é commitado: o fim lista os próximos passos, de git diff --staged a composer test.",
+          "en": "Nothing committed: ending lists next steps, from git diff --staged to composer test."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "A classe que roda é a instalada",
+        "en": "Installed class runs"
+      },
+      "items": [
+        {
+          "pt": "O próprio kit:update está entre os arquivos que ele atualiza, e a versão nova só vale na execução seguinte.",
+          "en": "kit:update itself is among files it updates; new version only takes effect on next run."
+        },
+        {
+          "pt": "caminhosDoKit() lê a lista da versão destino; se a leitura falhar e o próprio kit:update for aplicado, o aviso final traz o comando para rodar de novo com --from.",
+          "en": "caminhosDoKit() reads target version list; if read fails and kit:update itself is applied, final warning gives command to rerun with --from."
+        }
+      ]
+    }
+  ]
+}

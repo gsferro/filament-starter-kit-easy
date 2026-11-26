@@ -13,7 +13,7 @@ Everything below comes installed, published and registered on the panels — the
 | [laravel/framework](https://packagist.org/packages/laravel/framework) | the framework |
 | [filament/filament](https://packagist.org/packages/filament/filament) | the panels, tables, forms and widgets |
 | [laravel/tinker](https://packagist.org/packages/laravel/tinker) | Laravel's REPL |
-| [livewire/blaze](https://packagist.org/packages/livewire/blaze) | optimizes Blade components by folding them into the parent template |
+| [livewire/blaze](https://packagist.org/packages/livewire/blaze) | optimizes Blade components by folding them into the parent template — installed, but unused in the kit's code today ([details](../qualidade-de-codigo/)) |
 
 ## Administration and security
 
@@ -27,7 +27,7 @@ Everything below comes installed, published and registered on the panels — the
 | [tapp/filament-authentication-log](https://packagist.org/packages/tapp/filament-authentication-log) | login history, IP and device |
 | [owen-it/laravel-auditing](https://packagist.org/packages/owen-it/laravel-auditing) | change trail for your models |
 | [tapp/filament-auditing](https://packagist.org/packages/tapp/filament-auditing) | the screen for that trail inside the panel |
-| [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | activity log (spatie/laravel-activitylog) in Filament |
+| [syriable/filament-activitylog](https://packagist.org/packages/syriable/filament-activitylog) | activity log (spatie/laravel-activitylog) in Filament — installed, but unused in the kit's code today |
 | [bezhansalleh/filament-panel-switch](https://packagist.org/packages/bezhansalleh/filament-panel-switch) | panel switching from the user menu |
 | [laravel/socialite](https://packagist.org/packages/laravel/socialite) | social login (Google, GitHub, LinkedIn, X), opt-in per provider |
 | [ddr/filament-captcha](https://packagist.org/packages/ddr/filament-captcha) | anti-robot challenge on the public screens (reCAPTCHA v2/v3, Turnstile, hCaptcha), opt-in; the kit wraps it with fail-closed verification and logging ([details](../../autenticacao/protecao-anti-robo/)) |
@@ -68,18 +68,19 @@ Everything below comes installed, published and registered on the panels — the
 | [gsferro/filament-odometer-easy](https://packagist.org/packages/gsferro/filament-odometer-easy) | animated counters in tables, infolists, stats and badges |
 | [gsferro/odometer-easy](https://packagist.org/packages/gsferro/odometer-easy) | the odometer base, outside Filament |
 | [gsferro/filament-stat-plus-easy](https://packagist.org/packages/gsferro/filament-stat-plus-easy) | stat cards with a corner icon, colored border and skeleton |
-| [awcodes/filament-badgeable-column](https://packagist.org/packages/awcodes/filament-badgeable-column) | badges inside table columns |
+| [awcodes/filament-badgeable-column](https://packagist.org/packages/awcodes/filament-badgeable-column) | badges inside table columns — installed, but unused in the kit's code today |
 | [asmit/resized-column](https://packagist.org/packages/asmit/resized-column) | columns resizable by the user |
 | [sehsah/filament-remember-table](https://packagist.org/packages/sehsah/filament-remember-table) | saved table views (named filters, search, sort, grouping and columns, per user and per organization), opt-in in the settings ([details](../../recursos/visoes-de-tabela-e-carregamento/)) |
 | [asignua/filament-infinite-scroll](https://packagist.org/packages/asignua/filament-infinite-scroll) | infinite scroll or a "Load more" button on every table, opt-in in the settings ([details](../../recursos/visoes-de-tabela-e-carregamento/)) |
 | [laboiteacode/filament-dashboard-widgets](https://packagist.org/packages/laboiteacode/filament-dashboard-widgets) | ready-made metric, goal, breakdown and trend widgets |
 | [mddev31/filament-dynamic-dashboard](https://packagist.org/packages/mddev31/filament-dynamic-dashboard) | user-configurable dashboard: drag and resize widgets |
-| [lara-zeus/progress](https://packagist.org/packages/lara-zeus/progress) | progress bars in columns and entries |
+| [lara-zeus/progress](https://packagist.org/packages/lara-zeus/progress) | progress bars in columns and entries — installed, but unused in the kit's code today |
 | [wallacemartinss/filament-onboarding](https://packagist.org/packages/wallacemartinss/filament-onboarding) | checklists and guided tours, authored in `/admin` |
 | [anselmokossa/filament-sentinel](https://packagist.org/packages/anselmokossa/filament-sentinel) | error pages (403, 404, 419, 500, 503) that look like the panel |
 | [flowframe/laravel-trend](https://packagist.org/packages/flowframe/laravel-trend) | period aggregation for the widgets' charts |
 | [bezhansalleh/filament-language-switch](https://packagist.org/packages/bezhansalleh/filament-language-switch) | language switcher on the three panels and on the login screens |
 | [harvirsidhu/filament-cards](https://packagist.org/packages/harvirsidhu/filament-cards) | the card grid of the [navigation hubs](../../recursos/hub-de-navegacao/) |
+| [hoceineel/filament-quick-action-dock](https://packagist.org/packages/hoceineel/filament-quick-action-dock) | the floating button of the [shortcut dock](../../recursos/dock-de-atalhos/): up to 10 favourites per user, from any panel, opt-in per panel in the settings |
 | [leandrocfe/filament-apex-charts](https://packagist.org/packages/leandrocfe/filament-apex-charts) | ApexCharts charts in the dashboard widgets |
 | [solution-forest/filament-simplelightbox](https://packagist.org/packages/solution-forest/filament-simplelightbox) | lightbox to enlarge images in tables and infolists |
 | [mortalkiller/filament-page-header](https://packagist.org/packages/mortalkiller/filament-page-header) | the rich header on record screens — avatar, status and metadata. Recipe in [`wikis/receitas.md`](https://github.com/gsferro/filament-starter-kit-easy/blob/main/wikis/receitas.md#cabeçalho-rico-num-resource-com-relations) |
@@ -94,7 +95,7 @@ Everything below comes installed, published and registered on the panels — the
 | [filament/spatie-laravel-media-library-plugin](https://packagist.org/packages/filament/spatie-laravel-media-library-plugin) | the media layer (uploads, collections, conversions) in the form, table and infolist components |
 | [mike-bronner/laravel-model-caching](https://packagist.org/packages/mike-bronner/laravel-model-caching) | automatic caching of Eloquent queries |
 | [predis/predis](https://packagist.org/packages/predis/predis) | pure-PHP Redis client (no extension needed) |
-| [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket for real-time notifications |
+| [laravel/reverb](https://packagist.org/packages/laravel/reverb) | WebSocket that Docker brings up in the `app` and `realtime` profiles; Filament's Echo ships unconfigured, so notifications still arrive by polling |
 
 > **Engines under the plugins**, installed as dependencies (you don't declare them, but they're what actually runs): `spatie/laravel-permission` (Shield), `spatie/laravel-health` (the checks), `spatie/laravel-activitylog` (the activity log), `spatie/laravel-medialibrary` (the attachments) and `livewire/livewire` (all of Filament).
 
@@ -117,9 +118,12 @@ php artisan modelCache:clear      # clears the model cache
 |---|---|
 | [pestphp/pest](https://packagist.org/packages/pestphp/pest) + [pest-plugin-laravel](https://packagist.org/packages/pestphp/pest-plugin-laravel) | the test suite |
 | [phpunit/phpunit](https://packagist.org/packages/phpunit/phpunit) | the engine under Pest |
+| [brianium/paratest](https://packagist.org/packages/brianium/paratest) | parallel tests (`composer test:kit` runs with `--parallel`) |
 | [larastan/larastan](https://packagist.org/packages/larastan/larastan) | static analysis (`composer types:check`) |
 | [laravel/pint](https://packagist.org/packages/laravel/pint) | formatting (`composer lint`) |
 | [laraveldaily/filacheck](https://packagist.org/packages/laraveldaily/filacheck) | Filament-specific lint (`composer filament:check`) |
+| [icanhazstring/composer-unused](https://packagist.org/packages/icanhazstring/composer-unused) | flags a dependency declared and never used (`composer deps:unused`, part of `composer deps:check`) — a report, it fails nothing ([details](../qualidade-de-codigo/)) |
+| [maglnet/composer-require-checker](https://packagist.org/packages/maglnet/composer-require-checker) | flags a symbol used from a package that `composer.json` does not declare (`composer deps:require`, part of `composer deps:check`) — a report, it fails nothing |
 | [laravel-lang/common](https://packagist.org/packages/laravel-lang/common) | pt-BR translations for Laravel |
 | [laravel/pail](https://packagist.org/packages/laravel/pail) | real-time logs in the terminal |
 | [laravel/pao](https://packagist.org/packages/laravel/pao) | JSON output for tests and static analysis **when an AI agent runs the commands**; humans see no difference. Turn it off with `PAO_DISABLE=1` — see [working with agents](../../operacao/agentes-de-ia/) |

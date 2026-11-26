@@ -1,0 +1,50 @@
+{
+  "slug": "infra-multi-tenancy-opt-in",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/infra — Multi-tenancy (opcional)",
+    "en": "/infra — Multi-tenancy (opt-in)"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Models\\Projeto",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Models\\Tenant",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Traits\\BelongsToTenant",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\ContextoDePapeis",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\CorPrimaria",
+      "row": 3,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

@@ -1,0 +1,232 @@
+{
+  "slug": "infra-resumo",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/infra — resumo por domínio",
+    "en": "/infra — summary by domain"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "painel:infra",
+      "row": 0,
+      "col": 0
+    }
+  ],
+  "agrupamentos": [
+    {
+      "id": "grupo-acesso-e-autenticacao",
+      "rotulo": {
+        "pt": "Acesso e autenticação",
+        "en": "Access and authentication"
+      },
+      "membros": [
+        "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+        "App\\Filament\\Pages\\Auth\\TelaLogin",
+        "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+        "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+        "App\\Filament\\Pages\\MyProfilePage",
+        "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
+        "App\\Livewire\\DefinirSenhaPorEmail",
+        "App\\Livewire\\InformacoesPessoais",
+        "App\\Models\\User",
+        "App\\Support\\ConfiguracaoDoLogin",
+        "App\\Support\\DestinoAposLogin",
+        "App\\Support\\EmailComMais",
+        "App\\Support\\RegistroAberto",
+        "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+        "Filament\\Http\\Middleware\\Authenticate",
+        "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+        "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+        "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+        "lockscreen\\FilamentLockscreen\\Lockscreen"
+      ],
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "grupo-autorizacao",
+      "rotulo": {
+        "pt": "Autorização",
+        "en": "Authorization"
+      },
+      "membros": [
+        "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+        "App\\Support\\Paineis",
+        "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin"
+      ],
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "grupo-convites",
+      "rotulo": {
+        "pt": "Convites",
+        "en": "Invitations"
+      },
+      "membros": [
+        "App\\Models\\Convite",
+        "App\\Notifications\\ConviteDeAcesso"
+      ],
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "grupo-multi-tenancy-opt-in",
+      "rotulo": {
+        "pt": "Multi-tenancy (opt-in)",
+        "en": "Multi-tenancy (opt-in)"
+      },
+      "membros": [
+        "App\\Models\\Projeto",
+        "App\\Models\\Tenant",
+        "App\\Support\\ContextoDePapeis",
+        "App\\Support\\CorPrimaria",
+        "App\\Traits\\BelongsToTenant"
+      ],
+      "row": 1,
+      "col": 3
+    },
+    {
+      "id": "grupo-administracao",
+      "rotulo": {
+        "pt": "Administração",
+        "en": "Administration"
+      },
+      "membros": [
+        "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
+        "App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource",
+        "App\\Filament\\Pages\\DashboardClassico",
+        "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+        "App\\Support\\IdentidadeDoKit",
+        "App\\Support\\TutorialGuiado",
+        "Filament\\Widgets\\AccountWidget",
+        "Filament\\Widgets\\FilamentInfoWidget",
+        "Leandrocfe\\FilamentApexCharts\\FilamentApexChartsPlugin",
+        "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin"
+      ],
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "grupo-infraestrutura",
+      "rotulo": {
+        "pt": "Infraestrutura",
+        "en": "Infrastructure"
+      },
+      "membros": [
+        "App\\Filament\\Infra\\Pages\\BackupRunsPage",
+        "App\\Filament\\Infra\\Pages\\Pulse",
+        "App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource",
+        "App\\Filament\\Infra\\Resources\\ComposerReleasePackages\\ComposerReleasePackageResource",
+        "App\\Filament\\Infra\\Widgets\\AuditoriaPorEvento",
+        "App\\Filament\\Infra\\Widgets\\AuditoriaRecente",
+        "App\\Filament\\Infra\\Widgets\\AutenticacaoStats",
+        "App\\Filament\\Infra\\Widgets\\ComposerReleaseOverviewWidget",
+        "App\\Filament\\Infra\\Widgets\\FilasPorFila",
+        "App\\Filament\\Infra\\Widgets\\FilasStats",
+        "App\\Filament\\Infra\\Widgets\\FilasTaxaDeSucesso",
+        "App\\Filament\\Infra\\Widgets\\IaCustoPorTask",
+        "App\\Filament\\Infra\\Widgets\\IaExecucoesPorDia",
+        "App\\Filament\\Infra\\Widgets\\IaExecucoesPorStatus",
+        "App\\Filament\\Infra\\Widgets\\IaStats",
+        "App\\Filament\\Infra\\Widgets\\IaTokensPorDriver",
+        "App\\Filament\\Infra\\Widgets\\PacotesComposer",
+        "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoPorStatus",
+        "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoStats",
+        "App\\Filament\\Infra\\Widgets\\UltimoBackup",
+        "App\\Filament\\Infra\\Widgets\\UltimosAcessos",
+        "App\\Support\\RetencaoDeExcecoes",
+        "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+        "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+        "Bityukov\\CommandCenter\\Filament\\CommandCenterPlugin",
+        "Bityukov\\CommandCenter\\Filament\\Pages\\Commands",
+        "Bityukov\\CommandCenter\\Filament\\Pages\\History",
+        "Bityukov\\CommandCenter\\Filament\\Pages\\RunView",
+        "Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource",
+        "CmsMulti\\FilamentClearCache\\FilamentClearCachePlugin",
+        "Croustibat\\FilamentJobsMonitor\\FilamentJobsMonitorPlugin",
+        "Croustibat\\FilamentJobsMonitor\\Resources\\QueueMonitorResource",
+        "LaBoiteACode\\DependencyGraph\\DependencyGraphPlugin",
+        "LaBoiteACode\\DependencyGraph\\Filament\\Pages\\DependencyGraphPage",
+        "LaBoiteACode\\FilamentLogsExplorer\\FilamentLogsExplorerPlugin",
+        "LaBoiteACode\\FilamentLogsExplorer\\Pages\\LogsExplorer",
+        "MominAlZaraa\\FilamentComposerReleaseNotifier\\FilamentComposerReleaseNotifierPlugin",
+        "Promethys\\Revive\\Pages\\RecycleBin",
+        "Promethys\\Revive\\RevivePlugin",
+        "ShuvroRoy\\FilamentSpatieLaravelHealth\\FilamentSpatieLaravelHealthPlugin",
+        "ShuvroRoy\\FilamentSpatieLaravelHealth\\Pages\\HealthCheckResults",
+        "Tapp\\FilamentAuditing\\Filament\\Resources\\Audits\\AuditResource",
+        "Tapp\\FilamentAuditing\\FilamentAuditingPlugin",
+        "Tapp\\FilamentAuthenticationLog\\FilamentAuthenticationLogPlugin",
+        "Tapp\\FilamentAuthenticationLog\\Resources\\AuthenticationLogResource",
+        "Tapp\\FilamentMailLog\\FilamentMailLogPlugin",
+        "Tapp\\FilamentMailLog\\Resources\\MailLogResource"
+      ],
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "grupo-produtividade-e-ui",
+      "rotulo": {
+        "pt": "Produtividade e UI",
+        "en": "Productivity and UI"
+      },
+      "membros": [
+        "App\\Filament\\Infra\\Pages\\Dashboard",
+        "App\\Filament\\Pages\\PrimeirosPassos",
+        "App\\Livewire\\PreferenciasDeAparencia",
+        "App\\Support\\AparenciaDoUsuario",
+        "App\\Support\\DashboardDinamico",
+        "App\\Support\\DensidadeDoLayout",
+        "App\\Support\\DockDeAtalhos",
+        "App\\Support\\ModoDoMenu",
+        "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+        "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale",
+        "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
+        "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+        "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
+        "pxlrbt\\FilamentEnvironmentIndicator\\EnvironmentIndicatorPlugin",
+        "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+        "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin"
+      ],
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "grupo-pilha-da-requisicao",
+      "rotulo": {
+        "pt": "Pilha da requisição",
+        "en": "Request stack"
+      },
+      "membros": [
+        "Filament\\Http\\Middleware\\AuthenticateSession",
+        "Filament\\Http\\Middleware\\DisableBladeIconComponents",
+        "Filament\\Http\\Middleware\\DispatchServingFilamentEvent",
+        "Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse",
+        "Illuminate\\Cookie\\Middleware\\EncryptCookies",
+        "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestForgery",
+        "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+        "Illuminate\\Session\\Middleware\\StartSession",
+        "Illuminate\\View\\Middleware\\ShareErrorsFromSession",
+        "panel:infra"
+      ],
+      "row": 3,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 4,
+    "cellW": 240,
+    "cellH": 64,
+    "gapX": 90,
+    "gapY": 48
+  }
+}

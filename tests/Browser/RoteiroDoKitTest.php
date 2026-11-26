@@ -6,11 +6,13 @@ use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 
 /**
- * O roteiro de features do README, em navegador real.
+ * O roteiro de features, em navegador real.
  *
- * Cada cenário cita o **F-XX** da seção `## Roteiro de features`. É esse número que liga a
- * promessa ("o kit entrega X") à prova ("e aqui está o teste que mostra"). Se uma feature do
- * roteiro deixar de funcionar, é aqui que aparece — e o README diz quais têm essa marca (🔵) e
+ * O roteiro é o catálogo único do kit: a página "Roteiro de features" do site
+ * (`docs/pt/operacao/roteiro-de-features.md` e o espelho em `docs/en/`), que saiu do README na
+ * migração para o site. Cada cenário cita o **F-XX** de lá. É esse número que liga a promessa
+ * ("o kit entrega X") à prova ("e aqui está o teste que mostra"). Se uma feature do roteiro deixar
+ * de funcionar, é aqui que aparece — e a coluna "Teste" do roteiro diz quais têm essa marca (🔵) e
  * quais dependem de worker, cron ou Docker e por isso não têm.
  *
  * O que NÃO entra aqui, para não duplicar:

@@ -1,0 +1,478 @@
+{
+  "slug": "infra-ledger-de-ia",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Ledger de IA visto do /infra",
+    "en": "AI ledger viewed from /infra"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "dashed": {
+          "label": {
+            "pt": "evento do agente",
+            "en": "agent event"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "chamada no servidor",
+            "en": "server call"
+          }
+        },
+        "emphasis": {
+          "label": {
+            "pt": "ação no navegador",
+            "en": "browser action"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta",
+            "en": "reply"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      },
+      "sublabel": {
+        "pt": "papel infra",
+        "en": "infra role"
+      }
+    },
+    {
+      "id": "resource",
+      "type": "frontend",
+      "label": "AiRunResource",
+      "sublabel": "/infra/execucoes-ia",
+      "sources": [
+        {
+          "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+          "trecho": "class AiRunResource extends Resource",
+          "label": "AiRunResource"
+        },
+        {
+          "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+          "trecho": "return (Auth::user()?->can('ver-ai-tasks') ?? false) && parent::canAccess();",
+          "label": "AiRunResource@canAccess"
+        },
+        {
+          "arquivo": "app/Providers/KitServiceProvider.php",
+          "trecho": "Gate::define('ver-ai-tasks', $doPainelInfra);",
+          "label": "KitServiceProvider"
+        }
+      ]
+    },
+    {
+      "id": "exporter",
+      "type": "backend",
+      "label": "AiRunExporter",
+      "sublabel": "CSV",
+      "sources": [
+        {
+          "arquivo": "app/Filament/Exports/AiRunExporter.php",
+          "trecho": "class AiRunExporter extends ExportadorDoKit",
+          "label": "AiRunExporter"
+        },
+        {
+          "arquivo": "app/Filament/Exports/AiRunExporter.php",
+          "trecho": "protected static function colunas(): array",
+          "label": "AiRunExporter@colunas"
+        }
+      ]
+    },
+    {
+      "id": "iastats",
+      "type": "frontend",
+      "label": "IaStats",
+      "sublabel": {
+        "pt": "widget do /infra",
+        "en": "/infra widget"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Infra/Widgets/IaStats.php",
+          "trecho": "class IaStats extends StatsOverviewWidget",
+          "label": "IaStats"
+        },
+        {
+          "arquivo": "app/Filament/Infra/Widgets/IaStats.php",
+          "trecho": "$custo  = (float) AiRun::query()->sum('cost');",
+          "label": "IaStats@getStats"
+        }
+      ]
+    },
+    {
+      "id": "airun",
+      "type": "database",
+      "label": "AiRun",
+      "sublabel": {
+        "pt": "tabela ai_runs",
+        "en": "ai_runs table"
+      },
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164948_create_ai_runs_table.php",
+          "trecho": "Schema::create(config('ai-tasks.table', 'ai_runs'), function (Blueprint $t) {",
+          "label": "create_ai_runs_table"
+        },
+        {
+          "arquivo": "database/migrations/2026_08_12_164948_create_ai_runs_table.php",
+          "trecho": "$t->string('tenant_id')->index();",
+          "label": "create_ai_runs_table"
+        },
+        {
+          "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+          "trecho": "protected static ?string $model = AiRun::class;",
+          "label": "AiRunResource"
+        }
+      ]
+    },
+    {
+      "id": "registrar",
+      "type": "backend",
+      "label": "RegistrarAiRun",
+      "sublabel": "listener",
+      "sources": [
+        {
+          "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+          "trecho": "final class RegistrarAiRun",
+          "label": "RegistrarAiRun"
+        },
+        {
+          "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+          "trecho": "public function handle(AgentPrompted $event): void",
+          "label": "RegistrarAiRun@handle"
+        }
+      ]
+    },
+    {
+      "id": "resolvedor",
+      "type": "backend",
+      "label": "ResolvedorDe",
+      "sublabel": "Tenant",
+      "sources": [
+        {
+          "arquivo": "app/Ai/Support/ResolvedorDeTenant.php",
+          "trecho": "final class ResolvedorDeTenant",
+          "label": "ResolvedorDeTenant"
+        },
+        {
+          "arquivo": "app/Ai/Support/ResolvedorDeTenant.php",
+          "trecho": "public function id(): string",
+          "label": "ResolvedorDeTenant@id"
+        }
+      ]
+    },
+    {
+      "id": "agentebase",
+      "type": "backend",
+      "label": "AgenteBase",
+      "sublabel": {
+        "pt": "agentes do kit",
+        "en": "kit agents"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Ai/Agents/AgenteBase.php",
+          "trecho": "abstract class AgenteBase implements Agent, HasMiddleware",
+          "label": "AgenteBase"
+        },
+        {
+          "arquivo": "app/Ai/Agents/AgenteBase.php",
+          "trecho": "use Promptable;",
+          "label": "AgenteBase"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 636,
+      "label": {
+        "pt": "Gravação, a cada execução",
+        "en": "Saving on each run"
+      }
+    },
+    {
+      "from": 652,
+      "to": 1521,
+      "label": {
+        "pt": "Leitura no /infra",
+        "en": "Reading in /infra"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "evento",
+      "from": "agentebase",
+      "to": "registrar",
+      "y": 172,
+      "label": "AgentPrompted/AgentStreamed",
+      "variant": "dashed",
+      "note": {
+        "pt": "fim de prompt() ou de stream() de qualquer agente do laravel/ai; agente que não estende AgenteBase vira task pelo nome da classe",
+        "en": "end of prompt() or stream() for any laravel/ai agent; agents outside AgenteBase use class name as task"
+      },
+      "prova": {
+        "arquivo": "app/Providers/KitServiceProvider.php",
+        "trecho": "Event::listen([AgentPrompted::class, AgentStreamed::class], RegistrarAiRun::class);"
+      }
+    },
+    {
+      "id": "pedir-tenant",
+      "from": "registrar",
+      "to": "resolvedor",
+      "y": 297,
+      "label": "id()",
+      "variant": "default",
+      "prova": {
+        "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+        "trecho": "'tenant_id'    => app(ResolvedorDeTenant::class)->id(),"
+      }
+    },
+    {
+      "id": "tenant",
+      "from": "resolvedor",
+      "to": "registrar",
+      "y": 327,
+      "label": "tenant_id",
+      "variant": "return",
+      "note": {
+        "pt": "a organização aberta no /app com tenancy; sem ela (sem tenancy, /admin, /infra, job ou CLI), ai-tasks.default_tenant ('default'), porque a coluna é NOT NULL",
+        "en": "open /app organization with tenancy; without it (no tenancy, /admin, /infra, job or CLI), ai-tasks.default_tenant ('default'), since column is NOT NULL"
+      },
+      "prova": {
+        "arquivo": "app/Ai/Support/ResolvedorDeTenant.php",
+        "trecho": "return (string) ($organizacao?->getKey() ?? config('ai-tasks.default_tenant', 'default'));"
+      }
+    },
+    {
+      "id": "gravar",
+      "from": "registrar",
+      "to": "airun",
+      "y": 474,
+      "label": "AiRun::create",
+      "variant": "default",
+      "note": {
+        "pt": "task, driver, model, tokens, subject = usuário do agente, status ok e custo pelo preço de ai-tasks.drivers; o texto da resposta só com ai-tasks.store_request; falha ao gravar só loga, sem derrubar o agente",
+        "en": "task, driver, model, tokens, subject = agent user, status ok and cost from ai-tasks.drivers pricing; reply text only with ai-tasks.store_request; save failure only logs, without failing agent"
+      },
+      "prova": {
+        "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+        "trecho": "AiRun::create(["
+      }
+    },
+    {
+      "id": "abrir-ledger",
+      "from": "navegador",
+      "to": "resource",
+      "y": 674,
+      "label": "GET /infra/execucoes-ia",
+      "variant": "emphasis",
+      "note": {
+        "pt": "canAccess exige o gate ver-ai-tasks (papel do painel infra no contexto global) e ViewAny:AiRun; o master_global passa pelo Gate::before",
+        "en": "canAccess needs ver-ai-tasks gate (infra panel role in global context) and ViewAny:AiRun; master_global passes via Gate::before"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+        "trecho": "protected static ?string $slug = 'execucoes-ia';"
+      }
+    },
+    {
+      "id": "listar",
+      "from": "resource",
+      "to": "airun",
+      "y": 799,
+      "label": {
+        "pt": "lista, mais recentes antes",
+        "en": "list, newest first"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "somente leitura: sem criar, editar nem excluir; filtros de status, tarefa e driver; com tenancy, todas as organizações juntas, sem coluna de organização",
+        "en": "read only: no create, edit or delete; status, task and driver filters; with tenancy, all organizations together, no organization column"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/Tables/AiRunsTable.php",
+        "trecho": "->defaultSort('created_at', 'desc')"
+      }
+    },
+    {
+      "id": "detalhe",
+      "from": "resource",
+      "to": "airun",
+      "y": 935,
+      "label": {
+        "pt": "detalhe da execução",
+        "en": "run details"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "consumo (tokens, custo em USD, duração); o request guarda só metadados (modelo, conversa, se foi stream); o texto da resposta só aparece com ai-tasks.store_request",
+        "en": "usage (tokens, USD cost, duration); request holds only metadata (model, conversation, streamed flag); reply text only with ai-tasks.store_request"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+        "trecho": "'view'  => ViewAiRun::route('/{record}'),"
+      }
+    },
+    {
+      "id": "link-ai-tasks",
+      "from": "resource",
+      "to": "navegador",
+      "y": 1082,
+      "label": {
+        "pt": "link /ai-tasks (nova aba)",
+        "en": "link /ai-tasks (new tab)"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "dashboard do pacote ai-tasks, atrás do mesmo gate ver-ai-tasks",
+        "en": "ai-tasks package dashboard, behind same ver-ai-tasks gate"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/Pages/ListAiRuns.php",
+        "trecho": "->url(fn (): string => route('ai-tasks.index'))"
+      }
+    },
+    {
+      "id": "exportar",
+      "from": "navegador",
+      "to": "resource",
+      "y": 1163,
+      "label": {
+        "pt": "Exportar CSV",
+        "en": "Export CSV"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "a ação é autorizada por Export:AiRun",
+        "en": "action authorized by Export:AiRun"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/Pages/ListAiRuns.php",
+        "trecho": "ExportAction::make()"
+      }
+    },
+    {
+      "id": "exportador",
+      "from": "resource",
+      "to": "exporter",
+      "y": 1233,
+      "label": {
+        "pt": "monta o CSV",
+        "en": "builds the CSV"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/Pages/ListAiRuns.php",
+        "trecho": "->exporter(AiRunExporter::class)"
+      }
+    },
+    {
+      "id": "colunas",
+      "from": "exporter",
+      "to": "airun",
+      "y": 1303,
+      "label": {
+        "pt": "colunas de custo e tempo",
+        "en": "cost and time columns"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "tarefa, driver, modelo, status, tokens, custo, duração, início e fim; request e response ficam fora",
+        "en": "task, driver, model, status, tokens, cost, duration, start and end; request and response omitted"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Exports/AiRunExporter.php",
+        "trecho": "protected static function colunas(): array"
+      }
+    },
+    {
+      "id": "abrir-dashboard",
+      "from": "navegador",
+      "to": "iastats",
+      "y": 1406,
+      "label": {
+        "pt": "GET /infra (painel inicial)",
+        "en": "GET /infra (home panel)"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "->discoverWidgets(in: app_path('Filament/Infra/Widgets')"
+      }
+    },
+    {
+      "id": "totais",
+      "from": "iastats",
+      "to": "airun",
+      "y": 1436,
+      "label": {
+        "pt": "total, erros, tokens, custo",
+        "en": "total, errors, tokens, cost"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "IaExecucoesPorDia, IaExecucoesPorStatus, IaCustoPorTask e IaTokensPorDriver também leem ai_runs",
+        "en": "IaExecucoesPorDia, IaExecucoesPorStatus, IaCustoPorTask and IaTokensPorDriver also read ai_runs"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Infra/Widgets/IaStats.php",
+        "trecho": "$total = AiRun::query()->count();"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "ai-tasks.store_request (AI_STORE_REQUEST, padrão desligado): ligado, ai_runs guarda o texto da resposta",
+          "en": "ai-tasks.store_request (AI_STORE_REQUEST, default off): when on, ai_runs stores reply text"
+        },
+        {
+          "pt": "ai-tasks.default_tenant (AI_DEFAULT_TENANT, padrão 'default'): o tenant_id de execução fora de organização",
+          "en": "ai-tasks.default_tenant (AI_DEFAULT_TENANT, default 'default'): run tenant_id outside organizations"
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Sem e com tenant",
+        "en": "Tenant on/off"
+      },
+      "items": [
+        {
+          "pt": "O caminho é o mesmo. Com tenancy, a execução nascida no /app/{slug} grava o id da organização; o /infra lista e exporta as de todas as organizações juntas, sem mostrar tenant_id",
+          "en": "Same path. With tenancy, runs started in /app/{slug} save organization id; /infra lists and exports all organizations together, without showing tenant_id"
+        }
+      ]
+    }
+  ]
+}

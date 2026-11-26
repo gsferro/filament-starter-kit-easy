@@ -1,0 +1,34 @@
+{
+  "slug": "app-convites-sem",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Convites, sem tenant",
+    "en": "/app — Invitations, tenancy off"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Models\\Convite",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Notifications\\ConviteDeAcesso",
+      "row": 0,
+      "col": 2
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

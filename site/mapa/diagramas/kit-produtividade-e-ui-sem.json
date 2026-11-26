@@ -1,0 +1,113 @@
+{
+  "slug": "kit-produtividade-e-ui-sem",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Produtividade e UI, sem tenant",
+    "en": "Kit — Productivity and UI, tenancy off"
+  },
+  "paineis": [],
+  "modos": [
+    "sem"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Console\\Commands\\KitMidiaPrivada",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Livewire\\ChecklistDoOnboarding",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Sehsah\\FilamentRememberTable\\Models\\TableView",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Policies\\ProjetoPolicy",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "Asignua\\FilamentInfiniteScroll\\FilamentInfiniteScrollServiceProvider",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "BezhanSalleh\\PanelSwitch\\PanelSwitchServiceProvider",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\AssinaturaDoRodape",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Services\\Dashboard\\CriadorDeDashboardPadrao",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\ImportExport\\ExportadorDoKit",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\ImportExport\\ImportadorDoKit",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Observers\\TenantObserver",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Models\\Tenant",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\DashboardDinamico",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\AgentesDeIa",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\CarregamentoDaTabela",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\Paineis",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "Filament\\Actions\\Exports\\Exporter",
+      "row": 5,
+      "col": 2
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44,
+    "teto": 3
+  }
+}

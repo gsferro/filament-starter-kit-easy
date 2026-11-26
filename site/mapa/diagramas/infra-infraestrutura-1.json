@@ -1,0 +1,146 @@
+{
+  "slug": "infra-infraestrutura-1",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/infra — Infraestrutura (1/2)",
+    "en": "/infra — Infrastructure (1/2)"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Filament\\Infra\\Pages\\BackupRunsPage",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "Bityukov\\CommandCenter\\Filament\\Pages\\Commands",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "LaBoiteACode\\DependencyGraph\\Filament\\Pages\\DependencyGraphPage",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "ShuvroRoy\\FilamentSpatieLaravelHealth\\Pages\\HealthCheckResults",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "Bityukov\\CommandCenter\\Filament\\Pages\\History",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "LaBoiteACode\\FilamentLogsExplorer\\Pages\\LogsExplorer",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Infra\\Pages\\Pulse",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "Promethys\\Revive\\Pages\\RecycleBin",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "Bityukov\\CommandCenter\\Filament\\Pages\\RunView",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "Bityukov\\CommandCenter\\Filament\\CommandCenterPlugin",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "LaBoiteACode\\DependencyGraph\\DependencyGraphPlugin",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "Tapp\\FilamentAuditing\\FilamentAuditingPlugin",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "Tapp\\FilamentAuthenticationLog\\FilamentAuthenticationLogPlugin",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "CmsMulti\\FilamentClearCache\\FilamentClearCachePlugin",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "MominAlZaraa\\FilamentComposerReleaseNotifier\\FilamentComposerReleaseNotifierPlugin",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+      "row": 7,
+      "col": 1
+    },
+    {
+      "id": "Croustibat\\FilamentJobsMonitor\\FilamentJobsMonitorPlugin",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "LaBoiteACode\\FilamentLogsExplorer\\FilamentLogsExplorerPlugin",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "Tapp\\FilamentMailLog\\FilamentMailLogPlugin",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "ShuvroRoy\\FilamentSpatieLaravelHealth\\FilamentSpatieLaravelHealthPlugin",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "Promethys\\Revive\\RevivePlugin",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "Tapp\\FilamentAuditing\\Filament\\Resources\\Audits\\AuditResource",
+      "row": 6,
+      "col": 2
+    },
+    {
+      "id": "Brimham\\FilamentBackupMonitor\\Pages\\BackupRunsPage",
+      "row": 7,
+      "col": 2
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44,
+    "teto": 3
+  }
+}

@@ -32,6 +32,10 @@ concurrency:
 
 jobs:
   build:
+    # Só a `main` publica (D31 da wiki `mapa-interativo-do-kit`): o mapa interativo liga cada prova ao
+    # commit do build (`/blob/{commit}/…`), e um `workflow_dispatch` de outro ramo publicaria links
+    # para um commit que some quando o ramo some. O dispatch a partir da `main` continua valendo.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     # No NÍVEL DO JOB, e não no passo do build: o conferidor de links precisa descontar o mesmo
@@ -84,6 +88,16 @@ jobs:
           npx astro preview &
           npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000
           node verifica-acessibilidade.mjs
+
+      - name: Conferir o mapa interativo (amostra de acessibilidade, nos dois temas)
+        working-directory: site
+        # O mapa (os HTML do archify em `dist/mapa/`, gerados pelo `npm run build`) tem conferidor
+        # próprio: os CT-B dele e os do conferidor de acessibilidade começam os dois em 01 (D17 da
+        # wiki `mapa-interativo-do-kit`). Usa a prévia que o passo anterior deixou de pé — o
+        # `wait-on` só confirma. ANTES do envio, como os outros conferidores.
+        run: |
+          npx wait-on "http://localhost:4321${DOCS_BASE}/pt/" -t 60000
+          node verifica-mapa.mjs
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

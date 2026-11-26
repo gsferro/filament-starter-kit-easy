@@ -1,0 +1,15 @@
+{
+  "slug": "admin-registro-sem",
+  "tipo": "tree",
+  "construtor": "registro",
+  "titulo": {
+    "pt": "/admin — o que o painel registra, sem tenant",
+    "en": "/admin — what the panel registers, tenancy off"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem"
+  ]
+}

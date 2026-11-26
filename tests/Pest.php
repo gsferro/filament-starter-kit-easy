@@ -17,8 +17,10 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Providers\KitServiceProvider;
 use App\Settings\ConfiguracoesDoKit;
+use App\Support\AgentesDeIa;
 use App\Support\CustomizadorDaInstalacao;
 use App\Support\ProvedorSocial;
+use App\Support\TutorialGuiado;
 use Database\Seeders\PapeisSeeder;
 use Database\Seeders\ShieldPermissionsSeeder;
 use Filament\Facades\Filament;
@@ -36,12 +38,14 @@ use HoceineEl\QuickActionDock\Livewire\QuickActionDock;
 use HoceineEl\QuickActionDock\Support\DockContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -50,6 +54,7 @@ use Laravel\Ai\Models\Conversation;
 use Laravel\Socialite\Two\User as UsuarioDoProvedor;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use PHPUnit\Framework\AssertionFailedError;
 use Psr\Log\LoggerInterface;
 use Sehsah\FilamentRememberTable\Models\TableView;
 use Spatie\LaravelSettings\Models\SettingsProperty;
@@ -3938,4 +3943,1258 @@ function comTelaAssentada(object $pagina): object
         JS);
 
     return $pagina;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mapa interativo — helpers compartilhados pelas guardas do mapa
+|--------------------------------------------------------------------------
+| Wiki `feat/mapa-interativo-do-kit`. As guardas moram em cinco arquivos,
+| escritos em lotes separados: tests/Kit/MapaInterativoTest.php,
+| MapaInterativoDiagramasTest.php, MapaInterativoCatalogoTest.php,
+| MapaInterativoPublicacaoTest.php e tests/Tenancy/MapaInterativoTenancyTest.php.
+| Cada lote trouxe a sua cópia, com prefixo, do que os outros também faziam:
+| ler o modelo e os diagramas, montar o registro de um painel num modo, achar
+| a F-nn de uma peça, ler o catálogo e o índice do git, e decidir o motivo de
+| enfeite. É o clone com outro nome que `.ai/rules/testes.md` proíbe, e o
+| Setup Global do `04` já mandava esses helpers para cá. O helper usado por
+| um arquivo só continua nele.
+|
+| Os que leem `site/` ou `docs/` ou invocam o `git` dependem da árvore do
+| kit (`export-ignore`): o caso que chama leva a sentinela `naArvoreDoKit()`.
+*/
+
+/**
+ * O modelo publicado do mapa: as peças de `site/mapa/pecas.json` e as ligações de
+ * `site/mapa/ligacoes.json`, como estão nos arquivos — duas listas, na ordem do arquivo.
+ *
+ * Lista, e não indexado pelo id, porque a guarda da R8 (o CT-08) precisa ver a peça repetida.
+ * Quem consulta a peça pelo id usa `modeloDoMapaPorId()`.
+ *
+ * @return array{pecas: list<array<string, mixed>>, ligacoes: list<array<string, mixed>>}
+ */
+function modeloDoMapa(): array
+{
+    static $modelo = null;
+
+    return $modelo ??= [
+        'pecas'    => json_decode((string) file_get_contents(base_path('site/mapa/pecas.json')), true, 512, JSON_THROW_ON_ERROR),
+        'ligacoes' => json_decode((string) file_get_contents(base_path('site/mapa/ligacoes.json')), true, 512, JSON_THROW_ON_ERROR),
+    ];
+}
+
+/**
+ * As peças indexadas pelo id; com o id repetido, vale a primeira.
+ *
+ * @param  list<array<string, mixed>>  $pecas
+ * @return array<string, array<string, mixed>>
+ */
+function pecasPorId(array $pecas): array
+{
+    return collect($pecas)->unique('id')->keyBy('id')->all();
+}
+
+/**
+ * O modelo publicado com as peças indexadas pelo id (`pecasPorId()`) e as ligações como estão.
+ *
+ * @return array{pecas: array<string, array<string, mixed>>, ligacoes: list<array<string, mixed>>}
+ */
+function modeloDoMapaPorId(): array
+{
+    $modelo = modeloDoMapa();
+
+    return ['pecas' => pecasPorId($modelo['pecas']), 'ligacoes' => $modelo['ligacoes']];
+}
+
+/**
+ * Os arquivos de diagrama de `site/mapa/diagramas/`, por slug, na ordem dos caminhos. A pasta é o
+ * manifesto: o slug é o nome do arquivo.
+ *
+ * @return array<string, array<string, mixed>>
+ */
+function diagramasDoMapa(): array
+{
+    static $diagramas = null;
+
+    if ($diagramas === null) {
+        $arquivos = glob(base_path('site/mapa/diagramas/*.json')) ?: [];
+        sort($arquivos);
+        $diagramas = [];
+
+        foreach ($arquivos as $arquivo) {
+            $diagramas[basename($arquivo, '.json')] = json_decode((string) file_get_contents($arquivo), true, 512, JSON_THROW_ON_ERROR);
+        }
+    }
+
+    return $diagramas;
+}
+
+/**
+ * A classe de um item que um painel registra: a própria string; o `widget` de um
+ * `WidgetConfiguration`; a classe do objeto; o primeiro item de um callable em array. Closure não
+ * tem classe e devolve `null`.
+ */
+function classeDoRegistro(mixed $valor): ?string
+{
+    if ($valor instanceof Closure) {
+        return null;
+    }
+
+    if (is_string($valor)) {
+        return $valor;
+    }
+
+    if (is_object($valor)) {
+        return property_exists($valor, 'widget') && is_string($valor->widget) ? $valor->widget : $valor::class;
+    }
+
+    if (is_array($valor) && isset($valor[0]) && is_string($valor[0])) {
+        return $valor[0];
+    }
+
+    return null;
+}
+
+/** A classe, a interface, o trait ou o enum existe, pelo autoload. */
+function classeExiste(string $classe): bool
+{
+    return class_exists($classe) || interface_exists($classe) || trait_exists($classe) || enum_exists($classe);
+}
+
+/**
+ * O que o painel registra no modo em que a suíte roda, por tipo, lido do registro vivo (Setup
+ * Global do `04`, getters conferidos no vendor): `getResources()`; `getPages()` mais as páginas que
+ * o painel liga pela configuração (as rotas de autenticação, o perfil e, com tenant, as duas da
+ * organização); `getWidgets()`; `getPlugins()`; e os middlewares, em que o alias `panel:{id}` fica
+ * inteiro, `Classe:parametro` vira `Classe` e o de organização só conta com `hasTenancy()`.
+ *
+ * Quem precisa da lista sem o tipo junta as cinco: `array_merge(...array_values($registro))`.
+ *
+ * @return array{recurso: list<string>, pagina: list<string>, widget: list<string>, plugin: list<string>, middleware: list<string>}
+ */
+function registroVivoDoPainel(Panel $painel): array
+{
+    $unicos = static fn (array $itens): array => array_values(array_unique(array_filter(array_map('classeDoRegistro', $itens))));
+
+    $daConfiguracao = [
+        $painel->getLoginRouteAction(),
+        $painel->getRegistrationRouteAction(),
+        $painel->getRequestPasswordResetRouteAction(),
+        $painel->getResetPasswordRouteAction(),
+        $painel->getEmailVerificationPromptRouteAction(),
+        $painel->getProfilePage(),
+    ];
+
+    if ($painel->hasTenancy()) {
+        $daConfiguracao[] = $painel->getTenantRegistrationPage();
+        $daConfiguracao[] = $painel->getTenantProfilePage();
+    }
+
+    $paginas = array_values(array_filter(
+        $unicos(array_merge($painel->getPages(), $daConfiguracao)),
+        static fn (string $classe): bool => class_exists($classe),
+    ));
+
+    $middlewares = [];
+
+    foreach (array_merge($painel->getMiddleware(), $painel->getAuthMiddleware(), $painel->hasTenancy() ? $painel->getTenantMiddleware() : []) as $middleware) {
+        if (! is_string($middleware)) {
+            continue;
+        }
+
+        $middlewares[] = str_starts_with($middleware, 'panel:') ? $middleware : explode(':', $middleware, 2)[0];
+    }
+
+    return [
+        'recurso'    => $unicos($painel->getResources()),
+        'pagina'     => $paginas,
+        'widget'     => $unicos($painel->getWidgets()),
+        'plugin'     => array_values(array_unique(array_map(static fn (object $plugin): string => $plugin::class, array_values($painel->getPlugins())))),
+        'middleware' => array_values(array_unique($middlewares)),
+    ];
+}
+
+/**
+ * O que o modelo dá ao painel no modo: o destino de toda ligação `registra` que parte de
+ * `painel:{id}` e vale no modo.
+ *
+ * @param  array{pecas: array<array-key, array<string, mixed>>, ligacoes: list<array<string, mixed>>}  $modelo
+ * @return list<string>
+ */
+function registradasNoModelo(array $modelo, string $painel, string $modo): array
+{
+    $ids = [];
+
+    foreach ($modelo['ligacoes'] as $ligacao) {
+        if ($ligacao['de'] === "painel:{$painel}" && $ligacao['verbo'] === 'registra' && in_array($modo, $ligacao['modos'] ?? [], true)) {
+            $ids[] = $ligacao['para'];
+        }
+    }
+
+    return array_values(array_unique($ids));
+}
+
+/**
+ * O arquivo da classe, relativo à raiz do projeto e com `/` (fora da raiz, o caminho absoluto), ou
+ * `null` quando a classe não existe ou não tem arquivo (`painel:{id}`, `panel:{id}`, classe interna).
+ */
+function arquivoDaClasse(string $classe): ?string
+{
+    if (! classeExiste($classe)) {
+        return null;
+    }
+
+    $arquivo = (new ReflectionClass($classe))->getFileName();
+
+    if ($arquivo === false) {
+        return null;
+    }
+
+    $raiz    = str_replace('\\', '/', base_path()).'/';
+    $arquivo = str_replace('\\', '/', $arquivo);
+
+    return str_starts_with($arquivo, $raiz) ? substr($arquivo, strlen($raiz)) : $arquivo;
+}
+
+/**
+ * As F-nn que a peça entrega e que o catálogo tem; vazio quando a peça não está no modelo.
+ *
+ * @param  array<string, array<string, mixed>>  $pecasPorId
+ * @param  list<string>  $catalogo
+ * @return list<string>
+ */
+function fnnDaPeca(array $pecasPorId, string $id, array $catalogo): array
+{
+    return array_values(array_intersect($pecasPorId[$id]['features'] ?? [], $catalogo));
+}
+
+/**
+ * As linhas de feature do catálogo de um idioma (`docs/{idioma}/operacao/roteiro-de-features.md`):
+ * cada linha é a lista das células, sem a marcação da tabela. A primeira célula é a F-nn; depois
+ * vêm a feature, a origem e o "onde fica".
+ *
+ * @return list<list<string>>
+ */
+function linhasDoCatalogo(string $idioma): array
+{
+    $linhas = [];
+
+    foreach (preg_split('/\R/u', (string) file_get_contents(base_path("docs/{$idioma}/operacao/roteiro-de-features.md"))) as $linha) {
+        $linha = trim($linha);
+
+        if (! str_starts_with($linha, '|')) {
+            continue;
+        }
+
+        $celulas = array_map('trim', array_slice(explode('|', $linha), 1, -1));
+
+        if (count($celulas) >= 7 && preg_match('/^F-\d+[a-z]?$/', $celulas[0]) === 1) {
+            $linhas[] = $celulas;
+        }
+    }
+
+    return $linhas;
+}
+
+/**
+ * Os arquivos no índice do git, relativos à raiz e com `/`: "no commit que publica" (Setup Global
+ * do `04`). Invocar o `git` exige a sentinela no caso que chama (o CT-26 de
+ * `tests/Kit/RedeDeDocumentacaoTest.php`).
+ *
+ * @return list<string>
+ */
+function arquivosVersionados(): array
+{
+    static $arquivos = null;
+
+    return $arquivos ??= array_values(array_filter(
+        explode("\0", Process::path(base_path())->run(['git', 'ls-files', '-z'])->throw()->output()),
+        static fn (string $arquivo): bool => $arquivo !== '',
+    ));
+}
+
+/**
+ * O motivo de enfeite (Setup Global do `04`, ADV-22), com uma definição só: o que não é string; o
+ * vazio, ou só de travessão, pontuação, símbolo ou espaço; e o que se reduz a "não se aplica" (ou
+ * "nao se aplica", "not applicable", "does not apply", "n/a") sem dizer por quê. "Não se aplica:
+ * o pacote não tem tela" diz por quê, e não é enfeite.
+ */
+function motivoDeEnfeite(mixed $motivo): bool
+{
+    if (! is_string($motivo)) {
+        return true;
+    }
+
+    $nucleo = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}]+/u', ' ', $motivo)));
+
+    return $nucleo === '' || in_array($nucleo, ['não se aplica', 'nao se aplica', 'not applicable', 'does not apply', 'n a'], true);
+}
+
+/**
+ * O `node` do ambiente, lido pela versão: o `Dado` da costura G5 do `04`. Sem ele o caso reprova, e não pula
+ * (Q21). Devolve a versão, e o caso confere o formato dela.
+ */
+function versaoDoNode(): string
+{
+    $processo = Process::path(base_path())->timeout(60)->run(['node', '--version']);
+
+    expect($processo->successful())->toBeTrue('o node do ambiente não respondeu ao --version: '.$processo->errorOutput());
+
+    return trim($processo->output());
+}
+
+/**
+ * A entrada que o gerador do mapa entrega ao archify, na forma de leitura da costura G5 do `04`: um `node` filho
+ * importa `site/mapa/gerar.mjs` e chama as funções que ele exporta (`carregarModelo`, `entradaDoArchify` e
+ * `idArchify`), sem baixar o archify nem renderizar. O script e o pedido moram numa pasta temporária do sistema,
+ * apagada no fim; nada é escrito em `site/`. O gerador é importado, e não executado: o caminho dele vai no
+ * `argv[2]`, porque ele roda o build inteiro quando o `argv[1]` é ele mesmo.
+ *
+ * O pedido, todo opcional, diz o mundo que o filho monta:
+ * - `extras`: diagramas em memória, montados depois dos publicados; `soExtras`: só eles;
+ * - `construtor`: só os diagramas com esse construtor; `slugs`: só esses (vazio, todos). O comparativo nunca
+ *   entra: ele é a soma de dois mapas;
+ * - `ligacoes`: acrescentadas à cópia em memória do modelo; `agrupamentos`: acrescentados, por slug, à cópia
+ *   em memória do diagrama;
+ * - `idiomas`: os da montagem (sem ele, `pt` e `en`);
+ * - `marcarAncoras`: cada âncora, da peça e do diagrama, leva o próprio trecho no `label` — a única chave
+ *   opcional da âncora —, para que a guarda ache, na linha que o gerador calculou, o trecho que a projetou;
+ * - `soCaixasESetas`: da entrada, só as caixas (`components`, com o rótulo secundário) e as setas
+ *   (`connections`, com o traço);
+ * - `textosNaRevisao`: o texto que o filho devolve, por caminho relativo à raiz (com `/`), no lugar do
+ *   `git show <revisão>:<caminho>` com que o gerador lê o arquivo citado — o controle muda o arquivo em memória,
+ *   sem gravar nada no repositório.
+ *
+ * Devolve o id do archify de cada peça do modelo e, por slug e por idioma, a entrada sem o `meta`, ou o erro com
+ * que o gerador recusou o diagrama. Um mundo por processo, porque o modelo de `carregarModelo()` é cache mutável;
+ * o mesmo pedido monta uma vez por execução da suíte. Sem `node`, ou com o filho quebrado, o caso reprova (Q21), por
+ * expectativa — que conta uma asserção na primeira montagem do pedido, e só nela.
+ *
+ * @param  array{extras?: list<array<string, mixed>>, soExtras?: bool, construtor?: string, slugs?: list<string>, ligacoes?: list<array<string, mixed>>, agrupamentos?: array<string, list<array<string, mixed>>>, idiomas?: list<string>, marcarAncoras?: bool, soCaixasESetas?: bool, textosNaRevisao?: array<string, string>}  $pedido
+ * @return array{ids: array<string, string>, diagramas: array<string, array<string, array<string, mixed>>>}
+ */
+function entradasDoGeradorDoMapa(array $pedido = []): array
+{
+    static $montadas = [];
+
+    $json = json_encode((object) $pedido, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    if (isset($montadas[$json])) {
+        return $montadas[$json];
+    }
+
+    $script = <<<'JS'
+        import childProcess from 'node:child_process';
+        import { readFileSync, readdirSync } from 'node:fs';
+        import { syncBuiltinESMExports } from 'node:module';
+        import { join } from 'node:path';
+        import { pathToFileURL } from 'node:url';
+
+        const [gerador, pasta, arquivoDoPedido] = process.argv.slice(2);
+        const pedido = JSON.parse(readFileSync(arquivoDoPedido, 'utf8'));
+        const trocas = pedido.textosNaRevisao ?? {};
+        if (Object.keys(trocas).length) {
+          const original = childProcess.execFileSync;
+          childProcess.execFileSync = (comando, argumentos = [], opcoes) => {
+            const alvo = comando === 'git' && argumentos.includes('show') ? String(argumentos.at(-1)).replace(/^[^:]*:/, '') : null;
+            return alvo !== null && Object.hasOwn(trocas, alvo) ? trocas[alvo] : original(comando, argumentos, opcoes);
+          };
+          syncBuiltinESMExports();
+        }
+        const { carregarModelo, entradaDoArchify, idArchify } = await import(pathToFileURL(gerador).href);
+
+        const marcar = (valor) => {
+          if (Array.isArray(valor)) return valor.forEach(marcar);
+          if (valor === null || typeof valor !== 'object') return;
+          if (typeof valor.arquivo === 'string' && typeof valor.trecho === 'string') valor.label = valor.trecho;
+          Object.values(valor).forEach(marcar);
+        };
+
+        const modelo = carregarModelo();
+        modelo.ligacoes.push(...(pedido.ligacoes ?? []));
+        if (pedido.marcarAncoras) marcar([...modelo.pecas.values()]);
+        const saida = { ids: {}, diagramas: {} };
+        for (const id of modelo.pecas.keys()) saida.ids[id] = idArchify(id);
+        const publicados = pedido.soExtras ? [] : readdirSync(pasta).filter((nome) => nome.endsWith('.json')).sort()
+          .map((nome) => JSON.parse(readFileSync(join(pasta, nome), 'utf8')));
+        for (let diagrama of [...publicados, ...(pedido.extras ?? [])]) {
+          if (diagrama.tipo === 'compare') continue;
+          if (pedido.construtor && diagrama.construtor !== pedido.construtor) continue;
+          if (pedido.slugs?.length && !pedido.slugs.includes(diagrama.slug)) continue;
+          const agrupamentos = pedido.agrupamentos?.[diagrama.slug] ?? [];
+          if (agrupamentos.length) diagrama = { ...diagrama, agrupamentos: [...(diagrama.agrupamentos ?? []), ...agrupamentos] };
+          if (pedido.marcarAncoras) marcar(diagrama);
+          saida.diagramas[diagrama.slug] = {};
+          for (const idioma of pedido.idiomas ?? ['pt', 'en']) {
+            try {
+              const ir = entradaDoArchify(diagrama, idioma, {});
+              delete ir.meta;
+              saida.diagramas[diagrama.slug][idioma] = pedido.soCaixasESetas ? {
+                components: (ir.components ?? []).map(({ id, sublabel }) => ({ id, sublabel: sublabel ?? null })),
+                connections: (ir.connections ?? []).map(({ id, from, to, variant }) => ({ id, from, to, variant: variant ?? null })),
+              } : ir;
+            } catch (erro) {
+              saida.diagramas[diagrama.slug][idioma] = { erro: String(erro?.message ?? erro) };
+            }
+          }
+        }
+        process.stdout.write(JSON.stringify(saida));
+        JS;
+
+    $pasta = sys_get_temp_dir().DIRECTORY_SEPARATOR.'mapa-gerador-'.bin2hex(random_bytes(6));
+    File::ensureDirectoryExists($pasta);
+
+    try {
+        file_put_contents($pasta.DIRECTORY_SEPARATOR.'entrada.mjs', $script);
+        file_put_contents($pasta.DIRECTORY_SEPARATOR.'pedido.json', $json);
+        $processo = Process::path(base_path())->timeout(300)->run([
+            'node', $pasta.DIRECTORY_SEPARATOR.'entrada.mjs', base_path('site/mapa/gerar.mjs'), base_path('site/mapa/diagramas'), $pasta.DIRECTORY_SEPARATOR.'pedido.json',
+        ]);
+    } finally {
+        File::deleteDirectory($pasta);
+    }
+
+    expect($processo->successful())->toBeTrue('o node não montou a entrada do archify: '.trim($processo->errorOutput().$processo->output()));
+
+    return $montadas[$json] = json_decode($processo->output(), true, 512, JSON_THROW_ON_ERROR);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mapa interativo — o discriminante da peça condicional
+|--------------------------------------------------------------------------
+| A definição única do Setup Global do `04` (`### A peça condicional e o
+| discriminante`, com a guarda da R30 e a população da R43), chamada do mesmo
+| jeito pelo tests/Kit/MapaInterativoTest.php (CT-32), pelo
+| MapaInterativoDiagramasTest.php (CT-33, CT-37) e pelo
+| tests/Tenancy/MapaInterativoTenancyTest.php (CT-56, CT-38).
+|
+| Entra o painel, o modo da suíte, a peça e a condição que o modelo dá a ela;
+| saem as duas respostas do contrato, a da guarda da condição e a do lugar
+| (`discriminanteDaPeca()`). A população vem de `populacaoDoDiscriminante()`.
+| O modo nunca é ligado: `kit.tenancy.enabled` é decidido no boot da suíte.
+*/
+
+/**
+ * O mapa fechado de predicados de renderização dos componentes flutuantes (Setup Global do `04`, RQ-33): o mesmo
+ * que o discriminante vivo avalia (`pecaDisponivelNoPainel()`), aqui como o método que a leitura estática da R37
+ * segue (`mapaModeloChavesQueDecidemOAcesso()`).
+ */
+define('MAPA_MODELO_PREDICADOS_DOS_FLUTUANTES', [
+    'App\\Livewire\\AssistenteChatWidget'  => ['App\\Support\\AgentesDeIa', 'assistenteNoPainel'],
+    'App\\Livewire\\ChecklistDoOnboarding' => ['App\\Support\\TutorialGuiado', 'visivel'],
+]);
+
+/** Normaliza as quebras de linha do código e do trecho da prova. */
+function mapaModeloNorm(string $texto): string
+{
+    return str_replace("\r\n", "\n", $texto);
+}
+
+/**
+ * O texto do arquivo com cada byte de comentário trocado por espaço e as quebras de linha mantidas: o mesmo
+ * tamanho e as mesmas linhas, pela sintaxe do tipo do arquivo (`04`, Guarda e controles, ADV2-06 e Q20). É o que
+ * diz se o trecho está fora de comentário NUMA linha (CT-52), onde apagar o comentário deslocaria as linhas.
+ */
+function mapaModeloMascararComentarios(string $arquivo, string $conteudo): string
+{
+    $mascarar = static fn (string $texto): string => (string) preg_replace('/[^\n]/', ' ', $texto);
+    $porRegex = static fn (string $padrao): string => (string) preg_replace_callback($padrao, static fn (array $m): string => $mascarar($m[0]), $conteudo);
+
+    if (str_ends_with($arquivo, '.blade.php')) {
+        return $porRegex('/\{\{--.*?--\}\}|<!--.*?-->/s');
+    }
+
+    if (str_ends_with($arquivo, '.php')) {
+        $saida = '';
+
+        foreach (token_get_all($conteudo) as $token) {
+            $saida .= ! is_array($token) ? $token : (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true) ? $mascarar($token[1]) : $token[1]);
+        }
+
+        return $saida;
+    }
+
+    if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
+        return $porRegex('~/\*.*?\*/|(?<![:\w])//[^\n]*~s');
+    }
+
+    if (preg_match('/\.ya?ml$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
+        return $porRegex('/(?<=^|[ \t])#[^\n]*/m');
+    }
+
+    if (str_ends_with($arquivo, '.md')) {
+        return $porRegex('/<!--.*?-->/s');
+    }
+
+    return $conteudo;
+}
+
+/**
+ * O código do arquivo sem comentário, pela sintaxe do tipo dele (`04`, Guarda e controles, ADV2-06). Em YAML e
+ * `.env`, o `#` até o fim da linha; em Markdown, o `<!-- -->` (Q20, step 9, achado A7); JSON não tem comentário.
+ */
+function mapaModeloSemComentario(string $arquivo, string $conteudo): string
+{
+    if (preg_match('/\.(ya?ml|md)$/', $arquivo) === 1 || str_starts_with(basename($arquivo), '.env')) {
+        return mapaModeloMascararComentarios($arquivo, $conteudo);
+    }
+
+    if (str_ends_with($arquivo, '.blade.php')) {
+        return preg_replace(['/\{\{--.*?--\}\}/s', '/<!--.*?-->/s'], '', $conteudo) ?? $conteudo;
+    }
+
+    if (str_ends_with($arquivo, '.php')) {
+        return codigoSemComentario($conteudo);
+    }
+
+    if (preg_match('/\.(m?js|ts|stub)$/', $arquivo) === 1) {
+        $sem = preg_replace('~/\*.*?\*/~s', '', $conteudo) ?? $conteudo;
+
+        return preg_replace('~(?<![:\w])//[^\n]*~', '', $sem) ?? $sem;
+    }
+
+    return $conteudo;
+}
+
+/**
+ * O código sem comentário de um arquivo do repositório, ou `null` se não é arquivo. A sobrescrita
+ * troca o conteúdo em memória (o controle "cópia do arquivo sem a linha do trecho").
+ *
+ * @param  array<string, string>  $sobrescritas
+ */
+function mapaModeloCodigo(string $arquivo, array $sobrescritas = []): ?string
+{
+    static $cache = [];
+
+    if (isset($sobrescritas[$arquivo])) {
+        return mapaModeloSemComentario($arquivo, mapaModeloNorm($sobrescritas[$arquivo]));
+    }
+
+    if (array_key_exists($arquivo, $cache)) {
+        return $cache[$arquivo];
+    }
+
+    $caminho = base_path($arquivo);
+
+    return $cache[$arquivo] = is_file($caminho)
+        ? mapaModeloSemComentario($arquivo, mapaModeloNorm((string) file_get_contents($caminho)))
+        : null;
+}
+
+/**
+ * R9: a prova resolve no commit que publica. O arquivo é versionado no kit, o trecho está nele fora de
+ * comentário, e a prova não guarda número de linha (campo próprio, ou colado no caminho).
+ *
+ * A âncora tem chaves fechadas — `arquivo`, `trecho` e, opcional, `label` (step 9, achado A10): qualquer outra
+ * (`linha`, `line`, `end_line`, `path`) reprova, porque o gerador a deixa vencer a que ele calcula.
+ *
+ * @param  array<string, mixed>  $campos  os campos além de `arquivo` e `trecho`
+ * @param  array<string, string>  $sobrescritas
+ * @return array{aceita: bool, motivo: ?string}
+ */
+function mapaModeloConferirProva(string $nome, mixed $arquivo, mixed $trecho, array $campos = [], array $sobrescritas = []): array
+{
+    $reprova = static fn (string $motivo): array => ['aceita' => false, 'motivo' => "{$nome}: {$motivo}"];
+
+    foreach (array_keys($campos) as $campo) {
+        if ($campo === 'label') {
+            continue;
+        }
+
+        return $reprova(in_array($campo, ['linha', 'line', 'end_line'], true)
+            ? "a prova guarda o número da linha no campo `{$campo}`"
+            : "a prova traz a chave `{$campo}`, fora das chaves da âncora (arquivo, trecho e label)");
+    }
+
+    if (! is_string($arquivo) || trim($arquivo) === '') {
+        return $reprova('a prova não tem arquivo');
+    }
+
+    if (preg_match('/(:\d+|#L\d+)$/', $arquivo) === 1) {
+        return $reprova("a prova guarda o número da linha no caminho {$arquivo}");
+    }
+
+    if (! is_string($trecho) || trim($trecho) === '') {
+        return $reprova("a prova de {$arquivo} não tem trecho (ausente, vazio ou só de espaços)");
+    }
+
+    $codigo = mapaModeloCodigo($arquivo, $sobrescritas);
+
+    if ($codigo === null) {
+        return $reprova("o arquivo {$arquivo} não existe");
+    }
+
+    if (! in_array($arquivo, arquivosVersionados(), true)) {
+        return $reprova("o arquivo {$arquivo} está fora do commit (não é versionado no kit)");
+    }
+
+    if (! str_contains($codigo, mapaModeloNorm($trecho))) {
+        return $reprova("o trecho não está em {$arquivo} fora de comentário");
+    }
+
+    return ['aceita' => true, 'motivo' => null];
+}
+
+/**
+ * O caminho de config e o valor de fábrica da chave que a condição nomeia, na forma fixada do campo
+ * `disponibilidade`: a variável `KIT_*`, pelo caminho que ela alimenta (`caminhoDaVariavelDoKit()`) e pelo
+ * `config/kit.php` relido sem ela (`kitConfigCom()`), o que dá o valor já coagido — `false` nas booleanas, `[]`
+ * na `KIT_AGENTES_IA_PAINEIS`; a configuração de pacote (`command-center.sources`), pelo arquivo de config do
+ * kit em que ela mora.
+ *
+ * @return array{0: string, 1: mixed}
+ *
+ * @throws UnexpectedValueException
+ */
+function valorDeFabricaDaChaveDaCondicao(string $nome): array
+{
+    if (preg_match('/^[A-Z][A-Z0-9_]*$/', $nome) === 1) {
+        $caminho = caminhoDaVariavelDoKit($nome);
+
+        return [$caminho, data_get(kitConfigCom($nome, null), substr($caminho, strlen('kit.')))];
+    }
+
+    $arquivo = 'config/'.strstr($nome, '.', true).'.php';
+
+    if (! str_contains($nome, '.') || ! is_file(base_path($arquivo))) {
+        throw new UnexpectedValueException("a chave \"{$nome}\" não é variável KIT_* nem caminho de um arquivo de config do kit");
+    }
+
+    return [$nome, data_get(require base_path($arquivo), substr($nome, strpos($nome, '.') + 1))];
+}
+
+/**
+ * O valor de fábrica de uma chave da condição (R30 e R37): o `padrao` é o que o arquivo de config dá sem
+ * ambiente; a chave ligada de fábrica não marca (P-16); o valor que a condição dá como ligado não é o de
+ * fábrica; e, com `$comOLido`, o valor lido no caso é o de fábrica (o `Dado` da guarda viva).
+ *
+ * @param  array{chave?: string, padrao?: mixed, ligada?: mixed}|mixed  $chave
+ * @return list<string>
+ */
+function conferirValorDeFabricaDaCondicao(string $quem, mixed $chave, bool $comOLido): array
+{
+    $nome = is_array($chave) && is_string($chave['chave'] ?? null) ? $chave['chave'] : '';
+
+    if ($nome === '') {
+        return ["{$quem}: a condição do modelo traz uma chave sem nome"];
+    }
+
+    try {
+        [$caminho, $deFabrica] = valorDeFabricaDaChaveDaCondicao($nome);
+    } catch (UnexpectedValueException $erro) {
+        return ["{$quem}: {$erro->getMessage()}"];
+    }
+
+    $json    = static fn (mixed $valor): string => (string) json_encode($valor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $motivos = [];
+
+    if (! array_key_exists('padrao', $chave) || $chave['padrao'] !== $deFabrica) {
+        $motivos[] = "{$quem}: a condição dá a {$nome} o valor de fábrica ".$json($chave['padrao'] ?? null).', e o arquivo de config dá '.$json($deFabrica);
+    }
+
+    if ($comOLido && config($caminho) !== $deFabrica) {
+        $motivos[] = "{$quem}: {$nome} ({$caminho}) está lida no caso como ".$json(config($caminho)).', fora do valor de fábrica '.$json($deFabrica);
+    }
+
+    if ($deFabrica === true) {
+        $motivos[] = "{$quem}: {$nome} vem ligada de fábrica, e a chave ligada de fábrica não marca (P-16)";
+    }
+
+    if (array_key_exists('ligada', $chave) && $chave['ligada'] === $deFabrica) {
+        $motivos[] = "{$quem}: o valor que a condição dá como ligado em {$nome} é o de fábrica, e ligada de fábrica não abre a peça";
+    }
+
+    return $motivos;
+}
+
+/**
+ * As chaves booleanas de `kit.*` — fora `kit.tenancy.enabled`, que é o modo — cujo valor lido difere do de
+ * fábrica, o que o `config/kit.php` dá sem ambiente nenhum (o default do `env()`, Setup Global do `04`). A
+ * folha que cada variável alimenta é medida por `caminhoDaVariavelDoKit()` e relida sem a variável por
+ * `kitConfigCom()`; a que variável nenhuma alimenta sozinha fica com o valor do arquivo.
+ *
+ * @return list<string>
+ */
+function booleanasDoKitForaDaFabrica(): array
+{
+    $arquivo = base_path('config/kit.php');
+    $fabrica = require $arquivo;
+
+    preg_match_all("/env\\('(KIT_[A-Z0-9_]+)'/", (string) file_get_contents($arquivo), $variaveis);
+
+    foreach (array_unique($variaveis[1]) as $variavel) {
+        try {
+            $folha = Str::after(caminhoDaVariavelDoKit($variavel), 'kit.');
+        } catch (UnexpectedValueException) {
+            continue;
+        }
+
+        data_set($fabrica, $folha, data_get(kitConfigCom($variavel, null), $folha));
+    }
+
+    $fora   = [];
+    $varrer = static function (array $ramo, string $prefixo) use (&$varrer, &$fora, $fabrica): void {
+        foreach ($ramo as $chave => $valor) {
+            $caminho = "{$prefixo}{$chave}";
+
+            if (is_array($valor) && ! array_is_list($valor)) {
+                $varrer($valor, "{$caminho}.");
+            } elseif (is_bool($valor) && $caminho !== 'tenancy.enabled' && Arr::has($fabrica, $caminho) && $valor !== data_get($fabrica, $caminho)) {
+                $fora[] = "kit.{$caminho}: lido ".var_export($valor, true).', de fábrica '.var_export(data_get($fabrica, $caminho), true);
+            }
+        }
+    };
+    $varrer((array) config('kit'), '');
+
+    return $fora;
+}
+
+/**
+ * A condição de uma peça contra o que o discriminante mediu no modo da suíte (R30): com a configuração de
+ * fábrica, a peça está disponível se, e só se, a condição deixa o modo da suíte e não tem chave; com as chaves
+ * da condição ligadas juntas, se, e só se, a condição deixa o modo da suíte. O valor de fábrica de cada chave
+ * (`conferirValorDeFabricaDaCondicao()`) e a âncora, que resolve como uma prova (R9), valem em todo caso.
+ *
+ * @param  'sem'|'com'  $modo
+ * @param  array{modo?: 'sem'|'com', chaves?: list<array{chave: string, padrao?: mixed, ligada?: mixed}>, evidencia?: array{arquivo: string, trecho: string}}|null  $condicao
+ * @param  array{deFabrica: bool, comAsChavesDaCondicao: bool}  $medido
+ * @return list<string>
+ */
+function conferirCondicaoNoModo(string $quem, string $modo, mixed $condicao, array $medido): array
+{
+    if ($condicao === null) {
+        return $medido['deFabrica'] ? [] : ["{$quem}: fica indisponível {$modo} tenant e de fábrica, e o modelo não guarda a condição que a explica"];
+    }
+
+    if (! is_array($condicao)) {
+        return ["{$quem}: a condição do modelo não é um objeto"];
+    }
+
+    $json           = static fn (mixed $valor): string => (string) json_encode($valor, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $modoDaCondicao = $condicao['modo'] ?? null;
+    $chaves         = (array) ($condicao['chaves'] ?? []);
+    $nomes          = implode(' e ', array_map(static fn (mixed $chave): string => is_array($chave) ? (string) ($chave['chave'] ?? '?') : '?', $chaves));
+    $texto          = $json(array_diff_key($condicao, ['evidencia' => true]));
+    $motivos        = [];
+
+    if ($modoDaCondicao !== null && ! in_array($modoDaCondicao, ['sem', 'com'], true)) {
+        $motivos[] = "{$quem}: a condição {$texto} dá um modo que não é sem nem com";
+    }
+
+    if ($modoDaCondicao === null && $chaves === []) {
+        $motivos[] = "{$quem}: a condição {$texto} não diz modo nem chave";
+    }
+
+    $abreNoModo = $modoDaCondicao === null || $modoDaCondicao === $modo;
+
+    if ($medido['deFabrica'] !== ($abreNoModo && $chaves === [])) {
+        $motivos[] = $medido['deFabrica']
+            ? "{$quem}: está disponível {$modo} tenant e de fábrica, e a condição {$texto} a dá como fechada"
+            : "{$quem}: a condição {$texto} a dá como disponível {$modo} tenant e de fábrica, e ela está indisponível";
+    }
+
+    if ($chaves !== [] && $medido['comAsChavesDaCondicao'] !== $abreNoModo) {
+        $outroModo   = $modo === 'sem' ? 'com' : 'sem';
+        $motivos[]   = $medido['comAsChavesDaCondicao']
+            ? "{$quem}: com {$nomes} ligadas juntas, abre {$modo} tenant, e a condição {$texto} só a deixa {$outroModo} tenant"
+            : "{$quem}: com {$nomes} ligadas juntas, continua indisponível {$modo} tenant, e a condição {$texto} a dá como disponível";
+    }
+
+    foreach ($chaves as $chave) {
+        array_push($motivos, ...conferirValorDeFabricaDaCondicao($quem, $chave, true));
+    }
+
+    $ancora = $condicao['evidencia'] ?? null;
+    $prova  = is_array($ancora)
+        ? mapaModeloConferirProva($quem, $ancora['arquivo'] ?? null, $ancora['trecho'] ?? null, array_diff_key($ancora, ['arquivo' => true, 'trecho' => true]))
+        : ['aceita' => false, 'motivo' => "{$quem}: a condição não traz a âncora (evidencia) do código que decide"];
+
+    if (! $prova['aceita']) {
+        $motivos[] = "{$prova['motivo']} (âncora da condição: {$json($ancora)})";
+    }
+
+    return $motivos;
+}
+
+/**
+ * Em todo modo em que o diagrama vale, o painel registra a peça (`registrada`) e, pela condição do modelo, ela fica
+ * disponível (Setup Global do `04`, "Entrar no diagrama de um modo"): a condição de modo a prende a ele, e a de chave,
+ * não, porque entra ligada (P-15). O diagrama compartilhado vale nos dois modos, e a ponta registrada num modo só não
+ * entra nele. É a regra do gerador (`site/mapa/gerar.mjs`, `entraNosModos`).
+ *
+ * @param  array{pecas: array<string, array<string, mixed>>}  $modelo
+ * @param  list<string>  $modos  os modos em que o diagrama vale
+ */
+function pecaAbreNosModosDoDiagrama(array $modelo, string $id, array $modos): bool
+{
+    $peca     = $modelo['pecas'][$id] ?? null;
+    $soNoModo = $peca['disponibilidade']['modo'] ?? null;
+
+    return $peca !== null
+        && array_diff($modos, $peca['registrada'] ?? []) === []
+        && ($soNoModo === null || array_diff($modos, [$soNoModo]) === []);
+}
+
+/** Os três `Dashboard` do dashboard dinâmico, um por painel, cujo `mount()` os devolve ao clássico de fábrica (QA-10). */
+const MAPA_MODELO_OS_TRES_DASHBOARDS = [
+    'App\\Filament\\Admin\\Pages\\Dashboard',
+    'App\\Filament\\App\\Pages\\Dashboard',
+    'App\\Filament\\Infra\\Pages\\Dashboard',
+];
+
+/** O `DynamicDashboard` do pacote, abstrato e fora do registro, que herda dos três `Dashboard` (Q32). */
+const MAPA_MODELO_DYNAMIC_DASHBOARD = 'MDDev\\DynamicDashboard\\Pages\\DynamicDashboard';
+
+/**
+ * A condição que o `Dashboard` dado deve guardar (QA-10): a chave `KIT_DASHBOARD_DINAMICO`, com a âncora do
+ * `if (! DashboardDinamico::atende(self::class)) {` do `mount()` no arquivo dele.
+ *
+ * @return array{chaves: list<array{chave: string, padrao: bool}>, evidencia: array{arquivo: string, trecho: string}}
+ */
+function mapaModeloCondicaoDoDashboard(string $classe): array
+{
+    return [
+        'chaves'    => [['chave' => 'KIT_DASHBOARD_DINAMICO', 'padrao' => false]],
+        'evidencia' => ['arquivo' => 'app/'.str_replace('\\', '/', substr($classe, strlen('App\\'))).'.php', 'trecho' => 'if (! DashboardDinamico::atende(self::class)) {'],
+    ];
+}
+
+/**
+ * D43 (Setup Global do `04`): as peças do modelo que um nó de diagrama escrito à mão designa — a peça cuja classe uma
+ * fonte (`sources`) do nó declara, num arquivo de evidência dela, sem que o trecho precise ser igual ao da evidência;
+ * sem fonte assim, a peça do nome exato do rótulo, só se uma peça só tem esse nome. Com homônimas e sem prova, nenhuma.
+ * É a mesma regra do conferidor do site (`site/verifica-mapa.mjs`, `pecasDoNo`).
+ *
+ * @param  array<string, mixed>  $no
+ * @param  list<string>  $rotulos
+ * @param  iterable<array<string, mixed>>  $pecas
+ * @return list<string>
+ */
+function pecasDoNoEscritoAMao(array $no, array $rotulos, iterable $pecas): array
+{
+    $pelaProva = [];
+    $peloNome  = [];
+
+    foreach ($pecas as $peca) {
+        $id         = (string) $peca['id'];
+        $declaracao = '/\b(?:class|interface|trait|enum)\s+'.preg_quote(class_basename($id), '/').'\b/';
+        $arquivos   = array_column(isset($peca['evidencia']['arquivo']) ? [$peca['evidencia']] : (array) ($peca['evidencia'] ?? []), 'arquivo');
+
+        foreach ((array) ($no['sources'] ?? []) as $fonte) {
+            if (is_array($fonte) && in_array($fonte['arquivo'] ?? null, $arquivos, true) && preg_match($declaracao, (string) ($fonte['trecho'] ?? '')) === 1) {
+                $pelaProva[] = $id;
+            }
+        }
+
+        if (in_array($peca['nome'] ?? null, $rotulos, true)) {
+            $peloNome[] = $id;
+        }
+    }
+
+    if ($pelaProva !== []) {
+        return array_values(array_unique($pelaProva));
+    }
+
+    return count($peloNome) === 1 ? $peloNome : [];
+}
+
+/**
+ * O arnês do discriminante (Setup Global do `04`, "O arnês, medido"): o `PapeisSeeder` e o super_admin
+ * do kit autenticado. O super_admin vem de `usuarioDoKit()` com o papel que `filament-shield.super_admin.name`
+ * nomeia (`master_global`), e o `Gate::before` o põe acima de toda permissão. Com tenant, o arnês cria a
+ * organização que o `/app` abre, de `organizacaoComRegistro()`, e boota o `/app` por um GET real: o
+ * `noPainelBootado('app')` morre no boot do Breezy sem rota (`.ai/rules/testes.md`).
+ *
+ * Idempotente no caso: o banco volta a cada caso (`RefreshDatabase`), e a chamada seguinte acha o que a
+ * primeira criou e só autentica de novo. O e-mail e o slug são próprios, para não colidir com a persona
+ * nem com a organização do caso que chama. Antes do GET, a sessão é zerada: o `AuthenticateSession`
+ * desloga a segunda pessoa de um caso que já fez request com outra (`.ai/rules/testes.md`).
+ *
+ * @return array{superAdmin: User, organizacao: Tenant|null}
+ */
+function arnesDoDiscriminante(): array
+{
+    $email      = 'super-admin.discriminante@example.com';
+    $slug       = 'organizacao-do-discriminante';
+    $comTenant  = (bool) config('kit.tenancy.enabled');
+    $superAdmin = User::query()->where('email', $email)->first();
+
+    if ($superAdmin === null) {
+        test()->seed(PapeisSeeder::class);
+        $superAdmin = usuarioDoKit((string) config('filament-shield.super_admin.name'), $email);
+
+        expect($superAdmin->isMasterGlobal())->toBeTrue('o super_admin do arnês do discriminante não ficou master_global no contexto global');
+    }
+
+    $organizacao = $comTenant ? Tenant::query()->where('slug', $slug)->first() : null;
+
+    if ($comTenant && $organizacao === null) {
+        $organizacao = organizacaoComRegistro($slug);
+
+        test()->flushSession();
+        test()->actingAs($superAdmin)->get("/app/{$organizacao->slug}")->assertOk();
+    }
+
+    test()->actingAs($superAdmin);
+
+    return ['superAdmin' => $superAdmin, 'organizacao' => $organizacao];
+}
+
+/**
+ * O método estático com que a peça decide o próprio acesso: `canAccess()` (recurso e página) ou
+ * `canView()` (widget, e o componente do perfil do Breezy); `null` quando a classe não tem nenhum dos dois.
+ */
+function metodoDeAcessoDaPeca(string $classe): ?string
+{
+    foreach (['canAccess', 'canView'] as $metodo) {
+        if (! method_exists($classe, $metodo)) {
+            continue;
+        }
+
+        $reflexao = new ReflectionMethod($classe, $metodo);
+
+        if ($reflexao->isStatic() && $reflexao->isPublic()) {
+            return $metodo;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * A população do discriminante num painel (Setup Global do `04`, "A população"; R43), por tipo e nunca
+ * por nome:
+ * - `registrada`: os recursos, as páginas e os widgets do registro vivo do painel (`registroVivoDoPainel()`);
+ * - `foraDoRegistro`: a peça do modelo que painel nenhum registra e tem `canAccess()` ou `canView()`
+ *   estático (RQ-31). É a mesma lista em todo painel, porque ela é avaliada em cada um;
+ * - `flutuante`: a peça Livewire do modelo que painel nenhum registra e não tem nenhum dos dois, o
+ *   componente flutuante ligado a chave (RQ-33). O predicado de `pecaDisponivelNoPainel()` decide se
+ *   ele aparece.
+ *
+ * Plugin e middleware ficam fora (RQ-32). "Painel nenhum registra" se mede pelo registro vivo de todos
+ * os painéis, no modo da suíte. O modelo é parâmetro, para o controle passar a cópia em memória.
+ *
+ * @param  array{pecas: array<array-key, array<string, mixed>>, ligacoes?: list<array<string, mixed>>}  $modelo
+ * @return array{registrada: list<string>, foraDoRegistro: list<string>, flutuante: list<string>}
+ */
+function populacaoDoDiscriminante(string $painel, array $modelo): array
+{
+    $registradas   = [];
+    $todoORegistro = [];
+
+    foreach (Filament::getPanels() as $outro) {
+        $registro = registroVivoDoPainel($outro);
+
+        $registradas[$outro->getId()] = array_values(array_unique(array_merge($registro['recurso'], $registro['pagina'], $registro['widget'])));
+        $todoORegistro                = array_merge($todoORegistro, ...array_values($registro));
+    }
+
+    $foraDoRegistro = [];
+    $flutuantes     = [];
+
+    foreach ($modelo['pecas'] as $peca) {
+        $classe = (string) $peca['id'];
+
+        if (in_array($classe, $todoORegistro, true) || ! class_exists($classe)) {
+            continue;
+        }
+
+        if (metodoDeAcessoDaPeca($classe) !== null) {
+            $foraDoRegistro[] = $classe;
+        } elseif (($peca['tipo'] ?? null) === 'livewire') {
+            $flutuantes[] = $classe;
+        }
+    }
+
+    return [
+        'registrada'     => $registradas[$painel] ?? throw new InvalidArgumentException("o painel {$painel} não está no registro de painéis"),
+        'foraDoRegistro' => array_values(array_unique($foraDoRegistro)),
+        'flutuante'      => array_values(array_unique($flutuantes)),
+    ];
+}
+
+/**
+ * A página que o painel registra com `canAccess()` abre de fato? (Setup Global do `04`, "e, na página que o
+ * painel registra com `canAccess()`, quando a página abre de fato", QA-10.) A montagem é o `Livewire::test()`
+ * da classe, no painel que o arnês já preparou, e a página abre quando termina com o status 200 **e** sem o
+ * efeito de redirect: `assertStatus(200)` e `assertNoRedirect()`. O status é o que discrimina o `mount()` que
+ * devolve a página a outra (`redirect(…, navigate: true)` sai como 302, e o efeito de redirect fica vazio); o
+ * `abort()` sai como 403.
+ *
+ * Fica fora da montagem, e o `canAccess()` decide sozinho: a classe sem `canAccess()` próprio (as telas de
+ * autenticação), a abstrata, a que não é página registrada (recurso e widget) e a página cujo `mount()` pede
+ * parâmetro obrigatório (a de detalhe, como a `RunView`).
+ */
+function paginaRegistradaAbreNaMontagem(string $classe): bool
+{
+    $reflexao = new ReflectionClass($classe);
+
+    if ($reflexao->isAbstract() || ! $reflexao->hasMethod('mount') || $reflexao->getMethod('mount')->getNumberOfRequiredParameters() > 0) {
+        return true;
+    }
+
+    try {
+        Livewire::test($classe)->assertStatus(200)->assertNoRedirect();
+    } catch (AssertionFailedError) {
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * A peça está disponível agora, no painel corrente? Decide o `canAccess()` ou o `canView()` vivo dela, e, na
+ * página que o painel registra com `canAccess()`, a montagem (`paginaRegistradaAbreNaMontagem()`).
+ *
+ * A peça que o painel registra sem nenhum dos dois fica disponível, porque nada a fecha. São as telas de
+ * autenticação que o painel liga pela configuração, como a `TelaLogin`, que devolvem o usuário autenticado (302)
+ * por desenho e ficam fora da montagem. Medido: as 86 registradas da tabela do `04` contam com elas, e nenhuma
+ * está entre as indisponíveis.
+ *
+ * A peça abstrata que painel nenhum registra, com método próprio — o `DynamicDashboard` do pacote e o
+ * `BreakdownWidget` —, herda pelas subclasses concretas que o registro vivo DESTE painel tem (Q32): está
+ * disponível se alguma delas está, na mesma configuração da vez. O painel que não registra subclasse dela não
+ * vota, e a resposta é `null`; quem junta os painéis exige ao menos um voto e que os votos concordem.
+ *
+ * O componente flutuante, que painel nenhum registra e não tem nenhum dos dois, é avaliado pelo predicado que
+ * decide a renderização dele, num mapa fechado (Setup Global do `04`, RQ-33):
+ * - o chat do assistente, pelo `AgentesDeIa::assistenteNoPainel()` do painel, o mesmo que o `chatNaTela()` chama;
+ * - o checklist do tutorial, pelo `TutorialGuiado::visivel()`, o mesmo que o `->launcher()` do plugin usa.
+ *
+ * Um terceiro componente fora do mapa lança a exceção com o nome dele, até ganhar o predicado: falha fechado.
+ *
+ * @return bool|null `null`: a peça abstrata sem subclasse registrada neste painel, que não vota
+ *
+ * @throws UnexpectedValueException
+ */
+function pecaDisponivelNoPainel(string $classe, Panel $painel): ?bool
+{
+    $metodo   = metodoDeAcessoDaPeca($classe);
+    $registro = registroVivoDoPainel($painel);
+
+    if ($metodo !== null && class_exists($classe) && (new ReflectionClass($classe))->isAbstract()) {
+        $votos = [];
+
+        foreach (array_merge($registro['recurso'], $registro['pagina'], $registro['widget']) as $registrada) {
+            if (is_subclass_of($registrada, $classe) && ! (new ReflectionClass($registrada))->isAbstract()) {
+                $votos[] = pecaDisponivelNoPainel($registrada, $painel);
+            }
+        }
+
+        return $votos === [] ? null : in_array(true, $votos, true);
+    }
+
+    if ($metodo !== null) {
+        if (! $classe::$metodo()) {
+            return false;
+        }
+
+        return $metodo === 'canAccess' && in_array($classe, $registro['pagina'], true)
+            ? paginaRegistradaAbreNaMontagem($classe)
+            : true;
+    }
+
+    if (in_array($classe, array_merge($registro['recurso'], $registro['pagina'], $registro['widget']), true)) {
+        return true;
+    }
+
+    $predicado = MAPA_MODELO_PREDICADOS_DOS_FLUTUANTES[$classe]
+        ?? throw new UnexpectedValueException("a peça {$classe} não tem canAccess() nem canView() estático, e o mapa fechado de predicados dos componentes flutuantes do discriminante não a conhece: dê a ela o predicado que decide a renderização");
+
+    return (bool) $predicado($painel);
+}
+
+/**
+ * O caminho de config que a variável do `config/kit.php` alimenta (`KIT_DEMO` → `kit.demo`). O caminho é
+ * medido, e não lido do texto: o arquivo é relido com a variável `true` e com `false` (`kitConfigCom()`), e
+ * o caminho é a folha que muda. A lista conta como folha. A variável que não alimenta chave nenhuma, ou
+ * alimenta mais de uma, lança a exceção com o nome dela.
+ *
+ * @throws UnexpectedValueException
+ */
+function caminhoDaVariavelDoKit(string $variavel): string
+{
+    static $caminhos = [];
+
+    if (isset($caminhos[$variavel])) {
+        return $caminhos[$variavel];
+    }
+
+    $folhasQueMudam = static function (array $ligada, array $desligada, string $prefixo) use (&$folhasQueMudam): array {
+        $folhas = [];
+
+        foreach (array_keys($ligada + $desligada) as $chave) {
+            $comTrue  = $ligada[$chave] ?? null;
+            $comFalse = $desligada[$chave] ?? null;
+
+            if (is_array($comTrue) && is_array($comFalse) && ! array_is_list($comTrue) && ! array_is_list($comFalse)) {
+                $folhas = array_merge($folhas, $folhasQueMudam($comTrue, $comFalse, "{$prefixo}{$chave}."));
+            } elseif ($comTrue !== $comFalse) {
+                $folhas[] = "{$prefixo}{$chave}";
+            }
+        }
+
+        return $folhas;
+    };
+
+    $folhas = $folhasQueMudam(kitConfigCom($variavel, 'true'), kitConfigCom($variavel, 'false'), 'kit.');
+
+    if (count($folhas) !== 1) {
+        throw new UnexpectedValueException("a variável {$variavel} alimenta ".count($folhas).' chaves do config/kit.php ('.implode(', ', $folhas).'), e o discriminante só liga a que ela decide sozinha');
+    }
+
+    return $caminhos[$variavel] = $folhas[0];
+}
+
+/**
+ * As chaves que a condição do modelo nomeia e que o discriminante liga juntas, no formato caminho de config
+ * => valor ligado. `kit.tenancy.enabled` nunca entra, mesmo nomeado, porque é o modo.
+ *
+ * A condição é o campo `disponibilidade` da peça no modelo (`site/mapa/pecas.json`), numa forma só:
+ * `{modo?: 'sem'|'com', chaves?: list<{chave, padrao, ligada?}>, evidencia: {arquivo, trecho}}`. `chave` é a
+ * variável `KIT_*` do `config/kit.php` (`KIT_DEMO`), resolvida para o caminho, ou o caminho da configuração de
+ * pacote (`command-center.sources`); `padrao` é o valor de fábrica, que a marca escreve; `ligada` é o valor que
+ * a liga, que o modelo propõe e o discriminante põe como está. Sem ele, a booleana liga no oposto do valor lido,
+ * que o `Dado` afirma ser o de fábrica, e a lista ganha o painel avaliado: "ligada", na
+ * `KIT_AGENTES_IA_PAINEIS`, é a lista com o painel. A chave que a configuração não tem, e a que não é booleana
+ * nem lista e vem sem o `ligada` (a configuração de pacote), lançam a exceção com o nome da chave.
+ *
+ * @param  array{modo?: 'sem'|'com', chaves?: list<array{chave: string, padrao?: mixed, ligada?: mixed}>, evidencia?: array{arquivo: string, trecho: string}}|null  $condicao
+ * @return array<string, mixed>
+ *
+ * @throws UnexpectedValueException
+ */
+function chavesLigadasDaCondicao(?array $condicao, string $painel): array
+{
+    $ligadas = [];
+
+    foreach ($condicao['chaves'] ?? [] as $chave) {
+        $nome    = (string) $chave['chave'];
+        $caminho = preg_match('/^[A-Z][A-Z0-9_]*$/', $nome) === 1 ? caminhoDaVariavelDoKit($nome) : $nome;
+
+        if ($caminho === 'kit.tenancy.enabled') {
+            continue;
+        }
+
+        if (! config()->has($caminho)) {
+            throw new UnexpectedValueException("a condição nomeia {$nome}, e a configuração não tem a chave {$caminho}");
+        }
+
+        $lido = config($caminho);
+
+        $ligadas[$caminho] = match (true) {
+            array_key_exists('ligada', $chave)                      => $chave['ligada'],
+            is_bool($lido)                                          => ! $lido,
+            is_array($lido) && array_is_list($lido)                 => array_values(array_unique([...$lido, $painel])),
+            default                                                 => throw new UnexpectedValueException("a condição nomeia {$nome}, que não é booleana nem lista, sem o valor que a liga"),
+        };
+    }
+
+    return $ligadas;
+}
+
+/**
+ * O discriminante da peça (Setup Global do `04`, "Contrato do helper único"). Entram o painel, o modo da
+ * suíte, a peça e a condição que o modelo dá a ela, se houver. Saem as duas respostas:
+ * - `guarda` (R30: CT-32, CT-56): `deFabrica` diz se a peça abre com a configuração de fábrica.
+ *   `comAsChavesDaCondicao` diz se abre com só as chaves e a configuração que a condição nomeia, ligadas
+ *   juntas; sem chave nomeada, repete o `deFabrica`. É a resposta que põe a condição do modelo à prova:
+ *   chave errada não abre a peça;
+ * - `lugar` (a subtração e a metade viva: CT-33 sem tenant, CT-37, CT-38): a peça abre de fábrica, ou
+ *   com alguma chave booleana de `kit.*` desligada ligada, uma de cada vez, ou com as chaves da condição
+ *   ligadas juntas. O modelo só propõe: a chave errada nele não tira do diagrama a peça que a certa abre,
+ *   e a peça que nada abre sai.
+ *
+ * O arnês é o de `arnesDoDiscriminante()`. Antes de avaliar, `noPainelDoShield()` descarta o Shield (sem o
+ * descarte, o mapa fica no do primeiro painel e o `PermissaoDaTela::permite()` falha fechado nas páginas
+ * de pacote dos outros). Depois vêm o `noPainelBootado()` e, no painel com tenant, o `noPainelDa()` com a
+ * organização do arnês. Cada chave é ligada por `config()->set()` e volta ao valor lido antes, no mesmo
+ * caso. O formato da condição é o de `chavesLigadasDaCondicao()`; o resto dela, o modo e a âncora, é da
+ * guarda. O `FilamentManager` boota um painel só por processo (`isCurrentPanelBooted` não volta a falso no
+ * `setCurrentPanel()`), e por isso só o primeiro painel avaliado num caso é bootado de fato; medido, as três
+ * ordens dos painéis dão a mesma resposta em cada peça, nas duas suítes.
+ *
+ * O modo nunca é ligado: `kit.tenancy.enabled` fica fora de toda chave ligada, e o `$modo` tem de ser o
+ * da suíte. Ligá-lo em tempo de execução "abriria" o `TenantResource` sem tenant.
+ *
+ * @param  'sem'|'com'  $modo
+ * @param  array{modo?: 'sem'|'com', chaves?: list<array{chave: string, padrao?: mixed, ligada?: mixed}>, evidencia?: array{arquivo: string, trecho: string}}|null  $condicao
+ *                                                                                                                                                                             A peça abstrata fora do registro herda pelas subclasses concretas do painel (Q32, `pecaDisponivelNoPainel()`),
+ *                                                                                                                                                                             na mesma configuração da vez, na página e no widget: o painel que não registra subclasse dela devolve `vota`
+ *                                                                                                                                                                             falso, com tudo falso, e quem junta os painéis o ignora — nenhum voto reprova, e os votos têm de concordar.
+ *                                                                                                                                                                             Toda outra peça devolve `vota` verdadeiro.
+ * @return array{guarda: array{deFabrica: bool, comAsChavesDaCondicao: bool}, lugar: bool, vota: bool}
+ *
+ * @throws UnexpectedValueException
+ */
+function discriminanteDaPeca(string $painel, string $modo, string $peca, ?array $condicao = null): array
+{
+    $modoDaSuite = config('kit.tenancy.enabled') ? 'com' : 'sem';
+
+    if ($modo !== $modoDaSuite) {
+        throw new InvalidArgumentException("o discriminante mede o modo da suíte, que roda {$modoDaSuite} tenant, e recebeu o modo {$modo}");
+    }
+
+    ['organizacao' => $organizacao] = arnesDoDiscriminante();
+
+    noPainelDoShield($painel);
+    noPainelBootado($painel);
+
+    $doPainel = Filament::getPanel($painel);
+
+    if ($doPainel->hasTenancy() && $organizacao !== null) {
+        noPainelDa($organizacao);
+    }
+
+    $avaliar = static fn (): ?bool => pecaDisponivelNoPainel($peca, $doPainel);
+
+    $comLigadas = static function (array $ligadas) use ($avaliar): ?bool {
+        $antes = [];
+
+        foreach ($ligadas as $caminho => $valor) {
+            $antes[$caminho] = config($caminho);
+            config()->set($caminho, $valor);
+        }
+
+        try {
+            return $avaliar();
+        } finally {
+            foreach ($antes as $caminho => $valor) {
+                config()->set($caminho, $valor);
+            }
+        }
+    };
+
+    $desligadas = [];
+    $varrer     = static function (array $ramo, string $prefixo) use (&$varrer, &$desligadas): void {
+        foreach ($ramo as $chave => $valor) {
+            if (is_array($valor) && ! array_is_list($valor)) {
+                $varrer($valor, "{$prefixo}{$chave}.");
+            } elseif ($valor === false && "{$prefixo}{$chave}" !== 'kit.tenancy.enabled') {
+                $desligadas[] = "{$prefixo}{$chave}";
+            }
+        }
+    };
+    $varrer((array) config('kit'), 'kit.');
+
+    $daCondicao   = chavesLigadasDaCondicao($condicao, $painel);
+    $deFabrica    = $avaliar();
+
+    if ($deFabrica === null) {
+        return ['guarda' => ['deFabrica' => false, 'comAsChavesDaCondicao' => false], 'lugar' => false, 'vota' => false];
+    }
+
+    $comACondicao = $daCondicao === [] ? $deFabrica : $comLigadas($daCondicao);
+    $lugar        = $deFabrica || $comACondicao;
+
+    foreach ($desligadas as $chave) {
+        if ($lugar) {
+            break;
+        }
+
+        $lugar = (bool) $comLigadas([$chave => true]);
+    }
+
+    return ['guarda' => ['deFabrica' => $deFabrica, 'comAsChavesDaCondicao' => $comACondicao], 'lugar' => $lugar, 'vota' => true];
 }

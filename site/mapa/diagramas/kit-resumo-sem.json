@@ -1,0 +1,250 @@
+{
+  "slug": "kit-resumo-sem",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — resumo por domínio do que não é de painel, sem tenant",
+    "en": "Kit — summary by domain of what is not panel-bound, tenancy off"
+  },
+  "paineis": [],
+  "modos": [
+    "sem"
+  ],
+  "pecas": [],
+  "agrupamentos": [
+    {
+      "id": "grupo-acesso-e-autenticacao",
+      "rotulo": {
+        "pt": "Acesso e autenticação",
+        "en": "Access and authentication"
+      },
+      "membros": [
+        "App\\Data\\Social\\PerfilSocialData",
+        "App\\Filament\\Pages\\Auth\\TelaLoginUnificada",
+        "App\\Http\\Controllers\\Auth\\EntrarNoPainelController",
+        "App\\Http\\Controllers\\Auth\\LoginSocialController",
+        "App\\Http\\Middleware\\BloquearSessaoComRetorno",
+        "App\\Http\\Middleware\\ExigirEmailVerificado",
+        "App\\Http\\Responses\\RespostaDeCadastro",
+        "App\\Http\\Responses\\RespostaDeLogin",
+        "App\\Models\\VinculoSocial",
+        "App\\Notifications\\ConfirmarVinculoSocial",
+        "App\\Notifications\\PrimeiroAcessoSocial",
+        "App\\Providers\\AppServiceProvider",
+        "App\\Providers\\Filament\\AdminPanelProvider",
+        "App\\Providers\\Filament\\AppPanelProvider",
+        "App\\Providers\\Filament\\InfraPanelProvider",
+        "App\\Support\\AparenciaDasTelasDeAcesso",
+        "App\\Support\\GerenciadorAntiRobo",
+        "App\\Support\\VerificacaoAntiRobo",
+        "Laravel\\Socialite\\SocialiteServiceProvider",
+        "STS\\FilamentImpersonate\\FilamentImpersonateServiceProvider"
+      ],
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "grupo-autorizacao",
+      "rotulo": {
+        "pt": "Autorização",
+        "en": "Authorization"
+      },
+      "membros": [
+        "App\\Filament\\Pages\\BoasVindas",
+        "App\\Policies\\ConvitePolicy",
+        "App\\Policies\\RolePolicy",
+        "App\\Policies\\UserPolicy",
+        "App\\Providers\\KitServiceProvider",
+        "App\\Support\\PermissaoDaTela",
+        "App\\Support\\PoliciesDeVendor",
+        "Filament\\Sentinel\\SentinelServiceProvider"
+      ],
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "grupo-convites",
+      "rotulo": {
+        "pt": "Convites",
+        "en": "Invitations"
+      },
+      "membros": [
+        "App\\Console\\Commands\\KitConvitesLembrar",
+        "App\\Data\\Convite\\FalhaDoConviteData",
+        "App\\Data\\Convite\\ResultadoDoConviteEmMassaData",
+        "App\\Support\\ValidadeDoConvite"
+      ],
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "grupo-multi-tenancy-opt-in",
+      "rotulo": {
+        "pt": "Multi-tenancy (opt-in)",
+        "en": "Multi-tenancy (opt-in)"
+      },
+      "membros": [
+        "App\\Console\\Commands\\KitTenancy",
+        "App\\Policies\\TenantPolicy",
+        "App\\Support\\AtivadorDeTenancy"
+      ],
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "grupo-administracao",
+      "rotulo": {
+        "pt": "Administração",
+        "en": "Administration"
+      },
+      "membros": [
+        "App\\Ai\\Agents\\AgenteBase",
+        "App\\Ai\\Exceptions\\AgenteInativoException",
+        "App\\Policies\\AgenteIaPolicy",
+        "App\\Policies\\OnboardingConditionPolicy",
+        "App\\Policies\\OnboardingFlowPolicy",
+        "App\\Settings\\ConfiguracoesDoKit",
+        "Laravel\\Ai\\AiServiceProvider"
+      ],
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "grupo-infraestrutura",
+      "rotulo": {
+        "pt": "Infraestrutura",
+        "en": "Infrastructure"
+      },
+      "membros": [
+        "App\\Ai\\Health\\LocalAiCheck",
+        "App\\Ai\\Listeners\\RegistrarAiRun",
+        "App\\Listeners\\AuditarConfiguracoesDoKit",
+        "App\\Policies\\AiRunPolicy",
+        "App\\Policies\\AuditPolicy",
+        "App\\Policies\\AuthenticationLogPolicy",
+        "App\\Policies\\CommandRecordPolicy",
+        "App\\Policies\\ComposerReleasePackageSnapshotPolicy",
+        "App\\Policies\\ExceptionPolicy",
+        "App\\Policies\\MailLogPolicy",
+        "App\\Policies\\QueueMonitorPolicy",
+        "App\\Traits\\AuditsFillables",
+        "Dotswan\\FilamentLaravelPulse\\Widgets\\PulseServers",
+        "Fomvasss\\AiTasks\\Models\\AiRun"
+      ],
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "grupo-produtividade-e-ui",
+      "rotulo": {
+        "pt": "Produtividade e UI",
+        "en": "Productivity and UI"
+      },
+      "membros": [
+        "App\\Console\\Commands\\KitMidiaPrivada",
+        "App\\Livewire\\ChecklistDoOnboarding",
+        "App\\Observers\\TenantObserver",
+        "App\\Policies\\ProjetoPolicy",
+        "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
+        "App\\Services\\Dashboard\\CriadorDeDashboardPadrao",
+        "App\\Support\\AssinaturaDoRodape",
+        "App\\Support\\ImportExport\\ExportadorDoKit",
+        "App\\Support\\ImportExport\\ImportadorDoKit",
+        "Asignua\\FilamentInfiniteScroll\\FilamentInfiniteScrollServiceProvider",
+        "BezhanSalleh\\PanelSwitch\\PanelSwitchServiceProvider",
+        "Sehsah\\FilamentRememberTable\\Models\\TableView"
+      ],
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "grupo-ia",
+      "rotulo": {
+        "pt": "IA",
+        "en": "AI"
+      },
+      "membros": [
+        "App\\Ai\\Agents\\Assistente",
+        "App\\Ai\\Agents\\GuardaPrompt",
+        "App\\Ai\\Exceptions\\AgenteSemGuardrailsException",
+        "App\\Ai\\Exceptions\\PromptInjecaoBloqueadaException",
+        "App\\Ai\\Guardrails\\FiltroSaidaSensivelMiddleware",
+        "App\\Ai\\Guardrails\\GarantirPromptSeguroMiddleware",
+        "App\\Ai\\Guardrails\\GuardrailRegistry",
+        "App\\Ai\\Guardrails\\PiiRedactor",
+        "App\\Ai\\Guardrails\\PiiRedactorMiddleware",
+        "App\\Ai\\Guardrails\\PromptInjectionGuardMiddleware",
+        "App\\Ai\\Middleware\\AiAuditMiddleware",
+        "App\\Ai\\Middleware\\BudgetGuardMiddleware",
+        "App\\Ai\\Support\\ResolvedorDeTenant",
+        "App\\Data\\Ia\\VeredictoDoGuardrailData",
+        "App\\Livewire\\AssistenteChatWidget",
+        "App\\Support\\Casts\\BooleanoFlexivelCast"
+      ],
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "grupo-instalacao-e-operacao",
+      "rotulo": {
+        "pt": "Instalação e operação",
+        "en": "Installation and operations"
+      },
+      "membros": [
+        "App\\Console\\Commands\\KitAdmin",
+        "App\\Console\\Commands\\KitInfo",
+        "App\\Console\\Commands\\KitInstall",
+        "App\\Console\\Commands\\KitUpdate",
+        "App\\Http\\Middleware\\RaizDeUrlSemPublic",
+        "App\\Support\\BancoSqlite",
+        "App\\Support\\HostLocal",
+        "App\\Support\\ProxiesConfiaveis",
+        "App\\Support\\SenhaDoAdministrador",
+        "App\\Support\\SubstituicaoEmArquivo",
+        "App\\Support\\VinculoDoSnyk",
+        "App\\Traits\\ModeloCacheavel",
+        "GeneaLabs\\LaravelModelCaching\\Providers\\Service"
+      ],
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "grupo-desenvolvimento",
+      "rotulo": {
+        "pt": "Desenvolvimento",
+        "en": "Development"
+      },
+      "membros": [
+        "App\\Console\\Commands\\KitArte",
+        "App\\Console\\Commands\\KitCobertura",
+        "App\\Support\\GuardaDoPadraoDeDto",
+        "App\\Traits\\TemUuid",
+        "Laravel\\Boost\\BoostServiceProvider",
+        "Pest\\Laravel\\PestServiceProvider"
+      ],
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "grupo-outras-pecas",
+      "rotulo": {
+        "pt": "Outras peças",
+        "en": "Other pieces"
+      },
+      "membros": [
+        "App\\Http\\Controllers\\Controller",
+        "App\\Support\\BooleanoDoEnv",
+        "App\\Support\\NumeroDoEnv"
+      ],
+      "row": 5,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 240,
+    "cellH": 64,
+    "gapX": 90,
+    "gapY": 48
+  }
+}

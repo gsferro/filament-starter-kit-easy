@@ -1,0 +1,53 @@
+{
+  "slug": "kit-desenvolvimento",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Desenvolvimento",
+    "en": "Kit — Development"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Console\\Commands\\KitArte",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Console\\Commands\\KitCobertura",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Laravel\\Boost\\BoostServiceProvider",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "Pest\\Laravel\\PestServiceProvider",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\GuardaDoPadraoDeDto",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "App\\Traits\\TemUuid",
+      "row": 5,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

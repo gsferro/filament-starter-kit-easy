@@ -1,0 +1,674 @@
+{
+  "slug": "erd-painel",
+  "tipo": "erd",
+  "titulo": {
+    "pt": "Painel: dashboards, visões salvas e notificações",
+    "en": "Panel: dashboards, saved views and notifications"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "entities": [
+    {
+      "id": "users",
+      "label": "users",
+      "sublabel": {
+        "pt": "dono: Laravel (esqueleto) + colunas do kit",
+        "en": "owner: Laravel (skeleton) + kit columns"
+      },
+      "tag": {
+        "pt": "identidade",
+        "en": "identity"
+      },
+      "row": 0,
+      "col": 0,
+      "width": 268,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "email",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "email_verified_at",
+          "type": "datetime"
+        },
+        {
+          "name": "password",
+          "type": "varchar NN"
+        },
+        {
+          "name": "avatar_url",
+          "type": "varchar"
+        },
+        {
+          "name": "remember_token",
+          "type": "varchar"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "aprovacao_pendente",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "origem",
+          "type": "varchar NN"
+        },
+        {
+          "name": "ativo",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "deleted_at",
+          "type": "datetime"
+        },
+        {
+          "name": "dock_atalhos",
+          "type": "TEXT"
+        },
+        {
+          "name": "dock_layout",
+          "type": "varchar"
+        },
+        {
+          "name": "aparencia",
+          "type": "TEXT"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000000_create_users_table.php",
+          "trecho": "Schema::create('users', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria users",
+            "en": "new users"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tenants",
+      "label": "tenants",
+      "sublabel": {
+        "pt": "dono: kit",
+        "en": "kit owner"
+      },
+      "tag": {
+        "pt": "organizações e convites",
+        "en": "organization/invitation"
+      },
+      "row": 1,
+      "col": 0,
+      "width": 288,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "uuid",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "nome",
+          "type": "varchar NN"
+        },
+        {
+          "name": "slug",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "ativo",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "cor_primaria",
+          "type": "varchar"
+        },
+        {
+          "name": "logo",
+          "type": "varchar"
+        },
+        {
+          "name": "registro_habilitado",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "cor_primaria_nome",
+          "type": "varchar"
+        },
+        {
+          "name": "logo_dark",
+          "type": "varchar"
+        },
+        {
+          "name": "unifica_logo",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "aparencia_das_telas",
+          "type": "TEXT"
+        },
+        {
+          "name": "aparencia_por_usuario",
+          "type": "tinyint(1) NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/0001_01_01_000020_create_tenants_table.php",
+          "trecho": "Schema::create('tenants', function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria tenants",
+            "en": "new tenants"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dashboards",
+      "label": "dashboards",
+      "sublabel": {
+        "pt": "dono: mddev31/filament-dynamic-dashboard (+ tenant_id do kit)",
+        "en": "by: mddev31/filament-dynamic-dashboard (+ kit tenant_id)"
+      },
+      "tag": {
+        "pt": "painel",
+        "en": "panel"
+      },
+      "row": 0,
+      "col": 1,
+      "width": 220,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "description",
+          "type": "TEXT"
+        },
+        {
+          "name": "page",
+          "type": "varchar"
+        },
+        {
+          "name": "ordering",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "is_active",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "is_locked",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "is_personal",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "created_by",
+          "type": "INTEGER",
+          "key": "fk",
+          "references": "users.id"
+        },
+        {
+          "name": "settings",
+          "type": "TEXT"
+        },
+        {
+          "name": "filters",
+          "type": "TEXT"
+        },
+        {
+          "name": "display_filters",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "template_key",
+          "type": "varchar"
+        },
+        {
+          "name": "tenant_id",
+          "type": "INTEGER",
+          "key": "fk",
+          "references": "tenants.id"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_19_153814_create_dynamic_dashboard_tables.php",
+          "trecho": "Schema::create('dashboards', function (Blueprint $table) use ($usersTable) {",
+          "label": {
+            "pt": "cria dashboards",
+            "en": "add dashboards"
+          }
+        }
+      ]
+    },
+    {
+      "id": "remember_table_views",
+      "label": "remember_table_views",
+      "sublabel": {
+        "pt": "dono: sehsah/filament-remember-table",
+        "en": "by: sehsah/filament-remember-table"
+      },
+      "tag": {
+        "pt": "painel",
+        "en": "panel"
+      },
+      "row": 0,
+      "col": 2,
+      "width": 212,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "user_type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "tenant_id",
+          "type": "varchar"
+        },
+        {
+          "name": "table_key",
+          "type": "varchar NN"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "icon",
+          "type": "varchar"
+        },
+        {
+          "name": "state",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "is_default",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "is_public",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "sort_order",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_10_14_213646_create_remember_table_views_table.php",
+          "trecho": "Schema::create(config('remember-table.table_name', 'remember_table_views'), function (Blueprint $table) {",
+          "label": {
+            "pt": "cria remember_table_views",
+            "en": "add remember_table_views"
+          }
+        }
+      ]
+    },
+    {
+      "id": "dashboard_widgets",
+      "label": "dashboard_widgets",
+      "sublabel": {
+        "pt": "dono: mddev31/filament-dynamic-dashboard",
+        "en": "by: mddev31/filament-dynamic-dashboard"
+      },
+      "tag": {
+        "pt": "painel",
+        "en": "panel"
+      },
+      "row": 1,
+      "col": 1,
+      "width": 232,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "dashboard_id",
+          "type": "INTEGER NN",
+          "key": "fk",
+          "references": "dashboards.id"
+        },
+        {
+          "name": "name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "description",
+          "type": "TEXT"
+        },
+        {
+          "name": "type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "is_active",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "display_title",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "settings",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        },
+        {
+          "name": "section_slug",
+          "type": "varchar NN"
+        },
+        {
+          "name": "x",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "y",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "w",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "h",
+          "type": "INTEGER NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_19_153814_create_dynamic_dashboard_tables.php",
+          "trecho": "Schema::create('dashboard_widgets', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria dashboard_widgets",
+            "en": "add dashboard_widgets"
+          }
+        }
+      ]
+    },
+    {
+      "id": "notifications",
+      "label": "notifications",
+      "sublabel": {
+        "pt": "dono: Laravel (notificações em banco)",
+        "en": "by: Laravel (database notifications)"
+      },
+      "tag": {
+        "pt": "painel",
+        "en": "panel"
+      },
+      "row": 1,
+      "col": 2,
+      "width": 228,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "notifiable_type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "notifiable_id",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "data",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "read_at",
+          "type": "datetime"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164956_create_notifications_table.php",
+          "trecho": "Schema::create('notifications', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria notifications",
+            "en": "add notifications"
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "fk_dashboards_tenant_id",
+      "from": "dashboards",
+      "to": "tenants",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "identifying": false,
+      "label": "SET NULL",
+      "prova": {
+        "arquivo": "database/migrations/2026_09_10_100000_add_tenant_id_to_dashboards_table.php",
+        "trecho": "$table->foreignId('tenant_id')\n                ->nullable()\n                ->after('page')\n                ->constrained('tenants')\n                ->nullOnDelete();"
+      }
+    },
+    {
+      "id": "fk_dashboards_created_by",
+      "from": "dashboards",
+      "to": "users",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "toOptional": true,
+      "identifying": false,
+      "label": "SET NULL",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_19_153814_create_dynamic_dashboard_tables.php",
+        "trecho": "$table->foreignId('created_by')->nullable()\n                ->constrained($usersTable)->nullOnDelete();"
+      }
+    },
+    {
+      "id": "fk_dashboard_widgets_dashboard_id",
+      "from": "dashboard_widgets",
+      "to": "dashboards",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "fromOptional": true,
+      "identifying": false,
+      "label": "CASCADE",
+      "prova": {
+        "arquivo": "database/migrations/2026_08_19_153814_create_dynamic_dashboard_tables.php",
+        "trecho": "$table->foreignId('dashboard_id')->constrained('dashboards')->cascadeOnDelete();"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Colunas e tipos como o SQLite os registra depois de rodar as migrations (PRAGMA table_info). Em MySQL ou PostgreSQL, a mesma migration gera os tipos nativos.",
+          "en": "Columns and types as SQLite records them after migrations (PRAGMA table_info). In MySQL or PostgreSQL, the same migration creates native types."
+        },
+        {
+          "pt": "NN = NOT NULL. Sem NN, a coluna aceita nulo.",
+          "en": "NN = NOT NULL. Without NN, null is allowed."
+        },
+        {
+          "pt": "PK, FK e UK marcam cada coluna.",
+          "en": "PK, FK and UK mark each column."
+        },
+        {
+          "pt": "O rótulo de cada ligação é a regra ON DELETE da chave estrangeira. Linha tracejada: a FK não faz parte da PK da tabela filha.",
+          "en": "Each link label is the foreign key's ON DELETE rule. Dashed line: the FK is not part of the child table's PK."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Referências sem chave estrangeira",
+        "en": "References without foreign keys"
+      },
+      "items": [
+        {
+          "pt": "O banco não tem chave estrangeira para estas colunas, por isso elas não ganham linha. Os pares *_type/*_id são relações polimórficas.",
+          "en": "Database has no foreign keys for these columns, so they have no lines. *_type/*_id pairs are polymorphic relations."
+        },
+        {
+          "pt": "remember_table_views: user_type/user_id e tenant_id",
+          "en": "remember_table_views: user_type/user_id and tenant_id"
+        },
+        "notifications: notifiable_type/notifiable_id"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": {
+        "pt": "Outras migrations",
+        "en": "Other migrations"
+      },
+      "items": [
+        {
+          "pt": "users: aprovacao_pendente (add_aprovacao_pendente_to_users_table), origem (add_origem_to_users_table), ativo e deleted_at (add_ativo_and_soft_deletes_to_users_table), dock_atalhos e dock_layout (add_dock_to_users_table) e aparencia (add_aparencia_to_users_table).",
+          "en": "users: aprovacao_pendente (add_aprovacao_pendente_to_users_table), origem (add_origem_to_users_table), ativo and deleted_at (add_ativo_and_soft_deletes_to_users_table), dock_atalhos and dock_layout (add_dock_to_users_table) and aparencia (add_aparencia_to_users_table)."
+        },
+        {
+          "pt": "tenants: cor_primaria e logo (add_identidade_visual_to_tenants_table), registro_habilitado (add_registro_habilitado_to_tenants_table), cor_primaria_nome (add_cor_primaria_nome_to_tenants_table), logo_dark (add_logo_dark_to_tenants_table), unifica_logo (add_unifica_logo_to_tenants_table), aparencia_das_telas (add_aparencia_das_telas_to_tenants_table) e aparencia_por_usuario (add_aparencia_por_usuario_to_tenants_table).",
+          "en": "tenants: cor_primaria and logo (add_identidade_visual_to_tenants_table), registro_habilitado (add_registro_habilitado_to_tenants_table), cor_primaria_nome (add_cor_primaria_nome_to_tenants_table), logo_dark (add_logo_dark_to_tenants_table), unifica_logo (add_unifica_logo_to_tenants_table), aparencia_das_telas (add_aparencia_das_telas_to_tenants_table) and aparencia_por_usuario (add_aparencia_por_usuario_to_tenants_table)."
+        },
+        {
+          "pt": "dashboards: template_key (upgrade_dynamic_dashboard_tables_to_v2) e tenant_id (add_tenant_id_to_dashboards_table). A mesma upgrade tira dashboard_grid_id e apaga as tabelas dashboard_grids e dashboard_grid_blocks.",
+          "en": "dashboards: template_key (upgrade_dynamic_dashboard_tables_to_v2) and tenant_id (add_tenant_id_to_dashboards_table). Same upgrade removes dashboard_grid_id and drops dashboard_grids and dashboard_grid_blocks tables."
+        },
+        {
+          "pt": "dashboard_widgets: section_slug, x, y, w e h entram, e dashboard_grid_block_id, ordering e columns saem (upgrade_dynamic_dashboard_tables_to_v2).",
+          "en": "dashboard_widgets: adds section_slug, x, y, w and h; removes dashboard_grid_block_id, ordering and columns (upgrade_dynamic_dashboard_tables_to_v2)."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Evidência",
+        "en": "Evidence"
+      },
+      "items": [
+        {
+          "pt": "Cada tabela leva à linha da migration que a cria.",
+          "en": "Each table links to its creation migration line."
+        },
+        {
+          "pt": "As colunas que outras migrations acrescentam ou tiram estão no card \"Outras migrations\".",
+          "en": "Columns added or removed by other migrations are in the \"Other migrations\" card."
+        },
+        {
+          "pt": "Cada ligação leva à linha da chave estrangeira, nos cards \"Prova das ligações\".",
+          "en": "Each link leads to the foreign key line in the \"Link evidence\" cards."
+        }
+      ]
+    }
+  ]
+}

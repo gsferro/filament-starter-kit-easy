@@ -1,0 +1,490 @@
+{
+  "slug": "login-social",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Login social: a ida ao provedor e a volta",
+    "en": "Social login: provider redirect and return"
+  },
+  "paineis": [
+    "admin",
+    "app",
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "passo seguinte",
+            "en": "next step"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "desvio: recusa sem sessão",
+            "en": "branch: deny, no session"
+          }
+        },
+        "dashed": {
+          "label": {
+            "pt": "só quando não há conta",
+            "en": "only without account"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta",
+            "en": "reply"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      }
+    },
+    {
+      "id": "loginsocial",
+      "type": "backend",
+      "label": "LoginSocial",
+      "sublabel": "Controller",
+      "sources": [
+        {
+          "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+          "trecho": "final class LoginSocialController extends Controller"
+        },
+        {
+          "arquivo": "routes/web.php",
+          "trecho": "Route::middleware('throttle:10,1')"
+        }
+      ]
+    },
+    {
+      "id": "provedor",
+      "type": "external",
+      "label": {
+        "pt": "Provedor OAuth",
+        "en": "OAuth provider"
+      },
+      "sublabel": "via Socialite"
+    },
+    {
+      "id": "vinculo",
+      "type": "database",
+      "label": "VinculoSocial",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/VinculoSocial.php",
+          "trecho": "public static function de(ProvedorSocial $provedor, string $sub): ?self"
+        },
+        {
+          "arquivo": "app/Models/VinculoSocial.php",
+          "trecho": "public static function vincular(User $user, ProvedorSocial $provedor, string $sub): self"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "database",
+      "label": "User",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function motivoDeIndisponibilidade(): ?string"
+        }
+      ]
+    },
+    {
+      "id": "authenticate",
+      "type": "security",
+      "label": "Authenticate",
+      "sublabel": "Filament",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 335,
+      "label": {
+        "pt": "Ida ao provedor",
+        "en": "To provider"
+      }
+    },
+    {
+      "from": 345,
+      "to": 900,
+      "label": {
+        "pt": "Volta: qual é a conta",
+        "en": "Return: which account"
+      }
+    },
+    {
+      "from": 905,
+      "to": 1245,
+      "label": {
+        "pt": "Desfecho",
+        "en": "Outcome"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "ida",
+      "from": "navegador",
+      "to": "loginsocial",
+      "y": 180,
+      "label": "GET /auth/{provedor}/redirect",
+      "variant": "emphasis",
+      "note": {
+        "pt": "o botão da tela do painel leva ?painel=; grupo throttle:10,1; provedor desligado, sem as três credenciais ou fora do painel: 404",
+        "en": "panel screen button carries ?painel=; throttle:10,1 group; provider off, missing any of three credentials or outside panel: 404"
+      },
+      "prova": {
+        "arquivo": "routes/web.php",
+        "trecho": "Route::get('redirect', [LoginSocialController::class, 'redirecionar'])->name('redirect');"
+      }
+    },
+    {
+      "id": "para-o-provedor",
+      "from": "loginsocial",
+      "to": "provedor",
+      "y": 260,
+      "label": {
+        "pt": "redirect com state",
+        "en": "redirect + state"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "guarda login_social.contexto (painel, org, token) na sessão; o state anti-CSRF do Socialite fica ligado",
+        "en": "saves login_social.contexto (panel, org, token) in session; Socialite anti-CSRF state stays on"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "return Socialite::driver($provedor->value)->redirect();"
+      }
+    },
+    {
+      "id": "volta",
+      "from": "provedor",
+      "to": "loginsocial",
+      "y": 360,
+      "label": "GET /auth/{provedor}/callback",
+      "variant": "emphasis",
+      "note": {
+        "pt": "depois do consentimento, o provedor devolve o navegador para a volta",
+        "en": "after consent, provider sends browser back to callback"
+      },
+      "prova": {
+        "arquivo": "routes/web.php",
+        "trecho": "Route::get('callback', [LoginSocialController::class, 'retorno'])->name('callback');"
+      }
+    },
+    {
+      "id": "usuario",
+      "from": "loginsocial",
+      "to": "provedor",
+      "y": 430,
+      "label": "user()",
+      "variant": "default",
+      "note": {
+        "pt": "state inválido, falha de rede ou credencial recusada: recusa genérica, de volta ao login",
+        "en": "invalid state, network error or rejected credentials: generic denial, back to login"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "$doProvedor = Socialite::driver($provedor->value)->user();"
+      }
+    },
+    {
+      "id": "perfil",
+      "from": "provedor",
+      "to": "loginsocial",
+      "y": 508,
+      "label": {
+        "pt": "e-mail e sub",
+        "en": "email + sub"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "sem e-mail, ou com e-mail não verificado no provedor: recusa, pela regra de cada provedor",
+        "en": "no email or unverified provider email: denied by each provider's rule"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "$perfil    = PerfilSocialData::doSocialite($provedor, $doProvedor);"
+      }
+    },
+    {
+      "id": "por-vinculo",
+      "from": "loginsocial",
+      "to": "vinculo",
+      "y": 586,
+      "label": "de(provedor, sub)",
+      "variant": "default",
+      "note": {
+        "pt": "a identidade já vinculada vence o e-mail",
+        "en": "linked identity takes precedence over email"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "$vinculo = $sub !== '' ? VinculoSocial::de($provedor, $sub) : null;"
+      }
+    },
+    {
+      "id": "por-email",
+      "from": "loginsocial",
+      "to": "user",
+      "y": 646,
+      "label": {
+        "pt": "conta pelo e-mail",
+        "en": "account by email"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "sem vínculo: a conta com o e-mail verificado, inclusive excluída",
+        "en": "no link: account with verified email, including Deleted"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "$user = $this->contaCom($email);"
+      }
+    },
+    {
+      "id": "conta-nova",
+      "from": "loginsocial",
+      "to": "user",
+      "y": 706,
+      "label": {
+        "pt": "cria a conta",
+        "en": "add account"
+      },
+      "variant": "dashed",
+      "note": {
+        "pt": "sem conta: o convite do ?token= ou o cadastro aberto, com o e-mail já verificado; sem os dois, recusa",
+        "en": "no account: ?token= invitation or open sign-up, with email already verified; neither: denied"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "$user = $convite instanceof Convite\n                        ? $this->criarContaPorConvite($provedor, $convite, $email, $mascarado, $perfil->nome)\n                        : $this->criarConta($provedor, $email, $mascarado, $perfil->nome, RegistroAberto::organizacao($contexto['org'] ?? null));"
+      }
+    },
+    {
+      "id": "vincular",
+      "from": "loginsocial",
+      "to": "vinculo",
+      "y": 795,
+      "label": "vincular()",
+      "variant": "default",
+      "note": {
+        "pt": "grava o vínculo; numa conta existente, a 1ª entrada por este provedor avisa a conta por e-mail. No modo estrito a volta para antes: manda o link e não abre sessão",
+        "en": "saves link; on existing account, first login via provider emails account. In strict mode, return stops earlier: sends link without opening session"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "VinculoSocial::vincular($user, $provedor, $sub);"
+      }
+    },
+    {
+      "id": "indisponivel",
+      "from": "loginsocial",
+      "to": "navegador",
+      "y": 915,
+      "label": "302 /conta-indisponivel",
+      "variant": "security",
+      "note": {
+        "pt": "conta inativa ou excluída: dispara Failed e grava o aviso",
+        "en": "Inactive or Deleted account: fires Failed and saves notice"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "ContaIndisponivelController::redirecionar($user, $this->urlDeLoginDoPainel()),"
+      }
+    },
+    {
+      "id": "pendente",
+      "from": "loginsocial",
+      "to": "navegador",
+      "y": 982,
+      "label": {
+        "pt": "302 login (pendente)",
+        "en": "302 login (Pending)"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "cadastro pendente de aprovação: sem sessão e com o aviso Cadastro recebido",
+        "en": "sign-up Pending approval: no session, with Sign-up received notice"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "return $this->aguardarAprovacao($provedor, $user, $mascarado);"
+      }
+    },
+    {
+      "id": "entrar",
+      "from": "loginsocial",
+      "to": "user",
+      "y": 1047,
+      "label": "Auth::login",
+      "variant": "default",
+      "note": {
+        "pt": "dispara o evento Login e destrava a sessão bloqueada; na página única, só os painéis que o provedor autoriza",
+        "en": "fires Login event and unlocks Locked session; on unified page, only panels allowed by provider"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "Auth::login($user);"
+      }
+    },
+    {
+      "id": "destino",
+      "from": "loginsocial",
+      "to": "navegador",
+      "y": 1122,
+      "label": {
+        "pt": "302 painel",
+        "en": "302 panel"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "página única: DestinoAposLogin; senão o painel da ida ou o default. Conta nova: Meu perfil",
+        "en": "unified page: DestinoAposLogin; else outbound panel or default. New account: My profile"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": ": redirect()->to($this->urlDoPainel($user));"
+      }
+    },
+    {
+      "id": "painel",
+      "from": "navegador",
+      "to": "authenticate",
+      "y": 1195,
+      "label": {
+        "pt": "GET do painel",
+        "en": "panel GET"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "a pilha do painel pergunta canAccessPanel (diagrama requisicao-autenticada)",
+        "en": "panel stack checks canAccessPanel (requisicao-autenticada diagram)"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "Authenticate::class,"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "kit.login.{provedor}.habilitado (KIT_SOCIALITE_GOOGLE, _GITHUB, _LINKEDIN e _X; padrão desligado), com as três credenciais de services.{provedor}: sem isso, o botão some e as rotas respondem 404.",
+          "en": "kit.login.{provedor}.habilitado (KIT_SOCIALITE_GOOGLE, _GITHUB, _LINKEDIN and _X; default off), with three services.{provedor} credentials: without these, button hides and routes return 404."
+        },
+        {
+          "pt": "kit.login.{provedor}.paineis (lista vazia vale para todos): em que painéis o provedor vale.",
+          "en": "kit.login.{provedor}.paineis (empty list means all): panels allowing provider."
+        },
+        {
+          "pt": "kit.login.vinculo_confirmar (KIT_SOCIALITE_VINCULO_CONFIRMAR, padrão desligado): liga o modo estrito do vínculo.",
+          "en": "kit.login.vinculo_confirmar (KIT_SOCIALITE_VINCULO_CONFIRMAR, default off): enables strict linking mode."
+        },
+        {
+          "pt": "kit.registro.habilitado (KIT_REGISTRO, padrão desligado): sem conta e sem convite, o cadastro aberto cria a conta; desligado, recusa.",
+          "en": "kit.registro.habilitado (KIT_REGISTRO, default off): without account or invitation, open sign-up creates account; when off, denies."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Modo estrito do vínculo",
+        "en": "Strict linking mode"
+      },
+      "items": [
+        {
+          "pt": "A primeira entrada por um provedor numa conta existente não abre sessão: vai ao e-mail da conta um link assinado de 30 min para GET /auth/{provedor}/confirmar, com o middleware signed.",
+          "en": "First provider login to existing account opens no session: account gets an emailed 30 min signed link to GET /auth/{provedor}/confirmar with signed middleware."
+        },
+        {
+          "pt": "O link vale uma vez; aberto, grava o vínculo e entra, ou responde a recusa se a identidade já for de outra conta.",
+          "en": "Single-use link; opening saves link and signs in, or denies if identity already belongs to another account."
+        }
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Recusas",
+        "en": "Denials"
+      },
+      "items": [
+        {
+          "pt": "Toda recusa volta ao login do painel de origem com um aviso, sem sessão e sem gravar nada.",
+          "en": "Every denial returns to source panel login with notice, no session and no writes."
+        },
+        {
+          "pt": "O login social não pergunta canAccessPanel antes de entrar: quem decide o painel é a pilha do painel, na requisição seguinte.",
+          "en": "Social login never checks canAccessPanel before signing in: panel stack decides on next request."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Com tenant",
+        "en": "Tenant on"
+      },
+      "items": [
+        {
+          "pt": "O cadastro aberto pelo provedor exige o ?org= da tela de cadastro, de uma organização que aceita cadastro; sem ele, a conta não é criada.",
+          "en": "Open sign-up via provider needs sign-up screen ?org= for an organization accepting sign-ups; without it, no account is created."
+        },
+        {
+          "pt": "A conta nova vai ao Meu perfil da primeira organização dela; sem organização, ao painel.",
+          "en": "New account goes to My profile in its first organization; without organization, to panel."
+        }
+      ]
+    }
+  ]
+}

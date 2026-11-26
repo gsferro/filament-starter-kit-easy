@@ -1,0 +1,17 @@
+{
+  "slug": "app-resumo-sem-com",
+  "tipo": "compare",
+  "titulo": {
+    "pt": "/app — o que muda com o tenant ativo",
+    "en": "/app — what changes with tenancy on"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "base": "app-resumo-sem",
+  "cabeca": "app-resumo-com"
+}

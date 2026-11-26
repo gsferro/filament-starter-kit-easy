@@ -1,0 +1,146 @@
+{
+  "slug": "infra-infraestrutura-2",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/infra — Infraestrutura (2/2)",
+    "en": "/infra — Infrastructure (2/2)"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "Tapp\\FilamentAuthenticationLog\\Resources\\AuthenticationLogResource",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Infra\\Resources\\ComposerReleasePackages\\ComposerReleasePackageResource",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "Tapp\\FilamentMailLog\\Resources\\MailLogResource",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "Croustibat\\FilamentJobsMonitor\\Resources\\QueueMonitorResource",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\RetencaoDeExcecoes",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\AuditoriaPorEvento",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\AuditoriaRecente",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\AutenticacaoStats",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\ComposerReleaseOverviewWidget",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\FilasPorFila",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\FilasStats",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\FilasTaxaDeSucesso",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\IaCustoPorTask",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\IaExecucoesPorDia",
+      "row": 7,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\IaExecucoesPorStatus",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\IaStats",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\IaTokensPorDriver",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\PacotesComposer",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoPorStatus",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoStats",
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\UltimoBackup",
+      "row": 6,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Infra\\Widgets\\UltimosAcessos",
+      "row": 7,
+      "col": 2
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44,
+    "teto": 3
+  }
+}

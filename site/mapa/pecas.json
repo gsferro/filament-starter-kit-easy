@@ -1,0 +1,6833 @@
+[
+  {
+    "id": "App\\Ai\\Agents\\AgenteBase",
+    "nome": "AgenteBase",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-30",
+      "F-53",
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Agents/AgenteBase.php",
+        "trecho": "abstract class AgenteBase implements Agent, HasMiddleware"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Agents\\Assistente",
+    "nome": "Assistente",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-53",
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Agents/Assistente.php",
+        "trecho": "final class Assistente extends AgenteBase implements Conversational, HasTools"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Agents\\GuardaPrompt",
+    "nome": "GuardaPrompt",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Agents/GuardaPrompt.php",
+        "trecho": "final class GuardaPrompt extends AgenteBase implements HasStructuredOutput"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Exceptions\\AgenteInativoException",
+    "nome": "AgenteInativoException",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-30",
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Exceptions/AgenteInativoException.php",
+        "trecho": "final class AgenteInativoException extends RuntimeException {}"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Exceptions\\AgenteSemGuardrailsException",
+    "nome": "AgenteSemGuardrailsException",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Exceptions/AgenteSemGuardrailsException.php",
+        "trecho": "class AgenteSemGuardrailsException extends RuntimeException {}"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Exceptions\\PromptInjecaoBloqueadaException",
+    "nome": "PromptInjecaoBloqueadaException",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Exceptions/PromptInjecaoBloqueadaException.php",
+        "trecho": "class PromptInjecaoBloqueadaException extends RuntimeException"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Guardrails\\FiltroSaidaSensivelMiddleware",
+    "nome": "FiltroSaidaSensivelMiddleware",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Guardrails/FiltroSaidaSensivelMiddleware.php",
+        "trecho": "final class FiltroSaidaSensivelMiddleware"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Guardrails\\GarantirPromptSeguroMiddleware",
+    "nome": "GarantirPromptSeguroMiddleware",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Guardrails/GarantirPromptSeguroMiddleware.php",
+        "trecho": "final class GarantirPromptSeguroMiddleware"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Guardrails\\GuardrailRegistry",
+    "nome": "GuardrailRegistry",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Guardrails/GuardrailRegistry.php",
+        "trecho": "final class GuardrailRegistry"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Guardrails\\PiiRedactor",
+    "nome": "PiiRedactor",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Guardrails/PiiRedactor.php",
+        "trecho": "final class PiiRedactor"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Guardrails\\PiiRedactorMiddleware",
+    "nome": "PiiRedactorMiddleware",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Guardrails/PiiRedactorMiddleware.php",
+        "trecho": "final class PiiRedactorMiddleware"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Guardrails\\PromptInjectionGuardMiddleware",
+    "nome": "PromptInjectionGuardMiddleware",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Guardrails/PromptInjectionGuardMiddleware.php",
+        "trecho": "final class PromptInjectionGuardMiddleware"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Health\\LocalAiCheck",
+    "nome": "LocalAiCheck",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "spatie/laravel-health",
+    "features": [
+      "F-33",
+      "F-56"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Health/LocalAiCheck.php",
+        "trecho": "final class LocalAiCheck extends PingCheck"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Listeners\\RegistrarAiRun",
+    "nome": "RegistrarAiRun",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-43",
+      "F-55"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Listeners/RegistrarAiRun.php",
+        "trecho": "final class RegistrarAiRun"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Middleware\\AiAuditMiddleware",
+    "nome": "AiAuditMiddleware",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Middleware/AiAuditMiddleware.php",
+        "trecho": "final class AiAuditMiddleware"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Middleware\\BudgetGuardMiddleware",
+    "nome": "BudgetGuardMiddleware",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Middleware/BudgetGuardMiddleware.php",
+        "trecho": "final class BudgetGuardMiddleware"
+      }
+    ]
+  },
+  {
+    "id": "App\\Ai\\Support\\ResolvedorDeTenant",
+    "nome": "ResolvedorDeTenant",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54",
+      "F-55"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Ai/Support/ResolvedorDeTenant.php",
+        "trecho": "final class ResolvedorDeTenant"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitAdmin",
+    "nome": "KitAdmin",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-103"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitAdmin.php",
+        "trecho": "class KitAdmin extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitArte",
+    "nome": "KitArte",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-113"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitArte.php",
+        "trecho": "class KitArte extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitCobertura",
+    "nome": "KitCobertura",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-112"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitCobertura.php",
+        "trecho": "class KitCobertura extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitConvitesLembrar",
+    "nome": "KitConvitesLembrar",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-19"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitConvitesLembrar.php",
+        "trecho": "class KitConvitesLembrar extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitInfo",
+    "nome": "KitInfo",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-104"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitInfo.php",
+        "trecho": "class KitInfo extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitInstall",
+    "nome": "KitInstall",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-102",
+      "F-106"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "class KitInstall extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitMidiaPrivada",
+    "nome": "KitMidiaPrivada",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-100"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitMidiaPrivada.php",
+        "trecho": "class KitMidiaPrivada extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitTenancy",
+    "nome": "KitTenancy",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-21"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitTenancy.php",
+        "trecho": "class KitTenancy extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Console\\Commands\\KitUpdate",
+    "nome": "KitUpdate",
+    "tipo": "comando",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-105",
+      "F-114"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Console/Commands/KitUpdate.php",
+        "trecho": "class KitUpdate extends Command"
+      }
+    ]
+  },
+  {
+    "id": "App\\Data\\Convite\\FalhaDoConviteData",
+    "nome": "FalhaDoConviteData",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "spatie/laravel-data",
+    "features": [
+      "F-18",
+      "F-111"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Data/Convite/FalhaDoConviteData.php",
+        "trecho": "final class FalhaDoConviteData extends Data"
+      }
+    ]
+  },
+  {
+    "id": "App\\Data\\Convite\\ResultadoDoConviteEmMassaData",
+    "nome": "ResultadoDoConviteEmMassaData",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "spatie/laravel-data",
+    "features": [
+      "F-18",
+      "F-111"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Data/Convite/ResultadoDoConviteEmMassaData.php",
+        "trecho": "final class ResultadoDoConviteEmMassaData extends Data"
+      }
+    ]
+  },
+  {
+    "id": "App\\Data\\Ia\\VeredictoDoGuardrailData",
+    "nome": "VeredictoDoGuardrailData",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "spatie/laravel-data",
+    "features": [
+      "F-54",
+      "F-111"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Data/Ia/VeredictoDoGuardrailData.php",
+        "trecho": "final class VeredictoDoGuardrailData extends Data"
+      }
+    ]
+  },
+  {
+    "id": "App\\Data\\Social\\PerfilSocialData",
+    "nome": "PerfilSocialData",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "spatie/laravel-data",
+    "features": [
+      "F-72",
+      "F-111"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Data/Social/PerfilSocialData.php",
+        "trecho": "final class PerfilSocialData extends Data"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Pages\\ConfiguracoesDoKit",
+    "nome": "ConfiguracoesDoKit",
+    "tipo": "pagina",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/spatie-laravel-settings-plugin",
+    "features": [
+      "F-03a",
+      "F-03b",
+      "F-03c",
+      "F-68",
+      "F-72",
+      "F-73",
+      "F-74",
+      "F-75",
+      "F-76",
+      "F-79",
+      "F-80",
+      "F-81",
+      "F-82",
+      "F-83",
+      "F-84",
+      "F-86",
+      "F-88",
+      "F-91",
+      "F-93",
+      "F-94",
+      "F-95",
+      "F-96",
+      "F-98",
+      "F-101",
+      "F-119"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+        "trecho": "class ConfiguracoesDoKit extends SettingsPage"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Pages\\Dashboard",
+    "nome": "Dashboard",
+    "tipo": "pagina",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_DASHBOARD_DINAMICO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+        "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "mddev31/filament-dynamic-dashboard",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+        "trecho": "final class Dashboard extends DynamicDashboard"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Pages\\HubDeAdministracao",
+    "nome": "HubDeAdministracao",
+    "tipo": "pagina",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_HUB",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Pages/HubDeAdministracao.php",
+        "trecho": "return (bool) config('kit.hub');"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "harvirsidhu/filament-cards",
+    "features": [
+      "F-68"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Pages/HubDeAdministracao.php",
+        "trecho": "class HubDeAdministracao extends CardsPage"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\AgentesIa\\AgenteIaResource",
+    "nome": "AgenteIaResource",
+    "tipo": "recurso",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_AGENTES_IA",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php",
+        "trecho": "return AgentesDeIa::habilitado() && parent::canAccess();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-30",
+      "F-46",
+      "F-97"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/AgentesIa/AgenteIaResource.php",
+        "trecho": "class AgenteIaResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Convites\\ConviteResource",
+    "nome": "ConviteResource",
+    "tipo": "recurso",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-15",
+      "F-16",
+      "F-18",
+      "F-20",
+      "F-46",
+      "F-120"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Convites/ConviteResource.php",
+        "trecho": "class ConviteResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Convites\\Pages\\CreateConvite",
+    "nome": "CreateConvite",
+    "tipo": "pagina",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-15"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Pages/CreateConvite.php",
+        "trecho": "class CreateConvite extends CreateRecord"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Convites\\Tables\\ConvitesTable",
+    "nome": "ConvitesTable",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-20"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "class ConvitesTable"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Onboarding\\CondicaoResource",
+    "nome": "CondicaoResource",
+    "tipo": "recurso",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/Onboarding/CondicaoResource.php",
+        "trecho": "return TutorialGuiado::habilitado() && parent::canAccess();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "wallacemartinss/filament-onboarding",
+    "features": [
+      "F-31",
+      "F-46"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Onboarding/CondicaoResource.php",
+        "trecho": "class CondicaoResource extends OnboardingConditionResource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Onboarding\\JornadaResource",
+    "nome": "JornadaResource",
+    "tipo": "recurso",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/Onboarding/JornadaResource.php",
+        "trecho": "return TutorialGuiado::habilitado() && parent::canAccess();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "wallacemartinss/filament-onboarding",
+    "features": [
+      "F-31",
+      "F-46"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Onboarding/JornadaResource.php",
+        "trecho": "class JornadaResource extends OnboardingFlowResource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Roles\\RoleResource",
+    "nome": "RoleResource",
+    "tipo": "recurso",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-09",
+      "F-12",
+      "F-62",
+      "F-63",
+      "F-120"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Roles/RoleResource.php",
+        "trecho": "class RoleResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Tenants\\TenantResource",
+    "nome": "TenantResource",
+    "tipo": "recurso",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/TenantResource.php",
+        "trecho": "return config('kit.tenancy.enabled') && parent::canAccess();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-23",
+      "F-24",
+      "F-27",
+      "F-28",
+      "F-46",
+      "F-70",
+      "F-78",
+      "F-83",
+      "F-87",
+      "F-89",
+      "F-90",
+      "F-97"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/TenantResource.php",
+        "trecho": "class TenantResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Tenants\\Widgets\\AcessosPorPainel",
+    "nome": "AcessosPorPainel",
+    "tipo": "widget",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/Widgets/AcessosPorPainel.php",
+        "trecho": "return TenantResource::canAccess() && rescue("
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-90"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/Widgets/AcessosPorPainel.php",
+        "trecho": "class AcessosPorPainel extends BreakdownWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Resources\\Users\\UserResource",
+    "nome": "UserResource",
+    "tipo": "recurso",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-03b",
+      "F-08",
+      "F-29",
+      "F-46",
+      "F-70",
+      "F-76",
+      "F-77",
+      "F-120"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+        "trecho": "class UserResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Widgets\\AgentesIaPorProvider",
+    "nome": "AgentesIaPorProvider",
+    "tipo": "widget",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_AGENTES_IA",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Widgets/AgentesIaPorProvider.php",
+        "trecho": "return AgentesDeIa::habilitado();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-32"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Widgets/AgentesIaPorProvider.php",
+        "trecho": "class AgentesIaPorProvider extends SegmentBarWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Widgets\\AgentesIaStats",
+    "nome": "AgentesIaStats",
+    "tipo": "widget",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_AGENTES_IA",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Widgets/AgentesIaStats.php",
+        "trecho": "return AgentesDeIa::habilitado();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "filament/widgets",
+    "features": [
+      "F-32"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Widgets/AgentesIaStats.php",
+        "trecho": "class AgentesIaStats extends StatsOverviewWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Widgets\\ConvitesPorSituacao",
+    "nome": "ConvitesPorSituacao",
+    "tipo": "widget",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "leandrocfe/filament-apex-charts",
+    "features": [
+      "F-32"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Widgets/ConvitesPorSituacao.php",
+        "trecho": "class ConvitesPorSituacao extends ApexChartWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Widgets\\ProgressoOnboarding",
+    "nome": "ProgressoOnboarding",
+    "tipo": "widget",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Widgets/ProgressoOnboarding.php",
+        "trecho": "return TutorialGuiado::habilitado() && (bool) rescue("
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-32"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Widgets/ProgressoOnboarding.php",
+        "trecho": "class ProgressoOnboarding extends GoalProgressWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Widgets\\UltimosUsuariosCadastrados",
+    "nome": "UltimosUsuariosCadastrados",
+    "tipo": "widget",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-32"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Widgets/UltimosUsuariosCadastrados.php",
+        "trecho": "class UltimosUsuariosCadastrados extends RecentItemsWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Widgets\\UsuariosPorPapel",
+    "nome": "UsuariosPorPapel",
+    "tipo": "widget",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-32"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Widgets/UsuariosPorPapel.php",
+        "trecho": "class UsuariosPorPapel extends BreakdownWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Admin\\Widgets\\UsuariosVisaoGeralStats",
+    "nome": "UsuariosVisaoGeralStats",
+    "tipo": "widget",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/widgets",
+    "features": [
+      "F-32"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Widgets/UsuariosVisaoGeralStats.php",
+        "trecho": "class UsuariosVisaoGeralStats extends StatsOverviewWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\App\\Pages\\ConvitesRecebidos",
+    "nome": "ConvitesRecebidos",
+    "tipo": "pagina",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
+        "trecho": "return (bool) config('kit.tenancy.enabled') && Auth::check();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-17"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
+        "trecho": "class ConvitesRecebidos extends Page implements HasTable"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\App\\Pages\\Dashboard",
+    "nome": "Dashboard",
+    "tipo": "pagina",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_DASHBOARD_DINAMICO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/App/Pages/Dashboard.php",
+        "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "mddev31/filament-dynamic-dashboard",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/App/Pages/Dashboard.php",
+        "trecho": "final class Dashboard extends DynamicDashboard"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\App\\Pages\\HubDoNegocio",
+    "nome": "HubDoNegocio",
+    "tipo": "pagina",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_HUB",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/App/Pages/HubDoNegocio.php",
+        "trecho": "return (bool) config('kit.hub');"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "harvirsidhu/filament-cards",
+    "features": [
+      "F-68"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/App/Pages/HubDoNegocio.php",
+        "trecho": "class HubDoNegocio extends CardsPage"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\App\\Resources\\Convites\\ConviteResource",
+    "nome": "ConviteResource",
+    "tipo": "recurso",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/App/Resources/Convites/ConviteResource.php",
+        "trecho": "return (bool) config('kit.tenancy.enabled') && parent::canAccess();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-15",
+      "F-18",
+      "F-25",
+      "F-46",
+      "F-76"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/App/Resources/Convites/ConviteResource.php",
+        "trecho": "class ConviteResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\App\\Resources\\Projetos\\ProjetoResource",
+    "nome": "ProjetoResource",
+    "tipo": "recurso",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "modo": "com",
+      "chaves": [
+        {
+          "chave": "KIT_DEMO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/App/Resources/Projetos/ProjetoResource.php",
+        "trecho": "return (bool) config('kit.tenancy.enabled') && (bool) config('kit.demo');"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-46",
+      "F-61",
+      "F-97",
+      "F-100",
+      "F-101"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/App/Resources/Projetos/ProjetoResource.php",
+        "trecho": "class ProjetoResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\App\\Resources\\Users\\UserResource",
+    "nome": "UserResource",
+    "tipo": "recurso",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "modo": "com",
+      "evidencia": {
+        "arquivo": "app/Filament/App/Resources/Users/UserResource.php",
+        "trecho": "return (bool) config('kit.tenancy.enabled') && parent::canAccess();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-03b",
+      "F-25",
+      "F-46",
+      "F-69",
+      "F-70",
+      "F-76"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/App/Resources/Users/UserResource.php",
+        "trecho": "class UserResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Pages\\BackupRunsPage",
+    "nome": "BackupRunsPage",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "brimham/filament-backup-monitor",
+    "features": [
+      "F-34"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Pages/BackupRunsPage.php",
+        "trecho": "class BackupRunsPage extends BackupRunsDoPacote"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Pages\\Dashboard",
+    "nome": "Dashboard",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_DASHBOARD_DINAMICO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Infra/Pages/Dashboard.php",
+        "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "mddev31/filament-dynamic-dashboard",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Pages/Dashboard.php",
+        "trecho": "final class Dashboard extends DynamicDashboard"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+    "nome": "HubDeInfraestrutura",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "harvirsidhu/filament-cards",
+    "features": [
+      "F-68"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Pages/HubDeInfraestrutura.php",
+        "trecho": "class HubDeInfraestrutura extends CardsPage"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Pages\\Pulse",
+    "nome": "Pulse",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-40"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Pages/Pulse.php",
+        "trecho": "class Pulse extends Dashboard"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Resources\\AiRuns\\AiRunResource",
+    "nome": "AiRunResource",
+    "tipo": "recurso",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-43",
+      "F-46",
+      "F-55",
+      "F-97"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+        "trecho": "class AiRunResource extends Resource"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Resources\\ComposerReleasePackages\\ComposerReleasePackageResource",
+    "nome": "ComposerReleasePackageResource",
+    "tipo": "recurso",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "mominalzaraa/filament-composer-release-notifier",
+    "features": [
+      "F-42",
+      "F-46"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Resources/ComposerReleasePackages/ComposerReleasePackageResource.php",
+        "trecho": "class ComposerReleasePackageResource extends ResourceDoPacote"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\AuditoriaPorEvento",
+    "nome": "AuditoriaPorEvento",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/AuditoriaPorEvento.php",
+        "trecho": "class AuditoriaPorEvento extends BreakdownWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\AuditoriaRecente",
+    "nome": "AuditoriaRecente",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/AuditoriaRecente.php",
+        "trecho": "class AuditoriaRecente extends TimelineWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\AutenticacaoStats",
+    "nome": "AutenticacaoStats",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/AutenticacaoStats.php",
+        "trecho": "class AutenticacaoStats extends StatsOverviewWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\ComposerReleaseOverviewWidget",
+    "nome": "ComposerReleaseOverviewWidget",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "mominalzaraa/filament-composer-release-notifier",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/ComposerReleaseOverviewWidget.php",
+        "trecho": "class ComposerReleaseOverviewWidget extends ComposerReleasesDoPacote"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\FilasPorFila",
+    "nome": "FilasPorFila",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/FilasPorFila.php",
+        "trecho": "class FilasPorFila extends BreakdownWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\FilasStats",
+    "nome": "FilasStats",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/FilasStats.php",
+        "trecho": "class FilasStats extends StatsOverviewWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\FilasTaxaDeSucesso",
+    "nome": "FilasTaxaDeSucesso",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "leandrocfe/filament-apex-charts",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/FilasTaxaDeSucesso.php",
+        "trecho": "class FilasTaxaDeSucesso extends ApexChartWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\IaCustoPorTask",
+    "nome": "IaCustoPorTask",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/IaCustoPorTask.php",
+        "trecho": "class IaCustoPorTask extends BreakdownWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\IaExecucoesPorDia",
+    "nome": "IaExecucoesPorDia",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "leandrocfe/filament-apex-charts",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/IaExecucoesPorDia.php",
+        "trecho": "class IaExecucoesPorDia extends ApexChartWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\IaExecucoesPorStatus",
+    "nome": "IaExecucoesPorStatus",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "leandrocfe/filament-apex-charts",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/IaExecucoesPorStatus.php",
+        "trecho": "class IaExecucoesPorStatus extends ApexChartWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\IaStats",
+    "nome": "IaStats",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/IaStats.php",
+        "trecho": "class IaStats extends StatsOverviewWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\IaTokensPorDriver",
+    "nome": "IaTokensPorDriver",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/IaTokensPorDriver.php",
+        "trecho": "class IaTokensPorDriver extends BreakdownWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\PacotesComposer",
+    "nome": "PacotesComposer",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/PacotesComposer.php",
+        "trecho": "class PacotesComposer extends BulletWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoPorStatus",
+    "nome": "SaudeAplicacaoPorStatus",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/SaudeAplicacaoPorStatus.php",
+        "trecho": "class SaudeAplicacaoPorStatus extends SegmentBarWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\SaudeAplicacaoStats",
+    "nome": "SaudeAplicacaoStats",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/SaudeAplicacaoStats.php",
+        "trecho": "class SaudeAplicacaoStats extends StatsOverviewWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\UltimoBackup",
+    "nome": "UltimoBackup",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/UltimoBackup.php",
+        "trecho": "class UltimoBackup extends MetricWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Infra\\Widgets\\UltimosAcessos",
+    "nome": "UltimosAcessos",
+    "tipo": "widget",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Widgets/UltimosAcessos.php",
+        "trecho": "class UltimosAcessos extends RecentItemsWidget"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\RegistroPorConvite",
+    "nome": "RegistroPorConvite",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-03",
+      "F-03a",
+      "F-74",
+      "F-76",
+      "F-78"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/RegistroPorConvite.php",
+        "trecho": "class RegistroPorConvite extends Register"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\TelaBloqueio",
+    "nome": "TelaBloqueio",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "marjose123/filament-lockscreen",
+    "features": [
+      "F-06"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "class TelaBloqueio extends LockerScreen"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\TelaDoisFatores",
+    "nome": "TelaDoisFatores",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "jeffgreco13/filament-breezy",
+    "features": [
+      "F-04"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaDoisFatores.php",
+        "trecho": "class TelaDoisFatores extends TwoFactorPage"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\TelaLogin",
+    "nome": "TelaLogin",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-01",
+      "F-73",
+      "F-74",
+      "F-89"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+        "trecho": "class TelaLogin extends Login"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\TelaLoginUnificada",
+    "nome": "TelaLoginUnificada",
+    "tipo": "pagina",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-73"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/KitServiceProvider.php",
+        "trecho": "Route::get('/login', TelaLoginUnificada::class)->name('login');"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\TelaRecuperarSenha",
+    "nome": "TelaRecuperarSenha",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-02",
+      "F-74"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaRecuperarSenha.php",
+        "trecho": "class TelaRecuperarSenha extends RequestPasswordReset"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\TelaRedefinirSenha",
+    "nome": "TelaRedefinirSenha",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-02"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaRedefinirSenha.php",
+        "trecho": "class TelaRedefinirSenha extends ResetPassword"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\Auth\\TelaVerificacaoDeEmail",
+    "nome": "TelaVerificacaoDeEmail",
+    "tipo": "pagina",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-03c"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php",
+        "trecho": "class TelaVerificacaoDeEmail extends EmailVerification"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\BoasVindas",
+    "nome": "BoasVindas",
+    "tipo": "pagina",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "harvirsidhu/filament-cards",
+    "features": [
+      "F-65",
+      "F-66"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "routes/web.php",
+        "trecho": "Route::get('/', BoasVindas::class)"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\DashboardClassico",
+    "nome": "DashboardClassico",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-32",
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/DashboardClassico.php",
+        "trecho": "final class DashboardClassico extends FilamentDashboard"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\MyProfilePage",
+    "nome": "MyProfilePage",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "jeffgreco13/filament-breezy",
+    "features": [
+      "F-04",
+      "F-07",
+      "F-83",
+      "F-116"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/MyProfilePage.php",
+        "trecho": "class MyProfilePage extends MeuPerfilDoPacote"
+      }
+    ]
+  },
+  {
+    "id": "App\\Filament\\Pages\\PrimeirosPassos",
+    "nome": "PrimeirosPassos",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Pages/PrimeirosPassos.php",
+        "trecho": "return TutorialGuiado::habilitado();"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "wallacemartinss/filament-onboarding",
+    "features": [
+      "F-94"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/PrimeirosPassos.php",
+        "trecho": "class PrimeirosPassos extends OnboardingProgress"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Controllers\\Auth\\ContaIndisponivelController",
+    "nome": "ContaIndisponivelController",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-77"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Controllers/Auth/ContaIndisponivelController.php",
+        "trecho": "final class ContaIndisponivelController extends Controller"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Controllers\\Auth\\EntrarNoPainelController",
+    "nome": "EntrarNoPainelController",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-73"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Controllers/Auth/EntrarNoPainelController.php",
+        "trecho": "final class EntrarNoPainelController extends Controller"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Controllers\\Auth\\LoginSocialController",
+    "nome": "LoginSocialController",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-72"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "final class LoginSocialController extends Controller"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Controllers\\Controller",
+    "nome": "Controller",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Controllers/Controller.php",
+        "trecho": "abstract class Controller"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Middleware\\BloquearSessaoComRetorno",
+    "nome": "BloquearSessaoComRetorno",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "marjose123/filament-lockscreen",
+    "features": [
+      "F-06"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Middleware/BloquearSessaoComRetorno.php",
+        "trecho": "class BloquearSessaoComRetorno extends Locker"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Middleware\\DefinirTenantDePermissoes",
+    "nome": "DefinirTenantDePermissoes",
+    "tipo": "middleware",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-22",
+      "F-24"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Middleware/DefinirTenantDePermissoes.php",
+        "trecho": "class DefinirTenantDePermissoes"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Middleware\\ExigeTutorialGuiadoLigado",
+    "nome": "ExigeTutorialGuiadoLigado",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-31",
+      "F-94"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
+        "trecho": "class ExigeTutorialGuiadoLigado"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Middleware\\ExigirEmailVerificado",
+    "nome": "ExigirEmailVerificado",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-03c"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+        "trecho": "final class ExigirEmailVerificado extends EnsureEmailIsVerified"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Middleware\\RaizDeUrlSemPublic",
+    "nome": "RaizDeUrlSemPublic",
+    "tipo": "middleware",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-117"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Middleware/RaizDeUrlSemPublic.php",
+        "trecho": "final class RaizDeUrlSemPublic"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Responses\\RespostaDeCadastro",
+    "nome": "RespostaDeCadastro",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-03",
+      "F-03a"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Responses/RespostaDeCadastro.php",
+        "trecho": "final class RespostaDeCadastro extends RegistrationResponse"
+      }
+    ]
+  },
+  {
+    "id": "App\\Http\\Responses\\RespostaDeLogin",
+    "nome": "RespostaDeLogin",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-01",
+      "F-73"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Responses/RespostaDeLogin.php",
+        "trecho": "final class RespostaDeLogin extends LoginResponse"
+      }
+    ]
+  },
+  {
+    "id": "App\\Listeners\\AuditarConfiguracoesDoKit",
+    "nome": "AuditarConfiguracoesDoKit",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-37",
+      "F-79"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Listeners/AuditarConfiguracoesDoKit.php",
+        "trecho": "final class AuditarConfiguracoesDoKit"
+      }
+    ]
+  },
+  {
+    "id": "App\\Livewire\\AssistenteChatWidget",
+    "nome": "AssistenteChatWidget",
+    "tipo": "livewire",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_AGENTES_IA",
+          "padrao": false
+        },
+        {
+          "chave": "KIT_AGENTES_IA_PAINEIS",
+          "padrao": []
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Support/AgentesDeIa.php",
+        "trecho": "&& in_array($painel->getId(), (array) config('kit.agentes_ia.paineis', []), true);"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "livewire/livewire",
+    "features": [
+      "F-53"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Livewire/AssistenteChatWidget.php",
+        "trecho": "class AssistenteChatWidget extends Component"
+      }
+    ]
+  },
+  {
+    "id": "App\\Livewire\\ChecklistDoOnboarding",
+    "nome": "ChecklistDoOnboarding",
+    "tipo": "livewire",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_ONBOARDING",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Support/TutorialGuiado.php",
+        "trecho": "return (bool) config('kit.onboarding.habilitado', false);"
+      }
+    },
+    "origem": "pacote+proprio",
+    "pacote": "wallacemartinss/filament-onboarding",
+    "features": [
+      "F-94"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Livewire/ChecklistDoOnboarding.php",
+        "trecho": "class ChecklistDoOnboarding extends OnboardingLauncher"
+      }
+    ]
+  },
+  {
+    "id": "App\\Livewire\\DefinirSenhaPorEmail",
+    "nome": "DefinirSenhaPorEmail",
+    "tipo": "livewire",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "jeffgreco13/filament-breezy",
+    "features": [
+      "F-116"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Livewire/DefinirSenhaPorEmail.php",
+        "trecho": "class DefinirSenhaPorEmail extends MyProfileComponent"
+      }
+    ]
+  },
+  {
+    "id": "App\\Livewire\\InformacoesPessoais",
+    "nome": "InformacoesPessoais",
+    "tipo": "livewire",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "jeffgreco13/filament-breezy",
+    "features": [
+      "F-07",
+      "F-76"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Livewire/InformacoesPessoais.php",
+        "trecho": "class InformacoesPessoais extends PersonalInfo"
+      }
+    ]
+  },
+  {
+    "id": "App\\Livewire\\PreferenciasDeAparencia",
+    "nome": "PreferenciasDeAparencia",
+    "tipo": "livewire",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "jeffgreco13/filament-breezy",
+    "features": [
+      "F-83"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Livewire/PreferenciasDeAparencia.php",
+        "trecho": "class PreferenciasDeAparencia extends MyProfileComponent"
+      }
+    ]
+  },
+  {
+    "id": "App\\Models\\AgenteIa",
+    "nome": "AgenteIa",
+    "tipo": "model",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-30"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Models/AgenteIa.php",
+        "trecho": "class AgenteIa extends Model implements Auditable"
+      }
+    ]
+  },
+  {
+    "id": "App\\Models\\Convite",
+    "nome": "Convite",
+    "tipo": "model",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-15",
+      "F-16",
+      "F-18",
+      "F-19",
+      "F-20"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "class Convite extends Model implements Auditable"
+      }
+    ]
+  },
+  {
+    "id": "App\\Models\\Projeto",
+    "nome": "Projeto",
+    "tipo": "model",
+    "paineis": [
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-26",
+      "F-61",
+      "F-97",
+      "F-100"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Models/Projeto.php",
+        "trecho": "class Projeto extends Model implements Auditable, HasMedia"
+      }
+    ]
+  },
+  {
+    "id": "App\\Models\\Role",
+    "nome": "Role",
+    "tipo": "model",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "spatie/laravel-permission",
+    "features": [
+      "F-09",
+      "F-12"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Models/Role.php",
+        "trecho": "class Role extends SpatieRole"
+      }
+    ]
+  },
+  {
+    "id": "App\\Models\\Tenant",
+    "nome": "Tenant",
+    "tipo": "model",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-22",
+      "F-23",
+      "F-27",
+      "F-28",
+      "F-87"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Models/Tenant.php",
+        "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName"
+      }
+    ]
+  },
+  {
+    "id": "App\\Models\\User",
+    "nome": "User",
+    "tipo": "model",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-03b",
+      "F-08",
+      "F-09",
+      "F-10",
+      "F-11",
+      "F-14",
+      "F-22",
+      "F-77",
+      "F-92"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Models/User.php",
+        "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail"
+      }
+    ]
+  },
+  {
+    "id": "App\\Models\\VinculoSocial",
+    "nome": "VinculoSocial",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-72"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Models/VinculoSocial.php",
+        "trecho": "class VinculoSocial extends Model"
+      }
+    ]
+  },
+  {
+    "id": "App\\Notifications\\ConfirmarVinculoSocial",
+    "nome": "ConfirmarVinculoSocial",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-72"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Notifications/ConfirmarVinculoSocial.php",
+        "trecho": "class ConfirmarVinculoSocial extends Notification implements ShouldQueue"
+      }
+    ]
+  },
+  {
+    "id": "App\\Notifications\\ConviteDeAcesso",
+    "nome": "ConviteDeAcesso",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-15",
+      "F-19"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Notifications/ConviteDeAcesso.php",
+        "trecho": "class ConviteDeAcesso extends Notification implements ShouldQueue"
+      }
+    ]
+  },
+  {
+    "id": "App\\Notifications\\PrimeiroAcessoSocial",
+    "nome": "PrimeiroAcessoSocial",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-72"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Notifications/PrimeiroAcessoSocial.php",
+        "trecho": "class PrimeiroAcessoSocial extends Notification implements ShouldQueue"
+      }
+    ]
+  },
+  {
+    "id": "App\\Observers\\TenantObserver",
+    "nome": "TenantObserver",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Observers/TenantObserver.php",
+        "trecho": "final class TenantObserver"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\AgenteIaPolicy",
+    "nome": "AgenteIaPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-30",
+      "F-63"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/AgenteIaPolicy.php",
+        "trecho": "class AgenteIaPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\AiRunPolicy",
+    "nome": "AiRunPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-43"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/AiRunPolicy.php",
+        "trecho": "class AiRunPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\AuditPolicy",
+    "nome": "AuditPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-37"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/AuditPolicy.php",
+        "trecho": "class AuditPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\AuthenticationLogPolicy",
+    "nome": "AuthenticationLogPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-38"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/AuthenticationLogPolicy.php",
+        "trecho": "class AuthenticationLogPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\CommandRecordPolicy",
+    "nome": "CommandRecordPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-39"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/CommandRecordPolicy.php",
+        "trecho": "class CommandRecordPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\ComposerReleasePackageSnapshotPolicy",
+    "nome": "ComposerReleasePackageSnapshotPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-42"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/ComposerReleasePackageSnapshotPolicy.php",
+        "trecho": "class ComposerReleasePackageSnapshotPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\ConvitePolicy",
+    "nome": "ConvitePolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-13",
+      "F-15",
+      "F-20",
+      "F-63"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/ConvitePolicy.php",
+        "trecho": "class ConvitePolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\ExceptionPolicy",
+    "nome": "ExceptionPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-57"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/ExceptionPolicy.php",
+        "trecho": "class ExceptionPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\MailLogPolicy",
+    "nome": "MailLogPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-58"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/MailLogPolicy.php",
+        "trecho": "class MailLogPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\OnboardingConditionPolicy",
+    "nome": "OnboardingConditionPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-31"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/OnboardingConditionPolicy.php",
+        "trecho": "class OnboardingConditionPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\OnboardingFlowPolicy",
+    "nome": "OnboardingFlowPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-31"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/OnboardingFlowPolicy.php",
+        "trecho": "class OnboardingFlowPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\ProjetoPolicy",
+    "nome": "ProjetoPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-61",
+      "F-97"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/ProjetoPolicy.php",
+        "trecho": "class ProjetoPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\QueueMonitorPolicy",
+    "nome": "QueueMonitorPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-35"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/QueueMonitorPolicy.php",
+        "trecho": "class QueueMonitorPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\RolePolicy",
+    "nome": "RolePolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-12",
+      "F-120"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/RolePolicy.php",
+        "trecho": "class RolePolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\TenantPolicy",
+    "nome": "TenantPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-23"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/TenantPolicy.php",
+        "trecho": "class TenantPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Policies\\UserPolicy",
+    "nome": "UserPolicy",
+    "tipo": "policy",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-13",
+      "F-29",
+      "F-77"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Policies/UserPolicy.php",
+        "trecho": "class UserPolicy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Providers\\AppServiceProvider",
+    "nome": "AppServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-06",
+      "F-74"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/AppServiceProvider.php",
+        "trecho": "class AppServiceProvider extends ServiceProvider"
+      }
+    ]
+  },
+  {
+    "id": "App\\Providers\\Concerns\\ConfiguraFilamentGlobal",
+    "nome": "ConfiguraFilamentGlobal",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-48",
+      "F-50",
+      "F-53",
+      "F-60",
+      "F-81",
+      "F-96",
+      "F-98",
+      "F-118"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+        "trecho": "trait ConfiguraFilamentGlobal"
+      }
+    ]
+  },
+  {
+    "id": "App\\Providers\\Filament\\AdminPanelProvider",
+    "nome": "AdminPanelProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-01",
+      "F-02",
+      "F-06",
+      "F-45",
+      "F-47",
+      "F-71",
+      "F-80",
+      "F-82"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "class AdminPanelProvider extends PanelProvider"
+      }
+    ]
+  },
+  {
+    "id": "App\\Providers\\Filament\\AppPanelProvider",
+    "nome": "AppPanelProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-01",
+      "F-02",
+      "F-03",
+      "F-03a",
+      "F-03c",
+      "F-06",
+      "F-22",
+      "F-27",
+      "F-45",
+      "F-47",
+      "F-71",
+      "F-80",
+      "F-82",
+      "F-88"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "class AppPanelProvider extends PanelProvider"
+      }
+    ]
+  },
+  {
+    "id": "App\\Providers\\Filament\\InfraPanelProvider",
+    "nome": "InfraPanelProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/filament",
+    "features": [
+      "F-01",
+      "F-02",
+      "F-06",
+      "F-33",
+      "F-34",
+      "F-36",
+      "F-41",
+      "F-45",
+      "F-47",
+      "F-59",
+      "F-62",
+      "F-71",
+      "F-80",
+      "F-82"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "class InfraPanelProvider extends PanelProvider"
+      }
+    ]
+  },
+  {
+    "id": "App\\Providers\\KitServiceProvider",
+    "nome": "KitServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "laravel/framework",
+    "features": [
+      "F-11",
+      "F-24",
+      "F-33",
+      "F-36",
+      "F-38",
+      "F-39",
+      "F-40",
+      "F-43",
+      "F-44",
+      "F-55",
+      "F-62",
+      "F-67",
+      "F-72",
+      "F-73",
+      "F-75",
+      "F-79",
+      "F-81",
+      "F-83",
+      "F-86",
+      "F-94",
+      "F-97",
+      "F-101",
+      "F-109",
+      "F-115",
+      "F-117",
+      "F-121"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/KitServiceProvider.php",
+        "trecho": "class KitServiceProvider extends ServiceProvider"
+      }
+    ]
+  },
+  {
+    "id": "App\\Services\\Dashboard\\CriadorDeDashboardPadrao",
+    "nome": "CriadorDeDashboardPadrao",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Services/Dashboard/CriadorDeDashboardPadrao.php",
+        "trecho": "final class CriadorDeDashboardPadrao"
+      }
+    ]
+  },
+  {
+    "id": "App\\Settings\\ConfiguracoesDoKit",
+    "nome": "ConfiguracoesDoKit",
+    "tipo": "setting",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "spatie/laravel-settings",
+    "features": [
+      "F-79",
+      "F-119"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Settings/ConfiguracoesDoKit.php",
+        "trecho": "final class ConfiguracoesDoKit extends Settings"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\AdministradorDaInstalacao",
+    "nome": "AdministradorDaInstalacao",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-103",
+      "F-120"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/AdministradorDaInstalacao.php",
+        "trecho": "class AdministradorDaInstalacao"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\AgentesDeIa",
+    "nome": "AgentesDeIa",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-30",
+      "F-53",
+      "F-84"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/AgentesDeIa.php",
+        "trecho": "final class AgentesDeIa"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\AparenciaDasTelasDeAcesso",
+    "nome": "AparenciaDasTelasDeAcesso",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-75",
+      "F-89"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/AparenciaDasTelasDeAcesso.php",
+        "trecho": "final class AparenciaDasTelasDeAcesso"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\AparenciaDoUsuario",
+    "nome": "AparenciaDoUsuario",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-83"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/AparenciaDoUsuario.php",
+        "trecho": "final class AparenciaDoUsuario"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\AssinaturaDoRodape",
+    "nome": "AssinaturaDoRodape",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-81"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/AssinaturaDoRodape.php",
+        "trecho": "final class AssinaturaDoRodape"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\AtivadorDeTenancy",
+    "nome": "AtivadorDeTenancy",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-21"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/AtivadorDeTenancy.php",
+        "trecho": "final class AtivadorDeTenancy"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\AvatarDeIniciais",
+    "nome": "AvatarDeIniciais",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-71"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/AvatarDeIniciais.php",
+        "trecho": "final class AvatarDeIniciais implements AvatarProvider"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\BancoSqlite",
+    "nome": "BancoSqlite",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-102"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/BancoSqlite.php",
+        "trecho": "final class BancoSqlite"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\BooleanoDoEnv",
+    "nome": "BooleanoDoEnv",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/BooleanoDoEnv.php",
+        "trecho": "class BooleanoDoEnv"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\CabecalhoDoPainel",
+    "nome": "CabecalhoDoPainel",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-80",
+      "F-92"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/CabecalhoDoPainel.php",
+        "trecho": "final class CabecalhoDoPainel"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\CarregamentoDaTabela",
+    "nome": "CarregamentoDaTabela",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-96"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/CarregamentoDaTabela.php",
+        "trecho": "enum CarregamentoDaTabela: string implements HasLabel"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\Casts\\BooleanoFlexivelCast",
+    "nome": "BooleanoFlexivelCast",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-54",
+      "F-111"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/Casts/BooleanoFlexivelCast.php",
+        "trecho": "final class BooleanoFlexivelCast implements Cast"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ConfiguracaoDoLogin",
+    "nome": "ConfiguracaoDoLogin",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-03a",
+      "F-72",
+      "F-73",
+      "F-74",
+      "F-81"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ConfiguracaoDoLogin.php",
+        "trecho": "final class ConfiguracaoDoLogin"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ContextoDePapeis",
+    "nome": "ContextoDePapeis",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-22",
+      "F-24"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ContextoDePapeis.php",
+        "trecho": "class ContextoDePapeis"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\CorPrimaria",
+    "nome": "CorPrimaria",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-27",
+      "F-66",
+      "F-80"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/CorPrimaria.php",
+        "trecho": "final class CorPrimaria"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\CustomizadorDaInstalacao",
+    "nome": "CustomizadorDaInstalacao",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-102"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/CustomizadorDaInstalacao.php",
+        "trecho": "final class CustomizadorDaInstalacao"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\DashboardDinamico",
+    "nome": "DashboardDinamico",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/DashboardDinamico.php",
+        "trecho": "final class DashboardDinamico"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\DensidadeDoLayout",
+    "nome": "DensidadeDoLayout",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-83"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/DensidadeDoLayout.php",
+        "trecho": "enum DensidadeDoLayout: string implements HasLabel"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\DestinoAposLogin",
+    "nome": "DestinoAposLogin",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-01",
+      "F-73"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/DestinoAposLogin.php",
+        "trecho": "final class DestinoAposLogin"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\DetalheDoUsuario",
+    "nome": "DetalheDoUsuario",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-80"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/DetalheDoUsuario.php",
+        "trecho": "enum DetalheDoUsuario: string"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\DockDeAtalhos",
+    "nome": "DockDeAtalhos",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-93"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/DockDeAtalhos.php",
+        "trecho": "final class DockDeAtalhos"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\EmailComMais",
+    "nome": "EmailComMais",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-76"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/EmailComMais.php",
+        "trecho": "class EmailComMais"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\GerenciadorAntiRobo",
+    "nome": "GerenciadorAntiRobo",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "ddr/filament-captcha",
+    "features": [
+      "F-74"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/GerenciadorAntiRobo.php",
+        "trecho": "final class GerenciadorAntiRobo extends CaptchaManager"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\GuardaDoPadraoDeDto",
+    "nome": "GuardaDoPadraoDeDto",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-111"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/GuardaDoPadraoDeDto.php",
+        "trecho": "final class GuardaDoPadraoDeDto"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\HostLocal",
+    "nome": "HostLocal",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-106"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/HostLocal.php",
+        "trecho": "final class HostLocal"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\IdentidadeDoKit",
+    "nome": "IdentidadeDoKit",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-80"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/IdentidadeDoKit.php",
+        "trecho": "final class IdentidadeDoKit"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ImportExport\\ExportadorDoKit",
+    "nome": "ExportadorDoKit",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/actions",
+    "features": [
+      "F-97"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ImportExport/ExportadorDoKit.php",
+        "trecho": "abstract class ExportadorDoKit extends Exporter"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ImportExport\\ImportadorDoKit",
+    "nome": "ImportadorDoKit",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "filament/actions",
+    "features": [
+      "F-97"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ImportExport/ImportadorDoKit.php",
+        "trecho": "abstract class ImportadorDoKit extends Importer"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ModoDoMenu",
+    "nome": "ModoDoMenu",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-83"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ModoDoMenu.php",
+        "trecho": "enum ModoDoMenu: string implements HasLabel"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\NumeroDoEnv",
+    "nome": "NumeroDoEnv",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/NumeroDoEnv.php",
+        "trecho": "class NumeroDoEnv"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\Paineis",
+    "nome": "Paineis",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-09",
+      "F-12",
+      "F-48"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/Paineis.php",
+        "trecho": "final class Paineis"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\Papeis",
+    "nome": "Papeis",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-12",
+      "F-92"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/Papeis.php",
+        "trecho": "final class Papeis"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\PermissaoDaTela",
+    "nome": "PermissaoDaTela",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-62"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/PermissaoDaTela.php",
+        "trecho": "final class PermissaoDaTela"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\PoliciesDeVendor",
+    "nome": "PoliciesDeVendor",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-62"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/PoliciesDeVendor.php",
+        "trecho": "final class PoliciesDeVendor"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ProvedorAntiRobo",
+    "nome": "ProvedorAntiRobo",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-74"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ProvedorAntiRobo.php",
+        "trecho": "enum ProvedorAntiRobo: string implements HasLabel"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ProvedorSocial",
+    "nome": "ProvedorSocial",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-72"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ProvedorSocial.php",
+        "trecho": "enum ProvedorSocial: string"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ProxiesConfiaveis",
+    "nome": "ProxiesConfiaveis",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-109"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ProxiesConfiaveis.php",
+        "trecho": "final class ProxiesConfiaveis"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\RegistroAberto",
+    "nome": "RegistroAberto",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-03a",
+      "F-78"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/RegistroAberto.php",
+        "trecho": "class RegistroAberto"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\RetencaoDeExcecoes",
+    "nome": "RetencaoDeExcecoes",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-57"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/RetencaoDeExcecoes.php",
+        "trecho": "class RetencaoDeExcecoes"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\SeletorDeOrganizacao",
+    "nome": "SeletorDeOrganizacao",
+    "tipo": "servico",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-88"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/SeletorDeOrganizacao.php",
+        "trecho": "final class SeletorDeOrganizacao"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\SenhaDoAdministrador",
+    "nome": "SenhaDoAdministrador",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-102",
+      "F-103"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/SenhaDoAdministrador.php",
+        "trecho": "final class SenhaDoAdministrador"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\SubstituicaoEmArquivo",
+    "nome": "SubstituicaoEmArquivo",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-102",
+      "F-106"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/SubstituicaoEmArquivo.php",
+        "trecho": "final class SubstituicaoEmArquivo"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\TamanhoDaFonte",
+    "nome": "TamanhoDaFonte",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-83"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/TamanhoDaFonte.php",
+        "trecho": "enum TamanhoDaFonte: string implements HasLabel"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\TelaDeAutenticacao",
+    "nome": "TelaDeAutenticacao",
+    "tipo": "servico",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-53",
+      "F-93"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/TelaDeAutenticacao.php",
+        "trecho": "final class TelaDeAutenticacao"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\TetoDeUpload",
+    "nome": "TetoDeUpload",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-101"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/TetoDeUpload.php",
+        "trecho": "class TetoDeUpload"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\TutorialGuiado",
+    "nome": "TutorialGuiado",
+    "tipo": "servico",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-31",
+      "F-94"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/TutorialGuiado.php",
+        "trecho": "final class TutorialGuiado"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\ValidadeDoConvite",
+    "nome": "ValidadeDoConvite",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-15"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ValidadeDoConvite.php",
+        "trecho": "class ValidadeDoConvite"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\VerificacaoAntiRobo",
+    "nome": "VerificacaoAntiRobo",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote+proprio",
+    "pacote": "ddr/filament-captcha",
+    "features": [
+      "F-74"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/VerificacaoAntiRobo.php",
+        "trecho": "final class VerificacaoAntiRobo extends CaptchaDriver"
+      }
+    ]
+  },
+  {
+    "id": "App\\Support\\VinculoDoSnyk",
+    "nome": "VinculoDoSnyk",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-102"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/VinculoDoSnyk.php",
+        "trecho": "final class VinculoDoSnyk"
+      }
+    ]
+  },
+  {
+    "id": "App\\Traits\\AuditsFillables",
+    "nome": "AuditsFillables",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-37",
+      "F-115"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Traits/AuditsFillables.php",
+        "trecho": "trait AuditsFillables"
+      }
+    ]
+  },
+  {
+    "id": "App\\Traits\\BelongsToTenant",
+    "nome": "BelongsToTenant",
+    "tipo": "servico",
+    "paineis": [
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-26"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Traits/BelongsToTenant.php",
+        "trecho": "trait BelongsToTenant"
+      }
+    ]
+  },
+  {
+    "id": "App\\Traits\\ModeloCacheavel",
+    "nome": "ModeloCacheavel",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-110"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Traits/ModeloCacheavel.php",
+        "trecho": "trait ModeloCacheavel"
+      }
+    ]
+  },
+  {
+    "id": "App\\Traits\\TemUuid",
+    "nome": "TemUuid",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-115"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Traits/TemUuid.php",
+        "trecho": "trait TemUuid"
+      }
+    ]
+  },
+  {
+    "id": "Asignua\\FilamentInfiniteScroll\\FilamentInfiniteScrollServiceProvider",
+    "nome": "FilamentInfiniteScrollServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "asignua/filament-infinite-scroll",
+    "features": [
+      "F-96"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+        "trecho": ": $table->infiniteScroll(perPage: (int) config('kit.tabelas.paginacao', 10), mode: $modo);"
+      }
+    ]
+  },
+  {
+    "id": "Asmit\\ResizedColumn\\ResizedColumnPlugin",
+    "nome": "ResizedColumnPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "asmit/resized-column",
+    "features": [
+      "F-50"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "ResizedColumnPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+    "nome": "FilamentExceptionsPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "bezhansalleh/filament-exceptions",
+    "features": [
+      "F-57"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentExceptionsPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "BezhanSalleh\\FilamentExceptions\\Models\\Exception",
+    "nome": "Exception",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "bezhansalleh/filament-exceptions",
+    "features": [
+      "F-57"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/PoliciesDeVendor.php",
+        "trecho": "use BezhanSalleh\\FilamentExceptions\\Models\\Exception;"
+      }
+    ]
+  },
+  {
+    "id": "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+    "nome": "ExceptionResource",
+    "tipo": "recurso",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "bezhansalleh/filament-exceptions",
+    "features": [
+      "F-57"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentExceptionsPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "BezhanSalleh\\FilamentShield\\FilamentShieldPlugin",
+    "nome": "FilamentShieldPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "bezhansalleh/filament-shield",
+    "features": [
+      "F-09",
+      "F-12",
+      "F-62",
+      "F-63"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentShieldPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "BezhanSalleh\\LanguageSwitch\\Http\\Middleware\\SwitchLanguageLocale",
+    "nome": "SwitchLanguageLocale",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "bezhansalleh/filament-language-switch",
+    "features": [
+      "F-60"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+        "trecho": "LanguageSwitch::configureUsing(function (LanguageSwitch $seletor): void {"
+      }
+    ]
+  },
+  {
+    "id": "BezhanSalleh\\PanelSwitch\\PanelSwitchServiceProvider",
+    "nome": "PanelSwitchServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "bezhansalleh/filament-panel-switch",
+    "features": [
+      "F-48"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Concerns/ConfiguraFilamentGlobal.php",
+        "trecho": "PanelSwitch::configureUsing(function (PanelSwitch $panelSwitch): void {"
+      }
+    ]
+  },
+  {
+    "id": "Bityukov\\CommandCenter\\Filament\\CommandCenterPlugin",
+    "nome": "CommandCenterPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "ssbityukov/filament-command-center",
+    "features": [
+      "F-39",
+      "F-67"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "CommandCenterPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Bityukov\\CommandCenter\\Filament\\Pages\\Commands",
+    "nome": "Commands",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "ssbityukov/filament-command-center",
+    "features": [
+      "F-39",
+      "F-67"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "CommandCenterPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Bityukov\\CommandCenter\\Filament\\Pages\\History",
+    "nome": "History",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "ssbityukov/filament-command-center",
+    "features": [
+      "F-39",
+      "F-67"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "CommandCenterPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Bityukov\\CommandCenter\\Filament\\Pages\\RunView",
+    "nome": "RunView",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "ssbityukov/filament-command-center",
+    "features": [
+      "F-39",
+      "F-67"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "CommandCenterPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Bityukov\\CommandCenter\\Filament\\Resources\\CommandRecordResource",
+    "nome": "CommandRecordResource",
+    "tipo": "recurso",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "command-center.sources",
+          "padrao": [
+            "Bityukov\\CommandCenter\\Sources\\ConfigSource"
+          ],
+          "ligada": [
+            "Bityukov\\CommandCenter\\Sources\\ConfigSource",
+            "Bityukov\\CommandCenter\\Sources\\DatabaseSource"
+          ]
+        }
+      ],
+      "evidencia": {
+        "arquivo": "config/command-center.php",
+        "trecho": "'sources' => ["
+      }
+    },
+    "origem": "pacote",
+    "pacote": "ssbityukov/filament-command-center",
+    "features": [
+      "F-39"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "CommandCenterPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Brimham\\FilamentBackupMonitor\\Pages\\BackupRunsPage",
+    "nome": "BackupRunsPage",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "brimham/filament-backup-monitor",
+    "features": [
+      "F-34"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Pages/BackupRunsPage.php",
+        "trecho": "use Brimham\\FilamentBackupMonitor\\Pages\\BackupRunsPage as BackupRunsDoPacote;"
+      }
+    ]
+  },
+  {
+    "id": "Caresome\\FilamentAuthDesigner\\AuthDesignerPlugin",
+    "nome": "AuthDesignerPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-01",
+      "F-28",
+      "F-49",
+      "F-75"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "AuthDesignerPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\EmailVerification",
+    "nome": "EmailVerification",
+    "tipo": "pagina",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-03c"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaVerificacaoDeEmail.php",
+        "trecho": "use Caresome\\FilamentAuthDesigner\\Pages\\Auth\\EmailVerification;"
+      }
+    ]
+  },
+  {
+    "id": "Caresome\\FilamentAuthDesigner\\Pages\\Auth\\RequestPasswordReset",
+    "nome": "RequestPasswordReset",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "caresome/filament-auth-designer",
+    "features": [
+      "F-02"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Pages/Auth/TelaRecuperarSenha.php",
+        "trecho": "use Caresome\\FilamentAuthDesigner\\Pages\\Auth\\RequestPasswordReset;"
+      }
+    ]
+  },
+  {
+    "id": "CmsMulti\\FilamentClearCache\\FilamentClearCachePlugin",
+    "nome": "FilamentClearCachePlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "cms-multi/filament-clear-cache",
+    "features": [
+      "F-44"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentClearCachePlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Croustibat\\FilamentJobsMonitor\\FilamentJobsMonitorPlugin",
+    "nome": "FilamentJobsMonitorPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "croustibat/filament-jobs-monitor",
+    "features": [
+      "F-35"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentJobsMonitorPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Croustibat\\FilamentJobsMonitor\\Resources\\QueueMonitorResource",
+    "nome": "QueueMonitorResource",
+    "tipo": "recurso",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "croustibat/filament-jobs-monitor",
+    "features": [
+      "F-35"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentJobsMonitorPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Ddr\\FilamentCaptcha\\CaptchaManager",
+    "nome": "CaptchaManager",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "ddr/filament-captcha",
+    "features": [
+      "F-74"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/GerenciadorAntiRobo.php",
+        "trecho": "use Ddr\\FilamentCaptcha\\CaptchaManager;"
+      }
+    ]
+  },
+  {
+    "id": "Dotswan\\FilamentLaravelPulse\\Widgets\\PulseServers",
+    "nome": "PulseServers",
+    "tipo": "widget",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "dotswan/filament-laravel-pulse",
+    "features": [
+      "F-40"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Pages/Pulse.php",
+        "trecho": "PulseServers::class,"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Actions\\Exports\\Exporter",
+    "nome": "Exporter",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/actions",
+    "features": [
+      "F-97"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/ImportExport/ExportadorDoKit.php",
+        "trecho": "use Filament\\Actions\\Exports\\Exporter;"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Http\\Middleware\\Authenticate",
+    "nome": "Authenticate",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [
+      "F-01"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "Authenticate::class,"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Http\\Middleware\\AuthenticateSession",
+    "nome": "AuthenticateSession",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "AuthenticateSession::class,"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Http\\Middleware\\DisableBladeIconComponents",
+    "nome": "DisableBladeIconComponents",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "DisableBladeIconComponents::class,"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Http\\Middleware\\DispatchServingFilamentEvent",
+    "nome": "DispatchServingFilamentEvent",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "DispatchServingFilamentEvent::class,"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Http\\Middleware\\IdentifyTenant",
+    "nome": "IdentifyTenant",
+    "tipo": "middleware",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [
+      "F-22"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->tenant(Tenant::class, slugAttribute: 'slug')"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Pages\\SettingsPage",
+    "nome": "SettingsPage",
+    "tipo": "pagina",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/spatie-laravel-settings-plugin",
+    "features": [
+      "F-79"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Pages/ConfiguracoesDoKit.php",
+        "trecho": "use Filament\\Pages\\SettingsPage;"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Panel",
+    "nome": "Panel",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [
+      "F-82"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "use Filament\\Panel;"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Sentinel\\SentinelServiceProvider",
+    "nome": "SentinelServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "anselmokossa/filament-sentinel",
+    "features": [
+      "F-10",
+      "F-52"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "config/sentinel.php",
+        "trecho": "'codes' => [500, 403, 404, 419, 503],"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Widgets\\AccountWidget",
+    "nome": "AccountWidget",
+    "tipo": "widget",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [
+      "F-32",
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "AccountWidget::class,"
+      }
+    ]
+  },
+  {
+    "id": "Filament\\Widgets\\FilamentInfoWidget",
+    "nome": "FilamentInfoWidget",
+    "tipo": "widget",
+    "paineis": [
+      "admin",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [
+      "F-32",
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentInfoWidget::class,"
+      }
+    ]
+  },
+  {
+    "id": "Fomvasss\\AiTasks\\Models\\AiRun",
+    "nome": "AiRun",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "fomvasss/laravel-ai-tasks",
+    "features": [
+      "F-43",
+      "F-55"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Infra/Resources/AiRuns/AiRunResource.php",
+        "trecho": "protected static ?string $model = AiRun::class;"
+      }
+    ]
+  },
+  {
+    "id": "GeneaLabs\\LaravelModelCaching\\Providers\\Service",
+    "nome": "Service",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "mike-bronner/laravel-model-caching",
+    "features": [
+      "F-110"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "config/laravel-model-caching.php",
+        "trecho": "'enabled' => env('MODEL_CACHE_ENABLED', false),"
+      }
+    ]
+  },
+  {
+    "id": "Gsferro\\FilamentOdometerEasy\\FilamentOdometerEasyPlugin",
+    "nome": "FilamentOdometerEasyPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "gsferro/filament-odometer-easy",
+    "features": [
+      "F-46"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentOdometerEasyPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+    "nome": "FilamentCardsPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "harvirsidhu/filament-cards",
+    "features": [
+      "F-65",
+      "F-68",
+      "F-73"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentCardsPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "HoceineEl\\QuickActionDock\\QuickActionDockPlugin",
+    "nome": "QuickActionDockPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "hoceineel/filament-quick-action-dock",
+    "features": [
+      "F-93"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "PluginDoDock::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse",
+    "nome": "AddQueuedCookiesToResponse",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/framework",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "AddQueuedCookiesToResponse::class,"
+      }
+    ]
+  },
+  {
+    "id": "Illuminate\\Cookie\\Middleware\\EncryptCookies",
+    "nome": "EncryptCookies",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/framework",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "EncryptCookies::class,"
+      }
+    ]
+  },
+  {
+    "id": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestForgery",
+    "nome": "PreventRequestForgery",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/framework",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "PreventRequestForgery::class,"
+      }
+    ]
+  },
+  {
+    "id": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+    "nome": "SubstituteBindings",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/framework",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "SubstituteBindings::class,"
+      }
+    ]
+  },
+  {
+    "id": "Illuminate\\Session\\Middleware\\StartSession",
+    "nome": "StartSession",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/framework",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "StartSession::class,"
+      }
+    ]
+  },
+  {
+    "id": "Illuminate\\View\\Middleware\\ShareErrorsFromSession",
+    "nome": "ShareErrorsFromSession",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/framework",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "ShareErrorsFromSession::class,"
+      }
+    ]
+  },
+  {
+    "id": "Jeffgreco13\\FilamentBreezy\\BreezyCore",
+    "nome": "BreezyCore",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "jeffgreco13/filament-breezy",
+    "features": [
+      "F-04",
+      "F-05",
+      "F-07",
+      "F-83",
+      "F-116"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "BreezyCore::make()"
+      }
+    ]
+  },
+  {
+    "id": "Jeffgreco13\\FilamentBreezy\\Middleware\\MustTwoFactor",
+    "nome": "MustTwoFactor",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "jeffgreco13/filament-breezy",
+    "features": [
+      "F-04"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "BreezyCore::make()"
+      }
+    ]
+  },
+  {
+    "id": "LaBoiteACode\\DependencyGraph\\DependencyGraphPlugin",
+    "nome": "DependencyGraphPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laboiteacode/filament-dependency-graph",
+    "features": [
+      "F-41"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "DependencyGraphPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "LaBoiteACode\\DependencyGraph\\Filament\\Pages\\DependencyGraphPage",
+    "nome": "DependencyGraphPage",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laboiteacode/filament-dependency-graph",
+    "features": [
+      "F-41"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "&& PermissaoDaTela::permite(DependencyGraphPage::class)),"
+      }
+    ]
+  },
+  {
+    "id": "LaBoiteACode\\FilamentDashboardWidgets\\FilamentDashboardWidgetsPlugin",
+    "nome": "FilamentDashboardWidgetsPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "FilamentDashboardWidgetsPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "LaBoiteACode\\FilamentDashboardWidgets\\Widgets\\BreakdownWidget",
+    "nome": "BreakdownWidget",
+    "tipo": "widget",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laboiteacode/filament-dashboard-widgets",
+    "features": [
+      "F-90"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Tenants/Widgets/AcessosPorPainel.php",
+        "trecho": "use LaBoiteACode\\FilamentDashboardWidgets\\Widgets\\BreakdownWidget;"
+      }
+    ]
+  },
+  {
+    "id": "LaBoiteACode\\FilamentLogsExplorer\\FilamentLogsExplorerPlugin",
+    "nome": "FilamentLogsExplorerPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laboiteacode/filament-logs-explorer",
+    "features": [
+      "F-36"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentLogsExplorerPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "LaBoiteACode\\FilamentLogsExplorer\\Pages\\LogsExplorer",
+    "nome": "LogsExplorer",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laboiteacode/filament-logs-explorer",
+    "features": [
+      "F-36"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "&& PermissaoDaTela::permite(LogsExplorer::class))"
+      }
+    ]
+  },
+  {
+    "id": "Laravel\\Ai\\AiServiceProvider",
+    "nome": "AiServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/ai",
+    "features": [
+      "F-30",
+      "F-53",
+      "F-54",
+      "F-56"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "config/ai.php",
+        "trecho": "'default'                   => env('AI_PROVIDER', 'llamacpp'),"
+      }
+    ]
+  },
+  {
+    "id": "Laravel\\Boost\\BoostServiceProvider",
+    "nome": "BoostServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/boost",
+    "features": [
+      "F-114"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "composer.json",
+        "trecho": "\"laravel/boost\": \"^2.5\","
+      }
+    ]
+  },
+  {
+    "id": "Laravel\\Socialite\\SocialiteServiceProvider",
+    "nome": "SocialiteServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "laravel/socialite",
+    "features": [
+      "F-72"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "return Socialite::driver($provedor->value)->redirect();"
+      }
+    ]
+  },
+  {
+    "id": "Leandrocfe\\FilamentApexCharts\\FilamentApexChartsPlugin",
+    "nome": "FilamentApexChartsPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "leandrocfe/filament-apex-charts",
+    "features": [
+      "F-32",
+      "F-85"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentApexChartsPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "lockscreen\\FilamentLockscreen\\Http\\Livewire\\LockerScreen",
+    "nome": "LockerScreen",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "marjose123/filament-lockscreen",
+    "features": [
+      "F-06"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/AppServiceProvider.php",
+        "trecho": "$this->app->bind(LockerScreen::class, TelaBloqueio::class);"
+      }
+    ]
+  },
+  {
+    "id": "lockscreen\\FilamentLockscreen\\Http\\Middleware\\Locker",
+    "nome": "Locker",
+    "tipo": "middleware",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "marjose123/filament-lockscreen",
+    "features": [
+      "F-06"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "Lockscreen::make()"
+      }
+    ]
+  },
+  {
+    "id": "lockscreen\\FilamentLockscreen\\Lockscreen",
+    "nome": "Lockscreen",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "marjose123/filament-lockscreen",
+    "features": [
+      "F-06"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "Lockscreen::make()"
+      }
+    ]
+  },
+  {
+    "id": "MDDev\\DynamicDashboard\\Pages\\DynamicDashboard",
+    "nome": "DynamicDashboard",
+    "tipo": "pagina",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_DASHBOARD_DINAMICO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+        "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+      }
+    },
+    "origem": "pacote",
+    "pacote": "mddev31/filament-dynamic-dashboard",
+    "features": [
+      "F-86"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+        "trecho": "use MDDev\\DynamicDashboard\\Pages\\DynamicDashboard;"
+      }
+    ]
+  },
+  {
+    "id": "MominAlZaraa\\FilamentComposerReleaseNotifier\\FilamentComposerReleaseNotifierPlugin",
+    "nome": "FilamentComposerReleaseNotifierPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "mominalzaraa/filament-composer-release-notifier",
+    "features": [
+      "F-42"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentComposerReleaseNotifierPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "MortalKiller\\FilamentPageHeader\\PageHeaderPlugin",
+    "nome": "PageHeaderPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "mortalkiller/filament-page-header",
+    "features": [
+      "F-70"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "PageHeaderPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "painel:admin",
+    "nome": "/admin",
+    "tipo": "painel",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-01",
+      "F-09",
+      "F-11",
+      "F-14"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "->id('admin')"
+      }
+    ]
+  },
+  {
+    "id": "painel:app",
+    "nome": "/app",
+    "tipo": "painel",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-01",
+      "F-09",
+      "F-11",
+      "F-13",
+      "F-14",
+      "F-22"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->id('app')\n            ->path('app')"
+      }
+    ]
+  },
+  {
+    "id": "painel:infra",
+    "nome": "/infra",
+    "tipo": "painel",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "proprio",
+    "features": [
+      "F-01",
+      "F-09",
+      "F-11",
+      "F-14"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "->id('infra')"
+      }
+    ]
+  },
+  {
+    "id": "panel:admin",
+    "nome": "panel:admin",
+    "tipo": "middleware",
+    "paineis": [
+      "admin"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "->id('admin')"
+      }
+    ]
+  },
+  {
+    "id": "panel:app",
+    "nome": "panel:app",
+    "tipo": "middleware",
+    "paineis": [
+      "app"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [
+      "F-66"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->id('app')\n            ->path('app')"
+      }
+    ]
+  },
+  {
+    "id": "panel:infra",
+    "nome": "panel:infra",
+    "tipo": "middleware",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "filament/filament",
+    "features": [],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "->id('infra')"
+      }
+    ]
+  },
+  {
+    "id": "Pest\\Laravel\\PestServiceProvider",
+    "nome": "PestServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "pestphp/pest-plugin-laravel",
+    "features": [
+      "F-112"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "composer.json",
+        "trecho": "\"pestphp/pest-plugin-laravel\": \"^5.0\","
+      }
+    ]
+  },
+  {
+    "id": "Prodstarter\\FilamentNotificationCenter\\FilamentNotificationCenterPlugin",
+    "nome": "FilamentNotificationCenterPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "prodstarter/filament-notification-center",
+    "features": [
+      "F-47"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentNotificationCenterPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Promethys\\Revive\\Pages\\RecycleBin",
+    "nome": "RecycleBin",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "promethys/revive",
+    "features": [
+      "F-59",
+      "F-77"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "&& PermissaoDaTela::permite(RecycleBin::class))"
+      }
+    ]
+  },
+  {
+    "id": "Promethys\\Revive\\RevivePlugin",
+    "nome": "RevivePlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "promethys/revive",
+    "features": [
+      "F-59",
+      "F-77"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "RevivePlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "pxlrbt\\FilamentEnvironmentIndicator\\EnvironmentIndicatorPlugin",
+    "nome": "EnvironmentIndicatorPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "pxlrbt/filament-environment-indicator",
+    "features": [
+      "F-51"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "EnvironmentIndicatorPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "Sehsah\\FilamentRememberTable\\Models\\TableView",
+    "nome": "TableView",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "sehsah/filament-remember-table",
+    "features": [
+      "F-95"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Concerns/VisoesDeTabela.php",
+        "trecho": "use Sehsah\\FilamentRememberTable\\Models\\TableView;"
+      }
+    ]
+  },
+  {
+    "id": "ShuvroRoy\\FilamentSpatieLaravelHealth\\FilamentSpatieLaravelHealthPlugin",
+    "nome": "FilamentSpatieLaravelHealthPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "shuvroroy/filament-spatie-laravel-health",
+    "features": [
+      "F-33"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentSpatieLaravelHealthPlugin::make()"
+      }
+    ]
+  },
+  {
+    "id": "ShuvroRoy\\FilamentSpatieLaravelHealth\\Pages\\HealthCheckResults",
+    "nome": "HealthCheckResults",
+    "tipo": "pagina",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "shuvroroy/filament-spatie-laravel-health",
+    "features": [
+      "F-33"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "&& PermissaoDaTela::permite(HealthCheckResults::class)),"
+      }
+    ]
+  },
+  {
+    "id": "SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin",
+    "nome": "SimpleLightBoxPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "solution-forest/filament-simplelightbox",
+    "features": [
+      "F-61"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "SimpleLightBoxPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Spatie\\LaravelData\\Data",
+    "nome": "Data",
+    "tipo": "servico",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "spatie/laravel-data",
+    "features": [
+      "F-111"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Data/Convite/FalhaDoConviteData.php",
+        "trecho": "use Spatie\\LaravelData\\Data;"
+      }
+    ]
+  },
+  {
+    "id": "STS\\FilamentImpersonate\\FilamentImpersonateServiceProvider",
+    "nome": "FilamentImpersonateServiceProvider",
+    "tipo": "provider",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "stechstudio/filament-impersonate",
+    "features": [
+      "F-08"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Filament/Admin/Resources/Users/UserResource.php",
+        "trecho": "Impersonate::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Tapp\\FilamentAuditing\\Filament\\Resources\\Audits\\AuditResource",
+    "nome": "AuditResource",
+    "tipo": "recurso",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "tapp/filament-auditing",
+    "features": [
+      "F-37"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentAuditingPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Tapp\\FilamentAuditing\\FilamentAuditingPlugin",
+    "nome": "FilamentAuditingPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "tapp/filament-auditing",
+    "features": [
+      "F-37"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentAuditingPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Tapp\\FilamentAuthenticationLog\\FilamentAuthenticationLogPlugin",
+    "nome": "FilamentAuthenticationLogPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "tapp/filament-authentication-log",
+    "features": [
+      "F-38"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentAuthenticationLogPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Tapp\\FilamentAuthenticationLog\\Resources\\AuthenticationLogResource",
+    "nome": "AuthenticationLogResource",
+    "tipo": "recurso",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "tapp/filament-authentication-log",
+    "features": [
+      "F-38"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentAuthenticationLogPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Tapp\\FilamentMailLog\\FilamentMailLogPlugin",
+    "nome": "FilamentMailLogPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "tapp/filament-maillog",
+    "features": [
+      "F-58"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentMailLogPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Tapp\\FilamentMailLog\\Models\\MailLog",
+    "nome": "MailLog",
+    "tipo": "model",
+    "paineis": [],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "tapp/filament-maillog",
+    "features": [
+      "F-58"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Support/PoliciesDeVendor.php",
+        "trecho": "use Tapp\\FilamentMailLog\\Models\\MailLog;"
+      }
+    ]
+  },
+  {
+    "id": "Tapp\\FilamentMailLog\\Resources\\MailLogResource",
+    "nome": "MailLogResource",
+    "tipo": "recurso",
+    "paineis": [
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "tapp/filament-maillog",
+    "features": [
+      "F-58"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentMailLogPlugin::make(),"
+      }
+    ]
+  },
+  {
+    "id": "Wallacemartinss\\FilamentOnboarding\\FilamentOnboardingPlugin",
+    "nome": "FilamentOnboardingPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "wallacemartinss/filament-onboarding",
+    "features": [
+      "F-31",
+      "F-94"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "TutorialGuiado::plugin(),"
+      }
+    ]
+  },
+  {
+    "id": "Wezlo\\FilamentSearchSpotlight\\FilamentSearchSpotlightPlugin",
+    "nome": "FilamentSearchSpotlightPlugin",
+    "tipo": "plugin",
+    "paineis": [
+      "admin",
+      "app",
+      "infra"
+    ],
+    "registrada": [
+      "sem",
+      "com"
+    ],
+    "origem": "pacote",
+    "pacote": "wezlo/filament-search-spotlight",
+    "features": [
+      "F-45"
+    ],
+    "evidencia": [
+      {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "FilamentSearchSpotlightPlugin::make()"
+      }
+    ]
+  }
+]

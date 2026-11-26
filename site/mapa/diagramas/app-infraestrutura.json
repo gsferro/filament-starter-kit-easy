@@ -1,0 +1,40 @@
+{
+  "slug": "app-infraestrutura",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Infraestrutura",
+    "en": "/app — Infrastructure"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "BezhanSalleh\\FilamentExceptions\\FilamentExceptionsPlugin",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "BezhanSalleh\\FilamentExceptions\\Resources\\ExceptionResource",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\RetencaoDeExcecoes",
+      "row": 0,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "slug": "admin-convites",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/admin — Convites",
+    "en": "/admin — Invitations"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Models\\Convite",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Convites\\ConviteResource",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Notifications\\ConviteDeAcesso",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Convites\\Pages\\CreateConvite",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Filament\\Admin\\Resources\\Convites\\Tables\\ConvitesTable",
+      "row": 1,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

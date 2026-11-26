@@ -1,0 +1,368 @@
+{
+  "slug": "sessao",
+  "tipo": "lifecycle",
+  "titulo": {
+    "pt": "Sessão autenticada: bloqueio e 2FA",
+    "en": "Authenticated session: lock and 2FA"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "mainPath": [
+    "autenticada",
+    "bloqueada",
+    "encerrada"
+  ],
+  "states": [
+    {
+      "id": "autenticada",
+      "type": "active",
+      "label": {
+        "pt": "Autenticada",
+        "en": "Authenticated"
+      },
+      "sublabel": {
+        "pt": "login aceito no painel",
+        "en": "panel login accepted"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaLogin.php",
+          "trecho": "return parent::authenticate();",
+          "label": "TelaLogin@authenticate"
+        },
+        {
+          "arquivo": "app/Providers/KitServiceProvider.php",
+          "trecho": "$this->app->bind(LoginResponse::class, RespostaDeLogin::class);",
+          "label": "KitServiceProvider (LoginResponse)"
+        },
+        {
+          "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+          "trecho": "Auth::login($user);",
+          "label": "LoginSocialController@retorno"
+        }
+      ]
+    },
+    {
+      "id": "aguardando2fa",
+      "type": "waiting",
+      "label": {
+        "pt": "Aguardando 2FA",
+        "en": "Awaiting 2FA"
+      },
+      "sublabel": {
+        "pt": "conta com 2FA confirmado",
+        "en": "account: 2FA confirmed"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),",
+          "label": "AdminPanelProvider (Breezy)"
+        },
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaDoisFatores.php",
+          "trecho": "class TelaDoisFatores extends TwoFactorPage",
+          "label": "TelaDoisFatores"
+        }
+      ]
+    },
+    {
+      "id": "bloqueada",
+      "type": "waiting",
+      "label": {
+        "pt": "Bloqueada",
+        "en": "Locked"
+      },
+      "sublabel": {
+        "pt": "lockscreen = true na sessão",
+        "en": "lockscreen = true, session"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/BloquearSessaoComRetorno.php",
+          "trecho": "class BloquearSessaoComRetorno extends Locker",
+          "label": "BloquearSessaoComRetorno"
+        },
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+          "trecho": "if (session('lockscreen') !== true) {",
+          "label": "TelaBloqueio@mount"
+        },
+        {
+          "arquivo": "app/Providers/AppServiceProvider.php",
+          "trecho": "$this->app->bind(LockerScreen::class, TelaBloqueio::class);",
+          "label": "AppServiceProvider@register"
+        }
+      ]
+    },
+    {
+      "id": "encerrada",
+      "type": "neutral",
+      "label": {
+        "pt": "Encerrada",
+        "en": "Ended"
+      },
+      "sublabel": {
+        "pt": "volta à tela de login",
+        "en": "returns to login"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+          "trecho": "session()->forget(['url.intended', self::RAIZ_GRAVADA]);",
+          "label": "TelaBloqueio@authenticate"
+        },
+        {
+          "arquivo": "config/authentication-log.php",
+          "trecho": "'logout'              => LogoutListener::class,",
+          "label": "authentication-log (logout_at)"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "autenticada-bloqueada-ociosidade",
+      "from": "autenticada",
+      "to": "bloqueada",
+      "label": {
+        "pt": "ociosidade",
+        "en": "idle"
+      },
+      "note": {
+        "pt": "GET depois de idle_timeout sem navegar",
+        "en": "GET after idle_timeout without browsing"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "->enableIdleTimeout((int) config('lockscreen.idle_timeout'))"
+      }
+    },
+    {
+      "id": "autenticada-bloqueada-menu",
+      "from": "autenticada",
+      "to": "bloqueada",
+      "label": {
+        "pt": "Bloquear sessão",
+        "en": "Lock session"
+      },
+      "note": {
+        "pt": "item do menu do usuário",
+        "en": "user menu item"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "->url(fn (): string => route(\"lockscreen.{$panelId}.lock-session\"))"
+      }
+    },
+    {
+      "id": "bloqueada-autenticada-senha",
+      "from": "bloqueada",
+      "to": "autenticada",
+      "label": {
+        "pt": "Desbloquear",
+        "en": "Unlock"
+      },
+      "note": {
+        "pt": "senha correta",
+        "en": "password OK"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "$resposta = parent::authenticate();"
+      }
+    },
+    {
+      "id": "bloqueada-autenticada-social",
+      "from": "bloqueada",
+      "to": "autenticada",
+      "label": {
+        "pt": "volta do provedor",
+        "en": "provider return"
+      },
+      "note": {
+        "pt": "login social",
+        "en": "social login"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "session()->put('lockscreen', false);"
+      }
+    },
+    {
+      "id": "bloqueada-encerrada",
+      "from": "bloqueada",
+      "to": "encerrada",
+      "label": {
+        "pt": "tentativas esgotadas",
+        "en": "attempts exhausted"
+      },
+      "note": {
+        "pt": "limit: 5 e forceLogout: true",
+        "en": "limit: 5; forceLogout: true"
+      },
+      "variant": "security",
+      "prova": {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "->enableRateLimit(limit: 5, decayMinutes: 5, forceLogout: true),"
+      }
+    },
+    {
+      "id": "autenticada-aguardando2fa",
+      "from": "autenticada",
+      "to": "aguardando2fa",
+      "label": {
+        "pt": "2FA na conta",
+        "en": "account 2FA"
+      },
+      "note": "MustTwoFactor",
+      "prova": {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+      }
+    },
+    {
+      "id": "aguardando2fa-autenticada",
+      "from": "aguardando2fa",
+      "to": "autenticada",
+      "label": {
+        "pt": "código válido",
+        "en": "valid code"
+      },
+      "note": {
+        "pt": "código do app ou de recuperação",
+        "en": "app or recovery code"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaDoisFatores.php",
+        "trecho": "class TelaDoisFatores extends TwoFactorPage"
+      }
+    },
+    {
+      "id": "autenticada-encerrada-sem-painel",
+      "from": "autenticada",
+      "to": "encerrada",
+      "label": {
+        "pt": "sem painel acessível",
+        "en": "no accessible panel"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/EscolhaDePainel.php",
+        "trecho": "Filament::auth()->logout();"
+      }
+    },
+    {
+      "id": "autenticada-encerrada-link-senha",
+      "from": "autenticada",
+      "to": "encerrada",
+      "label": {
+        "pt": "link de senha enviado",
+        "en": "password link sent"
+      },
+      "prova": {
+        "arquivo": "app/Livewire/DefinirSenhaPorEmail.php",
+        "trecho": "Filament::auth()->logout();"
+      }
+    },
+    {
+      "id": "autenticada-encerrada-cadastro-pendente",
+      "from": "autenticada",
+      "to": "encerrada",
+      "label": {
+        "pt": "cadastro pendente",
+        "en": "Pending sign-up"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/RegistroPorConvite.php",
+        "trecho": "Filament::auth()->logout();"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "lockscreen.enabled (LOCKSCREEN_ENABLED, padrão true): desligado, a sessão não bloqueia e o item Bloquear sessão some.",
+          "en": "lockscreen.enabled (LOCKSCREEN_ENABLED, default true): when off, session never locks and Lock session item hides."
+        },
+        {
+          "pt": "lockscreen.idle_timeout (LOCKSCREEN_IDLE_TIMEOUT, padrão 1.800 s): tempo sem navegar até o bloqueio.",
+          "en": "lockscreen.idle_timeout (LOCKSCREEN_IDLE_TIMEOUT, default 1,800 s): time without browsing until lock."
+        },
+        {
+          "pt": "O 2FA não é obrigatório: o desafio só aparece para quem confirmou o 2FA no Meu perfil.",
+          "en": "2FA is optional: challenge only appears for users who confirmed 2FA in My profile."
+        }
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Igual nos três painéis",
+        "en": "Same in three panels"
+      },
+      "items": [
+        {
+          "pt": "/admin, /app e /infra registram o bloqueio e o 2FA com a mesma configuração.",
+          "en": "/admin, /app and /infra register session lock and 2FA with same settings."
+        },
+        {
+          "pt": "Desbloquear volta à página que o bloqueio interceptou: quem a guarda é BloquearSessaoComRetorno, no lugar do middleware do pacote.",
+          "en": "Unlock returns to page intercepted by lock: BloquearSessaoComRetorno saves it, replacing package middleware."
+        }
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": {
+        "pt": "Quando o próprio kit encerra",
+        "en": "When kit ends session"
+      },
+      "items": [
+        {
+          "pt": "Sem painel acessível: a escolha de painel da página única de login encerra a sessão de quem não alcança painel nenhum; a resposta do cadastro faz o mesmo.",
+          "en": "No accessible panel: unified login page panel choice ends session for users with no panel access; sign-up response does the same."
+        },
+        {
+          "pt": "Link de senha enviado: o Meu perfil encerra a sessão depois de mandar o link de definição de senha, para a pessoa entrar de novo com a senha nova.",
+          "en": "Password link sent: My profile ends session after sending password setup link, so user signs in again with new password."
+        },
+        {
+          "pt": "Cadastro pendente: o cadastro que nasce pendente de aprovação encerra a sessão logo depois de criar a conta.",
+          "en": "Pending sign-up: sign-up Pending approval ends session right after creating account."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Fora do desenho",
+        "en": "Outside diagram"
+      },
+      "items": [
+        {
+          "pt": "Sair, Trocar de conta (na tela de bloqueio) e cancelar o desafio de 2FA encerram a sessão no código dos pacotes; nenhuma linha do kit os dispara.",
+          "en": "Sign out, Switch account (on lock screen) and cancel 2FA challenge end session in package code; no kit line triggers them."
+        },
+        {
+          "pt": "Todo fim de sessão fica em authentication_log.logout_at: o kit liga o evento Logout ao listener do authentication-log.",
+          "en": "Every session end is in authentication_log.logout_at: kit wires Logout event to authentication-log listener."
+        }
+      ]
+    }
+  ]
+}

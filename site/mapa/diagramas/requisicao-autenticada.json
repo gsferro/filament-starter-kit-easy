@@ -1,0 +1,507 @@
+{
+  "slug": "requisicao-autenticada",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Requisição autenticada num painel: a pilha de middleware",
+    "en": "Authenticated panel request: middleware stack"
+  },
+  "paineis": [
+    "admin",
+    "app",
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "passa ao próximo",
+            "en": "on to next"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "desvio: recusa ou redirect",
+            "en": "branch: denial or redirect"
+          }
+        },
+        "dashed": {
+          "label": {
+            "pt": "só em parte das rotas",
+            "en": "only on some routes"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta",
+            "en": "reply"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      }
+    },
+    {
+      "id": "setuppanel",
+      "type": "security",
+      "label": "SetUpPanel",
+      "sublabel": "panel:{id}",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->id('admin')"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->default()\n            ->id('app')"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "->id('infra')"
+        }
+      ]
+    },
+    {
+      "id": "authenticate",
+      "type": "security",
+      "label": "Authenticate",
+      "sublabel": "Filament",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "Authenticate::class,"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "database",
+      "label": "User",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function canAccessPanel(Panel $panel): bool"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function motivoDaNegativaDoPainel(Panel $panel): ?string"
+        }
+      ]
+    },
+    {
+      "id": "musttwofactor",
+      "type": "security",
+      "label": "MustTwoFactor",
+      "sublabel": "Breezy",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+        }
+      ]
+    },
+    {
+      "id": "bloquearsessao",
+      "type": "security",
+      "label": "BloquearSessao",
+      "sublabel": "ComRetorno",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/BloquearSessaoComRetorno.php",
+          "trecho": "class BloquearSessaoComRetorno extends Locker"
+        },
+        {
+          "arquivo": "app/Providers/AppServiceProvider.php",
+          "trecho": "$this->app->bind(Locker::class, BloquearSessaoComRetorno::class);"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->enablePlugin((bool) config('lockscreen.enabled'))"
+        }
+      ]
+    },
+    {
+      "id": "exigetutorial",
+      "type": "security",
+      "label": "ExigeTutorial",
+      "sublabel": "GuiadoLigado",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/ExigeTutorialGuiadoLigado.php",
+          "trecho": "class ExigeTutorialGuiadoLigado"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "ExigeTutorialGuiadoLigado::class,"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "ExigeTutorialGuiadoLigado::class,"
+        }
+      ]
+    },
+    {
+      "id": "exigiremail",
+      "type": "security",
+      "label": "ExigirEmail",
+      "sublabel": "Verificado",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+          "trecho": "final class ExigirEmailVerificado extends EnsureEmailIsVerified"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->emailVerifiedMiddlewareName(ExigirEmailVerificado::class)"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 544,
+      "label": {
+        "pt": "Quem é e se entra no painel",
+        "en": "Identity and panel access"
+      }
+    },
+    {
+      "from": 549,
+      "to": 779,
+      "label": {
+        "pt": "authMiddleware dos três painéis",
+        "en": "authMiddleware of three panels"
+      }
+    },
+    {
+      "from": 784,
+      "to": 1038,
+      "label": {
+        "pt": "Só no /app",
+        "en": "/app only"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "pedido",
+      "from": "navegador",
+      "to": "setuppanel",
+      "y": 180,
+      "label": "GET /{painel}/…",
+      "variant": "emphasis",
+      "note": {
+        "pt": "panel:{id} é o primeiro middleware de toda rota do painel e fixa o painel corrente",
+        "en": "panel:{id} is first middleware on every panel route and sets current panel"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+        "trecho": "->id('admin')"
+      }
+    },
+    {
+      "id": "sessao",
+      "from": "setuppanel",
+      "to": "authenticate",
+      "y": 250,
+      "label": {
+        "pt": "cookies e sessão",
+        "en": "cookies, session"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "EncryptCookies e StartSession, do ->middleware([...]) do provider, rodam antes do Authenticate",
+        "en": "EncryptCookies and StartSession, from provider ->middleware([...]), run before Authenticate"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "StartSession::class,"
+      }
+    },
+    {
+      "id": "sem-sessao",
+      "from": "authenticate",
+      "to": "navegador",
+      "y": 339,
+      "label": {
+        "pt": "302 login do painel",
+        "en": "302 panel login"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "sem sessão: vai ao login do painel corrente",
+        "en": "no session: goes to current panel login"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "Authenticate::class,"
+      }
+    },
+    {
+      "id": "pode-entrar",
+      "from": "authenticate",
+      "to": "user",
+      "y": 404,
+      "label": {
+        "pt": "canAccessPanel(painel)",
+        "en": "canAccessPanel(panel)"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "nega conta excluída ou inativa e cadastro pendente; master_global entra; senão exige papel com roles.painel igual ao id do painel",
+        "en": "denies Deleted or Inactive account and Pending sign-up; master_global enters; else needs role with roles.painel matching panel id"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "public function canAccessPanel(Panel $panel): bool"
+      }
+    },
+    {
+      "id": "negado",
+      "from": "authenticate",
+      "to": "navegador",
+      "y": 484,
+      "label": "403",
+      "variant": "security",
+      "note": {
+        "pt": "canAccessPanel falso; diagnóstico só em local e testing",
+        "en": "canAccessPanel false; diagnosis only in local and testing"
+      },
+      "prova": {
+        "arquivo": "resources/views/errors/403.blade.php",
+        "trecho": "$mostrarDiagnostico = app()->environment('local', 'testing');"
+      }
+    },
+    {
+      "id": "dois-fatores",
+      "from": "authenticate",
+      "to": "musttwofactor",
+      "y": 564,
+      "label": {
+        "pt": "autorizado",
+        "en": "authorized"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "2FA confirmado e sem o desafio nesta sessão: 302 para o desafio, com ?next= (diagrama dois-fatores)",
+        "en": "confirmed 2FA, session unchallenged: 302 to challenge with ?next= (dois-fatores diagram)"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->enableTwoFactorAuthentication(action: TelaDoisFatores::class),"
+      }
+    },
+    {
+      "id": "bloqueio",
+      "from": "musttwofactor",
+      "to": "bloquearsessao",
+      "y": 634,
+      "label": {
+        "pt": "segue",
+        "en": "next"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "Locker do lockscreen, trocado pela subclasse do kit; sessão travada ou ociosa vai à tela de bloqueio (diagrama bloqueio-de-sessao)",
+        "en": "lockscreen Locker, replaced by kit subclass; Locked or idle session goes to lock screen (bloqueio-de-sessao diagram)"
+      },
+      "prova": {
+        "arquivo": "app/Providers/AppServiceProvider.php",
+        "trecho": "$this->app->bind(Locker::class, BloquearSessaoComRetorno::class);"
+      }
+    },
+    {
+      "id": "tutorial",
+      "from": "bloquearsessao",
+      "to": "exigetutorial",
+      "y": 709,
+      "label": {
+        "pt": "segue",
+        "en": "next"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "tutorial desligado: 404 em Primeiros passos e nas telas de autoria do onboarding",
+        "en": "tutorial off: 404 for Getting started and onboarding authoring screens"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "ExigeTutorialGuiadoLigado::class,"
+      }
+    },
+    {
+      "id": "email",
+      "from": "exigetutorial",
+      "to": "exigiremail",
+      "y": 799,
+      "label": {
+        "pt": "rotas de página do /app",
+        "en": "/app page routes"
+      },
+      "variant": "dashed",
+      "note": {
+        "pt": "só nas rotas de Page e Resource do /app; em /admin e /infra a página responde depois do passo anterior",
+        "en": "only /app Page and Resource routes; in /admin and /infra, page responds after prior step"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+        "trecho": "final class ExigirEmailVerificado extends EnsureEmailIsVerified"
+      }
+    },
+    {
+      "id": "pagina",
+      "from": "exigiremail",
+      "to": "navegador",
+      "y": 883,
+      "label": {
+        "pt": "200 página",
+        "en": "200 page"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "chave desligada ou e-mail verificado",
+        "en": "key off or email verified"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+        "trecho": "return $next($request);"
+      }
+    },
+    {
+      "id": "email-pendente",
+      "from": "exigiremail",
+      "to": "navegador",
+      "y": 978,
+      "label": {
+        "pt": "302 verificação de e-mail",
+        "en": "302 email verification"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "chave ligada e conta sem email_verified_at: vai ao aviso de verificação; quem espera JSON recebe 403",
+        "en": "key on, account lacks email_verified_at: goes to verification notice; JSON requests get 403"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+        "trecho": "$resposta = parent::handle($request, $next, $redirectToRoute);"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Ordem da pilha",
+        "en": "Stack order"
+      },
+      "items": [
+        {
+          "pt": "A ordem é a de execução, e não a de declaração: o Laravel ordena a pilha pela prioridade de middleware, e o Authenticate roda logo depois de StartSession e ShareErrorsFromSession.",
+          "en": "Order is execution order: Laravel sorts stack by middleware priority, and Authenticate runs right after StartSession and ShareErrorsFromSession."
+        },
+        {
+          "pt": "Depois do Authenticate, e antes do MustTwoFactor, roda o resto da pilha base do provider: AuthenticateSession, CSRF, bindings e DispatchServingFilamentEvent.",
+          "en": "After Authenticate and before MustTwoFactor, rest of provider base stack runs: AuthenticateSession, CSRF, bindings and DispatchServingFilamentEvent."
+        },
+        {
+          "pt": "MustTwoFactor e Locker entram pelos plugins Breezy e Lockscreen, registrados no ->plugins([...]) antes do ->authMiddleware([...]) do provider; por isso vêm antes do ExigeTutorialGuiadoLigado.",
+          "en": "MustTwoFactor and Locker enter via Breezy and Lockscreen plugins, registered in provider ->plugins([...]) before ->authMiddleware([...]); thus before ExigeTutorialGuiadoLigado."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Com tenant",
+        "en": "Tenant on"
+      },
+      "items": [
+        {
+          "pt": "No /app, entre o ExigeTutorialGuiadoLigado e o ExigirEmailVerificado rodam o IdentifyTenant e o DefinirTenantDePermissoes: diagrama requisicao-autenticada-com.",
+          "en": "In /app, IdentifyTenant and DefinirTenantDePermissoes run between ExigeTutorialGuiadoLigado and ExigirEmailVerificado: requisicao-autenticada-com diagram."
+        },
+        {
+          "pt": "/admin e /infra exigem o papel no contexto global; o /app aceita o papel em qualquer organização, e a organização da URL é conferida depois, por canAccessTenant.",
+          "en": "/admin and /infra need role in global context; /app accepts role in any organization; URL organization checked later via canAccessTenant."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Updates Livewire",
+        "en": "Livewire updates"
+      },
+      "items": [
+        {
+          "pt": "As ações da página (POST /livewire-*/update) reaplicam os middlewares persistentes: SetUpPanel, Authenticate e AuthenticateSession, da lista do Filament, e o Locker e o ExigeTutorialGuiadoLigado, marcados como persistentes.",
+          "en": "Page actions (POST /livewire-*/update) reapply persistent middlewares: SetUpPanel, Authenticate and AuthenticateSession from Filament list, plus Locker and ExigeTutorialGuiadoLigado, marked persistent."
+        },
+        {
+          "pt": "MustTwoFactor e ExigirEmailVerificado não são reaplicados: os dois valem no GET da página.",
+          "en": "MustTwoFactor and ExigirEmailVerificado are not reapplied: both apply on page GET."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "lockscreen.enabled (LOCKSCREEN_ENABLED, padrão ligado): sem ele o Locker não entra na pilha.",
+          "en": "lockscreen.enabled (LOCKSCREEN_ENABLED, default on): without it, Locker stays out of stack."
+        },
+        {
+          "pt": "kit.onboarding.habilitado (KIT_ONBOARDING, padrão desligado): desligado, as telas do onboarding respondem 404.",
+          "en": "kit.onboarding.habilitado (KIT_ONBOARDING, default off): when off, onboarding screens return 404."
+        },
+        {
+          "pt": "kit.registro.verificar_email (KIT_REGISTRO_VERIFICAR_EMAIL, padrão desligado): lido a cada requisição, e não no boot.",
+          "en": "kit.registro.verificar_email (KIT_REGISTRO_VERIFICAR_EMAIL, default off): read on each request, rather than boot."
+        }
+      ]
+    }
+  ]
+}

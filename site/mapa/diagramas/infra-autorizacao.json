@@ -1,0 +1,40 @@
+{
+  "slug": "infra-autorizacao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/infra — Autorização",
+    "en": "/infra — Authorization"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Filament\\Infra\\Pages\\HubDeInfraestrutura",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "Harvirsidhu\\FilamentCards\\FilamentCardsPlugin",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\Paineis",
+      "row": 2,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

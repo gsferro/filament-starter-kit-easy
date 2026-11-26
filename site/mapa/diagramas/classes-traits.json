@@ -1,0 +1,603 @@
+{
+  "slug": "classes-traits",
+  "tipo": "class",
+  "titulo": {
+    "pt": "Traits de app/Traits e os models que as usam",
+    "en": "app/Traits traits and models using them"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "class",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "dependency": {
+          "label": {
+            "pt": "usa a trait (use)",
+            "en": "uses trait (use)"
+          }
+        }
+      }
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "gapY": 150
+  },
+  "types": [
+    {
+      "id": "User",
+      "label": "User",
+      "kind": "class",
+      "sublabel": "model",
+      "row": 0,
+      "col": 0,
+      "methods": [
+        {
+          "name": "auditaAlemDoFillable",
+          "returns": "array",
+          "visibility": "protected"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "class User extends Authenticatable implements Auditable, FilamentUser, HasAvatar, HasTenants, MustVerifyEmail",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "protected function auditaAlemDoFillable(): array",
+          "label": {
+            "pt": "sobrescreve o gancho da trait",
+            "en": "overrides the trait hook"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Convite",
+      "label": "Convite",
+      "kind": "class",
+      "sublabel": "model",
+      "row": 0,
+      "col": 1,
+      "sources": [
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "class Convite extends Model implements Auditable",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Projeto",
+      "label": "Projeto",
+      "kind": "class",
+      "sublabel": "model",
+      "row": 0,
+      "col": 2,
+      "sources": [
+        {
+          "arquivo": "app/Models/Projeto.php",
+          "trecho": "class Projeto extends Model implements Auditable, HasMedia",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ModeloCacheavel",
+      "label": "ModeloCacheavel",
+      "kind": "class",
+      "sublabel": {
+        "pt": "trait · em cima de Cachable (laravel-model-caching)",
+        "en": "trait · wraps Cachable (laravel-model-caching)"
+      },
+      "row": 1,
+      "col": 0,
+      "sources": [
+        {
+          "arquivo": "app/Traits/ModeloCacheavel.php",
+          "trecho": "trait ModeloCacheavel",
+          "label": {
+            "pt": "declaração da trait",
+            "en": "trait declaration"
+          }
+        },
+        {
+          "arquivo": "app/Traits/ModeloCacheavel.php",
+          "trecho": "use Cachable;",
+          "label": "use Cachable"
+        },
+        {
+          "arquivo": "app/Traits/ModeloCacheavel.php",
+          "trecho": "use GeneaLabs\\LaravelModelCaching\\Traits\\Cachable;",
+          "label": {
+            "pt": "import de Cachable",
+            "en": "Cachable import"
+          }
+        }
+      ]
+    },
+    {
+      "id": "AuditsFillables",
+      "label": "AuditsFillables",
+      "kind": "class",
+      "sublabel": {
+        "pt": "trait · em cima de Auditable (owen-it)",
+        "en": "trait · wraps Auditable (owen-it)"
+      },
+      "row": 1,
+      "col": 1,
+      "methods": [
+        {
+          "name": "getAuditInclude",
+          "returns": "array",
+          "visibility": "public"
+        },
+        {
+          "name": "auditaAlemDoFillable",
+          "returns": "array",
+          "visibility": "protected"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "app/Traits/AuditsFillables.php",
+          "trecho": "trait AuditsFillables",
+          "label": {
+            "pt": "declaração da trait",
+            "en": "trait declaration"
+          }
+        },
+        {
+          "arquivo": "app/Traits/AuditsFillables.php",
+          "trecho": "use Auditable;",
+          "label": "use Auditable"
+        },
+        {
+          "arquivo": "app/Traits/AuditsFillables.php",
+          "trecho": "public function getAuditInclude(): array",
+          "label": "getAuditInclude"
+        }
+      ]
+    },
+    {
+      "id": "TemUuid",
+      "label": "TemUuid",
+      "kind": "class",
+      "sublabel": {
+        "pt": "trait · em cima de HasUuids (Laravel)",
+        "en": "trait · wraps HasUuids (Laravel)"
+      },
+      "row": 1,
+      "col": 2,
+      "methods": [
+        {
+          "name": "uniqueIds",
+          "returns": "array",
+          "visibility": "public"
+        },
+        {
+          "name": "getRouteKeyName",
+          "returns": "string",
+          "visibility": "public"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "app/Traits/TemUuid.php",
+          "trecho": "trait TemUuid",
+          "label": {
+            "pt": "declaração da trait",
+            "en": "trait declaration"
+          }
+        },
+        {
+          "arquivo": "app/Traits/TemUuid.php",
+          "trecho": "use HasUuids;",
+          "label": "use HasUuids"
+        },
+        {
+          "arquivo": "app/Traits/TemUuid.php",
+          "trecho": "public function getRouteKeyName(): string",
+          "label": "getRouteKeyName"
+        }
+      ]
+    },
+    {
+      "id": "BelongsToTenant",
+      "label": "BelongsToTenant",
+      "kind": "class",
+      "sublabel": {
+        "pt": "trait · escopo e relação de tenant",
+        "en": "trait · tenant scope and relation"
+      },
+      "row": 1,
+      "col": 3,
+      "methods": [
+        {
+          "name": "bootBelongsToTenant",
+          "returns": "void",
+          "visibility": "public",
+          "static": true
+        },
+        {
+          "name": "tenant",
+          "returns": "BelongsTo",
+          "visibility": "public"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "app/Traits/BelongsToTenant.php",
+          "trecho": "trait BelongsToTenant",
+          "label": {
+            "pt": "declaração da trait",
+            "en": "trait declaration"
+          }
+        },
+        {
+          "arquivo": "app/Traits/BelongsToTenant.php",
+          "trecho": "static::addGlobalScope('tenant', function (Builder $query): void {",
+          "label": {
+            "pt": "escopo global tenant",
+            "en": "tenant global scope"
+          }
+        },
+        {
+          "arquivo": "app/Traits/BelongsToTenant.php",
+          "trecho": "public function tenant(): BelongsTo",
+          "label": {
+            "pt": "relação tenant()",
+            "en": "tenant() link"
+          }
+        }
+      ]
+    },
+    {
+      "id": "AgenteIa",
+      "label": "AgenteIa",
+      "kind": "class",
+      "sublabel": "model",
+      "row": 2,
+      "col": 1,
+      "sources": [
+        {
+          "arquivo": "app/Models/AgenteIa.php",
+          "trecho": "class AgenteIa extends Model implements Auditable",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Role",
+      "label": "Role",
+      "kind": "class",
+      "sublabel": "model",
+      "row": 2,
+      "col": 3,
+      "sources": [
+        {
+          "arquivo": "app/Models/Role.php",
+          "trecho": "class Role extends SpatieRole",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Tenant",
+      "label": "Tenant",
+      "kind": "class",
+      "sublabel": "model",
+      "row": 2,
+      "col": 2,
+      "sources": [
+        {
+          "arquivo": "app/Models/Tenant.php",
+          "trecho": "class Tenant extends Model implements Auditable, HasCurrentTenantLabel, HasName",
+          "label": {
+            "pt": "declaração da classe",
+            "en": "class declaration"
+          }
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "User-ModeloCacheavel",
+      "from": "User",
+      "to": "ModeloCacheavel",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "use ModeloCacheavel;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "User-AuditsFillables",
+      "from": "User",
+      "to": "AuditsFillables",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "use AuditsFillables;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "User-TemUuid",
+      "from": "User",
+      "to": "TemUuid",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "use TemUuid;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "Convite-ModeloCacheavel",
+      "from": "Convite",
+      "to": "ModeloCacheavel",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "use ModeloCacheavel;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "Convite-AuditsFillables",
+      "from": "Convite",
+      "to": "AuditsFillables",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "use AuditsFillables;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "Convite-TemUuid",
+      "from": "Convite",
+      "to": "TemUuid",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "use TemUuid;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "Projeto-ModeloCacheavel",
+      "from": "Projeto",
+      "to": "ModeloCacheavel",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Projeto.php",
+        "trecho": "use ModeloCacheavel;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "Projeto-AuditsFillables",
+      "from": "Projeto",
+      "to": "AuditsFillables",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Projeto.php",
+        "trecho": "use AuditsFillables;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "Projeto-TemUuid",
+      "from": "Projeto",
+      "to": "TemUuid",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Projeto.php",
+        "trecho": "use TemUuid;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "Projeto-BelongsToTenant",
+      "from": "Projeto",
+      "to": "BelongsToTenant",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Projeto.php",
+        "trecho": "use BelongsToTenant;"
+      },
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "AgenteIa-AuditsFillables",
+      "from": "AgenteIa",
+      "to": "AuditsFillables",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/AgenteIa.php",
+        "trecho": "use AuditsFillables;"
+      },
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "AgenteIa-TemUuid",
+      "from": "AgenteIa",
+      "to": "TemUuid",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/AgenteIa.php",
+        "trecho": "use TemUuid;"
+      },
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "Role-TemUuid",
+      "from": "Role",
+      "to": "TemUuid",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Role.php",
+        "trecho": "use TemUuid;"
+      },
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "Tenant-AuditsFillables",
+      "from": "Tenant",
+      "to": "AuditsFillables",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Tenant.php",
+        "trecho": "use AuditsFillables;"
+      },
+      "fromSide": "left",
+      "toSide": "right",
+      "via": [
+        [
+          696,
+          505
+        ],
+        [
+          696,
+          296
+        ]
+      ]
+    },
+    {
+      "id": "Tenant-TemUuid",
+      "from": "Tenant",
+      "to": "TemUuid",
+      "kind": "dependency",
+      "prova": {
+        "arquivo": "app/Models/Tenant.php",
+        "trecho": "use TemUuid;"
+      },
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "BelongsToTenant-Tenant",
+      "from": "BelongsToTenant",
+      "to": "Tenant",
+      "kind": "association",
+      "label": "tenant",
+      "prova": {
+        "arquivo": "app/Traits/BelongsToTenant.php",
+        "trecho": "public function tenant(): BelongsTo"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "O archify não tem o tipo trait: as quatro traits de app/Traits aparecem como classe. O subtítulo delas, no índice de nós e no passaporte, diz que são trait e qual trait de pacote cada uma envolve.",
+          "en": "archify has no trait type: the four app/Traits traits appear as classes. Their subtitle in the node index and passport says they are traits and names the package trait each wraps."
+        },
+        {
+          "pt": "A seta tracejada é o use da trait no model; a prova de cada uma é a linha do use dentro da classe.",
+          "en": "Dashed arrow is the trait use in the model; evidence is the use line inside the class."
+        },
+        {
+          "pt": "BelongsToTenant traz a relação tenant(): a seta contínua vai da trait para Tenant.",
+          "en": "BelongsToTenant provides tenant(): solid arrow runs from trait to Tenant."
+        },
+        {
+          "pt": "User sobrescreve auditaAlemDoFillable(), o gancho de AuditsFillables, para auditar também ativo e aprovacao_pendente.",
+          "en": "User overrides auditaAlemDoFillable(), the AuditsFillables hook, to also audit ativo and aprovacao_pendente."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "O que cada trait faz",
+        "en": "What each trait does"
+      },
+      "items": [
+        {
+          "pt": "AuditsFillables: audita só o $fillable, mais o que o model acrescentar pelo gancho.",
+          "en": "AuditsFillables: audits only $fillable, plus fields the model adds via the hook."
+        },
+        {
+          "pt": "TemUuid: uuid como chave de rota, com a chave primária numérica no banco.",
+          "en": "TemUuid: uuid as route key, with a numeric primary key in the database."
+        },
+        {
+          "pt": "ModeloCacheavel: o ponto único de ativação do cache de model, sobre a trait Cachable do pacote.",
+          "en": "ModeloCacheavel: single point for enabling model cache, over the package Cachable trait."
+        },
+        {
+          "pt": "BelongsToTenant: a relação tenant(), o escopo global pelo tenant corrente e o preenchimento de tenant_id ao criar.",
+          "en": "BelongsToTenant: tenant() relation, global scope by current tenant, and tenant_id set on create."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Fora do desenho",
+        "en": "Outside diagram"
+      },
+      "items": [
+        {
+          "pt": "VinculoSocial não usa nenhuma das quatro traits.",
+          "en": "VinculoSocial uses none of the four traits."
+        },
+        {
+          "pt": "As traits de app/Filament/Concerns e de app/Providers/Concerns servem peças dos painéis, e não models, e ficam fora deste diagrama.",
+          "en": "Traits in app/Filament/Concerns and app/Providers/Concerns serve panel parts rather than models and are outside this diagram."
+        },
+        {
+          "pt": "As traits de pacote que os models usam direto (HasRoles, InteractsWithMedia, SoftDeletes, Recyclable e outras) moram em vendor/ e não entram.",
+          "en": "Package traits used directly by models (HasRoles, InteractsWithMedia, SoftDeletes, Recyclable and others) live in vendor/ and are omitted."
+        }
+      ]
+    }
+  ]
+}

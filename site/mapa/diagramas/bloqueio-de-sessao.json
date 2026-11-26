@@ -1,0 +1,430 @@
+{
+  "slug": "bloqueio-de-sessao",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Bloqueio de sessão: travar e desbloquear",
+    "en": "Session lock: lock and unlock"
+  },
+  "paineis": [
+    "admin",
+    "app",
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "passo seguinte",
+            "en": "next step"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "redirect para a tela de bloqueio",
+            "en": "redirect to lock screen"
+          }
+        },
+        "dashed": {
+          "label": {
+            "pt": "caminho alternativo",
+            "en": "alternate path"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta",
+            "en": "reply"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      }
+    },
+    {
+      "id": "lockscreen",
+      "type": "cloud",
+      "label": "Lockscreen",
+      "sublabel": "plugin",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AdminPanelProvider.php",
+          "trecho": "->enablePlugin((bool) config('lockscreen.enabled'))"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->enablePlugin((bool) config('lockscreen.enabled'))"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "->enablePlugin((bool) config('lockscreen.enabled'))"
+        }
+      ]
+    },
+    {
+      "id": "bloquearsessao",
+      "type": "security",
+      "label": "BloquearSessao",
+      "sublabel": "ComRetorno",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/BloquearSessaoComRetorno.php",
+          "trecho": "class BloquearSessaoComRetorno extends Locker"
+        },
+        {
+          "arquivo": "app/Providers/AppServiceProvider.php",
+          "trecho": "$this->app->bind(Locker::class, BloquearSessaoComRetorno::class);"
+        }
+      ]
+    },
+    {
+      "id": "telabloqueio",
+      "type": "frontend",
+      "label": "TelaBloqueio",
+      "sublabel": {
+        "pt": "tela de bloqueio",
+        "en": "lock screen"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+          "trecho": "class TelaBloqueio extends LockerScreen"
+        },
+        {
+          "arquivo": "app/Providers/AppServiceProvider.php",
+          "trecho": "$this->app->bind(LockerScreen::class, TelaBloqueio::class);"
+        }
+      ]
+    },
+    {
+      "id": "loginsocial",
+      "type": "backend",
+      "label": "LoginSocial",
+      "sublabel": "Controller",
+      "sources": [
+        {
+          "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+          "trecho": "final class LoginSocialController extends Controller"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 450,
+      "label": {
+        "pt": "Travar",
+        "en": "Lock"
+      }
+    },
+    {
+      "from": 460,
+      "to": 795,
+      "label": {
+        "pt": "Desbloquear com a senha",
+        "en": "Unlock with password"
+      }
+    },
+    {
+      "from": 805,
+      "to": 1010,
+      "label": {
+        "pt": "Desbloquear pelo provedor",
+        "en": "Unlock via provider"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "travar",
+      "from": "navegador",
+      "to": "lockscreen",
+      "y": 180,
+      "label": "POST /{painel}/lock-session",
+      "variant": "emphasis",
+      "note": {
+        "pt": "item Bloquear sessão do menu do usuário, logo abaixo do Meu perfil",
+        "en": "Lock session item in user menu, just below My profile"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "->url(fn (): string => route(\"lockscreen.{$panelId}.lock-session\"))"
+      }
+    },
+    {
+      "id": "travada",
+      "from": "lockscreen",
+      "to": "navegador",
+      "y": 245,
+      "label": {
+        "pt": "302 tela de bloqueio",
+        "en": "302 lock screen"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "grava lockscreen = true e a página anterior como destino",
+        "en": "saves lockscreen = true and prior page as destination"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->enablePlugin((bool) config('lockscreen.enabled'))"
+      }
+    },
+    {
+      "id": "ociosa",
+      "from": "navegador",
+      "to": "bloquearsessao",
+      "y": 310,
+      "label": {
+        "pt": "GET de painel, sessão ociosa",
+        "en": "panel GET, idle session"
+      },
+      "variant": "dashed",
+      "note": {
+        "pt": "o Locker do pacote, trocado pela subclasse do kit; sem GET por mais de lockscreen.idle_timeout trava a sessão",
+        "en": "package Locker, replaced by kit subclass; no GET for longer than lockscreen.idle_timeout locks session"
+      },
+      "prova": {
+        "arquivo": "app/Providers/AppServiceProvider.php",
+        "trecho": "$this->app->bind(Locker::class, BloquearSessaoComRetorno::class);"
+      }
+    },
+    {
+      "id": "guarda",
+      "from": "bloquearsessao",
+      "to": "navegador",
+      "y": 390,
+      "label": {
+        "pt": "302 tela de bloqueio",
+        "en": "302 lock screen"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "guarda a URL interceptada como destino, e não o Referer; pedido que espera JSON não vira destino",
+        "en": "saves intercepted URL as target, rather than Referer; JSON requests never become targets"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/BloquearSessaoComRetorno.php",
+        "trecho": "redirect()->setIntendedUrl($request->fullUrl());"
+      }
+    },
+    {
+      "id": "abrir",
+      "from": "navegador",
+      "to": "telabloqueio",
+      "y": 480,
+      "label": "GET /{painel}/screen/lock",
+      "variant": "emphasis",
+      "note": {
+        "pt": "a rota do pacote resolve LockerScreen pelo container, que entrega a TelaBloqueio",
+        "en": "package route resolves LockerScreen via container, which returns TelaBloqueio"
+      },
+      "prova": {
+        "arquivo": "app/Providers/AppServiceProvider.php",
+        "trecho": "$this->app->bind(LockerScreen::class, TelaBloqueio::class);"
+      }
+    },
+    {
+      "id": "fora",
+      "from": "telabloqueio",
+      "to": "navegador",
+      "y": 550,
+      "label": {
+        "pt": "302 login ou painel",
+        "en": "302 login or panel"
+      },
+      "variant": "security",
+      "note": {
+        "pt": "sem sessão: login do painel; sessão destravada: raiz do painel",
+        "en": "no session: panel login; unlocked session: panel root"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "$this->sairPara($panel->getLoginUrl() ?? url($panel->getPath()));"
+      }
+    },
+    {
+      "id": "senha",
+      "from": "navegador",
+      "to": "telabloqueio",
+      "y": 620,
+      "label": {
+        "pt": "envia a senha",
+        "en": "send password"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "repõe o destino e chama o authenticate() do pacote: 5 tentativas e, estouradas, logout e login do painel",
+        "en": "restores destination and calls package authenticate(): 5 attempts, then logout and panel login"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "public function authenticate(): Redirector|RedirectResponse|Application|null"
+      }
+    },
+    {
+      "id": "destravada",
+      "from": "telabloqueio",
+      "to": "navegador",
+      "y": 710,
+      "label": {
+        "pt": "302 página guardada",
+        "en": "302 saved page"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "senha da conta logada conferida: sessão regenerada, lockscreen = false e o relógio da inatividade zerado",
+        "en": "logged-in account password checked: session regenerated, lockscreen = false and idle timer reset"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "redirect()->setIntendedUrl($this->destinoDoDesbloqueio);"
+      }
+    },
+    {
+      "id": "botoes",
+      "from": "telabloqueio",
+      "to": "navegador",
+      "y": 825,
+      "label": {
+        "pt": "botões dos provedores",
+        "en": "provider buttons"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "os mesmos do login, para quem entrou por provedor e não tem senha local",
+        "en": "same as login, for users who signed in via provider and have no local password"
+      },
+      "prova": {
+        "arquivo": "app/Filament/Pages/Auth/TelaBloqueio.php",
+        "trecho": "View::make('filament.auth.botoes-sociais'),"
+      }
+    },
+    {
+      "id": "provedor",
+      "from": "navegador",
+      "to": "loginsocial",
+      "y": 890,
+      "label": {
+        "pt": "volta do provedor",
+        "en": "provider return"
+      },
+      "variant": "emphasis",
+      "note": {
+        "pt": "a ida e a volta do diagrama login-social",
+        "en": "outbound and return in login-social diagram"
+      },
+      "prova": {
+        "arquivo": "routes/web.php",
+        "trecho": "Route::get('callback', [LoginSocialController::class, 'retorno'])->name('callback');"
+      }
+    },
+    {
+      "id": "desbloqueio",
+      "from": "loginsocial",
+      "to": "navegador",
+      "y": 950,
+      "label": {
+        "pt": "302 página guardada",
+        "en": "302 saved page"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "a mesma conta que travou: destrava e volta à página guardada; outra conta: a página é descartada",
+        "en": "same account that locked: unlocks and returns to saved page; other account: discards page"
+      },
+      "prova": {
+        "arquivo": "app/Http/Controllers/Auth/LoginSocialController.php",
+        "trecho": "? redirect()->intended($this->urlDoPainel($user))"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Para onde o desbloqueio volta",
+        "en": "Where unlock returns"
+      },
+      "items": [
+        {
+          "pt": "A página que a trava interceptou, guardada pela BloquearSessaoComRetorno; aberta a tela direto, sem página guardada, a TelaBloqueio grava a raiz do painel como destino.",
+          "en": "Page intercepted by lock, saved by BloquearSessaoComRetorno; when opened directly without a saved page, TelaBloqueio saves panel root as destination."
+        },
+        {
+          "pt": "O destino é reposto antes de cada envio da senha, então um segundo envio não cai na raiz; se o envio termina deslogado, o destino sai da sessão.",
+          "en": "Destination is restored before each password submit, so a second submit avoids root; if submit ends logged out, destination leaves session."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "O que trava por inatividade",
+        "en": "What locks on idle"
+      },
+      "items": [
+        {
+          "pt": "Só o GET de painel conta e trava: os updates Livewire passam pelo Locker sem travar e sem contar como atividade.",
+          "en": "Only panel GET counts and locks: Livewire updates pass through Locker without locking or counting as activity."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "lockscreen.enabled (LOCKSCREEN_ENABLED, padrão ligado): o plugin, as rotas, o item do menu e o Locker nos três painéis.",
+          "en": "lockscreen.enabled (LOCKSCREEN_ENABLED, default on): plugin, routes, menu item and Locker in all three panels."
+        },
+        {
+          "pt": "lockscreen.idle_timeout (LOCKSCREEN_IDLE_TIMEOUT, padrão 1.800 s, 30 min): tempo sem GET até a sessão travar.",
+          "en": "lockscreen.idle_timeout (LOCKSCREEN_IDLE_TIMEOUT, default 1,800 s, 30 min): time without GET until session locks."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Com tenant",
+        "en": "Tenant on"
+      },
+      "items": [
+        {
+          "pt": "No /app, sem página guardada, a raiz é a organização da sessão (tenant_corrente, gravada pelo DefinirTenantDePermissoes), se a pessoa ainda a acessa; a tela usa a logo dessa organização, quando ela tem uma.",
+          "en": "In /app, without a saved page, root is session organization (tenant_corrente, saved by DefinirTenantDePermissoes), if user still has access; screen uses its logo if present."
+        },
+        {
+          "pt": "As rotas do bloqueio não têm {tenant}: a organização vem só da sessão.",
+          "en": "Lock routes have no {tenant}: organization comes only from session."
+        }
+      ]
+    }
+  ]
+}

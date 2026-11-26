@@ -1,0 +1,373 @@
+{
+  "slug": "convite",
+  "tipo": "lifecycle",
+  "titulo": {
+    "pt": "Convite: situação",
+    "en": "Invitation: state"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 3,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "mainPath": [
+    "pendente",
+    "aceito"
+  ],
+  "states": [
+    {
+      "id": "pendente",
+      "type": "waiting",
+      "label": {
+        "pt": "Pendente",
+        "en": "Pending"
+      },
+      "sublabel": {
+        "pt": "expira_em no futuro",
+        "en": "expira_em in future"
+      },
+      "tag": {
+        "pt": "nasce no envio",
+        "en": "starts on send"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "default                                => 'Pendente',",
+          "label": "Convite@situacao"
+        },
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "->where('expira_em', '>', now());",
+          "label": "Convite@scopePendentes"
+        },
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Pages/CreateConvite.php",
+          "trecho": "$convite->enviar();",
+          "label": "CreateConvite@afterCreate"
+        }
+      ]
+    },
+    {
+      "id": "aceito",
+      "type": "success",
+      "label": {
+        "pt": "Aceito",
+        "en": "Accepted"
+      },
+      "sublabel": {
+        "pt": "aceito_em preenchido",
+        "en": "aceito_em set"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "$this->aceito_em !== null              => 'Aceito',",
+          "label": "Convite@situacao"
+        },
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "$this->forceFill(['aceito_em' => now(), 'token_lembrete' => null])->save();",
+          "label": "Convite@aceitar"
+        },
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "->update(['aceito_em' => now(), 'token_lembrete' => null]);",
+          "label": "Convite@aceitarComoUsuarioExistente"
+        }
+      ]
+    },
+    {
+      "id": "recusado",
+      "type": "neutral",
+      "label": {
+        "pt": "Recusado",
+        "en": "Declined"
+      },
+      "sublabel": {
+        "pt": "só com tenant",
+        "en": "tenant only"
+      },
+      "tag": {
+        "pt": "recusado_em preenchido",
+        "en": "recusado_em set"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "$this->recusado_em !== null            => 'Recusado',",
+          "label": "Convite@situacao"
+        },
+        {
+          "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
+          "trecho": "return (bool) config('kit.tenancy.enabled') && Auth::check();",
+          "label": "ConvitesRecebidos@regraLocalDeAcesso"
+        },
+        {
+          "arquivo": "app/Filament/App/Pages/ConvitesRecebidos.php",
+          "trecho": "$record->recusar($this->usuario());",
+          "label": "ConvitesRecebidos@table"
+        }
+      ]
+    },
+    {
+      "id": "expirado",
+      "type": "failure",
+      "label": {
+        "pt": "Expirado",
+        "en": "Expired"
+      },
+      "sublabel": {
+        "pt": "expira_em no passado",
+        "en": "expira_em in past"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Models/Convite.php",
+          "trecho": "$this->expira_em?->isPast() ?? true    => 'Expirado',",
+          "label": "Convite@situacao"
+        },
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+          "trecho": "->visible(fn (Convite $record): bool => ($record->situacao() === 'Pendente' || $record->situacao() === 'Expirado')",
+          "label": "ConvitesTable@configure"
+        }
+      ]
+    },
+    {
+      "id": "revogado",
+      "type": "neutral",
+      "label": {
+        "pt": "Revogado",
+        "en": "Revoked"
+      },
+      "sublabel": {
+        "pt": "linha apagada",
+        "en": "row deleted"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+          "trecho": "->label('Revogar')",
+          "label": "ConvitesTable@configure"
+        },
+        {
+          "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+          "trecho": "[ConvitesTable@revogar] Convite revogado",
+          "label": "ConvitesTable@revogar"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "pendente-aceito",
+      "from": "pendente",
+      "to": "aceito",
+      "label": {
+        "pt": "Aceitar",
+        "en": "Accept"
+      },
+      "note": {
+        "pt": "conta nova ou existente",
+        "en": "new or existing account"
+      },
+      "variant": "emphasis",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "$this->forceFill(['aceito_em' => now(), 'token_lembrete' => null])->save();"
+      }
+    },
+    {
+      "id": "pendente-recusado",
+      "from": "pendente",
+      "to": "recusado",
+      "label": {
+        "pt": "Recusar",
+        "en": "Decline"
+      },
+      "note": {
+        "pt": "só com tenant, em Convites recebidos",
+        "en": "tenant only, in Received invitations"
+      },
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "->update(['recusado_em' => now(), 'token_lembrete' => null]);"
+      }
+    },
+    {
+      "id": "pendente-expirado",
+      "from": "pendente",
+      "to": "expirado",
+      "label": {
+        "pt": "prazo vence",
+        "en": "term ends"
+      },
+      "note": {
+        "pt": "nada grava",
+        "en": "no write"
+      },
+      "variant": "dashed",
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "$this->expira_em?->isPast() ?? true    => 'Expirado',"
+      }
+    },
+    {
+      "id": "expirado-pendente",
+      "from": "expirado",
+      "to": "pendente",
+      "label": {
+        "pt": "Reenviar",
+        "en": "Resend"
+      },
+      "note": {
+        "pt": "token e prazo novos",
+        "en": "new token and term"
+      },
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "'expira_em' => now()->addDays((int) config('kit.convites.validade_em_dias', 7)),"
+      }
+    },
+    {
+      "id": "pendente-pendente",
+      "from": "pendente",
+      "to": "pendente",
+      "label": {
+        "pt": "Reenviar",
+        "en": "Resend"
+      },
+      "note": {
+        "pt": "token e prazo novos; o link anterior morre",
+        "en": "new token and expiry; prior link dies"
+      },
+      "prova": {
+        "arquivo": "app/Models/Convite.php",
+        "trecho": "'expira_em' => now()->addDays((int) config('kit.convites.validade_em_dias', 7)),"
+      }
+    },
+    {
+      "id": "pendente-revogado",
+      "from": "pendente",
+      "to": "revogado",
+      "label": {
+        "pt": "Revogar",
+        "en": "Revoke"
+      },
+      "variant": "security",
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "DeleteAction::make()"
+      }
+    },
+    {
+      "id": "aceito-revogado",
+      "from": "aceito",
+      "to": "revogado",
+      "label": {
+        "pt": "Revogar",
+        "en": "Revoke"
+      },
+      "variant": "security",
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "DeleteAction::make()"
+      }
+    },
+    {
+      "id": "recusado-revogado",
+      "from": "recusado",
+      "to": "revogado",
+      "label": {
+        "pt": "Revogar",
+        "en": "Revoke"
+      },
+      "variant": "security",
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "DeleteAction::make()"
+      }
+    },
+    {
+      "id": "expirado-revogado",
+      "from": "expirado",
+      "to": "revogado",
+      "label": {
+        "pt": "Revogar",
+        "en": "Revoke"
+      },
+      "variant": "security",
+      "prova": {
+        "arquivo": "app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php",
+        "trecho": "DeleteAction::make()"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como a situação é calculada",
+        "en": "How state is computed"
+      },
+      "items": [
+        {
+          "pt": "situacao() deriva a situação de aceito_em, recusado_em e expira_em, nessa precedência: Aceito, Recusado, Expirado, Pendente. Não há coluna de status.",
+          "en": "situacao() derives state from aceito_em, recusado_em and expira_em, in this order: Accepted, Declined, Expired, Pending. No status column."
+        },
+        {
+          "pt": "Expirado não tem linha que o grave: o prazo vence sozinho, situacao() compara expira_em com agora, e Convite::valido() deixa de achar o convite.",
+          "en": "No code writes Expired: time runs out, situacao() compares expira_em with now, and Convite::valido() stops finding the invitation."
+        },
+        {
+          "pt": "Revogado não é valor de situacao(): Revogar é o DeleteAction da tabela do /admin, a linha some e a revogação fica na auditoria.",
+          "en": "Revoked is no situacao() value: Revoke is /admin table DeleteAction; row disappears and revocation stays in audit."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Modos e telas",
+        "en": "Modes and UI"
+      },
+      "items": [
+        {
+          "pt": "Recusar só existe com tenant: a caixa Convites recebidos exige kit.tenancy.enabled. Sem tenant, nenhum convite chega a Recusado.",
+          "en": "Decline exists only with tenant: Received invitations box needs kit.tenancy.enabled. Without tenant, no invitation becomes Declined."
+        },
+        {
+          "pt": "Aceitar grava aceito_em por dois caminhos: aceitar(), na conta nova, pelo link do e-mail; aceitarComoUsuarioExistente(), na conta existente, pelo link ou, com tenant, pela caixa Convites recebidos.",
+          "en": "Accept saves aceito_em in two ways: aceitar() for new accounts via email link; aceitarComoUsuarioExistente() for existing accounts via link or, with tenant, Received invitations box."
+        },
+        {
+          "pt": "Reenviar e Revogar ficam na tabela do /admin. Reenviar só aparece em Pendente ou Expirado, e some para e-mail com + que não tem conta quando a instalação bloqueia o +.",
+          "en": "Resend and Revoke are in /admin table. Resend shows only for Pending or Expired, and hides for + email without account when installation blocks +."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Fora do desenho",
+        "en": "Outside diagram"
+      },
+      "items": [
+        {
+          "pt": "O lembrete (kit:convites-lembrar) grava só token_lembrete e lembretes_enviados: a situação não muda.",
+          "en": "Reminder (kit:convites-lembrar) saves only token_lembrete and lembretes_enviados: state stays the same."
+        },
+        {
+          "pt": "Aceito e Recusado não voltam a Pendente: Reenviar fica oculto nos dois.",
+          "en": "Accepted and Declined never return to Pending: Resend is hidden for both."
+        }
+      ]
+    }
+  ]
+}

@@ -183,19 +183,19 @@ Abaixo, a cópia do roteiro da versão instalada, para consulta depois da atuali
 versão; o roteiro que vale para a próxima atualização é sempre o do link.
 
 <!-- roteiro-de-atualizacao:inicio -->
-# Roteiro de atualização — v0.55.1 → v0.56.0
+# Roteiro de atualização — v0.56.0 → v0.57.0
 
 Leia o roteiro inteiro antes de alterar um arquivo do projeto.
 
 ## Identificação
 
-Origem: v0.55.1
+Origem: v0.56.0
 
-Destino: v0.56.0
+Destino: v0.57.0
 
-Data: 2026-11-19
+Data: 2026-11-26
 
-Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.56.0/wikis/atualizacoes/v0.56.0.md
+Link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v0.57.0/wikis/atualizacoes/v0.57.0.md
 
 Padrão do link: https://raw.githubusercontent.com/gsferro/filament-starter-kit-easy/v{versão}/wikis/atualizacoes/v{versão}.md
 
@@ -205,7 +205,7 @@ Leia também o mesmo arquivo na `main`. Se o arquivo da `main` trouxer a linha `
 
 ## Antes de começar
 
-O pedido que dispara este roteiro é: “Atualize meu projeto da v0.55.1 para a v0.56.0 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão com a versão destino `v0.56.0` e confira que é o mesmo endereço da Identificação. O agente segue os passos abaixo usando o `kit:update` para aplicar os arquivos.
+O pedido que dispara este roteiro é: “Atualize meu projeto da v0.56.0 para a v0.57.0 seguindo este roteiro”. Ele pode vir com o link da Identificação ou sem ele; sem o link, monte-o pelo padrão com a versão destino `v0.57.0` e confira que é o mesmo endereço da Identificação. O agente segue os passos abaixo usando o `kit:update` para aplicar os arquivos.
 
 Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e PowerShell, exceto onde aparecem as duas formas. Guarde as saídas para o relatório final.
 
@@ -224,7 +224,7 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan tinker --execute 'echo config("kit.version");'
    ```
 
-   Esperado: `0.55.1`. Outro valor encerra este roteiro sem aplicar arquivos: `0.56.0` indica marcador já no destino; uma versão anterior exige as atualizações intermediárias, em ordem; uma versão posterior exige outro roteiro. Informe ao dono o valor encontrado.
+   Esperado: `0.56.0`. Outro valor encerra este roteiro sem aplicar arquivos: `0.57.0` indica marcador já no destino; uma versão anterior exige as atualizações intermediárias, em ordem; uma versão posterior exige outro roteiro. Informe ao dono o valor encontrado.
 
 3. **O banco está acessível e a impressão dos dados foi guardada.**
 
@@ -236,92 +236,87 @@ Rode as conferências na raiz do projeto. Os comandos valem para Git Bash e Powe
    php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => array_map("md5", App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "configuracoes" => md5(json_encode(app(App\Settings\ConfiguracoesDoKit::class)->toArray()))]);'
    ```
 
-   Esperado: consulta sem erro e nenhuma migration `Pending`. Havendo pendência do projeto, informe os nomes e pare: o migrate executaria essas pendências junto com a migration desta versão. Anote a multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário, um por organização e um das Configurações da aplicação. Essa **impressão dos dados** deve ser idêntica ao final, excluindo na consulta final somente o setting acrescentado nesta versão, `email_permitir_mais`. Confira o valor novo separadamente, antes de qualquer escolha manual.
+   Esperado: consulta sem erro e nenhuma migration `Pending`. Havendo pendência do projeto, informe os nomes e pare; esta atualização não executa migrations. Anote a multi-organização, `SIM` ou `NAO`, e guarde integralmente a última saída: um hash por usuário, um por organização e um das Configurações da aplicação. Essa **impressão dos dados** deve ser idêntica ao final, sem excluir campos.
 
 4. **Os nomes reservados pelo comando estão livres.**
 
    ```bash
    git remote
    git tag -l "kit-*"
-   git branch --list kit-update/v0.56.0
+   git branch --list kit-update/v0.57.0
    ```
 
-   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.56.0`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
+   Esperado: nenhum remote `kit`, nenhuma tag `kit-*` e nenhum branch `kit-update/v0.57.0`. Se algum existir, pare e informe ao dono, sem apagar nada: o comando usa esses nomes e remove o remote e as tags ao encerrar.
 
 5. **O dry-run corresponde à release.**
 
    ```bash
-   php artisan kit:update --from=0.55.1 --tag=v0.56.0 --dry-run --keep-remote --no-interaction
-   git diff --stat kit-v0.55.1 kit-v0.56.0 -- composer.json composer.lock package.json package-lock.json
-   git diff --name-status kit-v0.55.1 kit-v0.56.0 -- database/migrations database/settings resources public
-   git diff --name-status kit-v0.55.1 kit-v0.56.0 -- app/Console/Commands app/Providers app/Filament app/Http app/Livewire app/Models app/Settings app/Support app/Data config/kit.php .env.example phpunit.xml tests/Pest.php tests/Kit tests/Tenancy
+   php artisan kit:update --from=0.56.0 --tag=v0.57.0 --dry-run --keep-remote --no-interaction
+   git diff --stat kit-v0.56.0 kit-v0.57.0 -- composer.json composer.lock package.json package-lock.json
+   git diff --name-status kit-v0.56.0 kit-v0.57.0 -- app bootstrap database resources public routes lang .env.example phpunit.xml
+   git diff --name-status kit-v0.56.0 kit-v0.57.0 -- .ai/rules wikis/glossario.md config/kit.php tests/Pest.php tests/Kit tests/Tenancy tests/Browser
    ```
 
-   Esperado: resumo entre `kit-v0.55.1` e `kit-v0.56.0`, sem tocar arquivos; diff de dependências vazio; exatamente a migration de settings listada em **O que muda nesta versão**, nenhuma migration de tabela nova, nada novo sob `resources` e nenhum asset publicado novo. Confira todos os arquivos da entrega relacionados abaixo. O dry-run mantém o remote `kit` e as tags para as comparações seguintes.
+   Esperado: resumo entre `kit-v0.56.0` e `kit-v0.57.0`, sem tocar arquivos; diff de dependências vazio; a terceira linha sem saída nenhuma (nada muda em código da aplicação, migrations, settings, views, assets, rotas, traduções, `.env.example` ou `phpunit.xml`); a quarta lista exatamente os arquivos de **O que muda nesta versão**. O dry-run mantém o remote `kit` e as tags para as comparações seguintes.
 
-   Se a tag ainda não estiver disponível, pare e informe ao dono. Não substitua a tag pela `main`. Dependência alterada, migration além da prevista, asset publicado novo ou ausência de parte da entrega exige parada com o diff encontrado.
+   Se a tag ainda não estiver disponível, pare e informe ao dono. Não substitua a tag pela `main`. Dependência alterada, arquivo de aplicação, migration ou asset alterado, ou ausência de parte da entrega exige parada com o diff encontrado.
 
 6. **As edições do dono foram identificadas.**
 
    Para cada arquivo do resumo que existe no projeto, compare com a origem quando for `modificado`, ou com o destino quando for `novo no kit`:
 
    ```bash
-   git diff --name-only kit-v0.55.1 HEAD -- caminho/do/modificado
-   git diff --name-only kit-v0.56.0 HEAD -- caminho/do/novo
+   git diff --name-only kit-v0.56.0 HEAD -- caminho/do/modificado
+   git diff --name-only kit-v0.57.0 HEAD -- caminho/do/novo
    ```
 
-   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente os três providers de painel (`myProfileComponents()` próprio é o ponto de integração mais provável), a página e a classe de settings, os dois `UserResource`, `RegistroPorConvite`, `RegistroAberto`, `Convite`, `ConvidaEmMassa`, `ConvitesTable`, `KitConvitesLembrar`, `LoginSocialController`, `config/kit.php`, `.env.example` e `tests/Pest.php`. Procure também testes próprios que definam helpers chamados `registrarAberto()`, `conviteCom()`, `aceitarConvite()`, `conviteSocialPara()` ou `opcaoDoMais()`: o kit passa a defini-los no `tests/Pest.php`.
+   Saída vazia significa que não há diferença naquele arquivo. Caminho impresso entra na lista de conflitos; repita sem `--name-only` para descrever a edição ao dono. Confira especialmente `.ai/rules/index.md` (rules próprias do dono entram nele), `wikis/glossario.md` (termos próprios do dono), `tests/Pest.php` e `config/kit.php`. O `tests/Pest.php` ganha 35 funções globais novas, as dos testes do mapa; liste-as e procure, nos testes próprios do dono, função com o mesmo nome:
+
+   ```bash
+   git diff kit-v0.56.0 kit-v0.57.0 -- tests/Pest.php | grep "^+function"
+   ```
+
+   Para cada nome impresso, `git grep -n "function nomeDaFuncao(" -- tests` fora do `tests/Pest.php` indica uma redeclaração que o PHP recusaria; registre como conflito.
 
 ## O que muda nesta versão
 
-A v0.56.0 traz a opção **Permitir "+" no e-mail ao cadastrar**. Um endereço como `fulano+loja@gmail.com` cai na caixa de `fulano@gmail.com`, então uma caixa só rende cadastros sem fim. Desligada a opção, toda via que dá um e-mail novo a uma conta recusa o "+" antes do "@", com a mesma mensagem: o cadastro aberto (`/app/register` e `/cadastro`), o convite para conta nova, um a um e em massa (no lote, o endereço sai com o motivo `email_com_mais` e os outros seguem), a tela de usuários do `/admin` e do `/app`, o login social que criaria uma conta e a troca de e-mail no Meu perfil.
+A v0.57.0 traz o **mapa interativo do kit** e o **catálogo único de features**: cada painel, sem e com o tenant ativo, e os fluxos do kit viram diagramas interativos gerados do código, com a prova de cada ligação, e o roteiro de features do site passa a ser o catálogo único, com 50 features novas numeradas. Tudo isso vive no site de documentação (`site/` e o diretório das páginas do site), que é material do repositório do kit: fica fora do pacote do `composer create-project` e fora da lista de caminhos do `kit:update`. **Nada muda no comportamento do projeto**: nenhum arquivo de `app/`, `config/` (fora o marcador), `database/`, `resources/`, `public/` ou `routes/` mudou entre as duas tags.
 
-A opção nasce **LIGADA**: nada muda para ninguém até o admin desligá-la, e esta atualização não muda nenhum default. Ela fica na aba **Registro** de *Configurações da aplicação*, na seção "E-mail com "+"", e a chave `KIT_EMAIL_PERMITIR_MAIS` só semeia o valor: depois da migration, governa a tela. Só um "desligado" explícito (`false`, `0`, `off`, `no`) bloqueia; a chave ausente, vazia ou irreconhecível permite. Conta que já tem "+" continua entrando e salvando o perfil; convite para um e-mail que já é de uma conta passa, pois só vincula; o convite para conta nova com "+" enviado antes de desligar deixa de se aceitar, tanto pelo link e pelo login social quanto por `Convite::aceitar()` chamado direto (revogue e convide sem o "+"); nesse caso o admin deixa de ver **Reenviar**, que continua disponível para os demais convites, o lembrete automático pula o convite, que fica pendente até alguém revogá-lo, e **Revogar** segue disponível. Os comandos `kit:install` e `kit:admin` ficam fora da regra.
+Confira estes arquivos que o `kit:update` traz:
 
-Confira estes arquivos que o `kit:update` traz e os pontos de conflito em projeto que mexeu à mão:
+- `.ai/rules/catalogo-de-features.md`, novo: a rule do catálogo de features. Ela declara que só vale no repositório do kit, onde existe o catálogo; no projeto, fica como referência para o agente e não exige nada;
+- `.ai/rules/index.md`: a linha que mapeia essa rule;
+- `wikis/glossario.md`: cinco termos novos (peça, ligação, peça condicional, condição de disponibilidade e catálogo de features);
+- `tests/Pest.php`: os helpers das guardas do mapa (35 funções globais novas, como `modeloDoMapa()` e `diagramasDoMapa()`);
+- novos `tests/Kit/MapaInterativoCatalogoTest.php`, `tests/Kit/MapaInterativoDiagramasTest.php`, `tests/Kit/MapaInterativoPublicacaoTest.php`, `tests/Kit/MapaInterativoTest.php` e `tests/Tenancy/MapaInterativoTenancyTest.php`: leem o site e o modelo do mapa, que não existem no projeto, então **todos os 439 casos pulam** fora da árvore do kit, pela guarda `naArvoreDoKit()`;
+- `tests/Kit/KitArteTest.php`, `tests/Kit/LinkDoPainelSemTenancyTest.php` e `tests/Browser/RoteiroDoKitTest.php`: só comentários (citações de linha do `tests/Pest.php` e a descrição do roteiro de features);
+- `config/kit.php`, com o marcador `0.57.0`.
 
-- `app/Providers/Filament/AdminPanelProvider.php`, `app/Providers/Filament/AppPanelProvider.php` e `app/Providers/Filament/InfraPanelProvider.php`: a linha `'personal_info' => InformacoesPessoais::class` em `myProfileComponents()`, sem perder os componentes próprios do dono;
-- `app/Settings/ConfiguracoesDoKit.php`: propriedade `email_permitir_mais` e a linha no mapa de configuração;
-- `app/Filament/Admin/Pages/ConfiguracoesDoKit.php`: a seção "E-mail com "+"" na aba Registro;
-- `app/Filament/Pages/Auth/RegistroPorConvite.php`, `app/Support/RegistroAberto.php`, `app/Models/Convite.php` (inclusive a guarda de `Convite::aceitar()`, que recusa a criação de conta nova com "+" mesmo chamado direto e preserva o aceite para conta existente), `app/Filament/Concerns/ConvidaEmMassa.php`, `app/Data/Convite/FalhaDoConviteData.php` e os dois formulários de convite (`app/Filament/Admin/Resources/Convites/Schemas/ConviteForm.php` e `app/Filament/App/Resources/Convites/ConviteResource.php`): a regra do "+" no cadastro e no convite;
-- `app/Filament/Admin/Resources/Convites/Tables/ConvitesTable.php`: oculta **Reenviar** quando o convite com "+" criaria conta nova e a opção está desligada. `app/Console/Commands/KitConvitesLembrar.php`: pula esses convites no lembrete automático, mantendo-os pendentes até a revogação. Preserve, ao integrar esses arquivos, as ações, permissões e o agendamento próprios do dono;
-- `app/Filament/Admin/Resources/Users/UserResource.php` e `app/Filament/App/Resources/Users/UserResource.php`: a regra ao criar e ao trocar o e-mail;
-- `app/Http/Controllers/Auth/LoginSocialController.php`: o login social que criaria uma conta, com o aviso do motivo;
-- `config/kit.php`: marcador `0.56.0` e a chave `email.permitir_mais`, lida de `KIT_EMAIL_PERMITIR_MAIS`;
-- `.env.example`: exemplo da variável; não substitui o `.env` do dono;
-- `phpunit.xml`, `tests/Pest.php`, que ganha os helpers `registrarAberto()`, `conviteCom()`, `aceitarConvite()`, `conviteSocialPara()` e `opcaoDoMais()`, vindos dos testes irmãos, e esses testes: `tests/Kit/ConviteTest.php`, `tests/Kit/RegistroAbertoTest.php`, `tests/Kit/CadastroSocialPorConviteTest.php`, `tests/Kit/KitInfoTest.php`, `tests/Tenancy/RegistroAbertoTenancyTest.php` e `tests/Tenancy/AdminDaOrganizacaoTest.php`;
-- novos `app/Support/EmailComMais.php`, o leitor único da regra, `app/Livewire/InformacoesPessoais.php` e `tests/Kit/EmailComMaisTest.php`.
+Por causa desses cinco arquivos, o teto de pulados da suíte `Kit,Tenancy` fora da árvore do kit sobe de **1161 para 1600** (+439, medidos arquivo a arquivo: 64 do catálogo, 148 dos diagramas, 65 da publicação, 135 do modelo e 27 do de multi-organização).
 
-A migration é uma só, de settings:
-
-- `database/settings/2026_11_19_100000_add_email_permitir_mais_to_kit_settings.php`: adiciona ao grupo `kit` o setting `email_permitir_mais` (`true`), semeado de `KIT_EMAIL_PERMITIR_MAIS`, salvo semente explícita `false`, `0`, `off` ou `no` no ambiente.
-
-Não há migration de tabela, dependência nova, instalação de pacotes, build, publicação de assets, semeadura ou geração de permissões a executar. Há alteração das configurações no banco: os arquivos sozinhos não concluem a atualização, e sem o `php artisan migrate` a propriedade ausente causa `MissingSettings`, a página de configurações pode falhar e o boot deixa de aplicar todas as opções de `ConfiguracoesDoKit` gravadas no banco, passando a usar a configuração dos arquivos e do `.env`. Execute a migration antes de usar os painéis.
-
-Os READMEs, a lista de mudanças e a cópia versionada deste roteiro não são aplicados pelo `kit:update`. Integre à documentação do projeto só o que o dono quiser, preservando o conteúdo próprio dele, e registre no relatório o que foi integrado ou considerado inaplicável. Os manifests de dependências não mudaram nesta versão.
+Não há migration, alteração de settings, dependência PHP ou JS nova, asset publicado nem default mudado. Basta aplicar os arquivos e conferir o resultado; não há instalação de pacotes, build, semeadura ou geração de permissões a executar. Os READMEs, a lista de mudanças, as páginas do site e a cópia versionada deste roteiro não são aplicados pelo `kit:update`; integre à documentação do projeto só o que o dono quiser e registre no relatório o que foi integrado ou considerado inaplicável.
 
 ## Cuidados
 
-- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. A migration só acrescenta um setting; confirme backup recuperável.
+- **Preserve o banco existente.** Não rode `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:refresh`, `php artisan migrate:reset` nem `php artisan migrate:rollback`, inclusive por Sail ou Docker. Esta versão não pede alteração de esquema nem de settings.
 - **Preserve a multi-organização.** Não rode `php artisan kit:tenancy` nem `php artisan kit:install`, pois recriam o banco.
-- **A opção nasce ligada.** Na ausência de semente explícita de bloqueio, nenhum e-mail com "+" passa a ser recusado por conta desta atualização; não desligue a opção por conta própria, nem faça escolha manual no banco do dono. Se o ambiente já contiver `KIT_EMAIL_PERMITIR_MAIS` com `false`, `0`, `off` ou `no`, preserve e registre essa semente: o valor inicial esperado é desligado, e a tela deve refletir o valor conferido no passo 4, sem salvar alterações no banco do dono.
-- **A guarda do convite antigo não pode se perder.** `Convite::aceitar()` recusa a conta nova com "+" mesmo chamado direto, e o admin e o lembrete deixam de tratar esse convite como reenviável. Arquivo preservado que comprometa qualquer dessas proteções (`Convite`, `ConvitesTable` ou `KitConvitesLembrar` antigos) é entrega parcial.
-- **Os arquivos trabalham juntos.** Provider antigo deixa a troca de e-mail do perfil sem a regra; formulário, `UserResource`, `RegistroAberto`, `Convite` ou `LoginSocialController` antigos deixam uma via aceitando o "+" com a opção desligada; settings ou página antigos deixam a opção sem campo ou sem persistência. Ausência de `EmailComMais` ou de `InformacoesPessoais` impede a entrega completa. Registre cada limitação.
-- **Os arquivos de teste andam juntos.** Os helpers `registrarAberto()`, `conviteCom()`, `aceitarConvite()` e `conviteSocialPara()` agora moram em `tests/Pest.php`, e `opcaoDoMais()` nasceu lá. Manter o `tests/Pest.php` antigo com os testes novos, ou o contrário, perde as funções ou as define duas vezes, e o PHP recusa a redeclaração. Teste próprio com cópia desses helpers deve receber o arquivo novo e remover a cópia. Registre cada limitação como entrega parcial.
-- **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 5, depois de limpar o cache de configuração. Faça escolhas manuais somente em ambiente de testes com dados descartáveis.
-- **O `--all` substitui arquivos existentes.** Resolva a decisão de conflito antes e restaure ou integre as edições do dono antes de validar. O marcador `0.56.0` sozinho não prova que toda a entrega chegou.
-- **Preserve `.env`, canais de log e customizações.** Não copie `.env.example` sobre `.env`. A única edição opcional do ambiente é `KIT_EMAIL_PERMITIR_MAIS=true`, explicitamente escolhida pelo dono, que não muda o comportamento; registre o diff. Preserve `config/logging.php`. Ao preservar `config/kit.php`, integre o marcador e a chave `email.permitir_mais`.
-- **As mudanças ficam para revisão.** Use `git status` e `git diff --cached`; não commite, não faça merge nem apague o branch por conta própria. Desfazer exige pedido do dono: `git reset --hard HEAD` desfaz arquivos e índice; avalie arquivos não rastreados um a um. Isso não reverte a migration nem os dados do banco.
+- **Não traga o site para o projeto.** O mapa, o catálogo e o gerador dos diagramas são do repositório do kit; copiar `site/` ou as páginas do site para o projeto não faz os testes do mapa rodarem, e acrescenta um toolchain de documentação que o projeto não usa. Os 439 pulados novos são esperados.
+- **O `tests/Pest.php` e os testes do mapa andam juntos.** Os cinco arquivos novos chamam os helpers que só o `tests/Pest.php` novo define. Manter o `tests/Pest.php` antigo com os testes novos dá erro de função indefinida; função própria do dono com o mesmo nome de um helper novo dá redeclaração, e o PHP recusa. Registre cada limitação como entrega parcial.
+- **As rules e o glossário são do dono também.** Rule própria listada no `.ai/rules/index.md` e termo próprio no `wikis/glossario.md` não podem sumir na troca: integre só a linha nova do índice e os cinco termos novos.
+- **A suíte pode recriar tabelas no banco que receber.** Force as três variáveis de banco do passo 4, depois de limpar o cache de configuração. Faça escolhas manuais somente em ambiente de testes com dados descartáveis.
+- **O `--all` substitui arquivos existentes.** Resolva a decisão de conflito antes e restaure ou integre as edições do dono antes de validar. O marcador `0.57.0` sozinho não prova que toda a entrega chegou.
+- **Preserve `.env`, canais de log e customizações.** Esta versão não exige editar o `.env` ou o `config/logging.php`. Ao preservar `config/kit.php`, altere somente o marcador de versão.
+- **As mudanças ficam para revisão.** Use `git status` e `git diff --cached`; não commite, não faça merge nem apague o branch por conta própria. Desfazer exige pedido do dono: `git reset --hard HEAD` desfaz arquivos e índice; avalie arquivos não rastreados um a um. Isso não reverte operações feitas no banco.
 
 ## Decisões do dono do projeto
 
-Apresente a lista de conflitos do pré-voo, com os diffs, antes do passo 1. Sem conflitos, registre “nenhum conflito” e siga. Nenhuma outra decisão do dono nesta versão: a opção nasce ligada e não muda default.
+Apresente a lista de conflitos do pré-voo, com os diffs, antes do passo 1. Sem conflitos, registre “nenhum conflito” e siga. Nenhuma outra decisão do dono nesta versão: nada muda no comportamento nem nos defaults.
 
 ### Conflito em arquivo do kit que você editou
 
-Pergunta: Estes arquivos têm edição sua e a v0.56.0 também os altera; manter providers, formulários, `UserResource`, settings ou página antigos deixa o "+" sem regra em alguma via, e manter `tests/Pest.php` ou os testes irmãos antigos duplica ou perde helpers: para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
+Pergunta: Estes arquivos têm edição sua e a v0.57.0 também os altera; manter o `tests/Pest.php` antigo deixa os testes do mapa sem os helpers, e manter o índice de rules ou o glossário antigos deixa a rule nova sem mapeamento ou os termos novos de fora: para cada arquivo, você quer manter a sua versão, receber a versão do kit ou receber a versão do kit com suas mudanças reaplicadas?
 
-Recomendação da release: receber a versão do kit com suas mudanças reaplicadas após revisar os diffs, preservando, num provider com `myProfileComponents()` próprio, os componentes do dono e integrando a linha `'personal_info' => InformacoesPessoais::class`, e mantendo uma única definição de cada helper de teste. Em `config/kit.php`, preservar suas configurações e integrar o marcador `0.56.0` e a chave `email.permitir_mais`.
+Recomendação da release: receber a versão do kit com suas mudanças reaplicadas após revisar os diffs, preservando as rules e os termos próprios do dono e mantendo uma única definição de cada função global de teste. Em `config/kit.php`, preservar suas configurações e alterar só a versão para `0.57.0`.
 
 Sem resposta: mantém a versão do dono e registra no relatório, arquivo a arquivo, o que deixou de chegar.
 
@@ -336,16 +331,16 @@ Condição: as seis conferências do pré-voo passaram, e cada conflito tem resp
 Ação:
 
 ```bash
-php artisan kit:update --from=0.55.1 --tag=v0.56.0 --all --keep-remote --no-interaction
+php artisan kit:update --from=0.56.0 --tag=v0.57.0 --all --keep-remote --no-interaction
 ```
 
-Evidência: arquivos anunciados como `aplicado:`, saída `config/kit.php: versão marcada como 0.56.0` e branch `kit-update/v0.56.0`. Se o comando recusar a árvore, pedir segunda execução ou anunciar outra versão, pare; não faça commit para tentar outra rodada.
+Evidência: arquivos anunciados como `aplicado:`, saída `config/kit.php: versão marcada como 0.57.0` e branch `kit-update/v0.57.0`. Se o comando recusar a árvore, pedir segunda execução ou anunciar outra versão, pare; não faça commit para tentar outra rodada.
 
 ### 2. Resolver os conflitos conforme a decisão
 
 Condição: há conflitos; sem eles, siga para o passo 3.
 
-Ação, arquivo a arquivo: para manter a versão do dono, use `git checkout HEAD -- caminho/do/arquivo`; para receber a do kit, mantenha o aplicado; para integrar, reaplique somente as mudanças do dono conforme o diff guardado. Integração incerta exige parada. No `config/kit.php` preservado, troque `'version' => '0.55.1',` por `'version' => '0.56.0',` e integre a chave `email.permitir_mais` conforme o destino, preservando as configurações existentes.
+Ação, arquivo a arquivo: para manter a versão do dono, use `git checkout HEAD -- caminho/do/arquivo`; para receber a do kit, mantenha o aplicado; para integrar, reaplique somente as mudanças do dono conforme o diff guardado. Integração incerta exige parada. No `config/kit.php` preservado, troque apenas `'version' => '0.56.0',` por `'version' => '0.57.0',`.
 
 ```bash
 git diff HEAD -- caminho/do/arquivo
@@ -354,7 +349,7 @@ git diff HEAD -- config/kit.php
 git add -- config/kit.php
 ```
 
-Evidência: arquivos mantidos têm diff vazio contra `HEAD`, integrações contêm ambas as mudanças revisadas e o config preserva as demais configurações. Registre cada parte da regra do "+" que não chegou, por via. Se um provider foi mantido sem a linha `personal_info`, registre que a troca de e-mail no perfil continua sem a regra; se `tests/Pest.php` e os testes irmãos não ficaram na mesma versão, registre a limitação.
+Evidência: arquivos mantidos têm diff vazio contra `HEAD`, integrações contêm ambas as mudanças revisadas e o config preserva as demais configurações. Registre cada parte da entrega que não chegou. Se o `tests/Pest.php` foi mantido antigo, registre que os testes do mapa não podem ficar no projeto sem ele; se uma função própria do dono foi renomeada para evitar a redeclaração, registre o nome antigo e o novo.
 
 ### 3. Conferir marcador e arquivos
 
@@ -368,32 +363,14 @@ php artisan tinker --execute 'echo config("kit.version");'
 git branch --show-current
 git status --short
 git diff --cached --name-status
-git diff HEAD -- app/Console/Commands/KitConvitesLembrar.php app/Providers app/Settings app/Filament app/Http/Controllers/Auth/LoginSocialController.php app/Livewire/InformacoesPessoais.php app/Models/Convite.php app/Support/EmailComMais.php app/Support/RegistroAberto.php app/Data/Convite/FalhaDoConviteData.php database/settings config/kit.php .env.example phpunit.xml tests/Pest.php
+git diff HEAD -- .ai/rules/index.md wikis/glossario.md config/kit.php
 ```
 
-Evidência: versão `0.56.0`, branch `kit-update/v0.56.0` e arquivos da entrega presentes, com o conteúdo do destino ou a integração aprovada. Compare cada caminho listado em **O que muda nesta versão** com `git diff kit-v0.56.0 -- caminho/do/arquivo`; diferenças devem corresponder somente às decisões registradas. O índice corresponde ao dry-run. Confira também os três arquivos novos (`app/Support/EmailComMais.php`, `app/Livewire/InformacoesPessoais.php` e `tests/Kit/EmailComMaisTest.php`) e a migration de settings com `git ls-files --error-unmatch caminho/do/arquivo`. Ainda não abra os painéis antes do migrate. Não há publicação de assets nesta atualização.
+Evidência: versão `0.57.0`, branch `kit-update/v0.57.0` e arquivos da entrega presentes, com o conteúdo do destino ou a integração aprovada. Compare cada caminho listado em **O que muda nesta versão** com `git diff kit-v0.57.0 -- caminho/do/arquivo`; diferenças devem corresponder somente às decisões registradas. Confira os seis arquivos novos (`.ai/rules/catalogo-de-features.md` e os cinco de teste do mapa) com `git ls-files --error-unmatch caminho/do/arquivo` depois do `git add`, ou com `git status --short`. O índice corresponde ao dry-run. Não execute migrations nem publicação de assets nesta atualização.
 
-### 4. Rodar a migration da versão
+### 4. Rodar a suíte Kit,Tenancy com banco descartável
 
-Condição: arquivos conferidos, backup confirmado, nenhuma pendência anterior.
-
-Ação: preserve o `.env`, salvo se o dono escolheu semear `KIT_EMAIL_PERMITIR_MAIS` explicitamente antes do migrate; registre o diff. Rode:
-
-```bash
-php artisan config:clear
-php artisan migrate --force
-php artisan optimize:clear
-php artisan migrate:status
-php artisan tinker --execute 'echo json_encode(app(App\Settings\ConfiguracoesDoKit::class)->email_permitir_mais);'
-```
-
-O comando de atualização do banco é `php artisan migrate`; acima, `--force` permite executá-lo também em produção sem pergunta interativa.
-
-Evidência: executada exatamente `2026_11_19_100000_add_email_permitir_mais_to_kit_settings`; `migrate:status` sem `Pending`. O setting responde `true`, salvo semente explícita registrada. Erro ou migration adicional exige parada, sem rollback.
-
-### 5. Rodar a suíte Kit,Tenancy com banco descartável
-
-Condição: arquivos e migration conferidos, caches limpos e valor novo verificado antes de escolhas manuais.
+Condição: arquivos conferidos, incluindo os helpers no `tests/Pest.php`.
 
 Ação, no Git Bash:
 
@@ -428,13 +405,15 @@ $codigoDaSuite
 
 O `DB_URL` também precisa apontar para o banco em memória; vazio pode permitir que o `.env` decida o banco usado.
 
-Evidência: código zero, zero erro, zero falha e no máximo **1161 pulados** fora da árvore do kit, o teto recebido da origem. Os pulados permitidos leem arquivos exclusivos do repositório do kit. Registre a quantidade efetiva; aumento exige listar as causas e parar, sem alterar os testes para passar.
+Evidência: código zero, zero erro, zero falha e no máximo **1600 pulados** fora da árvore do kit: o teto de 1161 recebido da origem mais os 439 casos dos cinco arquivos do mapa, que leem o site e o modelo do mapa, ausentes do projeto. Registre a quantidade efetiva; aumento além disso exige listar as causas e parar, sem alterar os testes para passar.
 
-Para a parte nova, rode também o arquivo dos casos do "+", com as mesmas variáveis de banco acima:
+Para a parte nova, rode também os cinco arquivos do mapa, com as mesmas variáveis de banco acima:
 
 ```bash
-php artisan test --compact tests/Kit/EmailComMaisTest.php
+php artisan test --compact tests/Kit/MapaInterativoCatalogoTest.php tests/Kit/MapaInterativoDiagramasTest.php tests/Kit/MapaInterativoPublicacaoTest.php tests/Kit/MapaInterativoTest.php tests/Tenancy/MapaInterativoTenancyTest.php
 ```
+
+Evidência: 439 pulados, nenhum verde, nenhuma falha e nenhum erro. Erro de função indefinida ou redeclarada aponta para o `tests/Pest.php` fora da versão do destino ou para uma função própria do dono com o mesmo nome.
 
 Depois da suíte, confira as policies que ela pode gerar ao semear permissões para Resources do dono:
 
@@ -451,27 +430,23 @@ git status --porcelain app/Policies
 
 Evidência: nenhuma policy não rastreada gerada pela suíte permanece; policies rastreadas continuam preservadas. Alteração rastreada exige parada e análise. Depois desta validação, peça ao dono que rode a suíte completa com `php artisan test --compact` em ambiente de testes com banco descartável.
 
-### 6. Conferir a preservação dos dados e do projeto
+### 5. Conferir a preservação dos dados e do projeto
 
 Condição: suíte concluída e variáveis PowerShell restauradas, quando aplicável.
 
-Ação: repita a consulta da multi-organização do pré-voo e compare a impressão dos dados com a consulta abaixo, que exclui somente o setting novo:
+Ação: repita os três comandos de consulta do item 3 do pré-voo e compare as saídas guardadas. Confira também:
 
 ```bash
 php artisan config:clear
 php artisan tinker --execute 'echo config("kit.version");'
-php artisan migrate:status
-php artisan tinker --execute 'echo json_encode(["usuarios" => array_map("md5", App\Models\User::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "organizacoes" => array_map("md5", App\Models\Tenant::orderBy("id")->get()->keyBy("id")->map->toJson()->all()), "configuracoes" => md5(json_encode(collect(app(App\Settings\ConfiguracoesDoKit::class)->toArray())->except(["email_permitir_mais"])->all()))]);'
 git diff HEAD -- .env config/logging.php
 git status --short
 git diff --cached --stat
 ```
 
-O valor novo foi conferido separadamente no passo 4.
+Evidência: `0.57.0`, mesma multi-organização, mesmo estado das migrations e impressão dos dados idêntica. Diff vazio de `.env` e `config/logging.php`; customizações preservadas conforme as decisões. Nenhuma escrita no banco do dono foi necessária.
 
-Evidência: `0.56.0`, mesma multi-organização, migrations anteriores mais a nova, nenhuma pendente e impressão dos dados idêntica. Diff vazio de `.env` e `config/logging.php`, salvo a semente opcional explicitamente escolhida; customizações preservadas conforme as decisões. Execute também as conferências de **Como conferir**, registrando o resultado antes de encerrar.
-
-### 7. Remover o remote e as tags temporários
+### 6. Remover o remote e as tags temporários
 
 Condição: ao terminar ou parar depois da criação dos nomes temporários; o pré-voo confirmou que não existiam.
 
@@ -489,76 +464,59 @@ git tag -l "kit-*" | ForEach-Object { git tag -d $_ }
 git remote remove kit
 ```
 
-Se uma tentativa anterior já removeu algum nome, confira e remova somente o que ainda existir. Evidência: `git remote` não lista `kit` e `git tag -l "kit-*"` tem saída vazia. O branch `kit-update/v0.56.0` permanece, com as mudanças para revisão e sem commit.
+Se uma tentativa anterior já removeu algum nome, confira e remova somente o que ainda existir. Evidência: `git remote` não lista `kit` e `git tag -l "kit-*"` tem saída vazia. O branch `kit-update/v0.57.0` permanece, com as mudanças para revisão e sem commit.
 
 ## Como conferir
 
-O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-organização, versão, arquivos e migration conferidos, dados e customizações preservados.
+O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-organização, versão e arquivos conferidos, dados e customizações preservados.
 
 | O que | Esperado |
 |---|---|
-| Marcador | `0.56.0` depois de limpar o cache de configuração |
-| Arquivos da entrega | Providers, settings, página, formulários, `UserResource`, registro, convite, login social, `EmailComMais`, `InformacoesPessoais` e testes conferidos contra o destino ou a integração aprovada |
-| Migration | A de settings desta versão executada; `php artisan migrate:status` sem pendências |
-| Instalação | `email_permitir_mais=true`, salvo semente explícita de bloqueio registrada, caso em que o esperado é desligado |
-| Defaults | Nenhum default mudado; o "+" continua permitido, salvo a semente explícita registrada |
-| Multi-organização | Mesmo `SIM` ou `NAO` do pré-voo |
-| Configurações da aplicação | Aba Registro mostra a seção "E-mail com "+"" com o valor conferido no passo 4 (ligada, salvo semente explícita registrada) |
-| Suíte Kit,Tenancy | Zero erro, zero falha, até 1161 pulados fora da árvore do kit |
-| Casos do "+" | `tests/Kit/EmailComMaisTest.php` verde, com os casos CT-16, CT-17 e CT-29 a CT-31 (convite antigo, login social, guarda de `Convite::aceitar()`, Reenviar e lembrete) registrados |
-| Convite antigo | `Convite::aceitar()` recusa conta nova com "+" e aceita conta existente; com a opção desligada, Reenviar oculto, lembrete pula o convite e Revogar disponível |
-| Testes do projeto | Pedido para rodar `php artisan test --compact` em banco descartável registrado |
+| Marcador | `0.57.0` depois de limpar o cache de configuração |
+| Arquivos da entrega | Rule do catálogo, índice de rules, glossário, `tests/Pest.php`, os cinco testes do mapa, os três testes com comentário atualizado e config conferidos contra o destino ou a integração aprovada |
+| Código da aplicação | Nenhum arquivo de `app/`, `database/`, `resources/`, `public/` ou `routes/` alterado pelo `kit:update` |
+| Migrations, settings, assets e dependências | Nenhum novo; nenhuma execução necessária |
+| Defaults e multi-organização | Nenhum default mudado; mesmo `SIM` ou `NAO` do pré-voo |
+| Suíte Kit,Tenancy | Zero erro, zero falha, até 1600 pulados fora da árvore do kit |
+| Testes do mapa | Os 439 casos dos cinco arquivos pulados, sem erro de função indefinida ou redeclarada |
 | Policies | Não rastreadas geradas pela suíte removidas e listadas; rastreadas preservadas |
-| Arquivos e dados do dono | Impressão anterior preservada, fora o setting novo; customizações e canais de log intactos |
-| Revisão | Branch `kit-update/v0.56.0`, índice revisável, sem commit; remote e tags temporários removidos |
+| Arquivos do dono | Rules e termos próprios preservados; `.env` e canais em `config/logging.php` intactos |
+| Dados do dono | Impressão final idêntica à inicial |
+| Revisão | Branch `kit-update/v0.57.0`, índice revisável, sem commit; remote e tags temporários removidos |
 
-Abra `/admin/configuracoes-da-aplicacao`, aba **Registro**: a seção "E-mail com "+"" deve aparecer com a opção no valor conferido no passo 4, ligada salvo semente explícita registrada. Não salve escolhas no banco do dono.
-
-Faça as demais conferências **em ambiente de testes com banco descartável**:
-
-1. Com a opção ligada, cadastre uma conta com e-mail com "+" no cadastro aberto: deve passar, como antes.
-2. Desligue a opção na tela: o cadastro aberto, o convite para conta nova (um a um e em massa), a criação e a troca de e-mail na tela de usuários e a troca de e-mail no Meu perfil recusam o "+" antes do "@", com a mesma mensagem; no lote, o endereço sai com o motivo próprio e os outros seguem.
-3. Com a opção desligada, uma conta que já tem "+" continua entrando e salvando o perfil; religue a opção e confira que o "+" volta a passar.
-4. Confira que `Convite::aceitar()` recusa a criação de conta nova com "+", mesmo chamado diretamente, e preserva o aceite para conta existente. Emita um convite para conta nova com "+" antes de desligar a opção; depois de desligá-la, o link e o aceite social devem informar o motivo, **Reenviar** deve ficar oculto, o lembrete (`php artisan kit:convites-lembrar`, se o dono o agenda) deve pular o convite e **Revogar** deve continuar disponível.
-
-Registre os resultados e os dados de teste. Sem ambiente ou permissão para conferir as telas, registre como não executado e explique o motivo; não declare validação manual concluída. Arquivo antigo mantido é entrega parcial, mesmo com marcador `0.56.0`.
+Não há tela nova nem mudança visível nos painéis para conferir: o mapa interativo é publicado no site de documentação do kit, não no projeto. Se quiser, abra `/admin` e `/app` e confirme que nada mudou. Registre o resultado, ou que a conferência não foi executada e o motivo. Arquivo mantido antigo é entrega parcial, mesmo com marcador `0.57.0`.
 
 ## Quando parar
 
 Pare e entregue ao dono a condição, a saída relevante e o que falta para continuar:
 
 - Roteiro indisponível, cópias divergentes sem marca de revisão ou dúvida de interpretação.
-- Árvore suja no início, versão instalada diferente de `0.55.1`, banco inacessível, backup não confirmado ou migrations pendentes do projeto: liste os valores e caminhos encontrados.
+- Árvore suja no início, versão instalada diferente de `0.56.0`, banco inacessível, backup não confirmado ou migrations pendentes do projeto: liste os valores e caminhos encontrados.
 - Remote, tags ou branch reservados já existentes: informe os nomes, sem removê-los.
-- Tag `v0.56.0` indisponível ou dry-run divergente: mostre os diffs, principalmente dependências, migrations além da prevista ou parte da entrega ausente.
+- Tag `v0.57.0` indisponível ou dry-run divergente: mostre os diffs, principalmente dependências, código da aplicação, migrations, assets ou parte da entrega ausente.
 - Comando recusado, pedido de segunda rodada, aplicação incompleta, integração incerta ou marcador, branch e arquivos fora do previsto: descreva o estado parcial, sem commit ou nova rodada.
-- Migration com erro, migration adicional executada ou valor novo fora do default ou da semente registrada: entregue as saídas, sem tentar desfazer o banco.
-- Suíte com erro, falha ou mais de 1161 pulados: entregue a saída e os casos envolvidos. Se houver erro de função de teste definida duas vezes ou ausente, registre a causa nos arquivos de teste e no `tests/Pest.php`, sem enfraquecer os testes.
-- Policy rastreada alterada, impressão de dados diferente, multi-organização alterada ou mudança inesperada em `.env`, canais de log ou customizações: mostre a diferença antes de restaurar qualquer coisa.
-- Seção ausente na aba Registro, "+" recusado com a opção ligada ou aceito com ela desligada em alguma via, ou conta existente com "+" impedida de entrar: registre conta de teste, via, contexto e resultado.
-- Convite antigo com "+" que, com a opção desligada, ainda cria conta por `Convite::aceitar()`, aparece com **Reenviar** ou recebe lembrete: registre o arquivo que ficou antigo (`Convite`, `ConvitesTable` ou `KitConvitesLembrar`) e o resultado.
+- Suíte com erro, falha ou mais de 1600 pulados: entregue a saída e os casos envolvidos. Caso do mapa que **não** pula fora da árvore do kit é defeito da release: registre o caso e a mensagem. Se houver erro de função definida duas vezes ou ausente, registre a causa nos arquivos de teste e no `tests/Pest.php`, sem enfraquecer os testes.
+- Policy rastreada alterada, impressão de dados diferente, multi-organização alterada ou mudança inesperada em `.env`, canais de log, rules, glossário ou customizações: mostre a diferença antes de restaurar qualquer coisa.
 - Um passo exigiria ação proibida em **Cuidados**: informe a necessidade e aguarde orientação.
 
-Ao parar depois de criar os nomes temporários, execute ainda o passo 7 para remover somente o remote e as tags deste roteiro. Preserve o branch e as mudanças para revisão. Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
+Ao parar depois de criar os nomes temporários, execute ainda o passo 6 para remover somente o remote e as tags deste roteiro. Preserve o branch e as mudanças para revisão. Este roteiro não promete funcionar em agentes ou hosts que não foram exercitados com ele. Na dúvida, pare e pergunte ao dono.
 
 ## Relatório final
 
 Entregue ao dono, ao terminar ou ao parar:
 
 - versões de partida e chegada, saída de `config('kit.version')`, branch e confirmação de que nada foi commitado nem integrado por merge;
-- arquivos aplicados e conferidos, arquivos novos e integrações, em especial a linha `personal_info` dos providers e os helpers de `tests/Pest.php`;
+- arquivos aplicados e conferidos, os seis arquivos novos e as integrações, em especial do índice de rules, do glossário e do `tests/Pest.php`;
 - cada decisão de conflito, pergunta e resposta ou “sem resposta”, default aplicado e limitações por arquivo; sem conflitos, registre isso;
-- saída do migrate com o nome da migration e do `php artisan migrate:status`, mais o valor novo conferido;
-- confirmação de que a opção nasce ligada e nenhum default mudou, ou a semente explícita escolhida, com o diff do `.env`;
-- confirmação de que não houve migration de tabela, dependência nova, instalação, build, publicação de assets, semeadura ou geração de permissões;
-- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados e pedido para rodar os testes do projeto com `php artisan test --compact` em ambiente de testes com banco descartável;
-- saída do teste `EmailComMaisTest.php`, com os resultados dos casos CT-16, CT-17 e CT-29 a CT-31 e das conferências manuais realizadas; arquivo preservado que comprometa qualquer dessas proteções caracteriza entrega parcial;
-- o destino dos READMEs, da lista de mudanças e da cópia deste roteiro: integrado ou considerado inaplicável;
+- funções próprias do dono que colidiam com os helpers novos e o que foi feito com cada uma, ou “nenhuma colisão”;
+- confirmação de que não houve migration, alteração de settings, dependência nova, asset publicado, default mudado, instalação, build, semeadura ou geração de permissões, e de que nenhum arquivo de código da aplicação mudou;
+- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados contra o teto de 1600 e pedido para rodar a suíte completa em ambiente de testes;
+- saída dos cinco arquivos de teste do mapa, com os 439 pulados;
+- o destino dos READMEs, da lista de mudanças, das páginas do site e da cópia deste roteiro: integrado ou considerado inaplicável;
 - policies não rastreadas removidas, impressões dos dados antes e depois e resultado da comparação;
-- preservação de `.env` (salvo a semente escolhida), canais de log, customizações e estado da multi-organização;
-- conferências manuais da aba Registro e das vias do "+", ou o motivo de não execução;
+- preservação de `.env`, canais de log, rules e termos próprios, customizações e estado da multi-organização;
 - remoção do remote `kit` e das tags `kit-*`;
 - em caso de parada, passo, saída relevante, estado parcial e condição necessária para continuar.
 
-Explique como revisar com `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Isso não reverte o banco: o setting novo permanece, com seu valor.
+Explique como revisar com `git status` e `git diff --cached`. Para desfazer, somente com pedido do dono, use `git reset --hard HEAD` e avalie os arquivos não rastreados um a um. Isso não reverte operações no banco; esta atualização não exigiu nenhuma no banco do dono.
 <!-- roteiro-de-atualizacao:fim -->

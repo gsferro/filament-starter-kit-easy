@@ -1,0 +1,250 @@
+{
+  "slug": "requisicao-autenticada-com",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Requisição autenticada no /app com tenant: a camada da organização",
+    "en": "Authenticated /app request with tenant: organization layer"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "passa ao próximo",
+            "en": "on to next"
+          }
+        },
+        "return": {
+          "label": {
+            "pt": "resposta",
+            "en": "reply"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      }
+    },
+    {
+      "id": "identifytenant",
+      "type": "security",
+      "label": "IdentifyTenant",
+      "sublabel": "Filament",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->tenant(Tenant::class, slugAttribute: 'slug')"
+        }
+      ]
+    },
+    {
+      "id": "user",
+      "type": "database",
+      "label": "User",
+      "sublabel": "model",
+      "sources": [
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function canAccessTenant(Model $tenant): bool"
+        },
+        {
+          "arquivo": "app/Models/User.php",
+          "trecho": "public function getTenants(Panel $panel): Collection"
+        }
+      ]
+    },
+    {
+      "id": "definirtenant",
+      "type": "security",
+      "label": "DefinirTenant",
+      "sublabel": "DePermissoes",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/DefinirTenantDePermissoes.php",
+          "trecho": "class DefinirTenantDePermissoes"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->tenantMiddleware([DefinirTenantDePermissoes::class], isPersistent: true);"
+        }
+      ]
+    },
+    {
+      "id": "exigiremail",
+      "type": "security",
+      "label": "ExigirEmail",
+      "sublabel": "Verificado",
+      "sources": [
+        {
+          "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+          "trecho": "final class ExigirEmailVerificado extends EnsureEmailIsVerified"
+        },
+        {
+          "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+          "trecho": "->emailVerifiedMiddlewareName(ExigirEmailVerificado::class)"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "pedido",
+      "from": "navegador",
+      "to": "identifytenant",
+      "y": 180,
+      "label": "GET /app/{tenant:slug}/…",
+      "variant": "emphasis",
+      "note": {
+        "pt": "depois da pilha comum até o ExigeTutorialGuiadoLigado (diagrama requisicao-autenticada); o ->tenant() do /app põe o IdentifyTenant à frente do tenantMiddleware",
+        "en": "after shared stack through ExigeTutorialGuiadoLigado (requisicao-autenticada diagram); /app ->tenant() puts IdentifyTenant before tenantMiddleware"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->tenant(Tenant::class, slugAttribute: 'slug')"
+      }
+    },
+    {
+      "id": "organizacao",
+      "from": "identifytenant",
+      "to": "user",
+      "y": 260,
+      "label": {
+        "pt": "canAccessTenant(organização)",
+        "en": "canAccessTenant(org.)"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "falso responde 404. Organização inativa nega a todos, inclusive o master_global; o master_global entra; os demais precisam do vínculo em tenant_user",
+        "en": "false returns 404. Inactive organization denies all, even master_global; master_global enters; others need tenant_user link"
+      },
+      "prova": {
+        "arquivo": "app/Models/User.php",
+        "trecho": "public function canAccessTenant(Model $tenant): bool"
+      }
+    },
+    {
+      "id": "permissoes",
+      "from": "identifytenant",
+      "to": "definirtenant",
+      "y": 350,
+      "label": {
+        "pt": "organização da URL",
+        "en": "URL organization"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "o Filament fixa a organização corrente e segue para o tenantMiddleware do kit",
+        "en": "Filament sets current organization and proceeds to kit tenantMiddleware"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/AppPanelProvider.php",
+        "trecho": "->tenantMiddleware([DefinirTenantDePermissoes::class], isPersistent: true);"
+      }
+    },
+    {
+      "id": "email",
+      "from": "definirtenant",
+      "to": "exigiremail",
+      "y": 420,
+      "label": {
+        "pt": "segue",
+        "en": "next"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "antes, fixa o team_id do spatie/permission na organização e grava tenant_corrente na sessão, que a tela de bloqueio lê",
+        "en": "first sets spatie/permission team_id to organization and saves tenant_corrente in session, read by lock screen"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+        "trecho": "final class ExigirEmailVerificado extends EnsureEmailIsVerified"
+      }
+    },
+    {
+      "id": "pagina",
+      "from": "exigiremail",
+      "to": "navegador",
+      "y": 510,
+      "label": {
+        "pt": "200 página da organização",
+        "en": "200 organization page"
+      },
+      "variant": "return",
+      "note": {
+        "pt": "com kit.registro.verificar_email ligado e sem e-mail verificado, vai antes ao aviso de verificação",
+        "en": "with kit.registro.verificar_email on and unverified email, goes to verification notice first"
+      },
+      "prova": {
+        "arquivo": "app/Http/Middleware/ExigirEmailVerificado.php",
+        "trecho": "return $next($request);"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Só com tenant",
+        "en": "Tenant only"
+      },
+      "items": [
+        {
+          "pt": "kit.tenancy.enabled (KIT_TENANCY, padrão desligado) é lido no boot do AppPanelProvider e ligado por php artisan kit:tenancy; sem ele o /app não tem {tenant:slug} nem estes dois middlewares.",
+          "en": "kit.tenancy.enabled (KIT_TENANCY, default off) is read on AppPanelProvider boot and enabled by php artisan kit:tenancy; without it, /app has no {tenant:slug} or these two middlewares."
+        },
+        {
+          "pt": "GET /app sem organização na URL leva à organização padrão da conta; sem nenhuma, 404, porque o kit não liga o cadastro de organização pelo painel.",
+          "en": "GET /app without organization in URL goes to account default organization; none gives 404, since kit does not enable organization sign-up via panel."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Updates Livewire",
+        "en": "Livewire updates"
+      },
+      "items": [
+        {
+          "pt": "As ações da página (POST /livewire-*/update) reaplicam o IdentifyTenant, persistente na lista do Filament, e o DefinirTenantDePermissoes, marcado isPersistent no provider: a organização é conferida de novo a cada ação.",
+          "en": "Page actions (POST /livewire-*/update) reapply IdentifyTenant, persistent in Filament list, and DefinirTenantDePermissoes, marked isPersistent in provider: organization is checked again on each action."
+        }
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Sem tenant",
+        "en": "No tenant"
+      },
+      "items": [
+        {
+          "pt": "Sem tenant, o /app vai do ExigeTutorialGuiadoLigado direto ao ExigirEmailVerificado: diagrama requisicao-autenticada.",
+          "en": "Without tenant, /app goes from ExigeTutorialGuiadoLigado straight to ExigirEmailVerificado: requisicao-autenticada diagram."
+        }
+      ]
+    }
+  ]
+}

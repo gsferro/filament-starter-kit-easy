@@ -1,0 +1,30 @@
+{
+  "slug": "admin-ia",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/admin — IA",
+    "en": "/admin — AI"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Support\\TelaDeAutenticacao",
+      "row": 0,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

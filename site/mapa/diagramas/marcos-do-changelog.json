@@ -1,0 +1,826 @@
+{
+  "slug": "marcos-do-changelog",
+  "tipo": "timeline",
+  "titulo": {
+    "pt": "Marcos do starter kit: 30 versões do CHANGELOG",
+    "en": "Starter kit milestones: 30 CHANGELOG versions"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "timeline",
+  "meta": {
+    "quality_profile": "showcase",
+    "evidence": "observed",
+    "timezone": "America/Sao_Paulo"
+  },
+  "layout": {
+    "breaks": "auto"
+  },
+  "lanes": [
+    {
+      "id": "inst",
+      "label": {
+        "pt": "Instalação e atualização",
+        "en": "Install and update"
+      }
+    },
+    {
+      "id": "auth",
+      "label": {
+        "pt": "Autenticação",
+        "en": "Auth"
+      }
+    },
+    {
+      "id": "tenant",
+      "label": "Multi-tenancy"
+    },
+    {
+      "id": "paineis",
+      "label": {
+        "pt": "Painéis",
+        "en": "Panels"
+      }
+    },
+    {
+      "id": "qa",
+      "label": {
+        "pt": "Qualidade e CI",
+        "en": "Quality and CI"
+      }
+    },
+    {
+      "id": "docs",
+      "label": {
+        "pt": "Site e docs",
+        "en": "Site & docs"
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "v0_1_0",
+      "at": "2026-08-12T12:00:00-03:00",
+      "title": {
+        "pt": "0.1.0 · Skeleton Laravel 13 + Filament 5",
+        "en": "0.1.0 · Laravel 13 + Filament 5 skeleton"
+      },
+      "detail": {
+        "pt": "12/08/2026. Primeira versão: o skeleton Laravel 13 + Filament 5, instalável por composer create-project, com o comando kit:install e os três painéis (/app, /admin e /infra).",
+        "en": "12/08/2026. First version: Laravel 13 + Filament 5 skeleton, installable via composer create-project, with kit:install command and three panels (/app, /admin and /infra)."
+      },
+      "lane": "inst",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.1.0] - 2026-08-12",
+          "label": {
+            "pt": "CHANGELOG, seção 0.1.0",
+            "en": "CHANGELOG, sect. 0.1.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_3_0",
+      "at": "2026-08-12T12:00:00-03:00",
+      "title": {
+        "pt": "0.3.0 · Comando php artisan kit:update",
+        "en": "0.3.0 · php artisan kit:update command"
+      },
+      "detail": {
+        "pt": "12/08/2026. O comando php artisan kit:update compara o projeto com uma versão nova do kit e aplica só o que for aprovado, arquivo a arquivo.",
+        "en": "12/08/2026. php artisan kit:update compares project to a new kit version, applying only approved changes, file by file."
+      },
+      "lane": "inst",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.3.0] - 2026-08-12",
+          "label": {
+            "pt": "CHANGELOG, seção 0.3.0",
+            "en": "CHANGELOG, sect. 0.3.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_8_0",
+      "at": "2026-08-13T12:00:00-03:00",
+      "title": {
+        "pt": "0.8.0 · A documentação que o agente de IA lê",
+        "en": "0.8.0 · The docs the AI agent reads"
+      },
+      "detail": {
+        "pt": "13/08/2026. A pasta wikis/ reúne o que o código não conta sozinho, para o agente de IA ler antes de codar. A mesma versão traz skills e plugins de IA e o README em inglês.",
+        "en": "13/08/2026. wikis/ holds what code alone cannot explain, for AI agents to read before coding. Same version brings AI skills and plugins and English README."
+      },
+      "lane": "docs",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.8.0] - 2026-08-13",
+          "label": {
+            "pt": "CHANGELOG, seção 0.8.0",
+            "en": "CHANGELOG, sect. 0.8.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_9_1",
+      "at": "2026-08-13T12:00:00-03:00",
+      "title": {
+        "pt": "0.9.1 · Multi-tenancy opt-in",
+        "en": "0.9.1 · Opt-in multi-tenancy"
+      },
+      "detail": {
+        "pt": "13/08/2026. php artisan kit:tenancy liga o modo multi-tenant: o /app vira /app/{tenant}, e a trait BelongsToTenant escopa as models de negócio.",
+        "en": "13/08/2026. php artisan kit:tenancy enables multi-tenant mode: /app becomes /app/{tenant}, and BelongsToTenant trait scopes business models."
+      },
+      "lane": "tenant",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.9.1] - 2026-08-13",
+          "label": {
+            "pt": "CHANGELOG, seção 0.9.1",
+            "en": "CHANGELOG, sect. 0.9.1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_10_0",
+      "at": "2026-08-13T12:00:00-03:00",
+      "title": {
+        "pt": "0.10.0 · A tela de bloqueio de sessão agora usa o layout do login",
+        "en": "0.10.0 · Session lock screen now uses the login layout"
+      },
+      "detail": {
+        "pt": "13/08/2026. A tela de bloqueio de sessão passa a usar o layout do login, nos três painéis.",
+        "en": "13/08/2026. Session lock screen now uses login layout in all three panels."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.10.0] - 2026-08-13",
+          "label": {
+            "pt": "CHANGELOG, seção 0.10.0",
+            "en": "CHANGELOG, sect. 0.10.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_11_0",
+      "at": "2026-08-13T12:00:00-03:00",
+      "title": {
+        "pt": "0.11.0 · O painel passa a ser dado do papel",
+        "en": "0.11.0 · Panel access now comes from the role"
+      },
+      "detail": {
+        "pt": "13/08/2026. O cadastro de quem vem de fora passa por convite por e-mail, e o acesso a painel passa a vir do papel, pela coluna roles.painel.",
+        "en": "13/08/2026. Outsiders sign up via email invitation; panel access now comes from role via roles.painel column."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.11.0] - 2026-08-13",
+          "label": {
+            "pt": "CHANGELOG, seção 0.11.0",
+            "en": "CHANGELOG, sect. 0.11.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_12_0",
+      "at": "2026-08-14T12:00:00-03:00",
+      "title": {
+        "pt": "0.12.0 · Convite para quem já tem conta",
+        "en": "0.12.0 · Invitations for existing accounts"
+      },
+      "detail": {
+        "pt": "14/08/2026. O convite deixa de ser só uma porta para gente nova: convite para quem já tem conta, convite em massa e lembretes de convite pendente.",
+        "en": "14/08/2026. Invitations now serve more than new users: invites for existing accounts, bulk invites and Pending invitation reminders."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.12.0] - 2026-08-14",
+          "label": {
+            "pt": "CHANGELOG, seção 0.12.0",
+            "en": "CHANGELOG, sect. 0.12.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_13_0",
+      "at": "2026-08-14T12:00:00-03:00",
+      "title": {
+        "pt": "0.13.0 · Navegador real, com JavaScript executando",
+        "en": "0.13.0 · Real browser, with JavaScript running"
+      },
+      "detail": {
+        "pt": "14/08/2026. Testes em navegador real, com JavaScript executando, sobre as 52 telas dos três painéis.",
+        "en": "14/08/2026. Real browser tests, running JavaScript, across all 52 screens in three panels."
+      },
+      "lane": "qa",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.13.0] - 2026-08-14",
+          "label": {
+            "pt": "CHANGELOG, seção 0.13.0",
+            "en": "CHANGELOG, sect. 0.13.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_13_1",
+      "at": "2026-08-14T12:00:00-03:00",
+      "title": {
+        "pt": "0.13.1 · Cor e logo por organização",
+        "en": "0.13.1 · Color, logo per organization"
+      },
+      "detail": {
+        "pt": "14/08/2026. Cada organização escolhe a cor primária e envia a logo, e o /app/{organizacao} veste a cor dela.",
+        "en": "14/08/2026. Each organization chooses primary color and uploads logo; /app/{organizacao} adopts its color."
+      },
+      "lane": "tenant",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.13.1] - 2026-08-14",
+          "label": {
+            "pt": "CHANGELOG, seção 0.13.1",
+            "en": "CHANGELOG, sect. 0.13.1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_14_0",
+      "at": "2026-08-14T12:00:00-03:00",
+      "title": {
+        "pt": "0.14.0 · Skills que orquestram wiki, QA e regra durável",
+        "en": "0.14.0 · Skills for wiki, QA and lasting rules"
+      },
+      "detail": {
+        "pt": "14/08/2026. O kit passa a levar junto como a feature é feita: as skills feature-wiki, feature-quality-gate e requirement-to-rule e o roteiro de features no README.",
+        "en": "14/08/2026. Kit now includes how features are built: feature-wiki, feature-quality-gate and requirement-to-rule skills, plus feature guide in README."
+      },
+      "lane": "qa",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.14.0] - 2026-08-14",
+          "label": {
+            "pt": "CHANGELOG, seção 0.14.0",
+            "en": "CHANGELOG, sect. 0.14.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_16_0",
+      "at": "2026-08-16T12:00:00-03:00",
+      "title": {
+        "pt": "0.16.0 · O create-project agora pergunta",
+        "en": "0.16.0 · create-project now asks"
+      },
+      "detail": {
+        "pt": "16/08/2026. Cinco perguntas antes de tocar no banco: nome do projeto, banco de dados, credenciais do administrador, cor primária dos painéis e modo multi-organização.",
+        "en": "16/08/2026. Five questions before database changes: project name, database, admin credentials, panel primary color and multi-organization mode."
+      },
+      "lane": "inst",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.16.0] - 2026-08-16",
+          "label": {
+            "pt": "CHANGELOG, seção 0.16.0",
+            "en": "CHANGELOG, sect. 0.16.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_17_0",
+      "at": "2026-08-18T12:00:00-03:00",
+      "title": {
+        "pt": "0.17.0 · Seis pacotes novos, todos Filament v5",
+        "en": "0.17.0 · Six new packages, all Filament v5"
+      },
+      "detail": {
+        "pt": "18/08/2026. Seis pacotes novos, todos Filament v5 e gratuitos, entre eles a camada de mídia (filament/spatie-laravel-media-library-plugin) e a Lixeira do /infra (promethys/revive).",
+        "en": "18/08/2026. Six new free Filament v5 packages, including media layer (filament/spatie-laravel-media-library-plugin) and /infra Trash (promethys/revive)."
+      },
+      "lane": "paineis",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.17.0] - 2026-08-18",
+          "label": {
+            "pt": "CHANGELOG, seção 0.17.0",
+            "en": "CHANGELOG, sect. 0.17.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_19_0",
+      "at": "2026-08-24T12:00:00-03:00",
+      "title": {
+        "pt": "0.19.0 · 19 propriedades em quatro abas",
+        "en": "0.19.0 · 19 settings in four tabs"
+      },
+      "detail": {
+        "pt": "24/08/2026. O que era pergunta do kit:install gravada no .env passa a ser editável numa página de configurações do kit em /admin.",
+        "en": "24/08/2026. Former kit:install answers saved in .env are now editable on a kit settings page in /admin."
+      },
+      "lane": "paineis",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.19.0] - 2026-08-24",
+          "label": {
+            "pt": "CHANGELOG, seção 0.19.0",
+            "en": "CHANGELOG, sect. 0.19.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_19_1",
+      "at": "2026-08-24T12:00:00-03:00",
+      "title": {
+        "pt": "0.19.1 · Registro aberto no painel /app",
+        "en": "0.19.1 · Open sign-up in /app panel"
+      },
+      "detail": {
+        "pt": "24/08/2026. O /app passa a aceitar cadastro sem convite, desligado por padrão, com aprovação manual opcional e verificação de e-mail.",
+        "en": "24/08/2026. /app now accepts sign-up without invitation, off by default, with optional manual approval and email verification."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.19.1] - 2026-08-24",
+          "label": {
+            "pt": "CHANGELOG, seção 0.19.1",
+            "en": "CHANGELOG, sect. 0.19.1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_19_2",
+      "at": "2026-08-24T12:00:00-03:00",
+      "title": {
+        "pt": "0.19.2 · Login com Google via laravel/socialite",
+        "en": "0.19.2 · Google login via laravel/socialite"
+      },
+      "detail": {
+        "pt": "24/08/2026. Entrar com Google, atrás de um interruptor desligado por padrão.",
+        "en": "24/08/2026. Sign in with Google, behind a switch off by default."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.19.2] - 2026-08-24",
+          "label": {
+            "pt": "CHANGELOG, seção 0.19.2",
+            "en": "CHANGELOG, sect. 0.19.2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_22_0",
+      "at": "2026-08-31T12:00:00-03:00",
+      "title": {
+        "pt": "0.22.0 · Proteção anti-robô sobre o pacote ddr/filament-captcha",
+        "en": "0.22.0 · Anti-robot protection on ddr/filament-captcha"
+      },
+      "detail": {
+        "pt": "31/08/2026. Proteção anti-robô sobre o pacote ddr/filament-captcha, com o reCAPTCHA v3 como quarto provedor, ao lado do reCAPTCHA v2, do Turnstile e do hCaptcha.",
+        "en": "31/08/2026. Bot protection via ddr/filament-captcha, with reCAPTCHA v3 as fourth provider, beside reCAPTCHA v2, Turnstile and hCaptcha."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.22.0] - 2026-08-31",
+          "label": {
+            "pt": "CHANGELOG, seção 0.22.0",
+            "en": "CHANGELOG, sect. 0.22.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_24_0",
+      "at": "2026-09-02T12:00:00-03:00",
+      "title": {
+        "pt": "0.24.0 · Site de documentação em GitHub Pages",
+        "en": "0.24.0 · Docs site on GitHub Pages"
+      },
+      "detail": {
+        "pt": "02/09/2026. A documentação dos dois READMEs vira 44 páginas navegáveis, com busca, nos dois idiomas.",
+        "en": "02/09/2026. Docs from both READMEs become 44 searchable pages in both languages."
+      },
+      "lane": "docs",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.24.0] - 2026-09-02",
+          "label": {
+            "pt": "CHANGELOG, seção 0.24.0",
+            "en": "CHANGELOG, sect. 0.24.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_31_0",
+      "at": "2026-09-05T12:00:00-03:00",
+      "title": {
+        "pt": "0.31.0 · Página única de login (/login) para os três painéis",
+        "en": "0.31.0 · Unified login page (/login) for three panels"
+      },
+      "detail": {
+        "pt": "05/09/2026. Página única de login para os três painéis, opcional e desligada por padrão (KIT_LOGIN_UNIFICADO).",
+        "en": "05/09/2026. Unified login page for three panels, optional and off by default (KIT_LOGIN_UNIFICADO)."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.31.0] - 2026-09-05",
+          "label": {
+            "pt": "CHANGELOG, seção 0.31.0",
+            "en": "CHANGELOG, sect. 0.31.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_33_0",
+      "at": "2026-09-15T12:00:00-03:00",
+      "title": {
+        "pt": "0.33.0 · Dashboard dinâmico nos três painéis",
+        "en": "0.33.0 · Dynamic dashboard in three panels"
+      },
+      "detail": {
+        "pt": "15/09/2026. Cada painel ganha uma grade de widgets montável pelo usuário (mddev31/filament-dynamic-dashboard).",
+        "en": "15/09/2026. Each panel gets a user-built widget grid (mddev31/filament-dynamic-dashboard)."
+      },
+      "lane": "paineis",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.33.0] - 2026-09-15",
+          "label": {
+            "pt": "CHANGELOG, seção 0.33.0",
+            "en": "CHANGELOG, sect. 0.33.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_37_0",
+      "at": "2026-09-20T12:00:00-03:00",
+      "title": {
+        "pt": "0.37.0 · O site de documentação passou a ser gerado pelo Astro Starlight",
+        "en": "0.37.0 · Docs site now built by Astro Starlight"
+      },
+      "detail": {
+        "pt": "20/09/2026. O site de documentação passa a ser gerado pelo Astro Starlight e publicado por GitHub Actions; sai o Jekyll embutido do GitHub Pages.",
+        "en": "20/09/2026. Docs site now built by Astro Starlight and published via GitHub Actions, replacing GitHub Pages built-in Jekyll."
+      },
+      "lane": "docs",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.37.0] - 2026-09-20",
+          "label": {
+            "pt": "CHANGELOG, seção 0.37.0",
+            "en": "CHANGELOG, sect. 0.37.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_40_0",
+      "at": "2026-09-25T12:00:00-03:00",
+      "title": {
+        "pt": "0.40.0 · Cobertura de testes medida, com meta, badge e guarda",
+        "en": "0.40.0 · Test coverage with target, badge and guard"
+      },
+      "detail": {
+        "pt": "25/09/2026. Cobertura de testes medida (composer test:coverage), com meta, badge e guarda. A mesma versão deixa de distribuir uma senha de administrador utilizável.",
+        "en": "25/09/2026. Test coverage measured (composer test:coverage), with target, badge and guard. Same version stops shipping a usable admin password."
+      },
+      "lane": "qa",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.40.0] - 2026-09-25",
+          "label": {
+            "pt": "CHANGELOG, seção 0.40.0",
+            "en": "CHANGELOG, sect. 0.40.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_42_0",
+      "at": "2026-09-30T12:00:00-03:00",
+      "title": {
+        "pt": "0.42.0 · Vinte diagramas da arquitetura, em Mermaid",
+        "en": "0.42.0 · Twenty architecture diagrams in Mermaid"
+      },
+      "detail": {
+        "pt": "30/09/2026. Vinte diagramas da arquitetura, em Mermaid, no README e no site, cada um com guarda.",
+        "en": "30/09/2026. Twenty architecture diagrams in Mermaid in README and site, each with a guard."
+      },
+      "lane": "docs",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.42.0] - 2026-09-30",
+          "label": {
+            "pt": "CHANGELOG, seção 0.42.0",
+            "en": "CHANGELOG, sect. 0.42.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_45_0",
+      "at": "2026-10-06T12:00:00-03:00",
+      "title": {
+        "pt": "0.45.0 · Deploy opt-in de vários ambientes no mesmo servidor",
+        "en": "0.45.0 · Opt-in multi-environment deploy on one server"
+      },
+      "detail": {
+        "pt": "06/10/2026. Deploy opt-in de vários ambientes no mesmo servidor, atrás do Traefik, por um override de exemplo do docker-compose.",
+        "en": "06/10/2026. Opt-in deploy of several environments on one server behind Traefik, via sample docker-compose override."
+      },
+      "lane": "inst",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.45.0] - 2026-10-06",
+          "label": {
+            "pt": "CHANGELOG, seção 0.45.0",
+            "en": "CHANGELOG, sect. 0.45.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_48_0",
+      "at": "2026-10-14T12:00:00-03:00",
+      "title": {
+        "pt": "0.48.0 · Dock de atalhos por usuário",
+        "en": "0.48.0 · Shortcut dock per user"
+      },
+      "detail": {
+        "pt": "14/10/2026. Botão flutuante com até 10 favoritos de qualquer painel (hoceineel/filament-quick-action-dock).",
+        "en": "14/10/2026. Floating button with up to 10 favorites from any panel (hoceineel/filament-quick-action-dock)."
+      },
+      "lane": "paineis",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.48.0] - 2026-10-14",
+          "label": {
+            "pt": "CHANGELOG, seção 0.48.0",
+            "en": "CHANGELOG, sect. 0.48.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_51_0",
+      "at": "2026-10-19T12:00:00-03:00",
+      "title": {
+        "pt": "0.51.0 · Agentes de IA ligados pelo settings, por painel",
+        "en": "0.51.0 · AI agents enabled via settings, per panel"
+      },
+      "detail": {
+        "pt": "19/10/2026. O interruptor Usar agentes de IA e a lista dos painéis onde o chat do Assistente aparece, na aba Aplicação das configurações; os dois nascem desligados.",
+        "en": "19/10/2026. Use AI agents switch and list of panels showing Assistente chat, in Application settings tab; both start off."
+      },
+      "lane": "paineis",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.51.0] - 2026-10-19",
+          "label": {
+            "pt": "CHANGELOG, seção 0.51.0",
+            "en": "CHANGELOG, sect. 0.51.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_52_0",
+      "at": "2026-10-23T12:00:00-03:00",
+      "title": {
+        "pt": "0.52.0 · Tutorial guiado nos três painéis",
+        "en": "0.52.0 · Guided tutorial in all three panels"
+      },
+      "detail": {
+        "pt": "23/10/2026. Jornadas de primeiros passos, tours por feature e a página Primeiros passos (wallacemartinss/filament-onboarding); nasce desligado.",
+        "en": "23/10/2026. Getting started journeys, feature tours and Getting started page (wallacemartinss/filament-onboarding); starts off."
+      },
+      "lane": "paineis",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.52.0] - 2026-10-23",
+          "label": {
+            "pt": "CHANGELOG, seção 0.52.0",
+            "en": "CHANGELOG, sect. 0.52.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_53_1",
+      "at": "2026-11-15T12:00:00-03:00",
+      "title": {
+        "pt": "0.53.1 · Aparência das telas de acesso escolhida na tela",
+        "en": "0.53.1 · Access screen look chosen in UI"
+      },
+      "detail": {
+        "pt": "15/11/2026. O layout das telas de autenticação passa a ser escolhido nas configurações da aplicação, com preview e por organização. A 0.53.1 é a entrega da 0.53.0.",
+        "en": "15/11/2026. Auth screen layout now chosen in application settings, with preview and per organization. 0.53.1 delivers 0.53.0."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.53.1] - 2026-11-15",
+          "label": {
+            "pt": "CHANGELOG, seção 0.53.1",
+            "en": "CHANGELOG, sect. 0.53.1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_54_0",
+      "at": "2026-11-18T12:00:00-03:00",
+      "title": {
+        "pt": "0.54.0 · Aparência no Meu perfil dos três painéis",
+        "en": "0.54.0 · Appearance in all panels' My profile"
+      },
+      "detail": {
+        "pt": "18/11/2026. Cada pessoa escolhe densidade do layout, tamanho da fonte, cor primária e o modo do menu lateral ao recolher.",
+        "en": "18/11/2026. Each person chooses layout density, font size, primary color and collapsed sidebar mode."
+      },
+      "lane": "paineis",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.54.0] - 2026-11-18",
+          "label": {
+            "pt": "CHANGELOG, seção 0.54.0",
+            "en": "CHANGELOG, sect. 0.54.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_55_0",
+      "at": "2026-11-18T12:00:00-03:00",
+      "title": {
+        "pt": "0.55.0 · Dependências declaradas × usadas, como relatório",
+        "en": "0.55.0 · Declared × used dependencies report"
+      },
+      "detail": {
+        "pt": "18/11/2026. composer-require-checker e composer-unused no require-dev, com o script composer deps:check, fora do composer test.",
+        "en": "18/11/2026. composer-require-checker and composer-unused in require-dev, with composer deps:check script, outside composer test."
+      },
+      "lane": "qa",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.55.0] - 2026-11-18",
+          "label": {
+            "pt": "CHANGELOG, seção 0.55.0",
+            "en": "CHANGELOG, sect. 0.55.0"
+          }
+        }
+      ]
+    },
+    {
+      "id": "v0_56_0",
+      "at": "2026-11-19T12:00:00-03:00",
+      "title": {
+        "pt": "0.56.0 · Opção para permitir ou bloquear o \"+\" no e-mail do cadastro",
+        "en": "0.56.0 · Option to allow or block \"+\" in sign-up email"
+      },
+      "detail": {
+        "pt": "19/11/2026. A opção fica na aba Registro das configurações da aplicação e em KIT_EMAIL_PERMITIR_MAIS, e nasce ligada: nada muda até o admin desligá-la.",
+        "en": "19/11/2026. Option in application settings Sign-up tab and KIT_EMAIL_PERMITIR_MAIS, on by default: nothing changes until admin turns it off."
+      },
+      "lane": "auth",
+      "kind": "change",
+      "sources": [
+        {
+          "arquivo": "CHANGELOG.md",
+          "trecho": "## [0.56.0] - 2026-11-19",
+          "label": {
+            "pt": "CHANGELOG, seção 0.56.0",
+            "en": "CHANGELOG, sect. 0.56.0"
+          }
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Cada marco é uma versão do CHANGELOG.md: o título começa pelo número da versão e repete um termo da seção dela, e a fonte do marco é o título dessa seção.",
+          "en": "Each milestone is a CHANGELOG.md version: title starts with version number and repeats a term from its section; milestone source is that section title."
+        },
+        {
+          "pt": "A data é a do título da versão no CHANGELOG e está no detalhe do marco, em dd/mm/aaaa; o eixo do visualizador escreve as datas como mês-dia.",
+          "en": "Date comes from CHANGELOG version title and appears in milestone details as dd/mm/yyyy; viewer axis shows dates as month-day."
+        },
+        {
+          "pt": "O CHANGELOG não dá hora: todo marco fica às 12:00, horário de Brasília, e os marcos do mesmo dia se empilham.",
+          "en": "CHANGELOG gives no time: all milestones are at 12:00 Brasilia time, and same-day milestones stack."
+        },
+        {
+          "pt": "Os marcos são uma seleção de 30 versões, e não o CHANGELOG inteiro. A raia agrupa o marco pela área da mudança.",
+          "en": "Milestones select 30 versions, rather than whole CHANGELOG. Lane groups milestones by change area."
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Fora do desenho",
+        "en": "Outside diagram"
+      },
+      "items": [
+        {
+          "pt": "A seção [Unreleased] do CHANGELOG: ela não tem data.",
+          "en": "CHANGELOG [Unreleased] section: it has no date."
+        }
+      ]
+    }
+  ]
+}

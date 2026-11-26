@@ -1,11 +1,11 @@
 ---
 title: "Operations"
-description: "The daily work of building on top of the kit: working with AI agents, the roadmap of the 68 ready features, the mandatory conventions, what to do after…"
+description: "The daily work of building on top of the kit: working with AI agents, the numbered catalog of ready features, the mandatory conventions, what to do after…"
 sidebar:
   label: "Overview"
   order: 0
 ---
-The daily work of building on top of the kit: working with AI agents, the roadmap of the 68 ready
+The daily work of building on top of the kit: working with AI agents, the numbered catalog of ready
 features, the mandatory conventions, what to do after creating your Resources and how to work on
 the kit itself — and how to serve [several environments of the same project on a single server](deploy-docker-multiambiente/),
 behind Traefik.

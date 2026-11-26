@@ -1,0 +1,109 @@
+{
+  "slug": "kit-ia",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — IA",
+    "en": "Kit — AI"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Livewire\\AssistenteChatWidget",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Ai\\Middleware\\AiAuditMiddleware",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "App\\Ai\\Middleware\\BudgetGuardMiddleware",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Ai\\Guardrails\\FiltroSaidaSensivelMiddleware",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "App\\Ai\\Guardrails\\GarantirPromptSeguroMiddleware",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Ai\\Guardrails\\PiiRedactorMiddleware",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Ai\\Guardrails\\PromptInjectionGuardMiddleware",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Ai\\Exceptions\\AgenteSemGuardrailsException",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "App\\Ai\\Agents\\Assistente",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Support\\Casts\\BooleanoFlexivelCast",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "App\\Ai\\Agents\\GuardaPrompt",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "App\\Ai\\Guardrails\\GuardrailRegistry",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "App\\Ai\\Guardrails\\PiiRedactor",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "App\\Ai\\Exceptions\\PromptInjecaoBloqueadaException",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "App\\Ai\\Support\\ResolvedorDeTenant",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "App\\Data\\Ia\\VeredictoDoGuardrailData",
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "App\\Support\\AgentesDeIa",
+      "row": 5,
+      "col": 1
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44,
+    "teto": 3
+  }
+}

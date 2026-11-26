@@ -1,0 +1,558 @@
+{
+  "slug": "erd-monitoramento",
+  "tipo": "erd",
+  "titulo": {
+    "pt": "Monitoramento e operação",
+    "en": "Monitoring and ops"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "quality_profile": "standard"
+  },
+  "layout": {
+    "mode": "grid"
+  },
+  "entities": [
+    {
+      "id": "pulse_values",
+      "label": "pulse_values",
+      "sublabel": {
+        "pt": "dono: laravel/pulse",
+        "en": "by: laravel/pulse"
+      },
+      "tag": "pulse",
+      "row": 0,
+      "col": 0,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "timestamp",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "type",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "key",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "key_hash",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "value",
+          "type": "TEXT NN"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164920_create_pulse_tables.php",
+          "trecho": "Schema::create('pulse_values', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria pulse_values",
+            "en": "add pulse_values"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pulse_entries",
+      "label": "pulse_entries",
+      "sublabel": {
+        "pt": "dono: laravel/pulse",
+        "en": "by: laravel/pulse"
+      },
+      "tag": "pulse",
+      "row": 1,
+      "col": 0,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "timestamp",
+          "type": "INTEGER NN"
+        },
+        {
+          "name": "type",
+          "type": "varchar NN"
+        },
+        {
+          "name": "key",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "key_hash",
+          "type": "varchar NN"
+        },
+        {
+          "name": "value",
+          "type": "INTEGER"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164920_create_pulse_tables.php",
+          "trecho": "Schema::create('pulse_entries', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria pulse_entries",
+            "en": "add pulse_entries"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pulse_aggregates",
+      "label": "pulse_aggregates",
+      "sublabel": {
+        "pt": "dono: laravel/pulse",
+        "en": "by: laravel/pulse"
+      },
+      "tag": "pulse",
+      "row": 2,
+      "col": 0,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "bucket",
+          "type": "INTEGER NN",
+          "key": "uk"
+        },
+        {
+          "name": "period",
+          "type": "INTEGER NN",
+          "key": "uk"
+        },
+        {
+          "name": "type",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "key",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "key_hash",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "aggregate",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "value",
+          "type": "numeric NN"
+        },
+        {
+          "name": "count",
+          "type": "INTEGER"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164920_create_pulse_tables.php",
+          "trecho": "Schema::create('pulse_aggregates', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria pulse_aggregates",
+            "en": "add pulse_aggregates"
+          }
+        }
+      ]
+    },
+    {
+      "id": "health_check_result_history_items",
+      "label": "health_check_result_history_items",
+      "sublabel": {
+        "pt": "dono: spatie/laravel-health (shuvroroy/filament-spatie-laravel-health)",
+        "en": "by: spatie/laravel-health (shuvroroy/filament-spatie-laravel-health)"
+      },
+      "tag": {
+        "pt": "saúde e releases",
+        "en": "health, releases"
+      },
+      "row": 0,
+      "col": 1,
+      "width": 304,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "check_name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "check_label",
+          "type": "varchar NN"
+        },
+        {
+          "name": "status",
+          "type": "varchar NN"
+        },
+        {
+          "name": "notification_message",
+          "type": "TEXT"
+        },
+        {
+          "name": "short_summary",
+          "type": "varchar"
+        },
+        {
+          "name": "meta",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "ended_at",
+          "type": "datetime NN"
+        },
+        {
+          "name": "batch",
+          "type": "varchar NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164901_create_health_tables.php",
+          "trecho": "Schema::connection($connection)->create($tableName, function (Blueprint $table) {",
+          "label": {
+            "pt": "cria health_check_result_history_items",
+            "en": "add health_check_result_history_items"
+          }
+        }
+      ]
+    },
+    {
+      "id": "composer_release_package_snapshots",
+      "label": "composer_release_package_snapshots",
+      "sublabel": {
+        "pt": "dono: mominalzaraa/filament-composer-release-notifier",
+        "en": "by: mominalzaraa/filament-composer-release-notifier"
+      },
+      "tag": {
+        "pt": "saúde e releases",
+        "en": "health, releases"
+      },
+      "row": 1,
+      "col": 1,
+      "width": 312,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "package_name",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "repository_owner",
+          "type": "varchar NN"
+        },
+        {
+          "name": "repository_name",
+          "type": "varchar NN"
+        },
+        {
+          "name": "installed_version",
+          "type": "varchar NN"
+        },
+        {
+          "name": "latest_release_tag",
+          "type": "varchar"
+        },
+        {
+          "name": "is_outdated",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "compare_html_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "release_notes",
+          "type": "TEXT"
+        },
+        {
+          "name": "commits_payload",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_error",
+          "type": "TEXT"
+        },
+        {
+          "name": "synced_at",
+          "type": "datetime"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164952_create_composer_release_package_snapshots_table.php",
+          "trecho": "Schema::create('composer_release_package_snapshots', function (Blueprint $table) {",
+          "label": {
+            "pt": "cria composer_release_package_snapshots",
+            "en": "add composer_release_package_snapshots"
+          }
+        }
+      ]
+    },
+    {
+      "id": "command_center_commands",
+      "label": "command_center_commands",
+      "sublabel": {
+        "pt": "dono: ssbityukov/filament-command-center",
+        "en": "by: ssbityukov/filament-command-center"
+      },
+      "tag": {
+        "pt": "operação",
+        "en": "ops"
+      },
+      "row": 0,
+      "col": 2,
+      "width": 224,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "INTEGER NN",
+          "key": "pk"
+        },
+        {
+          "name": "key",
+          "type": "varchar NN",
+          "key": "uk"
+        },
+        {
+          "name": "is_enabled",
+          "type": "tinyint(1) NN"
+        },
+        {
+          "name": "definition",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164952_create_command_center_commands_table.php",
+          "trecho": "Schema::create('command_center_commands', function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria command_center_commands",
+            "en": "add command_center_commands"
+          }
+        }
+      ]
+    },
+    {
+      "id": "command_center_runs",
+      "label": "command_center_runs",
+      "sublabel": {
+        "pt": "dono: ssbityukov/filament-command-center",
+        "en": "by: ssbityukov/filament-command-center"
+      },
+      "tag": {
+        "pt": "operação",
+        "en": "ops"
+      },
+      "row": 1,
+      "col": 2,
+      "width": 200,
+      "attributes": [
+        {
+          "name": "id",
+          "type": "varchar NN",
+          "key": "pk"
+        },
+        {
+          "name": "command_key",
+          "type": "varchar NN"
+        },
+        {
+          "name": "label",
+          "type": "varchar NN"
+        },
+        {
+          "name": "user_id",
+          "type": "varchar"
+        },
+        {
+          "name": "input",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "argv",
+          "type": "TEXT NN"
+        },
+        {
+          "name": "state",
+          "type": "varchar NN"
+        },
+        {
+          "name": "started_at",
+          "type": "datetime"
+        },
+        {
+          "name": "finished_at",
+          "type": "datetime"
+        },
+        {
+          "name": "duration_ms",
+          "type": "INTEGER"
+        },
+        {
+          "name": "exit_code",
+          "type": "INTEGER"
+        },
+        {
+          "name": "output",
+          "type": "TEXT"
+        },
+        {
+          "name": "progress",
+          "type": "INTEGER"
+        },
+        {
+          "name": "error",
+          "type": "TEXT"
+        }
+      ],
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_12_164951_create_command_center_runs_table.php",
+          "trecho": "Schema::create('command_center_runs', function (Blueprint $table): void {",
+          "label": {
+            "pt": "cria command_center_runs",
+            "en": "add command_center_runs"
+          }
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Como ler",
+        "en": "Reading"
+      },
+      "items": [
+        {
+          "pt": "Colunas e tipos como o SQLite os registra depois de rodar as migrations (PRAGMA table_info). Em MySQL ou PostgreSQL, a mesma migration gera os tipos nativos.",
+          "en": "Columns and types as SQLite records them after migrations (PRAGMA table_info). In MySQL or PostgreSQL, the same migration creates native types."
+        },
+        {
+          "pt": "NN = NOT NULL. Sem NN, a coluna aceita nulo.",
+          "en": "NN = NOT NULL. Without NN, null is allowed."
+        },
+        {
+          "pt": "PK, FK e UK marcam cada coluna. PK ou UK em mais de uma coluna da mesma tabela pode ser uma chave composta: veja o card \"Chaves compostas\".",
+          "en": "PK, FK and UK mark each column. PK or UK on several columns in one table may be a composite key: see the \"Composite keys\" card."
+        },
+        {
+          "pt": "Nenhuma tabela deste domínio tem chave estrangeira, por isso o desenho não tem linhas.",
+          "en": "No table in this domain has foreign keys, so diagram has no lines."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Chaves compostas",
+        "en": "Composite keys"
+      },
+      "items": [
+        {
+          "pt": "pulse_values: único (type, key_hash)",
+          "en": "pulse_values: unique (type, key_hash)"
+        },
+        {
+          "pt": "pulse_aggregates: único (bucket, period, type, aggregate, key_hash)",
+          "en": "pulse_aggregates: unique (bucket, period, type, aggregate, key_hash)"
+        }
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Referências sem chave estrangeira",
+        "en": "References without foreign keys"
+      },
+      "items": [
+        {
+          "pt": "O banco não tem chave estrangeira para estas colunas, por isso elas não ganham linha.",
+          "en": "Database has no foreign keys for these columns, so they have no lines."
+        },
+        "command_center_runs: user_id"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": {
+        "pt": "Evidência",
+        "en": "Evidence"
+      },
+      "items": [
+        {
+          "pt": "Cada tabela leva à linha da migration que a cria.",
+          "en": "Each table links to its creation migration line."
+        },
+        {
+          "pt": "backup_runs e migrations também existem no banco e ficam fora do desenho: nenhuma migration de database/migrations cria essas tabelas. A de backup_runs vem do pacote brimham/backup-monitor, em vendor/, e migrations é a tabela de controle do migrator do Laravel.",
+          "en": "backup_runs and migrations also exist in the database but are omitted: no database/migrations migration creates them. backup_runs comes from brimham/backup-monitor in vendor/; migrations is Laravel migrator's control table."
+        }
+      ]
+    }
+  ]
+}

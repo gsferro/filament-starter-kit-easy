@@ -1,0 +1,71 @@
+{
+  "pt": {
+    "viewer.export.svg.auto": "SVG · Automático",
+    "viewer.export.svg.auto.hint": "Segue o tema da página",
+    "viewer.export.svg.light": "SVG · Claro",
+    "viewer.export.svg.light.hint": "Sempre claro",
+    "viewer.export.svg.dark": "SVG · Escuro",
+    "viewer.export.svg.dark.hint": "Sempre escuro",
+    "viewer.guide.title": "Explore este sistema",
+    "viewer.focus.selectedNodes": "{count} nós selecionados",
+    "viewer.guide.credit": "Achou o Archify útil? Uma estrela no GitHub ajuda",
+    "viewer.guide.star": "Estrela",
+    "viewer.passport.move": "Mover o passaporte semântico. Arraste, use as setas ou pressione Home para voltar.",
+    "viewer.outline.title": "Índice de nós",
+    "viewer.rail.show": "Notas e índice",
+    "viewer.rail.controls": "Painel lateral",
+    "viewer.rail.collapse": "Recolher painel lateral",
+    "viewer.rail.bottom": "Mover o painel para baixo do diagrama",
+    "viewer.rail.right": "Mover o painel para o lado do diagrama",
+    "diagram.description.erd": "Um diagrama entidade-relacionamento gerado pelo Archify.",
+    "node.context.erd": "Entidade",
+    "legend.erd.pk": "Chave primária",
+    "legend.erd.fk": "Chave estrangeira",
+    "legend.erd.uk": "Chave única",
+    "legend.erd.one": "Um",
+    "legend.erd.many": "Muitos",
+    "legend.erd.optional": "Opcional"
+  },
+  "tipos": {
+    "architecture": {
+      "pt": {
+        "viewer.kind.frontend": "Tela",
+        "viewer.kind.backend": "Código do kit",
+        "viewer.kind.database": "Dados",
+        "viewer.kind.security": "Acesso",
+        "viewer.kind.cloud": "Pacote",
+        "viewer.kind.messagebus": "Interruptor",
+        "viewer.kind.external": "Outro mapa",
+        "legend.architecture.frontend": "Tela (painel, página, recurso, widget, Livewire)",
+        "legend.architecture.backend": "Código do kit (provider, serviço, comando)",
+        "legend.architecture.database": "Dados (model, settings)",
+        "legend.architecture.security": "Acesso (middleware, policy)",
+        "legend.architecture.cloud": "Pacote ou plugin de terceiros",
+        "legend.architecture.messagebus": "Interruptor (config, .env)",
+        "legend.architecture.external": "Porta para outro mapa"
+      },
+      "en": {
+        "viewer.kind.frontend": "Screen",
+        "viewer.kind.backend": "Kit code",
+        "viewer.kind.database": "Data",
+        "viewer.kind.security": "Access",
+        "viewer.kind.cloud": "Package",
+        "viewer.kind.messagebus": "Switch",
+        "viewer.kind.external": "Other map",
+        "legend.architecture.frontend": "Screen (panel, page, resource, widget, Livewire)",
+        "legend.architecture.backend": "Kit code (provider, service, command)",
+        "legend.architecture.database": "Data (model, settings)",
+        "legend.architecture.security": "Access (middleware, policy)",
+        "legend.architecture.cloud": "Third-party package or plugin",
+        "legend.architecture.messagebus": "Switch (config, .env)",
+        "legend.architecture.external": "Port to another map"
+      }
+    }
+  },
+  "foraDoCatalogo": {
+    "pt": {
+      "viewer.kind.class": "Classe",
+      "viewer.kind.abstract": "Classe abstrata"
+    }
+  }
+}

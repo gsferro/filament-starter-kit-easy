@@ -92,6 +92,46 @@ no lugar, é ali que se olha.
 `docs/` e `site/` são `export-ignore`: o site é material do kit e não chega ao projeto que nasce do
 `create-project`. As guardas disso ficam em `tests/Kit/SiteDeDocumentacaoTest.php`.
 
+## Como o mapa interativo é gerado
+
+O [mapa interativo do kit](../../referencia/mapa-interativo/) são diagramas do **archify** gerados no build do site
+a partir de um modelo versionado — as decisões estão nas ADRs da wiki `mapa-interativo-do-kit`:
+
+- **O modelo** — `site/mapa/pecas.json` e `site/mapa/ligacoes.json`: cada peça (recurso, página, widget, plugin,
+  middleware, serviço, model, policy, comando…) e cada ligação entre elas, com a prova como **âncora de trecho**
+  `{arquivo, trecho}`, nunca como número de linha. O build acha a linha do trecho no arquivo da revisão publicada.
+  A peça que só abre com tenant ou com uma chave desligada de fábrica — registrada pelo painel, usada dentro de outra
+  tela ou flutuante, como o chat do assistente — guarda a condição no campo `disponibilidade` (`{modo?, chaves?: [{chave, padrao, ligada?}], evidencia}`): o mapa a marca e só a
+  desenha no diagrama do modo em que ela abre, e as guardas cobram que toda peça assim tenha o campo, avaliando o
+  `canAccess()`/`canView()` dela — e, na página, a montagem, porque o `mount()` pode devolvê-la a outra tela — (ou, no componente flutuante, o predicado que decide se ele aparece) como
+  super_admin, nos dois modos.
+- **Os diagramas** — um arquivo por diagrama em `site/mapa/diagramas/{slug}.json`. A árvore de registro e os mapas
+  de arquitetura dizem só o recorte e a grade: as peças e as ligações saem do modelo. Os fluxos (sequência,
+  workflow, ciclo de vida, fluxo de dados, ER, classes, linha do tempo e tempos) são a própria entrada do archify,
+  com os textos em `{pt, en}` e a prova de cada ligação no campo `prova`.
+- **O gerador** — `site/mapa/gerar.mjs` roda no fim do `npm run build`. Baixa o archify pelo commit fixado em
+  `site/mapa/archify.mjs` (o build precisa de `git` e de acesso a github.com), projeta cada idioma e grava
+  `dist/mapa/{pt,en}/{slug}.html`. Ligação sem prova, trecho que não está no arquivo (ou que só aparece em
+  comentário), peça de diagrama que não está no modelo, condição de disponibilidade que não se lê, diagrama com
+  `modos` vazio, repetido ou fora de `sem`/`com`, JSON quebrado e layout que o archify recusa param o build,
+  com a mensagem `[mapa]` que nomeia o culpado — tudo, menos o layout, antes de baixar o archify e de apagar a
+  saída. Cada par de peças ganha uma seta por verbo (registra, usa, lê,
+  grava), cada uma com o traço dele.
+- **O posicionador** — `node mapa/posicionar.mjs <slug>` (em `site/`) busca uma grade que o archify aceite para um
+  mapa de arquitetura e a grava no arquivo. Rode depois de mudar as peças de um mapa; ele nunca roda no build.
+- **O conferidor** — `site/verifica-mapa.mjs` roda no CI depois do de acessibilidade: abre os diagramas nos dois
+  idiomas e confere, contra a fonte, as peças e os rótulos, a prova de cada ligação, a busca e o passaporte, e a
+  interface no idioma da página; audita uma amostra de um HTML por tipo, idioma e tema (WCAG 2.1 AA pelo axe, com
+  dois defeitos do próprio archify tolerados por regra e elemento); e reprova o job em qualquer erro de console.
+
+Para conferir um diagrama sem refazer o site inteiro: `cd site && node mapa/gerar.mjs --saida /tmp/mapa <slug>`.
+Sem slug, o gerador refaz a pasta de `--saida` inteira, e por isso recusa a pasta que tem algo além do que ele
+gera em `pt/` e `en/` (o HTML do mapa e o recibo do comparativo): ele nunca apaga o que não gerou.
+
+Peça nova do kit entra no modelo com as F-nn que entrega — a rule `.ai/rules/catalogo-de-features.md` e as guardas
+`tests/Kit/MapaInterativo*Test.php` (o catálogo, a publicação, o modelo e os diagramas) e
+`tests/Tenancy/MapaInterativoTenancyTest.php` cobram isso, e resolvem toda âncora do mapa em todo PR.
+
 ## O que roda em segundo plano
 
 `composer dev` sobe **servidor + fila + vite + reverb** juntos, num só terminal

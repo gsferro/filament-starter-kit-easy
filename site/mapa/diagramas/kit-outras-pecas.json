@@ -1,0 +1,38 @@
+{
+  "slug": "kit-outras-pecas",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Outras peças",
+    "en": "Kit — Other pieces"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Support\\BooleanoDoEnv",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Http\\Controllers\\Controller",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Support\\NumeroDoEnv",
+      "row": 2,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

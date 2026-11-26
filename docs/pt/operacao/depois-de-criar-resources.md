@@ -95,10 +95,14 @@ mapa não vai para papel nenhum (fail-closed) e o caso `CT-19` de
 > `AttachAction` cria é exatamente o que `User::canAccessTenant()` consulta para liberar
 > `/app/{slug}`, então as duas levam `->authorize()`.
 
-**Page e Widget de vendor ficam fora**: são classes de pacote, sem ponto de extensão. A permissão
-delas existe no banco e no checkbox, e **não é consultada** — a barreira é `canAccessPanel()` mais os
-gates nomeados de `KitServiceProvider` (`ver-logs`, `command-center:access`, `viewPulse`,
-`ver-ai-tasks`).
+**Page e Widget de vendor também consultam a permissão**, por um de dois caminhos: o callback que o
+pacote publica (`authorize()` no Health e na Lixeira, `canAccessUsing()` no Logs Explorer e no Grafo
+de dependências), que o kit liga a `App\Support\PermissaoDaTela::permite()`; ou uma página ou widget do
+kit no lugar da tela do pacote, quando ele não publica callback (`BackupRunsPage`, `Pulse`,
+`MyProfilePage` e `ComposerReleaseOverviewWidget`). A exceção declarada são as três telas da Central
+de comandos, cuja barreira é o gate `command-center:access` (F-67 no [roteiro de features](../roteiro-de-features/)).
+Os gates nomeados de `KitServiceProvider` (`ver-logs`, `command-center:access`, `viewPulse`,
+`ver-ai-tasks`) continuam valendo por cima, junto com `canAccessPanel()`.
 
 > **RelationManager o Shield não enxerga.** A descoberta dele cobre apenas Resources, Pages e Widgets, então nenhuma permission é gerada e a autorização recai na **policy do model relacionado**. Se esse model já tem Resource em algum painel, não há nada a fazer. Se não tem, crie a policy à mão (`php artisan make:policy`) e declare as chaves em `config('filament-shield.custom_permissions')` **antes** de rodar os seeders — do contrário o RelationManager fica aberto a qualquer um que consiga abrir o Resource pai.
 

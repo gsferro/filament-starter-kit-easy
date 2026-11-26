@@ -1,0 +1,64 @@
+{
+  "slug": "kit-administracao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "Kit — Administração",
+    "en": "Kit — Administration"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "App\\Policies\\AgenteIaPolicy",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "App\\Policies\\OnboardingConditionPolicy",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "App\\Policies\\OnboardingFlowPolicy",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "Laravel\\Ai\\AiServiceProvider",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "App\\Ai\\Agents\\AgenteBase",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "App\\Ai\\Exceptions\\AgenteInativoException",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "App\\Settings\\ConfiguracoesDoKit",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "App\\Models\\AgenteIa",
+      "row": 3,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 3,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44,
+    "teto": 3
+  }
+}

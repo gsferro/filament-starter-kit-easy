@@ -6,6 +6,9 @@ sidebar:
 ---
 Vinte diagramas Mermaid mostram como o kit funciona hoje: arquitetura, acesso por papel, autenticação, IA, infraestrutura, modelo de dados e o ciclo de vida do próprio kit. Cada um é guardado por um teste automatizado (`tests/Kit/DiagramasDaArquiteturaTest.php`, `tests/Kit/GuardasDosDiagramasTest.php` e, no modo multi-organização, `tests/Tenancy/DiagramasDaArquiteturaTenancyTest.php`) que falha quando o código deixar de bater com o que o diagrama descreve — nenhum diagrama aqui descreve funcionalidade planejada.
 
+Os mesmos painéis, sem e com o tenant ativo, e os fluxos do kit também estão em diagramas interativos gerados do
+código, com a prova de cada ligação, no [Mapa interativo do kit](../mapa-interativo/).
+
 ## DG-01 — Arquitetura em camadas
 
 Do navegador aos três painéis Filament (`app/Providers/Filament/AppPanelProvider.php:id:86`, `app/Providers/Filament/AdminPanelProvider.php:id:77`, `app/Providers/Filament/InfraPanelProvider.php:id:99`), pelo acesso por papel, até banco, fila, cache e os serviços opcionais. É o mesmo bloco do README — a fonte é única.

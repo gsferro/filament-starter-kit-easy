@@ -1,0 +1,17 @@
+{
+  "slug": "admin-resumo-sem-com",
+  "tipo": "compare",
+  "titulo": {
+    "pt": "/admin — o que muda com o tenant ativo",
+    "en": "/admin — what changes with tenancy on"
+  },
+  "paineis": [
+    "admin"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "base": "admin-resumo-sem",
+  "cabeca": "admin-resumo-com"
+}

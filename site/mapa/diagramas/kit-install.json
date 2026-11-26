@@ -1,0 +1,951 @@
+{
+  "slug": "kit-install",
+  "tipo": "workflow",
+  "titulo": {
+    "pt": "kit:install: os passos da instalação, na ordem do handle()",
+    "en": "kit:install: install steps in handle() order"
+  },
+  "paineis": [],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": {
+            "pt": "passo em PHP do kit",
+            "en": "kit PHP step"
+          }
+        },
+        "database": {
+          "label": {
+            "pt": "grava no banco",
+            "en": "writes to DB"
+          }
+        },
+        "external": {
+          "label": {
+            "pt": "processo externo",
+            "en": "external process"
+          }
+        },
+        "frontend": {
+          "label": {
+            "pt": "saída no terminal",
+            "en": "terminal output"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "sai antes do fim",
+            "en": "exits early"
+          }
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "saida",
+      "label": {
+        "pt": "Saídas antecipadas",
+        "en": "Early exits"
+      },
+      "variant": "exception"
+    },
+    {
+      "id": "suporte",
+      "label": "App\\Support"
+    },
+    {
+      "id": "handle",
+      "label": "KitInstall::handle()"
+    },
+    {
+      "id": "artisan",
+      "label": "Artisan: callSilently()"
+    },
+    {
+      "id": "processos",
+      "label": {
+        "pt": "Processos: pint, npm, testes",
+        "en": "Processes: pint, npm, tests"
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "preparar",
+      "label": {
+        "pt": "Prepara",
+        "en": "Prepare"
+      },
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "banco",
+      "label": {
+        "pt": "Banco",
+        "en": "DB"
+      },
+      "fromCol": 2,
+      "toCol": 2
+    },
+    {
+      "id": "popular",
+      "label": {
+        "pt": "Popula",
+        "en": "Seed"
+      },
+      "fromCol": 3,
+      "toCol": 3
+    },
+    {
+      "id": "front",
+      "label": "Assets",
+      "fromCol": 4,
+      "toCol": 4
+    },
+    {
+      "id": "fechar",
+      "label": {
+        "pt": "Fecha",
+        "en": "Close"
+      },
+      "fromCol": 5,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "env",
+    "perguntas",
+    "app-key",
+    "sqlite",
+    "conexao",
+    "migrar",
+    "senha",
+    "seed",
+    "tutorial",
+    "pint",
+    "assets",
+    "npm",
+    "host-local",
+    "banner",
+    "testes"
+  ],
+  "nodes": [
+    {
+      "id": "env",
+      "lane": "handle",
+      "col": 0,
+      "type": "backend",
+      "icon": "start",
+      "label": {
+        "pt": "Garante o .env",
+        "en": "Ensure .env"
+      },
+      "sublabel": "prepararEnv()",
+      "tag": "--force: devolverConfigAoEnv()",
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function prepararEnv(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "File::copy(base_path('.env.example'), base_path('.env'));"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "ConfiguracoesDoKit::devolverConfigAoEnv();"
+        }
+      ]
+    },
+    {
+      "id": "so-nome-e-cor",
+      "lane": "saida",
+      "col": 0,
+      "type": "security",
+      "icon": "success",
+      "label": {
+        "pt": "Refaz nome e cor e sai",
+        "en": "Reset name, color; end"
+      },
+      "sublabel": "customizarSemBanco()",
+      "tag": {
+        "pt": "não toca no banco",
+        "en": "no database edits"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "private function customizarSemBanco(): int"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$respostas    = $customizador->perguntarSemBanco();"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "foreach ($customizador->aplicarSemBanco($respostas) as [$rotulo, $valor]) {"
+        }
+      ]
+    },
+    {
+      "id": "perguntas",
+      "lane": "suporte",
+      "col": 1,
+      "type": "backend",
+      "label": {
+        "pt": "Faz as cinco perguntas",
+        "en": "Ask all five questions"
+      },
+      "sublabel": "CustomizadorDaInstalacao",
+      "tag": {
+        "pt": "projeto novo ou --force, com terminal",
+        "en": "new project or --force, with terminal"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$respostas    = $customizador->perguntar($this, $this->temTerminal());"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->resumo = $customizador->aplicar($respostas);"
+        },
+        {
+          "arquivo": "app/Support/CustomizadorDaInstalacao.php",
+          "trecho": "AtivadorDeTenancy::ligarPapeisPorTenant($this->base.DIRECTORY_SEPARATOR.'config');"
+        }
+      ]
+    },
+    {
+      "id": "app-key",
+      "lane": "artisan",
+      "col": 1,
+      "type": "backend",
+      "label": {
+        "pt": "Gera a APP_KEY",
+        "en": "Create APP_KEY"
+      },
+      "sublabel": "key:generate --force",
+      "tag": {
+        "pt": "só sem APP_KEY",
+        "en": "no APP_KEY"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function gerarAppKey(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "if (filled(config('app.key'))) {"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->callSilently('key:generate', ['--force' => true]);"
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "lane": "suporte",
+      "col": 2,
+      "type": "database",
+      "label": {
+        "pt": "Cria o banco SQLite",
+        "en": "Add SQLite database"
+      },
+      "sublabel": "BancoSqlite",
+      "tag": {
+        "pt": "só com SQLite; --force recria",
+        "en": "SQLite only; --force rebuilds"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "if (config('database.default') !== 'sqlite') {"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "BancoSqlite::recriar($caminho);"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$criado = BancoSqlite::criarSeFaltar($caminho);"
+        }
+      ]
+    },
+    {
+      "id": "sqlite-preso",
+      "lane": "saida",
+      "col": 2,
+      "type": "security",
+      "icon": "failure",
+      "label": {
+        "pt": "Arquivo SQLite preso",
+        "en": "SQLite file locked"
+      },
+      "sublabel": {
+        "pt": "RuntimeException interrompe",
+        "en": "RuntimeException stops it"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Support/BancoSqlite.php",
+          "trecho": "throw new RuntimeException(self::mensagemDeArquivoPreso($caminho, 'apagar'));"
+        },
+        {
+          "arquivo": "app/Support/BancoSqlite.php",
+          "trecho": "throw new RuntimeException(self::mensagemDeArquivoPreso($caminho, 'recriar'));"
+        }
+      ]
+    },
+    {
+      "id": "conexao",
+      "lane": "handle",
+      "col": 2,
+      "type": "backend",
+      "icon": "decision",
+      "label": {
+        "pt": "Confere a conexão",
+        "en": "Check connection"
+      },
+      "sublabel": "conferirConexao()",
+      "tag": {
+        "pt": "só fora do SQLite",
+        "en": "non-SQLite only"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "private function conferirConexao(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "DB::connection()->getPdo();"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->bancoAcessivel = false;"
+        }
+      ]
+    },
+    {
+      "id": "migrar",
+      "lane": "artisan",
+      "col": 2,
+      "type": "database",
+      "label": {
+        "pt": "Roda as migrations",
+        "en": "Run migrations"
+      },
+      "sublabel": "migrate --graceful --force",
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function migrar(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$codigo = $this->callSilently('migrate', ["
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->avisos[] = 'As migrations não completaram. Rode: php artisan migrate';"
+        }
+      ]
+    },
+    {
+      "id": "senha",
+      "lane": "suporte",
+      "col": 3,
+      "type": "backend",
+      "label": {
+        "pt": "Garante a senha do admin",
+        "en": "Ensure admin password"
+      },
+      "sublabel": "SenhaDoAdministrador",
+      "tag": {
+        "pt": "gera só se faltar",
+        "en": "create if missing"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function garantirSenhaDoAdministrador(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$administradores = AdministradorDaInstalacao::todos();"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->senhaGerada = SenhaDoAdministrador::garantirNoEnv(base_path('.env'));"
+        }
+      ]
+    },
+    {
+      "id": "seed",
+      "lane": "artisan",
+      "col": 3,
+      "yOffset": -45,
+      "type": "database",
+      "label": {
+        "pt": "Popula papéis e usuário",
+        "en": "Seed roles and user"
+      },
+      "sublabel": "db:seed --force",
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function semear(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$codigo = $this->callSilently('db:seed', ['--force' => true]);"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->avisos[] = 'Os seeders não completaram. Rode: php artisan db:seed';"
+        }
+      ]
+    },
+    {
+      "id": "tutorial",
+      "lane": "artisan",
+      "col": 3,
+      "yOffset": 45,
+      "type": "database",
+      "label": {
+        "pt": "Semeia o tutorial guiado",
+        "en": "Seed guided tutorial"
+      },
+      "sublabel": "db:seed OnboardingSeeder",
+      "tag": {
+        "pt": "--onboarding ou pergunta",
+        "en": "--onboarding or prompt"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function semearTutorialGuiado(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "confirm('Popular os tutoriais guiados?', default: false)"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$codigo = $this->callSilently('db:seed', ['--class' => 'OnboardingSeeder', '--force' => true]);"
+        }
+      ]
+    },
+    {
+      "id": "pint",
+      "lane": "processos",
+      "col": 3,
+      "type": "external",
+      "label": {
+        "pt": "Formata as policies",
+        "en": "Format policies"
+      },
+      "sublabel": "pint app/Policies",
+      "tag": {
+        "pt": "só com vendor/bin/pint",
+        "en": "with vendor/bin/pint"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function formatarCodigoGerado(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$pint = base_path('vendor/bin/pint');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$processo = new Process([PHP_BINARY, $pint, '--quiet', 'app/Policies'], base_path(), timeout: 300);"
+        }
+      ]
+    },
+    {
+      "id": "assets",
+      "lane": "artisan",
+      "col": 4,
+      "type": "backend",
+      "label": {
+        "pt": "Publica os assets",
+        "en": "Publish assets"
+      },
+      "sublabel": {
+        "pt": "filament:assets e storage:link",
+        "en": "filament:assets + storage:link"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function publicarAssets(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->callSilently('filament:assets');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->callSilently('storage:link');"
+        }
+      ]
+    },
+    {
+      "id": "npm",
+      "lane": "processos",
+      "col": 4,
+      "type": "external",
+      "label": {
+        "pt": "Instala e compila o front",
+        "en": "Install and build UI"
+      },
+      "sublabel": {
+        "pt": "npm install e npm run build",
+        "en": "npm install + npm run build"
+      },
+      "tag": {
+        "pt": "sem npm: aviso e pula",
+        "en": "no npm: warn and skip"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "protected function construirFrontend(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$npm = (new ExecutableFinder)->find('npm');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "foreach ([['install'], ['run', 'build']] as $argumentos) {"
+        }
+      ]
+    },
+    {
+      "id": "snyk",
+      "lane": "suporte",
+      "col": 5,
+      "yOffset": -45,
+      "type": "backend",
+      "label": {
+        "pt": "Remove o vínculo do Snyk",
+        "en": "Remove Snyk link"
+      },
+      "sublabel": "VinculoDoSnyk",
+      "tag": {
+        "pt": ".snyk e seguranca.yml",
+        "en": ".snyk + seguranca.yml"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "private function desvincularDoSnyk(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$apagados = VinculoDoSnyk::remover(base_path());"
+        },
+        {
+          "arquivo": "app/Support/VinculoDoSnyk.php",
+          "trecho": "'.github/workflows/seguranca.yml',"
+        }
+      ]
+    },
+    {
+      "id": "host-local",
+      "lane": "suporte",
+      "col": 5,
+      "yOffset": 45,
+      "type": "backend",
+      "label": {
+        "pt": "Oferece o domínio local",
+        "en": "Offer local domain"
+      },
+      "sublabel": "HostLocal",
+      "tag": {
+        "pt": "só com terminal",
+        "en": "terminal only"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "private function oferecerHostLocal(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$aviso = (new HostLocal(base_path()))->oferecer($this->temTerminal());"
+        },
+        {
+          "arquivo": "app/Support/HostLocal.php",
+          "trecho": "label: \"Cadastrar um domínio local (ex.: {$this->urlSugerida()})?\","
+        }
+      ]
+    },
+    {
+      "id": "banner",
+      "lane": "handle",
+      "col": 5,
+      "type": "frontend",
+      "icon": "success",
+      "label": {
+        "pt": "Mostra URLs, senha e avisos",
+        "en": "Show URLs, password, alerts"
+      },
+      "sublabel": "banner()",
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "$this->components->info('Pronto! O projeto está instalado.');"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "note($this->mensagemDoBanner($this->semeado));"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "foreach ($this->avisos as $aviso) {"
+        }
+      ]
+    },
+    {
+      "id": "testes",
+      "lane": "processos",
+      "col": 5,
+      "type": "external",
+      "label": {
+        "pt": "Oferece rodar os testes",
+        "en": "Offer to run tests"
+      },
+      "sublabel": "artisan test Kit,Tenancy",
+      "tag": {
+        "pt": "com terminal e customização",
+        "en": "terminal and customization"
+      },
+      "sources": [
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "private function oferecerTestes(): void"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "if (! confirm('Rodar os testes do kit agora?', default: false)) {"
+        },
+        {
+          "arquivo": "app/Console/Commands/KitInstall.php",
+          "trecho": "[PHP_BINARY, 'artisan', 'test', '--testsuite=Kit,Tenancy'],"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "env-so-nome-e-cor",
+      "from": "env",
+      "to": "so-nome-e-cor",
+      "role": "branch",
+      "variant": "dashed",
+      "label": "--custom",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "if ($this->option('custom')) {"
+      }
+    },
+    {
+      "id": "env-perguntas",
+      "from": "env",
+      "to": "perguntas",
+      "role": "main",
+      "toSide": "left",
+      "label": {
+        "pt": "sem --custom",
+        "en": "no --custom"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->customizar();"
+      }
+    },
+    {
+      "id": "perguntas-app-key",
+      "from": "perguntas",
+      "to": "app-key",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->gerarAppKey();"
+      }
+    },
+    {
+      "id": "app-key-sqlite",
+      "from": "app-key",
+      "to": "sqlite",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->prepararBancoSqlite();"
+      }
+    },
+    {
+      "id": "sqlite-arquivo-preso",
+      "from": "sqlite",
+      "to": "sqlite-preso",
+      "role": "error",
+      "variant": "security",
+      "label": {
+        "pt": "--force, arquivo preso",
+        "en": "--force, locked file"
+      },
+      "prova": {
+        "arquivo": "app/Support/BancoSqlite.php",
+        "trecho": "if (! $apagou || is_file($caminho)) {"
+      }
+    },
+    {
+      "id": "sqlite-conexao",
+      "from": "sqlite",
+      "to": "conexao",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->conferirConexao();"
+      }
+    },
+    {
+      "id": "conexao-migrar",
+      "from": "conexao",
+      "to": "migrar",
+      "role": "main",
+      "label": {
+        "pt": "banco acessível",
+        "en": "database up"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "if ($this->bancoAcessivel) {"
+      }
+    },
+    {
+      "id": "migrar-senha",
+      "from": "migrar",
+      "to": "senha",
+      "role": "main",
+      "label": {
+        "pt": "sem --no-seed",
+        "en": "no --no-seed"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "if ($this->bancoAcessivel && ! $this->option('no-seed')) {"
+      }
+    },
+    {
+      "id": "senha-seed",
+      "from": "senha",
+      "to": "seed",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$codigo = $this->callSilently('db:seed', ['--force' => true]);"
+      }
+    },
+    {
+      "id": "seed-tutorial",
+      "from": "seed",
+      "to": "tutorial",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->semearTutorialGuiado();"
+      }
+    },
+    {
+      "id": "tutorial-pint",
+      "from": "tutorial",
+      "to": "pint",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->formatarCodigoGerado();"
+      }
+    },
+    {
+      "id": "pint-assets",
+      "from": "pint",
+      "to": "assets",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->publicarAssets();"
+      }
+    },
+    {
+      "id": "assets-npm",
+      "from": "assets",
+      "to": "npm",
+      "role": "main",
+      "label": {
+        "pt": "sem --no-npm",
+        "en": "no --no-npm"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "if (! $this->option('no-npm')) {"
+      }
+    },
+    {
+      "id": "npm-snyk",
+      "from": "npm",
+      "to": "snyk",
+      "role": "branch",
+      "variant": "dashed",
+      "label": "--create-project",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->desvincularDoSnyk();"
+      }
+    },
+    {
+      "id": "npm-host-local",
+      "from": "npm",
+      "to": "host-local",
+      "role": "main",
+      "label": {
+        "pt": "sem --create-project",
+        "en": "no --create-project"
+      },
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "if ($this->option('create-project')) {"
+      }
+    },
+    {
+      "id": "snyk-host-local",
+      "from": "snyk",
+      "to": "host-local",
+      "role": "branch",
+      "variant": "dashed",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->oferecerHostLocal();"
+      }
+    },
+    {
+      "id": "host-local-banner",
+      "from": "host-local",
+      "to": "banner",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->banner();"
+      }
+    },
+    {
+      "id": "banner-testes",
+      "from": "banner",
+      "to": "testes",
+      "role": "main",
+      "prova": {
+        "arquivo": "app/Console/Commands/KitInstall.php",
+        "trecho": "$this->oferecerTestes();"
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "O que vira aviso e o que interrompe",
+        "en": "What warns and what stops"
+      },
+      "items": [
+        {
+          "pt": "Em migrate, db:seed e npm, código de saída diferente de sucesso vira aviso, com o comando de refazer; o banner() imprime os avisos no fim.",
+          "en": "In migrate, db:seed and npm, non-success exit codes become warnings with retry command; banner() prints warnings at end."
+        },
+        {
+          "pt": "O tutorial guiado também captura a exceção do seeder e a transforma em aviso.",
+          "en": "Guided tutorial also catches seeder exceptions and turns them into warnings."
+        },
+        {
+          "pt": "Banco inacessível (Postgres ou MySQL sem resposta): migrations e seeders são pulados, com a instrução no aviso, e o fluxo segue em publicarAssets().",
+          "en": "Database unreachable (Postgres or MySQL not responding): migrations and seeders skipped with instructions in warning; flow continues in publicarAssets()."
+        },
+        {
+          "pt": "Com --no-seed, senha, seeders, tutorial e pint ficam de fora; com --onboarding, um aviso diz como semear o tutorial depois.",
+          "en": "With --no-seed, password, seeders, tutorial and pint are skipped; with --onboarding, warning explains how to seed tutorial later."
+        },
+        {
+          "pt": "Com --no-npm, construirFrontend() não roda, e o fluxo segue de publicarAssets() para o Snyk ou o domínio local.",
+          "en": "With --no-npm, construirFrontend() never runs; flow goes from publicarAssets() to Snyk or local domain."
+        },
+        {
+          "pt": "Com --force, um SQLite preso por outro processo faz BancoSqlite::recriar() lançar RuntimeException, sem captura, e a instalação para ali.",
+          "en": "With --force, SQLite locked by another process makes BancoSqlite::recriar() throw uncaught RuntimeException; install stops there."
+        }
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": {
+        "pt": "Quem chama e com que flags",
+        "en": "Callers and flags"
+      },
+      "items": [
+        {
+          "pt": "O post-create-project-cmd do composer.json roda kit:install --ansi --create-project; o script setup roda sem --create-project.",
+          "en": "composer.json post-create-project-cmd runs kit:install --ansi --create-project; setup script runs without --create-project."
+        },
+        {
+          "pt": "--custom refaz só nome e cor e sai antes de banco, seeder e assets.",
+          "en": "--custom resets name and color, exits before database, seeder and assets."
+        },
+        {
+          "pt": "--force recria o SQLite do zero, o que apaga os dados, e refaz as cinco perguntas.",
+          "en": "--force recreates SQLite from scratch, deleting data, and repeats all five questions."
+        },
+        {
+          "pt": "Com a multi-organização respondida como sim, aplicar() liga a tenancy antes do primeiro migrate, sem recriar o banco.",
+          "en": "If multi-organization is answered yes, aplicar() enables tenancy before first migrate, without rebuilding database."
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Depois do banner",
+        "en": "After banner"
+      },
+      "items": [
+        {
+          "pt": "resumoDaCustomizacao() lista o que foi customizado e o que continua manual.",
+          "en": "resumoDaCustomizacao() lists what was customized and what stays manual."
+        },
+        {
+          "pt": "oferecerTestes() só pergunta com terminal e com customização feita nesta execução.",
+          "en": "oferecerTestes() only prompts with a terminal and customization done in this run."
+        },
+        {
+          "pt": "oferecerEstrela() imprime o endereço do kit e, com terminal e sem --no-support, pergunta pela estrela.",
+          "en": "oferecerEstrela() prints kit address and, with terminal and without --no-support, asks for a star."
+        }
+      ]
+    }
+  ]
+}

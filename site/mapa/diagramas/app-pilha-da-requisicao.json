@@ -1,0 +1,70 @@
+{
+  "slug": "app-pilha-da-requisicao",
+  "tipo": "architecture",
+  "construtor": "mapa",
+  "titulo": {
+    "pt": "/app — Pilha da requisição",
+    "en": "/app — Request stack"
+  },
+  "paineis": [
+    "app"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "pecas": [
+    {
+      "id": "Illuminate\\Cookie\\Middleware\\AddQueuedCookiesToResponse",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "Filament\\Http\\Middleware\\AuthenticateSession",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "Filament\\Http\\Middleware\\DisableBladeIconComponents",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "Filament\\Http\\Middleware\\DispatchServingFilamentEvent",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "Illuminate\\Cookie\\Middleware\\EncryptCookies",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "Illuminate\\Foundation\\Http\\Middleware\\PreventRequestForgery",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "Illuminate\\View\\Middleware\\ShareErrorsFromSession",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "Illuminate\\Session\\Middleware\\StartSession",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "Illuminate\\Routing\\Middleware\\SubstituteBindings",
+      "row": 8,
+      "col": 0
+    }
+  ],
+  "layout": {
+    "cols": 2,
+    "cellW": 230,
+    "cellH": 64,
+    "gapX": 80,
+    "gapY": 44
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "slug": "infra-excecoes",
+  "tipo": "sequence",
+  "titulo": {
+    "pt": "Exceções no /infra: tela e retenção",
+    "en": "/infra exceptions: view and retention"
+  },
+  "paineis": [
+    "infra"
+  ],
+  "modos": [
+    "sem",
+    "com"
+  ],
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "emphasis": {
+          "label": {
+            "pt": "requisição do navegador",
+            "en": "browser request"
+          }
+        },
+        "default": {
+          "label": {
+            "pt": "chamada no servidor",
+            "en": "server call"
+          }
+        },
+        "security": {
+          "label": {
+            "pt": "checagem de acesso",
+            "en": "access check"
+          }
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "navegador",
+      "type": "external",
+      "label": {
+        "pt": "Navegador",
+        "en": "Browser"
+      },
+      "sublabel": {
+        "pt": "papel infra",
+        "en": "infra role"
+      }
+    },
+    {
+      "id": "infra",
+      "type": "backend",
+      "label": "InfraPanel",
+      "sublabel": "Provider",
+      "sources": [
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "class InfraPanelProvider extends PanelProvider",
+          "label": "InfraPanelProvider"
+        },
+        {
+          "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+          "trecho": "FilamentExceptionsPlugin::make()",
+          "label": "InfraPanelProvider@panel"
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "type": "security",
+      "label": "ExceptionPolicy",
+      "sublabel": "policy",
+      "sources": [
+        {
+          "arquivo": "app/Policies/ExceptionPolicy.php",
+          "trecho": "class ExceptionPolicy",
+          "label": "ExceptionPolicy"
+        },
+        {
+          "arquivo": "app/Policies/ExceptionPolicy.php",
+          "trecho": "return $authUser->can('ViewAny:Exception');",
+          "label": "ExceptionPolicy@viewAny"
+        }
+      ]
+    },
+    {
+      "id": "exception",
+      "type": "database",
+      "label": "Exception",
+      "sublabel": {
+        "pt": "model do pacote",
+        "en": "package model"
+      },
+      "sources": [
+        {
+          "arquivo": "database/migrations/2026_08_18_171919_create_filament_exceptions_table.php",
+          "trecho": "Schema::create('filament_exceptions_table', function (Blueprint $table) {",
+          "label": "create_filament_exceptions_table"
+        }
+      ]
+    },
+    {
+      "id": "retencao",
+      "type": "backend",
+      "label": "RetencaoDe",
+      "sublabel": "Excecoes",
+      "sources": [
+        {
+          "arquivo": "app/Support/RetencaoDeExcecoes.php",
+          "trecho": "class RetencaoDeExcecoes",
+          "label": "RetencaoDeExcecoes"
+        },
+        {
+          "arquivo": "app/Support/RetencaoDeExcecoes.php",
+          "trecho": "public static function corte(): Carbon",
+          "label": "RetencaoDeExcecoes@corte"
+        }
+      ]
+    },
+    {
+      "id": "agendador",
+      "type": "backend",
+      "label": {
+        "pt": "Agendador",
+        "en": "Scheduler"
+      },
+      "sublabel": "routes/console.php",
+      "sources": [
+        {
+          "arquivo": "routes/console.php",
+          "trecho": "Schedule::command('model:prune', [",
+          "label": "routes/console.php"
+        }
+      ]
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 474,
+      "label": {
+        "pt": "Tela no /infra",
+        "en": "View in /infra"
+      }
+    },
+    {
+      "from": 490,
+      "to": 722,
+      "label": {
+        "pt": "Retenção",
+        "en": "Expiry"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "abrir-excecoes",
+      "from": "navegador",
+      "to": "infra",
+      "y": 172,
+      "label": "GET /infra/exceptions",
+      "variant": "emphasis",
+      "note": {
+        "pt": "tela do pacote filament-exceptions, no grupo Observabilidade; /admin e /app registram o plugin sem navegação",
+        "en": "filament-exceptions screen in Observability group; /admin and /app register plugin without navigation"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "FilamentExceptionsPlugin::make()"
+      }
+    },
+    {
+      "id": "autorizar",
+      "from": "infra",
+      "to": "policy",
+      "y": 286,
+      "label": "ViewAny:Exception",
+      "variant": "security",
+      "note": {
+        "pt": "policy de model de vendor, registrada pelo kit; para entrar no /infra já é preciso papel do painel infra ou master_global",
+        "en": "vendor model policy, registered by kit; /infra entry already needs infra panel role or master_global"
+      },
+      "prova": {
+        "arquivo": "app/Support/PoliciesDeVendor.php",
+        "trecho": "Exception::class                      => ExceptionPolicy::class,"
+      }
+    },
+    {
+      "id": "badge",
+      "from": "infra",
+      "to": "exception",
+      "y": 411,
+      "label": {
+        "pt": "badge de contagem",
+        "en": "count badge"
+      },
+      "variant": "default",
+      "note": {
+        "pt": "o item do menu mostra quantas exceções a tabela guarda",
+        "en": "menu item shows count of exceptions stored in table"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "->navigationBadge()"
+      }
+    },
+    {
+      "id": "corte",
+      "from": "infra",
+      "to": "retencao",
+      "y": 512,
+      "label": "modelPruneInterval(corte())",
+      "variant": "default",
+      "note": {
+        "pt": "no registro do plugin do /infra: hoje − kit.retencao.excecoes_em_dias (14); zero ou negativo vira uma data 100 anos atrás",
+        "en": "on /infra plugin setup: today − kit.retencao.excecoes_em_dias (14); zero or negative gives a date 100 years ago"
+      },
+      "prova": {
+        "arquivo": "app/Providers/Filament/InfraPanelProvider.php",
+        "trecho": "->modelPruneInterval(RetencaoDeExcecoes::corte()),"
+      }
+    },
+    {
+      "id": "podar",
+      "from": "agendador",
+      "to": "exception",
+      "y": 637,
+      "label": "02:00 model:prune",
+      "variant": "default",
+      "note": {
+        "pt": "--model explícito: o kit agenda a poda só do model do pacote, e não a de todo model podável do projeto",
+        "en": "explicit --model: kit schedules pruning only for package model, rather than every prunable project model"
+      },
+      "prova": {
+        "arquivo": "routes/console.php",
+        "trecho": "Schedule::command('model:prune', ["
+      }
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": {
+        "pt": "Interruptores",
+        "en": "Switches"
+      },
+      "items": [
+        {
+          "pt": "kit.retencao.excecoes_em_dias (KIT_RETENCAO_EXCECOES_DIAS, padrão 14): vira a data de corte que o kit passa ao plugin do /infra; zero ou negativo vira uma data 100 anos atrás",
+          "en": "kit.retencao.excecoes_em_dias (KIT_RETENCAO_EXCECOES_DIAS, default 14): cutoff date passed to /infra plugin; zero or negative gives a date 100 years ago"
+        }
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": {
+        "pt": "Sem e com tenant",
+        "en": "Tenant on/off"
+      },
+      "items": [
+        {
+          "pt": "Igual nos dois modos: a tela do /infra não recorta por organização",
+          "en": "Same in both modes: /infra screen does not filter by organization"
+        }
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": {
+        "pt": "O que este diagrama não liga",
+        "en": "What this diagram omits"
+      },
+      "items": [
+        {
+          "pt": "Este diagrama só liga o que o código do kit faz: não há seta de quem grava as linhas da tabela, nem do agendador até o RetencaoDeExcecoes",
+          "en": "Diagram only links kit code actions: no arrow from table row writer, or from scheduler to RetencaoDeExcecoes"
+        }
+      ]
+    }
+  ]
+}
