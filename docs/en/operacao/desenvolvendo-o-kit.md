@@ -102,7 +102,7 @@ build from a versioned model — the decisions are in the ADRs of the `mapa-inte
   keeps the condition in its `disponibilidade` field
   (`{modo?, chaves?: [{chave, padrao, ligada?}], evidencia}`): the map marks it and only draws it in the diagram of
   the mode where it opens, and the guards require that field on every such piece, evaluating its
-  `canAccess()`/`canView()` (or, for a floating component, the predicate that decides whether it shows) as
+  `canAccess()`/`canView()` — and, for a page, mounting it, since its `mount()` may send the user elsewhere — (or, for a floating component, the predicate that decides whether it shows) as
   super_admin, in both modes. The build finds the snippet's line in the file at the
   published revision.
 - **The diagrams** — one file per diagram in `site/mapa/diagramas/{slug}.json`. The registration tree and the

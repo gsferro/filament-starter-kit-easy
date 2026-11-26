@@ -120,7 +120,9 @@ model, the classes, the releases and the timings.
   always opens in dark.
 - **Numbers and dates**: archify writes the axis numbers in English format; the timings cascade uses whole
   seconds, and the timeline carries the dd/mm/yyyy date in the text of each milestone. The timeline, being wide,
-  opens with smaller text than the other diagrams: use the viewer zoom.
+  opens with smaller text than the other diagrams: use the viewer zoom. The same goes for four maps where the
+  conditional piece's mark widens the box: `kit-ia`, `admin-produtividade-e-ui`, `app-produtividade-e-ui-com` and
+  `infra-infraestrutura-2`.
 - **Completeness**: the map guarantees a floor — every piece a panel registers and every class of `app/` outside
   `app/Filament` delivers a catalog feature or sits in a list with the reason —, and does not guarantee that every
   link in the code is drawn.

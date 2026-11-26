@@ -103,7 +103,7 @@ a partir de um modelo versionado — as decisões estão nas ADRs da wiki `mapa-
   A peça que só abre com tenant ou com uma chave desligada de fábrica — registrada pelo painel, usada dentro de outra
   tela ou flutuante, como o chat do assistente — guarda a condição no campo `disponibilidade` (`{modo?, chaves?: [{chave, padrao, ligada?}], evidencia}`): o mapa a marca e só a
   desenha no diagrama do modo em que ela abre, e as guardas cobram que toda peça assim tenha o campo, avaliando o
-  `canAccess()`/`canView()` dela (ou, no componente flutuante, o predicado que decide se ele aparece) como
+  `canAccess()`/`canView()` dela — e, na página, a montagem, porque o `mount()` pode devolvê-la a outra tela — (ou, no componente flutuante, o predicado que decide se ele aparece) como
   super_admin, nos dois modos.
 - **Os diagramas** — um arquivo por diagrama em `site/mapa/diagramas/{slug}.json`. A árvore de registro e os mapas
   de arquitetura dizem só o recorte e a grade: as peças e as ligações saem do modelo. Os fluxos (sequência,

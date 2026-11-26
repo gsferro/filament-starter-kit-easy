@@ -121,7 +121,9 @@ as classes, as versões e os tempos.
   sempre no escuro.
 - **Números e datas**: o archify escreve os números dos eixos em formato inglês; a cascata de tempos usa segundos
   inteiros, e a linha do tempo traz a data dd/mm/aaaa no texto de cada marco. A linha do tempo, larga, abre com o
-  texto menor que os outros diagramas: use o zoom do visualizador.
+  texto menor que os outros diagramas: use o zoom do visualizador. O mesmo vale para quatro mapas em que a marca da
+  peça condicional alarga a caixa: `kit-ia`, `admin-produtividade-e-ui`, `app-produtividade-e-ui-com` e
+  `infra-infraestrutura-2`.
 - **Completude**: o mapa garante um piso — toda peça que um painel registra e toda classe de `app/` fora de
   `app/Filament` entrega uma feature do catálogo ou está numa lista com o motivo —, e não garante que toda
   ligação do código esteja desenhada.

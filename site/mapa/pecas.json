@@ -684,6 +684,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_DASHBOARD_DINAMICO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+        "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "mddev31/filament-dynamic-dashboard",
     "features": [
@@ -1281,6 +1293,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_DASHBOARD_DINAMICO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/App/Pages/Dashboard.php",
+        "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "mddev31/filament-dynamic-dashboard",
     "features": [
@@ -1471,6 +1495,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_DASHBOARD_DINAMICO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Infra/Pages/Dashboard.php",
+        "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+      }
+    },
     "origem": "pacote+proprio",
     "pacote": "mddev31/filament-dynamic-dashboard",
     "features": [
@@ -6118,6 +6154,18 @@
       "sem",
       "com"
     ],
+    "disponibilidade": {
+      "chaves": [
+        {
+          "chave": "KIT_DASHBOARD_DINAMICO",
+          "padrao": false
+        }
+      ],
+      "evidencia": {
+        "arquivo": "app/Filament/Admin/Pages/Dashboard.php",
+        "trecho": "if (! DashboardDinamico::atende(self::class)) {"
+      }
+    },
     "origem": "pacote",
     "pacote": "mddev31/filament-dynamic-dashboard",
     "features": [

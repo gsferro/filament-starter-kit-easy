@@ -22,7 +22,7 @@ roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
   - cada peça mostra as F-nn que entrega, e cada ligação traz a prova — o arquivo e o trecho do código —
     num card, com o passaporte da peça levando à linha no GitHub, no commit publicado;
   - a peça condicional — só disponível com tenant ou com uma chave desligada de fábrica, como o `TenantResource`,
-    os hubs e o chat do assistente — leva a marca da condição no desenho e no card "Condições de disponibilidade", e
+    os hubs, o dashboard dinâmico e o chat do assistente — leva a marca da condição no desenho e no card "Condições de disponibilidade", e
     só entra no diagrama do modo em que abre: o `/admin` e o `/app` têm diagramas sem e com tenant onde o
     conjunto muda, e um comparativo sem → com cada.
 - O modelo versionado do mapa (`site/mapa/pecas.json` e `ligacoes.json`, a prova como âncora de trecho, nunca
