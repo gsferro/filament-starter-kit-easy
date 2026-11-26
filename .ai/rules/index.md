@@ -18,6 +18,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | composer.json | .ai/rules/general.md |
 | tests/Kit/** | .ai/rules/kit.md |
 | app/Livewire/** | .ai/rules/livewire.md |
+| site/mapa/**, site/verifica-mapa.mjs, tests/Kit/MapaInterativo*Test.php, tests/Tenancy/MapaInterativoTenancyTest.php | .ai/rules/mapa.md |
 | app/Models/** | .ai/rules/models.md |
 | app/Filament/**, app/Providers/Filament/**, database/seeders/Onboarding/**, database/seeders/OnboardingSeeder.php, app/Filament/Dock/**, app/Filament/Spotlight/**, app/Support/DockDeAtalhos.php, app/Support/DashboardDinamico.php, app/Support/AgentesDeIa.php, app/Support/TutorialGuiado.php, config/lockscreen.php | .ai/rules/onboarding.md |
 | app/Filament/Admin/Pages/** | .ai/rules/pages.md |
