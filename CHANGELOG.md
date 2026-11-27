@@ -72,7 +72,7 @@ roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
   arquivos de teste do mapa (`tests/Kit/MapaInterativo*Test.php` e `tests/Tenancy/MapaInterativoTenancyTest.php`)
   e citações de linha em `tests/Kit/KitArteTest.php`, `tests/Kit/LinkDoPainelSemTenancyTest.php` e
   `tests/Browser/RoteiroDoKitTest.php`.
-- **Teto de pulados fora da árvore do kit: 1161 → 1600 (+439)**, medido com `--log-junit` numa extração do
+- **Teto de pulados fora da árvore do kit: 1173 → 1612 (+439)**, medido com `--log-junit` numa extração do
   `git archive` de `579cbc51` (os testes da release), só nos arquivos novos — todos os casos pulam pela guarda
   `naArvoreDoKit()`: `MapaInterativoCatalogoTest` 64, `MapaInterativoDiagramasTest` 148,
   `MapaInterativoPublicacaoTest` 65, `MapaInterativoTest` 135 e `MapaInterativoTenancyTest` 27.
@@ -81,6 +81,29 @@ roteiro de features passa a ser o catálogo único, com 50 features novas. Wiki:
 ### Defaults mudados
 
 - nenhum
+
+### Validação local dos quatro cenários (2026-11-26)
+
+- **Os quatro cenários de `wikis/checklist-de-release.md`** rodaram em 2026-11-26 **sobre a tag publicada** `v0.57.0`
+  (anterior `v0.56.0`), em `validacao-v0.57.0/` fora da árvore do kit. O `kit:update --all` dos cenários 3 e 4 aplicou
+  **14 arquivos (6 novos no kit e 8 modificados)**, a lista de "Atualizando" acima, presentes nos quatro. Sem migration:
+  `Nothing to migrate` no `migrate --force` dos cenários 3 e 4.
+
+  | Cenário | Saída de `php artisan test --testsuite=Kit,Tenancy --parallel --processes=4 --compact` | `kit.version` | tenancy |
+  |---|---|---|---|
+  | 1 `novo-sem-tenant` — `create-project` `v0.57.0` | `{"tool":"pest","result":"passed","tests":6728,"passed":5116,"assertions":26371,"duration_ms":1011147,"skipped":1612}` | `0.57.0` | `NAO` |
+  | 2 `novo-com-tenant` — `create-project` `v0.57.0` + `kit:tenancy --force` | `{"tool":"pest","result":"passed","tests":6728,"passed":5116,"assertions":26371,"duration_ms":1014595,"skipped":1612}` | `0.57.0` | `SIM` |
+  | 3 `velho-sem-tenant` — `create-project` `v0.56.0` + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":6728,"passed":5116,"assertions":26371,"duration_ms":1015754,"skipped":1612}` | `0.57.0` | `NAO` |
+  | 4 `velho-com-tenant` — `create-project` `v0.56.0` + `kit:tenancy --force` + commit + `kit:update --all` + `filament:assets` + `migrate --force` | `{"tool":"pest","result":"passed","tests":6728,"passed":5116,"assertions":26371,"duration_ms":1075879,"skipped":1612}` | `0.57.0` | `SIM` |
+
+  **Teto de pulados: 1612, e não 1600.** A conta da release partia do 1161 que o roteiro da `v0.56.0` anunciava, número
+  que não tinha sido medido sobre uma tag (não houve cenários entre a `v0.52.0` e a `v0.56.0`). Medido agora na tag
+  publicada `v0.56.0`, na mesma máquina e com o mesmo comando, mais `--log-junit`:
+  `{"tool":"pest","result":"passed","tests":6289,"passed":5116,"assertions":26371,"duration_ms":1005267,"skipped":1173}`,
+  39 arquivos com pulados. A `v0.57.0` soma exatamente os 439 dos cinco arquivos do mapa (medidos com `--log-junit` no
+  cenário 1: 64, 148, 65, 135 e 27), e fora deles os testes da `v0.56.0` e da `v0.57.0` só diferem em citações de
+  linha, sem skip novo. O roteiro `wikis/atualizacoes/v0.57.0.md` servido pela tag ainda diz 1600: quem atualiza da
+  `v0.56.0` e vê **1612** está dentro do esperado. O da `v0.56.0` diz 1161, e o efetivo é 1173.
 
 ## [0.56.0] - 2026-11-19
 

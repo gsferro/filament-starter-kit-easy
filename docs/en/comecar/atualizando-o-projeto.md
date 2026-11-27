@@ -160,7 +160,7 @@ The test helpers `registrarAberto()`, `conviteCom()`, `aceitarConvite()` and `co
 which does not travel with the project. `kit:update` brings only the `.ai/rules/catalogo-de-features.md` rule
 (which does not apply outside the kit repository), its line in `.ai/rules/index.md`, five new terms in
 `wikis/glossario.md`, the map tests — which skip outside the kit tree, so the skipped ceiling of the
-`Kit,Tenancy` suite goes from 1161 to 1600 — and their helpers in `tests/Pest.php`: if you have a function of
+`Kit,Tenancy` suite goes from 1173 to 1612 — and their helpers in `tests/Pest.php`: if you have a function of
 your own with one of those names, rename it.
 
 **v0.54.0 adds three migrations** (`php artisan migrate`): per-user appearance preferences (see

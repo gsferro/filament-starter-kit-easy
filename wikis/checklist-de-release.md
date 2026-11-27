@@ -141,7 +141,14 @@ php artisan test --testsuite=Kit,Tenancy --parallel --compact
 
 > ### Sobre os pulados — e por que aqui há **teto**, não só registro
 >
-> **Teto local: 942**, confirmado nos quatro cenários da `v0.52.0` sobre a tag publicada (2026-10-23, seção
+> **Teto local: 1612**, medido nos quatro cenários da `v0.57.0` sobre a tag publicada (2026-11-26, seção
+> `Validação local dos quatro cenários` da versão no `CHANGELOG.md`). O `+439` sobre o 1173 da `v0.56.0` são os cinco
+> arquivos de guarda do mapa interativo (`tests/Kit/MapaInterativo*Test.php` e
+> `tests/Tenancy/MapaInterativoTenancyTest.php`), todos guardados por `naArvoreDoKit()`. O 1173 foi medido na tag
+> `v0.56.0` na mesma data: entre a `v0.52.0` e a `v0.56.0` não houve cenários, e o 1161 que os roteiros carregaram era
+> conta, não medida — errou por 12.
+>
+> **Teto anterior: 942**, confirmado nos quatro cenários da `v0.52.0` sobre a tag publicada (2026-10-23, seção
 > `Validação local dos quatro cenários` da versão no `CHANGELOG.md`). O `+3` sobre o 939 vem de
 > `tests/Kit/OnboardingGuiadoInstalacaoTest.php`: `[CT-39]` lê `.ai/rules/` (1) e `[CT-42]` lê `docs/pt` e `docs/en`
 > (2), todos guardados por `naArvoreDoKit()` — diretórios excluídos do `create-project`.
