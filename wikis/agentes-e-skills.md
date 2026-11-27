@@ -292,7 +292,7 @@ Confira estes arquivos que o `kit:update` traz:
 - `tests/Kit/KitArteTest.php`, `tests/Kit/LinkDoPainelSemTenancyTest.php` e `tests/Browser/RoteiroDoKitTest.php`: só comentários (citações de linha do `tests/Pest.php` e a descrição do roteiro de features);
 - `config/kit.php`, com o marcador `0.57.0`.
 
-Por causa desses cinco arquivos, o teto de pulados da suíte `Kit,Tenancy` fora da árvore do kit sobe de **1161 para 1600** (+439, medidos arquivo a arquivo: 64 do catálogo, 148 dos diagramas, 65 da publicação, 135 do modelo e 27 do de multi-organização).
+Por causa desses cinco arquivos, o teto de pulados da suíte `Kit,Tenancy` fora da árvore do kit sobe de **1173 para 1612** (+439, medidos arquivo a arquivo: 64 do catálogo, 148 dos diagramas, 65 da publicação, 135 do modelo e 27 do de multi-organização). O 1173 é o da `v0.56.0` medido na tag publicada; o roteiro dela anunciava 1161, número que não tinha sido medido.
 
 Não há migration, alteração de settings, dependência PHP ou JS nova, asset publicado nem default mudado. Basta aplicar os arquivos e conferir o resultado; não há instalação de pacotes, build, semeadura ou geração de permissões a executar. Os READMEs, a lista de mudanças, as páginas do site e a cópia versionada deste roteiro não são aplicados pelo `kit:update`; integre à documentação do projeto só o que o dono quiser e registre no relatório o que foi integrado ou considerado inaplicável.
 
@@ -405,7 +405,7 @@ $codigoDaSuite
 
 O `DB_URL` também precisa apontar para o banco em memória; vazio pode permitir que o `.env` decida o banco usado.
 
-Evidência: código zero, zero erro, zero falha e no máximo **1600 pulados** fora da árvore do kit: o teto de 1161 recebido da origem mais os 439 casos dos cinco arquivos do mapa, que leem o site e o modelo do mapa, ausentes do projeto. Registre a quantidade efetiva; aumento além disso exige listar as causas e parar, sem alterar os testes para passar.
+Evidência: código zero, zero erro, zero falha e no máximo **1612 pulados** fora da árvore do kit: os 1173 da origem `v0.56.0`, medidos na tag publicada (o roteiro dela dizia 1161), mais os 439 casos dos cinco arquivos do mapa, que leem o site e o modelo do mapa, ausentes do projeto. Registre a quantidade efetiva; aumento além disso exige listar as causas e parar, sem alterar os testes para passar.
 
 Para a parte nova, rode também os cinco arquivos do mapa, com as mesmas variáveis de banco acima:
 
@@ -477,7 +477,7 @@ O estado esperado é o dos cenários 3 e 4 de atualização: com ou sem multi-or
 | Código da aplicação | Nenhum arquivo de `app/`, `database/`, `resources/`, `public/` ou `routes/` alterado pelo `kit:update` |
 | Migrations, settings, assets e dependências | Nenhum novo; nenhuma execução necessária |
 | Defaults e multi-organização | Nenhum default mudado; mesmo `SIM` ou `NAO` do pré-voo |
-| Suíte Kit,Tenancy | Zero erro, zero falha, até 1600 pulados fora da árvore do kit |
+| Suíte Kit,Tenancy | Zero erro, zero falha, até 1612 pulados fora da árvore do kit |
 | Testes do mapa | Os 439 casos dos cinco arquivos pulados, sem erro de função indefinida ou redeclarada |
 | Policies | Não rastreadas geradas pela suíte removidas e listadas; rastreadas preservadas |
 | Arquivos do dono | Rules e termos próprios preservados; `.env` e canais em `config/logging.php` intactos |
@@ -495,7 +495,7 @@ Pare e entregue ao dono a condição, a saída relevante e o que falta para cont
 - Remote, tags ou branch reservados já existentes: informe os nomes, sem removê-los.
 - Tag `v0.57.0` indisponível ou dry-run divergente: mostre os diffs, principalmente dependências, código da aplicação, migrations, assets ou parte da entrega ausente.
 - Comando recusado, pedido de segunda rodada, aplicação incompleta, integração incerta ou marcador, branch e arquivos fora do previsto: descreva o estado parcial, sem commit ou nova rodada.
-- Suíte com erro, falha ou mais de 1600 pulados: entregue a saída e os casos envolvidos. Caso do mapa que **não** pula fora da árvore do kit é defeito da release: registre o caso e a mensagem. Se houver erro de função definida duas vezes ou ausente, registre a causa nos arquivos de teste e no `tests/Pest.php`, sem enfraquecer os testes.
+- Suíte com erro, falha ou mais de 1612 pulados: entregue a saída e os casos envolvidos. Caso do mapa que **não** pula fora da árvore do kit é defeito da release: registre o caso e a mensagem. Se houver erro de função definida duas vezes ou ausente, registre a causa nos arquivos de teste e no `tests/Pest.php`, sem enfraquecer os testes.
 - Policy rastreada alterada, impressão de dados diferente, multi-organização alterada ou mudança inesperada em `.env`, canais de log, rules, glossário ou customizações: mostre a diferença antes de restaurar qualquer coisa.
 - Um passo exigiria ação proibida em **Cuidados**: informe a necessidade e aguarde orientação.
 
@@ -510,7 +510,7 @@ Entregue ao dono, ao terminar ou ao parar:
 - cada decisão de conflito, pergunta e resposta ou “sem resposta”, default aplicado e limitações por arquivo; sem conflitos, registre isso;
 - funções próprias do dono que colidiam com os helpers novos e o que foi feito com cada uma, ou “nenhuma colisão”;
 - confirmação de que não houve migration, alteração de settings, dependência nova, asset publicado, default mudado, instalação, build, semeadura ou geração de permissões, e de que nenhum arquivo de código da aplicação mudou;
-- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados contra o teto de 1600 e pedido para rodar a suíte completa em ambiente de testes;
+- saída literal da suíte Kit,Tenancy, contagem efetiva de pulados contra o teto de 1612 e pedido para rodar a suíte completa em ambiente de testes;
 - saída dos cinco arquivos de teste do mapa, com os 439 pulados;
 - o destino dos READMEs, da lista de mudanças, das páginas do site e da cópia deste roteiro: integrado ou considerado inaplicável;
 - policies não rastreadas removidas, impressões dos dados antes e depois e resultado da comparação;
